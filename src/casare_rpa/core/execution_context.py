@@ -117,6 +117,23 @@ class ExecutionContext:
     def get_page(self, name: str = "default") -> Optional[Page]:
         """Get a page by name."""
         return self.pages.get(name)
+    
+    def add_page(self, page: Page, name: str) -> None:
+        """
+        Add a page to the context.
+        
+        Args:
+            page: Playwright page object
+            name: Page identifier
+        """
+        self.pages[name] = page
+        logger.debug(f"Page added: {name}")
+    
+    def clear_pages(self) -> None:
+        """Clear all pages from the context."""
+        self.pages.clear()
+        self.active_page = None
+        logger.debug("All pages cleared")
 
     def close_page(self, name: str) -> None:
         """Close and remove a named page."""

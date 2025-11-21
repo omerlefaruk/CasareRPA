@@ -1,0 +1,354 @@
+"""
+Navigation nodes for web page navigation.
+
+This module provides nodes for controlling page navigation:
+going to URLs, back/forward navigation, and page refresh.
+"""
+
+from typing import Any, Optional
+
+from playwright.async_api import Page
+
+from ..core.base_node import BaseNode
+from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
+from ..core.execution_context import ExecutionContext
+from ..utils.config import DEFAULT_PAGE_LOAD_TIMEOUT
+from loguru import logger
+
+
+class GoToURLNode(BaseNode):
+    """
+    Go to URL node - navigates to a specified URL.
+    
+    Loads a web page at the given URL with optional timeout configuration.
+    """
+    
+    def __init__(
+        self,
+        node_id: str,
+        name: str = "Go To URL",
+        url: str = "",
+        timeout: int = DEFAULT_PAGE_LOAD_TIMEOUT,
+        **kwargs
+    ) -> None:
+        """
+        Initialize go to URL node.
+        
+        Args:
+            node_id: Unique identifier for this node
+            name: Display name for the node
+            url: URL to navigate to
+            timeout: Page load timeout in milliseconds
+        """
+        config = kwargs.get("config", {"url": url, "timeout": timeout})
+        if "url" not in config:
+            config["url"] = url
+        if "timeout" not in config:
+            config["timeout"] = timeout
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "GoToURLNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
+        self.add_input_port("url", PortType.INPUT, DataType.STRING)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute navigation to URL.
+        
+        Args:
+            context: Execution context for the workflow
+            
+        Returns:
+            Result with page instance
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            # Get page from input or context
+            page = self.get_input_value("page")
+            if page is None:
+                page = context.get_active_page()
+            
+            if page is None:
+                raise ValueError("No page instance found")
+            
+            # Get URL from input or config
+            url = self.get_input_value("url")
+            if url is None:
+                url = self.config.get("url", "")
+            
+            if not url:
+                raise ValueError("URL is required")
+            
+            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            
+            logger.info(f"Navigating to URL: {url}")
+            
+            # Navigate to URL
+            response = await page.goto(url, timeout=timeout)
+            
+            # Set output
+            self.set_output_value("page", page)
+            
+            self.status = NodeStatus.SUCCESS
+            logger.info(f"Navigation completed: {url} (status: {response.status if response else 'N/A'})")
+            
+            return {
+                "success": True,
+                "data": {
+                    "url": url,
+                    "status": response.status if response else None
+                },
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Failed to navigate to URL: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+    
+    def _validate_config(self) -> tuple[bool, str]:
+        """Validate node configuration."""
+        url = self.config.get("url", "")
+        if not url:
+            # URL can come from input port, so empty config is ok
+            return True, ""
+        
+        # Basic URL validation
+        if not (url.startswith("http://") or url.startswith("https://")):
+            return False, "URL must start with http:// or https://"
+        
+        return True, ""
+
+
+class GoBackNode(BaseNode):
+    """
+    Go back node - navigates back in browser history.
+    """
+    
+    def __init__(self, node_id: str, name: str = "Go Back", **kwargs) -> None:
+        """
+        Initialize go back node.
+        
+        Args:
+            node_id: Unique identifier for this node
+            name: Display name for the node
+        """
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "GoBackNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute back navigation.
+        
+        Args:
+            context: Execution context for the workflow
+            
+        Returns:
+            Result with page instance
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            page = self.get_input_value("page")
+            if page is None:
+                page = context.get_active_page()
+            
+            if page is None:
+                raise ValueError("No page instance found")
+            
+            logger.info("Navigating back")
+            
+            await page.go_back()
+            
+            self.set_output_value("page", page)
+            
+            self.status = NodeStatus.SUCCESS
+            logger.info("Back navigation completed")
+            
+            return {
+                "success": True,
+                "data": {"url": page.url},
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Failed to go back: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+    
+    def _validate_config(self) -> tuple[bool, str]:
+        """Validate node configuration."""
+        return True, ""
+
+
+class GoForwardNode(BaseNode):
+    """
+    Go forward node - navigates forward in browser history.
+    """
+    
+    def __init__(self, node_id: str, name: str = "Go Forward", **kwargs) -> None:
+        """
+        Initialize go forward node.
+        
+        Args:
+            node_id: Unique identifier for this node
+            name: Display name for the node
+        """
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "GoForwardNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute forward navigation.
+        
+        Args:
+            context: Execution context for the workflow
+            
+        Returns:
+            Result with page instance
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            page = self.get_input_value("page")
+            if page is None:
+                page = context.get_active_page()
+            
+            if page is None:
+                raise ValueError("No page instance found")
+            
+            logger.info("Navigating forward")
+            
+            await page.go_forward()
+            
+            self.set_output_value("page", page)
+            
+            self.status = NodeStatus.SUCCESS
+            logger.info("Forward navigation completed")
+            
+            return {
+                "success": True,
+                "data": {"url": page.url},
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Failed to go forward: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+    
+    def _validate_config(self) -> tuple[bool, str]:
+        """Validate node configuration."""
+        return True, ""
+
+
+class RefreshPageNode(BaseNode):
+    """
+    Refresh page node - reloads the current page.
+    """
+    
+    def __init__(self, node_id: str, name: str = "Refresh Page", **kwargs) -> None:
+        """
+        Initialize refresh page node.
+        
+        Args:
+            node_id: Unique identifier for this node
+            name: Display name for the node
+        """
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "RefreshPageNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute page refresh.
+        
+        Args:
+            context: Execution context for the workflow
+            
+        Returns:
+            Result with page instance
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            page = self.get_input_value("page")
+            if page is None:
+                page = context.get_active_page()
+            
+            if page is None:
+                raise ValueError("No page instance found")
+            
+            logger.info("Refreshing page")
+            
+            await page.reload()
+            
+            self.set_output_value("page", page)
+            
+            self.status = NodeStatus.SUCCESS
+            logger.info("Page refreshed successfully")
+            
+            return {
+                "success": True,
+                "data": {"url": page.url},
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Failed to refresh page: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+    
+    def _validate_config(self) -> tuple[bool, str]:
+        """Validate node configuration."""
+        return True, ""
+
