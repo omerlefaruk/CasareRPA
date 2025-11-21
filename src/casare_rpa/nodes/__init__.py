@@ -5,13 +5,77 @@ Contains all automation node implementations.
 
 __version__ = "0.1.0"
 
-# Node implementations will be imported here as they are developed
-# from .browser_nodes import OpenBrowserNode, CloseBrowserNode, NavigateNode
-# from .interaction_nodes import ClickNode, TypeNode, SelectNode
-# from .data_nodes import GetTextNode, GetAttributeNode, ScreenshotNode
-# from .control_nodes import IfNode, LoopNode, WaitNode
+# Basic nodes
+from .basic_nodes import StartNode, EndNode, CommentNode
+
+# Browser control nodes
+from .browser_nodes import LaunchBrowserNode, CloseBrowserNode, NewTabNode
+
+# Navigation nodes
+from .navigation_nodes import (
+    GoToURLNode,
+    GoBackNode,
+    GoForwardNode,
+    RefreshPageNode
+)
+
+# Interaction nodes
+from .interaction_nodes import (
+    ClickElementNode,
+    TypeTextNode,
+    SelectDropdownNode
+)
+
+# Data extraction nodes
+from .data_nodes import (
+    ExtractTextNode,
+    GetAttributeNode,
+    ScreenshotNode
+)
+
+# Wait nodes
+from .wait_nodes import (
+    WaitNode,
+    WaitForElementNode,
+    WaitForNavigationNode
+)
+
+# Variable nodes
+from .variable_nodes import (
+    SetVariableNode,
+    GetVariableNode,
+    IncrementVariableNode
+)
 
 __all__ = [
     "__version__",
-    # Node classes will be added here in Phase 4
+    # Basic nodes
+    "StartNode",
+    "EndNode",
+    "CommentNode",
+    # Browser control
+    "LaunchBrowserNode",
+    "CloseBrowserNode",
+    "NewTabNode",
+    # Navigation
+    "GoToURLNode",
+    "GoBackNode",
+    "GoForwardNode",
+    "RefreshPageNode",
+    # Interaction
+    "ClickElementNode",
+    "TypeTextNode",
+    "SelectDropdownNode",
+    # Data extraction
+    "ExtractTextNode",
+    "GetAttributeNode",
+    "ScreenshotNode",
+    # Wait nodes
+    "WaitNode",
+    "WaitForElementNode",
+    "WaitForNavigationNode",
+    # Variable nodes
+    "SetVariableNode",
+    "GetVariableNode",
+    "IncrementVariableNode",
 ]

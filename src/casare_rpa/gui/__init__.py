@@ -8,17 +8,29 @@ __version__ = "0.1.0"
 from .app import CasareRPAApp, main
 from .main_window import MainWindow
 from .node_graph_widget import NodeGraphWidget
+from .node_registry import (
+    NodeRegistry,
+    NodeFactory,
+    get_node_registry,
+    get_node_factory
+)
+from .visual_nodes import (
+    VisualNode,
+    VISUAL_NODE_CLASSES,
+    NODE_COLORS
+)
 
 __all__ = [
+    "__version__",
     "CasareRPAApp",
     "main",
     "MainWindow",
     "NodeGraphWidget",
-]
-# from .properties_panel import PropertiesPanel
-# from .log_viewer import LogViewer
-
-__all__ = [
-    "__version__",
-    # GUI classes will be added here in Phase 3
+    "NodeRegistry",
+    "NodeFactory",
+    "get_node_registry",
+    "get_node_factory",
+    "VisualNode",
+    "VISUAL_NODE_CLASSES",
+    "NODE_COLORS",
 ]

@@ -15,6 +15,7 @@ from qasync import QEventLoop
 
 from .main_window import MainWindow
 from .node_graph_widget import NodeGraphWidget
+from .node_registry import get_node_registry
 from ..utils.config import setup_logging, APP_NAME
 from loguru import logger
 
@@ -53,6 +54,11 @@ class CasareRPAApp:
         
         # Create node graph widget
         self._node_graph = NodeGraphWidget()
+        
+        # Register nodes with the graph
+        node_registry = get_node_registry()
+        node_registry.register_all_nodes(self._node_graph.graph)
+        logger.info("Registered all node types with graph")
         
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
