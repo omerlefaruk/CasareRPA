@@ -159,10 +159,39 @@ class NodeRegistry:
         Args:
             graph: NodeGraph instance to register nodes with
         """
+        # First register all nodes with NodeGraphQt
         for node_class in VISUAL_NODE_CLASSES:
             self.register_node(node_class, graph)
         
-        logger.info(f"Registered {len(VISUAL_NODE_CLASSES)} node types")
+        # Get the graph's context menu (right-click on canvas to add nodes)
+        graph_menu = graph.get_context_menu('graph')
+        
+        # Organize nodes by category and add to menu
+        category_menus = {}
+        for category, nodes in self._categories.items():
+            # Create a submenu for each category
+            category_label = category.replace('_', ' ').title()
+            category_menu = graph_menu.add_menu(category_label)
+            category_menus[category] = category_menu
+            
+            # Add each node to its category submenu
+            for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
+                # Create a function to instantiate this specific node class
+                # Using a factory function to avoid closure issues
+                def make_creator(cls):
+                    def create_node():
+                        return graph.create_node(
+                            f'{cls.__identifier__}.{cls.__name__}',
+                            name=cls.NODE_NAME
+                        )
+                    return create_node
+                
+                category_menu.add_command(
+                    name=node_class.NODE_NAME,
+                    func=make_creator(node_class)
+                )
+        
+        logger.info(f"Registered {len(VISUAL_NODE_CLASSES)} node types in context menu")
     
     def get_node_class(self, node_name: str) -> Optional[Type[VisualNode]]:
         """

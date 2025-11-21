@@ -49,9 +49,9 @@ class VisualNode(NodeGraphQtBaseNode):
         color = NODE_COLORS.get(self.NODE_CATEGORY, QColor(100, 100, 100))
         self.set_color(color.red(), color.green(), color.blue())
         
-        # Set node properties
-        self.set_property("node_id", "")
-        self.set_property("status", "idle")
+        # Create and initialize node properties
+        self.create_property("node_id", "")
+        self.create_property("status", "idle")
     
     def setup_ports(self) -> None:
         """
