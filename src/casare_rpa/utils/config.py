@@ -45,6 +45,11 @@ DEFAULT_WINDOW_HEIGHT: Final[int] = 900
 MIN_WINDOW_WIDTH: Final[int] = 1024
 MIN_WINDOW_HEIGHT: Final[int] = 768
 
+# Aliases for backward compatibility and convenience
+GUI_WINDOW_WIDTH: Final[int] = 1280
+GUI_WINDOW_HEIGHT: Final[int] = 768
+GUI_THEME: Final[str] = "dark"
+
 # ============================================================================
 # LOGGING CONFIGURATION
 # ============================================================================
