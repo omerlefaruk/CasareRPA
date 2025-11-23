@@ -163,9 +163,33 @@ class MainWindow(QMainWindow):
         self.action_undo.setEnabled(False)
         
         self.action_redo = QAction("&Redo", self)
-        self.action_redo.setShortcut(QKeySequence.StandardKey.Redo)
-        self.action_redo.setStatusTip("Redo the last undone action")
+        self.action_redo.setShortcuts([QKeySequence.StandardKey.Redo, QKeySequence("Ctrl+Shift+Z")])
+        self.action_redo.setStatusTip("Redo the last undone action (Ctrl+Y or Ctrl+Shift+Z)")
         self.action_redo.setEnabled(False)
+        
+        self.action_delete = QAction("&Delete", self)
+        self.action_delete.setShortcut(QKeySequence("X"))
+        self.action_delete.setStatusTip("Delete selected nodes")
+        
+        self.action_cut = QAction("Cu&t", self)
+        self.action_cut.setShortcut(QKeySequence.StandardKey.Cut)
+        self.action_cut.setStatusTip("Cut selected nodes")
+        
+        self.action_copy = QAction("&Copy", self)
+        self.action_copy.setShortcut(QKeySequence.StandardKey.Copy)
+        self.action_copy.setStatusTip("Copy selected nodes")
+        
+        self.action_paste = QAction("&Paste", self)
+        self.action_paste.setShortcut(QKeySequence.StandardKey.Paste)
+        self.action_paste.setStatusTip("Paste nodes")
+        
+        self.action_select_all = QAction("Select &All", self)
+        self.action_select_all.setShortcut(QKeySequence.StandardKey.SelectAll)
+        self.action_select_all.setStatusTip("Select all nodes")
+        
+        self.action_deselect_all = QAction("Deselect All", self)
+        self.action_deselect_all.setShortcut(QKeySequence("Ctrl+Shift+A"))
+        self.action_deselect_all.setStatusTip("Deselect all nodes")
         
         # View actions
         self.action_zoom_in = QAction("Zoom &In", self)
@@ -186,13 +210,13 @@ class MainWindow(QMainWindow):
         
         # Workflow actions
         self.action_run = QAction("&Run Workflow", self)
-        self.action_run.setShortcut(QKeySequence("F5"))
-        self.action_run.setStatusTip("Execute the workflow")
+        self.action_run.setShortcut(QKeySequence("F3"))
+        self.action_run.setStatusTip("Execute the workflow (F3)")
         self.action_run.triggered.connect(self._on_run_workflow)
         
         self.action_stop = QAction("&Stop Workflow", self)
-        self.action_stop.setShortcut(QKeySequence("Shift+F5"))
-        self.action_stop.setStatusTip("Stop workflow execution")
+        self.action_stop.setShortcut(QKeySequence("Shift+F3"))
+        self.action_stop.setStatusTip("Stop workflow execution (Shift+F3)")
         self.action_stop.setEnabled(False)
         self.action_stop.triggered.connect(self._on_stop_workflow)
         
@@ -219,6 +243,14 @@ class MainWindow(QMainWindow):
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(self.action_undo)
         edit_menu.addAction(self.action_redo)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action_cut)
+        edit_menu.addAction(self.action_copy)
+        edit_menu.addAction(self.action_paste)
+        edit_menu.addAction(self.action_delete)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action_select_all)
+        edit_menu.addAction(self.action_deselect_all)
         
         # View menu
         view_menu = menubar.addMenu("&View")
