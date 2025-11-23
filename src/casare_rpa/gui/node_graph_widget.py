@@ -45,8 +45,8 @@ class NodeGraphWidget(QWidget):
     
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""
-        # Set graph background color (dark theme)
-        self._graph.set_background_color(43, 43, 43)  # #2b2b2b
+        # Set graph background color to match image (very dark gray, almost black)
+        self._graph.set_background_color(35, 35, 35)  # #232323
         
         # Set grid styling
         self._graph.set_grid_mode(1)  # Show grid
