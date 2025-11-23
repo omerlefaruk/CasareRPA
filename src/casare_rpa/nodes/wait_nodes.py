@@ -14,6 +14,7 @@ from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 from ..utils.config import DEFAULT_NODE_TIMEOUT
+from ..utils.selector_normalizer import normalize_selector
 from loguru import logger
 
 
@@ -69,6 +70,10 @@ class WaitNode(BaseNode):
             duration = self.get_input_value("duration")
             if duration is None:
                 duration = self.config.get("duration", 1.0)
+            
+            # Convert to float if it's a string
+            if isinstance(duration, str):
+                duration = float(duration)
             
             if duration < 0:
                 raise ValueError("Duration must be non-negative")
@@ -177,14 +182,17 @@ class WaitForElementNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
             state = self.config.get("state", "visible")
             
-            logger.info(f"Waiting for element: {selector} (state={state})")
+            logger.info(f"Waiting for element: {normalized_selector} (state={state})")
             
             # Wait for element
             await page.wait_for_selector(
-                selector,
+                normalized_selector,
                 timeout=timeout,
                 state=state
             )

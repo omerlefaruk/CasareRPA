@@ -16,6 +16,7 @@ from qasync import QEventLoop
 from .main_window import MainWindow
 from .node_graph_widget import NodeGraphWidget
 from .node_registry import get_node_registry
+from .selector_integration import SelectorIntegration
 from ..runner.workflow_runner import WorkflowRunner
 from ..core.workflow_schema import WorkflowSchema, WorkflowMetadata
 from ..core.events import EventType, get_event_bus
@@ -70,6 +71,9 @@ class CasareRPAApp:
         # Workflow runner
         self._workflow_runner: Optional[WorkflowRunner] = None
         
+        # Selector integration (browser element picker)
+        self._selector_integration = SelectorIntegration(self._main_window)
+        
         # Event bus for execution feedback
         self._event_bus = get_event_bus()
         self._subscribe_to_events()
@@ -87,6 +91,9 @@ class CasareRPAApp:
         self._event_bus.subscribe(EventType.WORKFLOW_COMPLETED, self._on_workflow_completed)
         self._event_bus.subscribe(EventType.WORKFLOW_ERROR, self._on_workflow_error)
         self._event_bus.subscribe(EventType.WORKFLOW_STOPPED, self._on_workflow_stopped)
+        
+        # Subscribe to node completion for browser launch detection
+        self._event_bus.subscribe(EventType.NODE_COMPLETED, self._check_browser_launch)
         
         # Subscribe all events to log viewer
         log_viewer = self._main_window.get_log_viewer()
@@ -162,6 +169,12 @@ class CasareRPAApp:
         if execution_history:
             execution_history.node_selected.connect(self._on_history_node_selected)
             execution_history.clear_requested.connect(self._on_clear_history)
+        
+        # Selector integration connections
+        self._selector_integration.selector_picked.connect(self._on_selector_picked)
+        self._selector_integration.recording_complete.connect(self._on_recording_complete)
+        self._main_window.action_pick_selector.triggered.connect(self._on_start_selector_picking)
+        self._main_window.action_record_workflow.triggered.connect(self._on_toggle_recording)
     
     def _on_new_workflow(self) -> None:
         """Handle new workflow creation."""
@@ -674,6 +687,37 @@ class CasareRPAApp:
             logger.info("Stopping workflow execution")
             self._workflow_runner.stop()
     
+    def _check_browser_launch(self, event) -> None:
+        """Check if a browser was launched and initialize selector integration."""
+        if not self._workflow_runner:
+            return
+        
+        # Check if execution context has an active page
+        context = self._workflow_runner.context
+        if context and context.active_page:
+            # Check if this is a new page (different from current active page)
+            is_new_page = (
+                not self._selector_integration._active_page or 
+                self._selector_integration._active_page != context.active_page
+            )
+            
+            if is_new_page:
+                async def init_selector():
+                    try:
+                        await self._selector_integration.initialize_for_page(context.active_page)
+                        self._main_window.set_browser_running(True)
+                        logger.info("Selector integration initialized for browser page")
+                    except Exception as e:
+                        logger.error(f"Failed to initialize selector integration: {e}")
+                
+                asyncio.ensure_future(init_selector())
+        else:
+            # No active page - disable selector buttons
+            if self._selector_integration._active_page:
+                self._main_window.set_browser_running(False)
+                self._selector_integration._active_page = None
+                logger.info("Browser closed - selector integration disabled")
+    
     def _on_node_started(self, event) -> None:
         """Handle node started event."""
         node_id = event.data.get("node_id")
@@ -737,6 +781,9 @@ class CasareRPAApp:
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
+        
+        # Keep selector buttons enabled if browser is still active
+        # They will be disabled when browser is closed or page becomes invalid
     
     def _on_workflow_error(self, event) -> None:
         """Handle workflow error event."""
@@ -751,6 +798,9 @@ class CasareRPAApp:
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
+        
+        # Keep selector buttons enabled if browser is still active
+        # They will be disabled when browser is closed or page becomes invalid
     
     def _on_debug_mode_toggled(self, enabled: bool) -> None:
         """Handle debug mode toggle."""
@@ -817,6 +867,149 @@ class CasareRPAApp:
         if exec_history:
             exec_history.clear()
             self._main_window.statusBar().showMessage("Execution history cleared", 3000)
+    
+    def _on_start_selector_picking(self) -> None:
+        """Handle selector picking request."""
+        if not self._selector_integration._active_page:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self._main_window,
+                "No Browser",
+                "Please launch a browser first by running a workflow with a Launch Browser node."
+            )
+            # Ensure buttons are disabled if page is gone
+            self._main_window.set_browser_running(False)
+            return
+        
+        # Check if page is still valid (not closed)
+        try:
+            if self._selector_integration._active_page.is_closed():
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self._main_window,
+                    "Browser Closed",
+                    "The browser page has been closed. Please launch a new browser."
+                )
+                self._main_window.set_browser_running(False)
+                self._selector_integration._active_page = None
+                return
+        except Exception:
+            # If we can't check, assume it's closed
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self._main_window,
+                "Browser Unavailable",
+                "The browser is no longer available. Please launch a new browser."
+            )
+            self._main_window.set_browser_running(False)
+            self._selector_integration._active_page = None
+            return
+        
+        # Get selected node if any
+        selected_nodes = self._node_graph.graph.selected_nodes()
+        target_node = None
+        target_property = "selector"
+        
+        if selected_nodes:
+            # Get the first selected node with a selector property
+            for visual_node in selected_nodes:
+                # Check if node has selector widget
+                if hasattr(visual_node, 'get_widget'):
+                    selector_widget = visual_node.get_widget("selector")
+                    if selector_widget:
+                        target_node = visual_node
+                        break
+        
+        async def start_picking():
+            try:
+                await self._selector_integration.start_picking(target_node, target_property)
+                self._main_window.statusBar().showMessage("Selector mode active - Click an element in the browser", 0)
+                logger.info("Selector picking mode activated")
+            except Exception as e:
+                logger.error(f"Failed to start selector picking: {e}")
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.critical(
+                    self._main_window,
+                    "Selector Error",
+                    f"Failed to start selector picking:\n\n{str(e)}"
+                )
+        
+        asyncio.ensure_future(start_picking())
+    
+    def _on_toggle_recording(self, checked: bool) -> None:
+        """Handle recording mode toggle."""
+        if not self._selector_integration._active_page:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self._main_window,
+                "No Browser",
+                "Please launch a browser first by running a workflow with a Launch Browser node."
+            )
+            self._main_window.set_browser_running(False)
+            self._main_window.action_record_workflow.setChecked(False)
+            return
+        
+        # Check if page is still valid (not closed)
+        try:
+            if self._selector_integration._active_page.is_closed():
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self._main_window,
+                    "Browser Closed",
+                    "The browser page has been closed. Please launch a new browser."
+                )
+                self._main_window.set_browser_running(False)
+                self._selector_integration._active_page = None
+                self._main_window.action_record_workflow.setChecked(False)
+                return
+        except Exception:
+            # If we can't check, assume it's closed
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self._main_window,
+                "Browser Unavailable",
+                "The browser is no longer available. Please launch a new browser."
+            )
+            self._main_window.set_browser_running(False)
+            self._selector_integration._active_page = None
+            self._main_window.action_record_workflow.setChecked(False)
+            return
+        
+        async def toggle_recording():
+            try:
+                if checked:
+                    await self._selector_integration.start_recording()
+                    self._main_window.statusBar().showMessage("Recording workflow - Perform actions in the browser (Ctrl+R to stop)", 0)
+                    logger.info("Recording mode activated")
+                else:
+                    await self._selector_integration.stop_selector_mode()
+                    self._main_window.statusBar().showMessage("Recording stopped", 3000)
+                    logger.info("Recording mode deactivated")
+            except Exception as e:
+                logger.error(f"Failed to toggle recording: {e}")
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.critical(
+                    self._main_window,
+                    "Recording Error",
+                    f"Failed to toggle recording mode:\n\n{str(e)}"
+                )
+                self._main_window.action_record_workflow.setChecked(False)
+        
+        asyncio.ensure_future(toggle_recording())
+    
+    def _on_selector_picked(self, selector_value: str, selector_type: str) -> None:
+        """Handle selector picked event."""
+        logger.info(f"Selector picked: {selector_type} = {selector_value}")
+        self._main_window.statusBar().showMessage(f"Selector picked: {selector_type}", 3000)
+    
+    def _on_recording_complete(self, actions: list) -> None:
+        """Handle recording complete event - generate workflow nodes."""
+        logger.info(f"Recording complete: {len(actions)} actions captured")
+        self._main_window.statusBar().showMessage(f"Recording complete: {len(actions)} actions captured", 5000)
+        
+        # TODO: Generate nodes from recorded actions
+        # This would create Click, Type, Select nodes from the action sequence
+        # and automatically connect them in the graph
     
     def _update_debug_panels(self) -> None:
         """Update all debug panels with current data."""

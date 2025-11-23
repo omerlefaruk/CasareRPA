@@ -266,6 +266,19 @@ class MainWindow(QMainWindow):
         self.action_stop.triggered.connect(self._on_stop_workflow)
         
         # Tools actions
+        self.action_pick_selector = QAction("🎯 Pick Element Selector", self)
+        self.action_pick_selector.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        self.action_pick_selector.setStatusTip("Pick an element from the browser (Ctrl+Shift+S)")
+        self.action_pick_selector.setEnabled(False)  # Enabled when browser is running
+        self.action_pick_selector.triggered.connect(self._on_pick_selector)
+        
+        self.action_record_workflow = QAction("⏺ Record Workflow", self)
+        self.action_record_workflow.setShortcut(QKeySequence("Ctrl+Shift+R"))
+        self.action_record_workflow.setStatusTip("Record browser interactions as workflow (Ctrl+Shift+R)")
+        self.action_record_workflow.setCheckable(True)
+        self.action_record_workflow.setEnabled(False)  # Enabled when browser is running
+        self.action_record_workflow.triggered.connect(self._on_toggle_recording)
+        
         self.action_hotkey_manager = QAction("&Keyboard Shortcuts...", self)
         self.action_hotkey_manager.setShortcut(QKeySequence("Ctrl+K, Ctrl+S"))
         self.action_hotkey_manager.setStatusTip("View and customize keyboard shortcuts")
@@ -360,6 +373,9 @@ class MainWindow(QMainWindow):
         
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
+        tools_menu.addAction(self.action_pick_selector)
+        tools_menu.addAction(self.action_record_workflow)
+        tools_menu.addSeparator()
         tools_menu.addAction(self.action_hotkey_manager)
         
         # Help menu
@@ -383,6 +399,9 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_run)
         toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
+        toolbar.addSeparator()
+        toolbar.addAction(self.action_pick_selector)
+        toolbar.addAction(self.action_record_workflow)
         toolbar.addSeparator()
         toolbar.addAction(self.action_zoom_in)
         toolbar.addAction(self.action_zoom_out)
@@ -734,6 +753,26 @@ class MainWindow(QMainWindow):
             ExecutionHistoryViewer instance or None
         """
         return self._execution_history if hasattr(self, '_execution_history') else None
+    
+    def _on_pick_selector(self) -> None:
+        """Handle pick selector action."""
+        # This will be connected in app.py to trigger selector mode
+        pass
+    
+    def _on_toggle_recording(self, checked: bool) -> None:
+        """Handle recording mode toggle."""
+        # This will be connected in app.py to start/stop recording
+        pass
+    
+    def set_browser_running(self, running: bool) -> None:
+        """
+        Enable/disable browser-dependent actions.
+        
+        Args:
+            running: True if browser is running
+        """
+        self.action_pick_selector.setEnabled(running)
+        self.action_record_workflow.setEnabled(running)
     
     def closeEvent(self, event) -> None:
         """

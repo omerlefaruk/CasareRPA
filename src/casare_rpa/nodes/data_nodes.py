@@ -14,6 +14,7 @@ from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 from ..utils.config import DEFAULT_NODE_TIMEOUT
+from ..utils.selector_normalizer import normalize_selector
 from loguru import logger
 
 
@@ -86,12 +87,15 @@ class ExtractTextNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             variable_name = self.config.get("variable_name", "extracted_text")
             
-            logger.info(f"Extracting text from element: {selector}")
+            logger.info(f"Extracting text from element: {normalized_selector}")
             
             # Extract text
-            element = await page.query_selector(selector)
+            element = await page.query_selector(normalized_selector)
             if element is None:
                 raise ValueError(f"Element not found: {selector}")
             
@@ -211,12 +215,15 @@ class GetAttributeNode(BaseNode):
             if not attribute:
                 raise ValueError("Attribute name is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             variable_name = self.config.get("variable_name", "attribute_value")
             
-            logger.info(f"Getting attribute '{attribute}' from element: {selector}")
+            logger.info(f"Getting attribute '{attribute}' from element: {normalized_selector}")
             
             # Get attribute
-            value = await page.get_attribute(selector, attribute)
+            value = await page.get_attribute(normalized_selector, attribute)
             
             # Store in variable
             context.set_variable(variable_name, value)
