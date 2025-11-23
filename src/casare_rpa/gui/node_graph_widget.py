@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from NodeGraphQt import NodeGraph
 
 from ..utils.config import GUI_THEME
+from .auto_connect import AutoConnectManager
 
 
 class NodeGraphWidget(QWidget):
@@ -35,6 +36,9 @@ class NodeGraphWidget(QWidget):
         
         # Configure graph
         self._setup_graph()
+        
+        # Create auto-connect manager
+        self._auto_connect = AutoConnectManager(self._graph, self)
         
         # Create layout
         layout = QVBoxLayout(self)
@@ -104,3 +108,40 @@ class NodeGraphWidget(QWidget):
     def clear_selection(self) -> None:
         """Clear node selection."""
         self._graph.clear_selection()
+    
+    @property
+    def auto_connect(self) -> AutoConnectManager:
+        """
+        Get the auto-connect manager.
+        
+        Returns:
+            AutoConnectManager instance
+        """
+        return self._auto_connect
+    
+    def set_auto_connect_enabled(self, enabled: bool) -> None:
+        """
+        Enable or disable the auto-connect feature.
+        
+        Args:
+            enabled: Whether to enable auto-connect
+        """
+        self._auto_connect.set_active(enabled)
+    
+    def is_auto_connect_enabled(self) -> bool:
+        """
+        Check if auto-connect is enabled.
+        
+        Returns:
+            True if auto-connect is enabled
+        """
+        return self._auto_connect.is_active()
+    
+    def set_auto_connect_distance(self, distance: float) -> None:
+        """
+        Set the maximum distance for auto-connect suggestions.
+        
+        Args:
+            distance: Maximum distance in pixels
+        """
+        self._auto_connect.set_max_distance(distance)

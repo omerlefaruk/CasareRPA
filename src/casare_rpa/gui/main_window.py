@@ -240,6 +240,12 @@ class MainWindow(QMainWindow):
         self.action_toggle_log.setStatusTip("Show/hide execution log viewer")
         self.action_toggle_log.triggered.connect(self._on_toggle_log)
         
+        self.action_auto_connect = QAction("&Auto-Connect Nodes", self)
+        self.action_auto_connect.setCheckable(True)
+        self.action_auto_connect.setChecked(True)  # Enabled by default
+        self.action_auto_connect.setStatusTip("Automatically suggest connections while dragging nodes (right-click to connect/disconnect)")
+        self.action_auto_connect.triggered.connect(self._on_toggle_auto_connect)
+        
         # Workflow actions
         self.action_run = QAction("&Run Workflow", self)
         self.action_run.setShortcut(QKeySequence("F5"))
@@ -341,6 +347,8 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.action_zoom_reset)
         view_menu.addSeparator()
         view_menu.addAction(self.action_fit_view)
+        view_menu.addSeparator()
+        view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_log)
         
@@ -622,6 +630,11 @@ class MainWindow(QMainWindow):
             self.show_log_viewer()
         else:
             self.hide_log_viewer()
+    
+    def _on_toggle_auto_connect(self, checked: bool) -> None:
+        """Handle auto-connect toggle."""
+        # This will be connected by the app when the node graph is available
+        pass
     
     def _on_about(self) -> None:
         """Show about dialog."""
