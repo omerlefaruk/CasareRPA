@@ -47,6 +47,13 @@ from .variable_nodes import (
     IncrementVariableNode
 )
 
+# Control flow nodes
+from .control_flow_nodes import (
+    IfNode,
+    ForLoopNode,
+    WhileLoopNode
+)
+
 __all__ = [
     "__version__",
     # Basic nodes
@@ -78,4 +85,8 @@ __all__ = [
     "SetVariableNode",
     "GetVariableNode",
     "IncrementVariableNode",
+    # Control flow nodes
+    "IfNode",
+    "ForLoopNode",
+    "WhileLoopNode",
 ]

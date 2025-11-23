@@ -580,6 +580,74 @@ class VisualIncrementVariableNode(VisualNode):
         self.add_output("value")
 
 
+# Control Flow Nodes
+
+class VisualIfNode(VisualNode):
+    """Visual representation of IfNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "If"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize If node."""
+        super().__init__()
+        self.add_text_input("expression", "Expression", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("condition")
+        self.add_output("true")
+        self.add_output("false")
+
+
+class VisualForLoopNode(VisualNode):
+    """Visual representation of ForLoopNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "For Loop"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize For Loop node."""
+        super().__init__()
+        self.add_text_input("start", "Start", text="0", tab="properties")
+        self.add_text_input("end", "End", text="10", tab="properties")
+        self.add_text_input("step", "Step", text="1", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("items")
+        self.add_output("loop_body")
+        self.add_output("completed")
+        self.add_output("item")
+        self.add_output("index")
+
+
+class VisualWhileLoopNode(VisualNode):
+    """Visual representation of WhileLoopNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "While Loop"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize While Loop node."""
+        super().__init__()
+        self.add_text_input("expression", "Expression", tab="properties")
+        self.add_text_input("max_iterations", "Max Iterations", text="1000", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("condition")
+        self.add_output("loop_body")
+        self.add_output("completed")
+        self.add_output("iteration")
+
+
 # Node registry mapping visual nodes to CasareRPA nodes
 VISUAL_NODE_CLASSES = [
     # Basic
@@ -611,4 +679,8 @@ VISUAL_NODE_CLASSES = [
     VisualSetVariableNode,
     VisualGetVariableNode,
     VisualIncrementVariableNode,
+    # Control Flow
+    VisualIfNode,
+    VisualForLoopNode,
+    VisualWhileLoopNode,
 ]
