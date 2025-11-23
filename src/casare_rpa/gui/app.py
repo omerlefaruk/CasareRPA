@@ -16,6 +16,10 @@ from qasync import QEventLoop
 from .main_window import MainWindow
 from .node_graph_widget import NodeGraphWidget
 from .node_registry import get_node_registry
+from ..runner.workflow_runner import WorkflowRunner
+from ..core.workflow_schema import WorkflowSchema, WorkflowMetadata
+from ..core.events import EventType, get_event_bus
+from ..core.types import NodeStatus
 from ..utils.config import setup_logging, APP_NAME
 from loguru import logger
 
@@ -63,10 +67,32 @@ class CasareRPAApp:
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
         
+        # Workflow runner
+        self._workflow_runner: Optional[WorkflowRunner] = None
+        
+        # Event bus for execution feedback
+        self._event_bus = get_event_bus()
+        self._subscribe_to_events()
+        
         # Connect signals
         self._connect_signals()
         
         logger.info("Application initialized successfully")
+    
+    def _subscribe_to_events(self) -> None:
+        """Subscribe to workflow execution events for visual feedback."""
+        self._event_bus.subscribe(EventType.NODE_STARTED, self._on_node_started)
+        self._event_bus.subscribe(EventType.NODE_COMPLETED, self._on_node_completed)
+        self._event_bus.subscribe(EventType.NODE_ERROR, self._on_node_error)
+        self._event_bus.subscribe(EventType.WORKFLOW_COMPLETED, self._on_workflow_completed)
+        self._event_bus.subscribe(EventType.WORKFLOW_ERROR, self._on_workflow_error)
+        self._event_bus.subscribe(EventType.WORKFLOW_STOPPED, self._on_workflow_stopped)
+        
+        # Subscribe all events to log viewer
+        log_viewer = self._main_window.get_log_viewer()
+        if log_viewer:
+            for event_type in EventType:
+                self._event_bus.subscribe(event_type, log_viewer.log_event)
     
     def _connect_signals(self) -> None:
         """Connect window signals to handlers."""
@@ -78,6 +104,8 @@ class CasareRPAApp:
         
         # Workflow execution
         self._main_window.workflow_run.connect(self._on_run_workflow)
+        self._main_window.workflow_pause.connect(self._on_pause_workflow)
+        self._main_window.workflow_resume.connect(self._on_resume_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
         
         # Edit operations - connect to NodeGraphQt undo stack
@@ -114,6 +142,77 @@ class CasareRPAApp:
         self._node_graph.clear_graph()
         self._main_window.set_modified(False)
     
+    def _load_workflow_to_graph(self, workflow: WorkflowSchema) -> None:
+        """
+        Load a workflow into the node graph.
+        
+        Args:
+            workflow: WorkflowSchema to load
+        """
+        from .node_registry import get_node_registry
+        from ..nodes import NODE_REGISTRY
+        
+        graph = self._node_graph.graph
+        registry = get_node_registry()
+        
+        # Clear existing graph
+        graph.clear_session()
+        
+        # Create visual nodes from workflow nodes
+        node_map = {}  # Map node_id to visual node
+        
+        for node_id, node_data in workflow.nodes.items():
+            node_type = node_data.get("node_type")
+            
+            # Get the node class from registry
+            if node_type in NODE_REGISTRY:
+                node_class = NODE_REGISTRY[node_type]
+                
+                # Get the visual node class name
+                visual_class_name = f"Visual{node_type}"
+                
+                # Create visual node in graph
+                visual_node = graph.create_node(
+                    f"casare_rpa.{node_class.CATEGORY}.{visual_class_name}"
+                )
+                
+                if visual_node:
+                    # Create the underlying CasareRPA node
+                    casare_node = node_class(node_id, node_data.get("config", {}))
+                    visual_node.set_casare_node(casare_node)
+                    
+                    # Set node position if available
+                    pos = node_data.get("position", {})
+                    if pos:
+                        visual_node.set_pos(pos.get("x", 0), pos.get("y", 0))
+                    
+                    node_map[node_id] = visual_node
+        
+        # Create connections
+        for connection in workflow.connections:
+            source_visual = node_map.get(connection.source_node)
+            target_visual = node_map.get(connection.target_node)
+            
+            if source_visual and target_visual:
+                # Find ports by name
+                source_port = None
+                target_port = None
+                
+                for port in source_visual.output_ports():
+                    if port.name() == connection.source_port:
+                        source_port = port
+                        break
+                
+                for port in target_visual.input_ports():
+                    if port.name() == connection.target_port:
+                        target_port = port
+                        break
+                
+                if source_port and target_port:
+                    source_port.connect_to(target_port)
+        
+        logger.info(f"Loaded workflow '{workflow.metadata.name}' with {len(workflow.nodes)} nodes")
+    
     def _on_open_workflow(self, file_path: str) -> None:
         """
         Handle workflow opening.
@@ -121,17 +220,52 @@ class CasareRPAApp:
         Args:
             file_path: Path to workflow file
         """
-        logger.info(f"Opening workflow: {file_path}")
-        # TODO: Implement workflow loading in Phase 4
-        self._main_window.set_modified(False)
+        try:
+            logger.info(f"Opening workflow: {file_path}")
+            
+            from pathlib import Path
+            workflow = WorkflowSchema.load_from_file(Path(file_path))
+            
+            # Load workflow into graph
+            self._load_workflow_to_graph(workflow)
+            
+            self._main_window.set_modified(False)
+            self._main_window.statusBar().showMessage(f"Opened: {Path(file_path).name}", 3000)
+            
+        except Exception as e:
+            logger.exception("Failed to open workflow")
+            self._main_window.statusBar().showMessage(f"Error opening file: {str(e)}", 5000)
     
     def _on_save_workflow(self) -> None:
         """Handle workflow saving."""
         current_file = self._main_window.get_current_file()
         if current_file:
-            logger.info(f"Saving workflow: {current_file}")
-            # TODO: Implement workflow saving in Phase 4
-            self._main_window.set_modified(False)
+            try:
+                logger.info(f"Saving workflow: {current_file}")
+                
+                # Ensure all nodes are valid before saving
+                self._ensure_all_nodes_have_casare_nodes()
+                
+                # Create workflow from graph
+                workflow = self._create_workflow_from_graph()
+                
+                # Add node positions to serialization
+                graph = self._node_graph.graph
+                for visual_node in graph.all_nodes():
+                    node_id = visual_node.get_property("node_id")
+                    if node_id in workflow.nodes:
+                        pos = visual_node.pos()
+                        workflow.nodes[node_id]["position"] = {"x": pos[0], "y": pos[1]}
+                
+                # Save to file
+                workflow.save_to_file(current_file)
+                
+                self._main_window.set_modified(False)
+                self._main_window.statusBar().showMessage(f"Saved: {current_file.name}", 3000)
+                
+            except Exception as e:
+                logger.exception("Failed to save workflow")
+                self._main_window.statusBar().showMessage(f"Error saving file: {str(e)}", 5000)
     
     def _on_save_as_workflow(self, file_path: str) -> None:
         """
@@ -140,20 +274,292 @@ class CasareRPAApp:
         Args:
             file_path: Path to save workflow
         """
-        logger.info(f"Saving workflow as: {file_path}")
-        # TODO: Implement workflow saving in Phase 4
-        self._main_window.set_modified(False)
+        try:
+            from pathlib import Path
+            logger.info(f"Saving workflow as: {file_path}")
+            
+            # Ensure all nodes are valid before saving
+            self._ensure_all_nodes_have_casare_nodes()
+            
+            # Create workflow from graph
+            workflow = self._create_workflow_from_graph()
+            
+            # Add node positions to serialization
+            graph = self._node_graph.graph
+            for visual_node in graph.all_nodes():
+                node_id = visual_node.get_property("node_id")
+                if node_id in workflow.nodes:
+                    pos = visual_node.pos()
+                    workflow.nodes[node_id]["position"] = {"x": pos[0], "y": pos[1]}
+            
+            # Save to file
+            workflow.save_to_file(Path(file_path))
+            
+            self._main_window.set_modified(False)
+            self._main_window.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)
+            
+        except Exception as e:
+            logger.exception("Failed to save workflow")
+            self._main_window.statusBar().showMessage(f"Error saving file: {str(e)}", 5000)
+    
+    def _ensure_all_nodes_have_casare_nodes(self) -> bool:
+        """
+        Ensure all visual nodes in the graph have CasareRPA nodes.
+        Creates missing CasareRPA nodes on demand.
+        
+        Returns:
+            True if all nodes have CasareRPA nodes, False if any failed
+        """
+        graph = self._node_graph.graph
+        all_valid = True
+        
+        for visual_node in graph.all_nodes():
+            if hasattr(visual_node, 'ensure_casare_node'):
+                casare_node = visual_node.ensure_casare_node()
+                if not casare_node:
+                    logger.error(f"Failed to create CasareRPA node for {visual_node.name()}")
+                    all_valid = False
+            else:
+                logger.warning(f"Node {visual_node.name()} doesn't support ensure_casare_node")
+        
+        return all_valid
+    
+    def _sync_visual_properties_to_node(self, visual_node, casare_node) -> None:
+        """
+        Sync widget values from visual node to CasareRPA node config.
+        This updates the node's config with current values from the UI widgets.
+        
+        Args:
+            visual_node: Visual node from NodeGraphQt
+            casare_node: CasareRPA node instance
+        """
+        # Get all embedded widgets (text inputs, dropdowns, etc.)
+        widgets = visual_node.widgets()
+        logger.info(f"Visual node {casare_node.node_type} has widgets: {list(widgets.keys())}")
+        
+        # Sync widget values to node config
+        synced_count = 0
+        for widget_name, widget in widgets.items():
+            try:
+                # Get widget value
+                widget_value = widget.get_value()
+                logger.info(f"  Widget '{widget_name}' = '{widget_value}' (type: {type(widget_value).__name__})")
+                
+                if widget_value is not None and widget_value != "":
+                    casare_node.config[widget_name] = widget_value
+                    synced_count += 1
+                    logger.info(f"  ✓ Synced {casare_node.node_type}.{widget_name} = '{widget_value}'")
+            except Exception as e:
+                logger.warning(f"Could not sync widget {widget_name}: {e}")
+        
+        if synced_count == 0:
+            logger.info(f"No widgets synced for {casare_node.node_type}")
+    
+    def _create_workflow_from_graph(self) -> WorkflowSchema:
+        """
+        Create a WorkflowSchema from the current node graph.
+        WorkflowRunner expects workflow.nodes to be a dict of node instances.
+        
+        Returns:
+            WorkflowSchema instance
+        """
+        from .node_registry import get_node_registry
+        
+        graph = self._node_graph.graph
+        registry = get_node_registry()
+        
+        # Ensure all nodes have CasareRPA nodes
+        if not self._ensure_all_nodes_have_casare_nodes():
+            logger.error("Some nodes don't have CasareRPA nodes - workflow may be incomplete")
+        
+        # Create workflow metadata
+        metadata = WorkflowMetadata(
+            name="Current Workflow",
+            description="Workflow from visual editor"
+        )
+        
+        # Create workflow schema
+        workflow = WorkflowSchema(metadata)
+        
+        # Build nodes dict with actual node instances (required by WorkflowRunner)
+        nodes_dict = {}
+        logger.info(f"Building workflow from {len(graph.all_nodes())} visual nodes")
+        for visual_node in graph.all_nodes():
+            # Get the underlying CasareRPA node
+            casare_node = visual_node.get_casare_node()
+            if casare_node:
+                logger.info(f"Processing visual node: {visual_node.name()} -> {casare_node.node_type}")
+                # Sync visual node properties to CasareRPA node config
+                self._sync_visual_properties_to_node(visual_node, casare_node)
+                nodes_dict[casare_node.node_id] = casare_node
+            else:
+                logger.warning(f"Skipping node {visual_node.name()} - no CasareRPA node")
+        
+        # Set nodes as instances (WorkflowRunner needs this)
+        workflow.nodes = nodes_dict
+        
+        # Add connections from graph
+        connections = []
+        for node in graph.all_nodes():
+            # Get the CasareRPA node to access node_id
+            source_casare_node = node.get_casare_node()
+            if not source_casare_node:
+                continue
+            
+            # Get output connections
+            for output_port in node.output_ports():
+                for connected_port in output_port.connected_ports():
+                    target_casare_node = connected_port.node().get_casare_node()
+                    if not target_casare_node:
+                        continue
+                    
+                    from ..core.workflow_schema import NodeConnection
+                    connection = NodeConnection(
+                        source_node=source_casare_node.node_id,
+                        source_port=output_port.name(),
+                        target_node=target_casare_node.node_id,
+                        target_port=connected_port.name()
+                    )
+                    connections.append(connection)
+        
+        workflow.connections = connections
+        
+        return workflow
     
     def _on_run_workflow(self) -> None:
         """Handle workflow execution."""
-        logger.info("Starting workflow execution")
-        # TODO: Implement workflow execution in Phase 4
-        # This will use asyncio to run Playwright automation
+        try:
+            logger.info("Starting workflow execution")
+            
+            # Create workflow from current graph
+            workflow = self._create_workflow_from_graph()
+            
+            # Create workflow runner
+            self._workflow_runner = WorkflowRunner(workflow, self._event_bus)
+            
+            # Show log viewer
+            self._main_window.show_log_viewer()
+            self._main_window.action_toggle_log.setChecked(True)
+            
+            # Run workflow asynchronously
+            asyncio.ensure_future(self._workflow_runner.run())
+            
+        except Exception as e:
+            logger.exception("Failed to start workflow execution")
+            self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+    
+    def _on_pause_workflow(self) -> None:
+        """Handle workflow pause."""
+        if self._workflow_runner:
+            logger.info("Pausing workflow execution")
+            self._workflow_runner.pause()
+    
+    def _on_resume_workflow(self) -> None:
+        """Handle workflow resume."""
+        if self._workflow_runner:
+            logger.info("Resuming workflow execution")
+            self._workflow_runner.resume()
     
     def _on_stop_workflow(self) -> None:
         """Handle workflow stop."""
-        logger.info("Stopping workflow execution")
-        # TODO: Implement workflow stopping in Phase 4
+        if self._workflow_runner:
+            logger.info("Stopping workflow execution")
+            self._workflow_runner.stop()
+    
+    def _on_node_started(self, event) -> None:
+        """Handle node started event."""
+        node_id = event.data.get("node_id")
+        if node_id:
+            # Find visual node and update status
+            graph = self._node_graph.graph
+            for visual_node in graph.all_nodes():
+                if visual_node.get_property("node_id") == node_id:
+                    visual_node.update_status("running")
+                    break
+    
+    def _on_node_completed(self, event) -> None:
+        """Handle node completed event."""
+        node_id = event.data.get("node_id")
+        progress = event.data.get("progress", 0)
+        
+        if node_id:
+            # Find visual node and update status
+            graph = self._node_graph.graph
+            for visual_node in graph.all_nodes():
+                if visual_node.get_property("node_id") == node_id:
+                    visual_node.update_status("success")
+                    break
+        
+        # Update progress in status bar
+        self._main_window.statusBar().showMessage(
+            f"Workflow progress: {progress:.1f}%",
+            0
+        )
+    
+    def _on_node_error(self, event) -> None:
+        """Handle node error event."""
+        node_id = event.data.get("node_id")
+        error = event.data.get("error", "Unknown error")
+        
+        if node_id:
+            # Find visual node and update status
+            graph = self._node_graph.graph
+            for visual_node in graph.all_nodes():
+                if visual_node.get_property("node_id") == node_id:
+                    visual_node.update_status("error")
+                    break
+        
+        logger.error(f"Node error: {node_id} - {error}")
+        self._main_window.statusBar().showMessage(f"Error in node: {error}", 5000)
+    
+    def _on_workflow_completed(self, event) -> None:
+        """Handle workflow completed event."""
+        duration = event.data.get("duration", 0)
+        executed_nodes = event.data.get("executed_nodes", 0)
+        total_nodes = event.data.get("total_nodes", 0)
+        
+        logger.info(f"Workflow completed in {duration:.2f}s ({executed_nodes}/{total_nodes} nodes)")
+        self._main_window.statusBar().showMessage(
+            f"Workflow completed! ({executed_nodes}/{total_nodes} nodes in {duration:.2f}s)",
+            5000
+        )
+        
+        # Reset UI
+        self._main_window.action_run.setEnabled(True)
+        self._main_window.action_pause.setEnabled(False)
+        self._main_window.action_pause.setChecked(False)
+        self._main_window.action_stop.setEnabled(False)
+    
+    def _on_workflow_error(self, event) -> None:
+        """Handle workflow error event."""
+        error = event.data.get("error", "Unknown error")
+        executed_nodes = event.data.get("executed_nodes", 0)
+        
+        logger.error(f"Workflow failed: {error}")
+        self._main_window.statusBar().showMessage(f"Workflow failed: {error}", 5000)
+        
+        # Reset UI
+        self._main_window.action_run.setEnabled(True)
+        self._main_window.action_pause.setEnabled(False)
+        self._main_window.action_pause.setChecked(False)
+        self._main_window.action_stop.setEnabled(False)
+    
+    def _on_workflow_stopped(self, event) -> None:
+        """Handle workflow stopped event."""
+        executed_nodes = event.data.get("executed_nodes", 0)
+        total_nodes = event.data.get("total_nodes", 0)
+        
+        logger.info(f"Workflow stopped ({executed_nodes}/{total_nodes} nodes executed)")
+        self._main_window.statusBar().showMessage(
+            f"Workflow stopped ({executed_nodes}/{total_nodes} nodes)",
+            5000
+        )
+        
+        # Reset UI
+        self._main_window.action_run.setEnabled(True)
+        self._main_window.action_pause.setEnabled(False)
+        self._main_window.action_pause.setChecked(False)
+        self._main_window.action_stop.setEnabled(False)
     
     @property
     def main_window(self) -> MainWindow:

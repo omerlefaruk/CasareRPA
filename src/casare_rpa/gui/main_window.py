@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QMessageBox,
     QFileDialog,
+    QDockWidget,
 )
 
 from ..utils.config import (
@@ -45,6 +46,8 @@ class MainWindow(QMainWindow):
         workflow_save: Emitted when user requests to save workflow
         workflow_save_as: Emitted when user requests save as (str: file path)
         workflow_run: Emitted when user requests to run workflow
+        workflow_pause: Emitted when user requests to pause workflow
+        workflow_resume: Emitted when user requests to resume workflow
         workflow_stop: Emitted when user requests to stop workflow
     """
     
@@ -53,6 +56,8 @@ class MainWindow(QMainWindow):
     workflow_save = Signal()
     workflow_save_as = Signal(str)
     workflow_run = Signal()
+    workflow_pause = Signal()
+    workflow_resume = Signal()
     workflow_stop = Signal()
     
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -71,12 +76,16 @@ class MainWindow(QMainWindow):
         # Hotkey settings
         self._hotkey_settings = get_hotkey_settings()
         
+        # Log viewer dock
+        self._log_dock: Optional[QDockWidget] = None
+        
         # Setup window
         self._setup_window()
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
         self._create_status_bar()
+        self._create_log_viewer()
         
         # Set initial state
         self._update_window_title()
@@ -212,15 +221,28 @@ class MainWindow(QMainWindow):
         self.action_fit_view.setShortcut(QKeySequence("Ctrl+F"))
         self.action_fit_view.setStatusTip("Fit all nodes in view")
         
+        self.action_toggle_log = QAction("Execution &Log", self)
+        self.action_toggle_log.setShortcut(QKeySequence("Ctrl+L"))
+        self.action_toggle_log.setCheckable(True)
+        self.action_toggle_log.setStatusTip("Show/hide execution log viewer")
+        self.action_toggle_log.triggered.connect(self._on_toggle_log)
+        
         # Workflow actions
         self.action_run = QAction("&Run Workflow", self)
-        self.action_run.setShortcut(QKeySequence("F3"))
-        self.action_run.setStatusTip("Execute the workflow (F3)")
+        self.action_run.setShortcut(QKeySequence("F5"))
+        self.action_run.setStatusTip("Execute the workflow (F5)")
         self.action_run.triggered.connect(self._on_run_workflow)
         
+        self.action_pause = QAction("&Pause Workflow", self)
+        self.action_pause.setShortcut(QKeySequence("F6"))
+        self.action_pause.setStatusTip("Pause/Resume workflow execution (F6)")
+        self.action_pause.setEnabled(False)
+        self.action_pause.setCheckable(True)
+        self.action_pause.triggered.connect(self._on_pause_workflow)
+        
         self.action_stop = QAction("&Stop Workflow", self)
-        self.action_stop.setShortcut(QKeySequence("Shift+F3"))
-        self.action_stop.setStatusTip("Stop workflow execution (Shift+F3)")
+        self.action_stop.setShortcut(QKeySequence("F7"))
+        self.action_stop.setStatusTip("Stop workflow execution (F7)")
         self.action_stop.setEnabled(False)
         self.action_stop.triggered.connect(self._on_stop_workflow)
         
@@ -259,6 +281,7 @@ class MainWindow(QMainWindow):
             "zoom_reset": self.action_zoom_reset,
             "fit_view": self.action_fit_view,
             "run": self.action_run,
+            "pause": self.action_pause,
             "stop": self.action_stop,
             "hotkey_manager": self.action_hotkey_manager,
         }
@@ -303,10 +326,13 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.action_zoom_reset)
         view_menu.addSeparator()
         view_menu.addAction(self.action_fit_view)
+        view_menu.addSeparator()
+        view_menu.addAction(self.action_toggle_log)
         
         # Workflow menu
         workflow_menu = menubar.addMenu("&Workflow")
         workflow_menu.addAction(self.action_run)
+        workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
         
         # Tools menu
@@ -332,6 +358,7 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_redo)
         toolbar.addSeparator()
         toolbar.addAction(self.action_run)
+        toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
         toolbar.addSeparator()
         toolbar.addAction(self.action_zoom_in)
@@ -345,6 +372,45 @@ class MainWindow(QMainWindow):
         status_bar = QStatusBar()
         self.setStatusBar(status_bar)
         status_bar.showMessage("Ready", 3000)
+    
+    def _create_log_viewer(self) -> None:
+        """Create execution log viewer as dockable widget."""
+        from .log_viewer import ExecutionLogViewer
+        
+        # Create dock widget
+        self._log_dock = QDockWidget("Execution Log", self)
+        self._log_dock.setAllowedAreas(
+            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
+        )
+        
+        # Create log viewer widget
+        self._log_viewer = ExecutionLogViewer()
+        self._log_dock.setWidget(self._log_viewer)
+        
+        # Add to main window (bottom by default)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._log_dock)
+        
+        # Initially hidden
+        self._log_dock.hide()
+    
+    def get_log_viewer(self) -> Optional['ExecutionLogViewer']:
+        """
+        Get the execution log viewer.
+        
+        Returns:
+            ExecutionLogViewer instance or None
+        """
+        return self._log_viewer if hasattr(self, '_log_viewer') else None
+    
+    def show_log_viewer(self) -> None:
+        """Show the execution log viewer."""
+        if self._log_dock:
+            self._log_dock.show()
+    
+    def hide_log_viewer(self) -> None:
+        """Hide the execution log viewer."""
+        if self._log_dock:
+            self._log_dock.hide()
     
     def set_central_widget(self, widget: QWidget) -> None:
         """
@@ -466,13 +532,26 @@ class MainWindow(QMainWindow):
         """Handle run workflow request."""
         self.workflow_run.emit()
         self.action_run.setEnabled(False)
+        self.action_pause.setEnabled(True)
+        self.action_pause.setChecked(False)
         self.action_stop.setEnabled(True)
         self.statusBar().showMessage("Workflow execution started...", 0)
+    
+    def _on_pause_workflow(self, checked: bool) -> None:
+        """Handle pause/resume workflow request."""
+        if checked:
+            self.workflow_pause.emit()
+            self.statusBar().showMessage("Workflow paused", 0)
+        else:
+            self.workflow_resume.emit()
+            self.statusBar().showMessage("Workflow resumed...", 0)
     
     def _on_stop_workflow(self) -> None:
         """Handle stop workflow request."""
         self.workflow_stop.emit()
         self.action_run.setEnabled(True)
+        self.action_pause.setEnabled(False)
+        self.action_pause.setChecked(False)
         self.action_stop.setEnabled(False)
         self.statusBar().showMessage("Workflow execution stopped", 3000)
     
@@ -500,12 +579,20 @@ class MainWindow(QMainWindow):
             "zoom_reset": self.action_zoom_reset,
             "fit_view": self.action_fit_view,
             "run": self.action_run,
+            "pause": self.action_pause,
             "stop": self.action_stop,
             "hotkey_manager": self.action_hotkey_manager,
         }
         
         dialog = HotkeyManagerDialog(actions, self)
         dialog.exec()
+    
+    def _on_toggle_log(self, checked: bool) -> None:
+        """Handle log viewer toggle."""
+        if checked:
+            self.show_log_viewer()
+        else:
+            self.hide_log_viewer()
     
     def _on_about(self) -> None:
         """Show about dialog."""
