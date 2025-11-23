@@ -57,6 +57,15 @@ from .control_flow_nodes import (
     SwitchNode
 )
 
+# Error handling nodes
+from .error_handling_nodes import (
+    TryNode,
+    RetryNode,
+    RetrySuccessNode,
+    RetryFailNode,
+    ThrowErrorNode
+)
+
 __all__ = [
     "__version__",
     # Basic nodes
@@ -95,4 +104,10 @@ __all__ = [
     "BreakNode",
     "ContinueNode",
     "SwitchNode",
+    # Error handling nodes
+    "TryNode",
+    "RetryNode",
+    "RetrySuccessNode",
+    "RetryFailNode",
+    "ThrowErrorNode",
 ]

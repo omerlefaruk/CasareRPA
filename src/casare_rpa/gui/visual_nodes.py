@@ -705,6 +705,105 @@ class VisualSwitchNode(VisualNode):
         self.add_output("default")
 
 
+class VisualTryNode(VisualNode):
+    """Visual representation of TryNode."""
+    
+    __identifier__ = "casare_rpa.error_handling"
+    NODE_NAME = "Try"
+    NODE_CATEGORY = "error_handling"
+    
+    def __init__(self) -> None:
+        """Initialize Try node."""
+        super().__init__()
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("try_body")
+        self.add_output("success")
+        self.add_output("catch")
+        self.add_output("error_message")
+        self.add_output("error_type")
+
+
+class VisualRetryNode(VisualNode):
+    """Visual representation of RetryNode."""
+    
+    __identifier__ = "casare_rpa.error_handling"
+    NODE_NAME = "Retry"
+    NODE_CATEGORY = "error_handling"
+    
+    def __init__(self) -> None:
+        """Initialize Retry node."""
+        super().__init__()
+        self.add_text_input("max_attempts", "Max Attempts", text="3", tab="properties")
+        self.add_text_input("initial_delay", "Initial Delay (s)", text="1.0", tab="properties")
+        self.add_text_input("backoff_multiplier", "Backoff Multiplier", text="2.0", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("retry_body")
+        self.add_output("success")
+        self.add_output("failed")
+        self.add_output("attempt")
+        self.add_output("last_error")
+
+
+class VisualRetrySuccessNode(VisualNode):
+    """Visual representation of RetrySuccessNode."""
+    
+    __identifier__ = "casare_rpa.error_handling"
+    NODE_NAME = "Retry Success"
+    NODE_CATEGORY = "error_handling"
+    
+    def __init__(self) -> None:
+        """Initialize RetrySuccess node."""
+        super().__init__()
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+
+
+class VisualRetryFailNode(VisualNode):
+    """Visual representation of RetryFailNode."""
+    
+    __identifier__ = "casare_rpa.error_handling"
+    NODE_NAME = "Retry Fail"
+    NODE_CATEGORY = "error_handling"
+    
+    def __init__(self) -> None:
+        """Initialize RetryFail node."""
+        super().__init__()
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("error_message")
+        self.add_output("exec_out")
+
+
+class VisualThrowErrorNode(VisualNode):
+    """Visual representation of ThrowErrorNode."""
+    
+    __identifier__ = "casare_rpa.error_handling"
+    NODE_NAME = "Throw Error"
+    NODE_CATEGORY = "error_handling"
+    
+    def __init__(self) -> None:
+        """Initialize ThrowError node."""
+        super().__init__()
+        self.add_text_input("error_message", "Error Message", text="Custom error", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("error_message")
+        self.add_output("exec_out")
+
+
 # Node registry mapping visual nodes to CasareRPA nodes
 VISUAL_NODE_CLASSES = [
     # Basic
@@ -743,4 +842,10 @@ VISUAL_NODE_CLASSES = [
     VisualBreakNode,
     VisualContinueNode,
     VisualSwitchNode,
+    # Error Handling
+    VisualTryNode,
+    VisualRetryNode,
+    VisualRetrySuccessNode,
+    VisualRetryFailNode,
+    VisualThrowErrorNode,
 ]
