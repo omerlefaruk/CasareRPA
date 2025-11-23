@@ -53,6 +53,7 @@ class LaunchBrowserNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
@@ -97,6 +98,26 @@ class LaunchBrowserNode(BaseNode):
             # Create initial tab automatically
             browser_context = await browser.new_context()
             page = await browser_context.new_page()
+            
+            # Navigate to URL if provided
+            # Check input port first, then config
+            url = self.get_input_value("url")
+            if url is None:
+                # Only use config if no input connection exists
+                url = self.config.get("url", "")
+            
+            # Strip whitespace and normalize to empty string if None or whitespace-only
+            url = url.strip() if url else ""
+            
+            if url:
+                # Add protocol if missing
+                if not url.startswith(("http://", "https://", "file://", "about:")):
+                    url = f"https://{url}"
+                logger.info(f"Navigating to URL: {url}")
+                await page.goto(url)
+            else:
+                logger.info("Opening blank page")
+                await page.goto("about:blank")
             
             # Store page in context
             tab_name = "main"

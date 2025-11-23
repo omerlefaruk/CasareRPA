@@ -470,7 +470,8 @@ class CasareRPAApp:
                 widget_value = widget.get_value()
                 logger.info(f"  Widget '{widget_name}' = '{widget_value}' (type: {type(widget_value).__name__})")
                 
-                if widget_value is not None and widget_value != "":
+                # Always sync widget values, including empty strings (to clear previous values)
+                if widget_value is not None:
                     casare_node.config[widget_name] = widget_value
                     synced_count += 1
                     logger.info(f"  ✓ Synced {casare_node.node_type}.{widget_name} = '{widget_value}'")
