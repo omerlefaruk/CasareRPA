@@ -14,15 +14,19 @@ from ..core.types import PortType, DataType
 from loguru import logger
 
 
-# Color scheme for different node categories
+# Unified color scheme for all nodes matching the image colors
+# Using dark teal/gray with cyan accent border (matches reference image)
+UNIFIED_NODE_COLOR = QColor(52, 58, 64)  # Dark gray node body - #343a40
+
+# Legacy color scheme (kept for reference but not used)
 NODE_COLORS = {
-    "basic": QColor(100, 100, 100),      # Gray
-    "browser": QColor(66, 135, 245),     # Blue
-    "navigation": QColor(76, 175, 80),   # Green
-    "interaction": QColor(255, 152, 0),  # Orange
-    "data": QColor(156, 39, 176),        # Purple
-    "wait": QColor(255, 235, 59),        # Yellow
-    "variable": QColor(244, 67, 54),     # Red
+    "basic": UNIFIED_NODE_COLOR,
+    "browser": UNIFIED_NODE_COLOR,
+    "navigation": UNIFIED_NODE_COLOR,
+    "interaction": UNIFIED_NODE_COLOR,
+    "data": UNIFIED_NODE_COLOR,
+    "wait": UNIFIED_NODE_COLOR,
+    "variable": UNIFIED_NODE_COLOR,
 }
 
 
