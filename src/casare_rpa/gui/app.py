@@ -137,6 +137,11 @@ class CasareRPAApp:
         self._main_window.action_zoom_reset.triggered.connect(self._node_graph.reset_zoom)
         self._main_window.action_fit_view.triggered.connect(self._node_graph.center_on_nodes)
         
+        # Auto-connect toggle
+        self._main_window.action_auto_connect.triggered.connect(
+            lambda checked: self._node_graph.set_auto_connect_enabled(checked)
+        )
+        
         # Debug toolbar connections
         debug_toolbar = self._main_window.get_debug_toolbar()
         if debug_toolbar:
