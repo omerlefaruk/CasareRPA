@@ -67,6 +67,11 @@ class SelectorManager:
             self._handle_recording_complete
         )
         
+        await page.expose_function(
+            '__casareRPA_onActionRecorded',
+            self._handle_action_recorded
+        )
+        
         logger.info("Selector injector loaded into page")
     
     async def activate_selector_mode(self, recording: bool = False, 
@@ -144,6 +149,16 @@ class SelectorManager:
             except Exception as e:
                 logger.error(f"Error in element selected callback: {e}")
     
+    async def _handle_action_recorded(self, action: Dict[str, Any]):
+        """
+        Handle individual action being recorded (real-time feedback).
+        
+        Args:
+            action: Single action data from browser
+        """
+        logger.debug(f"Action recorded: {action.get('action')} at {action.get('timestamp')}")
+        # Could emit events here for real-time UI updates if needed
+    
     async def _handle_recording_complete(self, actions: List[Dict[str, Any]]):
         """
         Handle recording completion from browser
@@ -160,6 +175,7 @@ class SelectorManager:
             processed_actions.append({
                 'action': action_data.get('action'),
                 'timestamp': action_data.get('timestamp'),
+                'value': action_data.get('value'),
                 'element': fingerprint
             })
         
