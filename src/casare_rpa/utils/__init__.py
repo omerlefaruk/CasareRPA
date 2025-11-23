@@ -14,6 +14,7 @@ from .config import (
     setup_logging,
 )
 from .hotkey_settings import get_hotkey_settings, HotkeySettings
+from .template_loader import TemplateLoader, TemplateInfo, get_template_loader
 
 __all__ = [
     "APP_NAME",
@@ -26,4 +27,7 @@ __all__ = [
     "setup_logging",
     "get_hotkey_settings",
     "HotkeySettings",
+    "TemplateLoader",
+    "TemplateInfo",
+    "get_template_loader",
 ]

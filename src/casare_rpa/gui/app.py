@@ -98,6 +98,7 @@ class CasareRPAApp:
         """Connect window signals to handlers."""
         # File operations
         self._main_window.workflow_new.connect(self._on_new_workflow)
+        self._main_window.workflow_new_from_template.connect(self._on_new_from_template)
         self._main_window.workflow_open.connect(self._on_open_workflow)
         self._main_window.workflow_save.connect(self._on_save_workflow)
         self._main_window.workflow_save_as.connect(self._on_save_as_workflow)
@@ -163,6 +164,65 @@ class CasareRPAApp:
         self._node_graph.clear_graph()
         self._main_window.set_modified(False)
     
+    def _on_new_from_template(self, template_info) -> None:
+        """
+        Handle new workflow from template.
+        
+        Args:
+            template_info: TemplateInfo object
+        """
+        import asyncio
+        from casare_rpa.utils.template_loader import get_template_loader
+        from qasync import asyncSlot
+        
+        logger.info(f"Creating workflow from template: {template_info.name}")
+        
+        # Use qasync to properly handle async in Qt event loop
+        async def load_and_apply_template():
+            try:
+                # Load the template
+                loader = get_template_loader()
+                
+                # Create workflow from template (async) - returns WorkflowSchema with node instances
+                workflow_with_instances = await loader.create_workflow_from_template(template_info)
+                
+                # Convert to serialized format for GUI
+                # WorkflowRunner needs instances, but GUI needs serialized data
+                from ..core.workflow_schema import WorkflowSchema
+                serialized_workflow = WorkflowSchema(workflow_with_instances.metadata)
+                
+                # Serialize each node instance to dict
+                for node_id, node_instance in workflow_with_instances.nodes.items():
+                    serialized_workflow.nodes[node_id] = {
+                        "node_id": node_instance.node_id,
+                        "node_type": node_instance.node_type,
+                        "name": getattr(node_instance, 'name', node_instance.node_type),
+                        "config": node_instance.config,
+                        "position": {"x": 0, "y": 0}  # Default position
+                    }
+                
+                # Copy connections
+                serialized_workflow.connections = workflow_with_instances.connections
+                
+                # Load workflow into graph
+                self._load_workflow_to_graph(serialized_workflow)
+                
+                self._main_window.set_modified(True)
+                self._main_window.statusBar().showMessage(f"Loaded template: {template_info.name}", 5000)
+                logger.info(f"Successfully loaded template: {template_info.name}")
+                
+            except Exception as e:
+                logger.error(f"Failed to load template {template_info.name}: {e}")
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.critical(
+                    self._main_window,
+                    "Template Load Error",
+                    f"Failed to load template '{template_info.name}':\n\n{str(e)}"
+                )
+        
+        # Schedule the coroutine in the existing event loop
+        asyncio.create_task(load_and_apply_template())
+    
     def _load_workflow_to_graph(self, workflow: WorkflowSchema) -> None:
         """
         Load a workflow into the node graph.
@@ -171,7 +231,46 @@ class CasareRPAApp:
             workflow: WorkflowSchema to load
         """
         from .node_registry import get_node_registry
-        from ..nodes import NODE_REGISTRY
+        
+        # Import all node classes
+        from ..nodes.basic_nodes import StartNode, EndNode
+        from ..nodes.variable_nodes import SetVariableNode, GetVariableNode, IncrementVariableNode
+        from ..nodes.control_flow_nodes import IfNode, ForLoopNode, WhileLoopNode
+        from ..nodes.error_handling_nodes import TryNode, RetryNode
+        from ..nodes.wait_nodes import WaitNode, WaitForElementNode, WaitForNavigationNode
+        from ..nodes.browser_nodes import LaunchBrowserNode, CloseBrowserNode
+        from ..nodes.navigation_nodes import GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode
+        from ..nodes.interaction_nodes import ClickElementNode, TypeTextNode, SelectDropdownNode
+        from ..nodes.data_nodes import ExtractTextNode, GetAttributeNode, ScreenshotNode
+        
+        # Map node types to (class, identifier)
+        NODE_TYPE_MAP = {
+            "StartNode": (StartNode, "casare_rpa.basic"),
+            "EndNode": (EndNode, "casare_rpa.basic"),
+            "SetVariableNode": (SetVariableNode, "casare_rpa.variable"),
+            "GetVariableNode": (GetVariableNode, "casare_rpa.variable"),
+            "IncrementVariableNode": (IncrementVariableNode, "casare_rpa.variable"),
+            "IfNode": (IfNode, "casare_rpa.control_flow"),
+            "ForLoopNode": (ForLoopNode, "casare_rpa.control_flow"),
+            "WhileLoopNode": (WhileLoopNode, "casare_rpa.control_flow"),
+            "TryNode": (TryNode, "casare_rpa.error_handling"),
+            "RetryNode": (RetryNode, "casare_rpa.error_handling"),
+            "WaitNode": (WaitNode, "casare_rpa.wait"),
+            "WaitForElementNode": (WaitForElementNode, "casare_rpa.wait"),
+            "WaitForNavigationNode": (WaitForNavigationNode, "casare_rpa.wait"),
+            "LaunchBrowserNode": (LaunchBrowserNode, "casare_rpa.browser"),
+            "CloseBrowserNode": (CloseBrowserNode, "casare_rpa.browser"),
+            "GoToURLNode": (GoToURLNode, "casare_rpa.navigation"),
+            "GoBackNode": (GoBackNode, "casare_rpa.navigation"),
+            "GoForwardNode": (GoForwardNode, "casare_rpa.navigation"),
+            "RefreshPageNode": (RefreshPageNode, "casare_rpa.navigation"),
+            "ClickElementNode": (ClickElementNode, "casare_rpa.interaction"),
+            "TypeTextNode": (TypeTextNode, "casare_rpa.interaction"),
+            "SelectDropdownNode": (SelectDropdownNode, "casare_rpa.interaction"),
+            "ExtractTextNode": (ExtractTextNode, "casare_rpa.data"),
+            "GetAttributeNode": (GetAttributeNode, "casare_rpa.data"),
+            "ScreenshotNode": (ScreenshotNode, "casare_rpa.data"),
+        }
         
         graph = self._node_graph.graph
         registry = get_node_registry()
@@ -185,16 +284,16 @@ class CasareRPAApp:
         for node_id, node_data in workflow.nodes.items():
             node_type = node_data.get("node_type")
             
-            # Get the node class from registry
-            if node_type in NODE_REGISTRY:
-                node_class = NODE_REGISTRY[node_type]
+            # Get the node class and identifier from mapping
+            if node_type in NODE_TYPE_MAP:
+                node_class, identifier = NODE_TYPE_MAP[node_type]
                 
                 # Get the visual node class name
                 visual_class_name = f"Visual{node_type}"
                 
                 # Create visual node in graph
                 visual_node = graph.create_node(
-                    f"casare_rpa.{node_class.CATEGORY}.{visual_class_name}"
+                    f"{identifier}.{visual_class_name}"
                 )
                 
                 if visual_node:

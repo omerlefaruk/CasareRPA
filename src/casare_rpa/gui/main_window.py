@@ -42,6 +42,7 @@ class MainWindow(QMainWindow):
     
     Signals:
         workflow_new: Emitted when user requests new workflow
+        workflow_new_from_template: Emitted when user selects a template (TemplateInfo)
         workflow_open: Emitted when user requests to open workflow (str: file path)
         workflow_save: Emitted when user requests to save workflow
         workflow_save_as: Emitted when user requests save as (str: file path)
@@ -52,6 +53,7 @@ class MainWindow(QMainWindow):
     """
     
     workflow_new = Signal()
+    workflow_new_from_template = Signal(object)  # TemplateInfo
     workflow_open = Signal(str)
     workflow_save = Signal()
     workflow_save_as = Signal(str)
@@ -154,6 +156,11 @@ class MainWindow(QMainWindow):
         self.action_new.setShortcut(QKeySequence.StandardKey.New)
         self.action_new.setStatusTip("Create a new workflow")
         self.action_new.triggered.connect(self._on_new_workflow)
+        
+        self.action_new_from_template = QAction("New from &Template...", self)
+        self.action_new_from_template.setShortcut(QKeySequence("Ctrl+Shift+N"))
+        self.action_new_from_template.setStatusTip("Create a new workflow from a template")
+        self.action_new_from_template.triggered.connect(self._on_new_from_template)
         
         self.action_open = QAction("&Open Workflow...", self)
         self.action_open.setShortcut(QKeySequence.StandardKey.Open)
@@ -305,6 +312,8 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
         file_menu.addAction(self.action_new)
+        file_menu.addAction(self.action_new_from_template)
+        file_menu.addSeparator()
         file_menu.addAction(self.action_open)
         file_menu.addSeparator()
         file_menu.addAction(self.action_save)
@@ -491,6 +500,20 @@ class MainWindow(QMainWindow):
             self.set_current_file(None)
             self.set_modified(False)
             self.statusBar().showMessage("New workflow created", 3000)
+    
+    def _on_new_from_template(self) -> None:
+        """Handle new from template request."""
+        from .template_browser import show_template_browser
+        
+        if not self._check_unsaved_changes():
+            return
+        
+        # Show template browser
+        template = show_template_browser(self)
+        if template:
+            # Emit signal with template info (app.py will handle loading)
+            self.statusBar().showMessage(f"Loading template: {template.name}...", 3000)
+            self.workflow_new_from_template.emit(template)
     
     def _on_open_workflow(self) -> None:
         """Handle open workflow request."""
