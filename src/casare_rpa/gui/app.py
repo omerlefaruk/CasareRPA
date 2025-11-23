@@ -80,6 +80,28 @@ class CasareRPAApp:
         self._main_window.workflow_run.connect(self._on_run_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
         
+        # Edit operations - connect to NodeGraphQt undo stack
+        graph = self._node_graph.graph
+        undo_stack = graph.undo_stack()
+        
+        # Enable undo/redo actions and connect them
+        self._main_window.action_undo.setEnabled(True)
+        self._main_window.action_redo.setEnabled(True)
+        self._main_window.action_undo.triggered.connect(undo_stack.undo)
+        self._main_window.action_redo.triggered.connect(undo_stack.redo)
+        
+        # Connect undo stack signals to update action states
+        undo_stack.canUndoChanged.connect(self._main_window.action_undo.setEnabled)
+        undo_stack.canRedoChanged.connect(self._main_window.action_redo.setEnabled)
+        
+        # Other edit operations
+        self._main_window.action_delete.triggered.connect(lambda: graph.delete_nodes(graph.selected_nodes()))
+        self._main_window.action_cut.triggered.connect(graph.cut_nodes)
+        self._main_window.action_copy.triggered.connect(graph.copy_nodes)
+        self._main_window.action_paste.triggered.connect(graph.paste_nodes)
+        self._main_window.action_select_all.triggered.connect(graph.select_all)
+        self._main_window.action_deselect_all.triggered.connect(graph.clear_selection)
+        
         # View operations
         self._main_window.action_zoom_in.triggered.connect(self._node_graph.zoom_in)
         self._main_window.action_zoom_out.triggered.connect(self._node_graph.zoom_out)
