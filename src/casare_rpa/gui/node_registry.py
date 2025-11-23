@@ -166,6 +166,10 @@ class NodeRegistry:
         # Get the graph's context menu (right-click on canvas to add nodes)
         graph_menu = graph.get_context_menu('graph')
         
+        # Get the underlying QMenu and clear it to remove automatic undo/redo
+        qmenu = graph_menu.qmenu
+        qmenu.clear()
+        
         # Organize nodes by category and add to menu
         category_menus = {}
         for category, nodes in self._categories.items():
