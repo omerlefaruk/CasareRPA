@@ -41,6 +41,10 @@ from .visual_nodes import (
     VisualSetVariableNode,
     VisualGetVariableNode,
     VisualIncrementVariableNode,
+    # Control Flow
+    VisualIfNode,
+    VisualForLoopNode,
+    VisualWhileLoopNode,
 )
 
 from ..nodes import (
@@ -73,6 +77,10 @@ from ..nodes import (
     SetVariableNode,
     GetVariableNode,
     IncrementVariableNode,
+    # Control Flow
+    IfNode,
+    ForLoopNode,
+    WhileLoopNode,
 )
 
 
@@ -107,6 +115,10 @@ CASARE_NODE_MAPPING = {
     VisualSetVariableNode: SetVariableNode,
     VisualGetVariableNode: GetVariableNode,
     VisualIncrementVariableNode: IncrementVariableNode,
+    # Control Flow
+    VisualIfNode: IfNode,
+    VisualForLoopNode: ForLoopNode,
+    VisualWhileLoopNode: WhileLoopNode,
 }
 
 
