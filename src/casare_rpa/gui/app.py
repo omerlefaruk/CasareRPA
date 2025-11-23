@@ -395,11 +395,50 @@ class CasareRPAApp:
             else:
                 logger.warning(f"Skipping node {visual_node.name()} - no CasareRPA node")
         
+        # Auto-create hidden Start node
+        from ..nodes.basic_nodes import StartNode
+        start_node = StartNode("__auto_start__")
+        nodes_dict["__auto_start__"] = start_node
+        
+        # Find all nodes without exec_in connections (these are entry points)
+        entry_nodes = []
+        for visual_node in graph.all_nodes():
+            casare_node = visual_node.get_casare_node()
+            if not casare_node:
+                continue
+            
+            # Check if node has exec_in port
+            has_exec_in = "exec_in" in casare_node.input_ports
+            if not has_exec_in:
+                continue
+            
+            # Check if exec_in is connected
+            exec_in_connected = False
+            for input_port in visual_node.input_ports():
+                if input_port.name() == "exec_in" and input_port.connected_ports():
+                    exec_in_connected = True
+                    break
+            
+            if not exec_in_connected:
+                entry_nodes.append(casare_node.node_id)
+        
         # Set nodes as instances (WorkflowRunner needs this)
         workflow.nodes = nodes_dict
         
         # Add connections from graph
         connections = []
+        
+        # Auto-connect Start node to entry points
+        from ..core.workflow_schema import NodeConnection
+        for entry_node_id in entry_nodes:
+            connection = NodeConnection(
+                source_node="__auto_start__",
+                source_port="exec_out",
+                target_node=entry_node_id,
+                target_port="exec_in"
+            )
+            connections.append(connection)
+            logger.info(f"Auto-connected Start → {entry_node_id}")
         for node in graph.all_nodes():
             # Get the CasareRPA node to access node_id
             source_casare_node = node.get_casare_node()
@@ -413,7 +452,6 @@ class CasareRPAApp:
                     if not target_casare_node:
                         continue
                     
-                    from ..core.workflow_schema import NodeConnection
                     connection = NodeConnection(
                         source_node=source_casare_node.node_id,
                         source_port=output_port.name(),
