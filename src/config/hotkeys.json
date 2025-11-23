@@ -8,9 +8,6 @@
   "save": [
     "Ctrl+S"
   ],
-  "save_as": [
-    "Ctrl+Shift+S"
-  ],
   "exit": [
     "Ctrl+Q"
   ],
@@ -59,5 +56,8 @@
   ],
   "hotkey_manager": [
     "Ctrl+K, Ctrl+S"
+  ],
+  "pause": [
+    "F6"
   ]
 }

@@ -13,6 +13,7 @@ from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 from ..utils.config import DEFAULT_NODE_TIMEOUT
+from ..utils.selector_normalizer import normalize_selector
 from loguru import logger
 
 
@@ -85,12 +86,15 @@ class ClickElementNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
             
-            logger.info(f"Clicking element: {selector}")
+            logger.info(f"Clicking element: {normalized_selector}")
             
             # Click element
-            await page.click(selector, timeout=timeout)
+            await page.click(normalized_selector, timeout=timeout)
             
             self.set_output_value("page", page)
             
@@ -195,6 +199,9 @@ class TypeTextNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             # Get text from input or config
             text = self.get_input_value("text")
             if text is None:
@@ -205,12 +212,12 @@ class TypeTextNode(BaseNode):
             
             delay = self.config.get("delay", 0)
             
-            logger.info(f"Typing text into element: {selector}")
+            logger.info(f"Typing text into element: {normalized_selector}")
             
             # Type text
-            await page.fill(selector, text)
+            await page.fill(normalized_selector, text)
             if delay > 0:
-                await page.type(selector, text, delay=delay)
+                await page.type(normalized_selector, text, delay=delay)
             
             self.set_output_value("page", page)
             
@@ -310,6 +317,9 @@ class SelectDropdownNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
             
+            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
+            normalized_selector = normalize_selector(selector)
+            
             # Get value from input or config
             value = self.get_input_value("value")
             if value is None:
@@ -318,10 +328,10 @@ class SelectDropdownNode(BaseNode):
             if not value:
                 raise ValueError("Value is required")
             
-            logger.info(f"Selecting dropdown option: {selector} = {value}")
+            logger.info(f"Selecting dropdown option: {normalized_selector} = {value}")
             
             # Select option
-            await page.select_option(selector, value)
+            await page.select_option(normalized_selector, value)
             
             self.set_output_value("page", page)
             
