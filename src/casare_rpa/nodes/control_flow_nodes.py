@@ -318,3 +318,192 @@ class WhileLoopNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
+
+
+class BreakNode(BaseNode):
+    """
+    Loop control node that exits from the current loop.
+    
+    Signals the parent loop (For/While) to terminate immediately.
+    Can only be used inside loop_body execution path.
+    """
+    
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize Break node."""
+        super().__init__(node_id, config)
+        self.name = "Break"
+        self.node_type = "BreakNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute break - signals loop to exit.
+        
+        Args:
+            context: Execution context
+            
+        Returns:
+            Result with break signal
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            logger.info("Break executed - loop will exit")
+            
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "control_flow": "break",
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Break execution failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class ContinueNode(BaseNode):
+    """
+    Loop control node that skips to next iteration.
+    
+    Signals the parent loop (For/While) to skip remaining loop body
+    and proceed to the next iteration.
+    Can only be used inside loop_body execution path.
+    """
+    
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize Continue node."""
+        super().__init__(node_id, config)
+        self.name = "Continue"
+        self.node_type = "ContinueNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute continue - signals loop to skip to next iteration.
+        
+        Args:
+            context: Execution context
+            
+        Returns:
+            Result with continue signal
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            logger.info("Continue executed - skipping to next iteration")
+            
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "control_flow": "continue",
+                "next_nodes": ["exec_out"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Continue execution failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class SwitchNode(BaseNode):
+    """
+    Multi-way branching node based on value matching.
+    
+    Evaluates an input value and routes to matching case output.
+    Falls back to 'default' if no case matches.
+    """
+    
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize Switch node."""
+        super().__init__(node_id, config)
+        self.name = "Switch"
+        self.node_type = "SwitchNode"
+    
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
+        
+        # Get cases from config (e.g., ["success", "error", "pending"])
+        cases = self.config.get("cases", [])
+        for case in cases:
+            self.add_output_port(f"case_{case}", PortType.EXEC_OUTPUT)
+        
+        self.add_output_port("default", PortType.EXEC_OUTPUT)
+    
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute switch logic - match value to case.
+        
+        Args:
+            context: Execution context
+            
+        Returns:
+            Result with matched case or default
+        """
+        self.status = NodeStatus.RUNNING
+        
+        try:
+            # Get value to match
+            value = self.get_input_value("value")
+            
+            # If no value input, try expression
+            if value is None:
+                expression = self.config.get("expression", "")
+                if expression:
+                    # Evaluate expression with context variables
+                    value = eval(expression, {"__builtins__": {}}, context.variables)
+            
+            # Convert to string for matching
+            value_str = str(value) if value is not None else ""
+            
+            # Check each case
+            cases = self.config.get("cases", [])
+            for case in cases:
+                if str(case) == value_str:
+                    next_port = f"case_{case}"
+                    logger.info(f"Switch matched case: {case} -> {next_port}")
+                    
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"matched_case": case, "value": value},
+                        "next_nodes": [next_port]
+                    }
+            
+            # No match - use default
+            logger.info(f"Switch no match for '{value}' -> default")
+            
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "data": {"matched_case": "default", "value": value},
+                "next_nodes": ["default"]
+            }
+            
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Switch execution failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": ["default"]  # Fallback on error
+            }

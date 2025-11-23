@@ -51,7 +51,10 @@ from .variable_nodes import (
 from .control_flow_nodes import (
     IfNode,
     ForLoopNode,
-    WhileLoopNode
+    WhileLoopNode,
+    BreakNode,
+    ContinueNode,
+    SwitchNode
 )
 
 __all__ = [
@@ -89,4 +92,7 @@ __all__ = [
     "IfNode",
     "ForLoopNode",
     "WhileLoopNode",
+    "BreakNode",
+    "ContinueNode",
+    "SwitchNode",
 ]

@@ -45,6 +45,9 @@ from .visual_nodes import (
     VisualIfNode,
     VisualForLoopNode,
     VisualWhileLoopNode,
+    VisualBreakNode,
+    VisualContinueNode,
+    VisualSwitchNode,
 )
 
 from ..nodes import (
@@ -81,6 +84,9 @@ from ..nodes import (
     IfNode,
     ForLoopNode,
     WhileLoopNode,
+    BreakNode,
+    ContinueNode,
+    SwitchNode,
 )
 
 
@@ -119,6 +125,9 @@ CASARE_NODE_MAPPING = {
     VisualIfNode: IfNode,
     VisualForLoopNode: ForLoopNode,
     VisualWhileLoopNode: WhileLoopNode,
+    VisualBreakNode: BreakNode,
+    VisualContinueNode: ContinueNode,
+    VisualSwitchNode: SwitchNode,
 }
 
 
