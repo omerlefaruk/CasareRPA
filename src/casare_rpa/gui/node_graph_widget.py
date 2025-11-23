@@ -8,10 +8,66 @@ to integrate it with the PySide6 application.
 from typing import Optional
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor
+from PySide6.QtCore import Qt
 from NodeGraphQt import NodeGraph
+from NodeGraphQt.qgraphics.node_base import NodeItem
 
 from ..utils.config import GUI_THEME
 from .auto_connect import AutoConnectManager
+
+
+# Monkey-patch NodeItem to use thicker selection border and rounded corners
+_original_paint = NodeItem.paint
+
+def _patched_paint(self, painter, option, widget):
+    """Custom paint with thicker yellow border and rounded corners."""
+    # Temporarily clear selection for child items to prevent dotted boxes
+    option_copy = option.__class__(option)
+    option_copy.state &= ~option_copy.state.State_Selected
+    
+    painter.save()
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    
+    # Get bounding rect
+    rect = self.boundingRect()
+    
+    # Determine colors
+    bg_color = QColor(*self.color)
+    border_color = QColor(*self.border_color)
+    
+    if self.selected:
+        # Thicker yellow border when selected (3px instead of 1.2px)
+        border_width = 3.0
+        border_color = QColor(255, 215, 0, 255)  # Bright yellow
+        # Keep background the same (no overlay)
+    else:
+        border_width = 1.0
+    
+    # Create rounded rectangle path with 8px radius
+    radius = 8.0
+    path = QPainterPath()
+    path.addRoundedRect(rect, radius, radius)
+    
+    # Fill background
+    painter.fillPath(path, bg_color)
+    
+    # Draw border
+    pen = QPen(border_color, border_width)
+    pen.setCosmetic(self.viewer().get_zoom() < 0.0)
+    painter.strokePath(path, pen)
+    
+    painter.restore()
+    
+    # Draw child items (ports, text, widgets) without selection indicators
+    for child in self.childItems():
+        if child.isVisible():
+            painter.save()
+            painter.translate(child.pos())
+            child.paint(painter, option_copy, widget)  # Use option without selection state
+            painter.restore()
+
+NodeItem.paint = _patched_paint
 
 
 class NodeGraphWidget(QWidget):
@@ -56,7 +112,33 @@ class NodeGraphWidget(QWidget):
         self._graph.set_grid_mode(1)  # Show grid
         
         # Set graph properties
-        self._graph.set_pipe_style(2)  # Curved pipes
+        self._graph.set_pipe_style(1)  # Curved pipes (CURVED = 1, not 2)
+        
+        # Configure selection and connection colors
+        # Get the viewer to apply custom colors
+        viewer = self._graph.viewer()
+        
+        # Set selection colors - transparent overlay, thick yellow border
+        if hasattr(viewer, '_node_sel_color'):
+            viewer._node_sel_color = (0, 0, 0, 0)  # Transparent selection overlay
+        if hasattr(viewer, '_node_sel_border_color'):
+            viewer._node_sel_border_color = (255, 215, 0, 255)  # Bright yellow border
+        
+        # Set pipe colors - light gray curved lines
+        if hasattr(viewer, '_pipe_color'):
+            viewer._pipe_color = (100, 100, 100, 255)  # Gray pipes
+        if hasattr(viewer, '_live_pipe_color'):
+            viewer._live_pipe_color = (100, 100, 100, 255)  # Gray when dragging
+        
+        # Configure port colors to differentiate input/output
+        # Input ports (left side) - cyan/teal color
+        # Output ports (right side) - orange/amber color
+        from NodeGraphQt.constants import PortEnum
+        # Override the default port colors through the viewer
+        if hasattr(viewer, '_port_color'):
+            viewer._port_color = (100, 181, 246, 255)  # Light blue for ports
+        if hasattr(viewer, '_port_border_color'):
+            viewer._port_border_color = (66, 165, 245, 255)  # Darker blue border
     
     @property
     def graph(self) -> NodeGraph:
