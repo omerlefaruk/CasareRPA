@@ -184,10 +184,19 @@ class NodeRegistry:
                 # Using a factory function to avoid closure issues
                 def make_creator(cls):
                     def create_node():
-                        return graph.create_node(
+                        # Get the current mouse position in scene coordinates
+                        viewer = graph.viewer()
+                        pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                        
+                        # Create node at mouse cursor position (centered)
+                        # Offset by half the node's default size to center it on cursor
+                        # Typical node size is ~120x60, so offset by -60, -30
+                        node = graph.create_node(
                             f'{cls.__identifier__}.{cls.__name__}',
-                            name=cls.NODE_NAME
+                            name=cls.NODE_NAME,
+                            pos=[pos.x() - 100, pos.y() - 30]
                         )
+                        return node
                     return create_node
                 
                 category_menu.add_command(
