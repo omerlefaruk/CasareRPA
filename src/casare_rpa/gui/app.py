@@ -979,7 +979,10 @@ class CasareRPAApp:
             try:
                 if checked:
                     await self._selector_integration.start_recording()
-                    self._main_window.statusBar().showMessage("Recording workflow - Perform actions in the browser (Ctrl+R to stop)", 0)
+                    self._main_window.statusBar().showMessage(
+                        "🔴 RECORDING - Click elements to capture actions • Type to record text • Press Ctrl+R when done to generate workflow",
+                        0
+                    )
                     logger.info("Recording mode activated")
                 else:
                     await self._selector_integration.stop_selector_mode()
@@ -1005,11 +1008,198 @@ class CasareRPAApp:
     def _on_recording_complete(self, actions: list) -> None:
         """Handle recording complete event - generate workflow nodes."""
         logger.info(f"Recording complete: {len(actions)} actions captured")
-        self._main_window.statusBar().showMessage(f"Recording complete: {len(actions)} actions captured", 5000)
         
-        # TODO: Generate nodes from recorded actions
-        # This would create Click, Type, Select nodes from the action sequence
-        # and automatically connect them in the graph
+        # Reset recording button state
+        self._main_window.action_record_workflow.setChecked(False)
+        
+        if not actions:
+            self._main_window.statusBar().showMessage("No actions recorded", 3000)
+            return
+        
+        # Show preview dialog
+        from .recording_dialog import RecordingPreviewDialog
+        
+        dialog = RecordingPreviewDialog(actions, self._main_window)
+        if dialog.exec():
+            # User accepted - generate workflow
+            edited_actions = dialog.get_actions()
+            self._generate_workflow_from_recording(edited_actions)
+            self._main_window.statusBar().showMessage(
+                f"Generated workflow from {len(edited_actions)} actions",
+                5000
+            )
+        else:
+            logger.info("Recording cancelled by user")
+            self._main_window.statusBar().showMessage("Recording cancelled", 3000)
+    
+    def _generate_workflow_from_recording(self, actions: list) -> None:
+        """
+        Generate workflow nodes from recorded actions.
+        
+        Args:
+            actions: List of recorded action dictionaries
+        """
+        from ..recorder import RecordedAction, ActionType, WorkflowGenerator
+        from datetime import datetime
+        
+        # Convert action dicts to RecordedAction objects
+        recorded_actions = []
+        for action_dict in actions:
+            try:
+                # Extract element info
+                element_info = action_dict.get('element', {})
+                
+                # Handle both dict and ElementFingerprint objects
+                if hasattr(element_info, 'selectors'):
+                    # It's an ElementFingerprint object - selectors is a List[SelectorStrategy]
+                    # Convert to dict format for compatibility
+                    selectors = {}
+                    if element_info.selectors:
+                        for strat in element_info.selectors:
+                            selectors[strat.selector_type.value] = strat.value
+                elif isinstance(element_info, dict):
+                    # It's a dictionary
+                    selectors = element_info.get('selectors', {})
+                else:
+                    selectors = {}
+                
+                # Use XPath as primary selector
+                selector = selectors.get('xpath', '')
+                if not selector and selectors.get('css'):
+                    selector = selectors.get('css')
+                
+                # Map action type
+                action_type_str = action_dict.get('action', 'click')
+                action_type = ActionType(action_type_str)
+                
+                # Extract element metadata for better naming
+                element_text = None
+                element_id = None
+                element_tag = None
+                element_class = None
+                
+                if isinstance(element_info, dict):
+                    element_text = element_info.get('text', '')
+                    element_id = element_info.get('id', '')
+                    element_tag = element_info.get('tagName', '')
+                    element_class = element_info.get('className', '')
+                
+                # Create RecordedAction
+                recorded_action = RecordedAction(
+                    action_type=action_type,
+                    selector=selector,
+                    value=action_dict.get('value'),
+                    timestamp=datetime.fromtimestamp(action_dict.get('timestamp', 0) / 1000),
+                    element_info=element_info if isinstance(element_info, dict) else {},
+                    url=action_dict.get('url'),
+                    element_text=element_text,
+                    element_id=element_id,
+                    element_tag=element_tag,
+                    element_class=element_class,
+                )
+                recorded_actions.append(recorded_action)
+                
+            except Exception as e:
+                logger.error(f"Failed to convert action: {e}")
+                continue
+        
+        if not recorded_actions:
+            logger.warning("No valid actions to generate workflow from")
+            return
+        
+        # Generate workflow
+        generator = WorkflowGenerator()
+        
+        # Get insertion point (below last node in graph)
+        graph = self._node_graph.graph
+        nodes = graph.all_nodes()
+        if nodes:
+            # Find bottom-most node (pos() returns [x, y])
+            max_y = max(node.pos()[1] for node in nodes)
+            start_position = {'x': 200, 'y': max_y + 200}
+        else:
+            start_position = {'x': 200, 'y': 100}
+        
+        node_specs = generator.generate_workflow(recorded_actions, start_position)
+        
+        # Map node types to visual node identifiers
+        node_type_to_identifier = {
+            'ClickElement': 'casare_rpa.interaction.VisualClickElementNode',
+            'TypeText': 'casare_rpa.interaction.VisualTypeTextNode',
+            'SelectDropdown': 'casare_rpa.interaction.VisualSelectDropdownNode',
+            'GoToURL': 'casare_rpa.navigation.VisualGoToURLNode',
+            'WaitForElement': 'casare_rpa.wait.VisualWaitForElementNode',
+        }
+        
+        # Create visual nodes in graph
+        created_nodes = []
+        for spec in node_specs:
+            try:
+                node_type = spec['type']
+                
+                if node_type not in node_type_to_identifier:
+                    logger.warning(f"Unknown node type: {node_type}")
+                    continue
+                
+                # Create visual node
+                node_identifier = node_type_to_identifier[node_type]
+                visual_node = graph.create_node(
+                    node_identifier,
+                    name=spec.get('name', node_type),
+                    pos=[spec['position']['x'], spec['position']['y']]
+                )
+                
+                if visual_node:
+                    # Set properties from config
+                    for prop_name, prop_value in spec['config'].items():
+                        if visual_node.has_property(prop_name):
+                            visual_node.set_property(prop_name, prop_value)
+                    
+                    created_nodes.append(visual_node)
+                    logger.debug(f"Created visual node: {spec.get('name', node_type)}")
+                    
+            except Exception as e:
+                logger.error(f"Failed to create node {spec['type']}: {e}")
+                continue
+        
+        # Connect first generated node to last existing node (if workflow exists)
+        if created_nodes and nodes:
+            try:
+                # Find node with highest Y position (bottom-most) that has an exec output
+                nodes_with_outputs = [n for n in nodes if n.output_ports()]
+                if nodes_with_outputs:
+                    last_node = max(nodes_with_outputs, key=lambda n: n.pos()[1])
+                    first_new_node = created_nodes[0]
+                    
+                    # Connect last existing node to first new node
+                    exec_out = last_node.output(0)
+                    exec_in = first_new_node.input(0)
+                    exec_out.connect_to(exec_in)
+                    logger.info(f"Connected existing workflow: {last_node.name()} -> {first_new_node.name()}")
+            except Exception as e:
+                logger.warning(f"Could not connect to existing workflow: {e}")
+        
+        # Connect generated nodes to each other sequentially
+        for i in range(len(created_nodes) - 1):
+            try:
+                source_node = created_nodes[i]
+                target_node = created_nodes[i + 1]
+                
+                # Find exec output port on source
+                exec_out = source_node.output(0)  # Usually first output
+                # Find exec input port on target
+                exec_in = target_node.input(0)  # Usually first input
+                
+                # Connect
+                exec_out.connect_to(exec_in)
+                logger.debug(f"Connected {source_node.name()} -> {target_node.name()}")
+                
+            except Exception as e:
+                logger.error(f"Failed to connect nodes: {e}")
+                continue
+        
+        logger.info(f"Generated workflow with {len(created_nodes)} nodes")
+        self._main_window.set_modified(True)
     
     def _update_debug_panels(self) -> None:
         """Update all debug panels with current data."""

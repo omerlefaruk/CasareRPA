@@ -20,7 +20,9 @@
         selectedElements: [],
         overlay: null,
         highlightBox: null,
-        infoPanel: null
+        infoPanel: null,
+        recordingBadge: null,
+        recordingStartTime: null
     };
     
     // Styles (UiPath-inspired)
@@ -312,10 +314,15 @@
         
         // Recording badge
         if (state.recording) {
-            const badge = document.createElement('div');
-            badge.className = 'casare-recording-badge recording-indicator';
-            badge.innerHTML = '<div class="dot"></div> RECORDING';
-            document.body.appendChild(badge);
+            state.recordingBadge = document.createElement('div');
+            state.recordingBadge.className = 'casare-recording-badge recording-indicator';
+            state.recordingBadge.innerHTML = '<div class="dot"></div> RECORDING • 0 actions • 0:00';
+            document.body.appendChild(state.recordingBadge);
+            
+            state.recordingStartTime = Date.now();
+            
+            // Update timer every second
+            state.recordingTimer = setInterval(updateRecordingBadge, 1000);
         }
     }
     
@@ -331,6 +338,14 @@
         if (state.infoPanel) {
             state.infoPanel.remove();
             state.infoPanel = null;
+        }
+        if (state.recordingBadge) {
+            state.recordingBadge.remove();
+            state.recordingBadge = null;
+        }
+        if (state.recordingTimer) {
+            clearInterval(state.recordingTimer);
+            state.recordingTimer = null;
         }
         document.querySelectorAll('.casare-recording-badge').forEach(el => el.remove());
     }
@@ -391,18 +406,17 @@
         const elementInfo = getElementInfo(element);
         
         if (state.recording) {
-            // Add to recorded actions
-            state.recordedActions.push({
-                action: 'click',
-                element: elementInfo,
-                timestamp: Date.now()
-            });
+            // Record click action
+            recordAction('click', element, elementInfo);
             
             // Visual feedback
             state.highlightBox.classList.add('selected');
             setTimeout(() => {
                 state.highlightBox.classList.remove('selected');
             }, 300);
+            
+            // Update badge count
+            updateRecordingBadge();
         } else {
             // Single selection mode - send to Python
             if (window.__casareRPA_onElementSelected) {
@@ -410,6 +424,79 @@
             }
             deactivate();
         }
+    }
+    
+    // Record an action during recording mode
+    function recordAction(actionType, element, elementInfo) {
+        const action = {
+            action: actionType,
+            element: elementInfo,
+            timestamp: Date.now(),
+            value: null
+        };
+        
+        // Capture value for input elements
+        if (actionType === 'type' && (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA')) {
+            action.value = element.value;
+        } else if (actionType === 'select' && element.tagName === 'SELECT') {
+            action.value = element.value;
+        }
+        
+        state.recordedActions.push(action);
+        
+        // Notify Python of new action
+        if (window.__casareRPA_onActionRecorded) {
+            window.__casareRPA_onActionRecorded(action);
+        }
+        
+        console.log('[CasareRPA] Recorded action:', actionType, elementInfo.selectors.xpath);
+    }
+    
+    // Setup input monitoring for recording mode
+    function setupInputMonitoring() {
+        // Track input changes
+        document.addEventListener('input', function(e) {
+            if (!state.recording) return;
+            
+            const element = e.target;
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                // Debounce - only record after user stops typing for 500ms
+                clearTimeout(element._recordingTimeout);
+                element._recordingTimeout = setTimeout(() => {
+                    if (element.value) {
+                        const elementInfo = getElementInfo(element);
+                        recordAction('type', element, elementInfo);
+                    }
+                }, 500);
+            }
+        }, true);
+        
+        // Track select changes
+        document.addEventListener('change', function(e) {
+            if (!state.recording) return;
+            
+            const element = e.target;
+            if (element.tagName === 'SELECT') {
+                const elementInfo = getElementInfo(element);
+                recordAction('select', element, elementInfo);
+            }
+        }, true);
+    }
+    
+    // Update recording badge with action count and timer
+    function updateRecordingBadge() {
+        if (!state.recordingBadge) return;
+        
+        const count = state.recordedActions.length;
+        const duration = Math.floor((Date.now() - state.recordingStartTime) / 1000);
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        state.recordingBadge.innerHTML = `
+            <div class="dot"></div>
+            RECORDING • ${count} actions • ${timeStr}
+        `;
     }
     
     function handleKeyDown(e) {
@@ -428,7 +515,7 @@
         }
     }
     
-    // Public API
+    // Activation/Deactivation
     function activate(recordingMode = false) {
         if (state.active) return;
         
@@ -442,6 +529,11 @@
         document.addEventListener('mousemove', handleMouseMove, true);
         document.addEventListener('click', handleClick, true);
         document.addEventListener('keydown', handleKeyDown, true);
+        
+        // Setup input monitoring for recording mode
+        if (recordingMode) {
+            setupInputMonitoring();
+        }
         
         console.log('[CasareRPA] Selector mode activated', { recording: recordingMode });
     }
