@@ -8,7 +8,7 @@ to integrate it with the PySide6 application.
 from typing import Optional
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
-from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor
+from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor, QKeyEvent
 from PySide6.QtCore import Qt
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.qgraphics.node_base import NodeItem
@@ -102,6 +102,9 @@ class NodeGraphWidget(QWidget):
         layout.addWidget(self._graph.widget)
         
         self.setLayout(layout)
+        
+        # Install event filter on graph viewer to capture Tab key for context menu
+        self._graph.viewer().installEventFilter(self)
     
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""
@@ -227,3 +230,30 @@ class NodeGraphWidget(QWidget):
             distance: Maximum distance in pixels
         """
         self._auto_connect.set_max_distance(distance)
+    
+    def eventFilter(self, obj, event):
+        """
+        Event filter to capture Tab key press to show context menu.
+        
+        Args:
+            obj: Object that received the event
+            event: The event
+            
+        Returns:
+            True if event was handled, False otherwise
+        """
+        if event.type() == event.Type.KeyPress:
+            key_event = event
+            if key_event.key() == Qt.Key.Key_Tab:
+                # Show context menu at cursor position
+                viewer = self._graph.viewer()
+                cursor_pos = viewer.cursor().pos()
+                
+                # Get the context menu and show it
+                context_menu = self._graph.get_context_menu('graph')
+                if context_menu and context_menu.qmenu:
+                    context_menu.qmenu.exec(cursor_pos)
+                
+                return True  # Event handled
+        
+        return super().eventFilter(obj, event)
