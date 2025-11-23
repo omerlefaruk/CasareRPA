@@ -135,6 +135,27 @@ class CasareRPAApp:
         self._main_window.action_zoom_out.triggered.connect(self._node_graph.zoom_out)
         self._main_window.action_zoom_reset.triggered.connect(self._node_graph.reset_zoom)
         self._main_window.action_fit_view.triggered.connect(self._node_graph.center_on_nodes)
+        
+        # Debug toolbar connections
+        debug_toolbar = self._main_window.get_debug_toolbar()
+        if debug_toolbar:
+            debug_toolbar.debug_mode_toggled.connect(self._on_debug_mode_toggled)
+            debug_toolbar.step_mode_toggled.connect(self._on_step_mode_toggled)
+            debug_toolbar.step_requested.connect(self._on_step_requested)
+            debug_toolbar.continue_requested.connect(self._on_continue_requested)
+            debug_toolbar.stop_requested.connect(self._on_stop_workflow)
+            debug_toolbar.clear_breakpoints_requested.connect(self._on_clear_breakpoints)
+        
+        # Variable inspector connections
+        variable_inspector = self._main_window.get_variable_inspector()
+        if variable_inspector:
+            variable_inspector.refresh_requested.connect(self._on_refresh_variables)
+        
+        # Execution history connections
+        execution_history = self._main_window.get_execution_history_viewer()
+        if execution_history:
+            execution_history.node_selected.connect(self._on_history_node_selected)
+            execution_history.clear_requested.connect(self._on_clear_history)
     
     def _on_new_workflow(self) -> None:
         """Handle new workflow creation."""
@@ -475,12 +496,56 @@ class CasareRPAApp:
             # Create workflow runner
             self._workflow_runner = WorkflowRunner(workflow, self._event_bus)
             
+            # Apply debug settings from toolbar
+            debug_toolbar = self._main_window.get_debug_toolbar()
+            if debug_toolbar:
+                debug_enabled = debug_toolbar.action_debug_mode.isChecked()
+                step_enabled = debug_toolbar.action_step_mode.isChecked()
+                
+                if debug_enabled:
+                    self._workflow_runner.enable_debug_mode(True)
+                    logger.info("Debug mode enabled for execution")
+                    
+                    # Show debug panels
+                    var_inspector = self._main_window.get_variable_inspector()
+                    exec_history = self._main_window.get_execution_history_viewer()
+                    if var_inspector:
+                        var_inspector.show()
+                        var_inspector.clear()
+                    if exec_history:
+                        exec_history.show()
+                        exec_history.clear()
+                
+                if step_enabled:
+                    self._workflow_runner.enable_step_mode(True)
+                    logger.info("Step mode enabled for execution")
+                
+                # Update toolbar state
+                debug_toolbar.set_execution_state(True)
+            
             # Show log viewer
             self._main_window.show_log_viewer()
             self._main_window.action_toggle_log.setChecked(True)
             
+            # Start debug update timer if in debug mode
+            if self._workflow_runner.debug_mode:
+                self._start_debug_updates()
+            
             # Run workflow asynchronously
-            asyncio.ensure_future(self._workflow_runner.run())
+            async def run_and_cleanup():
+                try:
+                    await self._workflow_runner.run()
+                finally:
+                    # Update debug panels one final time
+                    if self._workflow_runner.debug_mode:
+                        self._update_debug_panels()
+                        self._stop_debug_updates()
+                    
+                    # Update toolbar state
+                    if debug_toolbar:
+                        debug_toolbar.set_execution_state(False)
+            
+            asyncio.ensure_future(run_and_cleanup())
             
         except Exception as e:
             logger.exception("Failed to start workflow execution")
@@ -581,6 +646,109 @@ class CasareRPAApp:
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
+    
+    def _on_debug_mode_toggled(self, enabled: bool) -> None:
+        """Handle debug mode toggle."""
+        logger.debug(f"Debug mode {'enabled' if enabled else 'disabled'}")
+        if self._workflow_runner:
+            self._workflow_runner.enable_debug_mode(enabled)
+    
+    def _on_step_mode_toggled(self, enabled: bool) -> None:
+        """Handle step mode toggle."""
+        logger.debug(f"Step mode {'enabled' if enabled else 'disabled'}")
+        if self._workflow_runner:
+            self._workflow_runner.enable_step_mode(enabled)
+    
+    def _on_step_requested(self) -> None:
+        """Handle step execution request."""
+        if self._workflow_runner:
+            logger.debug("Step execution requested")
+            self._workflow_runner.step()
+            # Update debug panels after step
+            self._update_debug_panels()
+    
+    def _on_continue_requested(self) -> None:
+        """Handle continue execution request."""
+        if self._workflow_runner:
+            logger.debug("Continue execution requested")
+            self._workflow_runner.continue_execution()
+    
+    def _on_clear_breakpoints(self) -> None:
+        """Handle clear all breakpoints request."""
+        if self._workflow_runner:
+            logger.debug("Clearing all breakpoints")
+            self._workflow_runner.clear_all_breakpoints()
+            self._main_window.statusBar().showMessage("All breakpoints cleared", 3000)
+    
+    def _on_refresh_variables(self) -> None:
+        """Handle variable refresh request."""
+        if self._workflow_runner:
+            variables = self._workflow_runner.get_variables()
+            var_inspector = self._main_window.get_variable_inspector()
+            if var_inspector:
+                var_inspector.update_variables(variables)
+    
+    def _on_history_node_selected(self, node_id: str) -> None:
+        """
+        Handle node selection from execution history.
+        
+        Args:
+            node_id: ID of the selected node
+        """
+        logger.debug(f"History node selected: {node_id}")
+        # Highlight the node in the graph
+        graph = self._node_graph.graph
+        graph.clear_selection()
+        for visual_node in graph.all_nodes():
+            if visual_node.get_property("node_id") == node_id:
+                visual_node.set_selected(True)
+                # Center on the node
+                self._node_graph.center_on_nodes([visual_node])
+                break
+    
+    def _on_clear_history(self) -> None:
+        """Handle clear execution history request."""
+        exec_history = self._main_window.get_execution_history_viewer()
+        if exec_history:
+            exec_history.clear()
+            self._main_window.statusBar().showMessage("Execution history cleared", 3000)
+    
+    def _update_debug_panels(self) -> None:
+        """Update all debug panels with current data."""
+        if not self._workflow_runner or not self._workflow_runner.debug_mode:
+            return
+        
+        # Update variable inspector
+        var_inspector = self._main_window.get_variable_inspector()
+        if var_inspector and var_inspector.isVisible():
+            variables = self._workflow_runner.get_variables()
+            var_inspector.update_variables(variables)
+        
+        # Update execution history
+        exec_history = self._main_window.get_execution_history_viewer()
+        if exec_history and exec_history.isVisible():
+            history = self._workflow_runner.get_execution_history()
+            exec_history.update_history(history)
+            exec_history.scroll_to_bottom()
+    
+    def _start_debug_updates(self) -> None:
+        """Start periodic debug panel updates."""
+        from PySide6.QtCore import QTimer
+        
+        # Create timer if it doesn't exist
+        if not hasattr(self, '_debug_update_timer'):
+            self._debug_update_timer = QTimer(self._main_window)
+            self._debug_update_timer.timeout.connect(self._update_debug_panels)
+        
+        # Start timer (update every 200ms)
+        self._debug_update_timer.start(200)
+        logger.debug("Started debug panel updates")
+    
+    def _stop_debug_updates(self) -> None:
+        """Stop periodic debug panel updates."""
+        if hasattr(self, '_debug_update_timer'):
+            self._debug_update_timer.stop()
+            logger.debug("Stopped debug panel updates")
     
     def _on_workflow_stopped(self, event) -> None:
         """Handle workflow stopped event."""

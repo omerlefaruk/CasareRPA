@@ -199,11 +199,10 @@ Pre-built workflows and templates for common tasks:
 Improve user experience and productivity:
 
 #### Features:
-- **Node Search**: Quick node finder (Ctrl+Space)
+- **Node Search**: Quick node finder (Tab)
 - **Mini-map**: Workflow overview navigator
 - **Node Comments**: Add notes to nodes
 - **Color Coding**: Custom node colors
-- **Zoom Presets**: Quick zoom levels
 - **Grid Snapping**: Align nodes perfectly
 - **Auto-Layout**: Automatic node arrangement
 

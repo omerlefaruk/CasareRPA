@@ -79,6 +79,11 @@ class MainWindow(QMainWindow):
         # Log viewer dock
         self._log_dock: Optional[QDockWidget] = None
         
+        # Debug components
+        self._debug_toolbar: Optional['DebugToolbar'] = None
+        self._variable_inspector: Optional['VariableInspectorPanel'] = None
+        self._execution_history: Optional['ExecutionHistoryViewer'] = None
+        
         # Setup window
         self._setup_window()
         self._create_actions()
@@ -86,6 +91,7 @@ class MainWindow(QMainWindow):
         self._create_toolbar()
         self._create_status_bar()
         self._create_log_viewer()
+        self._create_debug_components()
         
         # Set initial state
         self._update_window_title()
@@ -632,6 +638,66 @@ class MainWindow(QMainWindow):
             return True
         else:
             return False
+    
+    def _create_debug_components(self) -> None:
+        """Create debug toolbar and panels."""
+        from .debug_toolbar import DebugToolbar
+        from .variable_inspector import VariableInspectorPanel
+        from .execution_history_viewer import ExecutionHistoryViewer
+        
+        # Create debug toolbar
+        self._debug_toolbar = DebugToolbar(self)
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self._debug_toolbar)
+        
+        # Create variable inspector panel
+        self._variable_inspector = VariableInspectorPanel(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._variable_inspector)
+        self._variable_inspector.hide()  # Hidden by default
+        
+        # Create execution history viewer
+        self._execution_history = ExecutionHistoryViewer(self)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._execution_history)
+        self._execution_history.hide()  # Hidden by default
+        
+        # Add view menu options for debug panels
+        view_menu = None
+        for action in self.menuBar().actions():
+            if action.text() == "&View":
+                view_menu = action.menu()
+                break
+        
+        if view_menu:
+            view_menu.addSeparator()
+            view_menu.addAction(self._debug_toolbar.toggleViewAction())
+            view_menu.addAction(self._variable_inspector.toggleViewAction())
+            view_menu.addAction(self._execution_history.toggleViewAction())
+    
+    def get_debug_toolbar(self) -> Optional['DebugToolbar']:
+        """
+        Get the debug toolbar.
+        
+        Returns:
+            DebugToolbar instance or None
+        """
+        return self._debug_toolbar if hasattr(self, '_debug_toolbar') else None
+    
+    def get_variable_inspector(self) -> Optional['VariableInspectorPanel']:
+        """
+        Get the variable inspector panel.
+        
+        Returns:
+            VariableInspectorPanel instance or None
+        """
+        return self._variable_inspector if hasattr(self, '_variable_inspector') else None
+    
+    def get_execution_history_viewer(self) -> Optional['ExecutionHistoryViewer']:
+        """
+        Get the execution history viewer.
+        
+        Returns:
+            ExecutionHistoryViewer instance or None
+        """
+        return self._execution_history if hasattr(self, '_execution_history') else None
     
     def closeEvent(self, event) -> None:
         """
