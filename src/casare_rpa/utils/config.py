@@ -18,10 +18,16 @@ SRC_ROOT: Final[Path] = PROJECT_ROOT / "src"
 LOGS_DIR: Final[Path] = PROJECT_ROOT / "logs"
 WORKFLOWS_DIR: Final[Path] = PROJECT_ROOT / "workflows"
 DOCS_DIR: Final[Path] = PROJECT_ROOT / "docs"
+CONFIG_DIR: Final[Path] = PROJECT_ROOT / "config"
+
+# User settings
+SETTINGS_FILE: Final[Path] = CONFIG_DIR / "settings.json"
+HOTKEYS_FILE: Final[Path] = CONFIG_DIR / "hotkeys.json"
 
 # Ensure critical directories exist
 LOGS_DIR.mkdir(exist_ok=True)
 WORKFLOWS_DIR.mkdir(exist_ok=True)
+CONFIG_DIR.mkdir(exist_ok=True)
 
 # ============================================================================
 # APPLICATION CONFIGURATION

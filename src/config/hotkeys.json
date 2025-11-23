@@ -1,0 +1,63 @@
+{
+  "new": [
+    "Ctrl+N"
+  ],
+  "open": [
+    "Ctrl+O"
+  ],
+  "save": [
+    "Ctrl+S"
+  ],
+  "save_as": [
+    "Ctrl+Shift+S"
+  ],
+  "exit": [
+    "Ctrl+Q"
+  ],
+  "undo": [
+    "Ctrl+Z"
+  ],
+  "redo": [
+    "Ctrl+Y",
+    "Ctrl+Shift+Z"
+  ],
+  "cut": [
+    "Ctrl+X"
+  ],
+  "copy": [
+    "Ctrl+C"
+  ],
+  "paste": [
+    "Ctrl+V"
+  ],
+  "delete": [
+    "X"
+  ],
+  "select_all": [
+    "Ctrl+A"
+  ],
+  "deselect_all": [
+    "Ctrl+Shift+A"
+  ],
+  "zoom_in": [
+    "Ctrl++"
+  ],
+  "zoom_out": [
+    "Ctrl+-"
+  ],
+  "zoom_reset": [
+    "Ctrl+0"
+  ],
+  "fit_view": [
+    "Ctrl+F"
+  ],
+  "run": [
+    "F3"
+  ],
+  "stop": [
+    "Shift+F3"
+  ],
+  "hotkey_manager": [
+    "Ctrl+K, Ctrl+S"
+  ]
+}

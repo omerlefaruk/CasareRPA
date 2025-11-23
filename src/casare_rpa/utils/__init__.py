@@ -13,6 +13,7 @@ from .config import (
     WORKFLOWS_DIR,
     setup_logging,
 )
+from .hotkey_settings import get_hotkey_settings, HotkeySettings
 
 __all__ = [
     "APP_NAME",
@@ -23,4 +24,6 @@ __all__ = [
     "LOGS_DIR",
     "WORKFLOWS_DIR",
     "setup_logging",
+    "get_hotkey_settings",
+    "HotkeySettings",
 ]

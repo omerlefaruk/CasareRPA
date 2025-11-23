@@ -29,6 +29,7 @@ from ..utils.config import (
     GUI_WINDOW_WIDTH,
     GUI_WINDOW_HEIGHT,
 )
+from ..utils.hotkey_settings import get_hotkey_settings
 
 
 class MainWindow(QMainWindow):
@@ -66,6 +67,9 @@ class MainWindow(QMainWindow):
         # Window properties
         self._current_file: Optional[Path] = None
         self._is_modified: bool = False
+        
+        # Hotkey settings
+        self._hotkey_settings = get_hotkey_settings()
         
         # Setup window
         self._setup_window()
@@ -220,10 +224,50 @@ class MainWindow(QMainWindow):
         self.action_stop.setEnabled(False)
         self.action_stop.triggered.connect(self._on_stop_workflow)
         
+        # Tools actions
+        self.action_hotkey_manager = QAction("&Keyboard Shortcuts...", self)
+        self.action_hotkey_manager.setShortcut(QKeySequence("Ctrl+K, Ctrl+S"))
+        self.action_hotkey_manager.setStatusTip("View and customize keyboard shortcuts")
+        self.action_hotkey_manager.triggered.connect(self._on_open_hotkey_manager)
+        
         # Help actions
         self.action_about = QAction("&About", self)
         self.action_about.setStatusTip("About CasareRPA")
         self.action_about.triggered.connect(self._on_about)
+        
+        # Apply saved hotkeys
+        self._load_hotkeys()
+    
+    def _load_hotkeys(self) -> None:
+        """Load and apply saved hotkeys to actions."""
+        action_map = {
+            "new": self.action_new,
+            "open": self.action_open,
+            "save": self.action_save,
+            "save_as": self.action_save_as,
+            "exit": self.action_exit,
+            "undo": self.action_undo,
+            "redo": self.action_redo,
+            "cut": self.action_cut,
+            "copy": self.action_copy,
+            "paste": self.action_paste,
+            "delete": self.action_delete,
+            "select_all": self.action_select_all,
+            "deselect_all": self.action_deselect_all,
+            "zoom_in": self.action_zoom_in,
+            "zoom_out": self.action_zoom_out,
+            "zoom_reset": self.action_zoom_reset,
+            "fit_view": self.action_fit_view,
+            "run": self.action_run,
+            "stop": self.action_stop,
+            "hotkey_manager": self.action_hotkey_manager,
+        }
+        
+        for action_name, action in action_map.items():
+            shortcuts = self._hotkey_settings.get_shortcuts(action_name)
+            if shortcuts:
+                sequences = [QKeySequence(s) for s in shortcuts]
+                action.setShortcuts(sequences)
     
     def _create_menus(self) -> None:
         """Create menu bar and menus."""
@@ -264,6 +308,10 @@ class MainWindow(QMainWindow):
         workflow_menu = menubar.addMenu("&Workflow")
         workflow_menu.addAction(self.action_run)
         workflow_menu.addAction(self.action_stop)
+        
+        # Tools menu
+        tools_menu = menubar.addMenu("&Tools")
+        tools_menu.addAction(self.action_hotkey_manager)
         
         # Help menu
         help_menu = menubar.addMenu("&Help")
@@ -427,6 +475,37 @@ class MainWindow(QMainWindow):
         self.action_run.setEnabled(True)
         self.action_stop.setEnabled(False)
         self.statusBar().showMessage("Workflow execution stopped", 3000)
+    
+    def _on_open_hotkey_manager(self) -> None:
+        """Open the hotkey manager dialog."""
+        from .hotkey_manager import HotkeyManagerDialog
+        
+        # Collect all actions
+        actions = {
+            "new": self.action_new,
+            "open": self.action_open,
+            "save": self.action_save,
+            "save_as": self.action_save_as,
+            "exit": self.action_exit,
+            "undo": self.action_undo,
+            "redo": self.action_redo,
+            "cut": self.action_cut,
+            "copy": self.action_copy,
+            "paste": self.action_paste,
+            "delete": self.action_delete,
+            "select_all": self.action_select_all,
+            "deselect_all": self.action_deselect_all,
+            "zoom_in": self.action_zoom_in,
+            "zoom_out": self.action_zoom_out,
+            "zoom_reset": self.action_zoom_reset,
+            "fit_view": self.action_fit_view,
+            "run": self.action_run,
+            "stop": self.action_stop,
+            "hotkey_manager": self.action_hotkey_manager,
+        }
+        
+        dialog = HotkeyManagerDialog(actions, self)
+        dialog.exec()
     
     def _on_about(self) -> None:
         """Show about dialog."""
