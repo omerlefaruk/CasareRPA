@@ -52,8 +52,8 @@ class GoToURLNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
+        self.add_input_port("page", PortType.INPUT, DataType.PAGE, required=False)  # Optional: uses active page if not connected
+        self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)  # Optional: uses config value if not connected
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
     
@@ -72,8 +72,11 @@ class GoToURLNode(BaseNode):
         try:
             # Get page from input or context
             page = self.get_input_value("page")
+            logger.info(f"Page from input: {page} (type: {type(page).__name__ if page else 'None'})")
+            
             if page is None:
                 page = context.get_active_page()
+                logger.info(f"Page from context: {page} (type: {type(page).__name__ if page else 'None'})")
             
             if page is None:
                 raise ValueError("No page instance found")
@@ -85,6 +88,10 @@ class GoToURLNode(BaseNode):
             
             if not url:
                 raise ValueError("URL is required")
+            
+            # Add protocol if missing
+            if not url.startswith(("http://", "https://", "file://")):
+                url = f"https://{url}"
             
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             

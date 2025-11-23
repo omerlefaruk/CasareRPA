@@ -65,6 +65,9 @@ class EventType(Enum):
     WORKFLOW_STARTED = auto()  # Workflow execution started
     WORKFLOW_COMPLETED = auto()  # Workflow execution completed
     WORKFLOW_ERROR = auto()  # Workflow encountered error
+    WORKFLOW_STOPPED = auto()  # Workflow execution stopped by user
+    WORKFLOW_PAUSED = auto()  # Workflow execution paused
+    WORKFLOW_RESUMED = auto()  # Workflow execution resumed
     VARIABLE_SET = auto()  # Variable was set in context
     LOG_MESSAGE = auto()  # Log message emitted
 

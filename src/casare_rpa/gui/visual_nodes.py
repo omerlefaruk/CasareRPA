@@ -57,6 +57,10 @@ class VisualNode(NodeGraphQtBaseNode):
         self.create_property("node_id", "")
         self.create_property("status", "idle")
         
+        # Auto-create linked CasareRPA node
+        # This ensures every visual node has a CasareRPA node regardless of how it was created
+        self._auto_create_casare_node()
+        
         # Setup ports for this node type
         self.setup_ports()
     
@@ -86,6 +90,42 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         self._casare_node = node
         self.set_property("node_id", node.node_id)
+    
+    def _auto_create_casare_node(self) -> None:
+        """
+        Automatically create and link CasareRPA node.
+        Called during __init__ to ensure every visual node has a backing CasareRPA node.
+        Handles all creation scenarios: menu, copy/paste, undo/redo, workflow loading.
+        """
+        if self._casare_node is not None:
+            return  # Already has a node
+        
+        try:
+            # Import here to avoid circular dependency
+            from .node_registry import get_node_factory
+            factory = get_node_factory()
+            
+            # Create the CasareRPA node
+            casare_node = factory.create_casare_node(self)
+            if casare_node:
+                # Node is already linked via factory.create_casare_node -> set_casare_node
+                pass
+        except Exception:
+            # Silently fail during initialization - node will be created later if needed
+            # This handles cases where factory isn't ready yet (e.g., during testing)
+            pass
+    
+    def ensure_casare_node(self) -> Optional[CasareBaseNode]:
+        """
+        Ensure this visual node has a CasareRPA node, creating one if necessary.
+        Use this before any operation that requires the CasareRPA node.
+        
+        Returns:
+            The CasareRPA node instance, or None if creation failed
+        """
+        if self._casare_node is None:
+            self._auto_create_casare_node()
+        return self._casare_node
     
     def update_status(self, status: str) -> None:
         """
@@ -171,6 +211,7 @@ class VisualLaunchBrowserNode(VisualNode):
         self.add_input("exec_in")
         self.add_output("exec_out")
         self.add_output("browser")
+        self.add_output("page")
 
 
 class VisualCloseBrowserNode(VisualNode):

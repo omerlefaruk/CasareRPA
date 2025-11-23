@@ -55,6 +55,7 @@ class LaunchBrowserNode(BaseNode):
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
+        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
     
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -93,16 +94,27 @@ class LaunchBrowserNode(BaseNode):
             # Store browser in context
             context.browser = browser
             
-            # Set output
+            # Create initial tab automatically
+            browser_context = await browser.new_context()
+            page = await browser_context.new_page()
+            
+            # Store page in context
+            tab_name = "main"
+            context.add_page(page, tab_name)
+            context.set_active_page(page, tab_name)
+            
+            # Set outputs
             self.set_output_value("browser", browser)
+            self.set_output_value("page", page)
             
             self.status = NodeStatus.SUCCESS
-            logger.info(f"Browser launched successfully: {browser_type}")
+            logger.info(f"Browser launched successfully: {browser_type} with initial tab")
             
             return {
                 "success": True,
                 "data": {
                     "browser": browser,
+                    "page": page,
                     "browser_type": browser_type,
                     "headless": headless
                 },
@@ -237,7 +249,7 @@ class NewTabNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER)
+        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)  # Optional: uses context browser if not connected
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
     
@@ -271,8 +283,8 @@ class NewTabNode(BaseNode):
             page = await browser_context.new_page()
             
             # Store page in context
-            context.add_page(tab_name, page)
-            context.set_active_page(tab_name)
+            context.add_page(page, tab_name)
+            context.set_active_page(page, tab_name)
             
             # Set output
             self.set_output_value("page", page)
