@@ -97,6 +97,12 @@ class BaseNode(ABC):
         self.node_type = self.__class__.__name__
         self.category = "General"
         self.description = self.__class__.__doc__ or "No description"
+        
+        # Debug support
+        self.breakpoint_enabled: bool = False
+        self.execution_count: int = 0
+        self.last_execution_time: Optional[float] = None
+        self.last_output: Optional[Dict[str, Any]] = None
 
         # Initialize ports
         self._define_ports()
@@ -253,6 +259,42 @@ class BaseNode(ABC):
             port.value = None
         for port in self.output_ports.values():
             port.value = None
+        self.execution_count = 0
+        self.last_execution_time = None
+        self.last_output = None
+    
+    def set_breakpoint(self, enabled: bool = True) -> None:
+        """
+        Enable or disable breakpoint on this node.
+        
+        Args:
+            enabled: True to enable breakpoint, False to disable
+        """
+        self.breakpoint_enabled = enabled
+        logger.debug(f"Breakpoint {'enabled' if enabled else 'disabled'} on node {self.node_id}")
+    
+    def has_breakpoint(self) -> bool:
+        """Check if this node has a breakpoint set."""
+        return self.breakpoint_enabled
+    
+    def get_debug_info(self) -> Dict[str, Any]:
+        """
+        Get debug information about this node.
+        
+        Returns:
+            Dictionary containing debug information
+        """
+        return {
+            "node_id": self.node_id,
+            "node_type": self.node_type,
+            "status": self.status.name,
+            "breakpoint_enabled": self.breakpoint_enabled,
+            "execution_count": self.execution_count,
+            "last_execution_time": self.last_execution_time,
+            "last_output": self.last_output,
+            "input_values": {name: port.get_value() for name, port in self.input_ports.items()},
+            "output_values": {name: port.get_value() for name, port in self.output_ports.items()},
+        }
 
     def __repr__(self) -> str:
         """String representation of node."""

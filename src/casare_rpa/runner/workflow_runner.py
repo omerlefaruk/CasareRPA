@@ -72,6 +72,14 @@ class WorkflowRunner:
         self._pause_event.set()  # Not paused initially
         self._stop_requested = False
         
+        # Debug mode
+        self.debug_mode: bool = False
+        self.step_mode: bool = False
+        self._step_event = asyncio.Event()
+        self._step_event.set()  # Not waiting for step initially
+        self.breakpoints: Set[NodeId] = set()
+        self.execution_history: List[Dict[str, Any]] = []
+        
         logger.info(f"WorkflowRunner initialized for workflow: {workflow.metadata.name}")
     
     @property
@@ -166,10 +174,31 @@ class WorkflowRunner:
         self.current_node_id = node.node_id
         node.status = NodeStatus.RUNNING
         
+        # Debug mode: check for breakpoint or step mode
+        if self.debug_mode and (self.step_mode or node.node_id in self.breakpoints):
+            logger.info(f"Breakpoint hit or step mode at node: {node.node_id}")
+            self._emit_event(EventType.NODE_STARTED, {
+                "node_id": node.node_id,
+                "node_type": node.__class__.__name__,
+                "breakpoint": True
+            })
+            
+            # Wait for step command
+            self._step_event.clear()
+            await self._step_event.wait()
+            
+            # Reset for next step if still in step mode
+            if self.step_mode:
+                self._step_event.clear()
+        
         self._emit_event(EventType.NODE_STARTED, {
             "node_id": node.node_id,
             "node_type": node.__class__.__name__
         })
+        
+        # Record start time for debug info
+        import time
+        start_time = time.time()
         
         try:
             # Validate node before execution
@@ -184,6 +213,23 @@ class WorkflowRunner:
             
             # Execute the node
             result = await node.execute(self.context)
+            
+            # Update debug info
+            execution_time = time.time() - start_time
+            node.execution_count += 1
+            node.last_execution_time = execution_time
+            node.last_output = result
+            
+            # Add to execution history if in debug mode
+            if self.debug_mode:
+                self.execution_history.append({
+                    "timestamp": datetime.now().isoformat(),
+                    "node_id": node.node_id,
+                    "node_type": node.__class__.__name__,
+                    "execution_time": execution_time,
+                    "status": "success" if result and result.get("success") else "failed",
+                    "result": result
+                })
             
             if result and result.get("success", False):
                 node.status = NodeStatus.SUCCESS
@@ -408,9 +454,111 @@ class WorkflowRunner:
         self.end_time = None
         self._stop_requested = False
         self._pause_event.set()
+        self._step_event.set()
+        self.execution_history.clear()
         
         # Reset all node statuses
         for node in self.workflow.nodes.values():
             node.reset()
         
         logger.info("WorkflowRunner reset to initial state")
+    
+    # Debug Mode Methods
+    
+    def enable_debug_mode(self, enabled: bool = True) -> None:
+        """
+        Enable or disable debug mode.
+        
+        Args:
+            enabled: True to enable debug mode, False to disable
+        """
+        self.debug_mode = enabled
+        logger.info(f"Debug mode {'enabled' if enabled else 'disabled'}")
+    
+    def enable_step_mode(self, enabled: bool = True) -> None:
+        """
+        Enable or disable step execution mode.
+        
+        In step mode, execution pauses before each node and waits for step() call.
+        
+        Args:
+            enabled: True to enable step mode, False to disable
+        """
+        self.step_mode = enabled
+        if not enabled:
+            self._step_event.set()  # Unblock if disabling
+        logger.info(f"Step mode {'enabled' if enabled else 'disabled'}")
+    
+    def step(self) -> None:
+        """Execute one step (one node) in debug mode."""
+        if self.step_mode:
+            self._step_event.set()
+            logger.debug("Step command issued")
+    
+    def continue_execution(self) -> None:
+        """Continue execution without stepping (exit step mode temporarily)."""
+        self.step_mode = False
+        self._step_event.set()
+        logger.info("Continuing execution")
+    
+    def set_breakpoint(self, node_id: NodeId, enabled: bool = True) -> None:
+        """
+        Set or remove a breakpoint on a node.
+        
+        Args:
+            node_id: ID of the node to set breakpoint on
+            enabled: True to set breakpoint, False to remove
+        """
+        if enabled:
+            self.breakpoints.add(node_id)
+            if node_id in self.workflow.nodes:
+                self.workflow.nodes[node_id].set_breakpoint(True)
+            logger.info(f"Breakpoint set on node: {node_id}")
+        else:
+            self.breakpoints.discard(node_id)
+            if node_id in self.workflow.nodes:
+                self.workflow.nodes[node_id].set_breakpoint(False)
+            logger.info(f"Breakpoint removed from node: {node_id}")
+    
+    def clear_all_breakpoints(self) -> None:
+        """Clear all breakpoints."""
+        for node_id in self.breakpoints:
+            if node_id in self.workflow.nodes:
+                self.workflow.nodes[node_id].set_breakpoint(False)
+        self.breakpoints.clear()
+        logger.info("All breakpoints cleared")
+    
+    def get_execution_history(self) -> List[Dict[str, Any]]:
+        """
+        Get the execution history.
+        
+        Returns:
+            List of execution records
+        """
+        return self.execution_history.copy()
+    
+    def get_variables(self) -> Dict[str, Any]:
+        """
+        Get all variables from the execution context.
+        
+        Returns:
+            Dictionary of all variables
+        """
+        if self.context:
+            return self.context.variables.copy()
+        return {}
+    
+    def get_node_debug_info(self, node_id: NodeId) -> Optional[Dict[str, Any]]:
+        """
+        Get debug information for a specific node.
+        
+        Args:
+            node_id: ID of the node
+            
+        Returns:
+            Debug information dictionary or None if node not found
+        """
+        node = self.workflow.nodes.get(node_id)
+        if node:
+            return node.get_debug_info()
+        return None

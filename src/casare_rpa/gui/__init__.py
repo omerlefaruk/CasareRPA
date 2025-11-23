@@ -19,6 +19,9 @@ from .visual_nodes import (
     VISUAL_NODE_CLASSES,
     NODE_COLORS
 )
+from .debug_toolbar import DebugToolbar
+from .variable_inspector import VariableInspectorPanel
+from .execution_history_viewer import ExecutionHistoryViewer
 
 __all__ = [
     "__version__",
@@ -33,4 +36,7 @@ __all__ = [
     "VisualNode",
     "VISUAL_NODE_CLASSES",
     "NODE_COLORS",
+    "DebugToolbar",
+    "VariableInspectorPanel",
+    "ExecutionHistoryViewer",
 ]
