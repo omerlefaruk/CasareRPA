@@ -159,8 +159,12 @@ class NodeRegistry:
         Args:
             graph: NodeGraph instance to register nodes with
         """
-        # First register all nodes with NodeGraphQt
+        # First register all nodes with NodeGraphQt (except Start node - auto-created)
+        from .visual_nodes import VisualStartNode
         for node_class in VISUAL_NODE_CLASSES:
+            # Skip Start node - it's automatically created
+            if node_class == VisualStartNode:
+                continue
             self.register_node(node_class, graph)
         
         # Get the graph's context menu (right-click on canvas to add nodes)
