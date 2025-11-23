@@ -203,12 +203,14 @@ class VisualLaunchBrowserNode(VisualNode):
     def __init__(self) -> None:
         """Initialize launch browser node."""
         super().__init__()
+        self.add_text_input("url", "URL", placeholder_text="https://example.com", tab="properties")
         self.add_combo_menu("browser_type", "Browser", items=["chromium", "firefox", "webkit"], tab="properties")
         self.add_checkbox("headless", "Headless", state=False, tab="properties")
     
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
+        self.add_input("url")
         self.add_output("exec_out")
         self.add_output("browser")
         self.add_output("page")
