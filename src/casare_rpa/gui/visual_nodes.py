@@ -56,6 +56,9 @@ class VisualNode(NodeGraphQtBaseNode):
         # Create and initialize node properties
         self.create_property("node_id", "")
         self.create_property("status", "idle")
+        
+        # Setup ports for this node type
+        self.setup_ports()
     
     def setup_ports(self) -> None:
         """
