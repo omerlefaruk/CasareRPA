@@ -48,6 +48,12 @@ from .visual_nodes import (
     VisualBreakNode,
     VisualContinueNode,
     VisualSwitchNode,
+    # Error Handling
+    VisualTryNode,
+    VisualRetryNode,
+    VisualRetrySuccessNode,
+    VisualRetryFailNode,
+    VisualThrowErrorNode,
 )
 
 from ..nodes import (
@@ -80,13 +86,19 @@ from ..nodes import (
     SetVariableNode,
     GetVariableNode,
     IncrementVariableNode,
-    # Control Flow
+    # Control flow
     IfNode,
     ForLoopNode,
     WhileLoopNode,
     BreakNode,
     ContinueNode,
     SwitchNode,
+    # Error handling
+    TryNode,
+    RetryNode,
+    RetrySuccessNode,
+    RetryFailNode,
+    ThrowErrorNode,
 )
 
 
@@ -128,6 +140,12 @@ CASARE_NODE_MAPPING = {
     VisualBreakNode: BreakNode,
     VisualContinueNode: ContinueNode,
     VisualSwitchNode: SwitchNode,
+    # Error Handling
+    VisualTryNode: TryNode,
+    VisualRetryNode: RetryNode,
+    VisualRetrySuccessNode: RetrySuccessNode,
+    VisualRetryFailNode: RetryFailNode,
+    VisualThrowErrorNode: ThrowErrorNode,
 }
 
 
