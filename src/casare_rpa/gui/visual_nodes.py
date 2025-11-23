@@ -648,6 +648,63 @@ class VisualWhileLoopNode(VisualNode):
         self.add_output("iteration")
 
 
+class VisualBreakNode(VisualNode):
+    """Visual representation of BreakNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "Break"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize Break node."""
+        super().__init__()
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+
+
+class VisualContinueNode(VisualNode):
+    """Visual representation of ContinueNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "Continue"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize Continue node."""
+        super().__init__()
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+
+
+class VisualSwitchNode(VisualNode):
+    """Visual representation of SwitchNode."""
+    
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "Switch"
+    NODE_CATEGORY = "control_flow"
+    
+    def __init__(self) -> None:
+        """Initialize Switch node."""
+        super().__init__()
+        self.add_text_input("expression", "Expression", tab="properties")
+        self.add_text_input("cases", "Cases (comma-separated)", text="success,error,pending", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("value")
+        
+        # Cases will be created dynamically based on config
+        # But we need at least the default output
+        self.add_output("default")
+
+
 # Node registry mapping visual nodes to CasareRPA nodes
 VISUAL_NODE_CLASSES = [
     # Basic
@@ -683,4 +740,7 @@ VISUAL_NODE_CLASSES = [
     VisualIfNode,
     VisualForLoopNode,
     VisualWhileLoopNode,
+    VisualBreakNode,
+    VisualContinueNode,
+    VisualSwitchNode,
 ]

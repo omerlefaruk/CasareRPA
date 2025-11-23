@@ -153,7 +153,7 @@ class WorkflowRunner:
                 f"-> {connection.target_node}.{connection.target_port} = {value}"
             )
     
-    async def _execute_node(self, node: BaseNode) -> bool:
+    async def _execute_node(self, node: BaseNode) -> tuple[bool, Optional[Dict[str, Any]]]:
         """
         Execute a single node.
         
@@ -161,7 +161,7 @@ class WorkflowRunner:
             node: The node to execute
             
         Returns:
-            True if execution succeeded, False otherwise
+            Tuple of (success: bool, result: dict) where result contains execution data
         """
         self.current_node_id = node.node_id
         node.status = NodeStatus.RUNNING
@@ -180,7 +180,7 @@ class WorkflowRunner:
                     "node_id": node.node_id,
                     "error": "Validation failed"
                 })
-                return False
+                return False, None
             
             # Execute the node
             result = await node.execute(self.context)
@@ -196,7 +196,7 @@ class WorkflowRunner:
                 })
                 
                 logger.info(f"Node executed successfully: {node.node_id}")
-                return True
+                return True, result
             else:
                 node.status = NodeStatus.ERROR
                 error_msg = result.get("error", "Unknown error") if result else "No result"
@@ -205,7 +205,7 @@ class WorkflowRunner:
                     "error": error_msg
                 })
                 logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
-                return False
+                return False, result
                 
         except Exception as e:
             node.status = NodeStatus.ERROR
@@ -217,7 +217,7 @@ class WorkflowRunner:
             })
             
             logger.exception(f"Exception during node execution: {node.node_id}")
-            return False
+            return False, None
     
     async def _execute_workflow(self) -> None:
         """Execute the workflow from start to finish."""
@@ -235,8 +235,9 @@ class WorkflowRunner:
             
             current_node = nodes_to_execute.pop(0)
             
-            # Skip if already executed
-            if current_node.node_id in self.executed_nodes:
+            # Skip if already executed (except for loops which need re-execution)
+            is_loop_node = current_node.__class__.__name__ in ["ForLoopNode", "WhileLoopNode"]
+            if current_node.node_id in self.executed_nodes and not is_loop_node:
                 continue
             
             # Transfer data from connected input ports
@@ -245,16 +246,49 @@ class WorkflowRunner:
                     self._transfer_data(connection)
             
             # Execute the node
-            success = await self._execute_node(current_node)
+            success, result = await self._execute_node(current_node)
             
             if not success:
                 # Stop on error (can be made configurable)
                 logger.warning(f"Stopping workflow due to node error: {current_node.node_id}")
                 break
             
-            # Get next nodes to execute
-            next_nodes = self._get_next_nodes(current_node.node_id)
-            nodes_to_execute.extend(next_nodes)
+            # Check for control flow signals (break/continue)
+            control_flow = result.get("control_flow") if result else None
+            
+            if control_flow == "break":
+                # Break from loop - find the loop node and skip to its 'completed' output
+                logger.info(f"Break signal received from {current_node.node_id}")
+                # Clear any remaining loop body nodes from queue
+                # The loop node itself should handle the break by routing to 'completed'
+                continue
+            elif control_flow == "continue":
+                # Continue to next iteration - skip remaining loop body
+                logger.info(f"Continue signal received from {current_node.node_id}")
+                # The loop node will be re-executed to advance to next iteration
+                continue
+            
+            # Get next nodes based on execution result
+            if result and "next_nodes" in result:
+                # Dynamic routing - use the next_nodes from result
+                next_port_names = result["next_nodes"]
+                next_nodes = []
+                
+                for port_name in next_port_names:
+                    # Find connections from current node's specific output port
+                    for connection in self.workflow.connections:
+                        if (connection.source_node == current_node.node_id and 
+                            connection.source_port == port_name):
+                            target_node_id = connection.target_node
+                            if target_node_id in self.workflow.nodes:
+                                next_nodes.append(self.workflow.nodes[target_node_id])
+                                logger.debug(f"Dynamic routing: {current_node.node_id}.{port_name} -> {target_node_id}")
+                
+                nodes_to_execute.extend(next_nodes)
+            else:
+                # Fallback to all connected outputs (old behavior)
+                next_nodes = self._get_next_nodes(current_node.node_id)
+                nodes_to_execute.extend(next_nodes)
     
     async def run(self) -> bool:
         """
