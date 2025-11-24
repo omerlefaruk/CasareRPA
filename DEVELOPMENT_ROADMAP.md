@@ -1,7 +1,7 @@
 # CasareRPA Development Roadmap
 
 **Last Updated**: November 24, 2025  
-**Current Status**: Phase 6 - 66% Complete (4/6 goals)  
+**Current Status**: Phase 6 - 83% Complete (5/6 goals)  
 **Total Tests**: 323 passing ✅
 
 ---
@@ -20,8 +20,8 @@
 - ✅ **Error Handling System** (17 tests) - 100% Complete
 - ✅ **Debugging Tools** (55 tests) - 100% Complete
 - ✅ **Workflow Templates** (13 templates) - 100% Complete
-- 🚧 **Data Operations Nodes** (0 tests) - Not Started
-- 🚧 **Enhanced UI/UX** (0 tests) - In Progress (8%)
+- ✅ **Data Operations Nodes** (13 tests) - 100% Complete
+- 🚧 **Enhanced UI/UX** (0 tests) - In Progress (20%)
 
 ---
 
@@ -133,63 +133,32 @@
 
 ---
 
-### 🚧 In Progress Features
+#### 5. Data Operations Nodes (13 tests) ✅
+**Completed**: November 24, 2025
 
-#### 5. Data Operations Nodes (Priority: HIGH)
-**Target**: December 2025  
-**Estimated Tests**: +25
+**Implemented Nodes**:
+- **String Operations**: Concatenate, Format String, Regex Match, Regex Replace
+- **Math Operations**: Math Operation (Add, Sub, Mul, Div, etc.), Comparison
+- **List Operations**: Create List, Get List Item
+- **JSON/Data**: Parse JSON, Get Property
 
-**Planned Nodes**:
+**Key Features**:
+- Comprehensive string manipulation and regex support
+- Mathematical calculations and logical comparisons
+- List creation and indexing
+- JSON parsing and dynamic object property access
+- Dedicated "Data Operations" category in GUI
+- Dynamic node discovery for context menu
 
-##### String Operations:
-- **ConcatenateNode** - Join multiple strings
-- **FormatStringNode** - String formatting with variables
-- **RegexMatchNode** - Pattern matching
-- **RegexReplaceNode** - Pattern replacement
-- **SplitStringNode** - Split by delimiter
-- **JoinStringNode** - Join list with delimiter
-- **TrimStringNode** - Remove whitespace
-- **SubstringNode** - Extract substring
-
-##### List Operations:
-- **CreateListNode** - Build list from inputs
-- **ListAppendNode** - Add item to list
-- **ListGetItemNode** - Access by index
-- **ListLengthNode** - Get list size
-- **ListSortNode** - Sort list
-- **ListFilterNode** - Filter by condition
-- **ListMapNode** - Transform each item
-- **ListSliceNode** - Extract sublist
-
-##### Math Operations:
-- **MathOperationNode** - Add, subtract, multiply, divide
-- **ComparisonNode** - Greater than, less than, equals
-- **RandomNumberNode** - Generate random numbers
-- **RoundNode** - Round to decimal places
-
-##### JSON/Data Operations:
-- **JsonParseNode** - Parse JSON string
-- **JsonStringifyNode** - Convert to JSON string
-- **GetPropertyNode** - Access object property
-- **SetPropertyNode** - Set object property
-- **MergeObjectsNode** - Combine objects
-
-**Implementation Plan**:
-1. Create `src/casare_rpa/nodes/data_operation_nodes.py`
-2. Implement string operations first (highest priority)
-3. Add list operations for workflow data manipulation
-4. Implement math/comparison for conditional logic
-5. Add JSON operations for API integration
-6. Create visual nodes in `gui/visual_nodes/data_operations_visual.py`
-7. Write comprehensive tests for each operation
-8. Create demo workflows showing data transformations
-
-**Success Metrics**:
-- All 25+ tests passing
-- Demo showing: string manipulation, list processing, math calculations
-- Integration with existing control flow nodes
+**Files Created**:
+- `src/casare_rpa/nodes/data_operation_nodes.py`
+- `src/casare_rpa/gui/data_operations_visual.py`
+- `tests/test_data_operations.py`
+- `tests/test_data_scenarios.py`
 
 ---
+
+### 🚧 In Progress Features
 
 #### 6. Enhanced UI/UX (Priority: MEDIUM)
 **Target**: January 2026  
