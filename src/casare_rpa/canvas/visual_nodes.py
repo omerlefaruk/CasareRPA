@@ -1566,6 +1566,289 @@ class VisualCompareImagesNode(VisualNode):
         self.add_output("method")
 
 
+# ============================================================
+# Office Automation Visual Nodes (Bite 11)
+# ============================================================
+
+class VisualExcelOpenNode(VisualNode):
+    """Visual representation of ExcelOpenNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Open"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Excel Open node."""
+        super().__init__()
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("visible", False, widget_type=1, tab="config")
+        self.create_property("create_if_missing", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("file_path")
+        self.add_output("exec_out")
+        self.add_output("workbook")
+        self.add_output("app")
+        self.add_output("success")
+
+
+class VisualExcelReadCellNode(VisualNode):
+    """Visual representation of ExcelReadCellNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Read Cell"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Excel Read Cell node."""
+        super().__init__()
+        self.add_text_input("cell", "Cell (e.g., A1)", text="A1", tab="inputs")
+        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("sheet")
+        self.add_input("cell")
+        self.add_output("exec_out")
+        self.add_output("value")
+        self.add_output("success")
+
+
+class VisualExcelWriteCellNode(VisualNode):
+    """Visual representation of ExcelWriteCellNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Write Cell"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Excel Write Cell node."""
+        super().__init__()
+        self.add_text_input("cell", "Cell (e.g., A1)", text="A1", tab="inputs")
+        self.add_text_input("value", "Value", text="", tab="inputs")
+        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("sheet")
+        self.add_input("cell")
+        self.add_input("value")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualExcelGetRangeNode(VisualNode):
+    """Visual representation of ExcelGetRangeNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Get Range"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Excel Get Range node."""
+        super().__init__()
+        self.add_text_input("range", "Range (e.g., A1:C10)", text="A1:C10", tab="inputs")
+        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("sheet")
+        self.add_input("range")
+        self.add_output("exec_out")
+        self.add_output("data")
+        self.add_output("rows")
+        self.add_output("columns")
+        self.add_output("success")
+
+
+class VisualExcelCloseNode(VisualNode):
+    """Visual representation of ExcelCloseNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Close"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Excel Close node."""
+        super().__init__()
+        self.create_property("save", True, widget_type=1, tab="config")
+        self.create_property("quit_app", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("app")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualWordOpenNode(VisualNode):
+    """Visual representation of WordOpenNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Open"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Word Open node."""
+        super().__init__()
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("visible", False, widget_type=1, tab="config")
+        self.create_property("create_if_missing", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("file_path")
+        self.add_output("exec_out")
+        self.add_output("document")
+        self.add_output("app")
+        self.add_output("success")
+
+
+class VisualWordGetTextNode(VisualNode):
+    """Visual representation of WordGetTextNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Get Text"
+    NODE_CATEGORY = "office_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_output("exec_out")
+        self.add_output("text")
+        self.add_output("word_count")
+        self.add_output("success")
+
+
+class VisualWordReplaceTextNode(VisualNode):
+    """Visual representation of WordReplaceTextNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Replace Text"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Word Replace Text node."""
+        super().__init__()
+        self.add_text_input("find_text", "Find Text", text="", tab="inputs")
+        self.add_text_input("replace_text", "Replace With", text="", tab="inputs")
+        self.create_property("match_case", False, widget_type=1, tab="config")
+        self.create_property("replace_all", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_input("find_text")
+        self.add_input("replace_text")
+        self.add_output("exec_out")
+        self.add_output("replacements")
+        self.add_output("success")
+
+
+class VisualWordCloseNode(VisualNode):
+    """Visual representation of WordCloseNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Close"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Word Close node."""
+        super().__init__()
+        self.create_property("save", True, widget_type=1, tab="config")
+        self.create_property("quit_app", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_input("app")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualOutlookSendEmailNode(VisualNode):
+    """Visual representation of OutlookSendEmailNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Send Email"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Outlook Send Email node."""
+        super().__init__()
+        self.add_text_input("to", "To", text="", tab="inputs")
+        self.add_text_input("subject", "Subject", text="", tab="inputs")
+        self.add_text_input("body", "Body", text="", tab="inputs")
+        self.add_text_input("cc", "CC", text="", tab="inputs")
+        self.add_text_input("bcc", "BCC", text="", tab="inputs")
+        self.create_property("html_body", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("to")
+        self.add_input("subject")
+        self.add_input("body")
+        self.add_input("cc")
+        self.add_input("bcc")
+        self.add_input("attachments")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualOutlookReadEmailsNode(VisualNode):
+    """Visual representation of OutlookReadEmailsNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Read Emails"
+    NODE_CATEGORY = "office_automation"
+
+    def __init__(self) -> None:
+        """Initialize Outlook Read Emails node."""
+        super().__init__()
+        self.add_text_input("folder", "Folder", text="Inbox", tab="config")
+        self.create_property("count", 10, widget_type=2, tab="config")
+        self.create_property("unread_only", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+        self.add_output("emails")
+        self.add_output("count")
+        self.add_output("success")
+
+
+class VisualOutlookGetInboxCountNode(VisualNode):
+    """Visual representation of OutlookGetInboxCountNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Get Inbox Count"
+    NODE_CATEGORY = "office_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+        self.add_output("total_count")
+        self.add_output("unread_count")
+        self.add_output("success")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""
