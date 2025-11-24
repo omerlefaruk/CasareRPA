@@ -66,6 +66,20 @@ from .error_handling_nodes import (
     ThrowErrorNode
 )
 
+# Data operation nodes
+from .data_operation_nodes import (
+    ConcatenateNode,
+    FormatStringNode,
+    RegexMatchNode,
+    RegexReplaceNode,
+    MathOperationNode,
+    ComparisonNode,
+    CreateListNode,
+    ListGetItemNode,
+    JsonParseNode,
+    GetPropertyNode
+)
+
 __all__ = [
     "__version__",
     # Basic nodes
@@ -110,4 +124,15 @@ __all__ = [
     "RetrySuccessNode",
     "RetryFailNode",
     "ThrowErrorNode",
+    # Data operation nodes
+    "ConcatenateNode",
+    "FormatStringNode",
+    "RegexMatchNode",
+    "RegexReplaceNode",
+    "MathOperationNode",
+    "ComparisonNode",
+    "CreateListNode",
+    "ListGetItemNode",
+    "JsonParseNode",
+    "GetPropertyNode",
 ]
