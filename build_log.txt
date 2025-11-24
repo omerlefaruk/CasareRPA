@@ -1,0 +1,77 @@
+434 INFO: PyInstaller: 6.16.0, contrib hooks: 2025.10
+435 INFO: Python: 3.13.9 (conda)
+498 INFO: Platform: Windows-11-10.0.26100-SP0
+498 INFO: Python environment: C:\Users\Rau\miniconda3
+499 INFO: wrote C:\Users\Rau\Desktop\CasareRPA\CasareRPA-Canvas.spec
+503 INFO: Removing temporary files and cleaning cache in C:\Users\Rau\AppData\Local\pyinstaller
+506 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\Rau\\miniconda3\\Scripts\\pyinstaller.exe',
+ 'C:\\Users\\Rau\\miniconda3\\python313.zip',
+ 'C:\\Users\\Rau\\miniconda3\\DLLs',
+ 'C:\\Users\\Rau\\miniconda3\\Lib',
+ 'C:\\Users\\Rau\\miniconda3',
+ 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages',
+ 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\win32',
+ 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\win32\\lib',
+ 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\Pythonwin',
+ 'C:\\Users\\Rau\\Desktop\\CasareRPA']
+1268 INFO: Appending 'datas' from .spec
+1279 INFO: checking Analysis
+1280 INFO: Building Analysis because Analysis-00.toc is non existent
+1280 INFO: Looking for Python shared library...
+1280 INFO: Using Python shared library: C:\Users\Rau\miniconda3\python313.dll
+1280 INFO: Running Analysis Analysis-00.toc
+1280 INFO: Target bytecode optimization level: 0
+1280 INFO: Initializing module dependency graph...
+1282 INFO: Initializing module graph hook caches...
+1299 INFO: Analyzing modules for base_library.zip ...
+3689 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+6117 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+7215 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+7717 INFO: Caching module dependency graph...
+7771 INFO: Analyzing C:\Users\Rau\Desktop\CasareRPA\run.py
+7773 INFO: Analyzing hidden import 'PySide6.QtSvg'
+7779 INFO: Processing standard module hook 'hook-PySide6.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+7975 INFO: Processing standard module hook 'hook-shiboken6.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+8181 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+9422 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+9672 INFO: Processing standard module hook 'hook-PySide6.QtSvg.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+10803 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+11258 INFO: Processing module hooks (post-graph stage)...
+11267 INFO: Performing binary vs. data reclassification (260 entries)
+11351 INFO: Looking for ctypes DLLs
+11355 INFO: Analyzing run-time hooks ...
+11356 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+11359 INFO: Including run-time hook 'pyi_rth_pyside6.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+11361 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+11363 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PyInstaller\\hooks'
+11375 INFO: Creating base_library.zip...
+11395 INFO: Looking for dynamic libraries
+11572 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\shiboken6']
+11572 INFO: Extra DLL search directories (PATH): ['C:\\Users\\Rau\\miniconda3\\Lib\\site-packages\\PySide6']
+12834 INFO: Warnings written to C:\Users\Rau\Desktop\CasareRPA\build\CasareRPA-Canvas\warn-CasareRPA-Canvas.txt
+12850 INFO: Graph cross-reference written to C:\Users\Rau\Desktop\CasareRPA\build\CasareRPA-Canvas\xref-CasareRPA-Canvas.html
+12876 INFO: checking PYZ
+12877 INFO: Building PYZ because PYZ-00.toc is non existent
+12877 INFO: Building PYZ (ZlibArchive) C:\Users\Rau\Desktop\CasareRPA\build\CasareRPA-Canvas\PYZ-00.pyz
+12994 INFO: Building PYZ (ZlibArchive) C:\Users\Rau\Desktop\CasareRPA\build\CasareRPA-Canvas\PYZ-00.pyz completed successfully.
+12998 INFO: checking PKG
+12999 INFO: Building PKG because PKG-00.toc is non existent
+12999 INFO: Building PKG (CArchive) CasareRPA-Canvas.pkg
+13021 INFO: Building PKG (CArchive) CasareRPA-Canvas.pkg completed successfully.
+13022 INFO: Bootloader C:\Users\Rau\miniconda3\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+13022 INFO: checking EXE
+13022 INFO: Building EXE because EXE-00.toc is non existent
+13022 INFO: Building EXE from EXE-00.toc
+13022 INFO: Copying bootloader EXE to C:\Users\Rau\Desktop\CasareRPA\build\CasareRPA-Canvas\CasareRPA-Canvas.exe
+13066 INFO: Copying icon to EXE
+13105 INFO: Copying 0 resources to EXE
+13105 INFO: Embedding manifest in EXE
+13142 INFO: Appending PKG archive to EXE
+13216 INFO: Fixing EXE headers
+13442 INFO: Building EXE from EXE-00.toc completed successfully.
+13446 INFO: checking COLLECT
+13446 INFO: Building COLLECT because COLLECT-00.toc is non existent
+13446 INFO: Building COLLECT COLLECT-00.toc
+14114 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+14121 INFO: Build complete! The results are available in: C:\Users\Rau\Desktop\CasareRPA\dist
