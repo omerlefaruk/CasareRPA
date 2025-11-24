@@ -44,7 +44,11 @@ class DesktopContext:
         logger.debug(f"Finding window: '{title}' (exact={exact}, timeout={timeout}s)")
         
         start_time = time.time()
+        check_count = 0
+        max_quick_checks = 30  # Check 30 times (3 seconds) before slowing down
+        
         while time.time() - start_time < timeout:
+            check_count += 1
             try:
                 if exact:
                     window = auto.WindowControl(searchDepth=1, Name=title)
@@ -57,7 +61,11 @@ class DesktopContext:
             except Exception as e:
                 logger.debug(f"Window search attempt failed: {e}")
             
-            time.sleep(0.1)
+            # Quick checks for first 3 seconds, then slow down
+            if check_count < max_quick_checks:
+                time.sleep(0.1)  # Check every 100ms for first 3 seconds
+            else:
+                time.sleep(0.5)  # Then check every 500ms to avoid wasting CPU
         
         error_msg = f"Window not found: '{title}' (exact={exact})"
         logger.error(error_msg)
@@ -136,26 +144,51 @@ class DesktopContext:
                 exe_name = os.path.splitext(os.path.basename(path))[0]
                 window_title = exe_name
             
+            # Use a shorter timeout for window search (3 seconds should be enough)
+            # Most apps show a window within 1-2 seconds
+            window_search_timeout = min(timeout, 3.0)
+            
             try:
-                window = self.find_window(window_title, exact=False, timeout=timeout)
+                window = self.find_window(window_title, exact=False, timeout=window_search_timeout)
                 logger.info(f"Application launched successfully: {window_title}")
                 return window
             except ValueError:
                 # If we can't find by title, try to find by process ID
-                logger.warning(f"Could not find window by title '{window_title}', searching by process...")
+                logger.warning(f"Could not find window by title '{window_title}' after {window_search_timeout}s, searching by process...")
                 
-                # Give more time for window to appear
-                time.sleep(1.0)
+                # No additional sleep - go straight to process-based search
+                # time.sleep(1.0)  # Removed - unnecessary delay
                 
-                # Try to find any window from this process
-                for window_elem in self.get_all_windows():
-                    try:
-                        # This is a best-effort attempt
-                        if window_elem._control.ProcessId == process.pid:
-                            logger.info(f"Found window by process ID: {window_elem.get_text()}")
-                            return window_elem
-                    except:
-                        pass
+                # Try to find any window from this process (with timeout)
+                logger.debug(f"Searching for windows from PID {process.pid}...")
+                search_start = time.time()
+                max_search_time = 3.0  # Maximum 3 seconds for process-based search
+                windows_checked = 0
+                
+                try:
+                    for window in auto.GetRootControl().GetChildren():
+                        # Check timeout
+                        if time.time() - search_start > max_search_time:
+                            logger.warning(f"Process-based window search timed out after checking {windows_checked} windows")
+                            break
+                        
+                        windows_checked += 1
+                        
+                        # Only check window controls
+                        if window.ControlTypeName == 'WindowControl' and window.IsEnabled:
+                            try:
+                                if window.ProcessId == process.pid:
+                                    window_elem = DesktopElement(window)
+                                    window_title_found = window_elem.get_text()
+                                    logger.info(f"Found window by process ID: {window_title_found}")
+                                    return window_elem
+                            except Exception as e:
+                                logger.debug(f"Error checking window: {e}")
+                                continue
+                    
+                    logger.error(f"No window found for PID {process.pid} after checking {windows_checked} windows")
+                except Exception as e:
+                    logger.error(f"Error during process-based window search: {e}")
                 
                 raise RuntimeError(f"Failed to find window for application: {path}")
                 
