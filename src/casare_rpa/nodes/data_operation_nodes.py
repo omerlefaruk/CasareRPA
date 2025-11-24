@@ -7,7 +7,7 @@ math operations, list handling, and JSON processing.
 
 from typing import Any, Dict, List, Optional, Union
 import re
-import json
+import orjson
 import math
 import random
 from loguru import logger
@@ -435,7 +435,7 @@ class JsonParseNode(BaseNode):
             if not json_str:
                 raise ValueError("Empty JSON string")
 
-            data = json.loads(json_str)
+            data = orjson.loads(json_str)
             self.set_output_value("data", data)
             self.status = NodeStatus.SUCCESS
             return {
