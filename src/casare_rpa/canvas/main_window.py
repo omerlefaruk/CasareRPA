@@ -294,7 +294,12 @@ class MainWindow(QMainWindow):
         self.action_hotkey_manager.setShortcut(QKeySequence("Ctrl+K, Ctrl+S"))
         self.action_hotkey_manager.setStatusTip("View and customize keyboard shortcuts")
         self.action_hotkey_manager.triggered.connect(self._on_open_hotkey_manager)
-        
+
+        self.action_desktop_selector_builder = QAction("🎯 Desktop Selector Builder", self)
+        self.action_desktop_selector_builder.setShortcut(QKeySequence("Ctrl+Shift+D"))
+        self.action_desktop_selector_builder.setStatusTip("Build desktop element selectors visually (Ctrl+Shift+D)")
+        self.action_desktop_selector_builder.triggered.connect(self._on_open_desktop_selector_builder)
+
         # Help actions
         self.action_about = QAction("&About", self)
         self.action_about.setStatusTip("About CasareRPA")
@@ -387,6 +392,8 @@ class MainWindow(QMainWindow):
         tools_menu = menubar.addMenu("&Tools")
         tools_menu.addAction(self.action_pick_selector)
         tools_menu.addAction(self.action_record_workflow)
+        tools_menu.addSeparator()
+        tools_menu.addAction(self.action_desktop_selector_builder)
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_hotkey_manager)
         
@@ -821,7 +828,29 @@ class MainWindow(QMainWindow):
         """Handle recording mode toggle."""
         # This will be connected in app.py to start/stop recording
         pass
-    
+
+    def _on_open_desktop_selector_builder(self) -> None:
+        """Open the Desktop Selector Builder dialog."""
+        try:
+            from .desktop_selector_builder import DesktopSelectorBuilder
+
+            dialog = DesktopSelectorBuilder(parent=self)
+
+            if dialog.exec():
+                selector = dialog.get_selected_selector()
+                if selector:
+                    logger.info(f"Selector selected from builder: {selector}")
+                    # User can copy selector from here
+
+        except Exception as e:
+            logger.error(f"Failed to open desktop selector builder: {e}")
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to open Desktop Selector Builder:\n{str(e)}"
+            )
+
     def set_browser_running(self, running: bool) -> None:
         """
         Enable/disable browser-dependent actions.

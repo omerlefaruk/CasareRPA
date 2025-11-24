@@ -35,12 +35,9 @@ class VisualNode(NodeGraphQtBaseNode):
         
         # Reference to the underlying CasareRPA node
         self._casare_node: Optional[CasareBaseNode] = None
-        
-        # Set node colors to match reference image
-        # Dark background with dark gray border
-        self.set_color(45, 45, 45)  # Dark node background
-        self.model.border_color = (68, 68, 68, 255)  # Dark gray border
-        self.model.text_color = (220, 220, 220, 255)  # Light gray text
+
+        # Set node colors with category-based accents
+        self._apply_category_colors()
         
         # Configure selection colors - transparent overlay, yellow border
         self.model.selected_color = (0, 0, 0, 0)  # Transparent selection overlay (no body color change)
@@ -68,40 +65,34 @@ class VisualNode(NodeGraphQtBaseNode):
         
         # Style text input widgets after they're created
         self._style_text_inputs()
-    
+
+    def _apply_category_colors(self) -> None:
+        """Apply category-based colors to the node."""
+        from .node_icons import get_node_color, CATEGORY_COLORS
+
+        # Get category color
+        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(68, 68, 68))
+
+        # Dark background (same for all nodes)
+        self.set_color(45, 45, 45)
+
+        # Category-colored border (subtle accent)
+        # Use darker/more subtle version of category color for border
+        border_r = int(category_color.red() * 0.7)
+        border_g = int(category_color.green() * 0.7)
+        border_b = int(category_color.blue() * 0.7)
+        self.model.border_color = (border_r, border_g, border_b, 255)
+
+        # Light gray text
+        self.model.text_color = (220, 220, 220, 255)
+
     def _create_temp_icon(self) -> str:
-        """Create a temporary icon placeholder."""
-        # Create a simple colored square as placeholder
-        size = 24
-        pixmap = QPixmap(size, size)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
-        # Draw a rounded square with category color
-        category_colors = {
-            'basic': QColor(100, 181, 246),     # Light blue
-            'browser': QColor(156, 39, 176),    # Purple
-            'navigation': QColor(66, 165, 245),  # Blue
-            'interaction': QColor(255, 167, 38), # Orange
-            'data': QColor(102, 187, 106),       # Green
-            'wait': QColor(255, 202, 40),        # Yellow
-            'variable': QColor(171, 71, 188),    # Deep purple
-        }
-        
-        color = category_colors.get(self.NODE_CATEGORY, QColor(158, 158, 158))
-        painter.setBrush(QBrush(color))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(2, 2, size-4, size-4, 4, 4)
-        painter.end()
-        
-        # Save to temp file and return path
-        import tempfile
-        import os
-        temp_path = os.path.join(tempfile.gettempdir(), f"casare_icon_{id(self)}.png")
-        pixmap.save(temp_path, "PNG")
-        return temp_path
+        """Create a professional icon for this node type."""
+        from .node_icons import get_cached_node_icon
+
+        # Use the node name to get the appropriate icon
+        node_name = self.NODE_NAME
+        return get_cached_node_icon(node_name, size=24)
     
     def setup_ports(self) -> None:
         """
