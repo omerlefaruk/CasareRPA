@@ -10,9 +10,9 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
-from casare_rpa.gui.main_window import MainWindow
-from casare_rpa.gui.node_graph_widget import NodeGraphWidget
-from casare_rpa.gui.app import CasareRPAApp
+from casare_rpa.canvas.main_window import MainWindow
+from casare_rpa.canvas.node_graph_widget import NodeGraphWidget
+from casare_rpa.canvas.app import CasareRPAApp
 
 
 class TestMainWindow:
@@ -275,8 +275,8 @@ class TestCasareRPAApp:
         """Test application can be created (using qapp fixture)."""
         # Use existing qapp instead of creating new CasareRPAApp
         # CasareRPAApp creates its own QApplication which conflicts
-        from casare_rpa.gui.main_window import MainWindow
-        from casare_rpa.gui.node_graph_widget import NodeGraphWidget
+        from casare_rpa.canvas.main_window import MainWindow
+        from casare_rpa.canvas.node_graph_widget import NodeGraphWidget
         
         window = MainWindow()
         node_graph = NodeGraphWidget()

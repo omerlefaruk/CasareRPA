@@ -5,8 +5,8 @@ Test script to verify selector integration in all browser-related nodes.
 import sys
 sys.path.insert(0, 'src')
 
-from casare_rpa.gui.selector_integration import SelectorIntegration
-from casare_rpa.gui.visual_nodes import (
+from casare_rpa.canvas.selector_integration import SelectorIntegration
+from casare_rpa.canvas.visual_nodes import (
     VisualClickElementNode,
     VisualTypeTextNode,
     VisualSelectDropdownNode,
@@ -38,7 +38,7 @@ def test_visual_nodes_with_selector():
 
 def test_app_integration():
     """Test that app.py has selector integration"""
-    from casare_rpa.gui.app import CasareRPAApp
+    from casare_rpa.canvas.app import CasareRPAApp
     
     # Check that the class exists
     assert hasattr(CasareRPAApp, '__init__')

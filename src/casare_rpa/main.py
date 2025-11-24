@@ -23,7 +23,7 @@ def main() -> NoReturn:
         logger.info("=" * 80)
 
         # Phase 3: GUI initialization will be added here
-        # from casare_rpa.gui import MainWindow
+        # from casare_rpa.canvas import MainWindow
         # app = QApplication(sys.argv)
         # window = MainWindow()
         # window.show()

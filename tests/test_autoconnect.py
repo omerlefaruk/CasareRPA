@@ -3,8 +3,8 @@ Test script for auto-connect feature.
 """
 import sys
 from PySide6.QtWidgets import QApplication
-from casare_rpa.gui import NodeGraphWidget
-from casare_rpa.gui.node_registry import get_node_registry
+from casare_rpa.canvas import NodeGraphWidget
+from casare_rpa.canvas.node_registry import get_node_registry
 
 def test_auto_connect():
     """Test that auto-connect initializes properly."""
