@@ -20,12 +20,13 @@ class VisualConcatenateNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Concatenate Strings'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('string_1', label='String 1')
-        self.add_input('string_2', label='String 2')
-        self.add_output('result', label='Result')
+        self.add_input('string_1')
+        self.add_input('string_2')
+        self.add_output('result')
         self.create_property('separator', '', widget_type='text_input')
 
     def get_node_class(self):
@@ -36,12 +37,13 @@ class VisualFormatStringNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Format String'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('template', label='Template')
-        self.add_input('variables', label='Variables (Dict)')
-        self.add_output('result', label='Result')
+        self.add_input('template')
+        self.add_input('variables')
+        self.add_output('result')
 
     def get_node_class(self):
         return FormatStringNode
@@ -51,15 +53,16 @@ class VisualRegexMatchNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Match'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('text', label='Text')
-        self.add_input('pattern', label='Pattern')
-        self.add_output('match_found', label='Match Found')
-        self.add_output('first_match', label='First Match')
-        self.add_output('all_matches', label='All Matches')
-        self.add_output('groups', label='Groups')
+        self.add_input('text')
+        self.add_input('pattern')
+        self.add_output('match_found')
+        self.add_output('first_match')
+        self.add_output('all_matches')
+        self.add_output('groups')
 
     def get_node_class(self):
         return RegexMatchNode
@@ -69,14 +72,15 @@ class VisualRegexReplaceNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Replace'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('text', label='Text')
-        self.add_input('pattern', label='Pattern')
-        self.add_input('replacement', label='Replacement')
-        self.add_output('result', label='Result')
-        self.add_output('count', label='Count')
+        self.add_input('text')
+        self.add_input('pattern')
+        self.add_input('replacement')
+        self.add_output('result')
+        self.add_output('count')
 
     def get_node_class(self):
         return RegexReplaceNode
@@ -86,12 +90,13 @@ class VisualMathOperationNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Math Operation'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('a', label='A')
-        self.add_input('b', label='B')
-        self.add_output('result', label='Result')
+        self.add_input('a')
+        self.add_input('b')
+        self.add_output('result')
         
         items = ['add', 'subtract', 'multiply', 'divide', 'power', 'modulo']
         self.create_property('operation', 'add', items=items, widget_type='combo')
@@ -104,12 +109,13 @@ class VisualComparisonNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Compare Values'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('a', label='A')
-        self.add_input('b', label='B')
-        self.add_output('result', label='Result')
+        self.add_input('a')
+        self.add_input('b')
+        self.add_output('result')
         
         items = ['==', '!=', '>', '<', '>=', '<=']
         self.create_property('operator', '==', items=items, widget_type='combo')
@@ -122,13 +128,14 @@ class VisualCreateListNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Create List'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('item_1', label='Item 1')
-        self.add_input('item_2', label='Item 2')
-        self.add_input('item_3', label='Item 3')
-        self.add_output('list', label='List')
+        self.add_input('item_1')
+        self.add_input('item_2')
+        self.add_input('item_3')
+        self.add_output('list')
 
     def get_node_class(self):
         return CreateListNode
@@ -138,12 +145,13 @@ class VisualListGetItemNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get List Item'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('list', label='List')
-        self.add_input('index', label='Index')
-        self.add_output('item', label='Item')
+        self.add_input('list')
+        self.add_input('index')
+        self.add_output('item')
 
     def get_node_class(self):
         return ListGetItemNode
@@ -153,11 +161,12 @@ class VisualJsonParseNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Parse JSON'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('json_string', label='JSON String')
-        self.add_output('data', label='Data')
+        self.add_input('json_string')
+        self.add_output('data')
 
     def get_node_class(self):
         return JsonParseNode
@@ -167,12 +176,13 @@ class VisualGetPropertyNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get Property'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
-        self.add_input('object', label='Object/Dict')
-        self.add_input('property_path', label='Property Path')
-        self.add_output('value', label='Value')
+        self.add_input('object')
+        self.add_input('property_path')
+        self.add_output('value')
 
     def get_node_class(self):
         return GetPropertyNode
