@@ -436,8 +436,8 @@ class NodeRegistry:
         qmenu._first_match = None  # Store first matched node for Enter key
         qmenu._initial_scene_pos = None  # Store initial mouse position when menu opens
         
-        # Organize nodes by category and add to menu (sorted A-Z)
-        for category, nodes in sorted(self._categories.items(), key=lambda x: x[0]):
+        # Organize nodes by category and add to menu (sorted A-Z, case-insensitive)
+        for category, nodes in sorted(self._categories.items(), key=lambda x: x[0].lower()):
             category_label = category.replace('_', ' ').title()
             category_menu = qmenu.addMenu(category_label)
             qmenu._category_menus[category_label] = category_menu
