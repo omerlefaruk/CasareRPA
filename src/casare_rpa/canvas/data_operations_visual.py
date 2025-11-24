@@ -20,7 +20,7 @@ class VisualConcatenateNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Concatenate Strings'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -37,7 +37,7 @@ class VisualFormatStringNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Format String'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -53,7 +53,7 @@ class VisualRegexMatchNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Match'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -72,7 +72,7 @@ class VisualRegexReplaceNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Replace'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -90,7 +90,7 @@ class VisualMathOperationNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Math Operation'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -109,7 +109,7 @@ class VisualComparisonNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Compare Values'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -128,7 +128,7 @@ class VisualCreateListNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Create List'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -145,7 +145,7 @@ class VisualListGetItemNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get List Item'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -161,7 +161,7 @@ class VisualJsonParseNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Parse JSON'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
@@ -176,7 +176,7 @@ class VisualGetPropertyNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get Property'
-    NODE_CATEGORY = 'Data Operations'
+    NODE_CATEGORY = 'data_operations'
     
     def __init__(self):
         super().__init__()
