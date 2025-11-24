@@ -8,6 +8,10 @@ from datetime import datetime
 from loguru import logger
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import orjson
+
+from casare_rpa.core.workflow_schema import WorkflowSchema
+from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 from .config import get_robot_id, ROBOT_NAME
 
@@ -117,19 +121,45 @@ class RobotAgent:
         job_id = job["id"]
         logger.info(f"Processing job {job_id}: {job['workflow']}")
         
-        # Update status to running
-        await asyncio.to_thread(
-            lambda: self.client.table("jobs").update({"status": "running"}).eq("id", job_id).execute()
-        )
-        
-        # TODO: Actual execution logic here
-        await asyncio.sleep(2) # Simulate work
-        
-        # Update status to success
-        await asyncio.to_thread(
-            lambda: self.client.table("jobs").update({"status": "success"}).eq("id", job_id).execute()
-        )
-        logger.info(f"Job {job_id} completed.")
+        try:
+            # Parse workflow JSON
+            workflow_json = job["workflow"]
+            if isinstance(workflow_json, str):
+                workflow_data = orjson.loads(workflow_json)
+            else:
+                workflow_data = workflow_json
+                
+            schema = WorkflowSchema.from_dict(workflow_data)
+            
+            # Initialize Runner
+            runner = WorkflowRunner(schema)
+            
+            # Update status to running
+            await asyncio.to_thread(
+                lambda: self.client.table("jobs").update({"status": "running"}).eq("id", job_id).execute()
+            )
+            
+            # Execute
+            success = await runner.run()
+            
+            # Update status based on result
+            final_status = "success" if success else "failed"
+            await asyncio.to_thread(
+                lambda: self.client.table("jobs").update({
+                    "status": final_status,
+                    # TODO: Capture logs
+                }).eq("id", job_id).execute()
+            )
+            logger.info(f"Job {job_id} completed with status: {final_status}")
+            
+        except Exception as e:
+            logger.error(f"Job execution failed: {e}")
+            await asyncio.to_thread(
+                lambda: self.client.table("jobs").update({
+                    "status": "failed",
+                    "logs": str(e)
+                }).eq("id", job_id).execute()
+            )
 
     def stop(self):
         """Stop the agent."""
