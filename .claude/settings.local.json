@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(pip install:*)",
+      "Bash(playwright install:*)"
     ],
     "deny": [],
     "ask": []

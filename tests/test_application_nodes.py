@@ -4,7 +4,7 @@
 These tests mock the `DesktopContext` used by the nodes to avoid real UI interactions.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from casare_rpa.core.execution_context import ExecutionContext
 from casare_rpa.nodes.desktop_nodes.application_nodes import (
@@ -33,9 +33,9 @@ def mock_window():
 
 @pytest.mark.asyncio
 async def test_launch_application_success(exec_context, mock_window):
-    # Mock DesktopContext and its launch_application method
+    # Mock DesktopContext and its launch_application method (sync, not async)
     mock_desktop = MagicMock()
-    mock_desktop.launch_application = AsyncMock(return_value=mock_window)
+    mock_desktop.launch_application = MagicMock(return_value=mock_window)
     exec_context.desktop_context = mock_desktop
 
     node = LaunchApplicationNode(node_id="launch1")
@@ -61,14 +61,14 @@ async def test_launch_application_missing_path(exec_context):
 @pytest.mark.asyncio
 async def test_close_application_success(exec_context, mock_window):
     mock_desktop = MagicMock()
-    mock_desktop.close_application = AsyncMock(return_value=True)
+    mock_desktop.close_application = MagicMock(return_value=True)
     exec_context.desktop_context = mock_desktop
 
     node = CloseApplicationNode(node_id="close1")
     # Provide window input via config (node reads from input ports, but we can set directly)
     node.config["force_close"] = False
-    # Simulate input values by setting node's internal ports directly
-    node.input_ports["window"].set_value(mock_window)
+    # Set input value directly through the port
+    node.input_ports["window"].value = mock_window
 
     result = await node.execute(exec_context)
     assert result["success"] is True
@@ -77,13 +77,15 @@ async def test_close_application_success(exec_context, mock_window):
 @pytest.mark.asyncio
 async def test_activate_window_success(exec_context, mock_window):
     mock_desktop = MagicMock()
-    mock_desktop.find_window = AsyncMock(return_value=mock_window)
+    mock_desktop.find_window = MagicMock(return_value=mock_window)
     exec_context.desktop_context = mock_desktop
 
     node = ActivateWindowNode(node_id="activate1")
     # Provide window title hint via config
     node.config["window_title_hint"] = "Mock Window Title"
-    # No window object provided, should trigger find_window
+    # Set input value directly
+    node.input_ports["window_title"].value = "Mock Window Title"
+
     result = await node.execute(exec_context)
     assert result["success"] is True
     assert result["window"] == mock_window
@@ -105,7 +107,7 @@ async def test_get_window_list_success(exec_context):
     win2.is_enabled.return_value = False
     win2.is_visible.return_value = True
     win2.get_bounding_rect.return_value = (10, 10, 200, 200)
-    mock_desktop.get_all_windows = AsyncMock(return_value=[win1, win2])
+    mock_desktop.get_all_windows = MagicMock(return_value=[win1, win2])
     exec_context.desktop_context = mock_desktop
 
     node = GetWindowListNode(node_id="list1")
