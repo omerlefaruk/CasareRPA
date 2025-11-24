@@ -8,22 +8,33 @@ performance when running multiple workflows or requiring many browser tabs.
 import asyncio
 import time
 from collections import deque
-from dataclasses import dataclass, field
 from typing import Any, Deque, Dict, List, Optional, Set
 from loguru import logger
 
 from playwright.async_api import Browser, BrowserContext, Page, Playwright
 
 
-@dataclass
 class PooledContext:
     """A browser context managed by the pool."""
 
-    context: BrowserContext
-    created_at: float = field(default_factory=time.time)
-    last_used: float = field(default_factory=time.time)
-    use_count: int = 0
-    is_in_use: bool = False
+    def __init__(self, context: BrowserContext):
+        """Initialize a pooled context."""
+        self.context = context
+        self.created_at = time.time()
+        self.last_used = time.time()
+        self.use_count = 0
+        self.is_in_use = False
+        self._id = id(context)  # Unique ID for hashing
+
+    def __hash__(self) -> int:
+        """Make PooledContext hashable by using unique ID."""
+        return self._id
+
+    def __eq__(self, other: object) -> bool:
+        """Compare by ID."""
+        if not isinstance(other, PooledContext):
+            return False
+        return self._id == other._id
 
     def mark_used(self) -> None:
         """Mark the context as used."""
