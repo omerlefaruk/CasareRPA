@@ -97,6 +97,11 @@ from .visual_nodes import (
     VisualSendHotKeyNode,
     VisualGetMousePositionNode,
     VisualDragMouseNode,
+    # Wait & Verification
+    VisualWaitForElementNode,
+    VisualWaitForWindowNode,
+    VisualVerifyElementExistsNode,
+    VisualVerifyElementPropertyNode,
 )
 
 from ..nodes import (
@@ -187,6 +192,11 @@ from ..nodes.desktop_nodes import (
     SendHotKeyNode as DesktopSendHotKeyNode,
     GetMousePositionNode as DesktopGetMousePositionNode,
     DragMouseNode as DesktopDragMouseNode,
+    # Wait & Verification
+    WaitForElementNode as DesktopWaitForElementNode,
+    WaitForWindowNode as DesktopWaitForWindowNode,
+    VerifyElementExistsNode as DesktopVerifyElementExistsNode,
+    VerifyElementPropertyNode as DesktopVerifyElementPropertyNode,
 )
 
 
@@ -277,6 +287,11 @@ CASARE_NODE_MAPPING = {
     VisualSendHotKeyNode: DesktopSendHotKeyNode,
     VisualGetMousePositionNode: DesktopGetMousePositionNode,
     VisualDragMouseNode: DesktopDragMouseNode,
+    # Wait & Verification
+    VisualWaitForElementNode: DesktopWaitForElementNode,
+    VisualWaitForWindowNode: DesktopWaitForWindowNode,
+    VisualVerifyElementExistsNode: DesktopVerifyElementExistsNode,
+    VisualVerifyElementPropertyNode: DesktopVerifyElementPropertyNode,
 }
 
 

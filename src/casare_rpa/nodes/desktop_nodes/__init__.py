@@ -47,6 +47,13 @@ from .mouse_keyboard_nodes import (
     DragMouseNode,
 )
 
+from .wait_verification_nodes import (
+    WaitForElementNode,
+    WaitForWindowNode,
+    VerifyElementExistsNode,
+    VerifyElementPropertyNode,
+)
+
 __all__ = [
     # Application nodes
     'LaunchApplicationNode',
@@ -81,4 +88,9 @@ __all__ = [
     'SendHotKeyNode',
     'GetMousePositionNode',
     'DragMouseNode',
+    # Wait and verification nodes
+    'WaitForElementNode',
+    'WaitForWindowNode',
+    'VerifyElementExistsNode',
+    'VerifyElementPropertyNode',
 ]

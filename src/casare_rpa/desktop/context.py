@@ -1326,6 +1326,285 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
+    # =========================================================================
+    # Wait & Verification Methods (Bite 8)
+    # =========================================================================
+
+    def wait_for_element(
+        self,
+        selector: dict,
+        timeout: float = 10.0,
+        state: str = "visible",
+        poll_interval: float = 0.5,
+        parent: auto.Control = None
+    ) -> Optional[DesktopElement]:
+        """
+        Wait for an element to reach a specific state.
+
+        Args:
+            selector: Element selector dictionary
+            timeout: Maximum wait time in seconds
+            state: State to wait for - "visible", "hidden", "enabled", "disabled"
+            poll_interval: Time between checks in seconds
+            parent: Parent control to search within (uses root if None)
+
+        Returns:
+            DesktopElement if found (for visible/enabled), None if hidden/disabled
+
+        Raises:
+            TimeoutError: If element doesn't reach state within timeout
+        """
+        valid_states = ["visible", "hidden", "enabled", "disabled"]
+        if state.lower() not in valid_states:
+            raise ValueError(f"Invalid state '{state}'. Must be one of: {valid_states}")
+
+        state = state.lower()
+        logger.debug(f"Waiting for element to be '{state}' (timeout={timeout}s)")
+
+        start_time = time.time()
+        last_element = None
+
+        while time.time() - start_time < timeout:
+            try:
+                element = self.find_element(selector, timeout=0.1, parent=parent)
+                last_element = element
+
+                if state == "visible":
+                    # Element found and should be visible
+                    if element and element.exists():
+                        logger.info(f"Element is visible")
+                        return element
+                elif state == "hidden":
+                    # Element should not exist or not be visible
+                    if not element or not element.exists():
+                        logger.info(f"Element is hidden/not found")
+                        return None
+                elif state == "enabled":
+                    # Element should be enabled
+                    if element and element._control.IsEnabled:
+                        logger.info(f"Element is enabled")
+                        return element
+                elif state == "disabled":
+                    # Element should be disabled
+                    if element and not element._control.IsEnabled:
+                        logger.info(f"Element is disabled")
+                        return element
+
+            except Exception:
+                # Element not found
+                if state == "hidden":
+                    logger.info(f"Element is hidden (not found)")
+                    return None
+
+            time.sleep(poll_interval)
+
+        # Timeout reached
+        elapsed = time.time() - start_time
+        raise TimeoutError(
+            f"Element did not become '{state}' within {timeout} seconds (elapsed: {elapsed:.1f}s)"
+        )
+
+    def wait_for_window(
+        self,
+        title: str = None,
+        title_regex: str = None,
+        class_name: str = None,
+        timeout: float = 10.0,
+        state: str = "visible",
+        poll_interval: float = 0.5
+    ) -> Optional[auto.Control]:
+        """
+        Wait for a window to reach a specific state.
+
+        Args:
+            title: Window title (partial match)
+            title_regex: Window title regex pattern
+            class_name: Window class name
+            timeout: Maximum wait time in seconds
+            state: State to wait for - "visible", "hidden"
+            poll_interval: Time between checks in seconds
+
+        Returns:
+            Window control if found (for visible), None if hidden
+
+        Raises:
+            TimeoutError: If window doesn't reach state within timeout
+            ValueError: If no search criteria provided
+        """
+        if not title and not title_regex and not class_name:
+            raise ValueError("Must provide at least one of: title, title_regex, class_name")
+
+        valid_states = ["visible", "hidden"]
+        if state.lower() not in valid_states:
+            raise ValueError(f"Invalid state '{state}'. Must be one of: {valid_states}")
+
+        state = state.lower()
+        logger.debug(f"Waiting for window to be '{state}' (timeout={timeout}s)")
+
+        import re
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            # Get all windows
+            windows = auto.GetRootControl().GetChildren()
+            window_found = None
+
+            for win in windows:
+                try:
+                    win_title = win.Name or ""
+
+                    # Check title match
+                    if title and title.lower() in win_title.lower():
+                        window_found = win
+                        break
+                    elif title_regex and re.search(title_regex, win_title):
+                        window_found = win
+                        break
+                    elif class_name and win.ClassName == class_name:
+                        window_found = win
+                        break
+                except Exception:
+                    continue
+
+            if state == "visible":
+                if window_found:
+                    logger.info(f"Window found: '{window_found.Name}'")
+                    return window_found
+            elif state == "hidden":
+                if not window_found:
+                    logger.info(f"Window is hidden/closed")
+                    return None
+
+            time.sleep(poll_interval)
+
+        # Timeout reached
+        elapsed = time.time() - start_time
+        search_desc = title or title_regex or class_name
+        raise TimeoutError(
+            f"Window '{search_desc}' did not become '{state}' within {timeout} seconds"
+        )
+
+    def element_exists(
+        self,
+        selector: dict,
+        timeout: float = 0.0,
+        parent: auto.Control = None
+    ) -> bool:
+        """
+        Check if an element exists.
+
+        Args:
+            selector: Element selector dictionary
+            timeout: Maximum time to search (0 for immediate check)
+            parent: Parent control to search within
+
+        Returns:
+            True if element exists, False otherwise
+        """
+        logger.debug(f"Checking if element exists: {selector}")
+
+        try:
+            element = self.find_element(selector, timeout=max(0.1, timeout), parent=parent)
+            exists = element is not None and element.exists()
+            logger.debug(f"Element exists: {exists}")
+            return exists
+        except Exception:
+            logger.debug(f"Element does not exist")
+            return False
+
+    def verify_element_property(
+        self,
+        element: DesktopElement,
+        property_name: str,
+        expected_value: any,
+        comparison: str = "equals"
+    ) -> bool:
+        """
+        Verify an element property has an expected value.
+
+        Args:
+            element: DesktopElement to check
+            property_name: Name of property to check (Name, ClassName, IsEnabled, etc.)
+            expected_value: Expected value of the property
+            comparison: Comparison type - "equals", "contains", "startswith", "endswith",
+                       "regex", "greater", "less", "not_equals"
+
+        Returns:
+            True if verification passes, False otherwise
+        """
+        valid_comparisons = [
+            "equals", "contains", "startswith", "endswith",
+            "regex", "greater", "less", "not_equals"
+        ]
+        if comparison.lower() not in valid_comparisons:
+            raise ValueError(f"Invalid comparison '{comparison}'. Must be one of: {valid_comparisons}")
+
+        comparison = comparison.lower()
+        logger.debug(f"Verifying element property '{property_name}' {comparison} '{expected_value}'")
+
+        try:
+            control = element._control
+
+            # Get the property value
+            actual_value = getattr(control, property_name, None)
+
+            # If property doesn't exist, try common patterns
+            if actual_value is None:
+                property_map = {
+                    "text": control.Name,
+                    "name": control.Name,
+                    "class": control.ClassName,
+                    "classname": control.ClassName,
+                    "enabled": control.IsEnabled,
+                    "isenabled": control.IsEnabled,
+                    "automation_id": control.AutomationId,
+                    "automationid": control.AutomationId,
+                }
+                actual_value = property_map.get(property_name.lower())
+
+            if actual_value is None:
+                logger.warning(f"Property '{property_name}' not found on element")
+                return False
+
+            # Perform comparison
+            result = False
+            actual_str = str(actual_value)
+            expected_str = str(expected_value)
+
+            if comparison == "equals":
+                result = actual_value == expected_value or actual_str == expected_str
+            elif comparison == "not_equals":
+                result = actual_value != expected_value and actual_str != expected_str
+            elif comparison == "contains":
+                result = expected_str.lower() in actual_str.lower()
+            elif comparison == "startswith":
+                result = actual_str.lower().startswith(expected_str.lower())
+            elif comparison == "endswith":
+                result = actual_str.lower().endswith(expected_str.lower())
+            elif comparison == "regex":
+                import re
+                result = bool(re.search(expected_str, actual_str))
+            elif comparison == "greater":
+                try:
+                    result = float(actual_value) > float(expected_value)
+                except (ValueError, TypeError):
+                    result = actual_str > expected_str
+            elif comparison == "less":
+                try:
+                    result = float(actual_value) < float(expected_value)
+                except (ValueError, TypeError):
+                    result = actual_str < expected_str
+
+            logger.info(
+                f"Property verification: '{property_name}' {comparison} '{expected_value}' -> "
+                f"actual='{actual_value}', result={result}"
+            )
+            return result
+
+        except Exception as e:
+            logger.error(f"Property verification failed: {e}")
+            return False
+
     def __enter__(self):
         """Context manager entry."""
         return self
