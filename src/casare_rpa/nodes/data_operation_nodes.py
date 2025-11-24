@@ -5,8 +5,8 @@ import math
 import random
 from loguru import logger
 
-from casare_rpa.core.base_node import BaseNode
-from casare_rpa.core.types import PortType, DataType, NodeStatus
+from ..core.base_node import BaseNode
+from ..core.types import PortType, DataType, NodeStatus
 
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""

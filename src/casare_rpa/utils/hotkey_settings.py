@@ -33,6 +33,7 @@ DEFAULT_HOTKEYS: Dict[str, List[str]] = {
     "fit_view": ["Ctrl+F"],
     "run": ["F3"],
     "stop": ["Shift+F3"],
+    "create_frame": ["Shift+W"],
     "hotkey_manager": ["Ctrl+K, Ctrl+S"],
 }
 
