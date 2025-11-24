@@ -32,7 +32,7 @@ def test_context_access():
 def test_app_browser_detection():
     """Test that app.py correctly references context"""
     import inspect
-    from casare_rpa.gui.app import CasareRPAApp
+    from casare_rpa.canvas.app import CasareRPAApp
     
     # Get source code of _check_browser_launch method
     source = inspect.getsource(CasareRPAApp._check_browser_launch)

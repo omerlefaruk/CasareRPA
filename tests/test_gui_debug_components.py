@@ -11,9 +11,9 @@ Tests for:
 import pytest
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt, QTimer
-from casare_rpa.gui.debug_toolbar import DebugToolbar
-from casare_rpa.gui.variable_inspector import VariableInspectorPanel
-from casare_rpa.gui.execution_history_viewer import ExecutionHistoryViewer
+from casare_rpa.canvas.debug_toolbar import DebugToolbar
+from casare_rpa.canvas.variable_inspector import VariableInspectorPanel
+from casare_rpa.canvas.execution_history_viewer import ExecutionHistoryViewer
 from casare_rpa.core.workflow_schema import WorkflowSchema, NodeConnection, WorkflowMetadata
 from casare_rpa.runner.workflow_runner import WorkflowRunner
 from casare_rpa.nodes.basic_nodes import StartNode, EndNode

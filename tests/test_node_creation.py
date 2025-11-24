@@ -12,8 +12,8 @@ from PySide6.QtWidgets import QApplication
 from NodeGraphQt import NodeGraph
 
 # Import our modules
-from casare_rpa.gui.node_registry import get_node_registry, get_node_factory
-from casare_rpa.gui.visual_nodes import VisualStartNode
+from casare_rpa.canvas.node_registry import get_node_registry, get_node_factory
+from casare_rpa.canvas.visual_nodes import VisualStartNode
 
 def test_node_creation(qapp):
     """Test that nodes are created with CasareRPA nodes attached."""

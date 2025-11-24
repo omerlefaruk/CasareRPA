@@ -1,7 +1,7 @@
 """Manual test for minimap overlay."""
 import sys
-from casare_rpa.gui import CasareRPAApp
-from casare_rpa.gui.node_graph_widget import NodeGraphWidget
+from casare_rpa.canvas import CasareRPAApp
+from casare_rpa.canvas.node_graph_widget import NodeGraphWidget
 
 def main():
     """Run minimap manual test."""

@@ -16,7 +16,7 @@ from pathlib import Path
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from casare_rpa.gui import CasareRPAApp
+from casare_rpa.canvas import CasareRPAApp
 from loguru import logger
 
 
