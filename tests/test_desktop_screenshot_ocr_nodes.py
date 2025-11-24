@@ -309,6 +309,110 @@ class TestOCRExtractTextNode:
 
         assert result['language'] == "deu"
 
+    @pytest.mark.asyncio
+    async def test_ocr_with_rapidocr_engine(self):
+        """Test OCR with RapidOCR engine selection"""
+        node = OCRExtractTextNode("ocr_8", config={"engine": "rapidocr"})
+        context = ExecutionContext()
+
+        mock_image = MockImage()
+        node.set_input_value("image", mock_image)
+
+        mock_desktop_ctx = Mock(spec=DesktopContext)
+        mock_desktop_ctx.ocr_extract_text.return_value = "RapidOCR Text"
+        context.desktop_context = mock_desktop_ctx
+
+        result = await node.execute(context)
+
+        assert result['success'] is True
+        assert result['text'] == "RapidOCR Text"
+        assert result['engine'] == "rapidocr"
+        mock_desktop_ctx.ocr_extract_text.assert_called_once_with(
+            image=mock_image,
+            image_path=None,
+            region=None,
+            language="eng",
+            config="",
+            engine="rapidocr"
+        )
+
+    @pytest.mark.asyncio
+    async def test_ocr_with_tesseract_engine(self):
+        """Test OCR with Tesseract engine selection"""
+        node = OCRExtractTextNode("ocr_9", config={"engine": "tesseract"})
+        context = ExecutionContext()
+
+        mock_image = MockImage()
+        node.set_input_value("image", mock_image)
+
+        mock_desktop_ctx = Mock(spec=DesktopContext)
+        mock_desktop_ctx.ocr_extract_text.return_value = "Tesseract Text"
+        context.desktop_context = mock_desktop_ctx
+
+        result = await node.execute(context)
+
+        assert result['success'] is True
+        assert result['engine'] == "tesseract"
+
+    @pytest.mark.asyncio
+    async def test_ocr_with_winocr_engine(self):
+        """Test OCR with Windows OCR engine selection"""
+        node = OCRExtractTextNode("ocr_10", config={"engine": "winocr"})
+        context = ExecutionContext()
+
+        mock_image = MockImage()
+        node.set_input_value("image", mock_image)
+
+        mock_desktop_ctx = Mock(spec=DesktopContext)
+        mock_desktop_ctx.ocr_extract_text.return_value = "WinOCR Text"
+        context.desktop_context = mock_desktop_ctx
+
+        result = await node.execute(context)
+
+        assert result['success'] is True
+        assert result['engine'] == "winocr"
+
+    @pytest.mark.asyncio
+    async def test_ocr_with_auto_engine(self):
+        """Test OCR with auto engine selection (default)"""
+        node = OCRExtractTextNode("ocr_11")
+        context = ExecutionContext()
+
+        mock_image = MockImage()
+        node.set_input_value("image", mock_image)
+
+        mock_desktop_ctx = Mock(spec=DesktopContext)
+        mock_desktop_ctx.ocr_extract_text.return_value = "Auto Text"
+        context.desktop_context = mock_desktop_ctx
+
+        result = await node.execute(context)
+
+        assert result['success'] is True
+        assert result['engine'] == "auto"
+
+    @pytest.mark.asyncio
+    async def test_ocr_engine_used_output(self):
+        """Test that engine_used output is set correctly"""
+        node = OCRExtractTextNode("ocr_12", config={"engine": "rapidocr"})
+        context = ExecutionContext()
+
+        mock_image = MockImage()
+        node.set_input_value("image", mock_image)
+
+        mock_desktop_ctx = Mock(spec=DesktopContext)
+        mock_desktop_ctx.ocr_extract_text.return_value = "Test"
+        context.desktop_context = mock_desktop_ctx
+
+        await node.execute(context)
+
+        engine_used = node.get_output_value("engine_used")
+        assert engine_used == "rapidocr"
+
+    def test_ocr_default_engine_config(self):
+        """Test that default engine config is 'auto'"""
+        node = OCRExtractTextNode("ocr_13")
+        assert node.config.get("engine") == "auto"
+
 
 class TestCompareImagesNode:
     """Test suite for CompareImagesNode"""

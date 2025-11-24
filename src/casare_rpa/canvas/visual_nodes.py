@@ -1524,6 +1524,9 @@ class VisualOCRExtractTextNode(VisualNode):
         """Initialize OCR Extract Text node."""
         super().__init__()
         self.add_text_input("image_path", "Image Path", text="", tab="inputs")
+        self.create_property("engine", "auto",
+                           items=["auto", "rapidocr", "tesseract", "winocr"],
+                           widget_type=3, tab="config")
         self.create_property("language", "eng", widget_type=0, tab="config")
         self.add_text_input("config", "Tesseract Config", text="", tab="config")
 
@@ -1535,6 +1538,7 @@ class VisualOCRExtractTextNode(VisualNode):
         self.add_input("region")
         self.add_output("exec_out")
         self.add_output("text")
+        self.add_output("engine_used")
         self.add_output("success")
 
 

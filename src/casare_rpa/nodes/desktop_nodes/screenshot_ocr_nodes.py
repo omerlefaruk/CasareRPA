@@ -164,16 +164,19 @@ class OCRExtractTextNode(BaseNode):
         - region: Dict with x, y, width, height for specific region (optional)
 
     Config:
+        - engine: OCR engine ('auto', 'rapidocr', 'tesseract', 'winocr')
         - language: Tesseract language code (default: eng)
         - config: Additional Tesseract config options
 
     Outputs:
         - text: Extracted text string
+        - engine_used: Which OCR engine was used
         - success: Whether extraction succeeded
     """
 
     def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "OCR Extract Text"):
         default_config = {
+            "engine": "auto",
             "language": "eng",
             "config": ""
         }
@@ -189,6 +192,7 @@ class OCRExtractTextNode(BaseNode):
         self.add_input_port("image_path", DataType.STRING, "Image file path (optional)")
         self.add_input_port("region", DataType.ANY, "Region dict (optional)")
         self.add_output_port("text", DataType.STRING, "Extracted text")
+        self.add_output_port("engine_used", DataType.STRING, "OCR engine used")
         self.add_output_port("success", DataType.BOOLEAN, "Extraction succeeded")
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -196,6 +200,7 @@ class OCRExtractTextNode(BaseNode):
         image = self.get_input_value("image")
         image_path = self.get_input_value("image_path")
         region = self.get_input_value("region")
+        engine = self.config.get("engine", "auto")
         language = self.config.get("language", "eng")
         ocr_config = self.config.get("config", "")
 
@@ -208,12 +213,14 @@ class OCRExtractTextNode(BaseNode):
             image_path=image_path,
             region=region,
             language=language,
-            config=ocr_config
+            config=ocr_config,
+            engine=engine
         )
 
         success = text is not None
 
         self.set_output_value("text", text or "")
+        self.set_output_value("engine_used", engine)
         self.set_output_value("success", success)
         self.status = NodeStatus.SUCCESS if success else NodeStatus.ERROR
 
@@ -221,6 +228,7 @@ class OCRExtractTextNode(BaseNode):
             "success": success,
             "text": text,
             "language": language,
+            "engine": engine,
             "char_count": len(text) if text else 0
         }
 

@@ -1718,7 +1718,8 @@ class DesktopContext:
         image_path: str = None,
         region: dict = None,
         language: str = "eng",
-        config: str = ""
+        config: str = "",
+        engine: str = "auto"
     ) -> Optional[str]:
         """
         Extract text from an image using OCR.
@@ -1729,12 +1730,18 @@ class DesktopContext:
             region: Dict with x, y, width, height to extract from specific region
             language: Tesseract language code (default: eng)
             config: Additional Tesseract config options
+            engine: OCR engine to use ('auto', 'rapidocr', 'tesseract', 'winocr')
+                   - 'auto': Try rapidocr -> tesseract -> winocr in order
+                   - 'rapidocr': Use RapidOCR (ONNX-based, no Tesseract needed)
+                   - 'tesseract': Use pytesseract (requires Tesseract installed)
+                   - 'winocr': Use Windows built-in OCR
 
         Returns:
             Extracted text string if successful, None otherwise
         """
         try:
             from PIL import Image
+            import numpy as np
 
             # Load image from path if needed
             if image is None and image_path:
@@ -1755,31 +1762,112 @@ class DesktopContext:
                 height = region.get("height", image.height)
                 image = image.crop((x, y, x + width, y + height))
 
-            # Try using pytesseract for OCR
-            try:
-                import pytesseract
-                text = pytesseract.image_to_string(image, lang=language, config=config)
-                text = text.strip()
-                logger.info(f"OCR extracted {len(text)} characters")
-                return text
-            except ImportError:
-                logger.warning("pytesseract not installed, trying Windows OCR")
+            # Define OCR engine functions
+            def try_rapidocr():
+                """Try RapidOCR (ONNX-based OCR)"""
+                try:
+                    from rapidocr_onnxruntime import RapidOCR
+                    ocr = RapidOCR()
+                    # Convert PIL to numpy array (RGB)
+                    img_array = np.array(image.convert('RGB'))
+                    result, _ = ocr(img_array)
+                    if result:
+                        # RapidOCR returns list of [box, text, confidence]
+                        text_parts = [item[1] for item in result]
+                        text = '\n'.join(text_parts)
+                        logger.info(f"RapidOCR extracted {len(text)} characters")
+                        return text.strip()
+                    return ""
+                except ImportError:
+                    logger.debug("rapidocr_onnxruntime not installed")
+                    return None
+                except Exception as e:
+                    logger.warning(f"RapidOCR failed: {e}")
+                    return None
 
-            # Fallback: Try Windows built-in OCR (requires windows-ocr package)
-            try:
-                import winocr
-                import asyncio
+            def try_tesseract():
+                """Try pytesseract"""
+                try:
+                    import pytesseract
+                    text = pytesseract.image_to_string(image, lang=language, config=config)
+                    text = text.strip()
+                    logger.info(f"Tesseract OCR extracted {len(text)} characters")
+                    return text
+                except ImportError:
+                    logger.debug("pytesseract not installed")
+                    return None
+                except Exception as e:
+                    logger.warning(f"Tesseract OCR failed: {e}")
+                    return None
 
-                async def do_ocr():
-                    result = await winocr.recognize_pil(image, lang=language)
-                    return result.text
+            def try_winocr():
+                """Try Windows OCR"""
+                try:
+                    import winocr
+                    import asyncio
 
-                loop = asyncio.get_event_loop()
-                text = loop.run_until_complete(do_ocr())
-                logger.info(f"Windows OCR extracted {len(text)} characters")
-                return text.strip()
-            except ImportError:
-                logger.error("No OCR engine available. Install pytesseract or winocr")
+                    async def do_ocr():
+                        result = await winocr.recognize_pil(image, lang=language)
+                        return result.text
+
+                    # Handle event loop properly
+                    try:
+                        loop = asyncio.get_running_loop()
+                        import concurrent.futures
+                        with concurrent.futures.ThreadPoolExecutor() as pool:
+                            future = pool.submit(asyncio.run, do_ocr())
+                            text = future.result()
+                    except RuntimeError:
+                        text = asyncio.run(do_ocr())
+
+                    logger.info(f"Windows OCR extracted {len(text)} characters")
+                    return text.strip()
+                except ImportError:
+                    logger.debug("winocr not installed")
+                    return None
+                except Exception as e:
+                    logger.warning(f"Windows OCR failed: {e}")
+                    return None
+
+            # Execute based on engine selection
+            if engine == "rapidocr":
+                result = try_rapidocr()
+                if result is not None:
+                    return result
+                logger.error("RapidOCR not available. Install: pip install rapidocr_onnxruntime")
+                return None
+
+            elif engine == "tesseract":
+                result = try_tesseract()
+                if result is not None:
+                    return result
+                logger.error("Tesseract not available. Install: pip install pytesseract")
+                return None
+
+            elif engine == "winocr":
+                result = try_winocr()
+                if result is not None:
+                    return result
+                logger.error("Windows OCR not available. Install: pip install winocr")
+                return None
+
+            else:  # auto mode - try all engines in order
+                # Try RapidOCR first (easiest to install, no external deps)
+                result = try_rapidocr()
+                if result is not None:
+                    return result
+
+                # Try Tesseract
+                result = try_tesseract()
+                if result is not None:
+                    return result
+
+                # Try Windows OCR
+                result = try_winocr()
+                if result is not None:
+                    return result
+
+                logger.error("No OCR engine available. Install one of: rapidocr_onnxruntime, pytesseract, winocr")
                 return None
 
         except Exception as e:
