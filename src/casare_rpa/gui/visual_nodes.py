@@ -702,6 +702,108 @@ class VisualThrowErrorNode(VisualNode):
         self.add_output("exec_out")
 
 
+# Desktop Automation Nodes
+
+class VisualLaunchApplicationNode(VisualNode):
+    """Visual representation of LaunchApplicationNode."""
+    
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Launch Application"
+    NODE_CATEGORY = "desktop_automation"
+    
+    def __init__(self) -> None:
+        """Initialize Launch Application node."""
+        super().__init__()
+        self.add_text_input("application_path", "Application Path", text="calc.exe", tab="inputs")
+        self.add_text_input("arguments", "Arguments", text="", tab="inputs")
+        self.add_text_input("working_directory", "Working Directory", text="", tab="inputs")
+        self.add_text_input("window_title_hint", "Window Title Hint", text="", tab="config")
+        self.create_property("timeout", 10.0, widget_type=2, tab="config")
+        self.create_property("window_state", "normal", 
+                           items=["normal", "maximized", "minimized"],
+                           widget_type=3, tab="config")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("application_path")
+        self.add_input("arguments")
+        self.add_input("working_directory")
+        self.add_output("exec_out")
+        self.add_output("window")
+        self.add_output("process_id")
+        self.add_output("window_title")
+
+
+class VisualCloseApplicationNode(VisualNode):
+    """Visual representation of CloseApplicationNode."""
+    
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Close Application"
+    NODE_CATEGORY = "desktop_automation"
+    
+    def __init__(self) -> None:
+        """Initialize Close Application node."""
+        super().__init__()
+        self.add_text_input("window_title", "Window Title", text="", tab="inputs")
+        self.create_property("force_close", False, widget_type=1, tab="config")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_input("process_id")
+        self.add_input("window_title")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualActivateWindowNode(VisualNode):
+    """Visual representation of ActivateWindowNode."""
+    
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Activate Window"
+    NODE_CATEGORY = "desktop_automation"
+    
+    def __init__(self) -> None:
+        """Initialize Activate Window node."""
+        super().__init__()
+        self.add_text_input("window_title", "Window Title", text="", tab="inputs")
+        self.create_property("match_partial", True, widget_type=1, tab="config")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_input("window_title")
+        self.add_output("exec_out")
+        self.add_output("success")
+        self.add_output("window")
+
+
+class VisualGetWindowListNode(VisualNode):
+    """Visual representation of GetWindowListNode."""
+    
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Get Window List"
+    NODE_CATEGORY = "desktop_automation"
+    
+    def __init__(self) -> None:
+        """Initialize Get Window List node."""
+        super().__init__()
+        self.add_text_input("filter_title", "Filter by Title", text="", tab="config")
+        self.create_property("include_invisible", False, widget_type=1, tab="config")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+        self.add_output("window_list")
+        self.add_output("window_count")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

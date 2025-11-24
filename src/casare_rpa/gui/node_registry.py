@@ -65,6 +65,11 @@ from .visual_nodes import (
     VisualListGetItemNode,
     VisualJsonParseNode,
     VisualGetPropertyNode,
+    # Desktop Automation
+    VisualLaunchApplicationNode,
+    VisualCloseApplicationNode,
+    VisualActivateWindowNode,
+    VisualGetWindowListNode,
 )
 
 from ..nodes import (
@@ -123,6 +128,13 @@ from ..nodes import (
     GetPropertyNode,
 )
 
+from ..nodes.desktop_nodes import (
+    LaunchApplicationNode as DesktopLaunchApplicationNode,
+    CloseApplicationNode as DesktopCloseApplicationNode,
+    ActivateWindowNode as DesktopActivateWindowNode,
+    GetWindowListNode as DesktopGetWindowListNode,
+)
+
 
 # Mapping from visual node classes to CasareRPA node classes
 CASARE_NODE_MAPPING = {
@@ -179,6 +191,11 @@ CASARE_NODE_MAPPING = {
     VisualListGetItemNode: ListGetItemNode,
     VisualJsonParseNode: JsonParseNode,
     VisualGetPropertyNode: GetPropertyNode,
+    # Desktop Automation
+    VisualLaunchApplicationNode: DesktopLaunchApplicationNode,
+    VisualCloseApplicationNode: DesktopCloseApplicationNode,
+    VisualActivateWindowNode: DesktopActivateWindowNode,
+    VisualGetWindowListNode: DesktopGetWindowListNode,
 }
 
 
