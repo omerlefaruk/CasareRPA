@@ -54,6 +54,13 @@ from .wait_verification_nodes import (
     VerifyElementPropertyNode,
 )
 
+from .screenshot_ocr_nodes import (
+    CaptureScreenshotNode,
+    CaptureElementImageNode,
+    OCRExtractTextNode,
+    CompareImagesNode,
+)
+
 __all__ = [
     # Application nodes
     'LaunchApplicationNode',
@@ -93,4 +100,9 @@ __all__ = [
     'WaitForWindowNode',
     'VerifyElementExistsNode',
     'VerifyElementPropertyNode',
+    # Screenshot and OCR nodes
+    'CaptureScreenshotNode',
+    'CaptureElementImageNode',
+    'OCRExtractTextNode',
+    'CompareImagesNode',
 ]
