@@ -134,7 +134,7 @@ class VisualNode(NodeGraphQtBaseNode):
                     # Apply a more visible background color for text inputs
                     custom_widget.setStyleSheet("""
                         QLineEdit {
-                            background: rgba(60, 60, 80, 180);
+                            background: rgb(60, 60, 80);
                             border: 1px solid rgb(80, 80, 100);
                             border-radius: 3px;
                             color: rgba(230, 230, 230, 255);
@@ -142,7 +142,7 @@ class VisualNode(NodeGraphQtBaseNode):
                             selection-background-color: rgba(100, 150, 200, 150);
                         }
                         QLineEdit:focus {
-                            background: rgba(70, 70, 90, 200);
+                            background: rgb(70, 70, 90);
                             border: 1px solid rgb(100, 150, 200);
                         }
                     """)
