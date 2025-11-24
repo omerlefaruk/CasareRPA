@@ -1,10 +1,11 @@
 """
 CasareRPA - Workflow Runner
 Executes workflows by running nodes in the correct order based on connections.
+Supports parallel execution of independent branches for improved performance.
 """
 
 import asyncio
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 from datetime import datetime
 from loguru import logger
 
@@ -18,6 +19,11 @@ from ..utils.retry import (
     RetryStats,
     classify_error,
     ErrorCategory,
+)
+from ..utils.parallel_executor import (
+    DependencyGraph,
+    ParallelExecutor,
+    analyze_workflow_dependencies,
 )
 
 # Default timeout for node execution (in seconds)
@@ -38,15 +44,16 @@ class ExecutionState:
 class WorkflowRunner:
     """
     Executes workflows asynchronously.
-    
+
     Features:
     - Sequential node execution following connections
+    - Parallel execution of independent branches
     - Async support for Playwright operations
     - Real-time progress tracking
     - Pause/Resume/Stop controls
     - Error handling and recovery
     """
-    
+
     def __init__(
         self,
         workflow: WorkflowSchema,
@@ -54,6 +61,8 @@ class WorkflowRunner:
         retry_config: Optional[RetryConfig] = None,
         node_timeout: float = DEFAULT_NODE_EXECUTION_TIMEOUT,
         continue_on_error: bool = False,
+        parallel_execution: bool = False,
+        max_parallel_nodes: int = 4,
     ) -> None:
         """
         Initialize workflow runner.
@@ -64,6 +73,8 @@ class WorkflowRunner:
             retry_config: Configuration for automatic retry on transient errors
             node_timeout: Timeout for individual node execution in seconds
             continue_on_error: If True, continue workflow on node errors
+            parallel_execution: If True, execute independent nodes in parallel
+            max_parallel_nodes: Maximum number of nodes to run in parallel
         """
         self.workflow = workflow
 
@@ -82,6 +93,12 @@ class WorkflowRunner:
         self.node_timeout = node_timeout
         self.continue_on_error = continue_on_error
         self.retry_stats = RetryStats()
+
+        # Parallel execution settings
+        self.parallel_execution = parallel_execution
+        self.max_parallel_nodes = max_parallel_nodes
+        self._dependency_graph: Optional[DependencyGraph] = None
+        self._parallel_executor: Optional[ParallelExecutor] = None
 
         # Execution state
         self.state = ExecutionState.IDLE
@@ -107,7 +124,14 @@ class WorkflowRunner:
         self.breakpoints: Set[NodeId] = set()
         self.execution_history: List[Dict[str, Any]] = []
 
-        logger.info(f"WorkflowRunner initialized for workflow: {workflow.metadata.name}")
+        # Build dependency graph if parallel execution is enabled
+        if self.parallel_execution:
+            self._build_dependency_graph()
+
+        logger.info(
+            f"WorkflowRunner initialized for workflow: {workflow.metadata.name} "
+            f"(parallel={parallel_execution}, max_parallel={max_parallel_nodes})"
+        )
     
     @property
     def progress(self) -> float:
@@ -146,24 +170,75 @@ class WorkflowRunner:
     def _get_next_nodes(self, current_node_id: NodeId) -> List[BaseNode]:
         """
         Get the next nodes to execute based on connections.
-        
+
         Args:
             current_node_id: ID of the current node
-            
+
         Returns:
             List of nodes connected to the current node's output
         """
         next_nodes = []
-        
+
         for connection in self.workflow.connections:
             if connection.source_node == current_node_id:
                 # Found a connection from current node
                 target_node_id = connection.target_node
                 if target_node_id in self.workflow.nodes:
                     next_nodes.append(self.workflow.nodes[target_node_id])
-        
+
         return next_nodes
-    
+
+    def _build_dependency_graph(self) -> None:
+        """Build the dependency graph for parallel execution."""
+        self._dependency_graph = analyze_workflow_dependencies(
+            self.workflow.nodes, self.workflow.connections
+        )
+        self._parallel_executor = ParallelExecutor(
+            max_concurrency=self.max_parallel_nodes,
+            stop_on_error=not self.continue_on_error,
+        )
+        logger.debug("Dependency graph built for parallel execution")
+
+    def _get_ready_nodes(self) -> List[NodeId]:
+        """
+        Get nodes that are ready to execute (all dependencies satisfied).
+
+        Returns:
+            List of node IDs ready to execute
+        """
+        if not self._dependency_graph:
+            return []
+        return self._dependency_graph.get_ready_nodes(self.executed_nodes)
+
+    def _is_parallelizable_node(self, node: BaseNode) -> bool:
+        """
+        Check if a node can be executed in parallel.
+
+        Some nodes (like control flow, browser operations) should run sequentially.
+
+        Args:
+            node: The node to check
+
+        Returns:
+            True if node can be parallelized
+        """
+        # Control flow nodes must run sequentially
+        non_parallel_types = {
+            "ForLoopNode",
+            "WhileLoopNode",
+            "IfNode",
+            "SwitchNode",
+            "TryNode",
+            "RetryNode",
+            "BreakNode",
+            "ContinueNode",
+            # Browser nodes that share state
+            "LaunchBrowserNode",
+            "CloseBrowserNode",
+            "NewTabNode",
+        }
+        return node.__class__.__name__ not in non_parallel_types
+
     def _transfer_data(self, connection: NodeConnection) -> None:
         """
         Transfer data from source port to target port.
@@ -391,26 +466,34 @@ class WorkflowRunner:
         start_node = self._find_start_node()
         if not start_node:
             raise ValueError("No StartNode found in workflow")
-        
+
+        # Use parallel execution if enabled and not in debug/step mode
+        if self.parallel_execution and not self.debug_mode and not self.step_mode:
+            await self._execute_workflow_parallel(start_node)
+        else:
+            await self._execute_workflow_sequential(start_node)
+
+    async def _execute_workflow_sequential(self, start_node: BaseNode) -> None:
+        """Execute workflow sequentially (original behavior)."""
         # Execute nodes in order, following connections
         nodes_to_execute = [start_node]
-        
+
         while nodes_to_execute and not self._stop_requested:
             # Wait if paused
             await self._pause_event.wait()
-            
+
             current_node = nodes_to_execute.pop(0)
-            
+
             # Skip if already executed (except for loops which need re-execution)
             is_loop_node = current_node.__class__.__name__ in ["ForLoopNode", "WhileLoopNode"]
             if current_node.node_id in self.executed_nodes and not is_loop_node:
                 continue
-            
+
             # Transfer data from connected input ports
             for connection in self.workflow.connections:
                 if connection.target_node == current_node.node_id:
                     self._transfer_data(connection)
-            
+
             # Execute the node
             success, result = await self._execute_node(current_node)
 
@@ -425,10 +508,10 @@ class WorkflowRunner:
                     # Stop on error
                     logger.warning(f"Stopping workflow due to node error: {current_node.node_id}")
                     break
-            
+
             # Check for control flow signals (break/continue)
             control_flow = result.get("control_flow") if result else None
-            
+
             if control_flow == "break":
                 # Break from loop - find the loop node and skip to its 'completed' output
                 logger.info(f"Break signal received from {current_node.node_id}")
@@ -440,28 +523,149 @@ class WorkflowRunner:
                 logger.info(f"Continue signal received from {current_node.node_id}")
                 # The loop node will be re-executed to advance to next iteration
                 continue
-            
+
             # Get next nodes based on execution result
             if result and "next_nodes" in result:
                 # Dynamic routing - use the next_nodes from result
                 next_port_names = result["next_nodes"]
                 next_nodes = []
-                
+
                 for port_name in next_port_names:
                     # Find connections from current node's specific output port
                     for connection in self.workflow.connections:
-                        if (connection.source_node == current_node.node_id and 
+                        if (connection.source_node == current_node.node_id and
                             connection.source_port == port_name):
                             target_node_id = connection.target_node
                             if target_node_id in self.workflow.nodes:
                                 next_nodes.append(self.workflow.nodes[target_node_id])
                                 logger.debug(f"Dynamic routing: {current_node.node_id}.{port_name} -> {target_node_id}")
-                
+
                 nodes_to_execute.extend(next_nodes)
             else:
                 # Fallback to all connected outputs (old behavior)
                 next_nodes = self._get_next_nodes(current_node.node_id)
                 nodes_to_execute.extend(next_nodes)
+
+    async def _execute_workflow_parallel(self, start_node: BaseNode) -> None:
+        """
+        Execute workflow with parallel execution of independent branches.
+
+        Uses dependency analysis to identify nodes that can run concurrently.
+        Control flow nodes and browser operations still run sequentially.
+        """
+        logger.info("Executing workflow with parallel mode enabled")
+
+        # Execute start node first (always sequential)
+        await self._pause_event.wait()
+        success, result = await self._execute_node(start_node)
+
+        if not success and not self.continue_on_error:
+            logger.warning(f"Stopping workflow due to start node error")
+            return
+
+        # Process the rest of the workflow using dependency-based scheduling
+        while not self._stop_requested:
+            await self._pause_event.wait()
+
+            # Get all nodes that are ready to execute
+            ready_node_ids = self._get_ready_nodes()
+
+            # Filter out already executed nodes (except loops)
+            ready_node_ids = [
+                nid for nid in ready_node_ids
+                if nid not in self.executed_nodes or
+                self.workflow.nodes[nid].__class__.__name__ in ["ForLoopNode", "WhileLoopNode"]
+            ]
+
+            if not ready_node_ids:
+                # No more nodes ready - workflow complete
+                break
+
+            # Separate parallelizable and sequential nodes
+            parallel_nodes: List[BaseNode] = []
+            sequential_nodes: List[BaseNode] = []
+
+            for node_id in ready_node_ids:
+                node = self.workflow.nodes[node_id]
+                if self._is_parallelizable_node(node):
+                    parallel_nodes.append(node)
+                else:
+                    sequential_nodes.append(node)
+
+            # Execute sequential nodes first (one at a time)
+            for node in sequential_nodes:
+                if self._stop_requested:
+                    break
+
+                # Transfer data
+                for connection in self.workflow.connections:
+                    if connection.target_node == node.node_id:
+                        self._transfer_data(connection)
+
+                success, result = await self._execute_node(node)
+
+                if not success and not self.continue_on_error:
+                    logger.warning(f"Stopping workflow due to node error: {node.node_id}")
+                    return
+
+                # Handle control flow
+                control_flow = result.get("control_flow") if result else None
+                if control_flow in ("break", "continue"):
+                    logger.info(f"{control_flow.capitalize()} signal from {node.node_id}")
+                    # Let the loop node handle routing
+
+            # Execute parallelizable nodes concurrently
+            if parallel_nodes and not self._stop_requested:
+                await self._execute_nodes_parallel(parallel_nodes)
+
+    async def _execute_nodes_parallel(self, nodes: List[BaseNode]) -> None:
+        """
+        Execute multiple nodes in parallel.
+
+        Args:
+            nodes: List of nodes to execute concurrently
+        """
+        if not nodes:
+            return
+
+        logger.info(f"Executing {len(nodes)} nodes in parallel: {[n.node_id for n in nodes]}")
+
+        # Transfer data to all nodes first
+        for node in nodes:
+            for connection in self.workflow.connections:
+                if connection.target_node == node.node_id:
+                    self._transfer_data(connection)
+
+        # Create tasks for parallel execution
+        async def execute_single(node: BaseNode) -> Tuple[NodeId, bool, Optional[Dict[str, Any]]]:
+            """Execute a single node and return results."""
+            success, result = await self._execute_node(node)
+            return node.node_id, success, result
+
+        # Run all nodes concurrently with semaphore limiting
+        semaphore = asyncio.Semaphore(self.max_parallel_nodes)
+
+        async def limited_execute(node: BaseNode) -> Tuple[NodeId, bool, Optional[Dict[str, Any]]]:
+            async with semaphore:
+                return await execute_single(node)
+
+        # Execute all in parallel
+        tasks = [limited_execute(node) for node in nodes]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Process results
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"Parallel node execution error: {result}")
+                if not self.continue_on_error:
+                    self._stop_requested = True
+                    break
+            else:
+                node_id, success, node_result = result
+                if not success and not self.continue_on_error:
+                    logger.warning(f"Stopping parallel execution due to node error: {node_id}")
+                    self._stop_requested = True
+                    break
     
     async def run(self) -> bool:
         """
@@ -751,3 +955,42 @@ class WorkflowRunner:
         """
         self.node_timeout = timeout
         logger.info(f"Node execution timeout set to {timeout}s")
+
+    # Parallel Execution Methods
+
+    def enable_parallel_execution(self, enabled: bool = True) -> None:
+        """
+        Enable or disable parallel execution of independent nodes.
+
+        Args:
+            enabled: True to enable parallel execution, False to disable
+        """
+        self.parallel_execution = enabled
+        if enabled and not self._dependency_graph:
+            self._build_dependency_graph()
+        logger.info(f"Parallel execution {'enabled' if enabled else 'disabled'}")
+
+    def set_max_parallel_nodes(self, max_nodes: int) -> None:
+        """
+        Set the maximum number of nodes to execute in parallel.
+
+        Args:
+            max_nodes: Maximum concurrent node executions (1-16)
+        """
+        self.max_parallel_nodes = max(1, min(16, max_nodes))
+        if self._parallel_executor:
+            self._parallel_executor._max_concurrency = self.max_parallel_nodes
+        logger.info(f"Max parallel nodes set to {self.max_parallel_nodes}")
+
+    def get_parallel_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about parallel execution.
+
+        Returns:
+            Dictionary with parallel execution stats
+        """
+        return {
+            "enabled": self.parallel_execution,
+            "max_parallel_nodes": self.max_parallel_nodes,
+            "has_dependency_graph": self._dependency_graph is not None,
+        }
