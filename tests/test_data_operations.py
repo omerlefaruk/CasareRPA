@@ -21,9 +21,10 @@ class TestStringOperations:
         node.set_input_value("string_1", "Hello")
         node.set_input_value("string_2", "World")
         node.separator = " "
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") == "Hello World"
 
     @pytest.mark.asyncio
@@ -31,9 +32,10 @@ class TestStringOperations:
         node = FormatStringNode("test_format")
         node.set_input_value("template", "Hello {name}, you are {age} years old.")
         node.set_input_value("variables", {"name": "Alice", "age": 30})
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") == "Hello Alice, you are 30 years old."
 
     @pytest.mark.asyncio
@@ -41,9 +43,10 @@ class TestStringOperations:
         node = RegexMatchNode("test_regex")
         node.set_input_value("text", "The price is $123.45")
         node.set_input_value("pattern", r"\$(\d+\.\d+)")
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("match_found") is True
         assert node.get_output_value("first_match") == "$123.45"
         assert node.get_output_value("groups") == ["123.45"]
@@ -54,9 +57,10 @@ class TestStringOperations:
         node.set_input_value("text", "apple banana apple")
         node.set_input_value("pattern", "apple")
         node.set_input_value("replacement", "orange")
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") == "orange banana orange"
         assert node.get_output_value("count") == 2
 
@@ -66,9 +70,10 @@ class TestMathOperations:
         node = MathOperationNode("test_add", {"operation": "add"})
         node.set_input_value("a", 10)
         node.set_input_value("b", 5)
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") == 15
 
     @pytest.mark.asyncio
@@ -76,9 +81,10 @@ class TestMathOperations:
         node = MathOperationNode("test_div", {"operation": "divide"})
         node.set_input_value("a", 10)
         node.set_input_value("b", 2)
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") == 5
 
     @pytest.mark.asyncio
@@ -86,9 +92,10 @@ class TestMathOperations:
         node = ComparisonNode("test_comp", {"operator": ">"})
         node.set_input_value("a", 10)
         node.set_input_value("b", 5)
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("result") is True
 
 class TestListOperations:
@@ -98,9 +105,10 @@ class TestListOperations:
         node.set_input_value("item_1", "a")
         node.set_input_value("item_2", "b")
         node.set_input_value("item_3", "c")
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("list") == ["a", "b", "c"]
 
     @pytest.mark.asyncio
@@ -108,9 +116,10 @@ class TestListOperations:
         node = ListGetItemNode("test_get_item")
         node.set_input_value("list", ["a", "b", "c"])
         node.set_input_value("index", 1)
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("item") == "b"
 
 class TestJsonOperations:
@@ -118,9 +127,10 @@ class TestJsonOperations:
     async def test_json_parse(self):
         node = JsonParseNode("test_json")
         node.set_input_value("json_string", '{"name": "Bob", "active": true}')
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         data = node.get_output_value("data")
         assert data["name"] == "Bob"
         assert data["active"] is True
@@ -131,7 +141,8 @@ class TestJsonOperations:
         data = {"user": {"address": {"city": "New York"}}}
         node.set_input_value("object", data)
         node.set_input_value("property_path", "user.address.city")
-        
-        status = await node.execute(None)
-        assert status == NodeStatus.SUCCESS
+
+        result = await node.execute(None)
+        assert result["success"] is True
+        assert node.status == NodeStatus.SUCCESS
         assert node.get_output_value("value") == "New York"
