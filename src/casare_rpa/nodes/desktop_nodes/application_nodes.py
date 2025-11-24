@@ -7,9 +7,9 @@ Nodes for launching, closing, and managing Windows desktop applications.
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from casare_rpa.core.base_node import BaseNode as Node
-from casare_rpa.core.types import NodeStatus
-from casare_rpa.desktop import DesktopContext
+from ...core.base_node import BaseNode as Node
+from ...core.types import NodeStatus
+from ...desktop import DesktopContext
 
 
 class LaunchApplicationNode(Node):
@@ -44,7 +44,7 @@ class LaunchApplicationNode(Node):
     
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.core.types import PortType, DataType
+        from ...core.types import PortType, DataType
         
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -208,7 +208,7 @@ class CloseApplicationNode(Node):
     
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.core.types import PortType, DataType
+        from ...core.types import PortType, DataType
         
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -308,7 +308,7 @@ class ActivateWindowNode(Node):
     
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.core.types import PortType, DataType
+        from ...core.types import PortType, DataType
         
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -420,7 +420,7 @@ class GetWindowListNode(Node):
     
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.core.types import PortType, DataType
+        from ...core.types import PortType, DataType
         
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)

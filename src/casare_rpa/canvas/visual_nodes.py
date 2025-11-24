@@ -29,6 +29,12 @@ from .data_operations_visual import (
     VisualGetPropertyNode
 )
 
+# Import Rich Comment Nodes
+from .rich_comment_node import (
+    VisualRichCommentNode,
+    VisualStickyNoteNode,
+    VisualHeaderCommentNode
+)
 
 from .base_visual_node import VisualNode, UNIFIED_NODE_COLOR
 
@@ -932,6 +938,147 @@ class VisualGetElementPropertyNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("value")
         self.add_output("element")
+
+
+# Window Management Nodes
+
+class VisualResizeWindowNode(VisualNode):
+    """Visual representation of ResizeWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Resize Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Resize Window node."""
+        super().__init__()
+        # Use window_width/window_height to avoid conflict with reserved "width"/"height" properties
+        self.create_property("window_width", 800, widget_type=2, tab="config")
+        self.create_property("window_height", 600, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_input("window_width")
+        self.add_input("window_height")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualMoveWindowNode(VisualNode):
+    """Visual representation of MoveWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Move Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Move Window node."""
+        super().__init__()
+        # Use pos_x/pos_y to avoid conflict with reserved "x"/"y" properties
+        self.create_property("pos_x", 100, widget_type=2, tab="config")
+        self.create_property("pos_y", 100, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_input("pos_x")
+        self.add_input("pos_y")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualMaximizeWindowNode(VisualNode):
+    """Visual representation of MaximizeWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Maximize Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualMinimizeWindowNode(VisualNode):
+    """Visual representation of MinimizeWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Minimize Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualRestoreWindowNode(VisualNode):
+    """Visual representation of RestoreWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Restore Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualGetWindowPropertiesNode(VisualNode):
+    """Visual representation of GetWindowPropertiesNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Get Window Properties"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("properties")
+        self.add_output("title")
+        self.add_output("x")
+        self.add_output("y")
+        self.add_output("width")
+        self.add_output("height")
+        self.add_output("state")
+        self.add_output("is_maximized")
+        self.add_output("is_minimized")
+
+
+class VisualSetWindowStateNode(VisualNode):
+    """Visual representation of SetWindowStateNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Set Window State"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Set Window State node."""
+        super().__init__()
+        self.create_property("state", "normal",
+                           items=["normal", "maximized", "minimized"],
+                           widget_type=3, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_input("state")
+        self.add_output("exec_out")
+        self.add_output("success")
 
 
 # Dynamic node discovery
