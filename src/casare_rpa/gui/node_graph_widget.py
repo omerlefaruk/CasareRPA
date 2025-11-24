@@ -129,6 +129,7 @@ class NodeGraphWidget(QWidget):
         """
         Monkey-patch the viewer's mousePressEvent to allow panning with MMB
         even when hovering over items (nodes, ports, etc).
+        Also prevents MMB from starting port connections.
         """
         viewer = self._graph.viewer()
         ViewerClass = viewer.__class__
@@ -138,6 +139,7 @@ class NodeGraphWidget(QWidget):
             return
             
         original_mouse_press = ViewerClass.mousePressEvent
+        original_start_live = ViewerClass.start_live_connection
         
         def patched_mouse_press(viewer_self, event):
             # Call the original method first
@@ -148,8 +150,19 @@ class NodeGraphWidget(QWidget):
             # preventing panning. We override this behavior here to ensure MMB always pans.
             if event.button() == Qt.MouseButton.MiddleButton:
                 viewer_self.MMB_state = True
+                
+                # Also cancel any live connection that may have been started by MMB
+                if viewer_self._LIVE_PIPE.isVisible():
+                    viewer_self.end_live_connection()
+        
+        def patched_start_live(viewer_self, selected_port):
+            # Only allow starting connections with LMB, not MMB
+            if viewer_self.MMB_state:
+                return
+            original_start_live(viewer_self, selected_port)
         
         ViewerClass.mousePressEvent = patched_mouse_press
+        ViewerClass.start_live_connection = patched_start_live
         ViewerClass._patched_mmb = True
 
     def _setup_graph(self) -> None:
