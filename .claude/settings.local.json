@@ -8,7 +8,10 @@
       "Bash(pip show:*)",
       "Bash(git rm:*)",
       "Bash(python:*)",
-      "Bash(set PYTHONPATH=src:*)"
+      "Bash(set PYTHONPATH=src:*)",
+      "Bash($env:PYTHONPATH=\"src\")",
+      "Bash(PYTHONPATH=src python:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

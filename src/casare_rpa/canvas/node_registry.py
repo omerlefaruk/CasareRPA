@@ -408,15 +408,15 @@ class NodeRegistry:
                 for category, nodes in self._categories.items():
                     category_label = category.replace('_', ' ').title()
                     category_menu = qmenu.addMenu(category_label)
-                    
+
                     for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                         def make_creator(cls):
                             def create_node():
                                 viewer = graph.viewer()
                                 pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                                 node = graph.create_node(
-                                    f'{node_class.__identifier__}.{node_class.__name__}',
-                                    name=node_class.NODE_NAME,
+                                    f'{cls.__identifier__}.{cls.__name__}',
+                                    name=cls.NODE_NAME,
                                     pos=[pos.x() - 100, pos.y() - 30]
                                 )
                                 # Attach CasareRPA node immediately with unique ID
@@ -426,7 +426,7 @@ class NodeRegistry:
                                     node.set_casare_node(casare_node)
                                 return node
                             return create_node
-                        
+
                         action = category_menu.addAction(node_class.NODE_NAME)
                         action.triggered.connect(make_creator(node_class))
                 

@@ -265,12 +265,19 @@ class MathOperationNode(BaseNode):
 
 
 class ComparisonNode(BaseNode):
-    """Node that compares two values."""
+    """Node that compares two values.
+
+    Supports operators: ==, !=, >, <, >=, <=, and, or, in, not in, is, is not
+    """
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
         super().__init__(node_id, config)
-        # Operator: ==, !=, >, <, >=, <=
+        # Operator from dropdown or custom_operator text field
         self.operator = self.config.get("operator", "==")
+        # Allow custom operator to override dropdown
+        custom_op = self.config.get("custom_operator", "").strip()
+        if custom_op:
+            self.operator = custom_op
         self.name = "Comparison"
         self.node_type = "ComparisonNode"
 
@@ -302,6 +309,18 @@ class ComparisonNode(BaseNode):
                 result = a >= b
             elif op == "<=":
                 result = a <= b
+            elif op == "and":
+                result = bool(a) and bool(b)
+            elif op == "or":
+                result = bool(a) or bool(b)
+            elif op == "in":
+                result = a in b
+            elif op == "not in":
+                result = a not in b
+            elif op == "is":
+                result = a is b
+            elif op == "is not":
+                result = a is not b
             else:
                 raise ValueError(f"Unknown operator: {op}")
 
