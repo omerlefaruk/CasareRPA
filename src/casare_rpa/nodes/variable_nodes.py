@@ -79,6 +79,26 @@ class SetVariableNode(BaseNode):
             if value is None:
                 value = self.config.get("default_value")
             
+            # Apply type conversion if specified
+            variable_type = self.config.get("variable_type", "String")
+            
+            if value is not None and variable_type != "String":
+                try:
+                    if variable_type == "Boolean":
+                        if isinstance(value, str):
+                            value = value.lower() in ("true", "1", "yes", "on")
+                        else:
+                            value = bool(value)
+                    elif variable_type == "Int32":
+                        value = int(value)
+                    elif variable_type in ("Object", "Array", "DataTable"):
+                        if isinstance(value, str):
+                            import json
+                            value = json.loads(value)
+                except Exception as e:
+                    logger.warning(f"Failed to convert value '{value}' to {variable_type}: {e}")
+                    # Keep original value if conversion fails
+            
             # Store in context
             context.set_variable(variable_name, value)
             
@@ -86,13 +106,14 @@ class SetVariableNode(BaseNode):
             self.set_output_value("value", value)
             
             self.status = NodeStatus.SUCCESS
-            logger.info(f"Set variable '{variable_name}' = {value}")
+            logger.info(f"Set variable '{variable_name}' = {value} (Type: {type(value).__name__})")
             
             return {
                 "success": True,
                 "data": {
                     "variable_name": variable_name,
-                    "value": value
+                    "value": value,
+                    "type": type(value).__name__
                 },
                 "next_nodes": ["exec_out"]
             }
