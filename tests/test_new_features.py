@@ -772,5 +772,123 @@ class TestIntegration:
         assert "LogNode" in _NODE_REGISTRY
 
 
+# =============================================================================
+# Extended Comparison Node Tests
+# =============================================================================
+
+class TestComparisonNodeExtended:
+    """Tests for extended ComparisonNode operators."""
+
+    @pytest.mark.asyncio
+    async def test_comparison_and_operator(self):
+        """Test 'and' operator."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        node = ComparisonNode("test", config={"operator": "and"})
+        node.set_input_value("a", True)
+        node.set_input_value("b", True)
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+
+        # Test with False
+        node.set_input_value("a", True)
+        node.set_input_value("b", False)
+        result = await node.execute(context)
+        assert result["data"]["result"] is False
+
+    @pytest.mark.asyncio
+    async def test_comparison_or_operator(self):
+        """Test 'or' operator."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        node = ComparisonNode("test", config={"operator": "or"})
+        node.set_input_value("a", False)
+        node.set_input_value("b", True)
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+
+    @pytest.mark.asyncio
+    async def test_comparison_in_operator(self):
+        """Test 'in' operator."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        node = ComparisonNode("test", config={"operator": "in"})
+        node.set_input_value("a", "hello")
+        node.set_input_value("b", "hello world")
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+
+        # Test with list
+        node.set_input_value("a", 2)
+        node.set_input_value("b", [1, 2, 3])
+        result = await node.execute(context)
+        assert result["data"]["result"] is True
+
+    @pytest.mark.asyncio
+    async def test_comparison_not_in_operator(self):
+        """Test 'not in' operator."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        node = ComparisonNode("test", config={"operator": "not in"})
+        node.set_input_value("a", "xyz")
+        node.set_input_value("b", "hello world")
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+
+    @pytest.mark.asyncio
+    async def test_comparison_custom_operator(self):
+        """Test custom_operator overrides dropdown."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        # custom_operator should override the dropdown operator
+        node = ComparisonNode("test", config={"operator": "==", "custom_operator": ">"})
+        node.set_input_value("a", 10)
+        node.set_input_value("b", 5)
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+        assert result["data"]["operator"] == ">"
+
+    @pytest.mark.asyncio
+    async def test_comparison_is_operator(self):
+        """Test 'is' operator."""
+        from casare_rpa.nodes.data_operation_nodes import ComparisonNode
+        from casare_rpa.core.execution_context import ExecutionContext
+
+        node = ComparisonNode("test", config={"operator": "is"})
+        node.set_input_value("a", None)
+        node.set_input_value("b", None)
+
+        context = ExecutionContext()
+        result = await node.execute(context)
+
+        assert result["success"] is True
+        assert result["data"]["result"] is True
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
