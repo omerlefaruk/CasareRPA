@@ -15,9 +15,9 @@ from NodeGraphQt import NodeGraph
 from casare_rpa.gui.node_registry import get_node_registry, get_node_factory
 from casare_rpa.gui.visual_nodes import VisualStartNode
 
-def test_node_creation():
+def test_node_creation(qapp):
     """Test that nodes are created with CasareRPA nodes attached."""
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv) # Removed manual creation
     
     # Create graph
     graph = NodeGraph()

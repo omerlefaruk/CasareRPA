@@ -9,12 +9,20 @@ from typing import Optional
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor, QKeyEvent
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, QEvent
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.qgraphics.node_base import NodeItem
 
 from ..utils.config import GUI_THEME
 from .auto_connect import AutoConnectManager
+
+
+class TooltipBlocker(QObject):
+    """Event filter to block tooltips."""
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.ToolTip:
+            return True
+        return False
 
 
 # Monkey-patch NodeItem to use thicker selection border and rounded corners
@@ -70,6 +78,9 @@ def _patched_paint(self, painter, option, widget):
 NodeItem.paint = _patched_paint
 
 
+
+
+
 class NodeGraphWidget(QWidget):
     """
     Widget wrapper for NodeGraphQt's NodeGraph.
@@ -105,7 +116,42 @@ class NodeGraphWidget(QWidget):
         
         # Install event filter on graph viewer to capture Tab key for context menu
         self._graph.viewer().installEventFilter(self)
+        
+        # Install tooltip blocker
+        self._tooltip_blocker = TooltipBlocker()
+        self._graph.viewer().installEventFilter(self._tooltip_blocker)
+        self._graph.viewer().viewport().installEventFilter(self._tooltip_blocker)
+        
+        # Fix MMB panning over items
+        self._fix_mmb_panning()
     
+    def _fix_mmb_panning(self):
+        """
+        Monkey-patch the viewer's mousePressEvent to allow panning with MMB
+        even when hovering over items (nodes, ports, etc).
+        """
+        viewer = self._graph.viewer()
+        ViewerClass = viewer.__class__
+        
+        # Only patch once
+        if getattr(ViewerClass, '_patched_mmb', False):
+            return
+            
+        original_mouse_press = ViewerClass.mousePressEvent
+        
+        def patched_mouse_press(viewer_self, event):
+            # Call the original method first
+            original_mouse_press(viewer_self, event)
+            
+            # If MMB was pressed, force MMB_state to True.
+            # The original method sets MMB_state = False if it detects nodes under the cursor,
+            # preventing panning. We override this behavior here to ensure MMB always pans.
+            if event.button() == Qt.MouseButton.MiddleButton:
+                viewer_self.MMB_state = True
+        
+        ViewerClass.mousePressEvent = patched_mouse_press
+        ViewerClass._patched_mmb = True
+
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""
         # Set graph background color to match image (very dark gray, almost black)
