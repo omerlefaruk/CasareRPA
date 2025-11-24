@@ -31,6 +31,7 @@ from ..utils.config import (
     GUI_WINDOW_HEIGHT,
 )
 from ..utils.hotkey_settings import get_hotkey_settings
+from .minimap import Minimap
 
 
 class MainWindow(QMainWindow):
@@ -80,6 +81,10 @@ class MainWindow(QMainWindow):
         
         # Log viewer dock
         self._log_dock: Optional[QDockWidget] = None
+        
+        # Minimap overlay
+        self._minimap: Optional[Minimap] = None
+        self._central_widget: Optional[QWidget] = None
         
         # Debug components
         self._debug_toolbar: Optional['DebugToolbar'] = None
@@ -240,6 +245,12 @@ class MainWindow(QMainWindow):
         self.action_toggle_log.setStatusTip("Show/hide execution log viewer")
         self.action_toggle_log.triggered.connect(self._on_toggle_log)
         
+        self.action_toggle_minimap = QAction("&Minimap", self)
+        self.action_toggle_minimap.setShortcut(QKeySequence("Ctrl+M"))
+        self.action_toggle_minimap.setCheckable(True)
+        self.action_toggle_minimap.setStatusTip("Show/hide minimap overview (Ctrl+M)")
+        self.action_toggle_minimap.triggered.connect(self._on_toggle_minimap)
+        
         self.action_auto_connect = QAction("&Auto-Connect Nodes", self)
         self.action_auto_connect.setCheckable(True)
         self.action_auto_connect.setChecked(True)  # Enabled by default
@@ -364,6 +375,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_log)
+        view_menu.addAction(self.action_toggle_minimap)
         
         # Workflow menu
         workflow_menu = menubar.addMenu("&Workflow")
@@ -454,6 +466,47 @@ class MainWindow(QMainWindow):
         if self._log_dock:
             self._log_dock.hide()
     
+    def _create_minimap(self, node_graph) -> None:
+        """Create minimap overlay widget."""
+        # Create minimap as overlay on central widget
+        if self._central_widget:
+            self._minimap = Minimap(node_graph, self._central_widget)
+            self._minimap.setVisible(False)  # Initially hidden
+            self._position_minimap()
+    
+    def _position_minimap(self) -> None:
+        """Position minimap at bottom-left of central widget."""
+        if self._minimap and self._central_widget:
+            # Position at bottom-left with 10px margin
+            margin = 10
+            x = margin
+            y = self._central_widget.height() - self._minimap.height() - margin
+            self._minimap.move(x, y)
+            self._minimap.raise_()  # Ensure it's on top
+    
+    def show_minimap(self) -> None:
+        """Show the minimap."""
+        if self._minimap:
+            self._minimap.setVisible(True)
+            self._position_minimap()
+    
+    def hide_minimap(self) -> None:
+        """Hide the minimap."""
+        if self._minimap:
+            self._minimap.setVisible(False)
+    
+    def _on_toggle_minimap(self, checked: bool) -> None:
+        """Handle minimap toggle."""
+        if checked:
+            self.show_minimap()
+        else:
+            self.hide_minimap()
+    
+    def resizeEvent(self, event):
+        """Handle window resize to reposition minimap."""
+        super().resizeEvent(event)
+        self._position_minimap()
+    
     def set_central_widget(self, widget: QWidget) -> None:
         """
         Set the central widget (typically the node graph).
@@ -461,7 +514,12 @@ class MainWindow(QMainWindow):
         Args:
             widget: Widget to display in the central area
         """
+        self._central_widget = widget
         self.setCentralWidget(widget)
+        
+        # Initialize minimap if widget is a node graph
+        if hasattr(widget, 'graph'):
+            self._create_minimap(widget.graph)
     
     def set_modified(self, modified: bool) -> None:
         """

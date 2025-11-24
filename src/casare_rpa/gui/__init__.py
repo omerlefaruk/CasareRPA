@@ -23,6 +23,7 @@ from .debug_toolbar import DebugToolbar
 from .variable_inspector import VariableInspectorPanel
 from .execution_history_viewer import ExecutionHistoryViewer
 from .auto_connect import AutoConnectManager
+from .minimap import Minimap
 
 __all__ = [
     "__version__",
@@ -41,4 +42,5 @@ __all__ = [
     "VariableInspectorPanel",
     "ExecutionHistoryViewer",
     "AutoConnectManager",
+    "Minimap",
 ]
