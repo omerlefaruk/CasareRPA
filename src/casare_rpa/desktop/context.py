@@ -7,7 +7,7 @@ Manages windows, applications, and provides high-level desktop automation API.
 import time
 import subprocess
 import psutil
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 import uiautomation as auto
 
@@ -310,10 +310,261 @@ class DesktopContext:
         
         self._launched_processes.clear()
     
+    def resize_window(
+        self,
+        window: DesktopElement,
+        width: int,
+        height: int
+    ) -> bool:
+        """
+        Resize a window to specified dimensions.
+
+        Args:
+            window: DesktopElement representing the window
+            width: New width in pixels
+            height: New height in pixels
+
+        Returns:
+            True if resize was successful
+
+        Raises:
+            ValueError: If window cannot be resized
+        """
+        logger.debug(f"Resizing window to {width}x{height}")
+
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = window._control.NativeWindowHandle
+
+            # Get current position to preserve it
+            rect = window.get_bounding_rect()
+            current_x = rect['left']
+            current_y = rect['top']
+
+            # Resize window
+            win32gui.MoveWindow(hwnd, current_x, current_y, width, height, True)
+
+            logger.info(f"Resized window to {width}x{height}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to resize window: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def move_window(
+        self,
+        window: DesktopElement,
+        x: int,
+        y: int
+    ) -> bool:
+        """
+        Move a window to specified position.
+
+        Args:
+            window: DesktopElement representing the window
+            x: New X position (left edge)
+            y: New Y position (top edge)
+
+        Returns:
+            True if move was successful
+
+        Raises:
+            ValueError: If window cannot be moved
+        """
+        logger.debug(f"Moving window to ({x}, {y})")
+
+        try:
+            import win32gui
+
+            hwnd = window._control.NativeWindowHandle
+
+            # Get current size to preserve it
+            rect = window.get_bounding_rect()
+            current_width = rect['width']
+            current_height = rect['height']
+
+            # Move window
+            win32gui.MoveWindow(hwnd, x, y, current_width, current_height, True)
+
+            logger.info(f"Moved window to ({x}, {y})")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to move window: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def maximize_window(self, window: DesktopElement) -> bool:
+        """
+        Maximize a window.
+
+        Args:
+            window: DesktopElement representing the window
+
+        Returns:
+            True if maximize was successful
+        """
+        logger.debug("Maximizing window")
+
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = window._control.NativeWindowHandle
+            win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+
+            logger.info(f"Maximized window: {window.get_text()}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to maximize window: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def minimize_window(self, window: DesktopElement) -> bool:
+        """
+        Minimize a window.
+
+        Args:
+            window: DesktopElement representing the window
+
+        Returns:
+            True if minimize was successful
+        """
+        logger.debug("Minimizing window")
+
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = window._control.NativeWindowHandle
+            win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+
+            logger.info(f"Minimized window: {window.get_text()}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to minimize window: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def restore_window(self, window: DesktopElement) -> bool:
+        """
+        Restore a window to normal state (from maximized or minimized).
+
+        Args:
+            window: DesktopElement representing the window
+
+        Returns:
+            True if restore was successful
+        """
+        logger.debug("Restoring window")
+
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = window._control.NativeWindowHandle
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+            logger.info(f"Restored window: {window.get_text()}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to restore window: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def get_window_properties(self, window: DesktopElement) -> Dict[str, Any]:
+        """
+        Get comprehensive properties of a window.
+
+        Args:
+            window: DesktopElement representing the window
+
+        Returns:
+            Dictionary with window properties
+        """
+        logger.debug("Getting window properties")
+
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = window._control.NativeWindowHandle
+
+            # Get window rect
+            rect = window.get_bounding_rect()
+
+            # Get window state
+            placement = win32gui.GetWindowPlacement(hwnd)
+            show_state = placement[1]
+
+            state_map = {
+                win32con.SW_HIDE: 'hidden',
+                win32con.SW_MINIMIZE: 'minimized',
+                win32con.SW_MAXIMIZE: 'maximized',
+                win32con.SW_RESTORE: 'normal',
+                win32con.SW_SHOW: 'normal',
+                win32con.SW_SHOWMINIMIZED: 'minimized',
+                win32con.SW_SHOWMAXIMIZED: 'maximized',
+                win32con.SW_SHOWNOACTIVATE: 'normal',
+                win32con.SW_SHOWNORMAL: 'normal',
+            }
+            window_state = state_map.get(show_state, 'normal')
+
+            # Get window style
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+
+            properties = {
+                'title': window.get_text(),
+                'process_id': window._control.ProcessId,
+                'handle': hwnd,
+                'automation_id': window.get_property('AutomationId'),
+                'class_name': window._control.ClassName,
+                'control_type': window._control.ControlTypeName,
+                'is_enabled': window.is_enabled(),
+                'is_visible': window.is_visible(),
+                'bounds': rect,
+                'x': rect['left'],
+                'y': rect['top'],
+                'width': rect['width'],
+                'height': rect['height'],
+                'state': window_state,
+                'is_maximized': bool(style & win32con.WS_MAXIMIZE),
+                'is_minimized': bool(style & win32con.WS_MINIMIZE),
+                'is_resizable': bool(style & win32con.WS_THICKFRAME),
+                'has_title_bar': bool(style & win32con.WS_CAPTION),
+            }
+
+            logger.info(f"Got properties for window: {properties['title']}")
+            return properties
+
+        except Exception as e:
+            error_msg = f"Failed to get window properties: {e}"
+            logger.error(error_msg)
+            # Return basic properties if win32 fails
+            rect = window.get_bounding_rect()
+            return {
+                'title': window.get_text(),
+                'process_id': window.get_property('ProcessId'),
+                'is_enabled': window.is_enabled(),
+                'is_visible': window.is_visible(),
+                'bounds': rect,
+                'x': rect['left'],
+                'y': rect['top'],
+                'width': rect['width'],
+                'height': rect['height'],
+                'state': 'unknown',
+            }
+
     def __enter__(self):
         """Context manager entry."""
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - cleanup resources."""
         self.cleanup()
