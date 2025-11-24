@@ -1348,6 +1348,115 @@ class VisualDragMouseNode(VisualNode):
         self.add_output("success")
 
 
+# Wait & Verification Nodes
+
+class VisualWaitForElementNode(VisualNode):
+    """Visual representation of WaitForElementNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Wait For Element"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Wait For Element node."""
+        super().__init__()
+        self.create_property("timeout", 10.0, widget_type=2, tab="config")
+        self.create_property("state", "visible",
+                           items=["visible", "hidden", "enabled", "disabled"],
+                           widget_type=3, tab="config")
+        self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("selector")
+        self.add_input("timeout")
+        self.add_output("exec_out")
+        self.add_output("element")
+        self.add_output("success")
+
+
+class VisualWaitForWindowNode(VisualNode):
+    """Visual representation of WaitForWindowNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Wait For Window"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Wait For Window node."""
+        super().__init__()
+        self.add_text_input("title", "Window Title", text="", tab="inputs")
+        self.add_text_input("title_regex", "Title Regex", text="", tab="inputs")
+        self.add_text_input("class_name", "Class Name", text="", tab="inputs")
+        self.create_property("timeout", 10.0, widget_type=2, tab="config")
+        self.create_property("state", "visible",
+                           items=["visible", "hidden"],
+                           widget_type=3, tab="config")
+        self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("title")
+        self.add_input("title_regex")
+        self.add_input("class_name")
+        self.add_input("timeout")
+        self.add_output("exec_out")
+        self.add_output("window")
+        self.add_output("success")
+
+
+class VisualVerifyElementExistsNode(VisualNode):
+    """Visual representation of VerifyElementExistsNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Verify Element Exists"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Verify Element Exists node."""
+        super().__init__()
+        self.create_property("timeout", 0.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("selector")
+        self.add_input("timeout")
+        self.add_output("exec_out")
+        self.add_output("exists")
+        self.add_output("element")
+
+
+class VisualVerifyElementPropertyNode(VisualNode):
+    """Visual representation of VerifyElementPropertyNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Verify Element Property"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Verify Element Property node."""
+        super().__init__()
+        self.add_text_input("property_name", "Property Name", text="Name", tab="inputs")
+        self.add_text_input("expected_value", "Expected Value", text="", tab="inputs")
+        self.create_property("comparison", "equals",
+                           items=["equals", "contains", "startswith", "endswith",
+                                  "regex", "greater", "less", "not_equals"],
+                           widget_type=3, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("property_name")
+        self.add_input("expected_value")
+        self.add_output("exec_out")
+        self.add_output("result")
+        self.add_output("actual_value")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""
