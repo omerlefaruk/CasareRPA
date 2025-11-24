@@ -68,6 +68,12 @@ if TYPE_CHECKING:
         JsonParseNode,
         GetPropertyNode,
     )
+    from .utility_nodes import (
+        HttpRequestNode,
+        ValidateNode,
+        TransformNode,
+        LogNode,
+    )
 
 
 # Lazy loading registry - maps node class names to their module paths
@@ -125,6 +131,11 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ListGetItemNode": "data_operation_nodes",
     "JsonParseNode": "data_operation_nodes",
     "GetPropertyNode": "data_operation_nodes",
+    # Utility nodes
+    "HttpRequestNode": "utility_nodes",
+    "ValidateNode": "utility_nodes",
+    "TransformNode": "utility_nodes",
+    "LogNode": "utility_nodes",
 }
 
 # Cache for loaded modules and classes
@@ -278,6 +289,11 @@ __all__ = [
     "ListGetItemNode",
     "JsonParseNode",
     "GetPropertyNode",
+    # Utility nodes
+    "HttpRequestNode",
+    "ValidateNode",
+    "TransformNode",
+    "LogNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",

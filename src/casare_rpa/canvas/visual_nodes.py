@@ -41,6 +41,7 @@ NODE_COLORS = {
     "data": UNIFIED_NODE_COLOR,
     "wait": UNIFIED_NODE_COLOR,
     "variable": UNIFIED_NODE_COLOR,
+    "utility": UNIFIED_NODE_COLOR,
 }
 
 
@@ -932,6 +933,154 @@ class VisualGetElementPropertyNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("value")
         self.add_output("element")
+
+
+# =============================================================================
+# Utility Nodes
+# =============================================================================
+
+class VisualHttpRequestNode(VisualNode):
+    """Visual representation of HttpRequestNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "HTTP Request"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Request node."""
+        super().__init__()
+        self.add_text_input("url", "URL", placeholder_text="https://api.example.com", tab="inputs")
+        self.add_combo_menu("method", "Method", items=[
+            "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
+        ], tab="inputs")
+        self.add_text_input("headers", "Headers (JSON)", text="{}", tab="inputs")
+        self.add_text_input("body", "Body", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        self.create_property("follow_redirects", True, widget_type=1, tab="config")
+        self.add_text_input("variable_name", "Variable Name", text="http_response", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("headers")
+        self.add_input("body")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("status_code")
+        self.add_output("headers")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualValidateNode(VisualNode):
+    """Visual representation of ValidateNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Validate"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Validate node."""
+        super().__init__()
+        self.add_combo_menu("validation_type", "Validation Type", items=[
+            "not_empty",
+            "is_string",
+            "is_number",
+            "is_integer",
+            "is_boolean",
+            "is_list",
+            "is_dict",
+            "matches_regex",
+            "min_length",
+            "max_length",
+            "min_value",
+            "max_value",
+            "in_list",
+            "is_email",
+            "is_url"
+        ], tab="inputs")
+        self.add_text_input("validation_param", "Parameter", text="", tab="inputs")
+        self.add_text_input("error_message", "Error Message", text="Validation failed", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("value")
+        self.add_output("valid")
+        self.add_output("invalid")
+        self.add_output("is_valid")
+        self.add_output("error_message")
+
+
+class VisualTransformNode(VisualNode):
+    """Visual representation of TransformNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Transform"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Transform node."""
+        super().__init__()
+        self.add_combo_menu("transform_type", "Transform Type", items=[
+            "to_string",
+            "to_integer",
+            "to_float",
+            "to_boolean",
+            "to_list",
+            "to_json",
+            "from_json",
+            "uppercase",
+            "lowercase",
+            "trim",
+            "split",
+            "join",
+            "replace",
+            "regex_extract",
+            "get_key",
+            "get_index",
+            "map_values",
+            "filter_values"
+        ], tab="inputs")
+        self.add_text_input("transform_param", "Parameter", text="", tab="inputs")
+        self.add_text_input("variable_name", "Variable Name", text="transformed", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("value")
+        self.add_input("param")
+        self.add_output("exec_out")
+        self.add_output("result")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualLogNode(VisualNode):
+    """Visual representation of LogNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Log"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Log node."""
+        super().__init__()
+        self.add_text_input("message", "Message", text="", tab="inputs")
+        self.add_combo_menu("level", "Level", items=[
+            "critical", "error", "warning", "info", "debug"
+        ], tab="inputs")
+        self.create_property("include_timestamp", True, widget_type=1, tab="config")
+        self.create_property("include_node_id", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("message")
+        self.add_input("data")
+        self.add_output("exec_out")
 
 
 # Dynamic node discovery
