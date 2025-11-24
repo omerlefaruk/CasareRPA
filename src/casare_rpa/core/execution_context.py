@@ -251,20 +251,56 @@ class ExecutionContext:
             f"nodes_executed={len(self.execution_path)})"
         )
 
-    def __enter__(self) -> "ExecutionContext":
-        """Context manager entry."""
+    # Async context manager (preferred)
+    async def __aenter__(self) -> "ExecutionContext":
+        """Async context manager entry."""
         return self
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Context manager exit - ensure cleanup happens."""
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        """Async context manager exit - ensure cleanup happens."""
+        try:
+            await self.cleanup()
+        except Exception as e:
+            logger.error(f"Error during async context cleanup: {e}")
+        return False  # Don't suppress exceptions
+
+    # Sync context manager (for backwards compatibility)
+    def __enter__(self) -> "ExecutionContext":
+        """Sync context manager entry (prefer async with instead)."""
+        logger.warning(
+            "Using sync context manager with ExecutionContext. "
+            "Consider using 'async with' for proper cleanup."
+        )
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+        """
+        Sync context manager exit.
+
+        Note: This attempts to run async cleanup synchronously. For proper
+        resource cleanup, use 'async with' instead.
+        """
         import asyncio
 
         try:
-            # Run cleanup in event loop if available
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
+            # Try to get the running event loop
+            try:
+                loop = asyncio.get_running_loop()
+                # Loop is running - schedule cleanup as a task
+                # This is not ideal as it won't wait for cleanup to complete
+                logger.warning(
+                    "Sync __exit__ called while event loop is running. "
+                    "Cleanup will be scheduled but may not complete before exit."
+                )
                 loop.create_task(self.cleanup())
-            else:
-                loop.run_until_complete(self.cleanup())
+            except RuntimeError:
+                # No running loop - we can run cleanup synchronously
+                loop = asyncio.new_event_loop()
+                try:
+                    loop.run_until_complete(self.cleanup())
+                finally:
+                    loop.close()
         except Exception as e:
-            logger.error(f"Error during context cleanup: {e}")
+            logger.error(f"Error during sync context cleanup: {e}")
+
+        return False  # Don't suppress exceptions
