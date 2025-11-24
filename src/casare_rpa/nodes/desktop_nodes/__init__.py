@@ -61,6 +61,21 @@ from .screenshot_ocr_nodes import (
     CompareImagesNode,
 )
 
+from .office_nodes import (
+    ExcelOpenNode,
+    ExcelReadCellNode,
+    ExcelWriteCellNode,
+    ExcelGetRangeNode,
+    ExcelCloseNode,
+    WordOpenNode,
+    WordGetTextNode,
+    WordReplaceTextNode,
+    WordCloseNode,
+    OutlookSendEmailNode,
+    OutlookReadEmailsNode,
+    OutlookGetInboxCountNode,
+)
+
 __all__ = [
     # Application nodes
     'LaunchApplicationNode',
@@ -105,4 +120,17 @@ __all__ = [
     'CaptureElementImageNode',
     'OCRExtractTextNode',
     'CompareImagesNode',
+    # Office automation nodes
+    'ExcelOpenNode',
+    'ExcelReadCellNode',
+    'ExcelWriteCellNode',
+    'ExcelGetRangeNode',
+    'ExcelCloseNode',
+    'WordOpenNode',
+    'WordGetTextNode',
+    'WordReplaceTextNode',
+    'WordCloseNode',
+    'OutlookSendEmailNode',
+    'OutlookReadEmailsNode',
+    'OutlookGetInboxCountNode',
 ]
