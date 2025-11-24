@@ -213,11 +213,16 @@ class TypeTextNode(BaseNode):
             delay = self.config.get("delay", 0)
             
             logger.info(f"Typing text into element: {normalized_selector}")
-            
-            # Type text
-            await page.fill(normalized_selector, text)
+
+            # Type text - use fill() for immediate input, type() for character-by-character with delay
+            # Only use one method to avoid double-typing
             if delay > 0:
+                # Clear the field first, then type with delay
+                await page.fill(normalized_selector, "")
                 await page.type(normalized_selector, text, delay=delay)
+            else:
+                # Use fill() for immediate input (faster)
+                await page.fill(normalized_selector, text)
             
             self.set_output_value("page", page)
             

@@ -3,10 +3,10 @@ CasareRPA - Execution Context
 Manages runtime state, variables, and shared resources during workflow execution.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 from loguru import logger
-from playwright.async_api import Browser, Page
+from playwright.async_api import Browser, BrowserContext, Page
 
 from .types import ExecutionMode, NodeId
 
@@ -39,6 +39,7 @@ class ExecutionContext:
 
         # Shared resources (Playwright instances)
         self.browser: Optional[Browser] = None
+        self.browser_contexts: List[BrowserContext] = []  # Track all browser contexts
         self.pages: Dict[str, Page] = {}  # Named pages for multiple tabs
         self.active_page: Optional[Page] = None
 
@@ -135,6 +136,16 @@ class ExecutionContext:
         self.active_page = None
         logger.debug("All pages cleared")
 
+    def add_browser_context(self, context: BrowserContext) -> None:
+        """
+        Track a browser context for cleanup.
+
+        Args:
+            context: Playwright browser context object
+        """
+        self.browser_contexts.append(context)
+        logger.debug(f"Browser context added (total: {len(self.browser_contexts)})")
+
     def close_page(self, name: str) -> None:
         """Close and remove a named page."""
         if name in self.pages:
@@ -195,25 +206,37 @@ class ExecutionContext:
 
     async def cleanup(self) -> None:
         """
-        Clean up resources (close browser, pages, etc.).
+        Clean up resources (close browser, pages, browser contexts, etc.).
         Should be called when execution completes or fails.
         """
         logger.info("Cleaning up execution context...")
 
         # Close all pages
-        for page in self.pages.values():
+        for name, page in list(self.pages.items()):
             try:
                 await page.close()
+                logger.debug(f"Page '{name}' closed")
             except Exception as e:
-                logger.warning(f"Error closing page: {e}")
+                logger.warning(f"Error closing page '{name}': {e}")
 
         self.pages.clear()
         self.active_page = None
+
+        # Close all browser contexts
+        for i, context in enumerate(self.browser_contexts):
+            try:
+                await context.close()
+                logger.debug(f"Browser context {i} closed")
+            except Exception as e:
+                logger.warning(f"Error closing browser context {i}: {e}")
+
+        self.browser_contexts.clear()
 
         # Close browser
         if self.browser:
             try:
                 await self.browser.close()
+                logger.debug("Browser closed")
             except Exception as e:
                 logger.warning(f"Error closing browser: {e}")
             self.browser = None
