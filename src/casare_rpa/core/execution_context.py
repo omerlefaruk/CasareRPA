@@ -49,6 +49,9 @@ class ExecutionContext:
         self.errors: list[tuple[NodeId, str]] = []  # Track errors
         self.stopped: bool = False
 
+        # Desktop automation context (lazy-initialized)
+        self.desktop_context: Any = None
+
         logger.info(f"Execution context created for workflow: {workflow_name}")
 
     def set_variable(self, name: str, value: Any) -> None:
@@ -206,10 +209,24 @@ class ExecutionContext:
 
     async def cleanup(self) -> None:
         """
-        Clean up resources (close browser, pages, browser contexts, etc.).
+        Clean up resources (close browser, pages, browser contexts, desktop context, etc.).
         Should be called when execution completes or fails.
         """
         logger.info("Cleaning up execution context...")
+
+        # Clean up desktop context first (COM objects should be released early)
+        if self.desktop_context is not None:
+            try:
+                # DesktopContext may have a cleanup method
+                if hasattr(self.desktop_context, 'cleanup'):
+                    self.desktop_context.cleanup()
+                elif hasattr(self.desktop_context, 'close'):
+                    self.desktop_context.close()
+                logger.debug("Desktop context cleaned up")
+            except Exception as e:
+                logger.warning(f"Error cleaning up desktop context: {e}")
+            finally:
+                self.desktop_context = None
 
         # Close all pages
         for name, page in list(self.pages.items()):
