@@ -281,6 +281,11 @@ class NodeRegistry:
                             name=qmenu._first_match.NODE_NAME,
                             pos=[pos.x() - 100, pos.y() - 30]
                         )
+                        # Attach CasareRPA node immediately with unique ID
+                        factory = get_node_factory()
+                        casare_node = factory.create_casare_node(node)
+                        if casare_node:
+                            node.set_casare_node(casare_node)
                         qmenu.close()
                     event.accept()
                 else:
@@ -341,6 +346,11 @@ class NodeRegistry:
                             name=cls.NODE_NAME,
                             pos=[pos.x() - 100, pos.y() - 30]
                         )
+                        # Attach CasareRPA node immediately with unique ID
+                        factory = get_node_factory()
+                        casare_node = factory.create_casare_node(node)
+                        if casare_node:
+                            node.set_casare_node(casare_node)
                         return node
                     return create_node
                 
@@ -390,10 +400,15 @@ class NodeRegistry:
                                 viewer = graph.viewer()
                                 pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
                                 node = graph.create_node(
-                                    f'{cls.__identifier__}.{cls.__name__}',
-                                    name=cls.NODE_NAME,
+                                    f'{node_class.__identifier__}.{node_class.__name__}',
+                                    name=node_class.NODE_NAME,
                                     pos=[pos.x() - 100, pos.y() - 30]
                                 )
+                                # Attach CasareRPA node immediately with unique ID
+                                factory = get_node_factory()
+                                casare_node = factory.create_casare_node(node)
+                                if casare_node:
+                                    node.set_casare_node(casare_node)
                                 return node
                             return create_node
                         
@@ -428,6 +443,11 @@ class NodeRegistry:
                                 name=cls.NODE_NAME,
                                 pos=[pos.x() - 100, pos.y() - 30]
                             )
+                            # Attach CasareRPA node immediately with unique ID
+                            factory = get_node_factory()
+                            casare_node = factory.create_casare_node(node)
+                            if casare_node:
+                                node.set_casare_node(casare_node)
                             qmenu.close()  # Close menu after adding node
                             return node
                         return create_node

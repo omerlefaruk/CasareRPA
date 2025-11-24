@@ -260,6 +260,7 @@ class CasareRPAApp:
         from ..nodes.navigation_nodes import GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode
         from ..nodes.interaction_nodes import ClickElementNode, TypeTextNode, SelectDropdownNode
         from ..nodes.data_nodes import ExtractTextNode, GetAttributeNode, ScreenshotNode
+        from ..nodes.desktop_nodes import LaunchApplicationNode, CloseApplicationNode, ActivateWindowNode, GetWindowListNode
         
         # Map node types to (class, identifier)
         NODE_TYPE_MAP = {
@@ -288,6 +289,10 @@ class CasareRPAApp:
             "ExtractTextNode": (ExtractTextNode, "casare_rpa.data"),
             "GetAttributeNode": (GetAttributeNode, "casare_rpa.data"),
             "ScreenshotNode": (ScreenshotNode, "casare_rpa.data"),
+            "LaunchApplicationNode": (LaunchApplicationNode, "casare_rpa.nodes.desktop"),
+            "CloseApplicationNode": (CloseApplicationNode, "casare_rpa.nodes.desktop"),
+            "ActivateWindowNode": (ActivateWindowNode, "casare_rpa.nodes.desktop"),
+            "GetWindowListNode": (GetWindowListNode, "casare_rpa.nodes.desktop"),
         }
         
         graph = self._node_graph.graph
@@ -300,6 +305,7 @@ class CasareRPAApp:
         node_map = {}  # Map node_id to visual node
         
         for node_id, node_data in workflow.nodes.items():
+            logger.info(f"Loading node {node_id}: keys={list(node_data.keys())}")
             node_type = node_data.get("node_type")
             
             # Get the node class and identifier from mapping
@@ -319,10 +325,35 @@ class CasareRPAApp:
                     casare_node = node_class(node_id, node_data.get("config", {}))
                     visual_node.set_casare_node(casare_node)
                     
+                    # Restore widget values from saved config
+                    config = node_data.get("config", {})
+                    widgets = visual_node.widgets()
+                    for widget_name, widget in widgets.items():
+                        if widget_name in config:
+                            try:
+                                widget.set_value(config[widget_name])
+                                logger.info(f"Restored widget {node_id}.{widget_name} = '{config[widget_name]}'")
+                            except Exception as e:
+                                logger.warning(f"Failed to restore widget {node_id}.{widget_name}: {e}")
+                    
+                    # Restore node name if available
+                    name = node_data.get("name")
+                    if name:
+                        visual_node.set_name(name)
+                        logger.info(f"Restored name for {node_id}: '{name}'")
+                    
                     # Set node position if available
-                    pos = node_data.get("position", {})
-                    if pos:
-                        visual_node.set_pos(pos.get("x", 0), pos.get("y", 0))
+                    pos = node_data.get("position")
+                    if pos and "x" in pos and "y" in pos:
+                        logger.info(f"Restoring position for {node_id}: ({pos['x']}, {pos['y']})")
+                        visual_node.set_pos(pos["x"], pos["y"])
+                    else:
+                        # Auto-arrange nodes that don't have positions
+                        index = len(node_map)
+                        x = 100 + (index % 4) * 250
+                        y = 100 + (index // 4) * 150
+                        logger.info(f"Auto-arranging {node_id} at ({x}, {y})")
+                        visual_node.set_pos(x, y)
                     
                     node_map[node_id] = visual_node
         
@@ -389,14 +420,30 @@ class CasareRPAApp:
                 
                 # Serialize nodes to dict format for saving
                 serialized_workflow = WorkflowSchema(workflow.metadata)
+                
+                # Build a map of visual nodes by their node_id property
+                visual_node_map = {}
+                for visual_node in self._node_graph.graph.all_nodes():
+                    visual_node_id = visual_node.get_property("node_id")
+                    if visual_node_id:
+                        visual_node_map[visual_node_id] = visual_node
+                        logger.info(f"Visual node map: {visual_node_id} -> {visual_node.name()}")
+                    else:
+                        logger.warning(f"Visual node {visual_node.name()} has no node_id property")
+                
                 for node_id, node in workflow.nodes.items():
                     serialized_node = node.serialize()
-                    # Add node position from graph
-                    for visual_node in self._node_graph.graph.all_nodes():
-                        if visual_node.get_property("node_id") == node_id:
-                            pos = visual_node.pos()
-                            serialized_node["position"] = {"x": pos[0], "y": pos[1]}
-                            break
+                    
+                    # Add node position and name from graph
+                    if node_id in visual_node_map:
+                        visual_node = visual_node_map[node_id]
+                        pos = visual_node.pos()
+                        serialized_node["position"] = {"x": pos[0], "y": pos[1]}
+                        serialized_node["name"] = visual_node.name()
+                        logger.info(f"Saving {node_id}: pos=({pos[0]}, {pos[1]}), name='{visual_node.name()}'")
+                    else:
+                        logger.warning(f"No visual node found for {node_id}")
+                    
                     serialized_workflow.add_node(serialized_node)
                 
                 # Add connections
@@ -432,14 +479,30 @@ class CasareRPAApp:
             
             # Serialize nodes to dict format for saving
             serialized_workflow = WorkflowSchema(workflow.metadata)
+            
+            # Build a map of visual nodes by their node_id property
+            visual_node_map = {}
+            for visual_node in self._node_graph.graph.all_nodes():
+                visual_node_id = visual_node.get_property("node_id")
+                if visual_node_id:
+                    visual_node_map[visual_node_id] = visual_node
+                    logger.info(f"Visual node map: {visual_node_id} -> {visual_node.name()}")
+                else:
+                    logger.warning(f"Visual node {visual_node.name()} has no node_id property")
+            
             for node_id, node in workflow.nodes.items():
                 serialized_node = node.serialize()
-                # Add node position from graph
-                for visual_node in self._node_graph.graph.all_nodes():
-                    if visual_node.get_property("node_id") == node_id:
-                        pos = visual_node.pos()
-                        serialized_node["position"] = {"x": pos[0], "y": pos[1]}
-                        break
+                
+                # Add node position and name from graph
+                if node_id in visual_node_map:
+                    visual_node = visual_node_map[node_id]
+                    pos = visual_node.pos()
+                    serialized_node["position"] = {"x": pos[0], "y": pos[1]}
+                    serialized_node["name"] = visual_node.name()
+                    logger.info(f"Saving {node_id}: pos=({pos[0]}, {pos[1]}), name='{visual_node.name()}'")
+                else:
+                    logger.warning(f"No visual node found for {node_id}")
+                
                 serialized_workflow.add_node(serialized_node)
             
             # Add connections
@@ -538,15 +601,25 @@ class CasareRPAApp:
         
         # Build nodes dict with actual node instances (required by WorkflowRunner)
         nodes_dict = {}
+        node_id_map = {}  # Map visual_node -> node_id for connections
+        
         logger.info(f"Building workflow from {len(graph.all_nodes())} visual nodes")
         for visual_node in graph.all_nodes():
             # Get the underlying CasareRPA node
             casare_node = visual_node.get_casare_node()
             if casare_node:
-                logger.info(f"Processing visual node: {visual_node.name()} -> {casare_node.node_type}")
+                # Use the visual node's stored node_id property (set by set_casare_node)
+                stored_node_id = visual_node.get_property("node_id")
+                if stored_node_id:
+                    node_id = stored_node_id
+                else:
+                    node_id = casare_node.node_id
+                
+                logger.info(f"Processing visual node: {visual_node.name()} -> {casare_node.node_type} (id={node_id})")
                 # Sync visual node properties to CasareRPA node config
                 self._sync_visual_properties_to_node(visual_node, casare_node)
-                nodes_dict[casare_node.node_id] = casare_node
+                nodes_dict[node_id] = casare_node
+                node_id_map[visual_node] = node_id
             else:
                 logger.warning(f"Skipping node {visual_node.name()} - no CasareRPA node")
         
@@ -575,7 +648,9 @@ class CasareRPAApp:
                     break
             
             if not exec_in_connected:
-                entry_nodes.append(casare_node.node_id)
+                # Use the mapped node_id from node_id_map
+                node_id = node_id_map.get(visual_node, casare_node.node_id)
+                entry_nodes.append(node_id)
         
         # Set nodes as instances (WorkflowRunner needs this)
         workflow.nodes = nodes_dict
@@ -595,22 +670,23 @@ class CasareRPAApp:
             connections.append(connection)
             logger.info(f"Auto-connected Start → {entry_node_id}")
         for node in graph.all_nodes():
-            # Get the CasareRPA node to access node_id
-            source_casare_node = node.get_casare_node()
-            if not source_casare_node:
+            # Get the source node ID from our map
+            source_node_id = node_id_map.get(node)
+            if not source_node_id:
                 continue
             
             # Get output connections
             for output_port in node.output_ports():
                 for connected_port in output_port.connected_ports():
-                    target_casare_node = connected_port.node().get_casare_node()
-                    if not target_casare_node:
+                    target_visual_node = connected_port.node()
+                    target_node_id = node_id_map.get(target_visual_node)
+                    if not target_node_id:
                         continue
                     
                     connection = NodeConnection(
-                        source_node=source_casare_node.node_id,
+                        source_node=source_node_id,
                         source_port=output_port.name(),
-                        target_node=target_casare_node.node_id,
+                        target_node=target_node_id,
                         target_port=connected_port.name()
                     )
                     connections.append(connection)
