@@ -29,6 +29,15 @@ from .window_nodes import (
     SetWindowStateNode,
 )
 
+from .interaction_nodes import (
+    SelectFromDropdownNode,
+    CheckCheckboxNode,
+    SelectRadioButtonNode,
+    SelectTabNode,
+    ExpandTreeItemNode,
+    ScrollElementNode,
+)
+
 __all__ = [
     # Application nodes
     'LaunchApplicationNode',
@@ -49,4 +58,11 @@ __all__ = [
     'RestoreWindowNode',
     'GetWindowPropertiesNode',
     'SetWindowStateNode',
+    # Advanced interaction nodes
+    'SelectFromDropdownNode',
+    'CheckCheckboxNode',
+    'SelectRadioButtonNode',
+    'SelectTabNode',
+    'ExpandTreeItemNode',
+    'ScrollElementNode',
 ]

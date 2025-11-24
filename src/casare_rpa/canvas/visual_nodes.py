@@ -1081,6 +1081,131 @@ class VisualSetWindowStateNode(VisualNode):
         self.add_output("success")
 
 
+# Advanced Interaction Nodes
+
+class VisualSelectFromDropdownNode(VisualNode):
+    """Visual representation of SelectFromDropdownNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Select From Dropdown"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Select From Dropdown node."""
+        super().__init__()
+        self.add_text_input("value", "Value to Select", text="", tab="inputs")
+        self.create_property("by_text", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("value")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualCheckCheckboxNode(VisualNode):
+    """Visual representation of CheckCheckboxNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Check Checkbox"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Check Checkbox node."""
+        super().__init__()
+        self.create_property("check", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualSelectRadioButtonNode(VisualNode):
+    """Visual representation of SelectRadioButtonNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Select Radio Button"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualSelectTabNode(VisualNode):
+    """Visual representation of SelectTabNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Select Tab"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Select Tab node."""
+        super().__init__()
+        self.add_text_input("tab_name", "Tab Name", text="", tab="inputs")
+        self.create_property("tab_index", -1, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("tab_control")
+        self.add_input("tab_name")
+        self.add_input("tab_index")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualExpandTreeItemNode(VisualNode):
+    """Visual representation of ExpandTreeItemNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Expand Tree Item"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Expand Tree Item node."""
+        super().__init__()
+        self.create_property("expand", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualScrollElementNode(VisualNode):
+    """Visual representation of ScrollElementNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Scroll Element"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Scroll Element node."""
+        super().__init__()
+        self.create_property("direction", "down",
+                           items=["up", "down", "left", "right"],
+                           widget_type=3, tab="config")
+        self.create_property("amount", 0.5, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

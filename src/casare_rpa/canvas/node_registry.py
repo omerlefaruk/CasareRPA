@@ -83,6 +83,13 @@ from .visual_nodes import (
     VisualRestoreWindowNode,
     VisualGetWindowPropertiesNode,
     VisualSetWindowStateNode,
+    # Advanced Interactions
+    VisualSelectFromDropdownNode,
+    VisualCheckCheckboxNode,
+    VisualSelectRadioButtonNode,
+    VisualSelectTabNode,
+    VisualExpandTreeItemNode,
+    VisualScrollElementNode,
 )
 
 from ..nodes import (
@@ -159,6 +166,13 @@ from ..nodes.desktop_nodes import (
     RestoreWindowNode as DesktopRestoreWindowNode,
     GetWindowPropertiesNode as DesktopGetWindowPropertiesNode,
     SetWindowStateNode as DesktopSetWindowStateNode,
+    # Advanced Interactions
+    SelectFromDropdownNode as DesktopSelectFromDropdownNode,
+    CheckCheckboxNode as DesktopCheckCheckboxNode,
+    SelectRadioButtonNode as DesktopSelectRadioButtonNode,
+    SelectTabNode as DesktopSelectTabNode,
+    ExpandTreeItemNode as DesktopExpandTreeItemNode,
+    ScrollElementNode as DesktopScrollElementNode,
 )
 
 
@@ -235,6 +249,13 @@ CASARE_NODE_MAPPING = {
     VisualRestoreWindowNode: DesktopRestoreWindowNode,
     VisualGetWindowPropertiesNode: DesktopGetWindowPropertiesNode,
     VisualSetWindowStateNode: DesktopSetWindowStateNode,
+    # Advanced Interactions
+    VisualSelectFromDropdownNode: DesktopSelectFromDropdownNode,
+    VisualCheckCheckboxNode: DesktopCheckCheckboxNode,
+    VisualSelectRadioButtonNode: DesktopSelectRadioButtonNode,
+    VisualSelectTabNode: DesktopSelectTabNode,
+    VisualExpandTreeItemNode: DesktopExpandTreeItemNode,
+    VisualScrollElementNode: DesktopScrollElementNode,
 }
 
 

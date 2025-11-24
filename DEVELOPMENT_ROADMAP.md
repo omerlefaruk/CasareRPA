@@ -1,8 +1,8 @@
 # CasareRPA Development Roadmap
 
-**Last Updated**: November 24, 2025
-**Current Status**: Phase 7 - Bite 4 COMPLETE ✅ | Desktop Selector Builder UI Ready 🎯
-**Total Tests**: 341 passing (100% success rate) ✅
+**Last Updated**: November 25, 2025
+**Current Status**: Phase 7 - Bite 6 COMPLETE ✅ | Advanced Interactions Ready 🎯
+**Total Tests**: 401 passing (100% success rate) ✅
 
 ---
 
@@ -17,7 +17,7 @@
 - ✅ **Phase 6**: Advanced Workflow Features - 100% Complete
 
 ### 🔴 ACTIVE PHASE
-- 🔴 **Phase 7**: Windows Desktop Automation - 🔄 Bite 4 COMPLETE (33% Done)
+- 🔴 **Phase 7**: Windows Desktop Automation - 🔄 Bite 6 COMPLETE (50% Done)
 
 ### Phase 6 Final Status (101 tests total)
 - ✅ **Control Flow Nodes** (29 tests) - 100% Complete
@@ -276,18 +276,18 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 - [x] Node property integration ("Pick Element" button)
 - [x] Unit tests (20 tests passing)
 
-#### Bite 5: Window Management Nodes
-- [ ] ResizeWindowNode, MoveWindowNode
-- [ ] Maximize/Minimize/Restore nodes
-- [ ] GetWindowPropertiesNode
-- [ ] Unit tests (12+ tests)
+#### Bite 5: Window Management Nodes ✅ COMPLETE
+- [x] ResizeWindowNode, MoveWindowNode
+- [x] Maximize/Minimize/Restore nodes
+- [x] GetWindowPropertiesNode, SetWindowStateNode
+- [x] Unit tests (29 tests passing)
 
-#### Bite 6: Advanced Interactions
-- [ ] SelectFromDropdownNode (Desktop)
-- [ ] CheckCheckboxNode, SelectRadioButtonNode
-- [ ] SelectTabNode, ExpandTreeItemNode
-- [ ] ScrollElementNode
-- [ ] Unit tests (15+ tests)
+#### Bite 6: Advanced Interactions ✅ COMPLETE
+- [x] SelectFromDropdownNode (Desktop)
+- [x] CheckCheckboxNode, SelectRadioButtonNode
+- [x] SelectTabNode, ExpandTreeItemNode
+- [x] ScrollElementNode
+- [x] Unit tests (31 tests passing)
 
 #### Bite 7: Mouse & Keyboard Control
 - [ ] MoveMouseNode, MouseClickNode
@@ -348,7 +348,7 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 ### Detailed Documentation
 📄 **Complete Implementation Plan**: See `PHASE7_DESKTOP_AUTOMATION_PLAN.md`
 
-**Progress**: 25% (3/12 bites completed) - Bites 1‑3 ✅ COMPLETE
+**Progress**: 50% (6/12 bites completed) - Bites 1-6 ✅ COMPLETE
 
 ---
 
@@ -972,7 +972,7 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-**Last Updated**: November 24, 2025  
+**Last Updated**: November 25, 2025  
 **Next Review**: December 1, 2025 (Phase 7 Planning)  
 **Version**: 0.1.0 (Phase 6 Complete)
 
