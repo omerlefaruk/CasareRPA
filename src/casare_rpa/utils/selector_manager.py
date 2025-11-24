@@ -11,6 +11,7 @@ from loguru import logger
 
 from .selector_generator import SmartSelectorGenerator, ElementFingerprint
 from .selector_normalizer import normalize_selector, detect_selector_type
+from .selector_cache import SelectorCache, get_selector_cache
 
 
 class SelectorManager:
@@ -19,13 +20,14 @@ class SelectorManager:
     Integrates with Playwright for seamless element picking
     """
 
-    def __init__(self):
+    def __init__(self, cache: Optional[SelectorCache] = None):
         self._injector_script: Optional[str] = None
         self._active_page = None
         self._callback_element_selected: Optional[Callable] = None
         self._callback_recording_complete: Optional[Callable] = None
         self._is_active = False
         self._is_recording = False
+        self._cache = cache or get_selector_cache()
 
     def _load_injector_script(self) -> str:
         """Load the JavaScript injector from file"""
@@ -193,20 +195,43 @@ class SelectorManager:
 
     async def _validate_selectors(self, fingerprint: ElementFingerprint):
         """
-        Validate selectors against the current page
-        Tests uniqueness and updates scores
+        Validate selectors against the current page.
+        Uses caching to avoid repeated DOM queries for the same selectors.
         """
         if not self._active_page:
             return
 
+        # Get current page URL for cache key
+        try:
+            page_url = self._active_page.url
+        except Exception:
+            page_url = "unknown"
+
         for selector_strategy in fingerprint.selectors:
             try:
-                # Test selector using parameterized evaluate to prevent injection
                 selector_value = selector_strategy.value
                 selector_type = selector_strategy.selector_type.value
 
+                # Check cache first
+                cached = self._cache.get(selector_value, selector_type, page_url)
+                if cached:
+                    # Use cached result
+                    selector_strategy.is_unique = cached.is_unique
+                    selector_strategy.execution_time_ms = cached.execution_time_ms
+
+                    if selector_strategy.is_unique:
+                        selector_strategy.score = min(100, selector_strategy.score + 5)
+                    else:
+                        selector_strategy.score = max(0, selector_strategy.score - 10)
+
+                    logger.debug(
+                        f"Validated {selector_type} (cached): "
+                        f"unique={selector_strategy.is_unique}"
+                    )
+                    continue
+
+                # Not in cache - validate against page
                 if selector_type in ['xpath', 'aria', 'data_attr', 'text']:
-                    # XPath-based selectors - pass selector as parameter
                     result = await self._active_page.evaluate("""
                         (selector) => {
                             const start = performance.now();
@@ -222,7 +247,6 @@ class SelectorManager:
                         }
                     """, selector_value)
                 else:
-                    # CSS selectors - pass selector as parameter
                     result = await self._active_page.evaluate("""
                         (selector) => {
                             const start = performance.now();
@@ -232,19 +256,26 @@ class SelectorManager:
                         }
                     """, selector_value)
 
+                # Cache the result
+                self._cache.put(
+                    selector_value,
+                    selector_type,
+                    page_url,
+                    result['count'],
+                    result['time']
+                )
+
                 # Update selector metadata
                 selector_strategy.is_unique = (result['count'] == 1)
                 selector_strategy.execution_time_ms = result['time']
 
-                # Boost score for unique selectors
                 if selector_strategy.is_unique:
                     selector_strategy.score = min(100, selector_strategy.score + 5)
                 else:
-                    # Penalty for non-unique selectors
                     selector_strategy.score = max(0, selector_strategy.score - 10)
 
                 logger.debug(
-                    f"Validated {selector_strategy.selector_type.value}: "
+                    f"Validated {selector_type}: "
                     f"unique={selector_strategy.is_unique}, "
                     f"time={selector_strategy.execution_time_ms:.2f}ms"
                 )
@@ -255,17 +286,33 @@ class SelectorManager:
                 selector_strategy.score = max(0, selector_strategy.score - 15)
 
     async def test_selector(self, selector_value: str,
-                           selector_type: str = 'xpath') -> Dict[str, Any]:
+                           selector_type: str = 'xpath',
+                           use_cache: bool = True) -> Dict[str, Any]:
         """
-        Test a selector against the current page
-        Returns match count and execution time
+        Test a selector against the current page.
+        Returns match count and execution time.
+
+        Args:
+            selector_value: The selector string
+            selector_type: Type of selector (xpath, css, etc.)
+            use_cache: Whether to use cached results if available
         """
         if not self._active_page:
             raise RuntimeError("No active page")
 
         try:
+            page_url = self._active_page.url
+        except Exception:
+            page_url = "unknown"
+
+        # Check cache first if enabled
+        if use_cache:
+            cached = self._cache.get(selector_value, selector_type, page_url)
+            if cached:
+                return cached.to_dict()
+
+        try:
             if selector_type in ['xpath', 'aria', 'data_attr', 'text']:
-                # XPath-based selectors - pass selector as parameter to prevent injection
                 result = await self._active_page.evaluate("""
                     (selector) => {
                         const start = performance.now();
@@ -285,7 +332,6 @@ class SelectorManager:
                     }
                 """, selector_value)
             else:
-                # CSS selectors - pass selector as parameter to prevent injection
                 result = await self._active_page.evaluate("""
                     (selector) => {
                         const start = performance.now();
@@ -298,6 +344,15 @@ class SelectorManager:
                         };
                     }
                 """, selector_value)
+
+            # Cache the result
+            self._cache.put(
+                selector_value,
+                selector_type,
+                page_url,
+                result['count'],
+                result['time']
+            )
 
             return result
         except Exception as e:
@@ -404,3 +459,28 @@ class SelectorManager:
     def is_recording(self) -> bool:
         """Check if recording mode is active"""
         return self._is_recording
+
+    # Cache management methods
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get selector cache statistics."""
+        return self._cache.get_stats()
+
+    def clear_cache(self, page_url: Optional[str] = None) -> int:
+        """
+        Clear selector cache.
+
+        Args:
+            page_url: If provided, only clear entries for this URL
+
+        Returns:
+            Number of entries cleared
+        """
+        return self._cache.invalidate(page_url)
+
+    def enable_cache(self) -> None:
+        """Enable selector caching."""
+        self._cache.enable()
+
+    def disable_cache(self) -> None:
+        """Disable selector caching."""
+        self._cache.disable()
