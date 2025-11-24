@@ -1012,6 +1012,320 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
+    # =========================================================================
+    # Mouse & Keyboard Control Methods (Bite 7)
+    # =========================================================================
+
+    def move_mouse(
+        self,
+        x: int,
+        y: int,
+        duration: float = 0.0
+    ) -> bool:
+        """
+        Move mouse cursor to specified position.
+
+        Args:
+            x: Target X coordinate
+            y: Target Y coordinate
+            duration: Time in seconds to move (0 for instant)
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If move fails
+        """
+        logger.debug(f"Moving mouse to ({x}, {y}) over {duration}s")
+
+        try:
+            if duration > 0:
+                # Animated move
+                import ctypes
+                start_x, start_y = self.get_mouse_position()
+                steps = max(10, int(duration * 60))  # ~60 fps
+
+                for i in range(steps + 1):
+                    progress = i / steps
+                    # Ease-out quadratic
+                    ease = 1 - (1 - progress) ** 2
+                    current_x = int(start_x + (x - start_x) * ease)
+                    current_y = int(start_y + (y - start_y) * ease)
+                    ctypes.windll.user32.SetCursorPos(current_x, current_y)
+                    time.sleep(duration / steps)
+            else:
+                # Instant move
+                import ctypes
+                ctypes.windll.user32.SetCursorPos(x, y)
+
+            logger.info(f"Moved mouse to ({x}, {y})")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to move mouse: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def click_mouse(
+        self,
+        x: int = None,
+        y: int = None,
+        button: str = "left",
+        click_type: str = "single"
+    ) -> bool:
+        """
+        Click mouse at specified position or current position.
+
+        Args:
+            x: X coordinate (None for current position)
+            y: Y coordinate (None for current position)
+            button: Mouse button - "left", "right", "middle"
+            click_type: Click type - "single", "double", "triple"
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If click fails
+        """
+        logger.debug(f"Clicking {button} {click_type} at ({x}, {y})")
+
+        valid_buttons = ["left", "right", "middle"]
+        if button.lower() not in valid_buttons:
+            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
+
+        valid_types = ["single", "double", "triple"]
+        if click_type.lower() not in valid_types:
+            raise ValueError(f"Invalid click_type '{click_type}'. Must be one of: {valid_types}")
+
+        button = button.lower()
+        click_type = click_type.lower()
+
+        try:
+            # Move to position if specified
+            if x is not None and y is not None:
+                self.move_mouse(x, y)
+            else:
+                x, y = self.get_mouse_position()
+
+            # Determine click count
+            clicks = {"single": 1, "double": 2, "triple": 3}[click_type]
+
+            # Use uiautomation for clicking
+            for _ in range(clicks):
+                if button == "left":
+                    auto.Click(x, y)
+                elif button == "right":
+                    auto.RightClick(x, y)
+                elif button == "middle":
+                    auto.MiddleClick(x, y)
+                if clicks > 1:
+                    time.sleep(0.05)  # Small delay between clicks
+
+            logger.info(f"Clicked {button} {click_type} at ({x}, {y})")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to click mouse: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def get_mouse_position(self) -> tuple:
+        """
+        Get current mouse cursor position.
+
+        Returns:
+            Tuple of (x, y) coordinates
+        """
+        try:
+            import ctypes
+
+            class POINT(ctypes.Structure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_long)]
+
+            point = POINT()
+            ctypes.windll.user32.GetCursorPos(ctypes.byref(point))
+
+            logger.debug(f"Mouse position: ({point.x}, {point.y})")
+            return (point.x, point.y)
+
+        except Exception as e:
+            error_msg = f"Failed to get mouse position: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def send_keys(
+        self,
+        keys: str,
+        interval: float = 0.0
+    ) -> bool:
+        """
+        Send keyboard input.
+
+        Args:
+            keys: Keys to send. Supports special keys in braces:
+                  {Enter}, {Tab}, {Escape}, {Backspace}, {Delete},
+                  {Up}, {Down}, {Left}, {Right}, {Home}, {End},
+                  {PageUp}, {PageDown}, {F1}-{F12}, {Ctrl}, {Alt}, {Shift}
+            interval: Delay between keys in seconds
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If send fails
+        """
+        logger.debug(f"Sending keys: '{keys[:50]}...' (interval={interval}s)")
+
+        try:
+            # Use uiautomation's SendKeys
+            auto.SendKeys(keys, interval=interval)
+
+            logger.info(f"Sent keys: '{keys[:50]}...'")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to send keys: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def send_hotkey(
+        self,
+        *keys: str
+    ) -> bool:
+        """
+        Send a hotkey combination (e.g., Ctrl+C, Alt+Tab).
+
+        Args:
+            *keys: Keys in the combination (e.g., "ctrl", "c")
+                   Supported modifiers: ctrl, alt, shift, win
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If send fails
+        """
+        logger.debug(f"Sending hotkey: {'+'.join(keys)}")
+
+        try:
+            # Build the hotkey string for uiautomation
+            # Format: {Ctrl}{Alt}{Shift}key
+            modifiers = {
+                "ctrl": "{Ctrl}",
+                "control": "{Ctrl}",
+                "alt": "{Alt}",
+                "shift": "{Shift}",
+                "win": "{Win}",
+                "windows": "{Win}"
+            }
+
+            hotkey_str = ""
+            regular_keys = []
+
+            for key in keys:
+                key_lower = key.lower()
+                if key_lower in modifiers:
+                    hotkey_str += modifiers[key_lower]
+                else:
+                    regular_keys.append(key)
+
+            # Add regular keys
+            for key in regular_keys:
+                if len(key) == 1:
+                    hotkey_str += key
+                else:
+                    # Special key like Enter, Tab, etc.
+                    hotkey_str += "{" + key.capitalize() + "}"
+
+            # Send the hotkey
+            auto.SendKeys(hotkey_str, interval=0)
+
+            logger.info(f"Sent hotkey: {'+'.join(keys)}")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to send hotkey: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+    def drag_mouse(
+        self,
+        start_x: int,
+        start_y: int,
+        end_x: int,
+        end_y: int,
+        button: str = "left",
+        duration: float = 0.5
+    ) -> bool:
+        """
+        Drag mouse from one position to another.
+
+        Args:
+            start_x: Starting X coordinate
+            start_y: Starting Y coordinate
+            end_x: Ending X coordinate
+            end_y: Ending Y coordinate
+            button: Mouse button to hold - "left", "right"
+            duration: Time for drag operation in seconds
+
+        Returns:
+            True if successful
+
+        Raises:
+            ValueError: If drag fails
+        """
+        logger.debug(f"Dragging from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+
+        valid_buttons = ["left", "right"]
+        if button.lower() not in valid_buttons:
+            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
+
+        button = button.lower()
+
+        try:
+            # Move to start position
+            self.move_mouse(start_x, start_y)
+            time.sleep(0.1)
+
+            # Use win32api for drag operation
+            import ctypes
+            from ctypes import wintypes
+
+            # Mouse event constants
+            MOUSEEVENTF_LEFTDOWN = 0x0002
+            MOUSEEVENTF_LEFTUP = 0x0004
+            MOUSEEVENTF_RIGHTDOWN = 0x0008
+            MOUSEEVENTF_RIGHTUP = 0x0010
+            MOUSEEVENTF_ABSOLUTE = 0x8000
+            MOUSEEVENTF_MOVE = 0x0001
+
+            if button == "left":
+                down_flag = MOUSEEVENTF_LEFTDOWN
+                up_flag = MOUSEEVENTF_LEFTUP
+            else:
+                down_flag = MOUSEEVENTF_RIGHTDOWN
+                up_flag = MOUSEEVENTF_RIGHTUP
+
+            # Press button down
+            ctypes.windll.user32.mouse_event(down_flag, 0, 0, 0, 0)
+            time.sleep(0.05)
+
+            # Move to end position with animation
+            self.move_mouse(end_x, end_y, duration=duration)
+            time.sleep(0.05)
+
+            # Release button
+            ctypes.windll.user32.mouse_event(up_flag, 0, 0, 0, 0)
+
+            logger.info(f"Dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
+            return True
+
+        except Exception as e:
+            error_msg = f"Failed to drag mouse: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
     def __enter__(self):
         """Context manager entry."""
         return self

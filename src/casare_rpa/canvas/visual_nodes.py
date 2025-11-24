@@ -1206,6 +1206,148 @@ class VisualScrollElementNode(VisualNode):
         self.add_output("success")
 
 
+# Mouse & Keyboard Control Nodes
+
+class VisualMoveMouseNode(VisualNode):
+    """Visual representation of MoveMouseNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Move Mouse"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Move Mouse node."""
+        super().__init__()
+        self.create_property("mouse_x", 0, widget_type=2, tab="config")
+        self.create_property("mouse_y", 0, widget_type=2, tab="config")
+        self.create_property("duration", 0.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("x")
+        self.add_input("y")
+        self.add_input("duration")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualMouseClickNode(VisualNode):
+    """Visual representation of MouseClickNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Mouse Click"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Mouse Click node."""
+        super().__init__()
+        self.create_property("click_x", 0, widget_type=2, tab="config")
+        self.create_property("click_y", 0, widget_type=2, tab="config")
+        self.create_property("button", "left",
+                           items=["left", "right", "middle"],
+                           widget_type=3, tab="config")
+        self.create_property("click_type", "single",
+                           items=["single", "double", "triple"],
+                           widget_type=3, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("x")
+        self.add_input("y")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualSendKeysNode(VisualNode):
+    """Visual representation of SendKeysNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Send Keys"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Send Keys node."""
+        super().__init__()
+        self.add_text_input("keys", "Keys to Send", text="", tab="inputs")
+        self.create_property("interval", 0.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("keys")
+        self.add_input("interval")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualSendHotKeyNode(VisualNode):
+    """Visual representation of SendHotKeyNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Send Hotkey"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Send Hotkey node."""
+        super().__init__()
+        self.add_text_input("keys", "Hotkey (e.g., Ctrl,C)", text="Ctrl,C", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("keys")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualGetMousePositionNode(VisualNode):
+    """Visual representation of GetMousePositionNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Get Mouse Position"
+    NODE_CATEGORY = "desktop_automation"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+        self.add_output("x")
+        self.add_output("y")
+
+
+class VisualDragMouseNode(VisualNode):
+    """Visual representation of DragMouseNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Drag Mouse"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Drag Mouse node."""
+        super().__init__()
+        self.create_property("start_x", 0, widget_type=2, tab="config")
+        self.create_property("start_y", 0, widget_type=2, tab="config")
+        self.create_property("end_x", 100, widget_type=2, tab="config")
+        self.create_property("end_y", 100, widget_type=2, tab="config")
+        self.create_property("button", "left",
+                           items=["left", "right", "middle"],
+                           widget_type=3, tab="config")
+        self.create_property("duration", 0.5, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("start_x")
+        self.add_input("start_y")
+        self.add_input("end_x")
+        self.add_input("end_y")
+        self.add_input("duration")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

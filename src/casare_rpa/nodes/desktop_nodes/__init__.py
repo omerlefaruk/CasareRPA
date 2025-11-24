@@ -38,6 +38,15 @@ from .interaction_nodes import (
     ScrollElementNode,
 )
 
+from .mouse_keyboard_nodes import (
+    MoveMouseNode,
+    MouseClickNode,
+    SendKeysNode,
+    SendHotKeyNode,
+    GetMousePositionNode,
+    DragMouseNode,
+)
+
 __all__ = [
     # Application nodes
     'LaunchApplicationNode',
@@ -65,4 +74,11 @@ __all__ = [
     'SelectTabNode',
     'ExpandTreeItemNode',
     'ScrollElementNode',
+    # Mouse and keyboard nodes
+    'MoveMouseNode',
+    'MouseClickNode',
+    'SendKeysNode',
+    'SendHotKeyNode',
+    'GetMousePositionNode',
+    'DragMouseNode',
 ]
