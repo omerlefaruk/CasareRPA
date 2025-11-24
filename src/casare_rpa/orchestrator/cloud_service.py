@@ -68,16 +68,16 @@ class CloudService:
             logger.error(f"Failed to fetch jobs: {e}")
             return []
 
-    async def dispatch_job(self, robot_id: str, workflow_id: str):
+    async def dispatch_job(self, robot_id: str, workflow_json: str):
         """Send a job to a robot."""
         if not self.client:
             return False
             
-        logger.info(f"Dispatching workflow {workflow_id} to robot {robot_id}")
+        logger.info(f"Dispatching workflow to robot {robot_id}")
         try:
             data = {
                 "robot_id": robot_id,
-                "workflow": workflow_id,
+                "workflow": workflow_json,
                 "status": "pending"
             }
             await asyncio.to_thread(

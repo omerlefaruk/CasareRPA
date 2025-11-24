@@ -5,11 +5,12 @@ import sys
 import asyncio
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                QHBoxLayout, QLabel, QTableWidget, QTableWidgetItem, 
-                               QPushButton, QHeaderView, QTabWidget)
+                               QPushButton, QHeaderView, QTabWidget, QFileDialog, QMessageBox)
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QIcon
 import qasync
 from loguru import logger
+from pathlib import Path
 
 from .cloud_service import CloudService
 
@@ -66,8 +67,8 @@ class OrchestratorWindow(QMainWindow):
         
         # Table
         self.robots_table = QTableWidget()
-        self.robots_table.setColumnCount(4)
-        self.robots_table.setHorizontalHeaderLabels(["ID", "Name", "Status", "Last Seen"])
+        self.robots_table.setColumnCount(5)
+        self.robots_table.setHorizontalHeaderLabels(["ID", "Name", "Status", "Last Seen", "Actions"])
         self.robots_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.robots_table)
 
@@ -98,15 +99,65 @@ class OrchestratorWindow(QMainWindow):
             self.robots_table.setItem(i, 1, QTableWidgetItem(robot["name"]))
             self.robots_table.setItem(i, 2, QTableWidgetItem(robot["status"]))
             self.robots_table.setItem(i, 3, QTableWidgetItem(robot["last_seen"]))
+            
+            # Dispatch button
+            dispatch_btn = QPushButton("Dispatch")
+            dispatch_btn.clicked.connect(lambda checked, r=robot: self.dispatch_workflow(r))
+            self.robots_table.setCellWidget(i, 4, dispatch_btn)
 
     def update_jobs_table(self, jobs):
         self.jobs_table.setRowCount(len(jobs))
         for i, job in enumerate(jobs):
-            self.jobs_table.setItem(i, 0, QTableWidgetItem(job["id"]))
-            self.jobs_table.setItem(i, 1, QTableWidgetItem(job["robot_id"]))
-            self.jobs_table.setItem(i, 2, QTableWidgetItem(job["workflow"]))
-            self.jobs_table.setItem(i, 3, QTableWidgetItem(job["status"]))
-            self.jobs_table.setItem(i, 4, QTableWidgetItem(job["time"]))
+            self.jobs_table.setItem(i, 0, QTableWidgetItem(str(job["id"])))
+            self.jobs_table.setItem(i, 1, QTableWidgetItem(job.get("robot_id", "N/A")))
+            # Truncate workflow JSON for display
+            workflow_preview = job.get("workflow", "")[:50] + "..." if len(job.get("workflow", "")) > 50 else job.get("workflow", "")
+            self.jobs_table.setItem(i, 2, QTableWidgetItem(workflow_preview))
+            self.jobs_table.setItem(i, 3, QTableWidgetItem(job.get("status", "unknown")))
+            self.jobs_table.setItem(i, 4, QTableWidgetItem(job.get("created_at", "N/A")))
+    
+    def dispatch_workflow(self, robot):
+        """Open file dialog and dispatch workflow to robot."""
+        robot_id = robot["id"]
+        robot_name = robot["name"]
+        
+        # Open file dialog to select workflow
+        workflows_dir = Path("workflows")
+        if not workflows_dir.exists():
+            workflows_dir = Path.cwd()
+            
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Select Workflow for {robot_name}",
+            str(workflows_dir),
+            "Workflow Files (*.json)"
+        )
+        
+        if not file_path:
+            return
+            
+        try:
+            # Read workflow file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                workflow_json = f.read()
+            
+            # Dispatch asynchronously
+            asyncio.get_event_loop().create_task(self._dispatch_job(robot_id, workflow_json, Path(file_path).name))
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to read workflow file: {e}")
+    
+    async def _dispatch_job(self, robot_id, workflow_json, filename):
+        """Dispatch job to robot."""
+        try:
+            success = await self.cloud.dispatch_job(robot_id, workflow_json)
+            if success:
+                QMessageBox.information(self, "Success", f"Workflow '{filename}' dispatched to robot {robot_id}")
+                await self.refresh_data()
+            else:
+                QMessageBox.warning(self, "Failed", "Failed to dispatch workflow")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Dispatch error: {e}")
 
 def main():
     app = QApplication(sys.argv)
