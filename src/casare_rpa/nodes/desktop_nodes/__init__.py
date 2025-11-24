@@ -11,9 +11,22 @@ from .application_nodes import (
     GetWindowListNode,
 )
 
+from .element_nodes import (
+    FindElementNode,
+    ClickElementNode,
+    TypeTextNode,
+    GetElementTextNode,
+    GetElementPropertyNode,
+)
+
 __all__ = [
     'LaunchApplicationNode',
     'CloseApplicationNode',
     'ActivateWindowNode',
     'GetWindowListNode',
+    'FindElementNode',
+    'ClickElementNode',
+    'TypeTextNode',
+    'GetElementTextNode',
+    'GetElementPropertyNode',
 ]
