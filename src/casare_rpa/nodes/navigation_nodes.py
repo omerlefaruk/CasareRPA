@@ -85,6 +85,22 @@ class GoToURLNode(BaseNode):
             url = self.get_input_value("url")
             logger.info(f"URL from input port: '{url}'")
             logger.info(f"Node config: {self.config}")
+
+            # Support template substitution for variables in the form {{var_name}}
+            # If url is provided via input or config and contains placeholders,
+            # replace them with values from the execution context variables.
+            if isinstance(url, str) and "{{" in url and "}}" in url:
+                import re
+
+                def _replace(match: re.Match) -> str:
+                    var_name = match.group(1).strip()
+                    value = context.get_variable(var_name)
+                    if value is None:
+                        raise ValueError(f"Variable '{var_name}' not found in workflow context")
+                    return str(value)
+
+                url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
+                logger.info(f"URL after variable substitution: '{url}'")
             
             if url is None:
                 url = self.config.get("url", "")

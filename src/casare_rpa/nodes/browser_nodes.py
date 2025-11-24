@@ -108,7 +108,20 @@ class LaunchBrowserNode(BaseNode):
             
             # Strip whitespace and normalize to empty string if None or whitespace-only
             url = url.strip() if url else ""
-            
+            # Substitute variables in URL like {{var_name}} using execution context
+            if isinstance(url, str) and "{{" in url and "}}" in url:
+                import re
+
+                def _replace(match: re.Match) -> str:
+                    var_name = match.group(1).strip()
+                    value = context.get_variable(var_name)
+                    if value is None:
+                        raise ValueError(f"Variable '{var_name}' not found in workflow context")
+                    return str(value)
+
+                url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
+                logger.info(f"LaunchBrowserNode URL after substitution: '{url}'")
+
             if url:
                 # Add protocol if missing
                 if not url.startswith(("http://", "https://", "file://", "about:")):
