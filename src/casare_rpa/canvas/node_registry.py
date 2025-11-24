@@ -70,6 +70,11 @@ from .visual_nodes import (
     VisualCloseApplicationNode,
     VisualActivateWindowNode,
     VisualGetWindowListNode,
+    VisualFindElementNode,
+    VisualClickElementDesktopNode,
+    VisualTypeTextDesktopNode,
+    VisualGetElementTextNode,
+    VisualGetElementPropertyNode,
 )
 
 from ..nodes import (
@@ -133,6 +138,11 @@ from ..nodes.desktop_nodes import (
     CloseApplicationNode as DesktopCloseApplicationNode,
     ActivateWindowNode as DesktopActivateWindowNode,
     GetWindowListNode as DesktopGetWindowListNode,
+    FindElementNode as DesktopFindElementNode,
+    ClickElementNode as DesktopClickElementNode,
+    TypeTextNode as DesktopTypeTextNode,
+    GetElementTextNode as DesktopGetElementTextNode,
+    GetElementPropertyNode as DesktopGetElementPropertyNode,
 )
 
 
@@ -196,6 +206,11 @@ CASARE_NODE_MAPPING = {
     VisualCloseApplicationNode: DesktopCloseApplicationNode,
     VisualActivateWindowNode: DesktopActivateWindowNode,
     VisualGetWindowListNode: DesktopGetWindowListNode,
+    VisualFindElementNode: DesktopFindElementNode,
+    VisualClickElementDesktopNode: DesktopClickElementNode,
+    VisualTypeTextDesktopNode: DesktopTypeTextNode,
+    VisualGetElementTextNode: DesktopGetElementTextNode,
+    VisualGetElementPropertyNode: DesktopGetElementPropertyNode,
 }
 
 

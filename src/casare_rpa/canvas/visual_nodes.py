@@ -794,23 +794,144 @@ class VisualActivateWindowNode(VisualNode):
 
 class VisualGetWindowListNode(VisualNode):
     """Visual representation of GetWindowListNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Window List"
     NODE_CATEGORY = "desktop_automation"
-    
+
     def __init__(self) -> None:
         """Initialize Get Window List node."""
         super().__init__()
         self.add_text_input("filter_title", "Filter by Title", text="", tab="config")
         self.create_property("include_invisible", False, widget_type=1, tab="config")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_output("exec_out")
         self.add_output("window_list")
         self.add_output("window_count")
+
+
+class VisualFindElementNode(VisualNode):
+    """Visual representation of FindElementNode (Desktop)."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Find Element"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Find Element node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector (JSON)", text="", tab="inputs")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+        self.create_property("throw_on_not_found", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("element")
+        self.add_output("found")
+
+
+class VisualClickElementDesktopNode(VisualNode):
+    """Visual representation of ClickElementNode (Desktop)."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Click Element (Desktop)"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Click Element node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector (JSON)", text="", tab="inputs")
+        self.create_property("simulate", False, widget_type=1, tab="config")
+        self.create_property("x_offset", 0, widget_type=2, tab="config")
+        self.create_property("y_offset", 0, widget_type=2, tab="config")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualTypeTextDesktopNode(VisualNode):
+    """Visual representation of TypeTextNode (Desktop)."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Type Text (Desktop)"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Type Text node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector (JSON)", text="", tab="inputs")
+        self.add_text_input("text", "Text to Type", text="", tab="inputs")
+        self.create_property("clear_first", False, widget_type=1, tab="config")
+        self.create_property("interval", 0.01, widget_type=2, tab="config")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualGetElementTextNode(VisualNode):
+    """Visual representation of GetElementTextNode (Desktop)."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Get Element Text"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Get Element Text node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector (JSON)", text="", tab="inputs")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+        self.create_property("variable_name", "", widget_type=0, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("text")
+        self.add_output("element")
+
+
+class VisualGetElementPropertyNode(VisualNode):
+    """Visual representation of GetElementPropertyNode (Desktop)."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Get Element Property"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Get Element Property node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector (JSON)", text="", tab="inputs")
+        self.add_text_input("property_name", "Property Name", text="Name", tab="inputs")
+        self.create_property("timeout", 5.0, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("window")
+        self.add_output("exec_out")
+        self.add_output("value")
+        self.add_output("element")
 
 
 # Dynamic node discovery
