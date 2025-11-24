@@ -6,8 +6,18 @@ Tests selector_strategy, element_tree_widget, element_picker, selector_validator
 
 import pytest
 import json
+import asyncio
 from unittest.mock import Mock, MagicMock, patch
 from PySide6.QtWidgets import QApplication
+
+
+# Mock asyncio.get_event_loop to avoid errors from orchestrator import
+@pytest.fixture(autouse=True)
+def mock_event_loop():
+    """Mock asyncio event loop to prevent errors during import."""
+    mock_loop = MagicMock()
+    with patch('asyncio.get_event_loop', return_value=mock_loop):
+        yield
 
 from casare_rpa.desktop import DesktopElement
 from casare_rpa.canvas.selector_strategy import (
