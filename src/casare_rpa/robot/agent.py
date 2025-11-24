@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 import orjson
 
-from casare_rpa.core.workflow_schema import WorkflowSchema
+from casare_rpa.utils.workflow_loader import load_workflow_from_dict
 from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 from .config import get_robot_id, ROBOT_NAME
@@ -129,10 +129,18 @@ class RobotAgent:
             else:
                 workflow_data = workflow_json
                 
-            schema = WorkflowSchema.from_dict(workflow_data)
+            # Load workflow with actual node instances
+            workflow = load_workflow_from_dict(workflow_data)
+            logger.info(f"Workflow loaded: {len(workflow.nodes)} nodes, {len(workflow.connections)} connections")
+            
+            # Log workflow structure for debugging
+            for node_id, node in workflow.nodes.items():
+                logger.info(f"  Node: {node_id} ({node.node_type})")
+            for conn in workflow.connections:
+                logger.info(f"  Connection: {conn.source_node}.{conn.source_port} -> {conn.target_node}.{conn.target_port}")
             
             # Initialize Runner
-            runner = WorkflowRunner(schema)
+            runner = WorkflowRunner(workflow)
             
             # Update status to running
             await asyncio.to_thread(
@@ -140,24 +148,28 @@ class RobotAgent:
             )
             
             # Execute
+            logger.info(f"Starting workflow execution for job {job_id}")
             success = await runner.run()
+            logger.info(f"Workflow execution completed: success={success}")
             
             # Update status based on result
             final_status = "success" if success else "failed"
             await asyncio.to_thread(
                 lambda: self.client.table("jobs").update({
                     "status": final_status,
-                    # TODO: Capture logs
+                    "logs": f"Execution completed. Success: {success}"
                 }).eq("id", job_id).execute()
             )
             logger.info(f"Job {job_id} completed with status: {final_status}")
             
         except Exception as e:
-            logger.error(f"Job execution failed: {e}")
+            logger.exception(f"Job execution failed: {e}")
+            import traceback
+            error_details = f"{str(e)}\n\nTraceback:\n{traceback.format_exc()}"
             await asyncio.to_thread(
                 lambda: self.client.table("jobs").update({
                     "status": "failed",
-                    "logs": str(e)
+                    "logs": error_details
                 }).eq("id", job_id).execute()
             )
 

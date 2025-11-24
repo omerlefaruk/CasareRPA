@@ -83,10 +83,15 @@ class GoToURLNode(BaseNode):
             
             # Get URL from input or config
             url = self.get_input_value("url")
+            logger.info(f"URL from input port: '{url}'")
+            logger.info(f"Node config: {self.config}")
+            
             if url is None:
                 url = self.config.get("url", "")
+                logger.info(f"URL from config: '{url}'")
             
             if not url:
+                logger.error(f"URL validation failed. url='{url}', config={self.config}")
                 raise ValueError("URL is required")
             
             # Add protocol if missing
