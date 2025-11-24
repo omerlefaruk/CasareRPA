@@ -102,6 +102,11 @@ from .visual_nodes import (
     VisualWaitForWindowNode,
     VisualVerifyElementExistsNode,
     VisualVerifyElementPropertyNode,
+    # Screenshot & OCR
+    VisualCaptureScreenshotNode,
+    VisualCaptureElementImageNode,
+    VisualOCRExtractTextNode,
+    VisualCompareImagesNode,
 )
 
 from ..nodes import (
@@ -197,6 +202,11 @@ from ..nodes.desktop_nodes import (
     WaitForWindowNode as DesktopWaitForWindowNode,
     VerifyElementExistsNode as DesktopVerifyElementExistsNode,
     VerifyElementPropertyNode as DesktopVerifyElementPropertyNode,
+    # Screenshot & OCR
+    CaptureScreenshotNode as DesktopCaptureScreenshotNode,
+    CaptureElementImageNode as DesktopCaptureElementImageNode,
+    OCRExtractTextNode as DesktopOCRExtractTextNode,
+    CompareImagesNode as DesktopCompareImagesNode,
 )
 
 
@@ -292,6 +302,11 @@ CASARE_NODE_MAPPING = {
     VisualWaitForWindowNode: DesktopWaitForWindowNode,
     VisualVerifyElementExistsNode: DesktopVerifyElementExistsNode,
     VisualVerifyElementPropertyNode: DesktopVerifyElementPropertyNode,
+    # Screenshot & OCR
+    VisualCaptureScreenshotNode: DesktopCaptureScreenshotNode,
+    VisualCaptureElementImageNode: DesktopCaptureElementImageNode,
+    VisualOCRExtractTextNode: DesktopOCRExtractTextNode,
+    VisualCompareImagesNode: DesktopCompareImagesNode,
 }
 
 

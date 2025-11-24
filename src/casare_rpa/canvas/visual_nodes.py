@@ -1457,6 +1457,117 @@ class VisualVerifyElementPropertyNode(VisualNode):
         self.add_output("actual_value")
 
 
+# ============================================================
+# Screenshot & OCR Visual Nodes (Bite 9)
+# ============================================================
+
+class VisualCaptureScreenshotNode(VisualNode):
+    """Visual representation of CaptureScreenshotNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Capture Screenshot"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Capture Screenshot node."""
+        super().__init__()
+        self.add_text_input("file_path", "Save Path", text="", tab="inputs")
+        self.create_property("format", "PNG",
+                           items=["PNG", "JPEG", "BMP"],
+                           widget_type=3, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("file_path")
+        self.add_input("region")
+        self.add_output("exec_out")
+        self.add_output("image")
+        self.add_output("success")
+
+
+class VisualCaptureElementImageNode(VisualNode):
+    """Visual representation of CaptureElementImageNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Capture Element Image"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Capture Element Image node."""
+        super().__init__()
+        self.add_text_input("file_path", "Save Path", text="", tab="inputs")
+        self.create_property("padding", 0, widget_type=2, tab="config")
+        self.create_property("format", "PNG",
+                           items=["PNG", "JPEG", "BMP"],
+                           widget_type=3, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("element")
+        self.add_input("file_path")
+        self.add_input("padding")
+        self.add_output("exec_out")
+        self.add_output("image")
+        self.add_output("success")
+
+
+class VisualOCRExtractTextNode(VisualNode):
+    """Visual representation of OCRExtractTextNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "OCR Extract Text"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize OCR Extract Text node."""
+        super().__init__()
+        self.add_text_input("image_path", "Image Path", text="", tab="inputs")
+        self.create_property("language", "eng", widget_type=0, tab="config")
+        self.add_text_input("config", "Tesseract Config", text="", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("image")
+        self.add_input("image_path")
+        self.add_input("region")
+        self.add_output("exec_out")
+        self.add_output("text")
+        self.add_output("success")
+
+
+class VisualCompareImagesNode(VisualNode):
+    """Visual representation of CompareImagesNode."""
+
+    __identifier__ = "casare_rpa.desktop"
+    NODE_NAME = "Compare Images"
+    NODE_CATEGORY = "desktop_automation"
+
+    def __init__(self) -> None:
+        """Initialize Compare Images node."""
+        super().__init__()
+        self.add_text_input("image1_path", "Image 1 Path", text="", tab="inputs")
+        self.add_text_input("image2_path", "Image 2 Path", text="", tab="inputs")
+        self.create_property("method", "histogram",
+                           items=["histogram", "ssim", "pixel"],
+                           widget_type=3, tab="config")
+        self.create_property("threshold", 0.9, widget_type=2, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("image1")
+        self.add_input("image2")
+        self.add_input("image1_path")
+        self.add_input("image2_path")
+        self.add_output("exec_out")
+        self.add_output("similarity")
+        self.add_output("is_match")
+        self.add_output("method")
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

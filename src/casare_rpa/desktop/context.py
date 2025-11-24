@@ -1605,6 +1605,289 @@ class DesktopContext:
             logger.error(f"Property verification failed: {e}")
             return False
 
+    # ============================================================
+    # Bite 9: Screenshot & OCR Methods
+    # ============================================================
+
+    def capture_screenshot(
+        self,
+        file_path: str = None,
+        region: dict = None,
+        format: str = "PNG"
+    ) -> Optional[any]:
+        """
+        Capture a screenshot of the screen or a specific region.
+
+        Args:
+            file_path: Path to save the screenshot (optional)
+            region: Dict with x, y, width, height for specific region (optional)
+            format: Image format (PNG, JPEG, BMP)
+
+        Returns:
+            PIL Image object if successful, None otherwise
+        """
+        try:
+            from PIL import ImageGrab, Image
+
+            if region:
+                # Capture specific region
+                x = region.get("x", 0)
+                y = region.get("y", 0)
+                width = region.get("width", 100)
+                height = region.get("height", 100)
+                bbox = (x, y, x + width, y + height)
+                screenshot = ImageGrab.grab(bbox=bbox)
+                logger.info(f"Captured screenshot region: {bbox}")
+            else:
+                # Capture full screen
+                screenshot = ImageGrab.grab()
+                logger.info("Captured full screen screenshot")
+
+            # Save to file if path provided
+            if file_path:
+                screenshot.save(file_path, format=format)
+                logger.info(f"Screenshot saved to: {file_path}")
+
+            return screenshot
+
+        except ImportError:
+            logger.error("PIL/Pillow not installed. Run: pip install Pillow")
+            return None
+        except Exception as e:
+            logger.error(f"Screenshot capture failed: {e}")
+            return None
+
+    def capture_element_image(
+        self,
+        element: DesktopElement,
+        file_path: str = None,
+        padding: int = 0,
+        format: str = "PNG"
+    ) -> Optional[any]:
+        """
+        Capture an image of a specific desktop element.
+
+        Args:
+            element: DesktopElement to capture
+            file_path: Path to save the image (optional)
+            padding: Extra pixels around element bounds
+            format: Image format (PNG, JPEG, BMP)
+
+        Returns:
+            PIL Image object if successful, None otherwise
+        """
+        try:
+            from PIL import ImageGrab
+
+            # Get element bounding rectangle
+            control = element._control
+            rect = control.BoundingRectangle
+
+            if not rect:
+                logger.error("Could not get element bounding rectangle")
+                return None
+
+            # Calculate capture region with padding
+            x = max(0, rect.left - padding)
+            y = max(0, rect.top - padding)
+            right = rect.right + padding
+            bottom = rect.bottom + padding
+            bbox = (x, y, right, bottom)
+
+            # Capture the region
+            screenshot = ImageGrab.grab(bbox=bbox)
+            logger.info(f"Captured element image: {bbox}")
+
+            # Save to file if path provided
+            if file_path:
+                screenshot.save(file_path, format=format)
+                logger.info(f"Element image saved to: {file_path}")
+
+            return screenshot
+
+        except ImportError:
+            logger.error("PIL/Pillow not installed. Run: pip install Pillow")
+            return None
+        except Exception as e:
+            logger.error(f"Element image capture failed: {e}")
+            return None
+
+    def ocr_extract_text(
+        self,
+        image: any = None,
+        image_path: str = None,
+        region: dict = None,
+        language: str = "eng",
+        config: str = ""
+    ) -> Optional[str]:
+        """
+        Extract text from an image using OCR.
+
+        Args:
+            image: PIL Image object (optional)
+            image_path: Path to image file (optional)
+            region: Dict with x, y, width, height to extract from specific region
+            language: Tesseract language code (default: eng)
+            config: Additional Tesseract config options
+
+        Returns:
+            Extracted text string if successful, None otherwise
+        """
+        try:
+            from PIL import Image
+
+            # Load image from path if needed
+            if image is None and image_path:
+                image = Image.open(image_path)
+            elif image is None:
+                # Capture screen if no image provided
+                image = self.capture_screenshot(region=region)
+
+            if image is None:
+                logger.error("No image provided for OCR")
+                return None
+
+            # Crop to region if specified and image wasn't already captured with region
+            if region and image_path:
+                x = region.get("x", 0)
+                y = region.get("y", 0)
+                width = region.get("width", image.width)
+                height = region.get("height", image.height)
+                image = image.crop((x, y, x + width, y + height))
+
+            # Try using pytesseract for OCR
+            try:
+                import pytesseract
+                text = pytesseract.image_to_string(image, lang=language, config=config)
+                text = text.strip()
+                logger.info(f"OCR extracted {len(text)} characters")
+                return text
+            except ImportError:
+                logger.warning("pytesseract not installed, trying Windows OCR")
+
+            # Fallback: Try Windows built-in OCR (requires windows-ocr package)
+            try:
+                import winocr
+                import asyncio
+
+                async def do_ocr():
+                    result = await winocr.recognize_pil(image, lang=language)
+                    return result.text
+
+                loop = asyncio.get_event_loop()
+                text = loop.run_until_complete(do_ocr())
+                logger.info(f"Windows OCR extracted {len(text)} characters")
+                return text.strip()
+            except ImportError:
+                logger.error("No OCR engine available. Install pytesseract or winocr")
+                return None
+
+        except Exception as e:
+            logger.error(f"OCR extraction failed: {e}")
+            return None
+
+    def compare_images(
+        self,
+        image1: any = None,
+        image2: any = None,
+        image1_path: str = None,
+        image2_path: str = None,
+        method: str = "ssim",
+        threshold: float = 0.9
+    ) -> dict:
+        """
+        Compare two images and return similarity metrics.
+
+        Args:
+            image1: First PIL Image object
+            image2: Second PIL Image object
+            image1_path: Path to first image file
+            image2_path: Path to second image file
+            method: Comparison method ('ssim', 'histogram', 'pixel')
+            threshold: Similarity threshold for match (0.0 to 1.0)
+
+        Returns:
+            Dict with similarity score, is_match, and method used
+        """
+        try:
+            from PIL import Image
+            import numpy as np
+
+            # Load images from paths if needed
+            if image1 is None and image1_path:
+                image1 = Image.open(image1_path)
+            if image2 is None and image2_path:
+                image2 = Image.open(image2_path)
+
+            if image1 is None or image2 is None:
+                logger.error("Both images required for comparison")
+                return {"similarity": 0.0, "is_match": False, "method": method, "error": "Missing images"}
+
+            # Resize images to same size for comparison
+            if image1.size != image2.size:
+                image2 = image2.resize(image1.size, Image.LANCZOS)
+
+            # Convert to same mode
+            if image1.mode != image2.mode:
+                image2 = image2.convert(image1.mode)
+
+            # Convert to numpy arrays
+            arr1 = np.array(image1)
+            arr2 = np.array(image2)
+
+            similarity = 0.0
+
+            if method == "ssim":
+                # Structural Similarity Index
+                try:
+                    from skimage.metrics import structural_similarity as ssim
+                    # Convert to grayscale for SSIM
+                    if len(arr1.shape) == 3:
+                        gray1 = np.mean(arr1, axis=2)
+                        gray2 = np.mean(arr2, axis=2)
+                    else:
+                        gray1, gray2 = arr1, arr2
+                    similarity = ssim(gray1, gray2, data_range=255)
+                except ImportError:
+                    # Fallback to histogram if skimage not available
+                    method = "histogram"
+                    logger.warning("skimage not available, using histogram method")
+
+            if method == "histogram":
+                # Histogram comparison
+                hist1 = image1.histogram()
+                hist2 = image2.histogram()
+                # Normalized correlation
+                h1 = np.array(hist1, dtype=np.float64)
+                h2 = np.array(hist2, dtype=np.float64)
+                h1 = h1 / (h1.sum() + 1e-10)
+                h2 = h2 / (h2.sum() + 1e-10)
+                similarity = np.sum(np.minimum(h1, h2))
+
+            elif method == "pixel":
+                # Pixel-by-pixel comparison
+                diff = np.abs(arr1.astype(np.float64) - arr2.astype(np.float64))
+                max_diff = 255.0 * arr1.size
+                actual_diff = np.sum(diff)
+                similarity = 1.0 - (actual_diff / max_diff)
+
+            is_match = similarity >= threshold
+            logger.info(f"Image comparison ({method}): similarity={similarity:.4f}, threshold={threshold}, match={is_match}")
+
+            return {
+                "similarity": float(similarity),
+                "is_match": is_match,
+                "method": method,
+                "threshold": threshold
+            }
+
+        except ImportError as e:
+            logger.error(f"Required library not installed: {e}")
+            return {"similarity": 0.0, "is_match": False, "method": method, "error": str(e)}
+        except Exception as e:
+            logger.error(f"Image comparison failed: {e}")
+            return {"similarity": 0.0, "is_match": False, "method": method, "error": str(e)}
+
     def __enter__(self):
         """Context manager entry."""
         return self
