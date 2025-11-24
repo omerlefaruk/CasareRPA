@@ -1581,7 +1581,7 @@ class VisualExcelOpenNode(VisualNode):
         """Initialize Excel Open node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("visible", False, widget_type=1, tab="config")
+        self.create_property("show_window", False, widget_type=1, tab="config")
         self.create_property("create_if_missing", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
@@ -1702,7 +1702,7 @@ class VisualWordOpenNode(VisualNode):
         """Initialize Word Open node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("visible", False, widget_type=1, tab="config")
+        self.create_property("show_window", False, widget_type=1, tab="config")
         self.create_property("create_if_missing", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
