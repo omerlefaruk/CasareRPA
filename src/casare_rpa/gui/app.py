@@ -387,16 +387,24 @@ class CasareRPAApp:
                 # Create workflow from graph
                 workflow = self._create_workflow_from_graph()
                 
-                # Add node positions to serialization
-                graph = self._node_graph.graph
-                for visual_node in graph.all_nodes():
-                    node_id = visual_node.get_property("node_id")
-                    if node_id in workflow.nodes:
-                        pos = visual_node.pos()
-                        workflow.nodes[node_id]["position"] = {"x": pos[0], "y": pos[1]}
+                # Serialize nodes to dict format for saving
+                serialized_workflow = WorkflowSchema(workflow.metadata)
+                for node_id, node in workflow.nodes.items():
+                    serialized_node = node.serialize()
+                    # Add node position from graph
+                    for visual_node in self._node_graph.graph.all_nodes():
+                        if visual_node.get_property("node_id") == node_id:
+                            pos = visual_node.pos()
+                            serialized_node["position"] = {"x": pos[0], "y": pos[1]}
+                            break
+                    serialized_workflow.add_node(serialized_node)
+                
+                # Add connections
+                for conn in workflow.connections:
+                    serialized_workflow.add_connection(conn)
                 
                 # Save to file
-                workflow.save_to_file(current_file)
+                serialized_workflow.save_to_file(current_file)
                 
                 self._main_window.set_modified(False)
                 self._main_window.statusBar().showMessage(f"Saved: {current_file.name}", 3000)
@@ -422,16 +430,24 @@ class CasareRPAApp:
             # Create workflow from graph
             workflow = self._create_workflow_from_graph()
             
-            # Add node positions to serialization
-            graph = self._node_graph.graph
-            for visual_node in graph.all_nodes():
-                node_id = visual_node.get_property("node_id")
-                if node_id in workflow.nodes:
-                    pos = visual_node.pos()
-                    workflow.nodes[node_id]["position"] = {"x": pos[0], "y": pos[1]}
+            # Serialize nodes to dict format for saving
+            serialized_workflow = WorkflowSchema(workflow.metadata)
+            for node_id, node in workflow.nodes.items():
+                serialized_node = node.serialize()
+                # Add node position from graph
+                for visual_node in self._node_graph.graph.all_nodes():
+                    if visual_node.get_property("node_id") == node_id:
+                        pos = visual_node.pos()
+                        serialized_node["position"] = {"x": pos[0], "y": pos[1]}
+                        break
+                serialized_workflow.add_node(serialized_node)
+            
+            # Add connections
+            for conn in workflow.connections:
+                serialized_workflow.add_connection(conn)
             
             # Save to file
-            workflow.save_to_file(Path(file_path))
+            serialized_workflow.save_to_file(Path(file_path))
             
             self._main_window.set_modified(False)
             self._main_window.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)

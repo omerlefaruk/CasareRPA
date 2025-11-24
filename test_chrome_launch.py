@@ -26,8 +26,7 @@ async def test_chrome():
     context = ExecutionContext()
     
     # Set the Chrome path
-    chrome_path = r"C:\Users\Rau\AppData\Local\Google\Chrome\Application\chrome.exe"
-    node.set_input_value("application_path", chrome_path)
+    chrome_path = r" node.set_input_value("application_path", chrome_path)
     
     print(f"\n1. Launching Chrome from: {chrome_path}")
     print(f"   - Timeout: 15 seconds")
