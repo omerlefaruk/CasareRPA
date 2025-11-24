@@ -3,13 +3,14 @@ System Tray Icon for CasareRPA Robot
 """
 import sys
 import asyncio
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QMessageBox
 from PySide6.QtGui import QIcon, QAction
 from PySide6.QtCore import QObject, Signal
 from loguru import logger
 import qasync
 
-from .agent import RobotAgent
+from casare_rpa.robot.agent import RobotAgent
+from casare_rpa.utils.playwright_setup import ensure_playwright_ready
 
 class RobotTrayApp(QObject):
     def __init__(self):
@@ -53,6 +54,20 @@ class RobotTrayApp(QObject):
 
     async def run(self):
         """Run the application loop."""
+        # Check and install Playwright browsers if needed
+        logger.info("Checking Playwright browsers...")
+        self.status_action.setText("Status: Checking browsers...")
+        
+        if not ensure_playwright_ready():
+            # Show error message
+            QMessageBox.critical(
+                None,
+                "Browser Installation Failed",
+                "Failed to install Playwright browsers. Please check your internet connection and try again."
+            )
+            self.app.quit()
+            return
+        
         # Start Agent in background
         asyncio.create_task(self.agent.start())
         

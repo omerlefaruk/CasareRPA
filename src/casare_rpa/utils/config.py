@@ -80,15 +80,16 @@ def setup_logging() -> None:
     # Remove default handler
     logger.remove()
 
-    # Add console handler with color
-    logger.add(
-        sys.stderr,
-        format=LOG_FORMAT,
-        level=LOG_LEVEL,
-        colorize=True,
-        backtrace=True,
-        diagnose=True,
-    )
+    # Add console handler with color (only if stderr is available)
+    if sys.stderr:
+        logger.add(
+            sys.stderr,
+            format=LOG_FORMAT,
+            level=LOG_LEVEL,
+            colorize=True,
+            backtrace=True,
+            diagnose=True,
+        )
 
     # Add file handler with rotation
     logger.add(

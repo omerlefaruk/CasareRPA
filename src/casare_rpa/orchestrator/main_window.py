@@ -12,7 +12,7 @@ import qasync
 from loguru import logger
 from pathlib import Path
 
-from .cloud_service import CloudService
+from casare_rpa.orchestrator.cloud_service import CloudService
 
 class OrchestratorWindow(QMainWindow):
     def __init__(self):
