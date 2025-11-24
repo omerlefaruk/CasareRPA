@@ -54,6 +54,17 @@ from .visual_nodes import (
     VisualRetrySuccessNode,
     VisualRetryFailNode,
     VisualThrowErrorNode,
+    # Data Operations
+    VisualConcatenateNode,
+    VisualFormatStringNode,
+    VisualRegexMatchNode,
+    VisualRegexReplaceNode,
+    VisualMathOperationNode,
+    VisualComparisonNode,
+    VisualCreateListNode,
+    VisualListGetItemNode,
+    VisualJsonParseNode,
+    VisualGetPropertyNode,
 )
 
 from ..nodes import (
@@ -99,6 +110,17 @@ from ..nodes import (
     RetrySuccessNode,
     RetryFailNode,
     ThrowErrorNode,
+    # Data Operations
+    ConcatenateNode,
+    FormatStringNode,
+    RegexMatchNode,
+    RegexReplaceNode,
+    MathOperationNode,
+    ComparisonNode,
+    CreateListNode,
+    ListGetItemNode,
+    JsonParseNode,
+    GetPropertyNode,
 )
 
 
@@ -146,6 +168,17 @@ CASARE_NODE_MAPPING = {
     VisualRetrySuccessNode: RetrySuccessNode,
     VisualRetryFailNode: RetryFailNode,
     VisualThrowErrorNode: ThrowErrorNode,
+    # Data Operations
+    VisualConcatenateNode: ConcatenateNode,
+    VisualFormatStringNode: FormatStringNode,
+    VisualRegexMatchNode: RegexMatchNode,
+    VisualRegexReplaceNode: RegexReplaceNode,
+    VisualMathOperationNode: MathOperationNode,
+    VisualComparisonNode: ComparisonNode,
+    VisualCreateListNode: CreateListNode,
+    VisualListGetItemNode: ListGetItemNode,
+    VisualJsonParseNode: JsonParseNode,
+    VisualGetPropertyNode: GetPropertyNode,
 }
 
 
