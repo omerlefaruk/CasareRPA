@@ -90,6 +90,13 @@ from .visual_nodes import (
     VisualSelectTabNode,
     VisualExpandTreeItemNode,
     VisualScrollElementNode,
+    # Mouse & Keyboard Control
+    VisualMoveMouseNode,
+    VisualMouseClickNode,
+    VisualSendKeysNode,
+    VisualSendHotKeyNode,
+    VisualGetMousePositionNode,
+    VisualDragMouseNode,
 )
 
 from ..nodes import (
@@ -173,6 +180,13 @@ from ..nodes.desktop_nodes import (
     SelectTabNode as DesktopSelectTabNode,
     ExpandTreeItemNode as DesktopExpandTreeItemNode,
     ScrollElementNode as DesktopScrollElementNode,
+    # Mouse & Keyboard Control
+    MoveMouseNode as DesktopMoveMouseNode,
+    MouseClickNode as DesktopMouseClickNode,
+    SendKeysNode as DesktopSendKeysNode,
+    SendHotKeyNode as DesktopSendHotKeyNode,
+    GetMousePositionNode as DesktopGetMousePositionNode,
+    DragMouseNode as DesktopDragMouseNode,
 )
 
 
@@ -256,6 +270,13 @@ CASARE_NODE_MAPPING = {
     VisualSelectTabNode: DesktopSelectTabNode,
     VisualExpandTreeItemNode: DesktopExpandTreeItemNode,
     VisualScrollElementNode: DesktopScrollElementNode,
+    # Mouse & Keyboard Control
+    VisualMoveMouseNode: DesktopMoveMouseNode,
+    VisualMouseClickNode: DesktopMouseClickNode,
+    VisualSendKeysNode: DesktopSendKeysNode,
+    VisualSendHotKeyNode: DesktopSendHotKeyNode,
+    VisualGetMousePositionNode: DesktopGetMousePositionNode,
+    VisualDragMouseNode: DesktopDragMouseNode,
 }
 
 
