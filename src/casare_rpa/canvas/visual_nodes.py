@@ -42,10 +42,6 @@ from .base_visual_node import VisualNode, UNIFIED_NODE_COLOR
 NODE_COLORS = {
     "basic": UNIFIED_NODE_COLOR,
     "browser": UNIFIED_NODE_COLOR,
-    "navigation": UNIFIED_NODE_COLOR,
-    "interaction": UNIFIED_NODE_COLOR,
-    "data": UNIFIED_NODE_COLOR,
-    "wait": UNIFIED_NODE_COLOR,
     "variable": UNIFIED_NODE_COLOR,
 }
 
@@ -154,7 +150,7 @@ class VisualGoToURLNode(VisualNode):
     
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go To URL"
-    NODE_CATEGORY = "navigation"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize go to URL node."""
@@ -175,7 +171,7 @@ class VisualGoBackNode(VisualNode):
     
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go Back"
-    NODE_CATEGORY = "navigation"
+    NODE_CATEGORY = "browser"
     
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -190,7 +186,7 @@ class VisualGoForwardNode(VisualNode):
     
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go Forward"
-    NODE_CATEGORY = "navigation"
+    NODE_CATEGORY = "browser"
     
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -205,7 +201,7 @@ class VisualRefreshPageNode(VisualNode):
     
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Refresh Page"
-    NODE_CATEGORY = "navigation"
+    NODE_CATEGORY = "browser"
     
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -222,7 +218,7 @@ class VisualClickElementNode(VisualNode):
     
     __identifier__ = "casare_rpa.interaction"
     NODE_NAME = "Click Element"
-    NODE_CATEGORY = "interaction"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize click element node."""
@@ -243,7 +239,7 @@ class VisualTypeTextNode(VisualNode):
     
     __identifier__ = "casare_rpa.interaction"
     NODE_NAME = "Type Text"
-    NODE_CATEGORY = "interaction"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize type text node."""
@@ -266,7 +262,7 @@ class VisualSelectDropdownNode(VisualNode):
     
     __identifier__ = "casare_rpa.interaction"
     NODE_NAME = "Select Dropdown"
-    NODE_CATEGORY = "interaction"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize select dropdown node."""
@@ -291,7 +287,7 @@ class VisualExtractTextNode(VisualNode):
     
     __identifier__ = "casare_rpa.data"
     NODE_NAME = "Extract Text"
-    NODE_CATEGORY = "data"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize extract text node."""
@@ -314,7 +310,7 @@ class VisualGetAttributeNode(VisualNode):
     
     __identifier__ = "casare_rpa.data"
     NODE_NAME = "Get Attribute"
-    NODE_CATEGORY = "data"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize get attribute node."""
@@ -339,7 +335,7 @@ class VisualScreenshotNode(VisualNode):
     
     __identifier__ = "casare_rpa.data"
     NODE_NAME = "Screenshot"
-    NODE_CATEGORY = "data"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize screenshot node."""
@@ -363,7 +359,7 @@ class VisualWaitNode(VisualNode):
     
     __identifier__ = "casare_rpa.wait"
     NODE_NAME = "Wait"
-    NODE_CATEGORY = "wait"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize wait node."""
@@ -382,7 +378,7 @@ class VisualWaitForElementNode(VisualNode):
     
     __identifier__ = "casare_rpa.wait"
     NODE_NAME = "Wait For Element"
-    NODE_CATEGORY = "wait"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize wait for element node."""
@@ -404,7 +400,7 @@ class VisualWaitForNavigationNode(VisualNode):
     
     __identifier__ = "casare_rpa.wait"
     NODE_NAME = "Wait For Navigation"
-    NODE_CATEGORY = "wait"
+    NODE_CATEGORY = "browser"
     
     def __init__(self) -> None:
         """Initialize wait for navigation node."""
