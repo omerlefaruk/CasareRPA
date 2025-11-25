@@ -23,6 +23,7 @@ from .debug_toolbar import DebugToolbar
 from .auto_connect import AutoConnectManager
 from .connection_cutter import ConnectionCutter
 from .minimap import Minimap
+from .variable_inspector_dock import VariableInspectorDock
 
 __all__ = [
     "__version__",
@@ -41,4 +42,5 @@ __all__ = [
     "AutoConnectManager",
     "ConnectionCutter",
     "Minimap",
+    "VariableInspectorDock",
 ]

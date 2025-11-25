@@ -98,6 +98,9 @@ class MainWindow(QMainWindow):
         # Bottom panel dock (unified panel with Variables, Output, Log, Validation tabs)
         self._bottom_panel: Optional['BottomPanelDock'] = None
 
+        # Variable Inspector dock (shows real-time variable values during execution)
+        self._variable_inspector_dock: Optional['VariableInspectorDock'] = None
+
         # Properties panel (right dock for selected node properties)
         self._properties_panel: Optional['PropertiesPanel'] = None
 
@@ -115,7 +118,9 @@ class MainWindow(QMainWindow):
         self._create_breadcrumb_bar()
         self._create_status_bar()
         self._create_bottom_panel()
+        self._create_variable_inspector_dock()
         self._create_properties_panel()
+        self._create_execution_timeline_dock()
         self._create_debug_components()
         self._create_command_palette()
         self._setup_validation_timer()
@@ -244,6 +249,12 @@ class MainWindow(QMainWindow):
         self.action_toggle_bottom_panel.setCheckable(True)
         self.action_toggle_bottom_panel.setStatusTip("Show/hide bottom panel (Variables, Output, Log, Validation)")
         self.action_toggle_bottom_panel.triggered.connect(self._on_toggle_bottom_panel)
+
+        self.action_toggle_variable_inspector = QAction("Variable &Inspector", self)
+        self.action_toggle_variable_inspector.setShortcut(QKeySequence("Ctrl+Shift+V"))
+        self.action_toggle_variable_inspector.setCheckable(True)
+        self.action_toggle_variable_inspector.setStatusTip("Show/hide variable inspector (real-time variable values)")
+        self.action_toggle_variable_inspector.triggered.connect(self._on_toggle_variable_inspector)
 
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
@@ -432,6 +443,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_bottom_panel)
+        view_menu.addAction(self.action_toggle_variable_inspector)
         view_menu.addAction(self.action_toggle_minimap)
 
         # Workflow menu
@@ -814,6 +826,33 @@ class MainWindow(QMainWindow):
         self.action_toggle_bottom_panel.setChecked(True)
 
         logger.info("Bottom panel created with Variables, Output, Log, Validation tabs")
+
+    def _create_variable_inspector_dock(self) -> None:
+        """Create the Variable Inspector dock for real-time variable values."""
+        from .variable_inspector_dock import VariableInspectorDock
+
+        self._variable_inspector_dock = VariableInspectorDock(self)
+
+        # Add to main window (bottom area, will be tabified or split with bottom panel)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._variable_inspector_dock)
+
+        # Split dock horizontally with bottom panel (side-by-side)
+        if self._bottom_panel:
+            self.splitDockWidget(self._bottom_panel, self._variable_inspector_dock, Qt.Orientation.Horizontal)
+
+        # Initially hidden (user can show via View menu)
+        self._variable_inspector_dock.hide()
+        self.action_toggle_variable_inspector.setChecked(False)
+
+        logger.info("Variable Inspector dock created")
+
+    def _on_toggle_variable_inspector(self, checked: bool) -> None:
+        """Handle toggle variable inspector action."""
+        if self._variable_inspector_dock:
+            if checked:
+                self._variable_inspector_dock.show()
+            else:
+                self._variable_inspector_dock.hide()
 
     def _create_properties_panel(self) -> None:
         """Create the properties panel for selected node editing."""
@@ -1784,20 +1823,18 @@ class MainWindow(QMainWindow):
 
     def get_variable_inspector(self):
         """
-        Get the variables tab from bottom panel for variable inspection.
+        Get the Variable Inspector dock for real-time variable values.
 
         Returns:
-            VariablesTab instance or None
+            VariableInspectorDock instance or None
         """
-        if self._bottom_panel:
-            return self._bottom_panel.get_variables_tab()
-        return None
+        return self._variable_inspector_dock
 
     def show_variable_inspector(self) -> None:
-        """Show the bottom panel and switch to variables tab."""
-        if self._bottom_panel:
-            self._bottom_panel.show_variables_tab()
-            self.action_toggle_bottom_panel.setChecked(True)
+        """Show the Variable Inspector dock."""
+        if self._variable_inspector_dock:
+            self._variable_inspector_dock.show()
+            self.action_toggle_variable_inspector.setChecked(True)
 
     def get_execution_history_viewer(self):
         """

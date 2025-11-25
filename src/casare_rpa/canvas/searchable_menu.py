@@ -15,22 +15,28 @@ from ..utils.fuzzy_search import fuzzy_search, highlight_matches
 class SearchableNodeMenu(QMenu):
     """
     Context menu with integrated search functionality.
-    
+
     Features:
     - Search field at the top of the menu
     - Real-time filtering of menu items as you type
     - Fuzzy matching (e.g., "b l" matches "Browser Launch")
     - Keyboard navigation
+    - Shift+Enter to create node and auto-connect to last node
     """
-    
+
+    # Signal emitted when a node should be created with auto-connect
+    # Parameters: (category, name, auto_connect)
+    node_creation_requested = Signal(str, str, bool)
+
     def __init__(self, title: str = "", parent=None):
         """Initialize the searchable menu."""
         super().__init__(title, parent)
-        
+
         self._node_items: List[Tuple[str, str, str, Callable]] = []  # (category, name, description, callback)
         self._category_actions: dict = {}  # category -> list of QAction
         self._search_input: Optional[QLineEdit] = None
         self._all_actions: List[QAction] = []
+        self._auto_connect_requested: bool = False  # Track if Shift+Enter was pressed
         
     def setup_search(self):
         """Setup the search input at the top of the menu."""
@@ -147,7 +153,7 @@ class SearchableNodeMenu(QMenu):
         """Handle keyboard events in the search input."""
         if obj == self._search_input and event.type() == event.Type.KeyPress:
             key = event.key()
-            
+
             if key == Qt.Key.Key_Down:
                 # Move focus to first visible menu item
                 self._focus_first_visible_item()
@@ -156,10 +162,14 @@ class SearchableNodeMenu(QMenu):
                 self.close()
                 return True
             elif key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
+                # Check if Shift is held for auto-connect mode
+                modifiers = event.modifiers()
+                auto_connect = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
+                self._auto_connect_requested = auto_connect
                 # Execute first visible item
-                self._execute_first_visible_item()
+                self._execute_first_visible_item(auto_connect)
                 return True
-        
+
         return super().eventFilter(obj, event)
     
     def _focus_first_visible_item(self):
@@ -174,13 +184,28 @@ class SearchableNodeMenu(QMenu):
                         break
                 break
     
-    def _execute_first_visible_item(self):
-        """Execute the first visible menu item."""
+    def _execute_first_visible_item(self, auto_connect: bool = False):
+        """
+        Execute the first visible menu item.
+
+        Args:
+            auto_connect: If True, emit signal to auto-connect to last node
+        """
         for action in self.actions():
             if action.menu() and action.isVisible():
                 # Find first visible action in submenu
                 for sub_action in action.menu().actions():
                     if sub_action.isVisible():
+                        # Get node data for signal
+                        data = sub_action.data()
+                        if data and auto_connect:
+                            # Emit signal with auto-connect flag
+                            self.node_creation_requested.emit(
+                                data.get('category', ''),
+                                data.get('name', ''),
+                                True
+                            )
+                        # Always trigger the action (creates the node)
                         sub_action.trigger()
                         self.close()
                         return
