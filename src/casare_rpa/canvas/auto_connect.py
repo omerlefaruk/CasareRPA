@@ -290,17 +290,17 @@ class AutoConnectManager(QObject):
     
     def _are_ports_compatible(self, port1, port2) -> bool:
         """
-        Check if two ports are compatible for connection.
+        Check if two ports are compatible for auto-connection.
 
-        Uses ConnectionValidator for type-safe checking when available.
-        Falls back to name-based exec port detection otherwise.
+        Auto-connect only works for exec ports (exec_in/exec_out).
+        Data ports must be connected manually by the user.
 
         Args:
             port1: Output port (source)
             port2: Input port (target)
 
         Returns:
-            True if ports can be connected
+            True if ports can be auto-connected (exec ports only)
         """
         try:
             # Get port names
@@ -311,34 +311,13 @@ class AutoConnectManager(QObject):
             is_exec1 = 'exec' in port1_name
             is_exec2 = 'exec' in port2_name
 
-            # Exec/data mismatch - never allow
-            if is_exec1 != is_exec2:
-                return False
-
-            # Exec-to-exec is always compatible
+            # Only auto-connect exec ports to exec ports
+            # Data ports should be connected manually
             if is_exec1 and is_exec2:
                 return True
 
-            # For data ports, use ConnectionValidator if available
-            if HAS_VALIDATOR:
-                try:
-                    node1 = port1.node()
-                    node2 = port2.node()
-
-                    # Check if nodes have typed port methods
-                    if hasattr(node1, 'get_port_type') and hasattr(node2, 'get_port_type'):
-                        validator = get_connection_validator()
-                        validation = validator.validate_connection(
-                            node1, port1.name(),
-                            node2, port2.name()
-                        )
-                        return validation.is_valid
-                except Exception as e:
-                    logger.debug(f"Validator check failed, using fallback: {e}")
-
-            # Fallback: Allow data port connections (backward compatibility)
-            # This allows connections when types are unknown
-            return True
+            # Don't auto-connect data ports or mixed exec/data
+            return False
 
         except Exception as e:
             logger.debug(f"Port compatibility check failed: {e}")
