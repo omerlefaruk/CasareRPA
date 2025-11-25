@@ -11,6 +11,8 @@ from .config import (
     PROJECT_ROOT,
     LOGS_DIR,
     WORKFLOWS_DIR,
+    CONFIG_DIR,
+    IS_FROZEN,
     setup_logging,
 )
 from .hotkey_settings import get_hotkey_settings, HotkeySettings
@@ -78,6 +80,8 @@ __all__ = [
     "PROJECT_ROOT",
     "LOGS_DIR",
     "WORKFLOWS_DIR",
+    "CONFIG_DIR",
+    "IS_FROZEN",
     "setup_logging",
     # Hotkeys
     "get_hotkey_settings",
