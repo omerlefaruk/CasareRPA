@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(set PYTHONPATH=src:*)",
+      "Bash($env:PYTHONPATH=\"src\")",
+      "Bash(PYTHONPATH=src python:*)",
+      "Bash(findstr:*)",
+      "Bash(find:*)",
+      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")"
     ],
     "deny": [],
     "ask": []
