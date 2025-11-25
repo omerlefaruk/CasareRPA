@@ -1,0 +1,337 @@
+"""
+Bottom Panel Dock for CasareRPA.
+
+Main dockable container with tabs for Variables, Output, Log, and Validation.
+Provides Power Automate/UiPath-style bottom panel functionality.
+"""
+
+from typing import Optional, Dict, Any, TYPE_CHECKING
+
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QWidget,
+    QVBoxLayout,
+    QTabWidget,
+    QSizePolicy,
+)
+from PySide6.QtCore import Qt, Signal
+from loguru import logger
+
+if TYPE_CHECKING:
+    from ...core.validation import ValidationResult
+    from ...core.events import Event
+
+
+class BottomPanelDock(QDockWidget):
+    """
+    Dockable bottom panel with tabs for Variables, Output, Log, and Validation.
+
+    This panel provides a Power Automate/UiPath-style interface for:
+    - Variables: Global workflow variables with design/runtime modes
+    - Output: Workflow outputs and return values
+    - Log: Real-time execution logs
+    - Validation: Workflow validation issues
+
+    Signals:
+        variables_changed: Emitted when variables are modified
+        validation_requested: Emitted when user requests manual validation
+        issue_clicked: Emitted when a validation issue is clicked (location: str)
+        navigate_to_node: Emitted when user wants to navigate to a node (node_id: str)
+    """
+
+    variables_changed = Signal(dict)  # {name: VariableDefinition}
+    validation_requested = Signal()
+    issue_clicked = Signal(str)  # location string
+    navigate_to_node = Signal(str)  # node_id
+
+    # Tab indices
+    TAB_VARIABLES = 0
+    TAB_OUTPUT = 1
+    TAB_LOG = 2
+    TAB_VALIDATION = 3
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """
+        Initialize the bottom panel dock.
+
+        Args:
+            parent: Optional parent widget
+        """
+        super().__init__("Panel", parent)
+
+        self._is_runtime_mode = False
+
+        self._setup_dock()
+        self._setup_ui()
+        self._apply_styles()
+
+        logger.debug("BottomPanelDock initialized")
+
+    def _setup_dock(self) -> None:
+        """Configure dock widget properties."""
+        # Allow only bottom area
+        self.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
+
+        # Set features (movable but not floatable)
+        self.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable |
+            QDockWidget.DockWidgetFeature.DockWidgetClosable
+        )
+
+        # Set minimum height
+        self.setMinimumHeight(150)
+
+    def _setup_ui(self) -> None:
+        """Set up the user interface."""
+        # Main container widget
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Create tab widget
+        self._tab_widget = QTabWidget()
+        self._tab_widget.setTabPosition(QTabWidget.TabPosition.North)
+        self._tab_widget.setDocumentMode(True)
+
+        # Create tabs
+        self._create_tabs()
+
+        layout.addWidget(self._tab_widget)
+        self.setWidget(container)
+
+    def _create_tabs(self) -> None:
+        """Create all tab widgets."""
+        from .variables_tab import VariablesTab
+        from .output_tab import OutputTab
+        from .log_tab import LogTab
+        from .validation_tab import ValidationTab
+
+        # Variables tab
+        self._variables_tab = VariablesTab()
+        self._variables_tab.variables_changed.connect(self._on_variables_changed)
+        self._tab_widget.addTab(self._variables_tab, "Variables")
+
+        # Output tab
+        self._output_tab = OutputTab()
+        self._tab_widget.addTab(self._output_tab, "Output")
+
+        # Log tab
+        self._log_tab = LogTab()
+        self._log_tab.navigate_to_node.connect(self.navigate_to_node.emit)
+        self._tab_widget.addTab(self._log_tab, "Log")
+
+        # Validation tab
+        self._validation_tab = ValidationTab()
+        self._validation_tab.validation_requested.connect(self.validation_requested.emit)
+        self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
+        self._tab_widget.addTab(self._validation_tab, "Validation")
+
+    def _apply_styles(self) -> None:
+        """Apply dark theme styling."""
+        self.setStyleSheet("""
+            QDockWidget {
+                background-color: #252525;
+                color: #cccccc;
+            }
+            QDockWidget::title {
+                background-color: #2d2d2d;
+                padding: 6px;
+                text-align: left;
+            }
+            QTabWidget::pane {
+                border: 1px solid #3d3d3d;
+                background: #252525;
+                border-top: none;
+            }
+            QTabBar::tab {
+                background: #2d2d2d;
+                color: #cccccc;
+                padding: 8px 16px;
+                border: 1px solid #3d3d3d;
+                border-bottom: none;
+                margin-right: 2px;
+            }
+            QTabBar::tab:selected {
+                background: #3d3d3d;
+                color: #ffffff;
+                border-bottom: 2px solid #FFA500;
+            }
+            QTabBar::tab:hover:!selected {
+                background: #353535;
+            }
+        """)
+
+    def _on_variables_changed(self, variables: Dict[str, Any]) -> None:
+        """Handle variables changed from Variables tab."""
+        self.variables_changed.emit(variables)
+
+    # ==================== Public API ====================
+
+    def get_variables_tab(self) -> 'VariablesTab':
+        """Get the Variables tab widget."""
+        return self._variables_tab
+
+    def get_output_tab(self) -> 'OutputTab':
+        """Get the Output tab widget."""
+        return self._output_tab
+
+    def get_log_tab(self) -> 'LogTab':
+        """Get the Log tab widget."""
+        return self._log_tab
+
+    def get_validation_tab(self) -> 'ValidationTab':
+        """Get the Validation tab widget."""
+        return self._validation_tab
+
+    def show_variables_tab(self) -> None:
+        """Show and focus the Variables tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_VARIABLES)
+
+    def show_output_tab(self) -> None:
+        """Show and focus the Output tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_OUTPUT)
+
+    def show_log_tab(self) -> None:
+        """Show and focus the Log tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_LOG)
+
+    def show_validation_tab(self) -> None:
+        """Show and focus the Validation tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_VALIDATION)
+
+    # ==================== Variables API ====================
+
+    def set_variables(self, variables: Dict[str, Any]) -> None:
+        """
+        Set workflow variables (design mode).
+
+        Args:
+            variables: Dict of variable definitions
+        """
+        self._variables_tab.set_variables(variables)
+
+    def get_variables(self) -> Dict[str, Any]:
+        """
+        Get current workflow variables.
+
+        Returns:
+            Dict of variable definitions
+        """
+        return self._variables_tab.get_variables()
+
+    def update_runtime_values(self, values: Dict[str, Any]) -> None:
+        """
+        Update variable values during runtime.
+
+        Args:
+            values: Dict of {variable_name: current_value}
+        """
+        self._variables_tab.update_runtime_values(values)
+
+    def set_runtime_mode(self, enabled: bool) -> None:
+        """
+        Switch between design mode and runtime mode.
+
+        Args:
+            enabled: True for runtime mode, False for design mode
+        """
+        self._is_runtime_mode = enabled
+        self._variables_tab.set_runtime_mode(enabled)
+
+    # ==================== Output API ====================
+
+    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
+        """
+        Add an output to the Output tab.
+
+        Args:
+            name: Output name/key
+            value: Output value
+            timestamp: Optional timestamp string
+        """
+        self._output_tab.add_output(name, value, timestamp)
+
+    def clear_outputs(self) -> None:
+        """Clear all outputs."""
+        self._output_tab.clear()
+
+    def set_workflow_result(self, success: bool, message: str) -> None:
+        """
+        Set the final workflow result.
+
+        Args:
+            success: Whether workflow completed successfully
+            message: Result message
+        """
+        self._output_tab.set_workflow_result(success, message)
+
+    # ==================== Log API ====================
+
+    def log_event(self, event: 'Event') -> None:
+        """
+        Log an execution event.
+
+        Args:
+            event: Event to log
+        """
+        self._log_tab.log_event(event)
+
+    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
+        """
+        Log a custom message.
+
+        Args:
+            message: Message text
+            level: Log level (info, warning, error, success)
+            node_id: Optional associated node ID
+        """
+        self._log_tab.log_message(message, level, node_id)
+
+    def clear_log(self) -> None:
+        """Clear the execution log."""
+        self._log_tab.clear()
+
+    # ==================== Validation API ====================
+
+    def set_validation_result(self, result: 'ValidationResult') -> None:
+        """
+        Set validation results.
+
+        Args:
+            result: ValidationResult to display
+        """
+        self._validation_tab.set_result(result)
+
+    def clear_validation(self) -> None:
+        """Clear validation results."""
+        self._validation_tab.clear()
+
+    def has_validation_errors(self) -> bool:
+        """Check if there are validation errors."""
+        return self._validation_tab.has_errors()
+
+    # ==================== State Management ====================
+
+    def prepare_for_execution(self) -> None:
+        """Prepare panel for workflow execution."""
+        self.set_runtime_mode(True)
+        self.clear_log()
+        self.clear_outputs()
+        self.show_log_tab()
+
+    def execution_finished(self) -> None:
+        """Handle workflow execution completion."""
+        self.set_runtime_mode(False)
+
+    def reset(self) -> None:
+        """Reset all tabs to initial state."""
+        self._variables_tab.clear()
+        self._output_tab.clear()
+        self._log_tab.clear()
+        self._validation_tab.clear()
+        self.set_runtime_mode(False)

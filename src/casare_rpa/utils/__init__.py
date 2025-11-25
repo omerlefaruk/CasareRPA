@@ -70,6 +70,7 @@ from .performance_metrics import (
     get_metrics,
     time_operation,
 )
+from .subgraph_calculator import SubgraphCalculator
 
 __all__ = [
     # Config
@@ -133,4 +134,6 @@ __all__ = [
     "PerformanceMetrics",
     "get_metrics",
     "time_operation",
+    # Subgraph calculator
+    "SubgraphCalculator",
 ]
