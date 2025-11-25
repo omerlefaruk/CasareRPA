@@ -122,47 +122,9 @@ class MainWindow(QMainWindow):
         # Enable high-DPI support
         self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
         
-        # Apply dark theme stylesheet
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #2b2b2b;
-            }
-            QMenuBar {
-                background-color: #3c3f41;
-                color: #bbbbbb;
-                border-bottom: 1px solid #1e1e1e;
-            }
-            QMenuBar::item:selected {
-                background-color: #4b6eaf;
-            }
-            QMenu {
-                background-color: #3c3f41;
-                color: #bbbbbb;
-                border: 1px solid #1e1e1e;
-            }
-            QMenu::item:selected {
-                background-color: #4b6eaf;
-            }
-            QToolBar {
-                background-color: #3c3f41;
-                border: none;
-                spacing: 3px;
-            }
-            QToolButton {
-                background-color: transparent;
-                border: none;
-                padding: 5px;
-            }
-            QToolButton:hover {
-                background-color: #4b6eaf;
-                border-radius: 3px;
-            }
-            QStatusBar {
-                background-color: #3c3f41;
-                color: #bbbbbb;
-                border-top: 1px solid #1e1e1e;
-            }
-        """)
+        # Apply unified dark theme stylesheet
+        from casare_rpa.canvas.theme import get_canvas_stylesheet
+        self.setStyleSheet(get_canvas_stylesheet())
     
     def _create_actions(self) -> None:
         """Create actions for menus and toolbar."""

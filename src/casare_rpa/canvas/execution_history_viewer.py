@@ -114,7 +114,28 @@ class ExecutionHistoryViewer(QDockWidget):
         self.table.itemSelectionChanged.connect(self._on_selection_changed)
         
         layout.addWidget(self.table)
-        
+
+        # Empty state guidance
+        self.empty_state_label = QLabel(
+            "No execution history yet.\n\n"
+            "History will appear here when:\n"
+            "- You run a workflow (F5)\n"
+            "- Nodes execute and complete\n\n"
+            "Enable Debug Mode (Ctrl+F5) for detailed\n"
+            "execution tracking and breakpoints."
+        )
+        self.empty_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.empty_state_label.setWordWrap(True)
+        self.empty_state_label.setProperty("empty-state", True)
+        self.empty_state_label.setStyleSheet("""
+            QLabel {
+                color: #7a7f85;
+                font-size: 12px;
+                padding: 20px;
+            }
+        """)
+        layout.addWidget(self.empty_state_label)
+
         # Statistics
         stats_layout = QHBoxLayout()
         
@@ -136,7 +157,11 @@ class ExecutionHistoryViewer(QDockWidget):
         # Store full history for filtering
         self._full_history: List[Dict[str, Any]] = []
         self._current_filter = "All"
-        
+
+        # Show empty state initially
+        self.table.setVisible(False)
+        self.empty_state_label.setVisible(True)
+
         logger.debug("Execution history viewer initialized")
     
     def update_history(self, history: List[Dict[str, Any]]) -> None:
@@ -152,12 +177,16 @@ class ExecutionHistoryViewer(QDockWidget):
     def append_entry(self, entry: Dict[str, Any]) -> None:
         """
         Append a single entry to the history.
-        
+
         Args:
             entry: Execution history entry
         """
         self._full_history.append(entry)
-        
+
+        # Show table, hide empty state
+        self.table.setVisible(True)
+        self.empty_state_label.setVisible(False)
+
         # If filter allows this entry, add it
         if self._should_show_entry(entry):
             self._add_entry_to_table(entry, len(self._full_history))
@@ -167,12 +196,17 @@ class ExecutionHistoryViewer(QDockWidget):
         """Apply current filter to history."""
         # Clear table
         self.table.setRowCount(0)
-        
+
         # Add filtered entries
         for i, entry in enumerate(self._full_history, 1):
             if self._should_show_entry(entry):
                 self._add_entry_to_table(entry, i)
-        
+
+        # Toggle empty state visibility
+        has_entries = len(self._full_history) > 0
+        self.table.setVisible(has_entries)
+        self.empty_state_label.setVisible(not has_entries)
+
         # Update statistics
         self._update_statistics()
     
@@ -301,6 +335,9 @@ class ExecutionHistoryViewer(QDockWidget):
         self._full_history.clear()
         self.table.setRowCount(0)
         self._update_statistics()
+        # Show empty state
+        self.table.setVisible(False)
+        self.empty_state_label.setVisible(True)
         logger.debug("Execution history cleared")
     
     def scroll_to_bottom(self) -> None:
