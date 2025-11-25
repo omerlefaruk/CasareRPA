@@ -131,6 +131,10 @@ class NodeGraphWidget(QWidget):
         # Create quick actions for node context menu
         self._quick_actions = NodeQuickActions(self._graph, self)
 
+        # Wire up auto-connect reference so quick actions can check drag state
+        # This allows RMB to confirm auto-connect while dragging
+        self._quick_actions.set_auto_connect_manager(self._auto_connect)
+
         # Setup connection validator for strict type checking
         self._validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
         if self._validator:
