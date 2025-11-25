@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt, QSize
 
 from ..core.base_node import BaseNode as CasareBaseNode
 from ..core.types import PortType, DataType
+from ..core.port_type_system import PortTypeRegistry, get_port_type_registry
 from loguru import logger
 
 # Unified color scheme for all nodes matching the image colors
@@ -32,9 +33,13 @@ class VisualNode(NodeGraphQtBaseNode):
     def __init__(self) -> None:
         """Initialize visual node."""
         super().__init__()
-        
+
         # Reference to the underlying CasareRPA node
         self._casare_node: Optional[CasareBaseNode] = None
+
+        # Port type registry for typed connections
+        self._port_types: Dict[str, Optional[DataType]] = {}
+        self._type_registry: PortTypeRegistry = get_port_type_registry()
 
         # Set node colors with category-based accents
         self._apply_category_colors()
@@ -103,16 +108,162 @@ class VisualNode(NodeGraphQtBaseNode):
         pass
     
     def _configure_port_colors(self) -> None:
-        """Configure different colors for input and output ports."""
-        # Input ports (left side) - Cyan/Teal
+        """Configure port colors based on data type."""
+        # Apply type-based colors to input ports
         for port in self.input_ports():
-            port.color = (100, 181, 246, 255)  # Light blue
-            port.border_color = (66, 165, 245, 255)  # Darker blue border
-        
-        # Output ports (right side) - Orange/Amber
+            port_name = port.name()
+            data_type = self._port_types.get(port_name)
+
+            if data_type is None:
+                # Exec port - use white
+                color = self._type_registry.get_exec_color()
+            else:
+                # Data port - use type color
+                color = self._type_registry.get_type_color(data_type)
+
+            port.color = color
+            # Slightly darker border
+            port.border_color = (
+                max(0, color[0] - 30),
+                max(0, color[1] - 30),
+                max(0, color[2] - 30),
+                255,
+            )
+
+        # Apply type-based colors to output ports
         for port in self.output_ports():
-            port.color = (255, 167, 38, 255)  # Orange
-            port.border_color = (251, 140, 0, 255)  # Darker orange border
+            port_name = port.name()
+            data_type = self._port_types.get(port_name)
+
+            if data_type is None:
+                # Exec port - use white
+                color = self._type_registry.get_exec_color()
+            else:
+                # Data port - use type color
+                color = self._type_registry.get_type_color(data_type)
+
+            port.color = color
+            # Slightly darker border
+            port.border_color = (
+                max(0, color[0] - 30),
+                max(0, color[1] - 30),
+                max(0, color[2] - 30),
+                255,
+            )
+
+    # =========================================================================
+    # TYPED PORT METHODS
+    # =========================================================================
+
+    def add_typed_input(self, name: str, data_type: DataType = DataType.ANY) -> None:
+        """
+        Add an input port with type information.
+
+        Args:
+            name: Port name
+            data_type: The DataType for this port
+        """
+        self.add_input(name)
+        self._port_types[name] = data_type
+
+    def add_typed_output(self, name: str, data_type: DataType = DataType.ANY) -> None:
+        """
+        Add an output port with type information.
+
+        Args:
+            name: Port name
+            data_type: The DataType for this port
+        """
+        self.add_output(name)
+        self._port_types[name] = data_type
+
+    def add_exec_input(self, name: str = "exec_in") -> None:
+        """
+        Add an execution flow input port.
+
+        Exec ports use None as their type marker.
+
+        Args:
+            name: Port name (default: "exec_in")
+        """
+        self.add_input(name)
+        self._port_types[name] = None  # None marks exec ports
+
+    def add_exec_output(self, name: str = "exec_out") -> None:
+        """
+        Add an execution flow output port.
+
+        Exec ports use None as their type marker.
+
+        Args:
+            name: Port name (default: "exec_out")
+        """
+        self.add_output(name)
+        self._port_types[name] = None  # None marks exec ports
+
+    def get_port_type(self, port_name: str) -> Optional[DataType]:
+        """
+        Get the DataType for a port.
+
+        Args:
+            port_name: Name of the port
+
+        Returns:
+            DataType if it's a data port, None if it's an exec port or unknown
+        """
+        return self._port_types.get(port_name, DataType.ANY)
+
+    def is_exec_port(self, port_name: str) -> bool:
+        """
+        Check if a port is an execution flow port.
+
+        Args:
+            port_name: Name of the port
+
+        Returns:
+            True if this is an execution port
+        """
+        # Check explicit type first
+        if port_name in self._port_types:
+            return self._port_types[port_name] is None
+
+        # Fall back to name-based detection
+        return "exec" in port_name.lower()
+
+    def sync_types_from_casare_node(self) -> None:
+        """
+        Propagate type information from the linked CasareRPA node.
+
+        Call this after the CasareRPA node is set to automatically
+        populate port type information.
+        """
+        if not self._casare_node:
+            return
+
+        # Sync input port types
+        input_ports = getattr(self._casare_node, "input_ports", {})
+        for name, port in input_ports.items():
+            if name not in self._port_types:
+                port_type = getattr(port, "port_type", None)
+                is_exec = port_type in (PortType.EXEC_INPUT, PortType.EXEC_OUTPUT)
+                if is_exec:
+                    self._port_types[name] = None
+                else:
+                    self._port_types[name] = getattr(port, "data_type", DataType.ANY)
+
+        # Sync output port types
+        output_ports = getattr(self._casare_node, "output_ports", {})
+        for name, port in output_ports.items():
+            if name not in self._port_types:
+                port_type = getattr(port, "port_type", None)
+                is_exec = port_type in (PortType.EXEC_INPUT, PortType.EXEC_OUTPUT)
+                if is_exec:
+                    self._port_types[name] = None
+                else:
+                    self._port_types[name] = getattr(port, "data_type", DataType.ANY)
+
+        # Re-apply port colors now that we have type info
+        self._configure_port_colors()
     
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
