@@ -48,6 +48,7 @@ class VariableInspectorDock(QDockWidget):
             parent: Optional parent widget
         """
         super().__init__("Variable Inspector", parent)
+        self.setObjectName("VariableInspectorDock")
 
         self._runtime_values: Dict[str, Any] = {}
         self._previous_values: Dict[str, Any] = {}
@@ -164,8 +165,8 @@ class VariableInspectorDock(QDockWidget):
             QTableWidget {
                 background-color: #1e1e1e;
                 color: #d4d4d4;
-                border: none;
-                gridline-color: #3d3d3d;
+                border: 1px solid #404040;
+                gridline-color: #404040;
             }
             QTableWidget::item {
                 padding: 4px;
@@ -181,7 +182,7 @@ class VariableInspectorDock(QDockWidget):
                 color: #cccccc;
                 padding: 6px;
                 border: none;
-                border-right: 1px solid #3d3d3d;
+                border-right: 1px solid #404040;
             }
             QPushButton {
                 background-color: #3c3f41;
@@ -189,7 +190,7 @@ class VariableInspectorDock(QDockWidget):
                 border: 1px solid #555555;
                 padding: 4px 8px;
                 border-radius: 3px;
-                min-width: 50px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #4a4d50;

@@ -72,15 +72,16 @@ class ValidationTab(QWidget):
 
         # Validate button
         validate_btn = QPushButton("Validate")
-        validate_btn.setFixedWidth(80)
+        validate_btn.setFixedSize(50, 16)
         validate_btn.clicked.connect(self.validation_requested.emit)
         validate_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4b6eaf;
                 color: white;
                 border: none;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border-radius: 2px;
+                padding: 1px 4px;
+                font-size: 10px;
             }
             QPushButton:hover {
                 background-color: #5a7fc0;
@@ -89,7 +90,7 @@ class ValidationTab(QWidget):
 
         # Clear button
         clear_btn = QPushButton("Clear")
-        clear_btn.setFixedWidth(60)
+        clear_btn.setFixedSize(40, 16)
         clear_btn.clicked.connect(self.clear)
 
         header.addWidget(self._status_label)
@@ -133,7 +134,7 @@ class ValidationTab(QWidget):
             QTreeWidget {
                 background-color: #2b2b2b;
                 color: #d4d4d4;
-                border: 1px solid #3d3d3d;
+                border: 1px solid #404040;
                 font-family: 'Segoe UI', 'Arial', sans-serif;
                 font-size: 9pt;
             }
@@ -151,14 +152,15 @@ class ValidationTab(QWidget):
                 color: #bbbbbb;
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #1e1e1e;
+                border-bottom: 1px solid #404040;
             }
             QPushButton {
                 background-color: #3c3f41;
                 color: #cccccc;
                 border: 1px solid #555555;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border-radius: 2px;
+                padding: 0px 2px;
+                font-size: 9px;
             }
             QPushButton:hover {
                 background-color: #4c4f51;

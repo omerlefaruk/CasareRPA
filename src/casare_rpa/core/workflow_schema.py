@@ -416,6 +416,14 @@ class WorkflowSchema:
             # Parse JSON using orjson
             data = orjson.loads(json_data)
 
+            # Auto-migrate legacy node IDs to UUID format if needed
+            from ..utils.id_generator import is_uuid_based_id
+            from ..utils.workflow_migration import migrate_workflow_ids, needs_migration
+
+            if needs_migration(data):
+                logger.info(f"Migrating legacy node IDs in {file_path}")
+                data, _ = migrate_workflow_ids(data)
+
             # Optionally validate before creating workflow
             if validate_on_load:
                 from .validation import validate_workflow

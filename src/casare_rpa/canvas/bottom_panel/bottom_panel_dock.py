@@ -62,6 +62,7 @@ class BottomPanelDock(QDockWidget):
             parent: Optional parent widget
         """
         super().__init__("Panel", parent)
+        self.setObjectName("BottomPanelDock")
 
         self._is_runtime_mode = False
 
@@ -187,7 +188,7 @@ class BottomPanelDock(QDockWidget):
                 text-align: left;
             }
             QTabWidget::pane {
-                border: 1px solid #3d3d3d;
+                border: 1px solid #404040;
                 background: #252525;
                 border-top: none;
             }
@@ -195,7 +196,7 @@ class BottomPanelDock(QDockWidget):
                 background: #2d2d2d;
                 color: #cccccc;
                 padding: 8px 16px;
-                border: 1px solid #3d3d3d;
+                border: 1px solid #404040;
                 border-bottom: none;
                 margin-right: 2px;
             }

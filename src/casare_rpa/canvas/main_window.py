@@ -60,6 +60,9 @@ class MainWindow(QMainWindow):
     workflow_open = Signal(str)
     workflow_save = Signal()
     workflow_save_as = Signal(str)
+    workflow_import = Signal(str)  # Import/merge workflow from file path
+    workflow_import_json = Signal(str)  # Import/merge workflow from JSON string
+    workflow_export_selected = Signal(str)  # Export selected nodes to file path
     workflow_run = Signal()
     workflow_run_to_node = Signal(str)  # Run to selected node ID (F4)
     workflow_run_single_node = Signal(str)  # Run only selected node (F5)
@@ -167,7 +170,17 @@ class MainWindow(QMainWindow):
         self.action_open.setShortcut(QKeySequence.StandardKey.Open)
         self.action_open.setStatusTip("Open an existing workflow")
         self.action_open.triggered.connect(self._on_open_workflow)
-        
+
+        self.action_import = QAction("&Import Workflow...", self)
+        self.action_import.setShortcut(QKeySequence("Ctrl+Shift+I"))
+        self.action_import.setStatusTip("Import nodes from another workflow into current workflow")
+        self.action_import.triggered.connect(self._on_import_workflow)
+
+        self.action_export_selected = QAction("&Export Selected Nodes...", self)
+        self.action_export_selected.setShortcut(QKeySequence("Ctrl+Shift+E"))
+        self.action_export_selected.setStatusTip("Export selected nodes to a workflow file")
+        self.action_export_selected.triggered.connect(self._on_export_selected)
+
         self.action_save = QAction("&Save Workflow", self)
         self.action_save.setShortcut(QKeySequence.StandardKey.Save)
         self.action_save.setStatusTip("Save the current workflow")
@@ -215,7 +228,12 @@ class MainWindow(QMainWindow):
         self.action_paste = QAction("&Paste", self)
         self.action_paste.setShortcut(QKeySequence.StandardKey.Paste)
         self.action_paste.setStatusTip("Paste nodes")
-        
+
+        self.action_paste_workflow = QAction("Paste Workflow JSON", self)
+        self.action_paste_workflow.setShortcut(QKeySequence("Ctrl+Shift+V"))
+        self.action_paste_workflow.setStatusTip("Paste workflow JSON from clipboard and import nodes")
+        self.action_paste_workflow.triggered.connect(self._on_paste_workflow)
+
         self.action_select_all = QAction("Select &All", self)
         self.action_select_all.setShortcut(QKeySequence.StandardKey.SelectAll)
         self.action_select_all.setStatusTip("Select all nodes")
@@ -412,6 +430,8 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.action_new_from_template)
         file_menu.addSeparator()
         file_menu.addAction(self.action_open)
+        file_menu.addAction(self.action_import)
+        file_menu.addAction(self.action_export_selected)
 
         # Recent Files submenu
         self._recent_files_menu = file_menu.addMenu("Recent Files")
@@ -431,6 +451,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action_cut)
         edit_menu.addAction(self.action_copy)
         edit_menu.addAction(self.action_paste)
+        edit_menu.addAction(self.action_paste_workflow)
         edit_menu.addAction(self.action_delete)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_select_all)
@@ -772,6 +793,8 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_new, "File", "Create new workflow")
         self._command_palette.register_action(self.action_new_from_template, "File", "Create from template")
         self._command_palette.register_action(self.action_open, "File", "Open existing workflow")
+        self._command_palette.register_action(self.action_import, "File", "Import nodes from another workflow")
+        self._command_palette.register_action(self.action_export_selected, "File", "Export selected nodes to file")
         self._command_palette.register_action(self.action_save, "File", "Save current workflow")
         self._command_palette.register_action(self.action_save_as, "File", "Save with new name")
 
@@ -781,6 +804,7 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_cut, "Edit")
         self._command_palette.register_action(self.action_copy, "Edit")
         self._command_palette.register_action(self.action_paste, "Edit")
+        self._command_palette.register_action(self.action_paste_workflow, "Edit", "Paste workflow JSON from clipboard")
         self._command_palette.register_action(self.action_delete, "Edit")
         self._command_palette.register_action(self.action_select_all, "Edit")
 
@@ -913,6 +937,7 @@ class MainWindow(QMainWindow):
 
         # Create dock widget
         self._execution_timeline_dock = QDockWidget("Execution Timeline", self)
+        self._execution_timeline_dock.setObjectName("ExecutionTimelineDock")
         self._execution_timeline_dock.setWidget(self._execution_timeline)
         self._execution_timeline_dock.setAllowedAreas(
             Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea
@@ -1385,6 +1410,87 @@ class MainWindow(QMainWindow):
             from PySide6.QtCore import QTimer
             QTimer.singleShot(100, self._validate_after_open)
     
+    def _on_import_workflow(self) -> None:
+        """Handle import workflow request."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Workflow",
+            str(WORKFLOWS_DIR),
+            "Workflow Files (*.json);;All Files (*.*)"
+        )
+
+        if file_path:
+            self.workflow_import.emit(file_path)
+            self.statusBar().showMessage(f"Importing: {Path(file_path).name}...", 3000)
+
+    def _on_export_selected(self) -> None:
+        """Handle export selected nodes request."""
+        # Check if any nodes are selected
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            self.statusBar().showMessage("No graph available", 3000)
+            return
+
+        graph = self._central_widget.graph
+        selected_nodes = graph.selected_nodes()
+
+        if not selected_nodes:
+            QMessageBox.information(
+                self,
+                "Export Selected Nodes",
+                "Please select one or more nodes to export."
+            )
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Selected Nodes",
+            str(WORKFLOWS_DIR / "exported_nodes.json"),
+            "Workflow Files (*.json);;All Files (*.*)"
+        )
+
+        if file_path:
+            self.workflow_export_selected.emit(file_path)
+            self.statusBar().showMessage(f"Exporting {len(selected_nodes)} nodes...", 3000)
+
+    def _on_paste_workflow(self) -> None:
+        """Handle paste workflow JSON from clipboard."""
+        from PySide6.QtWidgets import QApplication
+        import orjson
+
+        clipboard = QApplication.clipboard()
+        text = clipboard.text()
+
+        if not text:
+            self.statusBar().showMessage("Clipboard is empty", 3000)
+            return
+
+        # Try to parse as JSON
+        try:
+            data = orjson.loads(text)
+
+            # Basic validation - should have nodes key
+            if "nodes" not in data:
+                QMessageBox.warning(
+                    self,
+                    "Invalid Workflow JSON",
+                    "The clipboard content does not appear to be a valid workflow.\n"
+                    "Expected a JSON object with a 'nodes' key."
+                )
+                return
+
+            # Emit signal with JSON string
+            self.workflow_import_json.emit(text)
+            node_count = len(data.get("nodes", {}))
+            self.statusBar().showMessage(f"Pasting {node_count} nodes from clipboard...", 3000)
+
+        except orjson.JSONDecodeError:
+            QMessageBox.warning(
+                self,
+                "Invalid JSON",
+                "The clipboard content is not valid JSON.\n"
+                "Please copy a valid workflow JSON to the clipboard."
+            )
+
     def _on_save_workflow(self) -> None:
         """Handle save workflow request."""
         # Validate before saving
