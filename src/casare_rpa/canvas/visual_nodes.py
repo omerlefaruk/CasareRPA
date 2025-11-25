@@ -2151,6 +2151,227 @@ class VisualUnzipFilesNode(VisualNode):
 
 
 # =============================================================================
+# Email Nodes
+# =============================================================================
+
+class VisualSendEmailNode(VisualNode):
+    """Visual representation of SendEmailNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Send Email"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Send Email node."""
+        super().__init__()
+        self.add_text_input("smtp_server", "SMTP Server", text="smtp.gmail.com", tab="connection")
+        self.add_text_input("smtp_port", "SMTP Port", text="587", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("from_email", "From Email", text="", tab="email")
+        self.add_text_input("to_email", "To Email", text="", tab="email")
+        self.add_text_input("subject", "Subject", text="", tab="email")
+        self.add_text_input("cc", "CC", text="", tab="email")
+        self.add_text_input("bcc", "BCC", text="", tab="email")
+        self.create_property("use_tls", True, widget_type=1, tab="config")
+        self.create_property("is_html", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("to_email")
+        self.add_input("subject")
+        self.add_input("body")
+        self.add_input("attachments")
+        self.add_output("exec_out")
+        self.add_output("success")
+        self.add_output("message_id")
+
+
+class VisualReadEmailsNode(VisualNode):
+    """Visual representation of ReadEmailsNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Read Emails"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Read Emails node."""
+        super().__init__()
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input("imap_port", "IMAP Port", text="993", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("folder", "Folder", text="INBOX", tab="config")
+        self.add_text_input("limit", "Limit", text="10", tab="config")
+        self.add_combo_menu("search_criteria", "Search", items=[
+            "ALL", "UNSEEN", "SEEN", "RECENT", "FLAGGED"
+        ], tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("folder")
+        self.add_input("limit")
+        self.add_input("search_criteria")
+        self.add_output("exec_out")
+        self.add_output("emails")
+        self.add_output("count")
+
+
+class VisualGetEmailContentNode(VisualNode):
+    """Visual representation of GetEmailContentNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Get Email Content"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Get Email Content node."""
+        super().__init__()
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("email")
+        self.add_output("exec_out")
+        self.add_output("subject")
+        self.add_output("from")
+        self.add_output("to")
+        self.add_output("date")
+        self.add_output("body_text")
+        self.add_output("body_html")
+        self.add_output("attachments")
+
+
+class VisualSaveAttachmentNode(VisualNode):
+    """Visual representation of SaveAttachmentNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Save Attachment"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Save Attachment node."""
+        super().__init__()
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("save_path", "Save Path", text=".", tab="config")
+        self.add_text_input("folder", "Folder", text="INBOX", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("email_uid")
+        self.add_input("save_path")
+        self.add_output("exec_out")
+        self.add_output("saved_files")
+        self.add_output("count")
+
+
+class VisualFilterEmailsNode(VisualNode):
+    """Visual representation of FilterEmailsNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Filter Emails"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Filter Emails node."""
+        super().__init__()
+        self.add_text_input("subject_contains", "Subject Contains", text="", tab="filters")
+        self.add_text_input("from_contains", "From Contains", text="", tab="filters")
+        self.create_property("has_attachments", False, widget_type=1, tab="filters")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("emails")
+        self.add_input("subject_contains")
+        self.add_input("from_contains")
+        self.add_output("exec_out")
+        self.add_output("filtered")
+        self.add_output("count")
+
+
+class VisualMarkEmailNode(VisualNode):
+    """Visual representation of MarkEmailNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Mark Email"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Mark Email node."""
+        super().__init__()
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("folder", "Folder", text="INBOX", tab="config")
+        self.add_combo_menu("mark_as", "Mark As", items=[
+            "read", "unread", "flagged", "unflagged"
+        ], tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("email_uid")
+        self.add_input("mark_as")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualDeleteEmailNode(VisualNode):
+    """Visual representation of DeleteEmailNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Delete Email"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Delete Email node."""
+        super().__init__()
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("folder", "Folder", text="INBOX", tab="config")
+        self.create_property("permanent", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("email_uid")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualMoveEmailNode(VisualNode):
+    """Visual representation of MoveEmailNode."""
+
+    __identifier__ = "casare_rpa.email"
+    NODE_NAME = "Move Email"
+    NODE_CATEGORY = "email"
+
+    def __init__(self) -> None:
+        """Initialize Move Email node."""
+        super().__init__()
+        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input("username", "Username", text="", tab="connection")
+        self.add_text_input("password", "Password", text="", tab="connection")
+        self.add_text_input("source_folder", "Source Folder", text="INBOX", tab="config")
+        self.add_text_input("target_folder", "Target Folder", text="", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("email_uid")
+        self.add_input("target_folder")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+# =============================================================================
 # Utility Nodes
 # =============================================================================
 
@@ -2553,6 +2774,354 @@ class VisualOutlookGetInboxCountNode(VisualNode):
         self.add_output("total_count")
         self.add_output("unread_count")
         self.add_output("success")
+
+
+# HTTP/REST API Nodes
+
+class VisualHttpRequestNode(VisualNode):
+    """Visual representation of HttpRequestNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP Request"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Request node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.add_combo_menu("method", "Method", items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], tab="config")
+        self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        self.create_property("follow_redirects", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("headers")
+        self.add_input("body")
+        self.add_input("params")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("response_headers")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpGetNode(VisualNode):
+    """Visual representation of HttpGetNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP GET"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP GET node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("params")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpPostNode(VisualNode):
+    """Visual representation of HttpPostNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP POST"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP POST node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
+        self.add_combo_menu("content_type", "Content Type", items=["application/json", "application/x-www-form-urlencoded", "text/plain"], tab="config")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("body")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpPutNode(VisualNode):
+    """Visual representation of HttpPutNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP PUT"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP PUT node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("body")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpPatchNode(VisualNode):
+    """Visual representation of HttpPatchNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP PATCH"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP PATCH node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("body")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpDeleteNode(VisualNode):
+    """Visual representation of HttpDeleteNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP DELETE"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP DELETE node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualSetHttpHeadersNode(VisualNode):
+    """Visual representation of SetHttpHeadersNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "Set HTTP Headers"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize Set HTTP Headers node."""
+        super().__init__()
+        self.add_text_input("header_name", "Header Name", text="", tab="inputs")
+        self.add_text_input("header_value", "Header Value", text="", tab="inputs")
+        self.add_text_input("headers_json", "Headers (JSON)", text="{}", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("base_headers")
+        self.add_input("header_name")
+        self.add_input("header_value")
+        self.add_output("exec_out")
+        self.add_output("headers")
+
+
+class VisualHttpAuthNode(VisualNode):
+    """Visual representation of HttpAuthNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP Auth"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Auth node."""
+        super().__init__()
+        self.add_combo_menu("auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config")
+        self.add_text_input("token", "Token/API Key", text="", tab="inputs")
+        self.add_text_input("username", "Username", text="", tab="inputs")
+        self.add_text_input("password", "Password", text="", tab="inputs")
+        self.add_text_input("api_key_name", "API Key Header", text="X-API-Key", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("token")
+        self.add_input("username")
+        self.add_input("password")
+        self.add_input("base_headers")
+        self.add_output("exec_out")
+        self.add_output("headers")
+
+
+class VisualParseJsonResponseNode(VisualNode):
+    """Visual representation of ParseJsonResponseNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "Parse JSON Response"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize Parse JSON Response node."""
+        super().__init__()
+        self.add_text_input("path", "JSON Path", text="", tab="inputs")
+        self.add_text_input("default", "Default Value", text="", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("json_data")
+        self.add_input("path")
+        self.add_input("default")
+        self.add_output("exec_out")
+        self.add_output("value")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpDownloadFileNode(VisualNode):
+    """Visual representation of HttpDownloadFileNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP Download File"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Download File node."""
+        super().__init__()
+        self.add_text_input("url", "URL", text="", tab="inputs")
+        self.add_text_input("save_path", "Save Path", text="", tab="inputs")
+        self.create_property("timeout", 300.0, widget_type=2, tab="config")
+        self.create_property("overwrite", True, widget_type=1, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("save_path")
+        self.add_input("headers")
+        self.add_output("exec_out")
+        self.add_output("file_path")
+        self.add_output("file_size")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualHttpUploadFileNode(VisualNode):
+    """Visual representation of HttpUploadFileNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "HTTP Upload File"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Upload File node."""
+        super().__init__()
+        self.add_text_input("url", "Upload URL", text="", tab="inputs")
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.add_text_input("field_name", "Field Name", text="file", tab="inputs")
+        self.create_property("timeout", 300.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("file_path")
+        self.add_input("headers")
+        self.add_input("extra_fields")
+        self.add_output("exec_out")
+        self.add_output("response_body")
+        self.add_output("response_json")
+        self.add_output("status_code")
+        self.add_output("success")
+        self.add_output("error")
+
+
+class VisualBuildUrlNode(VisualNode):
+    """Visual representation of BuildUrlNode."""
+
+    __identifier__ = "casare_rpa.http"
+    NODE_NAME = "Build URL"
+    NODE_CATEGORY = "rest_api"
+    CASARE_NODE_MODULE = "http_nodes"
+
+    def __init__(self) -> None:
+        """Initialize Build URL node."""
+        super().__init__()
+        self.add_text_input("base_url", "Base URL", text="", tab="inputs")
+        self.add_text_input("path", "Path", text="", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("base_url")
+        self.add_input("path")
+        self.add_input("params")
+        self.add_output("exec_out")
+        self.add_output("url")
 
 
 # Dynamic node discovery
