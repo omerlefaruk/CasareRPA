@@ -4,12 +4,16 @@ Desktop Window Management Nodes
 Nodes for resizing, moving, and managing Windows desktop windows.
 """
 
+import asyncio
 from typing import Any, Dict, Optional
 from loguru import logger
 
 from ...core.base_node import BaseNode as Node
 from ...core.types import NodeStatus
 from ...desktop import DesktopContext
+
+# Default timeout for window operations (in seconds)
+DEFAULT_WINDOW_TIMEOUT = 10
 
 
 class ResizeWindowNode(Node):
@@ -32,11 +36,21 @@ class ResizeWindowNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "width": 800,
+            "height": 600,
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+            "bring_to_front": False,  # Bring window to front before operation
+            "verify_resize": False,  # Verify window was actually resized
+        }
         if config is None:
-            config = {
-                "width": 800,
-                "height": 600
-            }
+            config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ResizeWindowNode"
@@ -73,6 +87,11 @@ class ResizeWindowNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+        bring_to_front = self.config.get('bring_to_front', False)
+
         logger.info(f"[{self.name}] Resizing window to {width}x{height}")
 
         # Get desktop context
@@ -81,22 +100,46 @@ class ResizeWindowNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            success = desktop_ctx.resize_window(window, int(width), int(height))
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"[{self.name}] Window resized successfully")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                # Bring window to front if requested
+                if bring_to_front:
+                    try:
+                        desktop_ctx.bring_to_front(window)
+                    except Exception:
+                        pass  # Ignore bring to front errors
 
-        except Exception as e:
-            error_msg = f"Failed to resize window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                success = desktop_ctx.resize_window(window, int(width), int(height))
+
+                logger.info(f"[{self.name}] Window resized successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Resize failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to resize window after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)
 
 
 class MoveWindowNode(Node):
@@ -119,11 +162,20 @@ class MoveWindowNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "x": 100,
+            "y": 100,
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+            "bring_to_front": False,  # Bring window to front before operation
+        }
         if config is None:
-            config = {
-                "x": 100,
-                "y": 100
-            }
+            config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MoveWindowNode"
@@ -160,6 +212,11 @@ class MoveWindowNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+        bring_to_front = self.config.get('bring_to_front', False)
+
         logger.info(f"[{self.name}] Moving window to ({x}, {y})")
 
         # Get desktop context
@@ -168,22 +225,46 @@ class MoveWindowNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            success = desktop_ctx.move_window(window, int(x), int(y))
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"[{self.name}] Window moved successfully")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                # Bring window to front if requested
+                if bring_to_front:
+                    try:
+                        desktop_ctx.bring_to_front(window)
+                    except Exception:
+                        pass  # Ignore bring to front errors
 
-        except Exception as e:
-            error_msg = f"Failed to move window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                success = desktop_ctx.move_window(window, int(x), int(y))
+
+                logger.info(f"[{self.name}] Window moved successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Move failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to move window after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)
 
 
 class MaximizeWindowNode(Node):
@@ -206,8 +287,17 @@ class MaximizeWindowNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+        }
         if config is None:
             config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MaximizeWindowNode"
@@ -240,6 +330,10 @@ class MaximizeWindowNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+
         logger.info(f"[{self.name}] Maximizing window")
 
         # Get desktop context
@@ -248,22 +342,39 @@ class MaximizeWindowNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            success = desktop_ctx.maximize_window(window)
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"[{self.name}] Window maximized successfully")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                success = desktop_ctx.maximize_window(window)
 
-        except Exception as e:
-            error_msg = f"Failed to maximize window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                logger.info(f"[{self.name}] Window maximized successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Maximize failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to maximize window after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)
 
 
 class MinimizeWindowNode(Node):
@@ -286,8 +397,17 @@ class MinimizeWindowNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+        }
         if config is None:
             config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MinimizeWindowNode"
@@ -320,6 +440,10 @@ class MinimizeWindowNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+
         logger.info(f"[{self.name}] Minimizing window")
 
         # Get desktop context
@@ -328,22 +452,39 @@ class MinimizeWindowNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            success = desktop_ctx.minimize_window(window)
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"[{self.name}] Window minimized successfully")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                success = desktop_ctx.minimize_window(window)
 
-        except Exception as e:
-            error_msg = f"Failed to minimize window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                logger.info(f"[{self.name}] Window minimized successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Minimize failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to minimize window after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)
 
 
 class RestoreWindowNode(Node):
@@ -366,8 +507,17 @@ class RestoreWindowNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+        }
         if config is None:
             config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RestoreWindowNode"
@@ -400,6 +550,10 @@ class RestoreWindowNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+
         logger.info(f"[{self.name}] Restoring window")
 
         # Get desktop context
@@ -408,22 +562,39 @@ class RestoreWindowNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            success = desktop_ctx.restore_window(window)
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"[{self.name}] Window restored successfully")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                success = desktop_ctx.restore_window(window)
 
-        except Exception as e:
-            error_msg = f"Failed to restore window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                logger.info(f"[{self.name}] Window restored successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Restore failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to restore window after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)
 
 
 class GetWindowPropertiesNode(Node):
@@ -543,10 +714,18 @@ class SetWindowStateNode(Node):
             config: Node configuration
             name: Display name for the node
         """
+        default_config = {
+            "state": "normal",  # normal, maximized, minimized
+            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1.0,  # Delay between retries in seconds
+        }
         if config is None:
-            config = {
-                "state": "normal"  # normal, maximized, minimized
-            }
+            config = {}
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SetWindowStateNode"
@@ -581,6 +760,10 @@ class SetWindowStateNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Get retry options
+        retry_count = int(self.config.get('retry_count', 0))
+        retry_interval = float(self.config.get('retry_interval', 1.0))
+
         logger.info(f"[{self.name}] Setting window state to '{state}'")
 
         # Get desktop context
@@ -589,28 +772,45 @@ class SetWindowStateNode(Node):
 
         desktop_ctx = context.desktop_context
 
-        try:
-            state = state.lower().strip()
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            if state == 'maximized':
-                success = desktop_ctx.maximize_window(window)
-            elif state == 'minimized':
-                success = desktop_ctx.minimize_window(window)
-            elif state in ('normal', 'restored'):
-                success = desktop_ctx.restore_window(window)
-            else:
-                raise ValueError(f"Invalid state: '{state}'. Use 'normal', 'maximized', or 'minimized'.")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}")
 
-            logger.info(f"[{self.name}] Window state set to '{state}' successfully")
+                state_lower = state.lower().strip()
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+                if state_lower == 'maximized':
+                    success = desktop_ctx.maximize_window(window)
+                elif state_lower == 'minimized':
+                    success = desktop_ctx.minimize_window(window)
+                elif state_lower in ('normal', 'restored'):
+                    success = desktop_ctx.restore_window(window)
+                else:
+                    raise ValueError(f"Invalid state: '{state}'. Use 'normal', 'maximized', or 'minimized'.")
 
-        except Exception as e:
-            error_msg = f"Failed to set window state: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+                logger.info(f"[{self.name}] Window state set to '{state}' successfully (attempt {attempts})")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    'success': success,
+                    'attempts': attempts,
+                    'next_nodes': ['exec_out']
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"[{self.name}] Set state failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval)
+                else:
+                    break
+
+        error_msg = f"Failed to set window state after {attempts} attempts: {last_error}"
+        logger.error(f"[{self.name}] {error_msg}")
+        self.status = NodeStatus.ERROR
+        raise RuntimeError(error_msg)

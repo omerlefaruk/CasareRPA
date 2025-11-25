@@ -17,6 +17,7 @@ from loguru import logger
 
 from ..utils.config import GUI_THEME
 from .auto_connect import AutoConnectManager
+from .connection_cutter import ConnectionCutter
 
 # Import connection validator for strict type checking
 try:
@@ -121,6 +122,9 @@ class NodeGraphWidget(QWidget):
 
         # Create auto-connect manager
         self._auto_connect = AutoConnectManager(self._graph, self)
+
+        # Create connection cutter (Y + LMB drag to cut connections)
+        self._connection_cutter = ConnectionCutter(self._graph, self)
 
         # Setup connection validator for strict type checking
         self._validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
@@ -362,7 +366,34 @@ class NodeGraphWidget(QWidget):
 
                 return True  # Event handled
 
+            # Handle X key or Delete key to delete selected frames
+            if key_event.key() in (Qt.Key.Key_X, Qt.Key.Key_Delete):
+                if self._delete_selected_frames():
+                    return True  # Event handled if frames were deleted
+
         return super().eventFilter(obj, event)
+
+    def _delete_selected_frames(self) -> bool:
+        """
+        Delete any selected frames in the scene.
+
+        Returns:
+            True if any frames were deleted, False otherwise
+        """
+        from .node_frame import NodeFrame
+
+        viewer = self._graph.viewer()
+        scene = viewer.scene()
+        deleted_any = False
+
+        # Find and delete selected frames
+        for item in scene.selectedItems():
+            if isinstance(item, NodeFrame):
+                logger.info(f"Deleting selected frame: {item.frame_title}")
+                item._delete_frame()
+                deleted_any = True
+
+        return deleted_any
 
     # =========================================================================
     # CONNECTION VALIDATION

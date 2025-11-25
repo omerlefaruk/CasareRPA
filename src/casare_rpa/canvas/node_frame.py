@@ -9,7 +9,7 @@ References:
 - "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import List, Optional, Tuple, Set, Dict, TYPE_CHECKING
+from typing import Any, List, Optional, Tuple, Set, Dict, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem,
     QGraphicsEllipseItem, QMenu, QInputDialog
@@ -307,6 +307,7 @@ class NodeFrame(QGraphicsRectItem):
         self._is_collapsed = False
         self._expanded_rect = QRectF(0, 0, width, height)  # Store expanded size
         self._exposed_ports: List[ExposedPortIndicator] = []  # Indicators for external connections
+        self._hidden_node_views: List[Any] = []  # Store references to hidden node views
 
         # Set frame properties
         self.setRect(0, 0, width, height)
@@ -406,17 +407,29 @@ class NodeFrame(QGraphicsRectItem):
         if self._is_collapsed:
             return
 
-        logger.info(f"Collapsing frame: {self.frame_title}")
+        # First, capture any nodes that are inside the frame bounds but not yet tracked
+        self._capture_nodes_in_bounds()
+
+        logger.info(f"Collapsing frame: {self.frame_title} with {len(self.contained_nodes)} nodes")
 
         # Store current expanded rect
         self._expanded_rect = QRectF(self.rect())
 
-        # Hide all contained nodes
+        # Clear previously stored views
+        self._hidden_node_views.clear()
+
+        # Hide all contained nodes and store their views
         for node in self.contained_nodes:
-            if hasattr(node, 'view') and node.view:
-                node.view.setVisible(False)
-            # Also hide any connected pipes to hidden nodes
-            self._hide_internal_connections(node)
+            try:
+                if hasattr(node, 'view') and node.view:
+                    node_view = node.view
+                    self._hidden_node_views.append(node_view)
+                    node_view.setVisible(False)
+                    logger.debug(f"Hidden node view: {node.name() if hasattr(node, 'name') else 'unknown'}")
+                # Also hide any connected pipes to hidden nodes
+                self._hide_internal_connections(node)
+            except Exception as e:
+                logger.warning(f"Error hiding node during collapse: {e}")
 
         # Resize to collapsed dimensions
         self.prepareGeometryChange()
@@ -432,7 +445,7 @@ class NodeFrame(QGraphicsRectItem):
         self._is_collapsed = True
         self.update()
 
-        logger.info(f"Frame '{self.frame_title}' collapsed to {self.COLLAPSED_WIDTH}x{self.COLLAPSED_HEIGHT}")
+        logger.info(f"Frame '{self.frame_title}' collapsed - hid {len(self._hidden_node_views)} node views")
 
     def expand(self) -> None:
         """
@@ -459,17 +472,77 @@ class NodeFrame(QGraphicsRectItem):
         if hasattr(self, '_collapse_button'):
             self._collapse_button._update_position()
 
-        # Show all contained nodes
+        # First, show all stored node views (from collapse)
+        shown_count = 0
+        for node_view in self._hidden_node_views:
+            try:
+                if node_view:
+                    node_view.setVisible(True)
+                    shown_count += 1
+            except Exception as e:
+                logger.warning(f"Error showing stored node view: {e}")
+
+        # Also iterate through contained_nodes to show any that might have been missed
         for node in self.contained_nodes:
-            if hasattr(node, 'view') and node.view:
-                node.view.setVisible(True)
-            # Show connected pipes
-            self._show_internal_connections(node)
+            try:
+                if hasattr(node, 'view') and node.view:
+                    node.view.setVisible(True)
+                # Show connected pipes
+                self._show_internal_connections(node)
+            except Exception as e:
+                logger.warning(f"Error showing node during expand: {e}")
+
+        # Clear the stored views list
+        self._hidden_node_views.clear()
 
         self._is_collapsed = False
         self.update()
 
-        logger.info(f"Frame '{self.frame_title}' expanded to {self._expanded_rect.width()}x{self._expanded_rect.height()}")
+        logger.info(f"Frame '{self.frame_title}' expanded - showed {shown_count} node views")
+
+    def _capture_nodes_in_bounds(self) -> None:
+        """
+        Find and capture any nodes that are inside the frame bounds.
+
+        This ensures nodes are properly tracked even if they weren't
+        explicitly added via drag-and-drop.
+        """
+        if not self.scene():
+            return
+
+        frame_rect = self.sceneBoundingRect()
+
+        # Get all items in the scene
+        for item in self.scene().items():
+            # Check if item looks like a node (has view attribute pointing to itself
+            # or is a node object with a view)
+            node = None
+
+            # Try to find the node object from the item
+            if hasattr(item, 'node') and callable(item.node):
+                try:
+                    node = item.node()
+                except Exception:
+                    pass
+
+            # Skip if already in contained_nodes or if it's the frame itself
+            if node is None or node in self.contained_nodes or item == self:
+                continue
+
+            # Check if node has a view and position
+            if hasattr(node, 'view') and hasattr(node, 'pos'):
+                try:
+                    node_view = node.view
+                    if node_view and hasattr(node_view, 'sceneBoundingRect'):
+                        node_rect = node_view.sceneBoundingRect()
+
+                        # Check if node center is inside the frame
+                        node_center = node_rect.center()
+                        if frame_rect.contains(node_center):
+                            self.add_node(node)
+                            logger.debug(f"Auto-captured node in frame bounds")
+                except Exception as e:
+                    logger.debug(f"Error checking node bounds: {e}")
 
     def _hide_internal_connections(self, node) -> None:
         """Hide connections between internal nodes (keep external visible)."""
@@ -639,6 +712,8 @@ class NodeFrame(QGraphicsRectItem):
         """
         if node not in self.contained_nodes:
             self.contained_nodes.append(node)
+            node_name = node.name() if hasattr(node, 'name') else str(node)
+            logger.info(f"Added node '{node_name}' to frame '{self.frame_title}' (total: {len(self.contained_nodes)})")
             # Store the node's relative position to the frame
             if hasattr(node, 'pos'):
                 node_pos = node.pos()

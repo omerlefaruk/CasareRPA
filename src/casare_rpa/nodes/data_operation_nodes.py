@@ -64,7 +64,20 @@ class FormatStringNode(BaseNode):
 
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
-    
+
+    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+        default_config = {
+            "ignore_case": False,  # Case insensitive matching
+            "multiline": False,  # ^ and $ match line boundaries
+            "dotall": False,  # . matches newlines
+        }
+        if config is None:
+            config = {}
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+        super().__init__(node_id, config)
+
     def _define_ports(self) -> None:
         self.add_input_port("text", DataType.STRING)
         self.add_input_port("pattern", DataType.STRING)
@@ -72,26 +85,37 @@ class RegexMatchNode(BaseNode):
         self.add_output_port("first_match", DataType.STRING)
         self.add_output_port("all_matches", DataType.LIST)
         self.add_output_port("groups", DataType.LIST)
+        self.add_output_port("match_count", DataType.INTEGER)
 
     async def execute(self, context) -> NodeStatus:
         try:
             text = self.get_input_value("text", "")
             pattern = self.get_input_value("pattern", "")
-            
-            matches = list(re.finditer(pattern, text))
-            
+
+            # Build regex flags
+            flags = 0
+            if self.config.get("ignore_case", False):
+                flags |= re.IGNORECASE
+            if self.config.get("multiline", False):
+                flags |= re.MULTILINE
+            if self.config.get("dotall", False):
+                flags |= re.DOTALL
+
+            matches = list(re.finditer(pattern, text, flags=flags))
+
             match_found = len(matches) > 0
             first_match = matches[0].group(0) if match_found else ""
             all_matches = [m.group(0) for m in matches]
-            
+
             # Collect groups from the first match if available
             groups = list(matches[0].groups()) if match_found else []
-            
+
             self.set_output_value("match_found", match_found)
             self.set_output_value("first_match", first_match)
             self.set_output_value("all_matches", all_matches)
             self.set_output_value("groups", groups)
-            
+            self.set_output_value("match_count", len(matches))
+
             return NodeStatus.SUCCESS
         except Exception as e:
             logger.error(f"Regex match failed: {e}")
@@ -100,7 +124,21 @@ class RegexMatchNode(BaseNode):
 
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
-    
+
+    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+        default_config = {
+            "ignore_case": False,  # Case insensitive matching
+            "multiline": False,  # ^ and $ match line boundaries
+            "dotall": False,  # . matches newlines
+            "max_count": 0,  # Max replacements (0 = unlimited)
+        }
+        if config is None:
+            config = {}
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+        super().__init__(node_id, config)
+
     def _define_ports(self) -> None:
         self.add_input_port("text", DataType.STRING)
         self.add_input_port("pattern", DataType.STRING)
@@ -113,9 +151,22 @@ class RegexReplaceNode(BaseNode):
             text = self.get_input_value("text", "")
             pattern = self.get_input_value("pattern", "")
             replacement = self.get_input_value("replacement", "")
-            
-            result, count = re.subn(pattern, replacement, text)
-            
+
+            # Build regex flags
+            flags = 0
+            if self.config.get("ignore_case", False):
+                flags |= re.IGNORECASE
+            if self.config.get("multiline", False):
+                flags |= re.MULTILINE
+            if self.config.get("dotall", False):
+                flags |= re.DOTALL
+
+            max_count = int(self.config.get("max_count", 0))
+            if max_count > 0:
+                result, count = re.subn(pattern, replacement, text, count=max_count, flags=flags)
+            else:
+                result, count = re.subn(pattern, replacement, text, flags=flags)
+
             self.set_output_value("result", result)
             self.set_output_value("count", count)
             return NodeStatus.SUCCESS
@@ -125,11 +176,19 @@ class RegexReplaceNode(BaseNode):
             return NodeStatus.ERROR
 
 class MathOperationNode(BaseNode):
-    """Node that performs basic math operations."""
-    
+    """Node that performs math operations."""
+
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+        default_config = {
+            "operation": "add",  # Operation to perform
+            "round_digits": None,  # Decimal places to round to (None = no rounding)
+        }
+        if config is None:
+            config = {}
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
-        # Operation: add, subtract, multiply, divide, power, modulo
         self.operation = self.config.get("operation", "add")
 
     def _define_ports(self) -> None:
@@ -141,10 +200,11 @@ class MathOperationNode(BaseNode):
         try:
             a = float(self.get_input_value("a", 0))
             b = float(self.get_input_value("b", 0))
-            
+
             result = 0.0
             op = self.operation.lower()
-            
+
+            # Two-operand operations
             if op == "add":
                 result = a + b
             elif op == "subtract":
@@ -155,13 +215,51 @@ class MathOperationNode(BaseNode):
                 if b == 0:
                     raise ValueError("Division by zero")
                 result = a / b
+            elif op == "floor_divide":
+                if b == 0:
+                    raise ValueError("Division by zero")
+                result = a // b
             elif op == "power":
                 result = math.pow(a, b)
             elif op == "modulo":
                 result = a % b
+            elif op == "min":
+                result = min(a, b)
+            elif op == "max":
+                result = max(a, b)
+            # Single-operand operations (use 'a' only)
+            elif op == "abs":
+                result = abs(a)
+            elif op == "sqrt":
+                result = math.sqrt(a)
+            elif op == "floor":
+                result = math.floor(a)
+            elif op == "ceil":
+                result = math.ceil(a)
+            elif op == "round":
+                result = round(a)
+            elif op == "sin":
+                result = math.sin(a)
+            elif op == "cos":
+                result = math.cos(a)
+            elif op == "tan":
+                result = math.tan(a)
+            elif op == "log":
+                result = math.log(a) if b == 0 else math.log(a, b)
+            elif op == "log10":
+                result = math.log10(a)
+            elif op == "exp":
+                result = math.exp(a)
+            elif op == "negate":
+                result = -a
             else:
                 raise ValueError(f"Unknown operation: {op}")
-            
+
+            # Apply rounding if configured
+            round_digits = self.config.get("round_digits")
+            if round_digits is not None:
+                result = round(result, int(round_digits))
+
             self.set_output_value("result", result)
             return NodeStatus.SUCCESS
         except Exception as e:
@@ -1089,6 +1187,17 @@ class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+        default_config = {
+            "indent": None,  # Indentation level (None = compact)
+            "sort_keys": False,  # Sort keys alphabetically
+            "ensure_ascii": True,  # Escape non-ASCII characters
+            "separators": None,  # Custom separators (item, key) - None = default
+        }
+        if config is None:
+            config = {}
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.indent = self.config.get("indent", None)
 
@@ -1105,7 +1214,16 @@ class DictToJsonNode(BaseNode):
             if indent is not None:
                 indent = int(indent)
 
-            result = json.dumps(d, indent=indent, default=str)
+            sort_keys = self.config.get("sort_keys", False)
+            ensure_ascii = self.config.get("ensure_ascii", True)
+
+            result = json.dumps(
+                d,
+                indent=indent,
+                sort_keys=sort_keys,
+                ensure_ascii=ensure_ascii,
+                default=str
+            )
 
             self.set_output_value("json_string", result)
             return NodeStatus.SUCCESS
