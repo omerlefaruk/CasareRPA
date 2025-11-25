@@ -4,6 +4,8 @@ Auto-connect feature for node graph.
 Provides automatic connection suggestions while dragging nodes
 with visual feedback (faded connection lines) and right-click
 to confirm connections or disconnect nodes.
+
+Now uses ConnectionValidator for type-safe connection checking.
 """
 
 from typing import Optional, Tuple, List, Dict
@@ -13,6 +15,15 @@ from PySide6.QtCore import QObject, Signal, QPointF, Qt, QTimer
 from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsScene
 from PySide6.QtGui import QPen, QColor
 from NodeGraphQt import NodeGraph, BaseNode
+
+from loguru import logger
+
+# Import connection validator for type checking
+try:
+    from .connection_validator import ConnectionValidator, get_connection_validator
+    HAS_VALIDATOR = True
+except ImportError:
+    HAS_VALIDATOR = False
 
 
 class AutoConnectManager(QObject):
@@ -280,21 +291,57 @@ class AutoConnectManager(QObject):
     def _are_ports_compatible(self, port1, port2) -> bool:
         """
         Check if two ports are compatible for connection.
-        
-        Only exec ports are auto-connected.
+
+        Uses ConnectionValidator for type-safe checking when available.
+        Falls back to name-based exec port detection otherwise.
+
+        Args:
+            port1: Output port (source)
+            port2: Input port (target)
+
+        Returns:
+            True if ports can be connected
         """
         try:
             # Get port names
             port1_name = port1.name().lower()
             port2_name = port2.name().lower()
-            
-            # Check if both are exec ports
+
+            # Check if both are exec ports (name-based)
             is_exec1 = 'exec' in port1_name
             is_exec2 = 'exec' in port2_name
-            
-            # Only allow exec port connections
-            return is_exec1 and is_exec2
-        except:
+
+            # Exec/data mismatch - never allow
+            if is_exec1 != is_exec2:
+                return False
+
+            # Exec-to-exec is always compatible
+            if is_exec1 and is_exec2:
+                return True
+
+            # For data ports, use ConnectionValidator if available
+            if HAS_VALIDATOR:
+                try:
+                    node1 = port1.node()
+                    node2 = port2.node()
+
+                    # Check if nodes have typed port methods
+                    if hasattr(node1, 'get_port_type') and hasattr(node2, 'get_port_type'):
+                        validator = get_connection_validator()
+                        validation = validator.validate_connection(
+                            node1, port1.name(),
+                            node2, port2.name()
+                        )
+                        return validation.is_valid
+                except Exception as e:
+                    logger.debug(f"Validator check failed, using fallback: {e}")
+
+            # Fallback: Allow data port connections (backward compatibility)
+            # This allows connections when types are unknown
+            return True
+
+        except Exception as e:
+            logger.debug(f"Port compatibility check failed: {e}")
             return False  # Default to not compatible if we can't determine
     
     def _draw_suggestion_lines(self, suggestions: List[Tuple[BaseNode, str, BaseNode, str]]):

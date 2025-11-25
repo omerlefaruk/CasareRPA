@@ -3,6 +3,11 @@ Minimap widget for the node graph.
 
 Provides a bird's-eye view of the entire node graph with viewport indicator.
 Overlays on the bottom-left corner of the canvas.
+
+Now uses event-driven updates for better performance with large workflows.
+
+References:
+- "Designing Data-Intensive Applications" by Kleppmann - Event Sourcing
 """
 
 from typing import Optional
@@ -10,6 +15,85 @@ from PySide6.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayou
 from PySide6.QtCore import Qt, QRectF, QPointF, QTimer, Signal
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor
 from NodeGraphQt import NodeGraph
+
+from loguru import logger
+
+
+# ============================================================================
+# CHANGE TRACKER (Event Sourcing Pattern)
+# ============================================================================
+
+
+class MinimapChangeTracker:
+    """
+    Tracks changes to determine when minimap needs update.
+
+    Uses event sourcing pattern - only update when something changed.
+    This reduces CPU usage significantly for large workflows.
+    """
+
+    def __init__(self, viewport_tolerance: float = 2.0):
+        """
+        Initialize change tracker.
+
+        Args:
+            viewport_tolerance: Tolerance for viewport position changes
+        """
+        self._dirty = True
+        self._last_viewport_rect = QRectF()
+        self._last_node_count = 0
+        self._viewport_tolerance = viewport_tolerance
+
+    def mark_dirty(self) -> None:
+        """Mark state as dirty - requires update."""
+        self._dirty = True
+
+    def should_update(self, current_viewport: QRectF, node_count: int) -> bool:
+        """
+        Check if minimap needs redraw.
+
+        Args:
+            current_viewport: Current viewport rectangle
+            node_count: Number of nodes in the graph
+
+        Returns:
+            True if update is needed
+        """
+        # Dirty flag set
+        if self._dirty:
+            return True
+
+        # Node count changed
+        if node_count != self._last_node_count:
+            return True
+
+        # Viewport moved significantly
+        if not self._rects_equal(current_viewport, self._last_viewport_rect):
+            return True
+
+        return False
+
+    def commit_update(self, viewport: QRectF, node_count: int) -> None:
+        """
+        Mark current state as rendered.
+
+        Args:
+            viewport: Current viewport rectangle
+            node_count: Number of nodes
+        """
+        self._last_viewport_rect = QRectF(viewport)
+        self._last_node_count = node_count
+        self._dirty = False
+
+    def _rects_equal(self, r1: QRectF, r2: QRectF) -> bool:
+        """Check if two rectangles are approximately equal."""
+        tolerance = self._viewport_tolerance
+        return (
+            abs(r1.x() - r2.x()) < tolerance
+            and abs(r1.y() - r2.y()) < tolerance
+            and abs(r1.width() - r2.width()) < tolerance
+            and abs(r1.height() - r2.height()) < tolerance
+        )
 
 
 class MinimapView(QGraphicsView):
@@ -118,44 +202,117 @@ class MinimapView(QGraphicsView):
 class Minimap(QWidget):
     """
     Minimap widget showing overview of node graph.
-    
+
     Displays nodes as colored rectangles and shows current viewport.
     Clicking on minimap navigates the main view.
+
+    Now uses event-driven updates for better performance:
+    - Connects to node_created/nodes_deleted signals
+    - Only updates when viewport or nodes change
+    - Reduced timer interval (200ms instead of 100ms)
     """
-    
+
     def __init__(self, node_graph: NodeGraph, parent: Optional[QWidget] = None):
         """
         Initialize minimap.
-        
+
         Args:
             node_graph: NodeGraph instance to display
             parent: Parent widget
         """
         super().__init__(parent)
-        
+
         self._node_graph = node_graph
         self._viewer = node_graph.viewer()
-        
+
+        # Create change tracker for event-driven updates
+        self._change_tracker = MinimapChangeTracker()
+
         # Create minimap view
         self._minimap_view = MinimapView(self)
         self._minimap_view.viewport_clicked.connect(self._on_minimap_clicked)
-        
+
         # Layout
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._minimap_view)
         self.setLayout(layout)
-        
+
         # Set fixed size (smaller)
         self.setFixedSize(200, 140)
-        
-        # Update timer
+
+        # Connect to graph signals for event-driven updates
+        self._connect_signals()
+
+        # Update timer (reduced interval - now just a fallback for viewport changes)
         self._update_timer = QTimer(self)
-        self._update_timer.timeout.connect(self._update_minimap)
-        self._update_timer.start(100)  # Update every 100ms
-        
+        self._update_timer.timeout.connect(self._check_and_update)
+        self._update_timer.start(200)  # Reduced from 100ms to 200ms
+
+        # Statistics for performance monitoring
+        self._update_count = 0
+        self._skip_count = 0
+
         # Initial update
         self._update_minimap()
+
+    def _connect_signals(self) -> None:
+        """Connect to graph signals for event-driven updates."""
+        try:
+            # Node created - mark dirty
+            self._node_graph.node_created.connect(self._on_node_changed)
+
+            # Nodes deleted - mark dirty
+            self._node_graph.nodes_deleted.connect(self._on_nodes_changed)
+
+            logger.debug("Minimap connected to graph signals for event-driven updates")
+        except Exception as e:
+            logger.warning(f"Could not connect minimap to graph signals: {e}")
+
+    def _on_node_changed(self, node) -> None:
+        """Handle node creation event."""
+        self._change_tracker.mark_dirty()
+
+    def _on_nodes_changed(self, node_ids) -> None:
+        """Handle node deletion event."""
+        self._change_tracker.mark_dirty()
+
+    def _check_and_update(self) -> None:
+        """Check if update is needed and perform if so."""
+        if not self.isVisible():
+            return
+
+        # Get current state
+        viewer_scene = self._viewer.scene()
+        if not viewer_scene:
+            return
+
+        viewport_rect = self._viewer.mapToScene(
+            self._viewer.viewport().rect()
+        ).boundingRect()
+        node_count = len(self._node_graph.all_nodes())
+
+        # Only update if something changed
+        if self._change_tracker.should_update(viewport_rect, node_count):
+            self._update_minimap()
+            self._change_tracker.commit_update(viewport_rect, node_count)
+            self._update_count += 1
+        else:
+            self._skip_count += 1
+
+    def mark_dirty(self) -> None:
+        """Manually mark minimap as needing update."""
+        self._change_tracker.mark_dirty()
+
+    def get_stats(self) -> dict:
+        """Get update statistics."""
+        return {
+            "updates": self._update_count,
+            "skips": self._skip_count,
+            "efficiency": (
+                self._skip_count / max(1, self._update_count + self._skip_count) * 100
+            ),
+        }
     
     def _update_minimap(self):
         """Update minimap content."""

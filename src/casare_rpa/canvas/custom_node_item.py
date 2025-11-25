@@ -6,8 +6,14 @@ Provides custom styling including:
 - Animated running state indicator
 - Completion checkmark
 - Icon display
+
+Now uses centralized AnimationCoordinator for performance with many nodes.
+
+References:
+- "Designing Data-Intensive Applications" - Resource pooling
 """
 
+from typing import Set, Optional
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 from PySide6.QtCore import Qt, QRectF, QTimer, QPointF, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QLinearGradient, QPixmap, QFont
@@ -18,6 +24,86 @@ from NodeGraphQt.constants import (
     NODE_SEL_COLOR,
     NODE_SEL_BORDER_COLOR
 )
+
+from loguru import logger
+
+
+# ============================================================================
+# ANIMATION COORDINATOR (Centralized Timer)
+# ============================================================================
+
+
+class AnimationCoordinator:
+    """
+    Singleton coordinator for all node animations.
+
+    Instead of each node having its own timer, this coordinator uses a
+    single timer to drive all animated nodes. This significantly reduces
+    CPU usage when many nodes are running simultaneously.
+
+    Usage:
+        coordinator = AnimationCoordinator.get_instance()
+        coordinator.register(node_item)  # Start animating
+        coordinator.unregister(node_item)  # Stop animating
+    """
+
+    _instance: Optional["AnimationCoordinator"] = None
+
+    @classmethod
+    def get_instance(cls) -> "AnimationCoordinator":
+        """Get the singleton instance."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __init__(self):
+        """Initialize the animation coordinator."""
+        self._animated_nodes: Set["CasareNodeItem"] = set()
+        self._timer = QTimer()
+        self._timer.timeout.connect(self._tick)
+        self._offset = 0
+        self._interval = 50  # 20 FPS
+
+    def register(self, node: "CasareNodeItem") -> None:
+        """
+        Start animating a node.
+
+        Args:
+            node: The CasareNodeItem to animate
+        """
+        self._animated_nodes.add(node)
+        if not self._timer.isActive():
+            self._timer.start(self._interval)
+
+    def unregister(self, node: "CasareNodeItem") -> None:
+        """
+        Stop animating a node.
+
+        Args:
+            node: The CasareNodeItem to stop animating
+        """
+        self._animated_nodes.discard(node)
+        if not self._animated_nodes and self._timer.isActive():
+            self._timer.stop()
+            self._offset = 0
+
+    def _tick(self) -> None:
+        """Update all animated nodes."""
+        self._offset = (self._offset + 1) % 8
+
+        for node in self._animated_nodes:
+            node._animation_offset = self._offset
+            node.update()
+
+    @property
+    def animated_count(self) -> int:
+        """Get the number of currently animated nodes."""
+        return len(self._animated_nodes)
+
+    @property
+    def is_running(self) -> bool:
+        """Check if the animation timer is running."""
+        return self._timer.isActive()
 
 
 class CasareNodeItem(NodeItem):
@@ -33,24 +119,23 @@ class CasareNodeItem(NodeItem):
     
     def __init__(self, name='node', parent=None):
         super().__init__(name, parent)
-        
+
         # Execution state
         self._is_running = False
         self._is_completed = False
         self._animation_offset = 0
-        
-        # Animation timer for running state
-        self._animation_timer = QTimer()
-        self._animation_timer.timeout.connect(self._animate_border)
-        self._animation_timer.setInterval(50)  # 20 FPS
-        
+
+        # Use centralized animation coordinator instead of per-node timer
+        # This significantly improves performance when many nodes are running
+        self._animation_coordinator = AnimationCoordinator.get_instance()
+
         # Icon
         self._icon_pixmap = None
         self._icon_item = None
-        
+
         # Checkmark for completed state
         self._checkmark_item = None
-        
+
         # Colors matching the reference image
         self._normal_border_color = QColor(68, 68, 68)  # Dark gray border
         self._selected_border_color = QColor(255, 215, 0)  # Bright yellow
@@ -151,20 +236,20 @@ class CasareNodeItem(NodeItem):
         node_name = self.name if hasattr(self, 'name') else "Node"
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, node_name)
     
-    def _animate_border(self):
-        """Animate the border for running state."""
-        self._animation_offset += 1
-        if self._animation_offset > 8:
-            self._animation_offset = 0
-        self.update()
-    
     def set_running(self, running: bool):
-        """Set node running state."""
+        """
+        Set node running state.
+
+        Uses centralized AnimationCoordinator for efficient animation.
+
+        Args:
+            running: True to show running animation, False to stop
+        """
         self._is_running = running
         if running:
-            self._animation_timer.start()
+            self._animation_coordinator.register(self)
         else:
-            self._animation_timer.stop()
+            self._animation_coordinator.unregister(self)
             self._animation_offset = 0
         self.update()
     

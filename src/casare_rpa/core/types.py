@@ -282,6 +282,9 @@ PortDefinition = Dict[str, Union[str, PortType, DataType]]
 # Serialized node data
 SerializedNode = Dict[str, Any]
 
+# Serialized frame data (for node grouping)
+SerializedFrame = Dict[str, Any]
+
 # Serialized workflow data
 SerializedWorkflow = Dict[str, Any]
 

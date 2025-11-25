@@ -379,7 +379,10 @@ class CasareRPAApp:
                 
                 if source_port and target_port:
                     source_port.connect_to(target_port)
-        
+
+        # Deserialize frames
+        self._deserialize_frames(workflow.frames, node_map)
+
         logger.info(f"Loaded workflow '{workflow.metadata.name}' with {len(workflow.nodes)} nodes")
     
     def _on_open_workflow(self, file_path: str) -> None:
@@ -449,17 +452,65 @@ class CasareRPAApp:
                 # Add connections
                 for conn in workflow.connections:
                     serialized_workflow.add_connection(conn)
-                
+
+                # Serialize frames
+                serialized_workflow.frames = self._serialize_frames()
+
                 # Save to file
                 serialized_workflow.save_to_file(current_file)
-                
+
                 self._main_window.set_modified(False)
                 self._main_window.statusBar().showMessage(f"Saved: {current_file.name}", 3000)
-                
+
             except Exception as e:
                 logger.exception("Failed to save workflow")
                 self._main_window.statusBar().showMessage(f"Error saving file: {str(e)}", 5000)
-    
+
+    def _serialize_frames(self) -> list:
+        """
+        Serialize all frames in the scene.
+
+        Returns:
+            List of serialized frame dictionaries
+        """
+        from .node_frame import NodeFrame
+
+        frames = []
+        scene = self._node_graph.graph.viewer().scene()
+
+        for item in scene.items():
+            if isinstance(item, NodeFrame):
+                frames.append(item.serialize())
+                logger.debug(f"Serialized frame: {item.frame_title}")
+
+        logger.info(f"Serialized {len(frames)} frames")
+        return frames
+
+    def _deserialize_frames(self, frames_data: list, node_map: dict) -> None:
+        """
+        Deserialize frames and add them to the scene.
+
+        Args:
+            frames_data: List of serialized frame dictionaries
+            node_map: Mapping of node_id to visual node objects
+        """
+        from .node_frame import NodeFrame
+
+        if not frames_data:
+            return
+
+        scene = self._node_graph.graph.viewer().scene()
+
+        for frame_data in frames_data:
+            try:
+                frame = NodeFrame.deserialize(frame_data, node_map)
+                scene.addItem(frame)
+                logger.debug(f"Deserialized frame: {frame.frame_title}")
+            except Exception as e:
+                logger.warning(f"Failed to deserialize frame: {e}")
+
+        logger.info(f"Deserialized {len(frames_data)} frames")
+
     def _on_save_as_workflow(self, file_path: str) -> None:
         """
         Handle save as workflow.
@@ -508,17 +559,20 @@ class CasareRPAApp:
             # Add connections
             for conn in workflow.connections:
                 serialized_workflow.add_connection(conn)
-            
+
+            # Serialize frames
+            serialized_workflow.frames = self._serialize_frames()
+
             # Save to file
             serialized_workflow.save_to_file(Path(file_path))
-            
+
             self._main_window.set_modified(False)
             self._main_window.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)
-            
+
         except Exception as e:
             logger.exception("Failed to save workflow")
             self._main_window.statusBar().showMessage(f"Error saving file: {str(e)}", 5000)
-    
+
     def _ensure_all_nodes_have_casare_nodes(self) -> bool:
         """
         Ensure all visual nodes in the graph have CasareRPA nodes.

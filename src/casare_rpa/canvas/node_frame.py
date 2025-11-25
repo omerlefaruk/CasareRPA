@@ -2,19 +2,117 @@
 Node Frame/Group System
 
 Allows users to create visual frames around groups of nodes for organization.
+
+Now uses centralized FrameBoundsManager for better performance with many frames.
+
+References:
+- "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import List, Optional, Tuple
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem, QMenu, QInputDialog
+from typing import List, Optional, Tuple, Set, Dict, TYPE_CHECKING
+from PySide6.QtWidgets import (
+    QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem,
+    QGraphicsEllipseItem, QMenu, QInputDialog
+)
 from PySide6.QtCore import QRectF, Qt, QPointF, QTimer, QObject, Signal
-from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QKeyEvent
+from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QKeyEvent, QPainterPath
 from NodeGraphQt import BaseNode
 from NodeGraphQt.base.node import NodeObject
 from loguru import logger
 
 
+# ============================================================================
+# FRAME BOUNDS MANAGER (Centralized Timer)
+# ============================================================================
+
+
+class FrameBoundsManager(QObject):
+    """
+    Centralized manager for all frame bounds checking.
+
+    Instead of each frame having its own 100ms timer, this manager uses
+    a single timer to check all frames. This significantly reduces CPU
+    usage when there are many frames.
+
+    Usage:
+        manager = FrameBoundsManager.get_instance()
+        manager.register_frame(frame)
+        manager.unregister_frame(frame)
+    """
+
+    _instance: Optional["FrameBoundsManager"] = None
+
+    @classmethod
+    def get_instance(cls) -> "FrameBoundsManager":
+        """Get the singleton instance."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __init__(self, parent: Optional[QObject] = None):
+        """Initialize the bounds manager."""
+        super().__init__(parent)
+        self._frames: Set["NodeFrame"] = set()
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._batch_check)
+        self._interval = 150  # ms - check every 150ms
+
+    def register_frame(self, frame: "NodeFrame") -> None:
+        """
+        Register a frame for bounds checking.
+
+        Args:
+            frame: The NodeFrame to check
+        """
+        self._frames.add(frame)
+        if not self._timer.isActive():
+            self._timer.start(self._interval)
+        logger.debug(f"Registered frame '{frame.frame_title}', total frames: {len(self._frames)}")
+
+    def unregister_frame(self, frame: "NodeFrame") -> None:
+        """
+        Unregister a frame from bounds checking.
+
+        Args:
+            frame: The NodeFrame to stop checking
+        """
+        self._frames.discard(frame)
+        if not self._frames and self._timer.isActive():
+            self._timer.stop()
+        logger.debug(f"Unregistered frame, total frames: {len(self._frames)}")
+
+    def _batch_check(self) -> None:
+        """Check all frames in a single pass."""
+        if not self._frames:
+            return
+
+        # Check each frame
+        for frame in list(self._frames):  # Copy to avoid modification during iteration
+            try:
+                if frame.scene():  # Frame still in scene
+                    frame._check_node_bounds()
+            except Exception as e:
+                logger.debug(f"Error checking frame bounds: {e}")
+
+    @property
+    def frame_count(self) -> int:
+        """Get the number of registered frames."""
+        return len(self._frames)
+
+    @property
+    def is_running(self) -> bool:
+        """Check if the timer is running."""
+        return self._timer.isActive()
+
+
+# Legacy helper for backward compatibility
 class FrameTimerHelper(QObject):
-    """Helper QObject to host the timer for NodeFrame."""
+    """
+    Helper QObject to host the timer for NodeFrame.
+
+    DEPRECATED: Use FrameBoundsManager instead for better performance.
+    Kept for backward compatibility.
+    """
 
     check_bounds = Signal()
 
@@ -30,6 +128,162 @@ class FrameTimerHelper(QObject):
         self.timer.stop()
 
 
+# ============================================================================
+# COLLAPSE BUTTON
+# ============================================================================
+
+
+class CollapseButton(QGraphicsRectItem):
+    """
+    A clickable button to collapse/expand a frame.
+
+    Visual design:
+    - Rounded square button in frame header
+    - Shows "-" when expanded (click to collapse)
+    - Shows "+" when collapsed (click to expand)
+    - Hover highlight for better UX
+    """
+
+    def __init__(self, parent: "NodeFrame"):
+        """
+        Initialize collapse button.
+
+        Args:
+            parent: Parent NodeFrame
+        """
+        super().__init__(parent)
+        self._parent_frame = parent
+        self._is_hovered = False
+
+        # Button size and position
+        self._size = 18
+        self.setRect(0, 0, self._size, self._size)
+
+        # Position in top-right of frame header
+        self._update_position()
+
+        # Make clickable
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
+
+        # Z-value above frame
+        self.setZValue(1)
+
+    def _update_position(self) -> None:
+        """Update button position based on frame rect."""
+        frame_rect = self._parent_frame.rect()
+        margin = 8
+        x = frame_rect.right() - self._size - margin
+        y = frame_rect.top() + margin
+        self.setPos(x, y)
+
+    def paint(self, painter: QPainter, option, widget=None):
+        """Paint the collapse button."""
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        rect = self.rect()
+
+        # Background color
+        if self._is_hovered:
+            bg_color = QColor(80, 80, 80, 200)
+        else:
+            bg_color = QColor(60, 60, 60, 180)
+
+        # Draw rounded rectangle background
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(QPen(QColor(100, 100, 100), 1))
+        painter.drawRoundedRect(rect, 4, 4)
+
+        # Draw +/- symbol
+        painter.setPen(QPen(QColor(220, 220, 220), 2))
+
+        center_x = rect.center().x()
+        center_y = rect.center().y()
+        symbol_size = 6
+
+        # Horizontal line (always present)
+        painter.drawLine(
+            QPointF(center_x - symbol_size, center_y),
+            QPointF(center_x + symbol_size, center_y)
+        )
+
+        # Vertical line (only when collapsed - shows "+")
+        if self._parent_frame.is_collapsed:
+            painter.drawLine(
+                QPointF(center_x, center_y - symbol_size),
+                QPointF(center_x, center_y + symbol_size)
+            )
+
+    def hoverEnterEvent(self, event):
+        """Handle hover enter."""
+        self._is_hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        """Handle hover leave."""
+        self._is_hovered = False
+        self.update()
+        super().hoverLeaveEvent(event)
+
+    def mousePressEvent(self, event):
+        """Handle click to toggle collapse."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._parent_frame.toggle_collapse()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
+
+# ============================================================================
+# EXPOSED PORT INDICATOR
+# ============================================================================
+
+
+class ExposedPortIndicator(QGraphicsEllipseItem):
+    """
+    Visual indicator for exposed ports on collapsed frames.
+
+    Shows which ports are connected externally when frame is collapsed.
+    Color-coded by port type for consistency with the type system.
+    """
+
+    def __init__(
+        self,
+        port_name: str,
+        is_output: bool,
+        color: QColor,
+        parent: QGraphicsItem
+    ):
+        """
+        Initialize exposed port indicator.
+
+        Args:
+            port_name: Name of the port
+            is_output: True if output port, False if input
+            color: Port type color
+            parent: Parent graphics item
+        """
+        super().__init__(parent)
+        self.port_name = port_name
+        self.is_output = is_output
+        self.port_color = color
+
+        # Indicator size
+        size = 10
+        self.setRect(-size / 2, -size / 2, size, size)
+
+        # Styling
+        self.setBrush(QBrush(color))
+        self.setPen(QPen(color.darker(130), 1.5))
+
+        # Tooltip showing port name
+        self.setToolTip(f"{'Output' if is_output else 'Input'}: {port_name}")
+
+        # Accept hover for tooltip
+        self.setAcceptHoverEvents(True)
+
+
 class NodeFrame(QGraphicsRectItem):
     """
     A visual frame/backdrop for grouping nodes.
@@ -41,7 +295,12 @@ class NodeFrame(QGraphicsRectItem):
     - Multiple color themes
     - Nodes can be grouped within the frame
     - Deletable (Delete key or context menu)
+    - Collapsible to hide internal nodes
     """
+
+    # Collapsed frame dimensions
+    COLLAPSED_WIDTH = 200
+    COLLAPSED_HEIGHT = 50
 
     def __init__(
         self,
@@ -67,6 +326,11 @@ class NodeFrame(QGraphicsRectItem):
         self._resize_start_pos = None  # Mouse position when resize started
         self._resize_start_rect = None  # Frame rect when resize started
 
+        # Collapse state
+        self._is_collapsed = False
+        self._expanded_rect = QRectF(0, 0, width, height)  # Store expanded size
+        self._exposed_ports: List[ExposedPortIndicator] = []  # Indicators for external connections
+
         # Set frame properties
         self.setRect(0, 0, width, height)
         self.setFlags(
@@ -90,12 +354,15 @@ class NodeFrame(QGraphicsRectItem):
         # Create title label
         self._create_title_label()
 
-        # Create timer helper to check for nodes moved outside/inside the frame
-        self._timer_helper = FrameTimerHelper()
-        self._timer_helper.check_bounds.connect(self._check_node_bounds)
-        self._timer_helper.start(100)  # Check every 100ms for responsive highlighting
+        # Create collapse button
+        self._collapse_button = CollapseButton(self)
 
-        logger.info(f"Created node frame: {title} with timer")
+        # Use centralized FrameBoundsManager instead of per-frame timer
+        # This significantly reduces CPU usage when there are many frames
+        self._bounds_manager = FrameBoundsManager.get_instance()
+        self._bounds_manager.register_frame(self)
+
+        logger.info(f"Created node frame: {title} (using centralized bounds manager)")
 
     def _apply_style(self):
         """Apply visual styling to the frame."""
@@ -133,26 +400,258 @@ class NodeFrame(QGraphicsRectItem):
         if self.title_label:
             self.title_label.setDefaultTextColor(color.darker(200))
 
+    # =========================================================================
+    # COLLAPSE FUNCTIONALITY
+    # =========================================================================
+
+    @property
+    def is_collapsed(self) -> bool:
+        """Check if frame is collapsed."""
+        return self._is_collapsed
+
+    def toggle_collapse(self) -> None:
+        """Toggle between collapsed and expanded state."""
+        if self._is_collapsed:
+            self.expand()
+        else:
+            self.collapse()
+
+    def collapse(self) -> None:
+        """
+        Collapse the frame to hide internal nodes.
+
+        When collapsed:
+        - Stores current expanded size
+        - Shrinks to compact dimensions
+        - Hides all contained nodes
+        - Shows exposed port indicators for external connections
+        """
+        if self._is_collapsed:
+            return
+
+        logger.info(f"Collapsing frame: {self.frame_title}")
+
+        # Store current expanded rect
+        self._expanded_rect = QRectF(self.rect())
+
+        # Hide all contained nodes
+        for node in self.contained_nodes:
+            if hasattr(node, 'view') and node.view:
+                node.view.setVisible(False)
+            # Also hide any connected pipes to hidden nodes
+            self._hide_internal_connections(node)
+
+        # Resize to collapsed dimensions
+        self.prepareGeometryChange()
+        self.setRect(0, 0, self.COLLAPSED_WIDTH, self.COLLAPSED_HEIGHT)
+
+        # Update collapse button position
+        if hasattr(self, '_collapse_button'):
+            self._collapse_button._update_position()
+
+        # Create exposed port indicators
+        self._create_exposed_ports()
+
+        self._is_collapsed = True
+        self.update()
+
+        logger.info(f"Frame '{self.frame_title}' collapsed to {self.COLLAPSED_WIDTH}x{self.COLLAPSED_HEIGHT}")
+
+    def expand(self) -> None:
+        """
+        Expand the frame to show internal nodes.
+
+        When expanded:
+        - Restores original size
+        - Shows all contained nodes
+        - Removes exposed port indicators
+        """
+        if not self._is_collapsed:
+            return
+
+        logger.info(f"Expanding frame: {self.frame_title}")
+
+        # Remove exposed port indicators
+        self._clear_exposed_ports()
+
+        # Restore expanded rect
+        self.prepareGeometryChange()
+        self.setRect(self._expanded_rect)
+
+        # Update collapse button position
+        if hasattr(self, '_collapse_button'):
+            self._collapse_button._update_position()
+
+        # Show all contained nodes
+        for node in self.contained_nodes:
+            if hasattr(node, 'view') and node.view:
+                node.view.setVisible(True)
+            # Show connected pipes
+            self._show_internal_connections(node)
+
+        self._is_collapsed = False
+        self.update()
+
+        logger.info(f"Frame '{self.frame_title}' expanded to {self._expanded_rect.width()}x{self._expanded_rect.height()}")
+
+    def _hide_internal_connections(self, node) -> None:
+        """Hide connections between internal nodes (keep external visible)."""
+        if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
+            return
+
+        try:
+            # Hide connections from input ports
+            for port in node.input_ports():
+                for connected_port in port.connected_ports():
+                    connected_node = connected_port.node()
+                    # Only hide if connected node is also in this frame
+                    if connected_node in self.contained_nodes:
+                        # Hide the pipe
+                        if hasattr(port, 'view') and port.view:
+                            for pipe in port.view.connected_pipes():
+                                pipe.setVisible(False)
+
+            # Hide connections from output ports
+            for port in node.output_ports():
+                for connected_port in port.connected_ports():
+                    connected_node = connected_port.node()
+                    if connected_node in self.contained_nodes:
+                        if hasattr(port, 'view') and port.view:
+                            for pipe in port.view.connected_pipes():
+                                pipe.setVisible(False)
+        except Exception as e:
+            logger.debug(f"Error hiding internal connections: {e}")
+
+    def _show_internal_connections(self, node) -> None:
+        """Show all connections for a node."""
+        if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
+            return
+
+        try:
+            for port in node.input_ports():
+                if hasattr(port, 'view') and port.view:
+                    for pipe in port.view.connected_pipes():
+                        pipe.setVisible(True)
+
+            for port in node.output_ports():
+                if hasattr(port, 'view') and port.view:
+                    for pipe in port.view.connected_pipes():
+                        pipe.setVisible(True)
+        except Exception as e:
+            logger.debug(f"Error showing internal connections: {e}")
+
+    def _create_exposed_ports(self) -> None:
+        """Create indicators for ports connected to nodes outside this frame."""
+        self._clear_exposed_ports()
+
+        # Collect external connections
+        input_ports = []
+        output_ports = []
+
+        for node in self.contained_nodes:
+            if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
+                continue
+
+            try:
+                # Check input ports for external connections
+                for port in node.input_ports():
+                    for connected_port in port.connected_ports():
+                        connected_node = connected_port.node()
+                        if connected_node not in self.contained_nodes:
+                            input_ports.append((port.name(), self._get_port_color(port)))
+
+                # Check output ports for external connections
+                for port in node.output_ports():
+                    for connected_port in port.connected_ports():
+                        connected_node = connected_port.node()
+                        if connected_node not in self.contained_nodes:
+                            output_ports.append((port.name(), self._get_port_color(port)))
+            except Exception as e:
+                logger.debug(f"Error collecting exposed ports: {e}")
+
+        # Create indicators
+        rect = self.rect()
+        margin = 12
+        port_spacing = 14
+
+        # Input ports on left side
+        y_start = rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
+        for i, (port_name, color) in enumerate(input_ports):
+            indicator = ExposedPortIndicator(port_name, False, color, self)
+            indicator.setPos(rect.left() + margin, y_start + i * port_spacing)
+            self._exposed_ports.append(indicator)
+
+        # Output ports on right side
+        y_start = rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
+        for i, (port_name, color) in enumerate(output_ports):
+            indicator = ExposedPortIndicator(port_name, True, color, self)
+            indicator.setPos(rect.right() - margin, y_start + i * port_spacing)
+            self._exposed_ports.append(indicator)
+
+    def _clear_exposed_ports(self) -> None:
+        """Remove all exposed port indicators."""
+        for indicator in self._exposed_ports:
+            if indicator.scene():
+                indicator.scene().removeItem(indicator)
+        self._exposed_ports.clear()
+
+    def _get_port_color(self, port) -> QColor:
+        """Get color for a port based on its type."""
+        # Default color
+        default_color = QColor(100, 181, 246)  # Light blue
+
+        try:
+            # Try to get port type from node
+            node = port.node()
+            if hasattr(node, 'get_port_type'):
+                data_type = node.get_port_type(port.name())
+                if data_type:
+                    # Import type registry to get color
+                    from ..core.port_type_system import get_port_type_registry
+                    registry = get_port_type_registry()
+                    color_tuple = registry.get_type_color(data_type)
+                    return QColor(*color_tuple)
+        except Exception as e:
+            logger.debug(f"Could not get port color: {e}")
+
+        return default_color
+
     def paint(self, painter: QPainter, option, widget=None):
         """Custom paint method with selection highlight (no visual resize handles)."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Draw rounded rectangle
         rect = self.rect()
 
         # Use bright yellow border when selected or when drop target
         if self.isSelected() or self._is_drop_target:
             pen = QPen(QColor(255, 215, 0), 3)  # Bright yellow, 3px thick
             pen.setStyle(Qt.PenStyle.SolidLine)
+        elif self._is_collapsed:
+            # Collapsed state: solid border, darker background
+            pen = QPen(self.frame_color.darker(150), 2)
+            pen.setStyle(Qt.PenStyle.SolidLine)
         else:
             pen = QPen(self.frame_color.darker(120), 2)
             pen.setStyle(Qt.PenStyle.DashLine)
 
-        painter.setBrush(self.brush())
+        # Use darker background when collapsed
+        if self._is_collapsed:
+            brush = QBrush(self.frame_color.darker(110))
+        else:
+            brush = self.brush()
+
+        painter.setBrush(brush)
         painter.setPen(pen)
         painter.drawRoundedRect(rect, 10, 10)
 
-        # Note: No visual resize handles drawn - only cursor changes indicate resize capability
+        # Draw node count indicator when collapsed
+        if self._is_collapsed and self.contained_nodes:
+            count_text = f"{len(self.contained_nodes)} nodes"
+            painter.setPen(QPen(self.frame_color.lighter(180)))
+            font = QFont("Segoe UI", 9)
+            painter.setFont(font)
+            text_rect = QRectF(rect.left() + 10, rect.bottom() - 20, rect.width() - 20, 15)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, count_text)
 
     def add_node(self, node):
         """
@@ -214,6 +713,10 @@ class NodeFrame(QGraphicsRectItem):
 
     def _get_resize_corner(self, pos):
         """Determine if the position is at the bottom-right resize corner."""
+        # Disable resizing when collapsed
+        if self._is_collapsed:
+            return None
+
         rect = self.rect()
         handle_size = self._resize_handle_size
 
@@ -427,6 +930,16 @@ class NodeFrame(QGraphicsRectItem):
         """Show context menu with frame options."""
         menu = QMenu()
 
+        # Collapse/Expand action
+        if self._is_collapsed:
+            collapse_action = menu.addAction("Expand Frame")
+            collapse_action.triggered.connect(self.expand)
+        else:
+            collapse_action = menu.addAction("Collapse Frame")
+            collapse_action.triggered.connect(self.collapse)
+
+        menu.addSeparator()
+
         # Rename action
         rename_action = menu.addAction("Rename Frame")
         rename_action.triggered.connect(self._edit_title)
@@ -450,16 +963,20 @@ class NodeFrame(QGraphicsRectItem):
             logger.info(f"❌ X key pressed - deleting frame '{self.frame_title}'")
             self._delete_frame()
             event.accept()
+        elif event.key() == Qt.Key.Key_C:
+            # Toggle collapse with 'C' key
+            logger.info(f"🔄 C key pressed - toggling collapse for frame '{self.frame_title}'")
+            self.toggle_collapse()
+            event.accept()
         else:
             logger.info(f"⏩ Other key pressed, passing to parent")
             super().keyPressEvent(event)
 
     def _delete_frame(self):
         """Delete this frame from the scene."""
-        # Stop the timer helper
-        if hasattr(self, '_timer_helper'):
-            self._timer_helper.stop()
-            self._timer_helper.deleteLater()
+        # Unregister from centralized bounds manager
+        if hasattr(self, '_bounds_manager') and self._bounds_manager:
+            self._bounds_manager.unregister_frame(self)
 
         # Ungroup all contained nodes
         for node in list(self.contained_nodes):
@@ -469,6 +986,105 @@ class NodeFrame(QGraphicsRectItem):
         if self.scene():
             self.scene().removeItem(self)
             logger.info(f"Deleted frame: {self.frame_title}")
+
+    # =========================================================================
+    # SERIALIZATION
+    # =========================================================================
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Serialize frame to dictionary for saving.
+
+        Returns:
+            Dictionary with frame data including position, size, color, and collapse state
+        """
+        pos = self.pos()
+        rect = self.rect() if not self._is_collapsed else self._expanded_rect
+
+        # Get color name from FRAME_COLORS or save RGBA
+        color_name = None
+        for name, color in FRAME_COLORS.items():
+            if color == self.frame_color:
+                color_name = name
+                break
+
+        # Get contained node IDs
+        contained_node_ids = []
+        for node in self.contained_nodes:
+            if hasattr(node, 'get_property'):
+                node_id = node.get_property("node_id")
+                if node_id:
+                    contained_node_ids.append(node_id)
+
+        return {
+            "title": self.frame_title,
+            "position": {"x": pos.x(), "y": pos.y()},
+            "size": {"width": rect.width(), "height": rect.height()},
+            "color": color_name or {
+                "r": self.frame_color.red(),
+                "g": self.frame_color.green(),
+                "b": self.frame_color.blue(),
+                "a": self.frame_color.alpha(),
+            },
+            "is_collapsed": self._is_collapsed,
+            "contained_nodes": contained_node_ids,
+        }
+
+    @classmethod
+    def deserialize(
+        cls,
+        data: Dict[str, Any],
+        node_map: Optional[Dict[str, Any]] = None
+    ) -> "NodeFrame":
+        """
+        Create a frame from serialized data.
+
+        Args:
+            data: Serialized frame data
+            node_map: Optional mapping of node_id to node objects for restoring containment
+
+        Returns:
+            NodeFrame instance
+        """
+        # Get color
+        color_data = data.get("color", "gray")
+        if isinstance(color_data, str):
+            color = FRAME_COLORS.get(color_data, FRAME_COLORS["gray"])
+        else:
+            color = QColor(
+                color_data.get("r", 100),
+                color_data.get("g", 100),
+                color_data.get("b", 100),
+                color_data.get("a", 80),
+            )
+
+        # Get size
+        size = data.get("size", {"width": 400, "height": 300})
+
+        # Create frame
+        frame = cls(
+            title=data.get("title", "Group"),
+            color=color,
+            width=size.get("width", 400),
+            height=size.get("height", 300),
+        )
+
+        # Set position
+        pos = data.get("position", {"x": 0, "y": 0})
+        frame.setPos(pos.get("x", 0), pos.get("y", 0))
+
+        # Restore contained nodes if node_map provided
+        if node_map:
+            for node_id in data.get("contained_nodes", []):
+                if node_id in node_map:
+                    frame.add_node(node_map[node_id])
+
+        # Restore collapsed state
+        if data.get("is_collapsed", False):
+            frame.collapse()
+
+        logger.info(f"Deserialized frame: {frame.frame_title}")
+        return frame
 
 
 # Pre-defined frame color themes
