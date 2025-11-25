@@ -5,6 +5,7 @@ This module provides nodes for extracting data: text content,
 attributes, screenshots, and page information.
 """
 
+import asyncio
 from typing import Any, Optional
 from pathlib import Path
 
@@ -52,6 +53,10 @@ class ExtractTextNode(BaseNode):
             "use_inner_text": False,  # True = innerText (visible text), False = textContent (all text)
             "strict": False,  # Require exactly one matching element
             "trim_whitespace": True,  # Trim leading/trailing whitespace from result
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
         }
 
         config = kwargs.get("config", {})
@@ -116,45 +121,92 @@ class ExtractTextNode(BaseNode):
             use_inner_text = self.config.get("use_inner_text", False)
             trim_whitespace = self.config.get("trim_whitespace", True)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Extracting text from element: {normalized_selector} (use_inner_text={use_inner_text})")
 
-            # Use locator API for better timeout support
-            locator = page.locator(normalized_selector)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            # Apply strict mode if configured
-            if self.config.get("strict", False):
-                locator = locator.first  # Ensures exactly one element
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for extract text: {selector}")
 
-            # Extract text using appropriate method
-            if use_inner_text:
-                # innerText returns visible text only (respects CSS display/visibility)
-                text = await locator.inner_text(timeout=timeout)
-            else:
-                # textContent returns all text including hidden elements
-                text = await locator.text_content(timeout=timeout)
+                    # Use locator API for better timeout support
+                    locator = page.locator(normalized_selector)
 
-            # Trim whitespace if configured
-            if trim_whitespace and text:
-                text = text.strip()
+                    # Apply strict mode if configured
+                    if self.config.get("strict", False):
+                        locator = locator.first  # Ensures exactly one element
 
-            # Store in variable
-            context.set_variable(variable_name, text)
+                    # Extract text using appropriate method
+                    if use_inner_text:
+                        # innerText returns visible text only (respects CSS display/visibility)
+                        text = await locator.inner_text(timeout=timeout)
+                    else:
+                        # textContent returns all text including hidden elements
+                        text = await locator.text_content(timeout=timeout)
 
-            # Set output
-            self.set_output_value("text", text)
+                    # Trim whitespace if configured
+                    if trim_whitespace and text:
+                        text = text.strip()
 
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Text extracted successfully: {len(text) if text else 0} characters")
+                    # Store in variable
+                    context.set_variable(variable_name, text)
 
-            return {
-                "success": True,
-                "data": {
-                    "text": text,
-                    "variable": variable_name,
-                    "use_inner_text": use_inner_text
-                },
-                "next_nodes": ["exec_out"]
-            }
+                    # Set output
+                    self.set_output_value("text", text)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Text extracted successfully: {len(text) if text else 0} characters (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "text": text,
+                            "variable": variable_name,
+                            "use_inner_text": use_inner_text,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Extract text failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"extract_text_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -164,7 +216,7 @@ class ExtractTextNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -205,6 +257,10 @@ class GetAttributeNode(BaseNode):
             "variable_name": variable_name,
             "timeout": timeout,
             "strict": False,  # Require exactly one matching element
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
         }
 
         config = kwargs.get("config", {})
@@ -276,36 +332,83 @@ class GetAttributeNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Getting attribute '{attribute}' from element: {normalized_selector}")
 
-            # Use locator API for better timeout support
-            locator = page.locator(normalized_selector)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            # Apply strict mode if configured
-            if self.config.get("strict", False):
-                locator = locator.first  # Ensures exactly one element
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for get attribute: {selector}")
 
-            # Get attribute with timeout
-            value = await locator.get_attribute(attribute, timeout=timeout)
+                    # Use locator API for better timeout support
+                    locator = page.locator(normalized_selector)
 
-            # Store in variable
-            context.set_variable(variable_name, value)
+                    # Apply strict mode if configured
+                    if self.config.get("strict", False):
+                        locator = locator.first  # Ensures exactly one element
 
-            # Set output
-            self.set_output_value("value", value)
+                    # Get attribute with timeout
+                    value = await locator.get_attribute(attribute, timeout=timeout)
 
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Attribute retrieved successfully: {attribute} = {value}")
+                    # Store in variable
+                    context.set_variable(variable_name, value)
 
-            return {
-                "success": True,
-                "data": {
-                    "attribute": attribute,
-                    "value": value,
-                    "variable": variable_name
-                },
-                "next_nodes": ["exec_out"]
-            }
+                    # Set output
+                    self.set_output_value("value", value)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Attribute retrieved successfully: {attribute} = {value} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "attribute": attribute,
+                            "value": value,
+                            "variable": variable_name,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Get attribute failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"get_attribute_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -315,7 +418,7 @@ class GetAttributeNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -361,6 +464,8 @@ class ScreenshotNode(BaseNode):
             "animations": "allow",  # allow or disabled
             "omit_background": False,  # Make background transparent (PNG only)
             "caret": "hide",  # hide or initial - whether to hide text caret
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -452,6 +557,10 @@ class ScreenshotNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+
             logger.info(f"Taking screenshot: {file_path}")
 
             # Build screenshot options
@@ -491,36 +600,57 @@ class ScreenshotNode(BaseNode):
 
             logger.debug(f"Screenshot options: {screenshot_options}")
 
-            # Take screenshot
-            if selector:
-                # Normalize selector for Playwright
-                normalized_selector = normalize_selector(selector)
-                locator = page.locator(normalized_selector)
-                # For element screenshots, remove options not supported by locator.screenshot
-                element_options = {k: v for k, v in screenshot_options.items()
-                                   if k in ("path", "timeout", "type", "quality", "scale",
-                                            "animations", "omit_background", "caret")}
-                await locator.screenshot(**element_options)
-            else:
-                screenshot_options["full_page"] = full_page
-                await page.screenshot(**screenshot_options)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            # Set output
-            self.set_output_value("file_path", file_path)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for screenshot")
 
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Screenshot saved: {file_path}")
+                    # Take screenshot
+                    if selector:
+                        # Normalize selector for Playwright
+                        normalized_selector = normalize_selector(selector)
+                        locator = page.locator(normalized_selector)
+                        # For element screenshots, remove options not supported by locator.screenshot
+                        element_options = {k: v for k, v in screenshot_options.items()
+                                           if k in ("path", "timeout", "type", "quality", "scale",
+                                                    "animations", "omit_background", "caret")}
+                        await locator.screenshot(**element_options)
+                    else:
+                        screenshot_options["full_page"] = full_page
+                        await page.screenshot(**screenshot_options)
 
-            return {
-                "success": True,
-                "data": {
-                    "file_path": file_path,
-                    "full_page": full_page,
-                    "element": selector is not None,
-                    "type": img_type
-                },
-                "next_nodes": ["exec_out"]
-            }
+                    # Set output
+                    self.set_output_value("file_path", file_path)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Screenshot saved: {file_path} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "file_path": file_path,
+                            "full_page": full_page,
+                            "element": selector is not None,
+                            "type": img_type,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Screenshot failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -530,7 +660,7 @@ class ScreenshotNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         file_path = self.config.get("file_path", "")

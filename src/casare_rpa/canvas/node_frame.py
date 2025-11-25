@@ -308,6 +308,7 @@ class NodeFrame(QGraphicsRectItem):
         self._expanded_rect = QRectF(0, 0, width, height)  # Store expanded size
         self._exposed_ports: List[ExposedPortIndicator] = []  # Indicators for external connections
         self._hidden_node_views: List[Any] = []  # Store references to hidden node views
+        self._hidden_pipes: Set[Any] = set()  # Store references to hidden pipes
 
         # Set frame properties
         self.setRect(0, 0, width, height)
@@ -415,21 +416,45 @@ class NodeFrame(QGraphicsRectItem):
         # Store current expanded rect
         self._expanded_rect = QRectF(self.rect())
 
-        # Clear previously stored views
+        # Clear previously stored views and pipes
         self._hidden_node_views.clear()
+        self._hidden_pipes.clear()
 
-        # Hide all contained nodes and store their views
-        for node in self.contained_nodes:
-            try:
-                if hasattr(node, 'view') and node.view:
-                    node_view = node.view
-                    self._hidden_node_views.append(node_view)
+        # Disable scene updates during batch operation to prevent visual glitches
+        scene = self.scene()
+        if scene:
+            for view in scene.views():
+                view.setUpdatesEnabled(False)
+
+        try:
+            # First, collect all pipes and node views
+            for node in self.contained_nodes:
+                try:
+                    # Collect node view
+                    if hasattr(node, 'view') and node.view:
+                        self._hidden_node_views.append(node.view)
+                    # Collect pipes
+                    self._collect_pipes(node)
+                except Exception as e:
+                    logger.warning(f"Error collecting items during collapse: {e}")
+
+            # Now hide everything at once
+            for node_view in self._hidden_node_views:
+                try:
                     node_view.setVisible(False)
-                    logger.debug(f"Hidden node view: {node.name() if hasattr(node, 'name') else 'unknown'}")
-                # Also hide any connected pipes to hidden nodes
-                self._hide_internal_connections(node)
-            except Exception as e:
-                logger.warning(f"Error hiding node during collapse: {e}")
+                except Exception:
+                    pass
+
+            for pipe in self._hidden_pipes:
+                try:
+                    pipe.setVisible(False)
+                except Exception:
+                    pass
+        finally:
+            # Re-enable scene updates
+            if scene:
+                for view in scene.views():
+                    view.setUpdatesEnabled(True)
 
         # Resize to collapsed dimensions
         self.prepareGeometryChange()
@@ -472,33 +497,50 @@ class NodeFrame(QGraphicsRectItem):
         if hasattr(self, '_collapse_button'):
             self._collapse_button._update_position()
 
-        # First, show all stored node views (from collapse)
-        shown_count = 0
-        for node_view in self._hidden_node_views:
-            try:
-                if node_view:
-                    node_view.setVisible(True)
-                    shown_count += 1
-            except Exception as e:
-                logger.warning(f"Error showing stored node view: {e}")
+        # Disable scene updates during batch operation to prevent visual glitches
+        scene = self.scene()
+        if scene:
+            for view in scene.views():
+                view.setUpdatesEnabled(False)
 
-        # Also iterate through contained_nodes to show any that might have been missed
-        for node in self.contained_nodes:
-            try:
-                if hasattr(node, 'view') and node.view:
-                    node.view.setVisible(True)
-                # Show connected pipes
-                self._show_internal_connections(node)
-            except Exception as e:
-                logger.warning(f"Error showing node during expand: {e}")
+        try:
+            # Show all stored node views
+            for node_view in self._hidden_node_views:
+                try:
+                    if node_view:
+                        node_view.setVisible(True)
+                except Exception:
+                    pass
 
-        # Clear the stored views list
+            # Also ensure all contained nodes are visible
+            for node in self.contained_nodes:
+                try:
+                    if hasattr(node, 'view') and node.view:
+                        node.view.setVisible(True)
+                except Exception:
+                    pass
+
+            # Show all stored pipes
+            for pipe in self._hidden_pipes:
+                try:
+                    if pipe:
+                        pipe.setVisible(True)
+                except Exception:
+                    pass
+        finally:
+            # Re-enable scene updates
+            if scene:
+                for view in scene.views():
+                    view.setUpdatesEnabled(True)
+
+        # Clear the stored views and pipes
         self._hidden_node_views.clear()
+        self._hidden_pipes.clear()
 
         self._is_collapsed = False
         self.update()
 
-        logger.info(f"Frame '{self.frame_title}' expanded - showed {shown_count} node views")
+        logger.info(f"Frame '{self.frame_title}' expanded")
 
     def _capture_nodes_in_bounds(self) -> None:
         """
@@ -544,43 +586,25 @@ class NodeFrame(QGraphicsRectItem):
                 except Exception as e:
                     logger.debug(f"Error checking node bounds: {e}")
 
-    def _hide_internal_connections(self, node) -> None:
-        """Hide ALL connections from a node when it's being hidden."""
+    def _collect_pipes(self, node) -> None:
+        """Collect all pipes from a node and store them (without hiding)."""
         if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
             return
 
         try:
-            # Hide ALL connections from input ports (node is hidden, so all its pipes should be hidden)
+            # Collect pipes from input ports
             for port in node.input_ports():
                 if hasattr(port, 'view') and port.view:
                     for pipe in port.view.connected_pipes():
-                        pipe.setVisible(False)
+                        self._hidden_pipes.add(pipe)
 
-            # Hide ALL connections from output ports
+            # Collect pipes from output ports
             for port in node.output_ports():
                 if hasattr(port, 'view') and port.view:
                     for pipe in port.view.connected_pipes():
-                        pipe.setVisible(False)
+                        self._hidden_pipes.add(pipe)
         except Exception as e:
-            logger.debug(f"Error hiding connections: {e}")
-
-    def _show_internal_connections(self, node) -> None:
-        """Show all connections for a node."""
-        if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
-            return
-
-        try:
-            for port in node.input_ports():
-                if hasattr(port, 'view') and port.view:
-                    for pipe in port.view.connected_pipes():
-                        pipe.setVisible(True)
-
-            for port in node.output_ports():
-                if hasattr(port, 'view') and port.view:
-                    for pipe in port.view.connected_pipes():
-                        pipe.setVisible(True)
-        except Exception as e:
-            logger.debug(f"Error showing internal connections: {e}")
+            logger.debug(f"Error collecting pipes: {e}")
 
     def _create_exposed_ports(self) -> None:
         """Create indicators for ports connected to nodes outside this frame."""
@@ -664,22 +688,26 @@ class NodeFrame(QGraphicsRectItem):
 
         rect = self.rect()
 
-        # Use bright yellow border when selected or when drop target
-        if self.isSelected() or self._is_drop_target:
+        # Determine pen and brush based on state
+        if self._is_drop_target:
+            # Drop target: green highlight with lighter background
+            pen = QPen(QColor(76, 175, 80), 3)  # Green border
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            # Lighten the frame color for drop target
+            drop_color = QColor(76, 175, 80, 40)  # Semi-transparent green
+            brush = QBrush(drop_color)
+        elif self.isSelected():
             pen = QPen(QColor(255, 215, 0), 3)  # Bright yellow, 3px thick
             pen.setStyle(Qt.PenStyle.SolidLine)
+            brush = self.brush()
         elif self._is_collapsed:
             # Collapsed state: solid border, darker background
             pen = QPen(self.frame_color.darker(150), 2)
             pen.setStyle(Qt.PenStyle.SolidLine)
+            brush = QBrush(self.frame_color.darker(110))
         else:
             pen = QPen(self.frame_color.darker(120), 2)
             pen.setStyle(Qt.PenStyle.DashLine)
-
-        # Use darker background when collapsed
-        if self._is_collapsed:
-            brush = QBrush(self.frame_color.darker(110))
-        else:
             brush = self.brush()
 
         painter.setBrush(brush)
@@ -864,19 +892,24 @@ class NodeFrame(QGraphicsRectItem):
 
         frame_rect = self.sceneBoundingRect()
 
-        # Get all nodes in the scene
-        all_nodes = []
+        # Get all node objects from the scene
+        # NodeItem (visual representation) has a node() method to get the actual node
+        scene_nodes = []
         for item in self.scene().items():
-            # Check if item is a node (has the necessary attributes)
-            if hasattr(item, 'view') and hasattr(item, 'pos') and item != self:
-                all_nodes.append(item)
+            if hasattr(item, 'node') and callable(item.node):
+                try:
+                    node_obj = item.node()
+                    if node_obj and node_obj not in scene_nodes:
+                        scene_nodes.append(node_obj)
+                except Exception:
+                    pass
 
         # Track if any node is being dragged over this frame
         has_hovering_node = False
 
-        # Check contained nodes for ungrouping
+        # Check contained nodes for ungrouping (moved outside frame)
         for node in list(self.contained_nodes):
-            if hasattr(node, 'view'):
+            if hasattr(node, 'view') and node.view:
                 node_view = node.view
                 if hasattr(node_view, 'sceneBoundingRect'):
                     node_rect = node_view.sceneBoundingRect()
@@ -892,50 +925,66 @@ class NodeFrame(QGraphicsRectItem):
                             logger.debug(f"Ungrouped node from frame (moved outside)")
 
         # Check for nodes being dragged over the frame (for highlighting and auto-grouping)
-        for node in all_nodes:
-            if node not in self.contained_nodes and hasattr(node, 'view'):
-                node_view = node.view
-                if hasattr(node_view, 'sceneBoundingRect'):
-                    node_rect = node_view.sceneBoundingRect()
+        for node in scene_nodes:
+            if node in self.contained_nodes:
+                continue  # Skip nodes already in this frame
 
-                    # Check if node overlaps with frame
-                    intersection = frame_rect.intersected(node_rect)
-                    if intersection.width() > 0 and intersection.height() > 0:
-                        node_area = node_rect.width() * node_rect.height()
-                        if node_area > 0:
-                            overlap_ratio = (intersection.width() * intersection.height()) / node_area
+            if not hasattr(node, 'view') or not node.view:
+                continue
 
-                            # Get node ID for tracking
-                            node_id = id(node)
-                            try:
-                                current_pos = (float(node.pos()[0]), float(node.pos()[1]))
-                            except Exception:
-                                continue
+            node_view = node.view
+            if not hasattr(node_view, 'sceneBoundingRect'):
+                continue
 
-                            # If more than 40% of the node is inside the frame, highlight
-                            if overlap_ratio > 0.4:
-                                has_hovering_node = True
+            node_rect = node_view.sceneBoundingRect()
 
-                                # Check if node position changed (being dragged)
-                                if node_id in self._last_overlap_check:
-                                    last_pos, last_overlap = self._last_overlap_check[node_id]
-                                    pos_changed = (abs(last_pos[0] - current_pos[0]) > 1 or
-                                                 abs(last_pos[1] - current_pos[1]) > 1)
+            # Check if node overlaps with frame
+            intersection = frame_rect.intersected(node_rect)
+            if intersection.width() <= 0 or intersection.height() <= 0:
+                # Node doesn't overlap - remove from tracking
+                node_id = id(node)
+                if node_id in self._last_overlap_check:
+                    del self._last_overlap_check[node_id]
+                continue
 
-                                    # If position changed and overlap is significant, add the node
-                                    if pos_changed and overlap_ratio > 0.5:
-                                        if not self._is_moving:
-                                            self.add_node(node)
-                                            # Remove from tracking after adding
-                                            if node_id in self._last_overlap_check:
-                                                del self._last_overlap_check[node_id]
+            node_area = node_rect.width() * node_rect.height()
+            if node_area <= 0:
+                continue
 
-                                # Update position tracking
-                                self._last_overlap_check[node_id] = (current_pos, overlap_ratio)
-                            else:
-                                # Remove from tracking if no longer overlapping significantly
-                                if node_id in self._last_overlap_check:
-                                    del self._last_overlap_check[node_id]
+            overlap_ratio = (intersection.width() * intersection.height()) / node_area
+            node_id = id(node)
+
+            try:
+                current_pos = (float(node.pos()[0]), float(node.pos()[1]))
+            except Exception:
+                continue
+
+            # If more than 30% of the node is inside the frame, show highlight
+            if overlap_ratio > 0.3:
+                has_hovering_node = True
+
+                # Check if node position changed (being dragged)
+                if node_id in self._last_overlap_check:
+                    last_pos, _ = self._last_overlap_check[node_id]
+                    pos_changed = (abs(last_pos[0] - current_pos[0]) > 2 or
+                                   abs(last_pos[1] - current_pos[1]) > 2)
+
+                    # If position changed and overlap is significant, add the node
+                    if pos_changed and overlap_ratio > 0.5:
+                        if not self._is_moving:
+                            self.add_node(node)
+                            logger.info(f"Node added to frame by dragging")
+                            # Remove from tracking after adding
+                            if node_id in self._last_overlap_check:
+                                del self._last_overlap_check[node_id]
+                            continue
+
+                # Update position tracking
+                self._last_overlap_check[node_id] = (current_pos, overlap_ratio)
+            else:
+                # Remove from tracking if no longer overlapping significantly
+                if node_id in self._last_overlap_check:
+                    del self._last_overlap_check[node_id]
 
         # Update highlight state
         if self._is_drop_target != has_hovering_node:
