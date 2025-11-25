@@ -7,6 +7,11 @@ aligned with the Orchestrator color palette for a cohesive look.
 
 from dataclasses import dataclass
 from typing import Dict
+from pathlib import Path
+
+# Get assets directory path
+ASSETS_DIR = Path(__file__).parent / "assets"
+CHECKMARK_PATH = (ASSETS_DIR / "checkmark.svg").as_posix()
 
 
 @dataclass
@@ -503,20 +508,26 @@ QCheckBox {{
 }}
 
 QCheckBox::indicator {{
-    width: 16px;
-    height: 16px;
-    border: 1px solid {THEME.border};
+    width: 18px;
+    height: 18px;
+    border: 2px solid {THEME.border};
     border-radius: 3px;
     background-color: {THEME.bg_dark};
 }}
 
-QCheckBox::indicator:checked {{
-    background-color: {THEME.accent_primary};
-    border-color: {THEME.accent_primary};
+QCheckBox::indicator:unchecked:hover {{
+    border-color: #0063B1;
 }}
 
-QCheckBox::indicator:hover {{
-    border-color: {THEME.border_light};
+QCheckBox::indicator:checked {{
+    background-color: #0063B1;
+    border-color: #0063B1;
+    image: url({CHECKMARK_PATH});
+}}
+
+QCheckBox::indicator:checked:hover {{
+    background-color: #005A9E;
+    border-color: #005A9E;
 }}
 
 /* ==================== PROGRESS BAR ==================== */

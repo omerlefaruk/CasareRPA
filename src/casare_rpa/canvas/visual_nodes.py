@@ -1571,7 +1571,12 @@ class VisualSendHotKeyNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Send Hotkey node."""
         super().__init__()
-        self.add_text_input("keys", "Hotkey (e.g., Ctrl,C)", text="Ctrl,C", tab="inputs")
+        # Modifier dropdown
+        self.add_combo_menu("modifier", "Modifier", items=["none", "Ctrl", "Alt", "Shift", "Win"], tab="properties")
+        # Key to send
+        self.add_text_input("key", "Key", text="Enter", tab="properties")
+        # Override text (comma-separated keys) - overrides modifier + key if provided
+        self.add_text_input("keys", "Custom Keys (overrides above)", placeholder_text="e.g., Ctrl,Alt,Delete", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3626,15 +3631,15 @@ class VisualSnippetNode(VisualNode):
 
     def on_double_click(self, event):
         """
-        Handle double-click event to open snippet editor.
+        Handle double-click event to navigate into snippet.
 
         Args:
             event: Mouse event
         """
         super().on_double_click(event)
 
-        # Open snippet editor dialog
-        self._open_snippet_editor()
+        # Navigate into snippet to view/edit internal nodes
+        self._navigate_into_snippet()
 
     def _open_snippet_editor(self):
         """Open the snippet editor dialog."""
@@ -3687,6 +3692,60 @@ class VisualSnippetNode(VisualNode):
                     snippet_version_widget = self.view.get_widget("snippet_version")
                     if snippet_version_widget:
                         snippet_version_widget.set_value(updated_snippet.version)
+
+    def _navigate_into_snippet(self):
+        """Navigate into snippet to view/edit internal nodes."""
+        from PySide6.QtWidgets import QMessageBox
+        from .snippet_navigation import get_navigation_manager
+
+        # Get navigation manager
+        nav_manager = get_navigation_manager()
+        if not nav_manager:
+            QMessageBox.critical(
+                None,
+                "Navigation Error",
+                "Navigation manager not available.\n\n"
+                "This is an internal error. Please restart the application."
+            )
+            return
+
+        # Verify snippet is loaded
+        if not hasattr(self, "_casare_node") or not self._casare_node:
+            logger.warning("SnippetNode has no casare node attached")
+            QMessageBox.warning(
+                None,
+                "No Snippet",
+                "This snippet node is not properly initialized."
+            )
+            return
+
+        from ..nodes.snippet_node import SnippetNode
+        casare_node = self._casare_node
+
+        if not isinstance(casare_node, SnippetNode):
+            logger.warning(f"Node is not a SnippetNode: {type(casare_node)}")
+            return
+
+        if not casare_node.snippet_definition:
+            QMessageBox.warning(
+                None,
+                "No Snippet Loaded",
+                "This snippet node has no snippet definition loaded.\n\n"
+                "Please select a snippet from the library first."
+            )
+            return
+
+        # Navigate into snippet
+        logger.info(f"Attempting to navigate into snippet: {casare_node.snippet_definition.name}")
+        success = nav_manager.enter_snippet(self)
+
+        if not success:
+            QMessageBox.critical(
+                None,
+                "Navigation Failed",
+                "Could not navigate into snippet.\n\n"
+                "Check the console for error messages."
+            )
 
     def add_custom_context_menu_actions(self, menu):
         """
