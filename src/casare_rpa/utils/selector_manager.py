@@ -59,21 +59,33 @@ class SelectorManager:
         except Exception as e:
             logger.debug(f"Script already injected or page not ready: {e}")
 
-        # Expose Python functions to JavaScript
-        await page.expose_function(
-            '__casareRPA_onElementSelected',
-            self._handle_element_selected
-        )
+        # Expose Python functions to JavaScript (only if not already registered)
+        try:
+            await page.expose_function(
+                '__casareRPA_onElementSelected',
+                self._handle_element_selected
+            )
+        except Exception as e:
+            if "already registered" not in str(e).lower():
+                raise
 
-        await page.expose_function(
-            '__casareRPA_onRecordingComplete',
-            self._handle_recording_complete
-        )
+        try:
+            await page.expose_function(
+                '__casareRPA_onRecordingComplete',
+                self._handle_recording_complete
+            )
+        except Exception as e:
+            if "already registered" not in str(e).lower():
+                raise
 
-        await page.expose_function(
-            '__casareRPA_onActionRecorded',
-            self._handle_action_recorded
-        )
+        try:
+            await page.expose_function(
+                '__casareRPA_onActionRecorded',
+                self._handle_action_recorded
+            )
+        except Exception as e:
+            if "already registered" not in str(e).lower():
+                raise
 
         logger.info("Selector injector loaded into page")
 

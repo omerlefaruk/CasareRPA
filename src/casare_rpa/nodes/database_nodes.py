@@ -182,9 +182,25 @@ class DatabaseConnectNode(BaseNode):
             password = self.get_input_value("password") or self.config.get("password", "")
             connection_string = self.get_input_value("connection_string") or self.config.get("connection_string", "")
 
+            # Resolve {{variable}} patterns in connection parameters
+            host = context.resolve_value(host)
+            database = context.resolve_value(database)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            connection_string = context.resolve_value(connection_string)
+
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
             logger.info(f"Connecting to {db_type} database")
 

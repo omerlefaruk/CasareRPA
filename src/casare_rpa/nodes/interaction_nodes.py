@@ -182,9 +182,18 @@ class ClickElementNode(BaseNode):
 
             logger.debug(f"Click options: {click_options}")
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
             highlight_before_click = self.config.get("highlight_before_click", False)
@@ -413,9 +422,18 @@ class TypeTextNode(BaseNode):
             press_enter_after = self.config.get("press_enter_after", False)
             press_tab_after = self.config.get("press_tab_after", False)
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 
@@ -636,9 +654,18 @@ class SelectDropdownNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             select_by = self.config.get("select_by", "value")
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 

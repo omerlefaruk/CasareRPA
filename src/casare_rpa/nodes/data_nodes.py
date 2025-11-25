@@ -105,6 +105,9 @@ class ExtractTextNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
 
+            # Resolve {{variable}} patterns in selector
+            selector = context.resolve_value(selector)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -121,9 +124,18 @@ class ExtractTextNode(BaseNode):
             use_inner_text = self.config.get("use_inner_text", False)
             trim_whitespace = self.config.get("trim_whitespace", True)
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 
@@ -318,6 +330,10 @@ class GetAttributeNode(BaseNode):
             if not attribute:
                 raise ValueError("Attribute name is required")
 
+            # Resolve {{variable}} patterns in selector and attribute
+            selector = context.resolve_value(selector)
+            attribute = context.resolve_value(attribute)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -332,9 +348,18 @@ class GetAttributeNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 
@@ -514,6 +539,9 @@ class ScreenshotNode(BaseNode):
             if not file_path:
                 raise ValueError("File path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             # Clean up and normalize file path
             import os
             from datetime import datetime
@@ -547,6 +575,10 @@ class ScreenshotNode(BaseNode):
             selector = self.config.get("selector")
             full_page = self.config.get("full_page", False)
 
+            # Resolve {{variable}} patterns in selector if present
+            if selector:
+                selector = context.resolve_value(selector)
+
             # Safely parse timeout with default
             timeout_val = self.config.get("timeout")
             if timeout_val is None or timeout_val == "":
@@ -557,9 +589,18 @@ class ScreenshotNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.info(f"Taking screenshot: {file_path}")
 
