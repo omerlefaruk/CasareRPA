@@ -120,18 +120,37 @@ class VisualCommentNode(VisualNode):
 
 class VisualLaunchBrowserNode(VisualNode):
     """Visual representation of LaunchBrowserNode."""
-    
+
     __identifier__ = "casare_rpa.browser"
     NODE_NAME = "Launch Browser"
     NODE_CATEGORY = "browser"
-    
+
     def __init__(self) -> None:
         """Initialize launch browser node."""
         super().__init__()
+        # Basic options
         self.add_text_input("url", "URL", placeholder_text="https://example.com", tab="properties")
         self.add_combo_menu("browser_type", "Browser", items=["chromium", "firefox", "webkit"], tab="properties")
         self.add_checkbox("headless", "Headless", state=False, tab="properties")
-    
+
+        # Performance options
+        self.add_text_input("slow_mo", "Slow Mo (ms)", placeholder_text="0", tab="advanced")
+        self.add_combo_menu("channel", "Channel", items=["", "chrome", "msedge", "chrome-beta"], tab="advanced")
+
+        # Viewport options
+        self.add_text_input("viewport_width", "Viewport Width", placeholder_text="1280", tab="advanced")
+        self.add_text_input("viewport_height", "Viewport Height", placeholder_text="720", tab="advanced")
+
+        # Identity options
+        self.add_text_input("user_agent", "User Agent", placeholder_text="Custom user agent", tab="advanced")
+        self.add_text_input("locale", "Locale", placeholder_text="en-US", tab="advanced")
+        self.add_text_input("timezone_id", "Timezone", placeholder_text="America/New_York", tab="advanced")
+        self.add_combo_menu("color_scheme", "Color Scheme", items=["light", "dark", "no-preference"], tab="advanced")
+
+        # Security options
+        self.add_checkbox("ignore_https_errors", "Ignore HTTPS Errors", state=False, tab="advanced")
+        self.add_text_input("proxy_server", "Proxy Server", placeholder_text="http://proxy:8080", tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -174,16 +193,18 @@ class VisualNewTabNode(VisualNode):
 
 class VisualGoToURLNode(VisualNode):
     """Visual representation of GoToURLNode."""
-    
+
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go To URL"
     NODE_CATEGORY = "browser"
-    
+
     def __init__(self) -> None:
         """Initialize go to URL node."""
         super().__init__()
         self.add_text_input("url", "URL", tab="properties")
-    
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+        self.add_text_input("referer", "Referer", placeholder_text="Optional referer URL", tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -195,11 +216,17 @@ class VisualGoToURLNode(VisualNode):
 
 class VisualGoBackNode(VisualNode):
     """Visual representation of GoBackNode."""
-    
+
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go Back"
     NODE_CATEGORY = "browser"
-    
+
+    def __init__(self) -> None:
+        """Initialize go back node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -210,11 +237,17 @@ class VisualGoBackNode(VisualNode):
 
 class VisualGoForwardNode(VisualNode):
     """Visual representation of GoForwardNode."""
-    
+
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Go Forward"
     NODE_CATEGORY = "browser"
-    
+
+    def __init__(self) -> None:
+        """Initialize go forward node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -225,11 +258,17 @@ class VisualGoForwardNode(VisualNode):
 
 class VisualRefreshPageNode(VisualNode):
     """Visual representation of RefreshPageNode."""
-    
+
     __identifier__ = "casare_rpa.navigation"
     NODE_NAME = "Refresh Page"
     NODE_CATEGORY = "browser"
-    
+
+    def __init__(self) -> None:
+        """Initialize refresh page node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -242,16 +281,27 @@ class VisualRefreshPageNode(VisualNode):
 
 class VisualClickElementNode(VisualNode):
     """Visual representation of ClickElementNode."""
-    
+
     __identifier__ = "casare_rpa.interaction"
     NODE_NAME = "Click Element"
     NODE_CATEGORY = "browser"
-    
+
     def __init__(self) -> None:
         """Initialize click element node."""
         super().__init__()
+        # Basic options
         self.add_text_input("selector", "Selector", tab="properties")
-    
+        self.add_combo_menu("button", "Button", items=["left", "right", "middle"], tab="properties")
+
+        # Click behavior
+        self.add_text_input("click_count", "Click Count", placeholder_text="1", tab="advanced")
+        self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
+        self.add_checkbox("force", "Force Click", state=False, tab="advanced")
+
+        # Position offset
+        self.add_text_input("position_x", "Position X", placeholder_text="center", tab="advanced")
+        self.add_text_input("position_y", "Position Y", placeholder_text="center", tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -263,17 +313,23 @@ class VisualClickElementNode(VisualNode):
 
 class VisualTypeTextNode(VisualNode):
     """Visual representation of TypeTextNode."""
-    
+
     __identifier__ = "casare_rpa.interaction"
     NODE_NAME = "Type Text"
     NODE_CATEGORY = "browser"
-    
+
     def __init__(self) -> None:
         """Initialize type text node."""
         super().__init__()
+        # Basic options
         self.add_text_input("selector", "Selector", tab="properties")
         self.add_text_input("text", "Text", tab="properties")
-    
+
+        # Advanced options
+        self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="advanced")
+        self.add_checkbox("clear_first", "Clear First", state=True, tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")

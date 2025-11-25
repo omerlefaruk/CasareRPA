@@ -34,18 +34,31 @@ class ClickElementNode(BaseNode):
     ) -> None:
         """
         Initialize click element node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             selector: CSS or XPath selector for the element
             timeout: Timeout in milliseconds
         """
-        config = kwargs.get("config", {"selector": selector, "timeout": timeout})
-        if "selector" not in config:
-            config["selector"] = selector
-        if "timeout" not in config:
-            config["timeout"] = timeout
+        # Default config with all Playwright click options
+        default_config = {
+            "selector": selector,
+            "timeout": timeout,
+            "button": "left",  # left, right, middle
+            "click_count": 1,  # Number of clicks (2 for double-click)
+            "delay": 0,  # Delay between mousedown and mouseup in ms
+            "force": False,  # Bypass actionability checks
+            "position_x": None,  # Click position X offset
+            "position_y": None,  # Click position Y offset
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ClickElementNode"
@@ -88,13 +101,46 @@ class ClickElementNode(BaseNode):
             
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
-            
+
             timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
-            
+
             logger.info(f"Clicking element: {normalized_selector}")
-            
+
+            # Build click options
+            click_options = {"timeout": timeout}
+
+            # Button type (left, right, middle)
+            button = self.config.get("button", "left")
+            if button and button != "left":
+                click_options["button"] = button
+
+            # Click count (for double-click)
+            click_count = self.config.get("click_count", 1)
+            if click_count and int(click_count) > 1:
+                click_options["click_count"] = int(click_count)
+
+            # Delay between mousedown and mouseup
+            delay = self.config.get("delay", 0)
+            if delay and int(delay) > 0:
+                click_options["delay"] = int(delay)
+
+            # Force click (bypass actionability checks)
+            if self.config.get("force", False):
+                click_options["force"] = True
+
+            # Position offset
+            pos_x = self.config.get("position_x")
+            pos_y = self.config.get("position_y")
+            if pos_x is not None and pos_y is not None:
+                try:
+                    click_options["position"] = {"x": float(pos_x), "y": float(pos_y)}
+                except (ValueError, TypeError):
+                    pass  # Ignore invalid position values
+
+            logger.debug(f"Click options: {click_options}")
+
             # Click element
-            await page.click(normalized_selector, timeout=timeout)
+            await page.click(normalized_selector, **click_options)
             
             self.set_output_value("page", page)
             
@@ -128,10 +174,10 @@ class ClickElementNode(BaseNode):
 class TypeTextNode(BaseNode):
     """
     Type text node - types text into an input field.
-    
+
     Finds an input element and types the specified text.
     """
-    
+
     def __init__(
         self,
         node_id: str,
@@ -143,7 +189,7 @@ class TypeTextNode(BaseNode):
     ) -> None:
         """
         Initialize type text node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
@@ -151,13 +197,21 @@ class TypeTextNode(BaseNode):
             text: Text to type
             delay: Delay between keystrokes in milliseconds
         """
-        config = kwargs.get("config", {"selector": selector, "text": text, "delay": delay})
-        if "selector" not in config:
-            config["selector"] = selector
-        if "text" not in config:
-            config["text"] = text
-        if "delay" not in config:
-            config["delay"] = delay
+        # Default config with all Playwright options
+        default_config = {
+            "selector": selector,
+            "text": text,
+            "delay": delay,
+            "timeout": DEFAULT_NODE_TIMEOUT * 1000,  # Element wait timeout
+            "clear_first": True,  # Clear field before typing
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TypeTextNode"
@@ -211,18 +265,22 @@ class TypeTextNode(BaseNode):
                 text = ""
             
             delay = self.config.get("delay", 0)
-            
+            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            clear_first = self.config.get("clear_first", True)
+
             logger.info(f"Typing text into element: {normalized_selector}")
 
             # Type text - use fill() for immediate input, type() for character-by-character with delay
             # Only use one method to avoid double-typing
             if delay > 0:
-                # Clear the field first, then type with delay
-                await page.fill(normalized_selector, "")
-                await page.type(normalized_selector, text, delay=delay)
+                # Clear the field first if configured, then type with delay
+                if clear_first:
+                    await page.fill(normalized_selector, "", timeout=timeout)
+                await page.type(normalized_selector, text, delay=delay, timeout=timeout)
             else:
                 # Use fill() for immediate input (faster)
-                await page.fill(normalized_selector, text)
+                # fill() always clears the field first, so clear_first doesn't affect behavior here
+                await page.fill(normalized_selector, text, timeout=timeout)
             
             self.set_output_value("page", page)
             

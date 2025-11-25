@@ -34,18 +34,39 @@ class LaunchBrowserNode(BaseNode):
     ) -> None:
         """
         Initialize launch browser node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             browser_type: Browser to launch (chromium, firefox, webkit)
             headless: Whether to run in headless mode
         """
-        config = kwargs.get("config", {"browser_type": browser_type, "headless": headless})
-        if "browser_type" not in config:
-            config["browser_type"] = browser_type
-        if "headless" not in config:
-            config["headless"] = headless
+        # Default config with all Playwright options
+        default_config = {
+            "browser_type": browser_type,
+            "headless": headless,
+            # Performance options
+            "slow_mo": 0,  # Slow down operations by ms (for debugging)
+            "channel": "",  # Browser channel (chrome, msedge, chrome-beta)
+            # Viewport options
+            "viewport_width": 1280,
+            "viewport_height": 720,
+            # Browser identity options
+            "user_agent": "",  # Custom user agent string
+            "locale": "",  # Locale (e.g., "en-US")
+            "timezone_id": "",  # Timezone (e.g., "America/New_York")
+            "color_scheme": "light",  # Preferred color scheme (light/dark/no-preference)
+            # Security options
+            "ignore_https_errors": False,
+            "proxy_server": "",  # Proxy server URL
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LaunchBrowserNode"
@@ -61,42 +82,93 @@ class LaunchBrowserNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute browser launch.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with browser instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             from playwright.async_api import async_playwright
-            
+
             browser_type = self.config.get("browser_type", DEFAULT_BROWSER)
             headless = self.config.get("headless", HEADLESS_MODE)
-            
+
             logger.info(f"Launching {browser_type} browser (headless={headless})")
-            
+
+            # Build launch options
+            launch_options = {"headless": headless}
+
+            # Add slow_mo if specified (for debugging)
+            slow_mo = self.config.get("slow_mo", 0)
+            if slow_mo and int(slow_mo) > 0:
+                launch_options["slow_mo"] = int(slow_mo)
+
+            # Add channel for chromium-based browsers
+            channel = self.config.get("channel", "")
+            if channel and browser_type == "chromium":
+                launch_options["channel"] = channel
+
             # Launch playwright
             playwright = await async_playwright().start()
-            
-            # Get browser type
+
+            # Get browser type and launch with options
             if browser_type == "firefox":
-                browser = await playwright.firefox.launch(headless=headless)
+                browser = await playwright.firefox.launch(**launch_options)
             elif browser_type == "webkit":
-                browser = await playwright.webkit.launch(headless=headless)
+                browser = await playwright.webkit.launch(**launch_options)
             else:  # chromium (default)
-                browser = await playwright.chromium.launch(
-                    headless=headless,
-                    args=BROWSER_ARGS
-                )
-            
+                # Add chromium-specific args
+                launch_options["args"] = BROWSER_ARGS
+                browser = await playwright.chromium.launch(**launch_options)
+
             # Store browser in context
             context.browser = browser
-            
-            # Create initial tab automatically
-            browser_context = await browser.new_context()
+
+            # Build browser context options
+            context_options = {}
+
+            # Viewport settings
+            viewport_width = int(self.config.get("viewport_width", 1280))
+            viewport_height = int(self.config.get("viewport_height", 720))
+            context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
+
+            # User agent
+            user_agent = self.config.get("user_agent", "")
+            if user_agent:
+                context_options["user_agent"] = user_agent
+
+            # Locale
+            locale = self.config.get("locale", "")
+            if locale:
+                context_options["locale"] = locale
+
+            # Timezone
+            timezone_id = self.config.get("timezone_id", "")
+            if timezone_id:
+                context_options["timezone_id"] = timezone_id
+
+            # Color scheme
+            color_scheme = self.config.get("color_scheme", "light")
+            if color_scheme and color_scheme != "light":
+                context_options["color_scheme"] = color_scheme
+
+            # HTTPS errors
+            if self.config.get("ignore_https_errors", False):
+                context_options["ignore_https_errors"] = True
+
+            # Proxy
+            proxy_server = self.config.get("proxy_server", "")
+            if proxy_server:
+                context_options["proxy"] = {"server": proxy_server}
+
+            logger.debug(f"Browser context options: {context_options}")
+
+            # Create initial tab automatically with context options
+            browser_context = await browser.new_context(**context_options)
             context.add_browser_context(browser_context)  # Track for cleanup
             page = await browser_context.new_page()
             
