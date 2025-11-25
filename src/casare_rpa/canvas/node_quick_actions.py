@@ -51,7 +51,17 @@ class NodeQuickActions(QObject):
         """
         super().__init__(parent)
         self._graph = graph
+        self._auto_connect_manager = None  # Will be set by NodeGraphWidget
         self._setup_context_menu()
+
+    def set_auto_connect_manager(self, manager) -> None:
+        """
+        Set reference to AutoConnectManager for drag state checking.
+
+        Args:
+            manager: The AutoConnectManager instance
+        """
+        self._auto_connect_manager = manager
 
     def _setup_context_menu(self) -> None:
         """Setup the node context menu by installing an event filter."""
@@ -116,6 +126,11 @@ class NodeQuickActions(QObject):
         """
         if event.type() == QEvent.Type.MouseButtonPress:
             if event.button() == Qt.MouseButton.RightButton:
+                # If auto-connect is in drag mode, let it handle the RMB event
+                # for connection confirmation
+                if self._auto_connect_manager and self._auto_connect_manager._dragging_node:
+                    return False  # Pass through to AutoConnectManager
+
                 # Check if click is directly on a node
                 node = self._get_node_at_pos(event.position())
                 if node:

@@ -18,7 +18,8 @@
       "Bash(done)",
       "Bash(python run.py:*)",
       "Bash(python:*)",
-      "Bash(timeout 5 python:*)"
+      "Bash(timeout 5 python:*)",
+      "WebFetch(domain:code.visualstudio.com)"
     ],
     "deny": [],
     "ask": []
