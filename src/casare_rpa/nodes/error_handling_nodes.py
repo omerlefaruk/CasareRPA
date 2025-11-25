@@ -2,12 +2,14 @@
 Error handling nodes for CasareRPA.
 
 This module implements error handling capabilities including try/catch,
-retry logic, and error throwing for robust workflow execution.
+retry logic, error throwing, notifications, and recovery strategies
+for robust workflow execution.
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from loguru import logger
 import asyncio
+import json
 
 from ..core.base_node import BaseNode
 from ..core.execution_context import ExecutionContext
@@ -370,10 +372,547 @@ class ThrowErrorNode(BaseNode):
                 "error_type": "CustomError",
                 "next_nodes": []
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"ThrowError node failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class WebhookNotifyNode(BaseNode):
+    """
+    Send error notifications via webhook.
+
+    Sends HTTP POST requests to configured webhook URLs when errors occur,
+    enabling integration with Slack, Teams, Discord, or custom endpoints.
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize WebhookNotify node."""
+        super().__init__(node_id, config)
+        self.name = "Webhook Notify"
+        self.node_type = "WebhookNotifyNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("webhook_url", PortType.INPUT, DataType.STRING)
+        self.add_input_port("message", PortType.INPUT, DataType.STRING)
+        self.add_input_port("error_details", PortType.INPUT, DataType.DICT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("response", PortType.OUTPUT, DataType.STRING)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Send webhook notification.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result with notification status
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get inputs
+            webhook_url = self.get_input_value("webhook_url")
+            if webhook_url is None:
+                webhook_url = self.config.get("webhook_url", "")
+
+            message = self.get_input_value("message")
+            if message is None:
+                message = self.config.get("message", "Error notification from CasareRPA")
+
+            error_details = self.get_input_value("error_details") or {}
+
+            if not webhook_url:
+                self.set_output_value("success", False)
+                self.set_output_value("response", "No webhook URL provided")
+                self.status = NodeStatus.ERROR
+                return {
+                    "success": False,
+                    "error": "No webhook URL provided",
+                    "next_nodes": ["exec_out"]
+                }
+
+            # Build payload
+            payload = self._build_payload(message, error_details)
+
+            # Send webhook
+            import aiohttp
+            async with aiohttp.ClientSession() as session:
+                timeout = aiohttp.ClientTimeout(total=30)
+                headers = {"Content-Type": "application/json"}
+
+                async with session.post(
+                    webhook_url,
+                    json=payload,
+                    headers=headers,
+                    timeout=timeout
+                ) as response:
+                    response_text = await response.text()
+                    success = response.status < 400
+
+                    self.set_output_value("success", success)
+                    self.set_output_value("response", response_text)
+
+                    if success:
+                        logger.info(f"Webhook notification sent successfully to {webhook_url}")
+                        self.status = NodeStatus.SUCCESS
+                        return {
+                            "success": True,
+                            "data": {"response": response_text},
+                            "next_nodes": ["exec_out"]
+                        }
+                    else:
+                        logger.warning(f"Webhook notification failed: {response.status}")
+                        self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
+                        return {
+                            "success": True,
+                            "data": {"webhook_failed": True, "status": response.status},
+                            "next_nodes": ["exec_out"]
+                        }
+
+        except ImportError:
+            self.set_output_value("success", False)
+            self.set_output_value("response", "aiohttp not installed")
+            self.status = NodeStatus.ERROR
+            logger.error("aiohttp required for webhook notifications")
+            return {
+                "success": False,
+                "error": "aiohttp package required. Install with: pip install aiohttp",
+                "next_nodes": []
+            }
+        except Exception as e:
+            self.set_output_value("success", False)
+            self.set_output_value("response", str(e))
+            self.status = NodeStatus.ERROR
+            logger.error(f"Webhook notification failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+    def _build_payload(self, message: str, error_details: Dict[str, Any]) -> Dict[str, Any]:
+        """Build webhook payload based on configured format."""
+        format_type = self.config.get("format", "generic")
+
+        if format_type == "slack":
+            return {
+                "text": message,
+                "attachments": [{
+                    "color": "danger",
+                    "title": "Error Details",
+                    "fields": [
+                        {"title": k, "value": str(v), "short": True}
+                        for k, v in error_details.items()
+                    ]
+                }] if error_details else []
+            }
+        elif format_type == "discord":
+            return {
+                "content": message,
+                "embeds": [{
+                    "title": "Error Details",
+                    "color": 15158332,  # Red
+                    "fields": [
+                        {"name": k, "value": str(v)[:1024], "inline": True}
+                        for k, v in error_details.items()
+                    ]
+                }] if error_details else []
+            }
+        elif format_type == "teams":
+            return {
+                "@type": "MessageCard",
+                "themeColor": "FF0000",
+                "summary": message,
+                "sections": [{
+                    "activityTitle": message,
+                    "facts": [
+                        {"name": k, "value": str(v)}
+                        for k, v in error_details.items()
+                    ]
+                }]
+            }
+        else:
+            # Generic format
+            return {
+                "message": message,
+                "timestamp": context.variables.get("_timestamp", "") if hasattr(self, 'context') else "",
+                "details": error_details,
+                "source": "CasareRPA"
+            }
+
+
+class OnErrorNode(BaseNode):
+    """
+    Global error handler node.
+
+    Catches unhandled errors in the workflow and routes to configured
+    error handling path. Can be placed anywhere in workflow to catch
+    errors from connected nodes.
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize OnError node."""
+        super().__init__(node_id, config)
+        self.name = "On Error"
+        self.node_type = "OnErrorNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_output_port("protected_body", PortType.EXEC_OUTPUT)
+        self.add_output_port("on_error", PortType.EXEC_OUTPUT)
+        self.add_output_port("finally", PortType.EXEC_OUTPUT)
+        self.add_output_port("error_message", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("error_type", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("error_node", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("stack_trace", PortType.OUTPUT, DataType.STRING)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute global error handler.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result routing to protected body or error handler
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            error_state_key = f"{self.node_id}_error_state"
+
+            if error_state_key not in context.variables:
+                # First execution - enter protected block
+                context.variables[error_state_key] = {
+                    "in_protected_block": True,
+                    "error_occurred": False,
+                    "finally_executed": False
+                }
+                logger.info(f"Entering protected block: {self.node_id}")
+
+                self.status = NodeStatus.SUCCESS
+                return {
+                    "success": True,
+                    "next_nodes": ["protected_body"]
+                }
+            else:
+                # Returning from protected block
+                error_state = context.variables[error_state_key]
+
+                if error_state.get("error_occurred") and not error_state.get("error_handled"):
+                    # Error occurred - route to error handler
+                    error_msg = error_state.get("error_message", "Unknown error")
+                    error_type = error_state.get("error_type", "Exception")
+                    error_node = error_state.get("error_node", "")
+                    stack_trace = error_state.get("stack_trace", "")
+
+                    self.set_output_value("error_message", error_msg)
+                    self.set_output_value("error_type", error_type)
+                    self.set_output_value("error_node", error_node)
+                    self.set_output_value("stack_trace", stack_trace)
+
+                    error_state["error_handled"] = True
+
+                    logger.warning(f"Error caught by OnError handler: {error_type}: {error_msg}")
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {
+                            "error_message": error_msg,
+                            "error_type": error_type,
+                            "error_node": error_node
+                        },
+                        "next_nodes": ["on_error"]
+                    }
+                elif not error_state.get("finally_executed"):
+                    # Execute finally block
+                    error_state["finally_executed"] = True
+
+                    logger.info(f"Executing finally block: {self.node_id}")
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "next_nodes": ["finally"]
+                    }
+                else:
+                    # Cleanup and exit
+                    del context.variables[error_state_key]
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "next_nodes": []
+                    }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"OnError node execution failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class ErrorRecoveryNode(BaseNode):
+    """
+    Configure error recovery strategy for workflow.
+
+    Sets the recovery behavior when errors occur:
+    - stop: Stop workflow execution
+    - continue: Skip failed node and continue
+    - retry: Retry the failed operation
+    - restart: Restart the entire workflow
+    - fallback: Execute a fallback path
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize ErrorRecovery node."""
+        super().__init__(node_id, config)
+        self.name = "Error Recovery"
+        self.node_type = "ErrorRecoveryNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("strategy", PortType.INPUT, DataType.STRING)
+        self.add_input_port("max_retries", PortType.INPUT, DataType.INTEGER)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("fallback", PortType.EXEC_OUTPUT)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Configure error recovery.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result with recovery configuration
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get strategy
+            strategy = self.get_input_value("strategy")
+            if strategy is None:
+                strategy = self.config.get("strategy", "stop")
+
+            max_retries = self.get_input_value("max_retries")
+            if max_retries is None:
+                max_retries = self.config.get("max_retries", 3)
+
+            # Valid strategies
+            valid_strategies = ["stop", "continue", "retry", "restart", "fallback"]
+            if strategy not in valid_strategies:
+                strategy = "stop"
+
+            # Store recovery config in context
+            context.variables["_error_recovery_strategy"] = strategy
+            context.variables["_error_recovery_max_retries"] = max_retries
+
+            logger.info(f"Error recovery configured: strategy={strategy}, max_retries={max_retries}")
+
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "data": {
+                    "strategy": strategy,
+                    "max_retries": max_retries
+                },
+                "next_nodes": ["exec_out"]
+            }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"ErrorRecovery node failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class LogErrorNode(BaseNode):
+    """
+    Log error details with structured information.
+
+    Captures error information and logs it with configurable
+    severity level and format for debugging and monitoring.
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize LogError node."""
+        super().__init__(node_id, config)
+        self.name = "Log Error"
+        self.node_type = "LogErrorNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
+        self.add_input_port("error_type", PortType.INPUT, DataType.STRING)
+        self.add_input_port("context", PortType.INPUT, DataType.DICT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("log_entry", PortType.OUTPUT, DataType.DICT)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Log error details.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result with log entry
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get inputs
+            error_message = self.get_input_value("error_message") or "Unknown error"
+            error_type = self.get_input_value("error_type") or "Error"
+            error_context = self.get_input_value("context") or {}
+
+            level = self.config.get("level", "error")
+            include_stack = self.config.get("include_stack_trace", False)
+
+            # Build log entry
+            from datetime import datetime
+            log_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "level": level,
+                "error_type": error_type,
+                "error_message": error_message,
+                "workflow": context.workflow_name,
+                "context": error_context
+            }
+
+            if include_stack:
+                import traceback
+                log_entry["stack_trace"] = traceback.format_exc()
+
+            # Log with appropriate level
+            log_message = f"[{error_type}] {error_message}"
+            if error_context:
+                log_message += f" | Context: {json.dumps(error_context)}"
+
+            if level == "debug":
+                logger.debug(log_message)
+            elif level == "info":
+                logger.info(log_message)
+            elif level == "warning":
+                logger.warning(log_message)
+            elif level == "critical":
+                logger.critical(log_message)
+            else:
+                logger.error(log_message)
+
+            self.set_output_value("log_entry", log_entry)
+
+            self.status = NodeStatus.SUCCESS
+            return {
+                "success": True,
+                "data": {"log_entry": log_entry},
+                "next_nodes": ["exec_out"]
+            }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"LogError node failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "next_nodes": []
+            }
+
+
+class AssertNode(BaseNode):
+    """
+    Assert a condition and throw error if false.
+
+    Validates that a condition is true, throwing an error with
+    a custom message if the assertion fails. Useful for validation
+    and debugging workflows.
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize Assert node."""
+        super().__init__(node_id, config)
+        self.name = "Assert"
+        self.node_type = "AssertNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("condition", PortType.INPUT, DataType.BOOLEAN)
+        self.add_input_port("message", PortType.INPUT, DataType.STRING)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("passed", PortType.OUTPUT, DataType.BOOLEAN)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute assertion.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result - success if assertion passes, error if fails
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get condition
+            condition = self.get_input_value("condition")
+            if condition is None:
+                condition = self.config.get("condition", True)
+
+            # Get message
+            message = self.get_input_value("message")
+            if message is None:
+                message = self.config.get("message", "Assertion failed")
+
+            # Evaluate condition (handle strings)
+            if isinstance(condition, str):
+                condition = condition.lower() in ("true", "1", "yes")
+
+            self.set_output_value("passed", bool(condition))
+
+            if condition:
+                logger.debug(f"Assertion passed: {message}")
+                self.status = NodeStatus.SUCCESS
+                return {
+                    "success": True,
+                    "data": {"passed": True},
+                    "next_nodes": ["exec_out"]
+                }
+            else:
+                logger.error(f"Assertion failed: {message}")
+                self.status = NodeStatus.ERROR
+                return {
+                    "success": False,
+                    "error": f"Assertion failed: {message}",
+                    "error_type": "AssertionError",
+                    "next_nodes": []
+                }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Assert node failed: {e}")
             return {
                 "success": False,
                 "error": str(e),

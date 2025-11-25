@@ -55,6 +55,11 @@ if TYPE_CHECKING:
         RetrySuccessNode,
         RetryFailNode,
         ThrowErrorNode,
+        WebhookNotifyNode,
+        OnErrorNode,
+        ErrorRecoveryNode,
+        LogErrorNode,
+        AssertNode,
     )
     from .data_operation_nodes import (
         ConcatenateNode,
@@ -162,6 +167,11 @@ _NODE_REGISTRY: Dict[str, str] = {
     "RetrySuccessNode": "error_handling_nodes",
     "RetryFailNode": "error_handling_nodes",
     "ThrowErrorNode": "error_handling_nodes",
+    "WebhookNotifyNode": "error_handling_nodes",
+    "OnErrorNode": "error_handling_nodes",
+    "ErrorRecoveryNode": "error_handling_nodes",
+    "LogErrorNode": "error_handling_nodes",
+    "AssertNode": "error_handling_nodes",
     # Data operation nodes
     "ConcatenateNode": "data_operation_nodes",
     "FormatStringNode": "data_operation_nodes",
@@ -361,6 +371,11 @@ __all__ = [
     "RetrySuccessNode",
     "RetryFailNode",
     "ThrowErrorNode",
+    "WebhookNotifyNode",
+    "OnErrorNode",
+    "ErrorRecoveryNode",
+    "LogErrorNode",
+    "AssertNode",
     # Data operation nodes
     "ConcatenateNode",
     "FormatStringNode",
