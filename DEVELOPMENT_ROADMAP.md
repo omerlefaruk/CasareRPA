@@ -1,8 +1,8 @@
 # CasareRPA Development Roadmap
 
 **Last Updated**: November 25, 2025
-**Current Status**: Phase 8 - IN PROGRESS 🚧 | File System Operations Complete ✅
-**Total Tests**: 660+ passing (100% success rate) ✅
+**Current Status**: Phase 8 - IN PROGRESS 🚧 | File System ✅ | REST API ✅ | Email ✅ | Error Handling ✅
+**Total Tests**: 501 passing (100% success rate) ✅
 
 ---
 
@@ -355,8 +355,8 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 ## 🚀 Phase 8: File System & External Integrations
 
 **Target**: Q2 2026
-**Status**: 🚧 IN PROGRESS (1/6 bites complete)
-**Tests**: 51+ new tests
+**Status**: 🚧 IN PROGRESS (4/6 bites complete)
+**Tests**: 195+ new tests
 
 ### Goals
 
@@ -405,35 +405,45 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-#### 2. REST API Integration (Priority: HIGH)
-**Estimated Tests**: +12
+#### 2. REST API Integration (Priority: HIGH) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 58 tests passing
 
-**Planned Nodes**:
-- **HttpRequestNode** - Generic HTTP request
-- **HttpGetNode** - GET request with params
-- **HttpPostNode** - POST with body
-- **HttpPutNode** - PUT request
-- **HttpDeleteNode** - DELETE request
-- **HttpHeadersNode** - Set custom headers
-- **ApiAuthNode** - OAuth, API Key, Bearer token
-- **ParseResponseNode** - Extract from JSON/XML
-- **RateLimitNode** - Throttle API calls
+**Implemented Nodes**:
+- ✅ **HttpRequestNode** - Generic HTTP request (all methods)
+- ✅ **HttpGetNode** - GET request with query parameters
+- ✅ **HttpPostNode** - POST with JSON body
+- ✅ **HttpPutNode** - PUT request for updates
+- ✅ **HttpPatchNode** - PATCH request for partial updates
+- ✅ **HttpDeleteNode** - DELETE request
+- ✅ **SetHttpHeadersNode** - Set custom headers
+- ✅ **HttpAuthNode** - Bearer, Basic, API Key authentication
+- ✅ **ParseJsonResponseNode** - Extract data from JSON response
+- ✅ **HttpDownloadFileNode** - Download files from URL
+- ✅ **HttpUploadFileNode** - Upload files via multipart/form-data
+- ✅ **BuildUrlNode** - Build URLs with query parameters
 
 **Key Features**:
-- Support all HTTP methods
-- Request/response body formatting (JSON, XML, Form)
-- Authentication schemes (OAuth2, API key, Basic)
-- Response parsing and validation
-- Retry logic for failed requests
-- Rate limiting and throttling
-- SSL certificate verification
+- Support all HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
+- JSON request/response body formatting
+- Authentication schemes (Bearer token, Basic auth, API Key)
+- Response parsing with JSONPath-like expressions
+- Configurable timeouts and SSL verification
+- File upload/download support
+- URL building with query parameters
+- Visual node wrappers for all 12 nodes
+
+**Files Created**:
+- `src/casare_rpa/nodes/http_nodes.py`
+- `tests/test_http_nodes.py`
+- Visual nodes added to `visual_nodes.py`
 
 **Use Cases**:
-- API testing automation
-- Data synchronization
-- Webhook handling
+- REST API testing and automation
+- Data synchronization between systems
+- Webhook handling and integration
 - Microservice orchestration
-- Third-party integrations
+- Third-party API integrations
 
 ---
 
@@ -472,32 +482,43 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-#### 4. Email Automation (Priority: MEDIUM)
-**Estimated Tests**: +8
+#### 4. Email Automation (Priority: MEDIUM) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 50 tests passing (8 skipped - require email credentials)
 
-**Planned Nodes**:
-- **SendEmailNode** - Send email via SMTP
-- **ReadEmailNode** - Fetch emails via IMAP
-- **ParseEmailNode** - Extract subject, body, attachments
-- **AttachFileNode** - Add file attachments
-- **EmailFilterNode** - Filter by subject, sender, date
-- **MarkEmailNode** - Mark as read/unread
-- **DeleteEmailNode** - Delete email
+**Implemented Nodes**:
+- ✅ **SendEmailNode** - Send email via SMTP with TLS/SSL, attachments, CC/BCC
+- ✅ **ReadEmailsNode** - Fetch emails via IMAP with search criteria
+- ✅ **GetEmailContentNode** - Extract subject, body, from, to, attachments
+- ✅ **SaveAttachmentNode** - Download and save email attachments to disk
+- ✅ **FilterEmailsNode** - Filter by subject, sender, has_attachments
+- ✅ **MarkEmailNode** - Mark as read/unread/flagged/unflagged
+- ✅ **DeleteEmailNode** - Delete email (soft or permanent with expunge)
+- ✅ **MoveEmailNode** - Move email to different folder
 
 **Key Features**:
-- SMTP sending with authentication
-- IMAP/POP3 receiving
-- HTML and plain text emails
-- File attachments
-- Email templates
-- CC/BCC support
+- SMTP sending with TLS/SSL authentication
+- IMAP receiving with folder selection
+- HTML and plain text email support
+- File attachments (send and receive)
+- Email parsing with header decoding
+- CC/BCC support for sending
+- Search criteria for reading (ALL, UNSEEN, SUBJECT, etc.)
+- Visual node wrappers for all 8 nodes
+- Environment variable configuration for real email tests
+
+**Files Created**:
+- `src/casare_rpa/nodes/email_nodes.py`
+- `tests/test_email_nodes.py`
+- Visual nodes added to `visual_nodes.py`
 
 **Use Cases**:
 - Automated email responses
-- Report distribution
+- Report distribution via email
 - Email notification systems
-- Email monitoring and filtering
-- Attachment processing
+- Inbox monitoring and filtering
+- Attachment processing workflows
+- Email-based workflow triggers
 
 ---
 
@@ -534,21 +555,36 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-#### 6. Advanced Error Handling (Priority: MEDIUM)
-**Estimated Tests**: +5
+#### 6. Advanced Error Handling (Priority: MEDIUM) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 36 tests passing
 
-**Enhanced Features**:
-- **Global Error Handler** - Catch-all for uncaught errors
-- **Error Notification** - Email/webhook on error
-- **Error Recovery Strategies** - Auto-restart, fallback
-- **Error Analytics** - Track error patterns
-- **Error Logging Enhancement** - Structured logs
+**Implemented Nodes**:
+- ✅ **WebhookNotifyNode** - Send error notifications to Slack/Discord/Teams/webhooks
+- ✅ **OnErrorNode** - Global error handler with protected_body, on_error, finally paths
+- ✅ **ErrorRecoveryNode** - Configure recovery strategy (STOP, CONTINUE, RETRY, etc.)
+- ✅ **LogErrorNode** - Structured error logging with severity levels
+- ✅ **AssertNode** - Validate conditions with custom error messages
+
+**Key Features**:
+- Global error handler with configurable recovery strategies
+- Error analytics for tracking patterns and trends
+- Webhook notifications with multiple platform formats
+- Recovery strategies: STOP, CONTINUE, RETRY, RESTART, FALLBACK, NOTIFY_AND_STOP
+- Error severity levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- Visual node wrappers for all 5 nodes
+
+**Files Created**:
+- `src/casare_rpa/utils/error_handler.py` (GlobalErrorHandler, ErrorAnalytics)
+- Enhanced `src/casare_rpa/nodes/error_handling_nodes.py`
+- `tests/test_advanced_error_handling.py`
+- Visual nodes added to `visual_nodes.py`
 
 **Implementation**:
-- Global try/catch wrapper
-- Error aggregation and analysis
-- Configurable error responses
-- Integration with monitoring systems
+- Global try/catch wrapper with singleton pattern
+- Error aggregation and pattern analysis
+- Configurable error responses per error type
+- Integration with notification systems (webhooks)
 
 ---
 
@@ -911,13 +947,13 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 5. Write database integration tests
 6. Create ETL demo workflows
 
-### Week 7-8 (January 2026): Email Automation
-1. Design email node architecture
-2. Implement SMTP sending nodes
-3. Add IMAP/POP3 receiving nodes
-4. Implement attachment handling
-5. Add email filtering and parsing
-6. Create email automation demo workflows
+### Week 7-8 (January 2026): Advanced Error Handling & Scheduling
+1. Complete advanced error handling nodes (global handler, analytics)
+2. Design scheduling system architecture
+3. Implement workflow scheduler with cron support
+4. Add trigger system for event-based execution
+5. Create schedule manager UI
+6. Write comprehensive tests for scheduling
 
 ---
 

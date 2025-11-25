@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QFileDialog,
     QDockWidget,
+    QDialog,
 )
 
 from ..utils.config import (
@@ -276,7 +277,17 @@ class MainWindow(QMainWindow):
         self.action_stop.setStatusTip("Stop workflow execution (F7)")
         self.action_stop.setEnabled(False)
         self.action_stop.triggered.connect(self._on_stop_workflow)
-        
+
+        # Schedule actions
+        self.action_schedule = QAction("&Schedule Workflow...", self)
+        self.action_schedule.setShortcut(QKeySequence("Ctrl+Shift+H"))
+        self.action_schedule.setStatusTip("Schedule this workflow to run automatically (Ctrl+Shift+H)")
+        self.action_schedule.triggered.connect(self._on_schedule_workflow)
+
+        self.action_manage_schedules = QAction("&Manage Schedules...", self)
+        self.action_manage_schedules.setStatusTip("View and manage all scheduled workflows")
+        self.action_manage_schedules.triggered.connect(self._on_manage_schedules)
+
         # Tools actions
         self.action_pick_selector = QAction("🎯 Pick Element Selector", self)
         self.action_pick_selector.setShortcut(QKeySequence("Ctrl+Shift+S"))
@@ -394,7 +405,10 @@ class MainWindow(QMainWindow):
         workflow_menu.addAction(self.action_run)
         workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
-        
+        workflow_menu.addSeparator()
+        workflow_menu.addAction(self.action_schedule)
+        workflow_menu.addAction(self.action_manage_schedules)
+
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
         tools_menu.addAction(self.action_pick_selector)
@@ -900,13 +914,112 @@ class MainWindow(QMainWindow):
     def set_browser_running(self, running: bool) -> None:
         """
         Enable/disable browser-dependent actions.
-        
+
         Args:
             running: True if browser is running
         """
         self.action_pick_selector.setEnabled(running)
         self.action_record_workflow.setEnabled(running)
-    
+
+    def _on_schedule_workflow(self) -> None:
+        """Handle schedule workflow action."""
+        from .schedule_dialog import ScheduleDialog, WorkflowSchedule
+        from .schedule_storage import get_schedule_storage
+
+        # Check if workflow is saved
+        if not self._current_file:
+            reply = QMessageBox.question(
+                self,
+                "Save Required",
+                "The workflow must be saved before scheduling. Save now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self._on_save_as_workflow()
+                if not self._current_file:
+                    return  # User cancelled save
+            else:
+                return
+
+        # Get workflow name
+        workflow_name = self._current_file.stem if self._current_file else "Untitled"
+
+        # Show schedule dialog
+        dialog = ScheduleDialog(
+            workflow_path=self._current_file,
+            workflow_name=workflow_name,
+            parent=self
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_schedule:
+            # Save the schedule
+            storage = get_schedule_storage()
+            if storage.save_schedule(dialog.result_schedule):
+                self.statusBar().showMessage(
+                    f"Schedule created: {dialog.result_schedule.name}",
+                    5000
+                )
+                logger.info(f"Workflow scheduled: {dialog.result_schedule.name}")
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Schedule Error",
+                    "Failed to save schedule"
+                )
+
+    def _on_manage_schedules(self) -> None:
+        """Handle manage schedules action."""
+        from .schedule_dialog import ScheduleManagerDialog
+        from .schedule_storage import get_schedule_storage
+
+        storage = get_schedule_storage()
+        schedules = storage.get_all_schedules()
+
+        dialog = ScheduleManagerDialog(schedules, parent=self)
+        dialog.schedule_changed.connect(lambda: self._save_all_schedules(dialog))
+        dialog.run_schedule.connect(self._on_run_scheduled_workflow)
+
+        dialog.exec()
+
+    def _save_all_schedules(self, dialog) -> None:
+        """Save all schedules from manager dialog."""
+        from .schedule_storage import get_schedule_storage
+
+        storage = get_schedule_storage()
+        storage.save_all_schedules(dialog.get_schedules())
+        self.statusBar().showMessage("Schedules updated", 3000)
+
+    def _on_run_scheduled_workflow(self, schedule) -> None:
+        """Run a scheduled workflow immediately."""
+        from pathlib import Path
+
+        workflow_path = Path(schedule.workflow_path)
+        if not workflow_path.exists():
+            QMessageBox.warning(
+                self,
+                "Workflow Not Found",
+                f"The scheduled workflow could not be found:\n{workflow_path}"
+            )
+            return
+
+        # Ask user if they want to open and run the workflow
+        reply = QMessageBox.question(
+            self,
+            "Run Scheduled Workflow",
+            f"Open and run '{schedule.workflow_name}'?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            # Check for unsaved changes
+            if self._check_unsaved_changes():
+                # Open the workflow
+                self.workflow_open.emit(str(workflow_path))
+                self.set_current_file(workflow_path)
+                self.set_modified(False)
+                # Run it
+                self._on_run_workflow()
+
     def closeEvent(self, event) -> None:
         """
         Handle window close event.
