@@ -241,6 +241,7 @@ if TYPE_CHECKING:
         FTPDisconnectNode,
         FTPGetSizeNode,
     )
+    from .snippet_node import SnippetNode
 
 
 # Lazy loading registry - maps node class names to their module paths
@@ -457,6 +458,8 @@ _NODE_REGISTRY: Dict[str, str] = {
     "FTPRenameNode": "ftp_nodes",
     "FTPDisconnectNode": "ftp_nodes",
     "FTPGetSizeNode": "ftp_nodes",
+    # Snippet nodes
+    "SnippetNode": "snippet_node",
 }
 
 # Cache for loaded modules and classes
@@ -769,6 +772,8 @@ __all__ = [
     "FTPRenameNode",
     "FTPDisconnectNode",
     "FTPGetSizeNode",
+    # Snippet nodes
+    "SnippetNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",
