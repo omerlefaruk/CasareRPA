@@ -317,6 +317,11 @@ class MainWindow(QMainWindow):
         self.action_create_frame.setStatusTip("Create a frame around selected nodes (Shift+W)")
         self.action_create_frame.triggered.connect(self._on_create_frame)
 
+        self.action_performance_dashboard = QAction("📊 Performance Dashboard", self)
+        self.action_performance_dashboard.setShortcut(QKeySequence("Ctrl+Shift+P"))
+        self.action_performance_dashboard.setStatusTip("View performance metrics and statistics (Ctrl+Shift+P)")
+        self.action_performance_dashboard.triggered.connect(self._on_open_performance_dashboard)
+
         # Help actions
         self.action_about = QAction("&About", self)
         self.action_about.setStatusTip("About CasareRPA")
@@ -416,6 +421,8 @@ class MainWindow(QMainWindow):
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_desktop_selector_builder)
         tools_menu.addAction(self.action_create_frame)
+        tools_menu.addSeparator()
+        tools_menu.addAction(self.action_performance_dashboard)
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_hotkey_manager)
         
@@ -741,7 +748,14 @@ class MainWindow(QMainWindow):
         """Handle auto-connect toggle."""
         # This will be connected by the app when the node graph is available
         pass
-    
+
+    def _on_open_performance_dashboard(self) -> None:
+        """Open the performance dashboard dialog."""
+        from .performance_dashboard import PerformanceDashboardDialog
+
+        dialog = PerformanceDashboardDialog(self)
+        dialog.exec()
+
     def _on_about(self) -> None:
         """Show about dialog."""
         QMessageBox.about(

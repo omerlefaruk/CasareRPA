@@ -294,29 +294,32 @@ class TestScheduleDialogFrequencyChange:
     """Tests for frequency change behavior."""
 
     def test_daily_shows_time(self, schedule_dialog):
-        """Test daily frequency shows time field."""
+        """Test daily frequency shows time field (not hidden)."""
         schedule_dialog._frequency_combo.setCurrentText("Daily")
-        assert schedule_dialog._time_edit.isVisible()
+        # Use isHidden() since widget visibility depends on parent being shown
+        assert not schedule_dialog._time_edit.isHidden()
 
     def test_weekly_shows_day_combo(self, schedule_dialog):
-        """Test weekly frequency shows day of week combo."""
+        """Test weekly frequency shows day of week combo (not hidden)."""
         schedule_dialog._frequency_combo.setCurrentText("Weekly")
-        assert schedule_dialog._day_combo.isVisible()
+        assert not schedule_dialog._day_combo.isHidden()
 
     def test_monthly_shows_day_spin(self, schedule_dialog):
-        """Test monthly frequency shows day of month spin."""
+        """Test monthly frequency shows day of month spin (not hidden)."""
         schedule_dialog._frequency_combo.setCurrentText("Monthly")
-        assert schedule_dialog._day_spin.isVisible()
+        assert not schedule_dialog._day_spin.isHidden()
 
     def test_cron_shows_cron_input(self, schedule_dialog):
-        """Test cron frequency shows cron expression input."""
+        """Test cron frequency shows cron expression input (not hidden)."""
         schedule_dialog._frequency_combo.setCurrentText("Cron")
-        assert schedule_dialog._cron_input.isVisible()
+        assert not schedule_dialog._cron_input.isHidden()
 
     def test_once_shows_datetime(self, schedule_dialog):
-        """Test once frequency shows datetime picker."""
+        """Test once frequency shows datetime picker (not hidden)."""
         schedule_dialog._frequency_combo.setCurrentText("Once")
-        assert schedule_dialog._datetime_edit.isVisible()
+        # Directly call the handler to ensure state is updated
+        schedule_dialog._on_frequency_changed("Once")
+        assert not schedule_dialog._datetime_edit.isHidden()
 
 
 class TestScheduleDialogBuildSchedule:

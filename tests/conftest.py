@@ -386,13 +386,7 @@ def node_search_dialog(qapp, qtbot):
     """Create a NodeSearchDialog for testing."""
     from casare_rpa.canvas.node_search_dialog import NodeSearchDialog
 
-    # Mock node categories
-    mock_categories = {
-        "Browser": ["Open Browser", "Navigate", "Click"],
-        "Control Flow": ["If", "Loop", "Wait"],
-    }
-
-    dialog = NodeSearchDialog(node_categories=mock_categories)
+    dialog = NodeSearchDialog()
     qtbot.addWidget(dialog)
     yield dialog
     dialog.close()
