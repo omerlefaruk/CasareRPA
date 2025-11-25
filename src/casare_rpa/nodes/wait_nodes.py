@@ -193,7 +193,15 @@ class WaitForElementNode(BaseNode):
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
             
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
             state = self.config.get("state", "visible")
             
             logger.info(f"Waiting for element: {normalized_selector} (state={state})")
@@ -305,7 +313,15 @@ class WaitForNavigationNode(BaseNode):
             if page is None:
                 raise ValueError("No page instance found")
             
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
             wait_until = self.config.get("wait_until", "load")
             
             logger.info(f"Waiting for navigation (wait_until={wait_until})")

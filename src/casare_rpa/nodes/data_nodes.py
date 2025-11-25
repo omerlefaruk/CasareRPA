@@ -104,7 +104,15 @@ class ExtractTextNode(BaseNode):
             normalized_selector = normalize_selector(selector)
 
             variable_name = self.config.get("variable_name", "extracted_text")
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
             use_inner_text = self.config.get("use_inner_text", False)
             trim_whitespace = self.config.get("trim_whitespace", True)
 
@@ -258,7 +266,15 @@ class GetAttributeNode(BaseNode):
             normalized_selector = normalize_selector(selector)
 
             variable_name = self.config.get("variable_name", "attribute_value")
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
 
             logger.info(f"Getting attribute '{attribute}' from element: {normalized_selector}")
 
@@ -393,9 +409,48 @@ class ScreenshotNode(BaseNode):
             if not file_path:
                 raise ValueError("File path is required")
 
+            # Clean up and normalize file path
+            import os
+            from datetime import datetime
+
+            # Remove quotes that might be in the path
+            file_path = file_path.strip().strip('"').strip("'")
+
+            # Get the image type for extension
+            img_type = self.config.get("type", "png")
+            ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
+
+            # If path is a directory (ends with separator or is existing dir), auto-generate filename
+            if file_path.endswith(os.sep) or file_path.endswith("/") or file_path.endswith("\\"):
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
+            elif os.path.isdir(file_path):
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
+
+            # Normalize path and ensure it's absolute
+            file_path = os.path.normpath(file_path)
+            if not os.path.isabs(file_path):
+                file_path = os.path.abspath(file_path)
+
+            # Create parent directory if it doesn't exist
+            parent_dir = os.path.dirname(file_path)
+            if parent_dir and not os.path.exists(parent_dir):
+                os.makedirs(parent_dir, exist_ok=True)
+                logger.info(f"Created directory: {parent_dir}")
+
             selector = self.config.get("selector")
             full_page = self.config.get("full_page", False)
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
 
             logger.info(f"Taking screenshot: {file_path}")
 
@@ -409,7 +464,7 @@ class ScreenshotNode(BaseNode):
 
             # JPEG quality (0-100)
             quality = self.config.get("quality")
-            if quality is not None and img_type == "jpeg":
+            if quality is not None and quality != "" and img_type == "jpeg":
                 try:
                     screenshot_options["quality"] = int(quality)
                 except (ValueError, TypeError):
