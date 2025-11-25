@@ -219,60 +219,23 @@ class WorkflowSchema:
 
     def validate(self) -> tuple[bool, List[str]]:
         """
-        Validate the workflow structure.
+        Validate the workflow structure (simple interface).
 
         Returns:
             Tuple of (is_valid, list of error messages)
         """
-        errors: List[str] = []
+        from .validation import quick_validate
+        return quick_validate(self.to_dict())
 
-        # Check for orphaned connections
-        for conn in self.connections:
-            if conn.source_node not in self.nodes:
-                errors.append(f"Connection references missing source node: {conn.source_node}")
-            if conn.target_node not in self.nodes:
-                errors.append(f"Connection references missing target node: {conn.target_node}")
+    def validate_full(self) -> "ValidationResult":
+        """
+        Perform comprehensive validation and return detailed result.
 
-        # Check for circular dependencies (simple check)
-        if self._has_circular_dependency():
-            errors.append("Workflow contains circular dependencies")
-
-        # Check if workflow has at least one node
-        if not self.nodes:
-            errors.append("Workflow has no nodes")
-
-        return len(errors) == 0, errors
-
-    def _has_circular_dependency(self) -> bool:
-        """Check if workflow has circular dependencies using DFS."""
-        # Build adjacency list
-        graph: Dict[NodeId, List[NodeId]] = {node_id: [] for node_id in self.nodes}
-        for conn in self.connections:
-            graph[conn.source_node].append(conn.target_node)
-
-        visited: set[NodeId] = set()
-        rec_stack: set[NodeId] = set()
-
-        def has_cycle(node: NodeId) -> bool:
-            visited.add(node)
-            rec_stack.add(node)
-
-            for neighbor in graph.get(node, []):
-                if neighbor not in visited:
-                    if has_cycle(neighbor):
-                        return True
-                elif neighbor in rec_stack:
-                    return True
-
-            rec_stack.remove(node)
-            return False
-
-        for node_id in self.nodes:
-            if node_id not in visited:
-                if has_cycle(node_id):
-                    return True
-
-        return False
+        Returns:
+            ValidationResult with all issues and suggestions
+        """
+        from .validation import validate_workflow, ValidationResult
+        return validate_workflow(self.to_dict())
 
     def to_dict(self) -> SerializedWorkflow:
         """
@@ -320,14 +283,26 @@ class WorkflowSchema:
 
         return workflow
 
-    def save_to_file(self, file_path: Path) -> None:
+    def save_to_file(self, file_path: Path, validate_before_save: bool = False) -> None:
         """
         Save workflow to JSON file using orjson.
 
         Args:
             file_path: Path to save file
+            validate_before_save: If True, validate workflow before saving
+
+        Raises:
+            ValueError: If validation fails and validate_before_save is True
         """
         try:
+            # Optionally validate before saving
+            if validate_before_save:
+                result = self.validate_full()
+                if not result.is_valid:
+                    error_summary = result.format_summary()
+                    logger.error(f"Validation failed before save:\n{error_summary}")
+                    raise ValueError(f"Cannot save invalid workflow: {result.error_count} error(s)")
+
             # Update modified timestamp
             self.metadata.modified_at = datetime.now().isoformat()
 
@@ -341,20 +316,32 @@ class WorkflowSchema:
             file_path.write_bytes(json_data)
             logger.info(f"Workflow saved to {file_path}")
 
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to save workflow: {e}")
             raise
 
     @classmethod
-    def load_from_file(cls, file_path: Path) -> "WorkflowSchema":
+    def load_from_file(
+        cls,
+        file_path: Path,
+        validate_on_load: bool = False,
+        strict: bool = False,
+    ) -> "WorkflowSchema":
         """
         Load workflow from JSON file.
 
         Args:
             file_path: Path to workflow file
+            validate_on_load: If True, validate workflow after loading
+            strict: If True and validate_on_load is True, raise on validation errors
 
         Returns:
             WorkflowSchema instance
+
+        Raises:
+            ValueError: If strict validation fails
         """
         try:
             # Read file
@@ -363,12 +350,28 @@ class WorkflowSchema:
             # Parse JSON using orjson
             data = orjson.loads(json_data)
 
+            # Optionally validate before creating workflow
+            if validate_on_load:
+                from .validation import validate_workflow
+                result = validate_workflow(data)
+
+                if not result.is_valid:
+                    error_summary = result.format_summary()
+                    logger.warning(f"Workflow validation issues:\n{error_summary}")
+
+                    if strict:
+                        raise ValueError(f"Workflow validation failed: {result.error_count} error(s)")
+                elif result.warnings:
+                    logger.info(f"Workflow loaded with {result.warning_count} warning(s)")
+
             # Create workflow
             workflow = cls.from_dict(data)
             logger.info(f"Workflow loaded from {file_path}")
 
             return workflow
 
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to load workflow: {e}")
             raise

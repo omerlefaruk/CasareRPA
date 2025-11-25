@@ -45,6 +45,17 @@ from .events import (
     reset_event_bus,
 )
 
+# Validation system
+from .validation import (
+    ValidationResult,
+    ValidationIssue,
+    ValidationSeverity,
+    validate_workflow,
+    validate_node,
+    validate_connections,
+    quick_validate,
+)
+
 __all__ = [
     # Version
     "__version__",
@@ -78,4 +89,12 @@ __all__ = [
     "EventRecorder",
     "get_event_bus",
     "reset_event_bus",
+    # Validation System
+    "ValidationResult",
+    "ValidationIssue",
+    "ValidationSeverity",
+    "validate_workflow",
+    "validate_node",
+    "validate_connections",
+    "quick_validate",
 ]

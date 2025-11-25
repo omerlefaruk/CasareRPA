@@ -92,7 +92,14 @@ class MainWindow(QMainWindow):
         self._debug_toolbar: Optional['DebugToolbar'] = None
         self._variable_inspector: Optional['VariableInspectorPanel'] = None
         self._execution_history: Optional['ExecutionHistoryViewer'] = None
-        
+
+        # Validation components
+        self._validation_dock: Optional[QDockWidget] = None
+        self._validation_panel: Optional['ValidationPanel'] = None
+        self._validation_timer: Optional['QTimer'] = None
+        self._auto_validate: bool = True  # Enable real-time validation
+        self._workflow_data_provider: Optional[callable] = None  # Callback to get workflow data
+
         # Setup window
         self._setup_window()
         self._create_actions()
@@ -100,6 +107,7 @@ class MainWindow(QMainWindow):
         self._create_toolbar()
         self._create_status_bar()
         self._create_log_viewer()
+        self._create_validation_panel()
         self._create_debug_components()
         
         # Set initial state
@@ -246,6 +254,17 @@ class MainWindow(QMainWindow):
         self.action_toggle_log.setCheckable(True)
         self.action_toggle_log.setStatusTip("Show/hide execution log viewer")
         self.action_toggle_log.triggered.connect(self._on_toggle_log)
+
+        self.action_toggle_validation = QAction("&Validation Panel", self)
+        self.action_toggle_validation.setShortcut(QKeySequence("Ctrl+Shift+V"))
+        self.action_toggle_validation.setCheckable(True)
+        self.action_toggle_validation.setStatusTip("Show/hide validation panel")
+        self.action_toggle_validation.triggered.connect(self._on_toggle_validation)
+
+        self.action_validate = QAction("&Validate Workflow", self)
+        self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
+        self.action_validate.setStatusTip("Validate current workflow")
+        self.action_validate.triggered.connect(lambda: self.validate_current_workflow())
         
         self.action_toggle_minimap = QAction("&Minimap", self)
         self.action_toggle_minimap.setShortcut(QKeySequence("Ctrl+M"))
@@ -403,10 +422,13 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_log)
+        view_menu.addAction(self.action_toggle_validation)
         view_menu.addAction(self.action_toggle_minimap)
-        
+
         # Workflow menu
         workflow_menu = menubar.addMenu("&Workflow")
+        workflow_menu.addAction(self.action_validate)
+        workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_run)
         workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
@@ -482,7 +504,214 @@ class MainWindow(QMainWindow):
         
         # Initially hidden
         self._log_dock.hide()
-    
+
+    def _create_validation_panel(self) -> None:
+        """Create validation panel as dockable widget."""
+        from .validation_panel import ValidationPanel
+
+        # Create dock widget
+        self._validation_dock = QDockWidget("Validation", self)
+        self._validation_dock.setAllowedAreas(
+            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
+        )
+
+        # Create validation panel widget
+        self._validation_panel = ValidationPanel()
+        self._validation_panel.validation_requested.connect(self._on_validate_workflow)
+        self._validation_panel.issue_clicked.connect(self._on_validation_issue_clicked)
+        self._validation_dock.setWidget(self._validation_panel)
+
+        # Add to main window (bottom by default, tabbed with log)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._validation_dock)
+
+        # Tab with log dock if it exists
+        if self._log_dock:
+            self.tabifyDockWidget(self._log_dock, self._validation_dock)
+
+        # Initially hidden
+        self._validation_dock.hide()
+
+        # Setup validation timer for debounced real-time validation
+        from PySide6.QtCore import QTimer
+        self._validation_timer = QTimer(self)
+        self._validation_timer.setSingleShot(True)
+        self._validation_timer.setInterval(500)  # 500ms debounce
+        self._validation_timer.timeout.connect(self._do_deferred_validation)
+
+    def get_validation_panel(self) -> Optional['ValidationPanel']:
+        """
+        Get the validation panel.
+
+        Returns:
+            ValidationPanel instance or None
+        """
+        return self._validation_panel
+
+    def show_validation_panel(self) -> None:
+        """Show the validation panel."""
+        if self._validation_dock:
+            self._validation_dock.show()
+            self._validation_dock.raise_()
+
+    def hide_validation_panel(self) -> None:
+        """Hide the validation panel."""
+        if self._validation_dock:
+            self._validation_dock.hide()
+
+    def _on_validate_workflow(self) -> None:
+        """Handle validation request from panel."""
+        self.validate_current_workflow()
+
+    def _on_validation_issue_clicked(self, location: str) -> None:
+        """
+        Handle clicking on a validation issue.
+
+        Args:
+            location: Issue location string (e.g., "node:abc123")
+        """
+        # Try to select the node in the graph
+        if location and location.startswith("node:"):
+            node_id = location.split(":", 1)[1]
+            self._select_node_by_id(node_id)
+
+    def _select_node_by_id(self, node_id: str) -> None:
+        """Select a node by ID in the graph."""
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            return
+
+        try:
+            graph = self._central_widget.graph
+            # Clear current selection
+            graph.clear_selection()
+
+            # Find and select the node
+            for node in graph.all_nodes():
+                if node.id() == node_id or getattr(node, 'node_id', None) == node_id:
+                    node.set_selected(True)
+                    # Center view on node
+                    graph.fit_to_selection()
+                    break
+        except Exception as e:
+            logger.debug(f"Could not select node {node_id}: {e}")
+
+    def validate_current_workflow(self, show_panel: bool = True) -> 'ValidationResult':
+        """
+        Validate the current workflow and update the validation panel.
+
+        Args:
+            show_panel: Whether to show the validation panel
+
+        Returns:
+            ValidationResult from validation
+        """
+        from ..core.validation import validate_workflow, ValidationResult
+
+        # Get workflow data from the canvas
+        workflow_data = self._get_workflow_data()
+
+        if workflow_data is None:
+            # Empty workflow
+            result = ValidationResult()
+            result.add_warning(
+                "EMPTY_WORKFLOW",
+                "Workflow is empty",
+                suggestion="Add some nodes to the workflow"
+            )
+        else:
+            result = validate_workflow(workflow_data)
+
+        # Update validation panel
+        if self._validation_panel:
+            self._validation_panel.set_result(result)
+
+        if show_panel:
+            self.show_validation_panel()
+
+        # Update status bar
+        if result.is_valid:
+            if result.warning_count > 0:
+                self.statusBar().showMessage(
+                    f"Validation: {result.warning_count} warning(s)", 5000
+                )
+            else:
+                self.statusBar().showMessage("Validation: OK", 3000)
+        else:
+            self.statusBar().showMessage(
+                f"Validation: {result.error_count} error(s)", 5000
+            )
+
+        return result
+
+    def _get_workflow_data(self) -> Optional[dict]:
+        """
+        Get the current workflow data as a dictionary.
+
+        Returns:
+            Workflow data dictionary or None
+        """
+        # Use the workflow data provider callback if set (by app.py)
+        if self._workflow_data_provider:
+            try:
+                return self._workflow_data_provider()
+            except Exception as e:
+                logger.debug(f"Workflow data provider failed: {e}")
+                return None
+
+        # Fallback - return None if no provider set
+        return None
+
+    def set_workflow_data_provider(self, provider: callable) -> None:
+        """
+        Set a callback to provide workflow data for validation.
+
+        Args:
+            provider: Callable that returns workflow data dict
+        """
+        self._workflow_data_provider = provider
+
+    def on_workflow_changed(self) -> None:
+        """
+        Called when the workflow is modified.
+        Triggers debounced real-time validation if enabled.
+
+        This method should be called from app.py when:
+        - Nodes are added/deleted
+        - Connections are made/broken
+        - Node properties change
+        """
+        if self._auto_validate and self._validation_timer:
+            # Restart the debounce timer
+            self._validation_timer.start()
+
+    def _do_deferred_validation(self) -> None:
+        """Perform deferred validation after debounce timeout."""
+        # Only update if validation panel is visible
+        if self._validation_dock and self._validation_dock.isVisible():
+            self.validate_current_workflow(show_panel=False)
+        else:
+            # Still validate but don't show panel
+            result = self.validate_current_workflow(show_panel=False)
+            # Update status bar with result
+            if not result.is_valid:
+                self.statusBar().showMessage(
+                    f"Validation: {result.error_count} error(s)", 0
+                )
+
+    def set_auto_validate(self, enabled: bool) -> None:
+        """
+        Enable or disable real-time validation.
+
+        Args:
+            enabled: Whether to enable auto-validation
+        """
+        self._auto_validate = enabled
+        if not enabled and self._validation_timer:
+            self._validation_timer.stop()
+
+    def is_auto_validate_enabled(self) -> bool:
+        """Check if auto-validation is enabled."""
+        return self._auto_validate
+
     def get_log_viewer(self) -> Optional['ExecutionLogViewer']:
         """
         Get the execution log viewer.
@@ -560,12 +789,16 @@ class MainWindow(QMainWindow):
     def set_modified(self, modified: bool) -> None:
         """
         Set the modified state of the workflow.
-        
+
         Args:
             modified: Whether the workflow has unsaved changes
         """
         self._is_modified = modified
         self._update_window_title()
+
+        # Trigger real-time validation when workflow is modified
+        if modified:
+            self.on_workflow_changed()
     
     def is_modified(self) -> bool:
         """
@@ -640,38 +873,50 @@ class MainWindow(QMainWindow):
         """Handle open workflow request."""
         if not self._check_unsaved_changes():
             return
-        
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Open Workflow",
             str(WORKFLOWS_DIR),
             "Workflow Files (*.json);;All Files (*.*)"
         )
-        
+
         if file_path:
             self.workflow_open.emit(file_path)
             self.set_current_file(Path(file_path))
             self.set_modified(False)
             self.statusBar().showMessage(f"Opened: {Path(file_path).name}", 3000)
+
+            # Validate after opening and show panel if issues found
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(100, self._validate_after_open)
     
     def _on_save_workflow(self) -> None:
         """Handle save workflow request."""
+        # Validate before saving
+        if not self._check_validation_before_save():
+            return
+
         if self._current_file:
             self.workflow_save.emit()
             self.set_modified(False)
             self.statusBar().showMessage(f"Saved: {self._current_file.name}", 3000)
         else:
             self._on_save_as_workflow()
-    
+
     def _on_save_as_workflow(self) -> None:
         """Handle save as workflow request."""
+        # Validate before saving
+        if not self._check_validation_before_save():
+            return
+
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save Workflow As",
             str(WORKFLOWS_DIR),
             "Workflow Files (*.json);;All Files (*.*)"
         )
-        
+
         if file_path:
             self.workflow_save_as.emit(file_path)
             self.set_current_file(Path(file_path))
@@ -680,6 +925,10 @@ class MainWindow(QMainWindow):
     
     def _on_run_workflow(self) -> None:
         """Handle run workflow request."""
+        # Validate before running - block if errors
+        if not self._check_validation_before_run():
+            return
+
         self.workflow_run.emit()
         self.action_run.setEnabled(False)
         self.action_pause.setEnabled(True)
@@ -743,7 +992,14 @@ class MainWindow(QMainWindow):
             self.show_log_viewer()
         else:
             self.hide_log_viewer()
-    
+
+    def _on_toggle_validation(self, checked: bool) -> None:
+        """Handle validation panel toggle."""
+        if checked:
+            self.show_validation_panel()
+        else:
+            self.hide_validation_panel()
+
     def _on_toggle_auto_connect(self, checked: bool) -> None:
         """Handle auto-connect toggle."""
         # This will be connected by the app when the node graph is available
@@ -794,7 +1050,87 @@ class MainWindow(QMainWindow):
             return True
         else:
             return False
-    
+
+    def _validate_after_open(self) -> None:
+        """Validate workflow after opening and show warnings if issues found."""
+        result = self.validate_current_workflow(show_panel=False)
+
+        if not result.is_valid:
+            # Show error dialog for blocking issues
+            QMessageBox.warning(
+                self,
+                "Validation Issues",
+                f"The opened workflow has {result.error_count} error(s) and "
+                f"{result.warning_count} warning(s).\n\n"
+                "Please review the validation panel for details.",
+            )
+            self.show_validation_panel()
+        elif result.warning_count > 0:
+            # Just show the panel for warnings
+            self.show_validation_panel()
+
+    def _check_validation_before_save(self) -> bool:
+        """
+        Check validation before saving. Warn about issues but allow saving.
+
+        Returns:
+            True if save should proceed, False to cancel
+        """
+        result = self.validate_current_workflow(show_panel=False)
+
+        if not result.is_valid:
+            # Show warning but allow saving
+            reply = QMessageBox.warning(
+                self,
+                "Validation Issues",
+                f"The workflow has {result.error_count} error(s).\n\n"
+                "Do you want to save anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.No:
+                self.show_validation_panel()
+                return False
+
+        return True
+
+    def _check_validation_before_run(self) -> bool:
+        """
+        Check validation before running. Block execution if there are errors.
+
+        Returns:
+            True if run should proceed, False to block
+        """
+        result = self.validate_current_workflow(show_panel=False)
+
+        if not result.is_valid:
+            # Block execution if there are errors
+            QMessageBox.critical(
+                self,
+                "Cannot Run Workflow",
+                f"The workflow has {result.error_count} validation error(s) "
+                "that must be fixed before running.\n\n"
+                "Please review the validation panel for details.",
+            )
+            self.show_validation_panel()
+            return False
+
+        if result.warning_count > 0:
+            # Warn but allow running
+            reply = QMessageBox.warning(
+                self,
+                "Validation Warnings",
+                f"The workflow has {result.warning_count} warning(s).\n\n"
+                "Do you want to run anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if reply == QMessageBox.StandardButton.No:
+                self.show_validation_panel()
+                return False
+
+        return True
+
     def _create_debug_components(self) -> None:
         """Create debug toolbar and panels."""
         from .debug_toolbar import DebugToolbar
