@@ -1415,7 +1415,7 @@ class CasareRPAApp:
             variables = self._workflow_runner.get_variables()
             var_inspector = self._main_window.get_variable_inspector()
             if var_inspector:
-                var_inspector.update_variables(variables)
+                var_inspector.update_runtime_values(variables)
     
     def _on_history_node_selected(self, node_id: str) -> None:
         """
@@ -1784,7 +1784,7 @@ class CasareRPAApp:
         var_inspector = self._main_window.get_variable_inspector()
         if var_inspector and var_inspector.isVisible():
             variables = self._workflow_runner.get_variables()
-            var_inspector.update_variables(variables)
+            var_inspector.update_runtime_values(variables)
         
         # Update execution history
         exec_history = self._main_window.get_execution_history_viewer()
