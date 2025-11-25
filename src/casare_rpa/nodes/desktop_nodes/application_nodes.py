@@ -7,9 +7,9 @@ Nodes for launching, closing, and managing Windows desktop applications.
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from casare_rpa.core.base_node import BaseNode as Node
-from casare_rpa.core.types import NodeStatus
-from casare_rpa.desktop import DesktopContext
+from ...core.base_node import BaseNode as Node
+from ...core.types import NodeStatus
+from ...desktop import DesktopContext
 
 
 class LaunchApplicationNode(Node):

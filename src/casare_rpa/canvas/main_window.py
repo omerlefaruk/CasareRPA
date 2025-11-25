@@ -32,6 +32,7 @@ from ..utils.config import (
 )
 from ..utils.hotkey_settings import get_hotkey_settings
 from .minimap import Minimap
+from loguru import logger
 
 
 class MainWindow(QMainWindow):
@@ -300,6 +301,11 @@ class MainWindow(QMainWindow):
         self.action_desktop_selector_builder.setStatusTip("Build desktop element selectors visually (Ctrl+Shift+D)")
         self.action_desktop_selector_builder.triggered.connect(self._on_open_desktop_selector_builder)
 
+        self.action_create_frame = QAction("📋 Create Frame", self)
+        self.action_create_frame.setShortcut(QKeySequence("Shift+W"))
+        self.action_create_frame.setStatusTip("Create a frame around selected nodes (Shift+W)")
+        self.action_create_frame.triggered.connect(self._on_create_frame)
+
         # Help actions
         self.action_about = QAction("&About", self)
         self.action_about.setStatusTip("About CasareRPA")
@@ -331,6 +337,7 @@ class MainWindow(QMainWindow):
             "run": self.action_run,
             "pause": self.action_pause,
             "stop": self.action_stop,
+            "create_frame": self.action_create_frame,
             "hotkey_manager": self.action_hotkey_manager,
         }
         
@@ -394,6 +401,7 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self.action_record_workflow)
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_desktop_selector_builder)
+        tools_menu.addAction(self.action_create_frame)
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_hotkey_manager)
         
@@ -849,6 +857,44 @@ class MainWindow(QMainWindow):
                 self,
                 "Error",
                 f"Failed to open Desktop Selector Builder:\n{str(e)}"
+            )
+
+    def _on_create_frame(self) -> None:
+        """Create a frame around selected nodes."""
+        try:
+            from .node_frame import group_selected_nodes, create_frame
+
+            # Get the node graph from central widget
+            if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+                logger.warning("Node graph not available")
+                return
+
+            graph = self._central_widget.graph
+            viewer = graph.viewer()
+            selected_nodes = graph.selected_nodes()
+
+            if selected_nodes:
+                # Group selected nodes
+                frame = group_selected_nodes(viewer, "Group", selected_nodes)
+                if frame:
+                    logger.info(f"Created frame around {len(selected_nodes)} nodes")
+            else:
+                # Create empty frame at center
+                frame = create_frame(
+                    viewer,
+                    title="Frame",
+                    color_name="blue",
+                    position=(0, 0),
+                    size=(400, 300)
+                )
+                logger.info("Created empty frame")
+
+        except Exception as e:
+            logger.error(f"Failed to create frame: {e}")
+            QMessageBox.warning(
+                self,
+                "Create Frame",
+                f"Failed to create frame:\n{str(e)}"
             )
 
     def set_browser_running(self, running: bool) -> None:

@@ -229,21 +229,184 @@ class DesktopActivateWindowNode(BaseNode):
 
 class DesktopGetWindowListNode(BaseNode):
     """Visual node for Get Window List"""
-    
+
     __identifier__ = 'casare_rpa.nodes.desktop'
     NODE_NAME = 'Get Window List'
-    
+
     def __init__(self):
         super().__init__()
-        
+
         # Visual styling
         self.set_color(138, 43, 226)  # Blue-violet
         self.set_border_color(75, 0, 130)  # Indigo
-        
+
         # Output ports
         self.add_output('window_list', color=(138, 43, 226))
         self.add_output('window_count', color=(138, 43, 226))
-        
+
         # Properties
         self.create_property('include_invisible', False, widget_type=1, tab='config')  # Checkbox
         self.create_property('filter_title', '', widget_type=0, tab='config')  # TextInput
+
+
+# Window Management Nodes
+
+class DesktopResizeWindowNode(BaseNode):
+    """Visual node for Resize Window"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Resize Window'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling - Window management uses same purple theme
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+        # Properties
+        self.create_property('width', 800, widget_type=2, tab='config')  # IntSpinBox
+        self.create_property('height', 600, widget_type=2, tab='config')  # IntSpinBox
+
+
+class DesktopMoveWindowNode(BaseNode):
+    """Visual node for Move Window"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Move Window'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+        # Properties
+        self.create_property('x', 100, widget_type=2, tab='config')  # IntSpinBox
+        self.create_property('y', 100, widget_type=2, tab='config')  # IntSpinBox
+
+
+class DesktopMaximizeWindowNode(BaseNode):
+    """Visual node for Maximize Window"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Maximize Window'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+
+class DesktopMinimizeWindowNode(BaseNode):
+    """Visual node for Minimize Window"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Minimize Window'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+
+class DesktopRestoreWindowNode(BaseNode):
+    """Visual node for Restore Window"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Restore Window'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+
+class DesktopGetWindowPropertiesNode(BaseNode):
+    """Visual node for Get Window Properties"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Get Window Properties'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('properties', color=(138, 43, 226))
+        self.add_output('title', color=(138, 43, 226))
+        self.add_output('x', color=(138, 43, 226))
+        self.add_output('y', color=(138, 43, 226))
+        self.add_output('width', color=(138, 43, 226))
+        self.add_output('height', color=(138, 43, 226))
+        self.add_output('state', color=(138, 43, 226))
+        self.add_output('is_maximized', color=(138, 43, 226))
+        self.add_output('is_minimized', color=(138, 43, 226))
+
+
+class DesktopSetWindowStateNode(BaseNode):
+    """Visual node for Set Window State"""
+
+    __identifier__ = 'casare_rpa.nodes.desktop'
+    NODE_NAME = 'Set Window State'
+
+    def __init__(self):
+        super().__init__()
+
+        # Visual styling
+        self.set_color(138, 43, 226)  # Blue-violet
+        self.set_border_color(75, 0, 130)  # Indigo
+
+        # Input ports
+        self.add_input('window', color=(138, 43, 226))
+
+        # Output ports
+        self.add_output('success', color=(138, 43, 226))
+
+        # Properties
+        self.create_property('state', 'normal',
+                           items=['normal', 'maximized', 'minimized'],
+                           widget_type=3, tab='config')  # ComboBox
