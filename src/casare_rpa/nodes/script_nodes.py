@@ -8,12 +8,15 @@ This module provides nodes for executing scripts:
 - RunBatchScriptNode: Execute batch/shell script
 """
 
+import asyncio
 import subprocess
 import sys
 import tempfile
 import os
 from typing import Any, Optional, Dict
 from pathlib import Path
+
+from loguru import logger
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -196,6 +199,8 @@ class RunPythonFileNode(BaseNode):
     Config:
         timeout: Execution timeout in seconds (default: 60)
         python_path: Python interpreter path (default: current)
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries in ms (default: 1000)
 
     Inputs:
         file_path: Path to Python file
@@ -210,7 +215,21 @@ class RunPythonFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Run Python File", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "timeout": 60,
+            "python_path": sys.executable,
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "retry_on_nonzero": False,  # Retry if return code is non-zero
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RunPythonFileNode"
@@ -236,6 +255,11 @@ class RunPythonFileNode(BaseNode):
             timeout = self.config.get("timeout", 60)
             python_path = self.config.get("python_path", sys.executable)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_on_nonzero = self.config.get("retry_on_nonzero", False)
+
             if not file_path:
                 raise ValueError("file_path is required")
 
@@ -252,38 +276,78 @@ class RunPythonFileNode(BaseNode):
                 elif isinstance(args, str):
                     cmd.extend(args.split())
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=working_dir
-            )
+            logger.info(f"Running Python file: {file_path}")
 
-            stdout = result.stdout
-            stderr = result.stderr
-            return_code = result.returncode
-            success = return_code == 0
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("stdout", stdout)
-            self.set_output_value("stderr", stderr)
-            self.set_output_value("return_code", return_code)
-            self.set_output_value("success", success)
-            self.status = NodeStatus.SUCCESS
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for Python file execution")
 
-            return {
-                "success": True,
-                "data": {"return_code": return_code, "success": success},
-                "next_nodes": ["exec_out"]
-            }
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=timeout,
+                        cwd=working_dir
+                    )
 
-        except subprocess.TimeoutExpired:
-            self.set_output_value("stdout", "")
-            self.set_output_value("stderr", f"Execution timed out after {timeout}s")
-            self.set_output_value("return_code", -1)
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": "Timeout", "next_nodes": []}
+                    stdout = result.stdout
+                    stderr = result.stderr
+                    return_code = result.returncode
+                    success = return_code == 0
+
+                    # Check if we should retry on non-zero return code
+                    if not success and retry_on_nonzero and attempts < max_attempts:
+                        logger.warning(f"Python file returned non-zero ({return_code}), retrying...")
+                        await asyncio.sleep(retry_interval / 1000)
+                        continue
+
+                    self.set_output_value("stdout", stdout)
+                    self.set_output_value("stderr", stderr)
+                    self.set_output_value("return_code", return_code)
+                    self.set_output_value("success", success)
+                    self.status = NodeStatus.SUCCESS
+
+                    logger.info(f"Python file executed: return_code={return_code} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"return_code": return_code, "success": success, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except subprocess.TimeoutExpired as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Python file timed out (attempt {attempts})")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Python file execution failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed
+            if isinstance(last_error, subprocess.TimeoutExpired):
+                self.set_output_value("stdout", "")
+                self.set_output_value("stderr", f"Execution timed out after {timeout}s")
+                self.set_output_value("return_code", -1)
+                self.set_output_value("success", False)
+                self.status = NodeStatus.ERROR
+                logger.error(f"Python file execution timed out after {max_attempts} attempts")
+                return {"success": False, "error": "Timeout", "next_nodes": []}
+
+            raise last_error
 
         except Exception as e:
             self.set_output_value("stdout", "")
@@ -291,6 +355,7 @@ class RunPythonFileNode(BaseNode):
             self.set_output_value("return_code", -1)
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
+            logger.error(f"Failed to run Python file: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -388,6 +453,8 @@ class RunBatchScriptNode(BaseNode):
 
     Config:
         timeout: Execution timeout in seconds (default: 60)
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries in ms (default: 1000)
 
     Inputs:
         script: Script content to execute
@@ -401,7 +468,20 @@ class RunBatchScriptNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Run Batch Script", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "timeout": 60,
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "retry_on_nonzero": False,  # Retry if return code is non-zero
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RunBatchScriptNode"
@@ -424,6 +504,11 @@ class RunBatchScriptNode(BaseNode):
             working_dir = self.get_input_value("working_dir", context)
             timeout = self.config.get("timeout", 60)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_on_nonzero = self.config.get("retry_on_nonzero", False)
+
             if not script:
                 raise ValueError("script is required")
 
@@ -433,54 +518,104 @@ class RunBatchScriptNode(BaseNode):
             else:
                 suffix = ".sh"
 
-            with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as f:
-                if sys.platform != "win32":
-                    f.write("#!/bin/bash\n")
-                f.write(script)
-                script_path = f.name
+            logger.info(f"Running batch script")
 
-            try:
-                if sys.platform == "win32":
-                    cmd = ["cmd", "/c", script_path]
-                else:
-                    os.chmod(script_path, 0o755)
-                    cmd = [script_path]
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
+            script_path = None
 
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                    cwd=working_dir
-                )
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for batch script")
 
-                stdout = result.stdout
-                stderr = result.stderr
-                return_code = result.returncode
-                success = return_code == 0
+                    # Create temp file for each attempt
+                    with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as f:
+                        if sys.platform != "win32":
+                            f.write("#!/bin/bash\n")
+                        f.write(script)
+                        script_path = f.name
 
-            finally:
-                os.unlink(script_path)
+                    try:
+                        if sys.platform == "win32":
+                            cmd = ["cmd", "/c", script_path]
+                        else:
+                            os.chmod(script_path, 0o755)
+                            cmd = [script_path]
 
-            self.set_output_value("stdout", stdout)
-            self.set_output_value("stderr", stderr)
-            self.set_output_value("return_code", return_code)
-            self.set_output_value("success", success)
-            self.status = NodeStatus.SUCCESS
+                        result = subprocess.run(
+                            cmd,
+                            capture_output=True,
+                            text=True,
+                            timeout=timeout,
+                            cwd=working_dir
+                        )
 
-            return {
-                "success": True,
-                "data": {"return_code": return_code, "success": success},
-                "next_nodes": ["exec_out"]
-            }
+                        stdout = result.stdout
+                        stderr = result.stderr
+                        return_code = result.returncode
+                        success = return_code == 0
 
-        except subprocess.TimeoutExpired:
-            self.set_output_value("stdout", "")
-            self.set_output_value("stderr", f"Execution timed out after {timeout}s")
-            self.set_output_value("return_code", -1)
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": "Timeout", "next_nodes": []}
+                    finally:
+                        if script_path and os.path.exists(script_path):
+                            os.unlink(script_path)
+                            script_path = None
+
+                    # Check if we should retry on non-zero return code
+                    if not success and retry_on_nonzero and attempts < max_attempts:
+                        logger.warning(f"Batch script returned non-zero ({return_code}), retrying...")
+                        await asyncio.sleep(retry_interval / 1000)
+                        continue
+
+                    self.set_output_value("stdout", stdout)
+                    self.set_output_value("stderr", stderr)
+                    self.set_output_value("return_code", return_code)
+                    self.set_output_value("success", success)
+                    self.status = NodeStatus.SUCCESS
+
+                    logger.info(f"Batch script executed: return_code={return_code} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"return_code": return_code, "success": success, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except subprocess.TimeoutExpired as e:
+                    last_error = e
+                    if script_path and os.path.exists(script_path):
+                        os.unlink(script_path)
+                        script_path = None
+                    if attempts < max_attempts:
+                        logger.warning(f"Batch script timed out (attempt {attempts})")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+                except Exception as e:
+                    last_error = e
+                    if script_path and os.path.exists(script_path):
+                        os.unlink(script_path)
+                        script_path = None
+                    if attempts < max_attempts:
+                        logger.warning(f"Batch script execution failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed
+            if isinstance(last_error, subprocess.TimeoutExpired):
+                self.set_output_value("stdout", "")
+                self.set_output_value("stderr", f"Execution timed out after {timeout}s")
+                self.set_output_value("return_code", -1)
+                self.set_output_value("success", False)
+                self.status = NodeStatus.ERROR
+                logger.error(f"Batch script execution timed out after {max_attempts} attempts")
+                return {"success": False, "error": "Timeout", "next_nodes": []}
+
+            raise last_error
 
         except Exception as e:
             self.set_output_value("stdout", "")
@@ -488,6 +623,7 @@ class RunBatchScriptNode(BaseNode):
             self.set_output_value("return_code", -1)
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
+            logger.error(f"Failed to run batch script: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:

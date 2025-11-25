@@ -89,40 +89,69 @@ class FTPConnectNode(BaseNode):
             timeout = self.config.get("timeout", 30)
             use_tls = self.config.get("use_tls", False)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
+
             if not host:
                 raise ValueError("host is required")
 
-            # Create FTP connection
-            if use_tls:
-                ftp = ftplib.FTP_TLS(timeout=timeout)
-            else:
-                ftp = ftplib.FTP(timeout=timeout)
+            logger.info(f"Connecting to FTP server: {host}:{port}")
 
-            ftp.connect(host, port)
-            welcome = ftp.login(username, password)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            if use_tls:
-                ftp.prot_p()  # Switch to protected data connection
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP connect")
 
-            ftp.set_pasv(passive)
+                    # Create FTP connection
+                    if use_tls:
+                        ftp = ftplib.FTP_TLS(timeout=timeout)
+                    else:
+                        ftp = ftplib.FTP(timeout=timeout)
 
-            # Store connection in context for other nodes
-            context.set_variable("_ftp_connection", ftp)
+                    ftp.connect(host, port)
+                    welcome = ftp.login(username, password)
 
-            self.set_output_value("connected", True)
-            self.set_output_value("server_message", welcome)
-            self.status = NodeStatus.SUCCESS
+                    if use_tls:
+                        ftp.prot_p()  # Switch to protected data connection
 
-            return {
-                "success": True,
-                "data": {"connected": True},
-                "next_nodes": ["exec_out"]
-            }
+                    ftp.set_pasv(passive)
+
+                    # Store connection in context for other nodes
+                    context.set_variable("_ftp_connection", ftp)
+
+                    self.set_output_value("connected", True)
+                    self.set_output_value("server_message", welcome)
+                    self.status = NodeStatus.SUCCESS
+
+                    logger.info(f"FTP connected successfully to {host} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"connected": True, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"FTP connect failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.set_output_value("connected", False)
             self.set_output_value("server_message", str(e))
             self.status = NodeStatus.ERROR
+            logger.error(f"Failed to connect to FTP: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -136,6 +165,8 @@ class FTPUploadNode(BaseNode):
     Config:
         binary_mode: Transfer in binary mode (default: True)
         create_dirs: Create remote directories if needed (default: False)
+        retry_count: Number of upload retries (default: 0)
+        retry_interval: Delay between retries in ms (default: 2000)
 
     Inputs:
         local_path: Local file path to upload
@@ -147,7 +178,20 @@ class FTPUploadNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Upload", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "binary_mode": True,
+            "create_dirs": False,
+            "retry_count": 0,  # Number of upload retries
+            "retry_interval": 2000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPUploadNode"
@@ -168,6 +212,10 @@ class FTPUploadNode(BaseNode):
             remote_path = str(self.get_input_value("remote_path", context) or "")
             binary_mode = self.config.get("binary_mode", True)
             create_dirs = self.config.get("create_dirs", False)
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
 
             if not local_path:
                 raise ValueError("local_path is required")
@@ -191,29 +239,53 @@ class FTPUploadNode(BaseNode):
                     except ftplib.error_perm:
                         pass  # Directory may already exist
 
-            # Upload file
             file_size = local.stat().st_size
+            logger.info(f"Uploading {local_path} to {remote_path} ({file_size} bytes)")
 
-            with open(local, "rb") as f:
-                if binary_mode:
-                    ftp.storbinary(f"STOR {remote_path}", f)
-                else:
-                    ftp.storlines(f"STOR {remote_path}", f)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("uploaded", True)
-            self.set_output_value("bytes_sent", file_size)
-            self.status = NodeStatus.SUCCESS
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP upload")
 
-            return {
-                "success": True,
-                "data": {"bytes_sent": file_size},
-                "next_nodes": ["exec_out"]
-            }
+                    # Upload file
+                    with open(local, "rb") as f:
+                        if binary_mode:
+                            ftp.storbinary(f"STOR {remote_path}", f)
+                        else:
+                            ftp.storlines(f"STOR {remote_path}", f)
+
+                    self.set_output_value("uploaded", True)
+                    self.set_output_value("bytes_sent", file_size)
+                    self.status = NodeStatus.SUCCESS
+
+                    logger.info(f"FTP upload completed: {remote_path} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"bytes_sent": file_size, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"FTP upload failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.set_output_value("uploaded", False)
             self.set_output_value("bytes_sent", 0)
             self.status = NodeStatus.ERROR
+            logger.error(f"Failed to upload file: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -227,6 +299,8 @@ class FTPDownloadNode(BaseNode):
     Config:
         binary_mode: Transfer in binary mode (default: True)
         overwrite: Overwrite local file if exists (default: False)
+        retry_count: Number of download retries (default: 0)
+        retry_interval: Delay between retries in ms (default: 2000)
 
     Inputs:
         remote_path: Remote file path to download
@@ -238,7 +312,20 @@ class FTPDownloadNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Download", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "binary_mode": True,
+            "overwrite": False,
+            "retry_count": 0,  # Number of download retries
+            "retry_interval": 2000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPDownloadNode"
@@ -260,6 +347,10 @@ class FTPDownloadNode(BaseNode):
             binary_mode = self.config.get("binary_mode", True)
             overwrite = self.config.get("overwrite", False)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
+
             if not remote_path:
                 raise ValueError("remote_path is required")
             if not local_path:
@@ -276,34 +367,59 @@ class FTPDownloadNode(BaseNode):
             if ftp is None:
                 raise RuntimeError("No FTP connection. Use FTP Connect node first.")
 
-            # Download file
-            bytes_received = 0
+            logger.info(f"Downloading {remote_path} to {local_path}")
 
-            with open(local, "wb") as f:
-                def callback(data):
-                    nonlocal bytes_received
-                    f.write(data)
-                    bytes_received += len(data)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-                if binary_mode:
-                    ftp.retrbinary(f"RETR {remote_path}", callback)
-                else:
-                    ftp.retrlines(f"RETR {remote_path}", lambda line: callback((line + "\n").encode()))
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP download")
 
-            self.set_output_value("downloaded", True)
-            self.set_output_value("bytes_received", bytes_received)
-            self.status = NodeStatus.SUCCESS
+                    # Download file
+                    bytes_received = 0
 
-            return {
-                "success": True,
-                "data": {"bytes_received": bytes_received},
-                "next_nodes": ["exec_out"]
-            }
+                    with open(local, "wb") as f:
+                        def callback(data):
+                            nonlocal bytes_received
+                            f.write(data)
+                            bytes_received += len(data)
+
+                        if binary_mode:
+                            ftp.retrbinary(f"RETR {remote_path}", callback)
+                        else:
+                            ftp.retrlines(f"RETR {remote_path}", lambda line: callback((line + "\n").encode()))
+
+                    self.set_output_value("downloaded", True)
+                    self.set_output_value("bytes_received", bytes_received)
+                    self.status = NodeStatus.SUCCESS
+
+                    logger.info(f"FTP download completed: {local_path} ({bytes_received} bytes, attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"bytes_received": bytes_received, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"FTP download failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.set_output_value("downloaded", False)
             self.set_output_value("bytes_received", 0)
             self.status = NodeStatus.ERROR
+            logger.error(f"Failed to download file: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
