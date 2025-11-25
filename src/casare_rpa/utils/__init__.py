@@ -44,6 +44,30 @@ from .selector_healing import (
     HealingResult,
     get_selector_healer,
 )
+from .database_pool import (
+    DatabaseType,
+    PoolStatistics,
+    PooledConnection,
+    DatabaseConnectionPool,
+    DatabasePoolManager,
+    get_pool_manager,
+)
+from .http_session_pool import (
+    SessionStatistics,
+    PooledSession,
+    HttpSessionPool,
+    HttpSessionManager,
+    get_session_manager,
+)
+from .performance_metrics import (
+    MetricType,
+    MetricValue,
+    TimerContext,
+    Histogram,
+    PerformanceMetrics,
+    get_metrics,
+    time_operation,
+)
 
 __all__ = [
     # Config
@@ -84,4 +108,25 @@ __all__ = [
     "ElementFingerprint",
     "HealingResult",
     "get_selector_healer",
+    # Database pool
+    "DatabaseType",
+    "PoolStatistics",
+    "PooledConnection",
+    "DatabaseConnectionPool",
+    "DatabasePoolManager",
+    "get_pool_manager",
+    # HTTP session pool
+    "SessionStatistics",
+    "PooledSession",
+    "HttpSessionPool",
+    "HttpSessionManager",
+    "get_session_manager",
+    # Performance metrics
+    "MetricType",
+    "MetricValue",
+    "TimerContext",
+    "Histogram",
+    "PerformanceMetrics",
+    "get_metrics",
+    "time_operation",
 ]
