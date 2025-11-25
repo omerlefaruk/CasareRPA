@@ -403,6 +403,23 @@ class WorkflowRunner:
         Returns:
             Tuple of (success: bool, result: dict) where result contains execution data
         """
+        # Check if node is disabled (bypassed)
+        if node.config.get("_disabled", False):
+            logger.info(f"Node {node.node_id} is disabled - bypassing execution")
+            node.status = NodeStatus.COMPLETED
+
+            # Emit a special event for bypassed nodes
+            self._emit_event(EventType.NODE_COMPLETED, {
+                "node_id": node.node_id,
+                "node_type": node.__class__.__name__,
+                "bypassed": True,
+                "execution_time": 0,
+                "progress": self._calculate_progress()
+            })
+
+            # Return success so workflow continues, with bypass marker in result
+            return True, {"success": True, "bypassed": True}
+
         self.current_node_id = node.node_id
         node.status = NodeStatus.RUNNING
 

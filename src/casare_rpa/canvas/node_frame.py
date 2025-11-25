@@ -22,6 +22,24 @@ from NodeGraphQt.base.node import NodeObject
 
 
 # ============================================================================
+# FRAME COLOR PALETTE
+# ============================================================================
+
+# Predefined colors for frame grouping (semi-transparent for background)
+FRAME_COLOR_PALETTE = {
+    "Gray": QColor(100, 100, 100, 80),
+    "Blue": QColor(60, 120, 180, 100),
+    "Green": QColor(60, 160, 80, 100),
+    "Yellow": QColor(180, 160, 60, 100),
+    "Orange": QColor(200, 120, 60, 100),
+    "Red": QColor(180, 70, 70, 100),
+    "Purple": QColor(140, 80, 160, 100),
+    "Teal": QColor(60, 150, 150, 100),
+    "Pink": QColor(180, 100, 140, 100),
+}
+
+
+# ============================================================================
 # UNDO COMMANDS
 # ============================================================================
 
@@ -1076,6 +1094,13 @@ class NodeFrame(QGraphicsRectItem):
         # Rename action
         rename_action = menu.addAction("Rename Frame")
         rename_action.triggered.connect(self._edit_title)
+
+        # Color submenu
+        color_menu = menu.addMenu("Change Color")
+        for name, color in FRAME_COLOR_PALETTE.items():
+            action = color_menu.addAction(f"  {name}")
+            # Use a lambda with default arg to capture the color value
+            action.triggered.connect(lambda checked, c=color: self.set_color(c))
 
         menu.addSeparator()
 

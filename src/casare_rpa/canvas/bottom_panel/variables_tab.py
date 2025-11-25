@@ -192,8 +192,8 @@ class VariablesTab(QWidget):
         self._table.setColumnWidth(self.COL_TYPE, 100)
         self._table.setColumnWidth(self.COL_SCOPE, 80)
 
-        # Hide Current Value column by default (shown in runtime mode)
-        self._table.setColumnHidden(self.COL_CURRENT, True)
+        # Current Value column is always visible (side-by-side with Default Value)
+        # Shows "-" when not in runtime mode, actual values during execution
 
         # Hide vertical header
         self._table.verticalHeader().setVisible(False)
@@ -649,8 +649,7 @@ class VariablesTab(QWidget):
         # Show/hide runtime header
         self._runtime_header.setVisible(enabled)
 
-        # Show/hide Current Value column (only visible in runtime mode)
-        self._table.setColumnHidden(self.COL_CURRENT, not enabled)
+        # Current Value column is always visible (side-by-side with Default Value)
 
         # Update "Create variable" row visibility/editability
         if enabled:

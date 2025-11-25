@@ -419,12 +419,12 @@ class BottomPanelDock(QDockWidget):
     # ==================== State Management ====================
 
     def prepare_for_execution(self) -> None:
-        """Prepare panel for workflow execution."""
+        """Prepare panel for workflow execution (preserves panel visibility)."""
         self.set_runtime_mode(True)
         self.clear_log()
         self.clear_outputs()
         self.clear_history()
-        self.show_log_tab()
+        # Don't change panel visibility or current tab
 
     def execution_finished(self) -> None:
         """Handle workflow execution completion."""
