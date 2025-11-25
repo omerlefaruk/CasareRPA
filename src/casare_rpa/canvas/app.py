@@ -195,6 +195,21 @@ class CasareRPAApp:
         if hasattr(graph, 'node_selection_changed'):
             graph.node_selection_changed.connect(self._on_selection_changed_for_properties)
 
+        # Quick actions connections (node right-click context menu)
+        quick_actions = self._node_graph.quick_actions
+        quick_actions.run_node_requested.connect(self._on_run_single_node)
+        quick_actions.run_to_node_requested.connect(self._on_run_to_node)
+        quick_actions.copy_requested.connect(graph.copy_nodes)
+        quick_actions.duplicate_requested.connect(self._on_duplicate_nodes)
+        quick_actions.delete_requested.connect(self._on_delete_selected)
+
+    def _on_duplicate_nodes(self) -> None:
+        """Duplicate the selected nodes."""
+        graph = self._node_graph.graph
+        graph.copy_nodes()
+        graph.paste_nodes()
+        logger.debug("Duplicated selected nodes")
+
     def _on_node_selected_for_properties(self, node) -> None:
         """Update properties panel and breadcrumb when a node is selected."""
         self._main_window.update_properties_panel(node)
@@ -941,15 +956,13 @@ class CasareRPAApp:
                 if debug_enabled:
                     self._workflow_runner.enable_debug_mode(True)
                     logger.info("Debug mode enabled for execution")
-                    
-                    # Show debug panels
+
+                    # Clear debug data (don't change panel visibility)
                     var_inspector = self._main_window.get_variable_inspector()
                     exec_history = self._main_window.get_execution_history_viewer()
                     if var_inspector:
-                        var_inspector.show()
                         var_inspector.clear()
                     if exec_history:
-                        exec_history.show()
                         exec_history.clear()
                 
                 if step_enabled:
@@ -1048,14 +1061,12 @@ class CasareRPAApp:
             self._workflow_runner.enable_debug_mode(True)
             logger.info("Debug mode enabled for run-to-node (for inspection at target)")
 
-            # Show debug panels for inspection
+            # Clear debug data (don't change panel visibility)
             var_inspector = self._main_window.get_variable_inspector()
             exec_history = self._main_window.get_execution_history_viewer()
             if var_inspector:
-                var_inspector.show()
                 var_inspector.clear()
             if exec_history:
-                exec_history.show()
                 exec_history.clear()
 
             # Update debug toolbar state

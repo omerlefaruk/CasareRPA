@@ -209,7 +209,19 @@ class MainWindow(QMainWindow):
         self.action_deselect_all = QAction("Deselect All", self)
         self.action_deselect_all.setShortcut(QKeySequence("Ctrl+Shift+A"))
         self.action_deselect_all.setStatusTip("Deselect all nodes")
-        
+
+        # Quick node selection
+        self.action_select_nearest = QAction("Select &Nearest Node", self)
+        self.action_select_nearest.setShortcut(QKeySequence("2"))
+        self.action_select_nearest.setStatusTip("Select the nearest node to mouse cursor (2)")
+        self.action_select_nearest.triggered.connect(self._on_select_nearest_node)
+
+        # Disable/bypass node
+        self.action_toggle_disable = QAction("&Disable Node", self)
+        self.action_toggle_disable.setShortcut(QKeySequence("4"))
+        self.action_toggle_disable.setStatusTip("Disable/enable selected node - inputs bypass to outputs (4)")
+        self.action_toggle_disable.triggered.connect(self._on_toggle_disable_node)
+
         # View actions
         self.action_zoom_in = QAction("Zoom &In", self)
         self.action_zoom_in.setShortcut(QKeySequence.StandardKey.ZoomIn)
@@ -403,6 +415,9 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_select_all)
         edit_menu.addAction(self.action_deselect_all)
+        edit_menu.addAction(self.action_select_nearest)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action_toggle_disable)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_find_node)
 
@@ -1393,7 +1408,113 @@ class MainWindow(QMainWindow):
         self.action_pause.setChecked(False)
         self.action_stop.setEnabled(False)
         self.statusBar().showMessage("Workflow execution stopped", 3000)
-    
+
+    def _on_select_nearest_node(self) -> None:
+        """Select the nearest node to the current mouse cursor position (hotkey 2)."""
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            return
+
+        graph = self._central_widget.graph
+        viewer = graph.viewer()
+        if not viewer:
+            return
+
+        # Get mouse position in scene coordinates
+        from PySide6.QtGui import QCursor
+        global_pos = QCursor.pos()
+        view_pos = viewer.mapFromGlobal(global_pos)
+        scene_pos = viewer.mapToScene(view_pos)
+
+        # Find nearest node
+        all_nodes = graph.all_nodes()
+        if not all_nodes:
+            self.statusBar().showMessage("No nodes in graph", 2000)
+            return
+
+        nearest_node = None
+        min_distance = float('inf')
+
+        for node in all_nodes:
+            node_pos = node.pos()
+            # Calculate distance from mouse to node center
+            dx = scene_pos.x() - node_pos[0]
+            dy = scene_pos.y() - node_pos[1]
+            distance = (dx * dx + dy * dy) ** 0.5
+
+            if distance < min_distance:
+                min_distance = distance
+                nearest_node = node
+
+        if nearest_node:
+            # Clear current selection and select the nearest node
+            graph.clear_selection()
+            nearest_node.set_selected(True)
+            node_name = nearest_node.name() if hasattr(nearest_node, 'name') else "Node"
+            self.statusBar().showMessage(f"Selected: {node_name}", 2000)
+
+    def _on_toggle_disable_node(self) -> None:
+        """Toggle disable state on nearest node to mouse (hotkey 4). Disabled nodes are bypassed during execution."""
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            return
+
+        graph = self._central_widget.graph
+        viewer = graph.viewer()
+        if not viewer:
+            return
+
+        # Get mouse position in scene coordinates
+        from PySide6.QtGui import QCursor
+        global_pos = QCursor.pos()
+        view_pos = viewer.mapFromGlobal(global_pos)
+        scene_pos = viewer.mapToScene(view_pos)
+
+        # Find nearest node to mouse
+        all_nodes = graph.all_nodes()
+        if not all_nodes:
+            self.statusBar().showMessage("No nodes in graph", 2000)
+            return
+
+        nearest_node = None
+        min_distance = float('inf')
+
+        for node in all_nodes:
+            node_pos = node.pos()
+            dx = scene_pos.x() - node_pos[0]
+            dy = scene_pos.y() - node_pos[1]
+            distance = (dx * dx + dy * dy) ** 0.5
+
+            if distance < min_distance:
+                min_distance = distance
+                nearest_node = node
+
+        if not nearest_node:
+            return
+
+        # Select and toggle disable on the nearest node
+        graph.clear_selection()
+        nearest_node.set_selected(True)
+
+        # Toggle disable state on the nearest node
+        casare_node = nearest_node.get_casare_node() if hasattr(nearest_node, 'get_casare_node') else None
+
+        if casare_node:
+            # Toggle the disabled state
+            current_disabled = casare_node.config.get("_disabled", False)
+            new_disabled = not current_disabled
+            casare_node.config["_disabled"] = new_disabled
+
+            # Update visual appearance
+            if hasattr(nearest_node, 'view') and nearest_node.view:
+                if new_disabled:
+                    # Make node semi-transparent when disabled
+                    nearest_node.view.setOpacity(0.4)
+                else:
+                    nearest_node.view.setOpacity(1.0)
+
+            node_name = nearest_node.name() if hasattr(nearest_node, 'name') else "Node"
+            state = "disabled" if new_disabled else "enabled"
+            self.statusBar().showMessage(f"{node_name} {state}", 2000)
+
     def _on_open_hotkey_manager(self) -> None:
         """Open the hotkey manager dialog."""
         from .hotkey_manager import HotkeyManagerDialog

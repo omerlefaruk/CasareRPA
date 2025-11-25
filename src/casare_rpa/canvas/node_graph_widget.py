@@ -18,6 +18,8 @@ from loguru import logger
 from ..utils.config import GUI_THEME
 from .auto_connect import AutoConnectManager
 from .connection_cutter import ConnectionCutter
+from .node_quick_actions import NodeQuickActions
+from .custom_pipe import CasarePipe
 
 # Import connection validator for strict type checking
 try:
@@ -126,6 +128,9 @@ class NodeGraphWidget(QWidget):
         # Create connection cutter (Y + LMB drag to cut connections)
         self._connection_cutter = ConnectionCutter(self._graph, self)
 
+        # Create quick actions for node context menu
+        self._quick_actions = NodeQuickActions(self._graph, self)
+
         # Setup connection validator for strict type checking
         self._validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
         if self._validator:
@@ -195,16 +200,24 @@ class NodeGraphWidget(QWidget):
         """Configure the node graph settings and appearance."""
         # Set graph background color to match image (very dark gray, almost black)
         self._graph.set_background_color(35, 35, 35)  # #232323
-        
+
         # Set grid styling
         self._graph.set_grid_mode(1)  # Show grid
-        
+
         # Set graph properties
         self._graph.set_pipe_style(1)  # Curved pipes (CURVED = 1, not 2)
-        
+
         # Configure selection and connection colors
         # Get the viewer to apply custom colors
         viewer = self._graph.viewer()
+
+        # Register custom pipe class for connection labels and output preview
+        try:
+            if hasattr(viewer, '_PIPE_ITEM'):
+                viewer._PIPE_ITEM = CasarePipe
+                logger.debug("Custom pipe class registered for connection labels")
+        except Exception as e:
+            logger.debug(f"Could not register custom pipe: {e}")
         
         # Set selection colors - transparent overlay, thick yellow border
         if hasattr(viewer, '_node_sel_color'):
@@ -310,12 +323,22 @@ class NodeGraphWidget(QWidget):
     def set_auto_connect_distance(self, distance: float) -> None:
         """
         Set the maximum distance for auto-connect suggestions.
-        
+
         Args:
             distance: Maximum distance in pixels
         """
         self._auto_connect.set_max_distance(distance)
-    
+
+    @property
+    def quick_actions(self) -> NodeQuickActions:
+        """
+        Get the quick actions manager.
+
+        Returns:
+            NodeQuickActions instance
+        """
+        return self._quick_actions
+
     def eventFilter(self, obj, event):
         """
         Event filter to capture Tab key press and right-click for context menu.
