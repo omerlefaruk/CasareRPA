@@ -22,6 +22,7 @@ from ..core.workflow_schema import WorkflowSchema, WorkflowMetadata
 from ..core.events import EventType, get_event_bus
 from ..core.types import NodeStatus
 from ..utils.config import setup_logging, APP_NAME
+from ..utils.playwright_setup import ensure_playwright_ready
 from loguru import logger
 
 
@@ -49,11 +50,16 @@ class CasareRPAApp:
         # Create Qt application
         self._app = QApplication(sys.argv)
         self._app.setApplicationName(APP_NAME)
-        
+
+        # Check for Playwright browsers and install if needed
+        # This happens early so the user sees the dialog before the main window
+        logger.info("Checking Playwright browser installation...")
+        ensure_playwright_ready(show_gui=True, parent=None)
+
         # Create qasync event loop
         self._loop = QEventLoop(self._app)
         asyncio.set_event_loop(self._loop)
-        
+
         # Create main window
         self._main_window = MainWindow()
         

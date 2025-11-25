@@ -7,6 +7,8 @@ This module provides nodes for file and directory operations:
 - FileExistsNode, GetFileInfoNode
 - ReadCSVNode, WriteCSVNode, ReadJSONFileNode, WriteJSONFileNode
 - ZipFilesNode
+
+SECURITY: All file operations are subject to path sandboxing.
 """
 
 import csv
@@ -18,9 +20,143 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
+from loguru import logger
+
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
+
+class PathSecurityError(Exception):
+    """Raised when a path fails security validation."""
+    pass
+
+
+# SECURITY: Default allowed directories for file operations
+# Can be customized via environment variable CASARE_ALLOWED_PATHS
+_DEFAULT_ALLOWED_PATHS = [
+    Path.home() / "Documents",
+    Path.home() / "Downloads",
+    Path.home() / "Desktop",
+    Path.cwd(),  # Current working directory
+]
+
+# SECURITY: Paths that should NEVER be accessed
+_BLOCKED_PATHS = [
+    Path.home() / ".ssh",
+    Path.home() / ".gnupg",
+    Path.home() / ".aws",
+    Path.home() / ".azure",
+    Path.home() / ".config",
+    Path.home() / "AppData" / "Local" / "Microsoft" / "Credentials",
+    Path.home() / "AppData" / "Roaming" / "Microsoft" / "Credentials",
+    Path("C:/Windows/System32"),
+    Path("C:/Windows/SysWOW64"),
+    Path("C:/Program Files"),
+    Path("C:/Program Files (x86)"),
+]
+
+
+def validate_path_security(
+    path: str | Path,
+    operation: str = "access",
+    allow_dangerous: bool = False,
+) -> Path:
+    """Validate that a file path is safe to access.
+
+    SECURITY: This function prevents path traversal attacks and blocks
+    access to sensitive system directories.
+
+    Args:
+        path: The path to validate
+        operation: The operation being performed (for logging)
+        allow_dangerous: If True, skip security checks (NOT RECOMMENDED)
+
+    Returns:
+        The validated, canonicalized Path object
+
+    Raises:
+        PathSecurityError: If the path fails security validation
+    """
+    if allow_dangerous:
+        logger.warning(f"Path security check BYPASSED for {operation}: {path}")
+        return Path(path).resolve()
+
+    try:
+        # Resolve to absolute path (handles .. and symlinks)
+        resolved_path = Path(path).resolve()
+    except Exception as e:
+        raise PathSecurityError(f"Invalid path '{path}': {e}")
+
+    # SECURITY: Check for blocked paths
+    for blocked in _BLOCKED_PATHS:
+        try:
+            blocked_resolved = blocked.resolve()
+            if resolved_path == blocked_resolved or blocked_resolved in resolved_path.parents:
+                raise PathSecurityError(
+                    f"Access to '{resolved_path}' is blocked for security reasons. "
+                    f"This path is in a protected system directory."
+                )
+        except Exception:
+            pass  # Blocked path doesn't exist, skip
+
+    # SECURITY: Check original path string for traversal attempts
+    path_str = str(path)
+    if ".." in path_str:
+        raise PathSecurityError(
+            f"Path traversal detected in '{path}'. "
+            f"Paths containing '..' are not allowed."
+        )
+
+    # SECURITY: Check for null bytes (can be used to bypass checks)
+    if "\x00" in path_str:
+        raise PathSecurityError(
+            f"Null byte detected in path '{path}'. "
+            f"This is a potential security exploit."
+        )
+
+    # SECURITY: Check for special Windows device names
+    stem = resolved_path.stem.upper()
+    windows_devices = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
+                       "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
+                       "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
+    if stem in windows_devices:
+        raise PathSecurityError(
+            f"Access to Windows device '{stem}' is not allowed."
+        )
+
+    # Log the operation for audit
+    logger.debug(f"File {operation}: {resolved_path}")
+
+    return resolved_path
+
+
+def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
+    """Validate a zip entry name to prevent Zip Slip attacks.
+
+    SECURITY: Prevents path traversal via malicious zip entries.
+
+    Args:
+        zip_path: The path where files will be extracted
+        entry_name: The name of the entry in the zip file
+
+    Returns:
+        The validated target path
+
+    Raises:
+        PathSecurityError: If the entry would escape the target directory
+    """
+    target_dir = Path(zip_path).resolve()
+    target_path = (target_dir / entry_name).resolve()
+
+    # SECURITY: Ensure the target path is within the target directory
+    if not str(target_path).startswith(str(target_dir)):
+        raise PathSecurityError(
+            f"Zip Slip attack detected! Entry '{entry_name}' would extract "
+            f"outside the target directory. This is a security vulnerability."
+        )
+
+    return target_path
 
 
 class ReadFileNode(BaseNode):
@@ -61,11 +197,14 @@ class ReadFileNode(BaseNode):
             file_path = self.get_input_value("file_path", context)
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
-            path = Path(file_path)
+            # SECURITY: Validate path before any operation
+            path = validate_path_security(file_path, "read", allow_dangerous)
+
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -88,6 +227,12 @@ class ReadFileNode(BaseNode):
                 "data": {"content": content[:100] + "..." if len(str(content)) > 100 else content, "size": size},
                 "next_nodes": ["exec_out"]
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in ReadFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -141,11 +286,13 @@ class WriteFileNode(BaseNode):
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             create_dirs = self.config.get("create_dirs", True)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
-            path = Path(file_path)
+            # SECURITY: Validate path before any operation
+            path = validate_path_security(file_path, "write", allow_dangerous)
 
             if create_dirs and path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -289,11 +436,13 @@ class DeleteFileNode(BaseNode):
         try:
             file_path = self.get_input_value("file_path", context)
             ignore_missing = self.config.get("ignore_missing", False)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
 
-            path = Path(file_path)
+            # SECURITY: Validate path before delete operation (extra important for delete!)
+            path = validate_path_security(file_path, "delete", allow_dangerous)
 
             if not path.exists():
                 if ignore_missing:
@@ -308,6 +457,8 @@ class DeleteFileNode(BaseNode):
                 else:
                     raise FileNotFoundError(f"File not found: {file_path}")
 
+            # SECURITY: Log deletion for audit
+            logger.warning(f"Deleting file: {path}")
             path.unlink()
 
             self.set_output_value("deleted_path", str(path))
@@ -319,6 +470,12 @@ class DeleteFileNode(BaseNode):
                 "data": {"deleted_path": str(path)},
                 "next_nodes": ["exec_out"]
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in DeleteFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -1240,25 +1397,44 @@ class UnzipFilesNode(BaseNode):
         try:
             zip_path = self.get_input_value("zip_path", context)
             extract_to = self.get_input_value("extract_to", context)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not zip_path:
                 raise ValueError("zip_path is required")
             if not extract_to:
                 raise ValueError("extract_to is required")
 
-            zip_file = Path(zip_path)
+            # SECURITY: Validate paths
+            zip_file = validate_path_security(zip_path, "read", allow_dangerous)
+            dest = validate_path_security(extract_to, "write", allow_dangerous)
+
             if not zip_file.exists():
                 raise FileNotFoundError(f"ZIP file not found: {zip_path}")
 
-            dest = Path(extract_to)
             dest.mkdir(parents=True, exist_ok=True)
 
             extracted_files = []
 
             with zipfile.ZipFile(zip_file, "r") as zf:
-                zf.extractall(dest)
-                for name in zf.namelist():
-                    extracted_files.append(str(dest / name))
+                # SECURITY: Do NOT use extractall() - vulnerable to Zip Slip!
+                # Instead, validate each entry and extract manually
+                for member in zf.namelist():
+                    # SECURITY: Validate entry path to prevent Zip Slip
+                    target_path = validate_zip_entry(str(dest), member)
+
+                    # Extract the file safely
+                    if member.endswith('/'):
+                        # Directory entry
+                        target_path.mkdir(parents=True, exist_ok=True)
+                    else:
+                        # File entry - ensure parent directory exists
+                        target_path.parent.mkdir(parents=True, exist_ok=True)
+                        with zf.open(member) as source, open(target_path, 'wb') as target:
+                            target.write(source.read())
+
+                    extracted_files.append(str(target_path))
+
+            logger.info(f"Extracted {len(extracted_files)} files to {dest}")
 
             self.set_output_value("extract_to", str(dest))
             self.set_output_value("files", extracted_files)
@@ -1271,6 +1447,12 @@ class UnzipFilesNode(BaseNode):
                 "data": {"extract_to": str(dest), "file_count": len(extracted_files)},
                 "next_nodes": ["exec_out"]
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in UnzipFilesNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)

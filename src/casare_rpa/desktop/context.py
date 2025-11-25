@@ -117,18 +117,28 @@ class DesktopContext:
             RuntimeError: If application fails to launch or window not found
         """
         logger.info(f"Launching application: {path} {args}")
-        
+
         try:
-            # Build command
-            command = f'"{path}"' if ' ' in path else path
+            import shlex
+
+            # SECURITY: Build command as list to avoid shell injection
+            # Never use shell=True with user-provided input
+            cmd_list = [path]
             if args:
-                command += f" {args}"
-            
-            # Launch process
+                # Parse args safely - handles quoted strings properly
+                try:
+                    parsed_args = shlex.split(args)
+                    cmd_list.extend(parsed_args)
+                except ValueError as e:
+                    # If shlex fails (unbalanced quotes), log warning and use simple split
+                    logger.warning(f"Could not parse args with shlex: {e}, using simple split")
+                    cmd_list.extend(args.split())
+
+            # Launch process without shell=True for security
             process = subprocess.Popen(
-                command,
+                cmd_list,
                 cwd=working_dir,
-                shell=True
+                shell=False  # SECURITY: Prevent command injection
             )
             
             self._launched_processes.append(process.pid)

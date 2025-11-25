@@ -13,9 +13,16 @@ import os
 import sys
 from typing import Any, Optional
 
+from loguru import logger
+
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
+
+class SecurityError(Exception):
+    """Raised when a security check fails."""
+    pass
 
 
 # ==================== CLIPBOARD OPERATIONS ====================
@@ -594,29 +601,92 @@ class RunCommandNode(BaseNode):
         self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
+    # SECURITY: Dangerous shell metacharacters that enable command injection
+    DANGEROUS_CHARS = ['|', '&', ';', '$', '`', '(', ')', '{', '}', '<', '>', '\n', '\r']
+
+    # SECURITY: Commands that should never be executed via workflows
+    BLOCKED_COMMANDS = [
+        'rm', 'del', 'format', 'fdisk', 'mkfs',  # Destructive
+        'wget', 'curl', 'invoke-webrequest',  # Network download
+        'nc', 'netcat', 'ncat',  # Network tools
+        'powershell', 'pwsh', 'cmd',  # Shell spawning (use dedicated nodes)
+        'reg', 'regedit',  # Registry modification
+        'net', 'sc',  # Service/network management
+        'shutdown', 'reboot',  # System control
+    ]
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
+        import shlex
 
         try:
             command = str(self.get_input_value("command", context) or "")
             args = self.get_input_value("args", context)
-            shell = self.config.get("shell", True)
+            # SECURITY: Default to shell=False to prevent command injection
+            shell = self.config.get("shell", False)
             timeout = self.config.get("timeout", 60)
             working_dir = self.config.get("working_dir")
             capture_output = self.config.get("capture_output", True)
+            # SECURITY: Allow bypassing security checks only if explicitly enabled
+            allow_dangerous = self.config.get("allow_dangerous", False)
 
             if not command:
                 raise ValueError("command is required")
 
-            # Build command
-            if args:
-                if isinstance(args, list):
-                    if shell:
-                        command = command + " " + " ".join(str(a) for a in args)
-                    else:
-                        command = [command] + [str(a) for a in args]
-                elif isinstance(args, str):
-                    command = command + " " + args
+            # SECURITY: Extract base command for validation
+            base_cmd = command.split()[0].lower() if command else ""
+            base_cmd = base_cmd.replace('.exe', '').replace('.cmd', '').replace('.bat', '')
+
+            # SECURITY: Block dangerous commands unless explicitly allowed
+            if not allow_dangerous:
+                if base_cmd in self.BLOCKED_COMMANDS:
+                    raise SecurityError(
+                        f"Command '{base_cmd}' is blocked for security reasons. "
+                        f"Set allow_dangerous=True in config to override (not recommended)."
+                    )
+
+                # SECURITY: Check for dangerous characters when shell=True
+                if shell:
+                    for char in self.DANGEROUS_CHARS:
+                        if char in command or (isinstance(args, str) and char in args):
+                            raise SecurityError(
+                                f"Dangerous character '{char}' detected in command. "
+                                f"This could enable command injection. "
+                                f"Use shell=False or set allow_dangerous=True to override."
+                            )
+
+            # SECURITY: Build command safely
+            if shell:
+                # When shell=True, concatenate as string (less safe)
+                if args:
+                    if isinstance(args, list):
+                        command = command + " " + " ".join(shlex.quote(str(a)) for a in args)
+                    elif isinstance(args, str):
+                        command = command + " " + args
+                logger.warning(f"RunCommandNode executing with shell=True: {command[:100]}...")
+            else:
+                # When shell=False, build command list (safer)
+                if isinstance(command, str):
+                    try:
+                        cmd_list = shlex.split(command)
+                    except ValueError:
+                        cmd_list = command.split()
+                else:
+                    cmd_list = list(command)
+
+                if args:
+                    if isinstance(args, list):
+                        cmd_list.extend(str(a) for a in args)
+                    elif isinstance(args, str):
+                        try:
+                            cmd_list.extend(shlex.split(args))
+                        except ValueError:
+                            cmd_list.extend(args.split())
+
+                command = cmd_list
+
+            # Log command execution for audit
+            logger.info(f"RunCommandNode executing: {str(command)[:200]}...")
 
             # Run command
             result = subprocess.run(
@@ -671,7 +741,9 @@ class RunPowerShellNode(BaseNode):
 
     Config:
         timeout: Command timeout in seconds (default: 60)
-        execution_policy: 'Bypass', 'Unrestricted', etc. (default: Bypass)
+        execution_policy: 'Bypass', 'Unrestricted', etc. (default: RemoteSigned for security)
+        allow_dangerous: Allow dangerous commands (default: False)
+        constrained_mode: Use PowerShell Constrained Language Mode (default: False)
 
     Inputs:
         script: PowerShell script or command
@@ -682,6 +754,35 @@ class RunPowerShellNode(BaseNode):
         return_code: Process return code
         success: Whether command succeeded
     """
+
+    # SECURITY: Dangerous PowerShell commands/patterns that could be malicious
+    DANGEROUS_PATTERNS = [
+        # Download and execute
+        'invoke-webrequest', 'iwr', 'wget', 'curl',
+        'invoke-restmethod', 'irm',
+        'downloadstring', 'downloadfile',
+        'start-bitstransfer',
+        # Code execution
+        'invoke-expression', 'iex',
+        'invoke-command', 'icm',
+        'start-process', 'saps',
+        # Credential theft
+        'get-credential', 'convertto-securestring',
+        'export-clixml',
+        # System modification
+        'set-executionpolicy',
+        'new-service', 'set-service',
+        'new-scheduledtask', 'register-scheduledjob',
+        # Registry
+        'set-itemproperty', 'new-itemproperty',
+        'remove-itemproperty',
+        # Encoding (often used for obfuscation)
+        '-encodedcommand', '-enc', '-e',
+        'fromb64string', 'tob64string',
+        # Reflection/Assembly loading
+        'add-type', 'reflection.assembly',
+        '[system.reflection',
+    ]
 
     def __init__(self, node_id: str, name: str = "Run PowerShell", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -704,18 +805,44 @@ class RunPowerShellNode(BaseNode):
         try:
             script = str(self.get_input_value("script", context) or "")
             timeout = self.config.get("timeout", 60)
-            execution_policy = self.config.get("execution_policy", "Bypass")
+            # SECURITY: Default to RemoteSigned instead of Bypass
+            execution_policy = self.config.get("execution_policy", "RemoteSigned")
+            allow_dangerous = self.config.get("allow_dangerous", False)
+            constrained_mode = self.config.get("constrained_mode", False)
 
             if not script:
                 raise ValueError("script is required")
+
+            # SECURITY: Check for dangerous patterns unless explicitly allowed
+            if not allow_dangerous:
+                script_lower = script.lower()
+                for pattern in self.DANGEROUS_PATTERNS:
+                    if pattern in script_lower:
+                        raise SecurityError(
+                            f"Dangerous PowerShell pattern '{pattern}' detected in script. "
+                            f"Set allow_dangerous=True in config to override (not recommended)."
+                        )
+
+            # SECURITY: Log all PowerShell executions for audit
+            logger.warning(
+                f"RunPowerShellNode executing script (policy={execution_policy}, "
+                f"constrained={constrained_mode}): {script[:200]}..."
+            )
 
             # Build PowerShell command
             ps_cmd = [
                 "powershell.exe",
                 "-ExecutionPolicy", execution_policy,
                 "-NoProfile",
-                "-Command", script
+                "-NonInteractive",  # SECURITY: Prevent interactive prompts
             ]
+
+            # SECURITY: Add Constrained Language Mode if requested
+            if constrained_mode:
+                # Wrap script in constrained language mode
+                script = f'$ExecutionContext.SessionState.LanguageMode = "ConstrainedLanguage"; {script}'
+
+            ps_cmd.extend(["-Command", script])
 
             result = subprocess.run(
                 ps_cmd,

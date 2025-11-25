@@ -1,15 +1,23 @@
 """
 Credential Manager for CasareRPA
 
-High-level interface for managing credentials with support for:
-- HashiCorp Vault (recommended for production)
-- Local encrypted storage (fallback for offline/development)
+SECURITY: This module enforces HashiCorp Vault for ALL credential storage.
+Local storage has been disabled for security reasons.
 
 Credentials are organized by scope:
 - GLOBAL: Organization-wide credentials
 - WORKFLOW: Credentials specific to a workflow
 - ROBOT: Credentials specific to a robot
 - ASSET: RPA Asset credentials (files, queues, etc.)
+
+Setup Requirements:
+    1. Install HashiCorp Vault: https://www.vaultproject.io/downloads
+    2. Configure environment variables:
+       - VAULT_ADDR: Vault server URL (e.g., http://127.0.0.1:8200)
+       - VAULT_TOKEN: Authentication token
+       Or use AppRole auth:
+       - VAULT_ROLE_ID: AppRole role ID
+       - VAULT_SECRET_ID: AppRole secret ID
 
 Usage:
     manager = CredentialManager.create()
@@ -167,11 +175,19 @@ class Credential:
         return datetime.now() > self.expires_at
 
 
+class VaultRequiredError(Exception):
+    """Raised when Vault is required but not available."""
+    pass
+
+
 class CredentialManager:
     """High-level credential management for CasareRPA.
 
+    SECURITY: This manager REQUIRES HashiCorp Vault for all credential operations.
+    Local storage has been disabled for security reasons.
+
     Provides a unified interface for storing and retrieving credentials
-    with support for different scopes and backend storage systems.
+    with support for different scopes.
 
     Example:
         >>> manager = CredentialManager.create()
@@ -181,16 +197,25 @@ class CredentialManager:
         admin
     """
 
-    def __init__(self, vault_client: Optional[VaultClient] = None):
+    def __init__(self, vault_client: VaultClient):
         """Initialize credential manager.
 
         Args:
-            vault_client: Optional VaultClient for Vault backend.
-                         If None, will use local encrypted storage.
+            vault_client: VaultClient for Vault backend (REQUIRED).
+
+        Raises:
+            VaultRequiredError: If vault_client is None.
         """
+        if vault_client is None:
+            raise VaultRequiredError(
+                "HashiCorp Vault is REQUIRED for credential management. "
+                "Local storage has been disabled for security reasons. "
+                "Please configure Vault by setting VAULT_ADDR and VAULT_TOKEN "
+                "(or VAULT_ROLE_ID and VAULT_SECRET_ID for AppRole auth) "
+                "environment variables."
+            )
         self.vault = vault_client
-        self._local_store_path = Path.home() / ".casare_rpa" / "credentials"
-        self._local_store_path.mkdir(parents=True, exist_ok=True)
+        logger.info("CredentialManager initialized with Vault backend")
 
     @classmethod
     def create(
@@ -199,55 +224,72 @@ class CredentialManager:
         vault_token: Optional[str] = None,
         vault_role_id: Optional[str] = None,
         vault_secret_id: Optional[str] = None,
-        use_local_fallback: bool = True,
     ) -> "CredentialManager":
         """Factory method to create a CredentialManager.
 
-        Attempts to connect to Vault if configured, falls back to local storage.
+        SECURITY: This method REQUIRES HashiCorp Vault. Local storage is disabled.
 
         Args:
-            vault_url: Vault server URL
-            vault_token: Vault token (for development)
-            vault_role_id: AppRole role ID
-            vault_secret_id: AppRole secret ID
-            use_local_fallback: If True, use local storage when Vault unavailable
+            vault_url: Vault server URL (or set VAULT_ADDR env var)
+            vault_token: Vault token (or set VAULT_TOKEN env var)
+            vault_role_id: AppRole role ID (or set VAULT_ROLE_ID env var)
+            vault_secret_id: AppRole secret ID (or set VAULT_SECRET_ID env var)
 
         Returns:
             Configured CredentialManager instance
+
+        Raises:
+            VaultRequiredError: If Vault is not configured or unavailable
+            VaultConnectionError: If connection to Vault fails
         """
-        vault_client = None
+        # SECURITY: Check if hvac library is available
+        if not HVAC_AVAILABLE:
+            raise VaultRequiredError(
+                "HashiCorp Vault client library (hvac) is not installed. "
+                "Install it with: pip install hvac"
+            )
 
-        # Try to create Vault client
-        if HVAC_AVAILABLE and (vault_url or os.environ.get("VAULT_ADDR")):
-            try:
-                if vault_url and vault_token:
-                    config = VaultConfig(
-                        url=vault_url,
-                        auth_method="token",
-                        token=vault_token,
-                    )
-                elif vault_url and vault_role_id and vault_secret_id:
-                    config = VaultConfig(
-                        url=vault_url,
-                        auth_method="approle",
-                        role_id=vault_role_id,
-                        secret_id=vault_secret_id,
-                    )
-                else:
-                    config = VaultConfig.from_env()
+        # Check for Vault configuration
+        vault_addr = vault_url or os.environ.get("VAULT_ADDR")
+        if not vault_addr:
+            raise VaultRequiredError(
+                "Vault is REQUIRED but not configured. "
+                "Set VAULT_ADDR environment variable or pass vault_url parameter. "
+                "Example: VAULT_ADDR=http://127.0.0.1:8200"
+            )
 
-                vault_client = VaultClient(config)
-                logger.info("CredentialManager: Using HashiCorp Vault backend")
+        try:
+            if vault_url and vault_token:
+                config = VaultConfig(
+                    url=vault_url,
+                    auth_method="token",
+                    token=vault_token,
+                )
+            elif vault_url and vault_role_id and vault_secret_id:
+                config = VaultConfig(
+                    url=vault_url,
+                    auth_method="approle",
+                    role_id=vault_role_id,
+                    secret_id=vault_secret_id,
+                )
+            else:
+                config = VaultConfig.from_env()
 
-            except (VaultConnectionError, VaultPermissionError) as e:
-                logger.warning(f"Vault connection failed: {e}")
-                if not use_local_fallback:
-                    raise
+            vault_client = VaultClient(config)
+            logger.info(f"CredentialManager: Connected to Vault at {vault_addr}")
 
-        if vault_client is None:
-            logger.info("CredentialManager: Using local encrypted storage")
+            return cls(vault_client=vault_client)
 
-        return cls(vault_client=vault_client)
+        except VaultConnectionError as e:
+            raise VaultRequiredError(
+                f"Failed to connect to Vault at {vault_addr}: {e}. "
+                "Ensure Vault is running and accessible."
+            ) from e
+        except VaultPermissionError as e:
+            raise VaultRequiredError(
+                f"Vault authentication failed: {e}. "
+                "Check your VAULT_TOKEN or AppRole credentials."
+            ) from e
 
     def _build_path(
         self,
@@ -281,11 +323,17 @@ class CredentialManager:
         """
         path = self._build_path(name, scope, scope_id)
 
-        if self.vault:
-            data = self.vault.get_secret(path)
-            return Credential.from_dict(data)
-        else:
-            return self._get_local_credential(path)
+        # SECURITY: Audit log credential access
+        logger.info(f"Credential access: {path}")
+
+        data = self.vault.get_secret(path)
+        credential = Credential.from_dict(data)
+
+        # Check for expiration
+        if credential.is_expired():
+            logger.warning(f"Credential '{name}' has expired")
+
+        return credential
 
     def store_credential(
         self,
@@ -327,12 +375,9 @@ class CredentialManager:
             expires_at=expires_at,
         )
 
-        if self.vault:
-            self.vault.store_secret(path, credential.to_dict())
-            logger.debug(f"Stored credential in Vault: {path}")
-        else:
-            self._store_local_credential(path, credential)
-            logger.debug(f"Stored credential locally: {path}")
+        self.vault.store_secret(path, credential.to_dict())
+        # SECURITY: Audit log credential storage
+        logger.info(f"Credential stored: {path} (type={credential_type.value})")
 
     def delete_credential(
         self,
@@ -351,12 +396,9 @@ class CredentialManager:
         """
         path = self._build_path(name, scope, scope_id)
 
-        if self.vault:
-            self.vault.delete_secret(path, destroy=permanent)
-        else:
-            self._delete_local_credential(path)
-
-        logger.info(f"Deleted credential: {path}")
+        self.vault.delete_secret(path, destroy=permanent)
+        # SECURITY: Audit log credential deletion
+        logger.info(f"Credential deleted: {path} (permanent={permanent})")
 
     def list_credentials(
         self,
@@ -377,10 +419,7 @@ class CredentialManager:
         else:
             path = scope.value
 
-        if self.vault:
-            return self.vault.list_secrets(path)
-        else:
-            return self._list_local_credentials(path)
+        return self.vault.list_secrets(path)
 
     def credential_exists(
         self,
@@ -404,65 +443,25 @@ class CredentialManager:
         except (VaultSecretNotFoundError, FileNotFoundError):
             return False
 
-    # Local storage methods (fallback when Vault is unavailable)
-
-    def _get_local_credential(self, path: str) -> Credential:
-        """Retrieve credential from local encrypted storage."""
-        file_path = self._local_store_path / f"{path.replace('/', '_')}.json"
-
-        if not file_path.exists():
-            raise VaultSecretNotFoundError(f"Credential not found: {path}")
-
-        # In production, this should decrypt the file
-        # For now, using simple JSON storage
-        with open(file_path) as f:
-            data = json.load(f)
-
-        return Credential.from_dict(data)
-
-    def _store_local_credential(self, path: str, credential: Credential) -> None:
-        """Store credential in local encrypted storage."""
-        file_path = self._local_store_path / f"{path.replace('/', '_')}.json"
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # In production, this should encrypt the file
-        # For now, using simple JSON storage with restricted permissions
-        with open(file_path, "w") as f:
-            json.dump(credential.to_dict(), f, indent=2)
-
-        # Restrict file permissions (Windows doesn't have chmod)
-        try:
-            import stat
-            os.chmod(file_path, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception:
-            pass  # Skip on Windows
-
-    def _delete_local_credential(self, path: str) -> None:
-        """Delete credential from local storage."""
-        file_path = self._local_store_path / f"{path.replace('/', '_')}.json"
-        if file_path.exists():
-            file_path.unlink()
-
-    def _list_local_credentials(self, path: str) -> list[str]:
-        """List credentials in local storage."""
-        prefix = path.replace("/", "_")
-        credentials = []
-
-        for file in self._local_store_path.glob(f"{prefix}_*.json"):
-            # Extract credential name from filename
-            name = file.stem.replace(prefix + "_", "")
-            credentials.append(name)
-
-        return credentials
+    # NOTE: Local storage methods have been REMOVED for security reasons.
+    # All credential storage now requires HashiCorp Vault.
 
 
 # Convenience functions for quick access
+# NOTE: These functions REQUIRE HashiCorp Vault to be configured.
+# Set VAULT_ADDR and VAULT_TOKEN environment variables before use.
 
 _default_manager: Optional[CredentialManager] = None
 
 
 def get_default_manager() -> CredentialManager:
-    """Get or create the default credential manager."""
+    """Get or create the default credential manager.
+
+    SECURITY: Requires HashiCorp Vault to be configured.
+
+    Raises:
+        VaultRequiredError: If Vault is not configured
+    """
     global _default_manager
     if _default_manager is None:
         _default_manager = CredentialManager.create()
@@ -474,7 +473,14 @@ def get_credential(
     scope: CredentialScope = CredentialScope.GLOBAL,
     scope_id: Optional[str] = None,
 ) -> Credential:
-    """Convenience function to get a credential using default manager."""
+    """Convenience function to get a credential using default manager.
+
+    SECURITY: Requires HashiCorp Vault to be configured.
+
+    Raises:
+        VaultRequiredError: If Vault is not configured
+        VaultSecretNotFoundError: If credential doesn't exist
+    """
     return get_default_manager().get_credential(name, scope, scope_id)
 
 
@@ -486,7 +492,13 @@ def store_credential(
     scope_id: Optional[str] = None,
     **kwargs,
 ) -> None:
-    """Convenience function to store a credential using default manager."""
+    """Convenience function to store a credential using default manager.
+
+    SECURITY: Requires HashiCorp Vault to be configured.
+
+    Raises:
+        VaultRequiredError: If Vault is not configured
+    """
     get_default_manager().store_credential(
         name, username, password, scope, scope_id, **kwargs
     )

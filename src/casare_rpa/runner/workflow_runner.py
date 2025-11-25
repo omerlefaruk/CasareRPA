@@ -478,6 +478,109 @@ class WorkflowRunner:
         # Execute nodes in order, following connections
         nodes_to_execute = [start_node]
 
+        # Track active loops for back-edge routing
+        # Each entry: {"loop_node_id": str, "loop_body_nodes": Set[str]}
+        active_loops: List[Dict[str, Any]] = []
+
+        # Track active try blocks for error handling
+        # Each entry: {"try_node_id": str, "try_body_nodes": Set[str]}
+        active_try_blocks: List[Dict[str, Any]] = []
+
+        def _find_try_body_nodes(try_node_id: str) -> Set[str]:
+            """Find all nodes reachable from a try node's try_body output."""
+            body_nodes: Set[str] = set()
+            to_explore: List[str] = []
+
+            # Find nodes connected to try_body port
+            for conn in self.workflow.connections:
+                if conn.source_node == try_node_id and conn.source_port == "try_body":
+                    to_explore.append(conn.target_node)
+
+            # BFS to find all reachable nodes
+            while to_explore:
+                node_id = to_explore.pop(0)
+                if node_id in body_nodes or node_id == try_node_id:
+                    continue
+                body_nodes.add(node_id)
+
+                # Add connected nodes
+                for conn in self.workflow.connections:
+                    if conn.source_node == node_id:
+                        if conn.target_node != try_node_id:
+                            to_explore.append(conn.target_node)
+
+            return body_nodes
+
+        def _handle_try_error(context: ExecutionContext, error_msg: str, error_type: str) -> Optional[str]:
+            """Handle error in try block - set error state and return try node id."""
+            if not active_try_blocks:
+                return None
+            try_info = active_try_blocks.pop()
+            try_node_id = try_info["try_node_id"]
+            # Set error state for TryNode to read
+            try_state_key = f"{try_node_id}_state"
+            if try_state_key in context.variables:
+                context.variables[try_state_key] = {
+                    "in_try_block": False,
+                    "error_occurred": True,
+                    "error_message": error_msg,
+                    "error_type": error_type
+                }
+            return try_node_id
+
+        def _complete_try_block(context: ExecutionContext, try_node_id: str) -> None:
+            """Mark try block as successfully completed."""
+            try_state_key = f"{try_node_id}_state"
+            if try_state_key in context.variables:
+                context.variables[try_state_key] = {
+                    "in_try_block": False,
+                    "error_occurred": False
+                }
+
+        def _find_loop_body_nodes(loop_node_id: str) -> Set[str]:
+            """Find all nodes reachable from a loop's loop_body output."""
+            body_nodes: Set[str] = set()
+            to_explore: List[str] = []
+
+            # Find nodes connected to loop_body port
+            for conn in self.workflow.connections:
+                if conn.source_node == loop_node_id and conn.source_port == "loop_body":
+                    to_explore.append(conn.target_node)
+
+            # BFS to find all reachable nodes (until we hit the loop node again or completed)
+            while to_explore:
+                node_id = to_explore.pop(0)
+                if node_id in body_nodes or node_id == loop_node_id:
+                    continue
+                body_nodes.add(node_id)
+
+                # Add connected nodes (following exec_out connections)
+                for conn in self.workflow.connections:
+                    if conn.source_node == node_id:
+                        # Don't follow back to the same loop's completed port
+                        if conn.target_node != loop_node_id:
+                            to_explore.append(conn.target_node)
+
+            return body_nodes
+
+        def _handle_break(context: ExecutionContext) -> Optional[str]:
+            """Handle break signal - clean up loop state and return loop node id."""
+            if not active_loops:
+                return None
+            loop_info = active_loops.pop()
+            loop_node_id = loop_info["loop_node_id"]
+            # Clean up loop state in context
+            loop_state_key = f"{loop_node_id}_loop_state"
+            if loop_state_key in context.variables:
+                del context.variables[loop_state_key]
+            return loop_node_id
+
+        def _handle_continue() -> Optional[str]:
+            """Handle continue signal - return loop node id to re-execute."""
+            if not active_loops:
+                return None
+            return active_loops[-1]["loop_node_id"]
+
         while nodes_to_execute and not self._stop_requested:
             # Wait if paused
             await self._pause_event.wait()
@@ -498,7 +601,30 @@ class WorkflowRunner:
             success, result = await self._execute_node(current_node)
 
             if not success:
-                if self.continue_on_error:
+                # Check if we're inside a try block
+                in_try_block = False
+                for try_info in active_try_blocks:
+                    if current_node.node_id in try_info["try_body_nodes"]:
+                        in_try_block = True
+                        break
+
+                if in_try_block:
+                    # Error occurred in try block - route to catch
+                    error_msg = result.get("error", "Unknown error") if result else "Unknown error"
+                    error_type = type(result.get("error", Exception())).__name__ if result else "Exception"
+                    logger.info(f"Error in try block at {current_node.node_id}: {error_msg}")
+
+                    try_node_id = _handle_try_error(self.context, error_msg, error_type)
+                    if try_node_id:
+                        # Clear remaining try body nodes from queue
+                        try_body_nodes = _find_try_body_nodes(try_node_id)
+                        nodes_to_execute = [n for n in nodes_to_execute if n.node_id not in try_body_nodes]
+                        # Re-add try node to process the error (will route to catch)
+                        nodes_to_execute.insert(0, self.workflow.nodes[try_node_id])
+                        logger.debug(f"Error caught, re-executing try node {try_node_id} for catch routing")
+                    continue
+
+                elif self.continue_on_error:
                     logger.warning(
                         f"Node {current_node.node_id} failed but continue_on_error is enabled. "
                         f"Continuing workflow..."
@@ -513,15 +639,32 @@ class WorkflowRunner:
             control_flow = result.get("control_flow") if result else None
 
             if control_flow == "break":
-                # Break from loop - find the loop node and skip to its 'completed' output
+                # Break from loop - clean up and route to completed
                 logger.info(f"Break signal received from {current_node.node_id}")
-                # Clear any remaining loop body nodes from queue
-                # The loop node itself should handle the break by routing to 'completed'
+                loop_node_id = _handle_break(self.context)
+                if loop_node_id:
+                    # Clear any loop body nodes from the queue
+                    loop_body_nodes = _find_loop_body_nodes(loop_node_id)
+                    nodes_to_execute = [n for n in nodes_to_execute if n.node_id not in loop_body_nodes]
+                    # Route to completed output of loop node
+                    for conn in self.workflow.connections:
+                        if conn.source_node == loop_node_id and conn.source_port == "completed":
+                            if conn.target_node in self.workflow.nodes:
+                                nodes_to_execute.insert(0, self.workflow.nodes[conn.target_node])
+                                logger.debug(f"Break: routing to {loop_node_id}.completed -> {conn.target_node}")
                 continue
+
             elif control_flow == "continue":
-                # Continue to next iteration - skip remaining loop body
+                # Continue to next iteration - re-add loop node to queue
                 logger.info(f"Continue signal received from {current_node.node_id}")
-                # The loop node will be re-executed to advance to next iteration
+                loop_node_id = _handle_continue()
+                if loop_node_id:
+                    # Clear remaining loop body nodes from queue
+                    loop_body_nodes = active_loops[-1].get("loop_body_nodes", set())
+                    nodes_to_execute = [n for n in nodes_to_execute if n.node_id not in loop_body_nodes]
+                    # Re-add the loop node to execute next iteration
+                    nodes_to_execute.insert(0, self.workflow.nodes[loop_node_id])
+                    logger.debug(f"Continue: re-executing loop {loop_node_id}")
                 continue
 
             # Get next nodes based on execution result
@@ -529,6 +672,39 @@ class WorkflowRunner:
                 # Dynamic routing - use the next_nodes from result
                 next_port_names = result["next_nodes"]
                 next_nodes = []
+
+                # Check if this is a loop node entering loop_body
+                if is_loop_node and "loop_body" in next_port_names:
+                    # Track this loop as active
+                    loop_body_nodes = _find_loop_body_nodes(current_node.node_id)
+                    active_loops.append({
+                        "loop_node_id": current_node.node_id,
+                        "loop_body_nodes": loop_body_nodes
+                    })
+                    logger.debug(f"Entered loop {current_node.node_id}, body nodes: {loop_body_nodes}")
+
+                # Check if loop is completing
+                if is_loop_node and "completed" in next_port_names:
+                    # Remove this loop from active loops if present
+                    active_loops = [l for l in active_loops if l["loop_node_id"] != current_node.node_id]
+                    logger.debug(f"Loop {current_node.node_id} completed")
+
+                # Check if this is a TryNode entering try_body
+                is_try_node = current_node.__class__.__name__ == "TryNode"
+                if is_try_node and "try_body" in next_port_names:
+                    # Track this try block as active
+                    try_body_nodes = _find_try_body_nodes(current_node.node_id)
+                    active_try_blocks.append({
+                        "try_node_id": current_node.node_id,
+                        "try_body_nodes": try_body_nodes
+                    })
+                    logger.debug(f"Entered try block {current_node.node_id}, body nodes: {try_body_nodes}")
+
+                # Check if try block is completing (success or catch)
+                if is_try_node and ("success" in next_port_names or "catch" in next_port_names):
+                    # Remove this try block from active if present
+                    active_try_blocks = [t for t in active_try_blocks if t["try_node_id"] != current_node.node_id]
+                    logger.debug(f"Try block {current_node.node_id} completed")
 
                 for port_name in next_port_names:
                     # Find connections from current node's specific output port
@@ -541,6 +717,41 @@ class WorkflowRunner:
                                 logger.debug(f"Dynamic routing: {current_node.node_id}.{port_name} -> {target_node_id}")
 
                 nodes_to_execute.extend(next_nodes)
+
+                # Loop back-edge handling: If we're in a loop body and have no more nodes,
+                # we need to re-execute the loop node for the next iteration
+                if not nodes_to_execute and active_loops:
+                    # Check if current node is part of any active loop body
+                    for loop_info in reversed(active_loops):
+                        if current_node.node_id in loop_info["loop_body_nodes"]:
+                            # Check if there are any more loop body nodes pending
+                            pending_body_nodes = loop_info["loop_body_nodes"] - self.executed_nodes
+                            pending_body_nodes.discard(current_node.node_id)
+                            if not pending_body_nodes:
+                                # All loop body nodes executed, re-add loop node
+                                loop_node = self.workflow.nodes[loop_info["loop_node_id"]]
+                                nodes_to_execute.append(loop_node)
+                                logger.debug(f"Loop back-edge: returning to {loop_info['loop_node_id']}")
+                            break
+
+                # Try block back-edge handling: If try body completes successfully,
+                # route back to TryNode for success path
+                if not nodes_to_execute and active_try_blocks:
+                    # Check if current node is part of any active try body
+                    for try_info in reversed(active_try_blocks):
+                        if current_node.node_id in try_info["try_body_nodes"]:
+                            # Check if there are any more try body nodes pending
+                            pending_body_nodes = try_info["try_body_nodes"] - self.executed_nodes
+                            pending_body_nodes.discard(current_node.node_id)
+                            if not pending_body_nodes:
+                                # All try body nodes executed successfully
+                                try_node_id = try_info["try_node_id"]
+                                _complete_try_block(self.context, try_node_id)
+                                # Re-add try node to process success path
+                                try_node = self.workflow.nodes[try_node_id]
+                                nodes_to_execute.append(try_node)
+                                logger.debug(f"Try body completed successfully, routing to {try_node_id} for success")
+                            break
             else:
                 # Fallback to all connected outputs (old behavior)
                 next_nodes = self._get_next_nodes(current_node.node_id)

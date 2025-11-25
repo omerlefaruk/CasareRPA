@@ -1,13 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python installer/build_dev_installer.py:*)",
-      "Bash(python -c:*)",
-      "WebSearch",
-      "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs",
-      "Bash(python -m pytest tests/ -v --tb=short -q)",
-      "Bash(python -m pytest tests/ -q --tb=no)"
+      "Bash(\"C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe\" /DAppVersion=1.0.0 /DSourceDir=....dist /DOutputDir=..output \"C:\\Users\\Rau\\Desktop\\CasareRPA\\installer\\inno\\casarerpa-dev.iss\")",
+      "Bash(\"C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe\" casarerpa-dev.iss)",
+      "Bash(xargs:*)",
+      "Bash(python:*)",
+      "Bash(pyinstaller:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
