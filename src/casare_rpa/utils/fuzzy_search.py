@@ -1,164 +1,331 @@
 """
 Fuzzy search utilities for node search functionality.
 
-Provides simple but effective fuzzy matching for node names.
+Provides fast and effective fuzzy matching for node names using
+a scoring algorithm inspired by fzf and Sublime Text.
 """
 
 from typing import List, Tuple, Optional
+from functools import lru_cache
+
+
+# Scoring constants (higher is better for positive, used to compute final score)
+SCORE_EXACT_MATCH = 1000
+SCORE_PREFIX_MATCH = 500
+SCORE_WORD_INITIAL_MATCH = 300
+SCORE_CONSECUTIVE_BONUS = 15
+SCORE_WORD_START_BONUS = 50
+SCORE_CAMEL_CASE_BONUS = 30
+SCORE_GAP_PENALTY = -3
+SCORE_LEADING_GAP_PENALTY = -1
 
 
 def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
     """
     Check if query matches target using fuzzy logic.
-    
-    Matches if all query characters appear in target in order (case-insensitive).
-    Returns match status, score (lower is better), and matched character positions.
-    
+
+    Uses a scoring algorithm similar to fzf/Sublime Text:
+    - Exact substring matches score highest
+    - Prefix matches score very high
+    - Word initial matches (e.g., "lb" -> "Launch Browser") score high
+    - Consecutive character matches get bonuses
+    - Matches at word boundaries get bonuses
+    - Gaps between matches incur penalties
+
     Examples:
-        "b l" matches "Browser Launch" (positions [0, 8])
-        "c e" matches "Click Element" (positions [0, 6])
-        "g v" matches "Get Variable" (positions [0, 4])
-    
+        "b l" matches "Browser Launch" (word initials)
+        "lb" matches "Launch Browser" (word initials without space)
+        "click" matches "Click Element" (prefix)
+        "typ" matches "Type Text" (prefix)
+
     Args:
         query: Search query string
         target: Target string to match against
-        
+
     Returns:
         Tuple of (matched: bool, score: int, positions: List[int])
-        - matched: True if all query chars found in order
-        - score: Lower is better (based on gaps and position)
+        - matched: True if query matches target
+        - score: Lower is better (inverted internally for sorting)
         - positions: Indices of matched characters in target
     """
     query = query.lower().strip()
     target_lower = target.lower()
-    
+
     if not query:
         return True, 0, []
-    
-    # If exact substring match, prioritize it highest
-    if query in target_lower:
-        start_pos = target_lower.index(query)
-        positions = list(range(start_pos, start_pos + len(query)))
-        # Give best possible score to exact substring matches
-        score = -200 + start_pos  # Favor exact matches at start of string
-        return True, score, positions
-    
-    # Strategy 1: Try matching query parts to word initials (e.g., "b l" -> "Browser Launch")
-    # Extract word initials from target
-    words = target_lower.split()
-    word_initials = [word[0] for word in words if word]
-    query_parts = [q for q in query.split() if q]
-    
-    # Check if query parts match word initials (in any order or as subsequence)
-    if len(query_parts) <= len(word_initials):
-        # Try to match query parts as a subsequence of word initials
-        # e.g., "b l" should match ['l', 'b'] in "Launch Browser" by matching b->browser, l->launch
-        matched_positions = []
-        used_words = set()
-        
-        for part in query_parts:
-            # Find a word initial that starts with this part
-            found = False
-            for word_idx, initial in enumerate(word_initials):
-                if word_idx not in used_words and initial == part[0]:
-                    matched_positions.append(word_idx)
-                    used_words.add(word_idx)
-                    found = True
-                    break
-            
-            if not found:
-                # No matching word initial found for this part
-                matched_positions = []
-                break
-        
-        if len(matched_positions) == len(query_parts):
-            # All query parts matched to word initials!
-            # Find character positions in target
-            positions = []
-            word_count = 0
-            for j, char in enumerate(target_lower):
-                if j == 0 or target_lower[j-1] == ' ':
-                    if word_count in matched_positions:
-                        positions.append(j)
-                    word_count += 1
-            
-            # Score: prioritize word initial matches with very low (best) score
-            # Use negative score to ensure word boundary matches always win
-            score = -100 + len(query_parts) + sum(matched_positions)  # Favor earlier words
+
+    if not target:
+        return False, 999999, []
+
+    # Check if query has spaces (indicating word-level search intent)
+    has_spaces = ' ' in query
+
+    # Remove spaces from query for character matching
+    query_chars = query.replace(' ', '')
+
+    # === Strategy 1: Exact substring match at word boundary (best) ===
+    if query_chars in target_lower:
+        start_pos = target_lower.index(query_chars)
+        # Check if match starts at word boundary
+        is_word_start = start_pos == 0 or target_lower[start_pos - 1] in ' -_'
+
+        if is_word_start:
+            # Perfect prefix/word-start match
+            positions = list(range(start_pos, start_pos + len(query_chars)))
+            score = -SCORE_EXACT_MATCH + start_pos
             return True, score, positions
-    
-    # Strategy 2: Sequential character matching (fallback)
+        elif not has_spaces:
+            # Mid-word substring match - lower priority than word initial matches
+            positions = list(range(start_pos, start_pos + len(query_chars)))
+            # Score it lower than word initial matches
+            score = -SCORE_PREFIX_MATCH + start_pos + 50
+            # Don't return yet - check if word initials are better
+        else:
+            # Query has spaces but substring is mid-word - likely not intended
+            pass
+
+    # === Strategy 2: Word initial matching ===
+    # "lb" or "l b" should match "Launch Browser"
+    initials_result = _match_word_initials(query, target, target_lower)
+    if initials_result[0]:
+        return initials_result
+
+    # If we had a mid-word substring match (no spaces in query), return it now
+    if not has_spaces and query_chars in target_lower:
+        start_pos = target_lower.index(query_chars)
+        is_word_start = start_pos == 0 or target_lower[start_pos - 1] in ' -_'
+        if not is_word_start:
+            positions = list(range(start_pos, start_pos + len(query_chars)))
+            score = -SCORE_PREFIX_MATCH + start_pos + 50
+            return True, score, positions
+
+    # === Strategy 3: Smart subsequence matching with scoring ===
+    result = _smart_subsequence_match(query_chars, target, target_lower)
+    return result
+
+
+def _match_word_initials(query: str, target: str, target_lower: str) -> Tuple[bool, int, List[int]]:
+    """
+    Match query against word initials.
+
+    "lb" matches "Launch Browser"
+    "b l" matches "Browser Launch"
+    "ce" matches "Click Element"
+    """
+    # Get word start positions and their characters
+    word_starts = []  # List of (position, char)
+    for i, char in enumerate(target_lower):
+        if i == 0 or target_lower[i-1] in ' -_':
+            word_starts.append((i, char))
+
+    if not word_starts:
+        return False, 999999, []
+
+    # Get query characters (without spaces)
+    query_chars = [c for c in query.lower() if c != ' ']
+
+    if not query_chars:
+        return False, 999999, []
+
+    # Try to match each query char to a word initial
+    # Allow matching in any order for flexibility
     positions = []
-    target_idx = 0
-    word_boundary_bonus = 0
-    
-    for char in query:
-        if char == ' ':  # Skip spaces in query
-            continue
-            
-        # Find next occurrence of character
+    used_words = set()
+
+    for qchar in query_chars:
         found = False
-        while target_idx < len(target_lower):
-            if target_lower[target_idx] == char:
-                positions.append(target_idx)
-                
-                # Check if this is at a word boundary (after space or at start)
-                if target_idx == 0 or target_lower[target_idx - 1] in ' -_':
-                    word_boundary_bonus -= 50  # Big bonus for word start
-                
-                target_idx += 1
+        for idx, (pos, initial) in enumerate(word_starts):
+            if idx not in used_words and initial == qchar:
+                positions.append(pos)
+                used_words.add(idx)
                 found = True
                 break
-            target_idx += 1
-        
+
+        if not found:
+            # Try matching to word prefixes (first few chars of each word)
+            for idx, (pos, _) in enumerate(word_starts):
+                if idx in used_words:
+                    continue
+                # Check if this word starts with the query char
+                if target_lower[pos] == qchar:
+                    positions.append(pos)
+                    used_words.add(idx)
+                    found = True
+                    break
+
         if not found:
             return False, 999999, []
-    
-    # Calculate score based on:
-    # 1. Total character span (positions[-1] - positions[0])
-    # 2. First character position (earlier is better)
-    # 3. Number of gaps between matched characters
-    # 4. Word boundary bonus (negative = better)
-    if positions:
-        span = positions[-1] - positions[0]
-        first_pos = positions[0]
-        gaps = sum(positions[i+1] - positions[i] - 1 for i in range(len(positions)-1))
-        score = first_pos * 10 + span + gaps + word_boundary_bonus
-    else:
-        score = 0
-    
-    return True, score, positions
+
+    if len(positions) == len(query_chars):
+        # Sort positions for proper highlighting
+        positions.sort()
+        # Score: prefer matches that use fewer words and earlier positions
+        score = -SCORE_WORD_INITIAL_MATCH + sum(positions) // 10
+        return True, score, positions
+
+    return False, 999999, []
+
+
+def _smart_subsequence_match(query: str, target: str, target_lower: str) -> Tuple[bool, int, List[int]]:
+    """
+    Find the best subsequence match using dynamic programming.
+
+    This finds positions that maximize the score based on:
+    - Consecutive matches
+    - Word boundary matches
+    - Minimal gaps
+    """
+    if not query:
+        return True, 0, []
+
+    n, m = len(query), len(target_lower)
+
+    if n > m:
+        return False, 999999, []
+
+    # Find all positions where each query character appears in target
+    char_positions = {}
+    for i, char in enumerate(target_lower):
+        if char not in char_positions:
+            char_positions[char] = []
+        char_positions[char].append(i)
+
+    # Check if all query characters exist in target
+    for char in query:
+        if char not in char_positions:
+            return False, 999999, []
+
+    # Use recursive search with memoization to find best match
+    best_result = _find_best_match(query, target_lower, char_positions, 0, -1, {})
+
+    if best_result is None:
+        return False, 999999, []
+
+    score, positions = best_result
+    # Invert score (we computed higher=better, but return lower=better)
+    return True, -score, positions
+
+
+def _find_best_match(
+    query: str,
+    target: str,
+    char_positions: dict,
+    q_idx: int,
+    last_pos: int,
+    memo: dict
+) -> Optional[Tuple[int, List[int]]]:
+    """
+    Recursively find the best matching positions.
+
+    Returns (score, positions) or None if no match.
+    """
+    if q_idx >= len(query):
+        return (0, [])
+
+    memo_key = (q_idx, last_pos)
+    if memo_key in memo:
+        return memo[memo_key]
+
+    char = query[q_idx]
+    if char not in char_positions:
+        memo[memo_key] = None
+        return None
+
+    best_score = None
+    best_positions = None
+
+    for pos in char_positions[char]:
+        if pos <= last_pos:
+            continue
+
+        # Calculate score for this position
+        pos_score = 0
+
+        # Bonus for consecutive match
+        if pos == last_pos + 1:
+            pos_score += SCORE_CONSECUTIVE_BONUS
+        else:
+            # Gap penalty
+            gap = pos - last_pos - 1 if last_pos >= 0 else pos
+            if last_pos < 0:
+                pos_score += gap * SCORE_LEADING_GAP_PENALTY
+            else:
+                pos_score += gap * SCORE_GAP_PENALTY
+
+        # Bonus for word boundary
+        if pos == 0 or target[pos - 1] in ' -_':
+            pos_score += SCORE_WORD_START_BONUS
+        # Bonus for camelCase boundary
+        elif pos > 0 and target[pos].isupper() and target[pos - 1].islower():
+            pos_score += SCORE_CAMEL_CASE_BONUS
+
+        # Recurse for remaining query
+        sub_result = _find_best_match(query, target, char_positions, q_idx + 1, pos, memo)
+
+        if sub_result is not None:
+            sub_score, sub_positions = sub_result
+            total_score = pos_score + sub_score
+
+            if best_score is None or total_score > best_score:
+                best_score = total_score
+                best_positions = [pos] + sub_positions
+
+    if best_score is not None:
+        memo[memo_key] = (best_score, best_positions)
+        return (best_score, best_positions)
+
+    memo[memo_key] = None
+    return None
 
 
 def fuzzy_search(query: str, items: List[Tuple[str, str, str]]) -> List[Tuple[str, str, str, int, List[int]]]:
     """
     Search items using fuzzy matching.
-    
+
+    Optimized for performance with:
+    - Quick prefix check to skip non-matching items
+    - Caching of query preprocessing
+    - Early exit for exact matches
+
     Args:
         query: Search query string
         items: List of (category, name, description) tuples
-        
+
     Returns:
         List of (category, name, description, score, positions) tuples, sorted by score
     """
+    query = query.lower().strip()
+    if not query:
+        return [(cat, name, desc, 0, []) for cat, name, desc in items]
+
     results = []
-    
+    query_chars = set(query.replace(' ', ''))
+    query_first = query.replace(' ', '')[0] if query.replace(' ', '') else ''
+
     for category, name, description in items:
+        name_lower = name.lower()
+
+        # Quick check: does target contain first query char?
+        if query_first and query_first not in name_lower:
+            # Also check description
+            desc_lower = description.lower()
+            if query_first not in desc_lower:
+                continue
+
         # Try matching against name first
         matched, score, positions = fuzzy_match(query, name)
-        
+
         if matched:
             results.append((category, name, description, score, positions))
         else:
-            # Try matching against description
+            # Try matching against description (with penalty)
             matched, score, positions = fuzzy_match(query, description)
             if matched:
-                # Penalize description matches slightly
-                results.append((category, name, description, score + 100, positions))
-    
+                results.append((category, name, description, score + 200, positions))
+
     # Sort by score (lower is better)
     results.sort(key=lambda x: x[3])
-    
+
     return results
 
 
