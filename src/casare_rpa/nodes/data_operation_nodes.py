@@ -12,8 +12,14 @@ import math
 import random
 from loguru import logger
 
+<<<<<<<<< Temporary merge branch 1
+from ..core.base_node import BaseNode
+from ..core.types import PortType, DataType, NodeStatus
+=========
 from casare_rpa.core.base_node import BaseNode
-from casare_rpa.core.types import PortType, DataType, NodeStatus
+from casare_rpa.core.types import PortType, DataType, NodeStatus, ExecutionResult
+
+>>>>>>>>> Temporary merge branch 2
 
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
