@@ -168,7 +168,13 @@ class MainWindow(QMainWindow):
         self.action_exit.setShortcut(QKeySequence.StandardKey.Quit)
         self.action_exit.setStatusTip("Exit the application")
         self.action_exit.triggered.connect(self.close)
-        
+
+        # Find action
+        self.action_find_node = QAction("&Find Node...", self)
+        self.action_find_node.setShortcut(QKeySequence.StandardKey.Find)
+        self.action_find_node.setStatusTip("Search for nodes in the canvas (Ctrl+F)")
+        self.action_find_node.triggered.connect(self._on_find_node)
+
         # Edit actions
         self.action_undo = QAction("&Undo", self)
         self.action_undo.setShortcut(QKeySequence.StandardKey.Undo)
@@ -374,6 +380,11 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.action_new_from_template)
         file_menu.addSeparator()
         file_menu.addAction(self.action_open)
+
+        # Recent Files submenu
+        self._recent_files_menu = file_menu.addMenu("Recent Files")
+        self._update_recent_files_menu()
+
         file_menu.addSeparator()
         file_menu.addAction(self.action_save)
         file_menu.addAction(self.action_save_as)
@@ -392,7 +403,9 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_select_all)
         edit_menu.addAction(self.action_deselect_all)
-        
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action_find_node)
+
         # View menu
         view_menu = menubar.addMenu("&View")
         view_menu.addAction(self.action_zoom_in)
@@ -1430,6 +1443,76 @@ class MainWindow(QMainWindow):
         """Open the command palette dialog."""
         if self._command_palette:
             self._command_palette.show_palette()
+
+    def _on_find_node(self) -> None:
+        """Open the node search dialog (Ctrl+F)."""
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            self.statusBar().showMessage("No graph available", 3000)
+            return
+
+        from .node_search import NodeSearchDialog
+        dialog = NodeSearchDialog(self._central_widget.graph, self)
+        dialog.show_search()
+
+    def _update_recent_files_menu(self) -> None:
+        """Update the recent files submenu."""
+        from .recent_files import get_recent_files_manager
+
+        self._recent_files_menu.clear()
+        manager = get_recent_files_manager()
+        recent = manager.get_recent_files()
+
+        if not recent:
+            action = self._recent_files_menu.addAction("(No recent files)")
+            action.setEnabled(False)
+            return
+
+        for i, file_info in enumerate(recent[:10]):
+            path = file_info["path"]
+            name = file_info["name"]
+            action = self._recent_files_menu.addAction(f"&{i+1}. {name}")
+            action.setToolTip(path)
+            action.triggered.connect(lambda checked, p=path: self._on_open_recent_file(p))
+
+        self._recent_files_menu.addSeparator()
+        clear_action = self._recent_files_menu.addAction("Clear Recent Files")
+        clear_action.triggered.connect(self._on_clear_recent_files)
+
+    def _on_open_recent_file(self, path: str) -> None:
+        """Open a recent file."""
+        from pathlib import Path
+        if not self._check_unsaved_changes():
+            return
+
+        file_path = Path(path)
+        if file_path.exists():
+            self.workflow_open.emit(str(file_path))
+            self.set_current_file(file_path)
+            self.set_modified(False)
+            self.statusBar().showMessage(f"Opened: {file_path.name}", 3000)
+        else:
+            QMessageBox.warning(self, "File Not Found", f"File not found:\n{path}")
+            # Remove from recent files
+            from .recent_files import get_recent_files_manager
+            manager = get_recent_files_manager()
+            manager.remove_file(file_path)
+            self._update_recent_files_menu()
+
+    def _on_clear_recent_files(self) -> None:
+        """Clear the recent files list."""
+        from .recent_files import get_recent_files_manager
+        manager = get_recent_files_manager()
+        manager.clear()
+        self._update_recent_files_menu()
+        self.statusBar().showMessage("Recent files cleared", 3000)
+
+    def add_to_recent_files(self, file_path) -> None:
+        """Add a file to the recent files list."""
+        from .recent_files import get_recent_files_manager
+        from pathlib import Path
+        manager = get_recent_files_manager()
+        manager.add_file(Path(file_path) if isinstance(file_path, str) else file_path)
+        self._update_recent_files_menu()
 
     def _on_about(self) -> None:
         """Show about dialog."""

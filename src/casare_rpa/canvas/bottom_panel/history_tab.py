@@ -68,6 +68,9 @@ class HistoryTab(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(5)
 
+        # Set size policy to prevent dock resizing
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         # Header with controls
         header_layout = QHBoxLayout()
 
@@ -90,7 +93,11 @@ class HistoryTab(QWidget):
 
         layout.addLayout(header_layout)
 
-        # Table for history
+        # Use stacked widget to prevent size changes when switching content
+        self._content_stack = QStackedWidget()
+        self._content_stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # Table for history (index 0)
         self._table = QTableWidget()
         self._table.setColumnCount(6)
         self._table.setHorizontalHeaderLabels([
@@ -120,20 +127,20 @@ class HistoryTab(QWidget):
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
         self._table.verticalHeader().setVisible(False)
 
-        layout.addWidget(self._table)
+        self._content_stack.addWidget(self._table)  # Index 0
 
-        # Empty state guidance
+        # Empty state guidance (index 1)
         self._empty_state_label = QLabel(
             "No execution history yet.\n\n"
             "History will appear here when:\n"
-            "- You run a workflow (F5)\n"
-            "- Nodes execute and complete\n\n"
-            "Enable Debug Mode (Ctrl+F5) for detailed\n"
-            "execution tracking and breakpoints."
+            "- You run a workflow (F3)\n"
+            "- Nodes execute and complete"
         )
         self._empty_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._empty_state_label.setWordWrap(True)
-        layout.addWidget(self._empty_state_label)
+        self._content_stack.addWidget(self._empty_state_label)  # Index 1
+
+        layout.addWidget(self._content_stack, 1)  # Stretch factor 1
 
         # Statistics
         stats_layout = QHBoxLayout()
@@ -151,9 +158,8 @@ class HistoryTab(QWidget):
 
         layout.addLayout(stats_layout)
 
-        # Show empty state initially
-        self._table.setVisible(False)
-        self._empty_state_label.setVisible(True)
+        # Show empty state initially (index 1)
+        self._content_stack.setCurrentIndex(1)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -239,14 +245,13 @@ class HistoryTab(QWidget):
         """
         self._full_history.append(entry)
 
-        # Show table, hide empty state
-        self._table.setVisible(True)
-        self._empty_state_label.setVisible(False)
-
         # If filter allows this entry, add it
         if self._should_show_entry(entry):
             self._add_entry_to_table(entry, len(self._full_history))
             self._update_statistics()
+
+        # Show table (index 0)
+        self._content_stack.setCurrentIndex(0)
 
     def _apply_filter(self) -> None:
         """Apply current filter to history."""
@@ -258,10 +263,9 @@ class HistoryTab(QWidget):
             if self._should_show_entry(entry):
                 self._add_entry_to_table(entry, i)
 
-        # Toggle empty state visibility
+        # Toggle between table (index 0) and empty state (index 1)
         has_entries = len(self._full_history) > 0
-        self._table.setVisible(has_entries)
-        self._empty_state_label.setVisible(not has_entries)
+        self._content_stack.setCurrentIndex(0 if has_entries else 1)
 
         # Update statistics
         self._update_statistics()
@@ -393,9 +397,8 @@ class HistoryTab(QWidget):
         self._full_history.clear()
         self._table.setRowCount(0)
         self._update_statistics()
-        # Show empty state
-        self._table.setVisible(False)
-        self._empty_state_label.setVisible(True)
+        # Show empty state (index 1)
+        self._content_stack.setCurrentIndex(1)
         logger.debug("Execution history cleared")
 
     def scroll_to_bottom(self) -> None:
