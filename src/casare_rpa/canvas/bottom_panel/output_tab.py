@@ -25,6 +25,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
 from loguru import logger
 
+from ..theme import THEME
+
 
 class OutputTab(QWidget):
     """
@@ -66,7 +68,6 @@ class OutputTab(QWidget):
         toolbar.setSpacing(8)
 
         # Status label
-        from ..theme import THEME
         self._status_label = QLabel("No outputs")
         self._status_label.setStyleSheet(f"color: {THEME.text_muted};")
 
@@ -143,8 +144,6 @@ class OutputTab(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
-        from ..theme import THEME
-
         self.setStyleSheet(f"""
             QTableWidget {{
                 background-color: {THEME.bg_panel};

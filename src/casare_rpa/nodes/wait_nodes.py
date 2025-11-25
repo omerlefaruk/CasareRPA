@@ -166,6 +166,7 @@ class WaitForElementNode(BaseNode):
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
     
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -271,6 +272,7 @@ class WaitForElementNode(BaseNode):
                             pass  # Ignore highlight errors
 
                     self.set_output_value("page", page)
+                    self.set_output_value("found", True)
 
                     self.status = NodeStatus.SUCCESS
                     logger.info(f"Element appeared: {selector} (attempt {attempts})")
@@ -280,7 +282,8 @@ class WaitForElementNode(BaseNode):
                         "data": {
                             "selector": selector,
                             "state": state,
-                            "attempts": attempts
+                            "attempts": attempts,
+                            "found": True
                         },
                         "next_nodes": ["exec_out"]
                     }
@@ -316,14 +319,19 @@ class WaitForElementNode(BaseNode):
                 except Exception as ss_error:
                     logger.warning(f"Failed to take screenshot: {ss_error}")
 
+            # Element not found after all attempts
+            self.set_output_value("page", page)
+            self.set_output_value("found", False)
             raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            self.set_output_value("found", False)
             logger.error(f"Failed to wait for element: {e}")
             return {
                 "success": False,
                 "error": str(e),
+                "data": {"found": False},
                 "next_nodes": []
             }
     

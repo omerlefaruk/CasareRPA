@@ -11,7 +11,6 @@ from ..core.types import DataType, ExecutionResult, NodeId
 from ..core.execution_context import ExecutionContext
 from ..core.snippet_definition import SnippetDefinition, ParameterMapping
 from ..runner.subgraph_runner import SubgraphRunner
-from ..utils.workflow_loader import NODE_TYPE_MAP
 
 
 class SnippetNode(BaseNode):
@@ -222,6 +221,9 @@ class SnippetNode(BaseNode):
         Returns:
             Dictionary mapping node_id to BaseNode instance
         """
+        # Import here to avoid circular dependency
+        from ..utils.workflow_loader import NODE_TYPE_MAP
+
         nodes = {}
 
         for node_id, node_data in self.snippet_definition.nodes.items():

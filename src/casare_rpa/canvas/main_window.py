@@ -459,8 +459,6 @@ class MainWindow(QMainWindow):
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(self.action_undo)
         edit_menu.addAction(self.action_redo)
-        edit_menu.addAction(self.action_create_snippet)
-        edit_menu.addAction(self.action_snippet_library)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_cut)
         edit_menu.addAction(self.action_copy)
@@ -1503,8 +1501,12 @@ class MainWindow(QMainWindow):
 
     def _on_create_snippet(self) -> None:
         """Handle create snippet from selection request."""
+        from .snippet_creator_dialog import SnippetCreatorDialog
+        from ..core.workflow_schema import NodeConnection
+
         # Get selected nodes from the graph
-        selected_nodes = self.graph_widget.graph.selected_nodes()
+        graph = self._central_widget.graph
+        selected_nodes = graph.selected_nodes()
 
         if not selected_nodes:
             QMessageBox.information(
@@ -1515,58 +1517,154 @@ class MainWindow(QMainWindow):
             )
             return
 
-        # TODO: Open SnippetCreatorDialog
-        # For now, show a placeholder message
-        QMessageBox.information(
-            self,
-            "Create Snippet",
-            f"Creating snippet from {len(selected_nodes)} selected nodes.\n\n"
-            "Snippet Creator Dialog will be implemented next."
+        # Extract connections from the visual graph
+        all_connections = []
+        for visual_node in graph.all_nodes():
+            # Get the CasareRPA node to access node_id
+            casare_node = visual_node.get_casare_node()
+            if not casare_node:
+                continue
+
+            source_node_id = casare_node.node_id
+
+            # Get output connections
+            for output_port in visual_node.output_ports():
+                for connected_port in output_port.connected_ports():
+                    target_visual_node = connected_port.node()
+                    target_casare_node = target_visual_node.get_casare_node()
+                    if not target_casare_node:
+                        continue
+
+                    connection = NodeConnection(
+                        source_node=source_node_id,
+                        source_port=output_port.name(),
+                        target_node=target_casare_node.node_id,
+                        target_port=connected_port.name()
+                    )
+                    all_connections.append(connection)
+
+        # Open snippet creator dialog
+        dialog = SnippetCreatorDialog(
+            selected_visual_nodes=selected_nodes,
+            all_connections=all_connections,
+            parent=self
         )
-        logger.info(f"Create snippet requested for {len(selected_nodes)} nodes")
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            logger.info(f"Snippet created successfully from {len(selected_nodes)} nodes")
+            self.statusBar().showMessage("Snippet created and saved to library", 3000)
+        else:
+            logger.info("Snippet creation cancelled")
 
     def _on_open_snippet_library(self) -> None:
         """Handle open snippet library browser request."""
-        # TODO: Open SnippetBrowserDialog
-        # For now, show a placeholder message
-        QMessageBox.information(
-            self,
-            "Snippet Library",
-            "Snippet Library Browser will be implemented next.\n\n"
-            "This dialog will allow you to browse, search, and insert snippets."
-        )
-        logger.info("Snippet library browser requested")
+        from .snippet_browser_dialog import SnippetBrowserDialog
 
-        if not selected_nodes:
-            QMessageBox.information(
-                self,
-                "No Selection",
-                "Please select nodes to create a snippet.\n\n"
-                "Select multiple nodes by dragging a selection box or holding Shift while clicking nodes."
+        # Open snippet browser dialog
+        dialog = SnippetBrowserDialog(parent=self)
+
+        # Connect signal to handle snippet insertion
+        dialog.snippet_insert_requested.connect(self._on_snippet_insert_requested)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            logger.info("Snippet insertion completed")
+        else:
+            logger.info("Snippet browser closed without insertion")
+
+    def _on_snippet_insert_requested(self, snippet_definition, is_collapsed: bool):
+        """
+        Handle snippet insertion into the canvas.
+
+        Args:
+            snippet_definition: SnippetDefinition to insert
+            is_collapsed: Whether to insert as collapsed node or expanded
+        """
+        from .workflow_import import WorkflowImporter
+
+        logger.info(
+            f"Inserting snippet '{snippet_definition.name}' "
+            f"({'collapsed' if is_collapsed else 'expanded'})"
+        )
+
+        if is_collapsed:
+            # Insert as a single collapsed SnippetNode
+            from ..nodes.snippet_node import SnippetNode
+            from ..utils.id_generator import generate_node_id
+
+            # Create visual node at center of view
+            graph = self._central_widget.graph
+            view_center = graph.viewer().sceneRect().center()
+
+            # Create SnippetNode visual node
+            visual_node = graph.create_node(
+                "casare_rpa.snippets.Snippet",
+                pos=[view_center.x(), view_center.y()]
             )
-            return
 
-        # TODO: Open SnippetCreatorDialog
-        # For now, show a placeholder message
-        QMessageBox.information(
-            self,
-            "Create Snippet",
-            f"Creating snippet from {len(selected_nodes)} selected nodes.\n\n"
-            "Snippet Creator Dialog will be implemented next."
-        )
-        logger.info(f"Create snippet requested for {len(selected_nodes)} nodes")
+            if not visual_node:
+                QMessageBox.critical(
+                    self,
+                    "Insert Failed",
+                    "Failed to create snippet node.\n\n"
+                    "Make sure VisualSnippetNode is properly registered."
+                )
+                return
 
-    def _on_open_snippet_library(self) -> None:
-        """Handle open snippet library browser request."""
-        # TODO: Open SnippetBrowserDialog
-        # For now, show a placeholder message
-        QMessageBox.information(
-            self,
-            "Snippet Library",
-            "Snippet Library Browser will be implemented next.\n\n"
-            "This dialog will allow you to browse, search, and insert snippets."
-        )
-        logger.info("Snippet library browser requested")
+            # Create casare SnippetNode instance
+            node_id = generate_node_id("SnippetNode")
+            config = {
+                "snippet_id": snippet_definition.snippet_id,
+                "snippet_name": snippet_definition.name,
+            }
+
+            casare_node = SnippetNode(node_id, config=config)
+
+            # Load snippet definition
+            casare_node.set_snippet_definition(snippet_definition)
+
+            # Link visual and casare nodes
+            visual_node._casare_node = casare_node
+            visual_node.set_property("node_id", node_id)
+
+            # Update visual node display name
+            visual_node.set_name(snippet_definition.name)
+
+            # Set snippet info in visual node widgets
+            if hasattr(visual_node, "view"):
+                snippet_name_widget = visual_node.view.get_widget("snippet_name")
+                if snippet_name_widget:
+                    snippet_name_widget.set_value(snippet_definition.name)
+
+                snippet_version_widget = visual_node.view.get_widget("snippet_version")
+                if snippet_version_widget:
+                    snippet_version_widget.set_value(snippet_definition.version)
+
+            self.statusBar().showMessage(
+                f"Inserted snippet '{snippet_definition.name}' as collapsed node",
+                3000
+            )
+            logger.info(f"Created collapsed snippet node: {snippet_definition.name}")
+        else:
+            # Insert as expanded nodes (inline)
+            # Convert snippet to workflow-like structure
+            workflow_data = {
+                "nodes": snippet_definition.nodes,
+                "connections": [conn.to_dict() for conn in snippet_definition.connections],
+            }
+
+            # Use WorkflowImporter to import nodes with ID remapping
+            graph = self._central_widget.graph
+            importer = WorkflowImporter(graph)
+            imported_nodes = importer.import_workflow_data(
+                workflow_data,
+                offset_x=100,  # Offset from current view
+                offset_y=100,
+            )
+
+            self.statusBar().showMessage(
+                f"Inserted {len(imported_nodes)} nodes from snippet '{snippet_definition.name}'",
+                3000
+            )
 
     def _on_save_workflow(self) -> None:
         """Handle save workflow request."""

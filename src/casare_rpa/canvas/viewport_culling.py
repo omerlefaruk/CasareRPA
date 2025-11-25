@@ -318,19 +318,27 @@ class ViewportCullingManager(QObject):
         """
         for node_id in show_ids:
             item = self._node_items.get(node_id)
-            if item and hasattr(item, 'setVisible'):
-                item.setVisible(True)
+            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+                # Only modify visibility if item still belongs to a scene
+                # This prevents Qt sendEvent warnings for orphaned items
+                if item.scene() is not None:
+                    item.setVisible(True)
 
         for node_id in hide_ids:
             item = self._node_items.get(node_id)
-            if item and hasattr(item, 'setVisible'):
-                item.setVisible(False)
+            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+                # Only modify visibility if item still belongs to a scene
+                # This prevents Qt sendEvent warnings for orphaned items
+                if item.scene() is not None:
+                    item.setVisible(False)
 
     def _show_all_nodes(self) -> None:
         """Show all nodes (used when culling is disabled)."""
         for node_id, item in self._node_items.items():
-            if item and hasattr(item, 'setVisible'):
-                item.setVisible(True)
+            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+                # Only modify visibility if item still belongs to a scene
+                if item.scene() is not None:
+                    item.setVisible(True)
         self._visible_nodes = self._all_nodes.copy()
 
     def get_visible_nodes(self) -> Set[str]:

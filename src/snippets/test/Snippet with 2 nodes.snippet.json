@@ -1,0 +1,150 @@
+{
+  "author": "",
+  "category": "test",
+  "color": [
+    100,
+    150,
+    200
+  ],
+  "connections": [
+    {
+      "source_node": "SetVariableNode_1ed73d28",
+      "source_port": "exec_out",
+      "target_node": "SetVariableNode_bc681a42",
+      "target_port": "exec_in"
+    }
+  ],
+  "created_at": "2025-11-26T01:12:43.850733",
+  "description": "",
+  "entry_node_ids": [
+    "SetVariableNode_1ed73d28"
+  ],
+  "exit_node_ids": [
+    "SetVariableNode_bc681a42"
+  ],
+  "icon_name": "snippet",
+  "modified_at": "2025-11-26T01:12:43.851283",
+  "name": "Snippet with 2 nodes",
+  "node_positions": {
+    "SetVariableNode_1ed73d28": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "SetVariableNode_bc681a42": {
+      "x": 420.6494172646342,
+      "y": 1.1524641568894367
+    }
+  },
+  "nodes": {
+    "SetVariableNode_1ed73d28": {
+      "category": "General",
+      "config": {
+        "default_value": "1",
+        "variable_name": "hey",
+        "variable_type": "String"
+      },
+      "input_ports": {
+        "exec_in": {
+          "data_type": "EXEC_INPUT",
+          "label": "exec_in",
+          "name": "exec_in",
+          "port_type": "INPUT",
+          "required": true
+        },
+        "value": {
+          "data_type": "INPUT",
+          "label": 7,
+          "name": "value",
+          "port_type": "INPUT",
+          "required": true
+        },
+        "variable_name": {
+          "data_type": "INPUT",
+          "label": 1,
+          "name": "variable_name",
+          "port_type": "INPUT",
+          "required": true
+        }
+      },
+      "node_id": "SetVariableNode_1ed73d28",
+      "node_type": "SetVariableNode",
+      "output_ports": {
+        "exec_out": {
+          "data_type": "EXEC_OUTPUT",
+          "label": "exec_out",
+          "name": "exec_out",
+          "port_type": "OUTPUT",
+          "required": false
+        },
+        "value": {
+          "data_type": "OUTPUT",
+          "label": 7,
+          "name": "value",
+          "port_type": "OUTPUT",
+          "required": false
+        }
+      }
+    },
+    "SetVariableNode_bc681a42": {
+      "category": "General",
+      "config": {
+        "default_value": "2",
+        "variable_name": "hey",
+        "variable_type": "String"
+      },
+      "input_ports": {
+        "exec_in": {
+          "data_type": "EXEC_INPUT",
+          "label": "exec_in",
+          "name": "exec_in",
+          "port_type": "INPUT",
+          "required": true
+        },
+        "value": {
+          "data_type": "INPUT",
+          "label": 7,
+          "name": "value",
+          "port_type": "INPUT",
+          "required": true
+        },
+        "variable_name": {
+          "data_type": "INPUT",
+          "label": 1,
+          "name": "variable_name",
+          "port_type": "INPUT",
+          "required": true
+        }
+      },
+      "node_id": "SetVariableNode_bc681a42",
+      "node_type": "SetVariableNode",
+      "output_ports": {
+        "exec_out": {
+          "data_type": "EXEC_OUTPUT",
+          "label": "exec_out",
+          "name": "exec_out",
+          "port_type": "OUTPUT",
+          "required": false
+        },
+        "value": {
+          "data_type": "OUTPUT",
+          "label": 7,
+          "name": "value",
+          "port_type": "OUTPUT",
+          "required": false
+        }
+      }
+    }
+  },
+  "parameters": [],
+  "schema_version": "1.0.0",
+  "snippet_id": "Snippet_8030ceda",
+  "tags": [],
+  "variable_scope": {
+    "export_local_vars": false,
+    "inherit_parent_scope": true,
+    "input_mappings": {},
+    "isolated_vars": [],
+    "output_mappings": {}
+  },
+  "version": "1.0.0"
+}

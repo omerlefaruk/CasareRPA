@@ -70,7 +70,12 @@ class CasareRPAApp:
         node_registry = get_node_registry()
         node_registry.register_all_nodes(self._node_graph.graph)
         logger.info("Registered all node types with graph")
-        
+
+        # Pre-build node mapping to avoid 500ms delay on first node creation
+        from .node_registry import get_casare_node_mapping
+        get_casare_node_mapping()
+        logger.info("Pre-built CasareRPA node mapping")
+
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
 
