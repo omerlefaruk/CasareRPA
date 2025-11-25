@@ -2,6 +2,11 @@
 Node search dialog for quick node creation.
 
 Provides a fuzzy search interface for finding and creating nodes.
+
+Performance optimizations:
+- Uses SearchIndex for pre-computed search data
+- Debounced search input (50ms) to reduce UI lag
+- Early termination after finding enough good matches
 """
 
 from typing import List, Tuple, Optional, Callable
@@ -12,7 +17,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QKeyEvent
 
-from ..utils.fuzzy_search import fuzzy_search, highlight_matches
+from ..utils.fuzzy_search import SearchIndex, highlight_matches
 
 
 class NodeSearchDialog(QDialog):
@@ -24,6 +29,7 @@ class NodeSearchDialog(QDialog):
     - Keyboard navigation (Up/Down/Enter/Esc)
     - Real-time results filtering with debouncing
     - Category and description display
+    - Optimized with pre-computed search index
     """
 
     node_selected = Signal(str, str)  # category, node_name
@@ -44,6 +50,7 @@ class NodeSearchDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
 
         self._node_items: List[Tuple[str, str, str]] = []  # (category, name, description)
+        self._search_index: Optional[SearchIndex] = None  # Pre-computed search index
         self._pending_query: str = ""
 
         # Debounce timer for search
@@ -127,14 +134,16 @@ class NodeSearchDialog(QDialog):
     
     def set_node_items(self, items: List[Tuple[str, str, str]]):
         """
-        Set the available node items.
-        
+        Set the available node items and build the search index.
+
         Args:
             items: List of (category, name, description) tuples
         """
         self._node_items = items
+        # Build search index for faster queries
+        self._search_index = SearchIndex(items)
         self._update_results("")
-    
+
     def _on_search_changed(self, text: str):
         """Handle search text changes with debouncing."""
         self._pending_query = text
@@ -150,14 +159,17 @@ class NodeSearchDialog(QDialog):
         self._results_list.clear()
 
         if not query.strip():
-            # Show all nodes when no query
-            results = [(cat, name, desc, 0, []) for cat, name, desc in self._node_items]
+            # Show all nodes when no query (limit to 10)
+            results = [(cat, name, desc, 0, []) for cat, name, desc in self._node_items[:10]]
+        elif self._search_index:
+            # Use optimized search index
+            results = self._search_index.search(query, max_results=10)
         else:
-            # Fuzzy search
-            results = fuzzy_search(query, self._node_items)
+            # Fallback: no items yet
+            results = []
 
-        # Limit to top 10 results
-        for category, name, description, score, positions in results[:10]:
+        # Display results (already limited to 10)
+        for category, name, description, score, positions in results:
             item = QListWidgetItem()
 
             # Highlight matched characters in name

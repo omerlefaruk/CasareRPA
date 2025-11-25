@@ -3,10 +3,17 @@ Fuzzy search utilities for node search functionality.
 
 Provides fast and effective fuzzy matching for node names using
 a scoring algorithm inspired by fzf and Sublime Text.
+
+Performance optimizations:
+- Pre-computed lowercase and character sets for items
+- Early termination after finding enough good matches
+- Aggressive pre-filtering with character set intersection
+- Memoized recursive matching with depth limits
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Set, Dict
 from functools import lru_cache
+from dataclasses import dataclass
 
 
 # Scoring constants (higher is better for positive, used to compute final score)
@@ -18,6 +25,207 @@ SCORE_WORD_START_BONUS = 50
 SCORE_CAMEL_CASE_BONUS = 30
 SCORE_GAP_PENALTY = -3
 SCORE_LEADING_GAP_PENALTY = -1
+
+# Performance tuning constants
+MAX_RESULTS_BEFORE_EARLY_EXIT = 20  # Stop searching after finding this many good matches
+MAX_RECURSION_DEPTH = 50  # Limit recursion in subsequence matching
+GOOD_SCORE_THRESHOLD = -200  # Scores better than this trigger early exit counting
+
+
+@dataclass(slots=True)
+class IndexedItem:
+    """Pre-computed data for a searchable item."""
+    category: str
+    name: str
+    description: str
+    name_lower: str
+    desc_lower: str
+    name_chars: Set[str]
+    word_starts: List[Tuple[int, str]]  # (position, char) for word initials
+
+
+class SearchIndex:
+    """
+    Pre-computed search index for fast fuzzy searching.
+
+    Use this class when searching the same items multiple times
+    to avoid repeated preprocessing.
+    """
+
+    __slots__ = ('_items', '_indexed')
+
+    def __init__(self, items: List[Tuple[str, str, str]]):
+        """
+        Create a search index from items.
+
+        Args:
+            items: List of (category, name, description) tuples
+        """
+        self._items = items
+        self._indexed: List[IndexedItem] = []
+        self._build_index()
+
+    def _build_index(self):
+        """Pre-compute all searchable data."""
+        for category, name, description in self._items:
+            name_lower = name.lower()
+            desc_lower = description.lower()
+
+            # Pre-compute character set for quick filtering
+            name_chars = set(name_lower)
+
+            # Pre-compute word starts for word initial matching
+            word_starts = []
+            for i, char in enumerate(name_lower):
+                if i == 0 or name_lower[i-1] in ' -_':
+                    word_starts.append((i, char))
+
+            self._indexed.append(IndexedItem(
+                category=category,
+                name=name,
+                description=description,
+                name_lower=name_lower,
+                desc_lower=desc_lower,
+                name_chars=name_chars,
+                word_starts=word_starts
+            ))
+
+    def search(self, query: str, max_results: int = 10) -> List[Tuple[str, str, str, int, List[int]]]:
+        """
+        Search indexed items using fuzzy matching.
+
+        This is faster than fuzzy_search() for repeated searches on the same items.
+
+        Args:
+            query: Search query string
+            max_results: Maximum number of results to return (default 10)
+
+        Returns:
+            List of (category, name, description, score, positions) tuples
+        """
+        query = query.lower().strip()
+        if not query:
+            return [(item.category, item.name, item.description, 0, [])
+                    for item in self._indexed[:max_results]]
+
+        query_no_spaces = query.replace(' ', '')
+        if not query_no_spaces:
+            return [(item.category, item.name, item.description, 0, [])
+                    for item in self._indexed[:max_results]]
+
+        query_chars = set(query_no_spaces)
+        query_first = query_no_spaces[0]
+
+        results = []
+        good_results_count = 0
+
+        for item in self._indexed:
+            # Fast pre-filter: check if first char exists
+            if query_first not in item.name_chars:
+                if query_first not in item.desc_lower:
+                    continue
+
+            # More aggressive filter: check if all query chars exist in name
+            if query_chars <= item.name_chars:
+                # All chars present - try matching name
+                matched, score, positions = _fuzzy_match_indexed(
+                    query, query_no_spaces, item.name, item.name_lower, item.word_starts
+                )
+                if matched:
+                    results.append((item.category, item.name, item.description, score, positions))
+                    if score < GOOD_SCORE_THRESHOLD:
+                        good_results_count += 1
+                        if good_results_count >= MAX_RESULTS_BEFORE_EARLY_EXIT:
+                            break
+                    continue
+
+            # Fallback: try description
+            matched, score, positions = fuzzy_match(query, item.description)
+            if matched:
+                results.append((item.category, item.name, item.description, score + 200, positions))
+
+        # Sort by score and limit results
+        results.sort(key=lambda x: x[3])
+        return results[:max_results]
+
+
+def _fuzzy_match_indexed(
+    query: str,
+    query_no_spaces: str,
+    target: str,
+    target_lower: str,
+    word_starts: List[Tuple[int, str]]
+) -> Tuple[bool, int, List[int]]:
+    """
+    Optimized fuzzy match using pre-computed data.
+
+    This is an internal function used by SearchIndex.
+    """
+    if not query:
+        return True, 0, []
+
+    has_spaces = ' ' in query
+    mid_match_score = None
+    mid_match_positions = None
+
+    # === Strategy 1: Exact substring match at word boundary ===
+    if query_no_spaces in target_lower:
+        start_pos = target_lower.index(query_no_spaces)
+        is_word_start = start_pos == 0 or target_lower[start_pos - 1] in ' -_'
+
+        if is_word_start:
+            positions = list(range(start_pos, start_pos + len(query_no_spaces)))
+            score = -SCORE_EXACT_MATCH + start_pos
+            return True, score, positions
+        elif not has_spaces:
+            # Store for later comparison with word initials
+            mid_match_score = -SCORE_PREFIX_MATCH + start_pos + 50
+            mid_match_positions = list(range(start_pos, start_pos + len(query_no_spaces)))
+
+    # === Strategy 2: Word initial matching (using pre-computed word_starts) ===
+    initials_result = _match_word_initials_fast(query_no_spaces, word_starts)
+    if initials_result[0]:
+        return initials_result
+
+    # Return mid-word match if we had one
+    if mid_match_score is not None:
+        return True, mid_match_score, mid_match_positions
+
+    # === Strategy 3: Smart subsequence matching ===
+    return _smart_subsequence_match(query_no_spaces, target, target_lower)
+
+
+def _match_word_initials_fast(
+    query_chars: str,
+    word_starts: List[Tuple[int, str]]
+) -> Tuple[bool, int, List[int]]:
+    """
+    Fast word initial matching using pre-computed word starts.
+    """
+    if not query_chars or not word_starts:
+        return False, 999999, []
+
+    positions = []
+    used_indices = set()
+
+    for qchar in query_chars:
+        found = False
+        for idx, (pos, initial) in enumerate(word_starts):
+            if idx not in used_indices and initial == qchar:
+                positions.append(pos)
+                used_indices.add(idx)
+                found = True
+                break
+
+        if not found:
+            return False, 999999, []
+
+    if len(positions) == len(query_chars):
+        positions.sort()
+        score = -SCORE_WORD_INITIAL_MATCH + sum(positions) // 10
+        return True, score, positions
+
+    return False, 999999, []
 
 
 def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
@@ -212,15 +420,21 @@ def _find_best_match(
     char_positions: dict,
     q_idx: int,
     last_pos: int,
-    memo: dict
+    memo: dict,
+    depth: int = 0
 ) -> Optional[Tuple[int, List[int]]]:
     """
     Recursively find the best matching positions.
 
     Returns (score, positions) or None if no match.
+    Includes depth limiting for performance.
     """
     if q_idx >= len(query):
         return (0, [])
+
+    # Depth limit to prevent exponential blowup on long strings
+    if depth > MAX_RECURSION_DEPTH:
+        return None
 
     memo_key = (q_idx, last_pos)
     if memo_key in memo:
@@ -233,10 +447,20 @@ def _find_best_match(
 
     best_score = None
     best_positions = None
+    positions_for_char = char_positions[char]
 
-    for pos in char_positions[char]:
+    # Limit candidates for better performance
+    candidates_checked = 0
+    max_candidates = 10  # Don't check every occurrence, just the first few
+
+    for pos in positions_for_char:
         if pos <= last_pos:
             continue
+
+        candidates_checked += 1
+        if candidates_checked > max_candidates and best_score is not None:
+            # We have a good match, skip remaining candidates
+            break
 
         # Calculate score for this position
         pos_score = 0
@@ -260,7 +484,7 @@ def _find_best_match(
             pos_score += SCORE_CAMEL_CASE_BONUS
 
         # Recurse for remaining query
-        sub_result = _find_best_match(query, target, char_positions, q_idx + 1, pos, memo)
+        sub_result = _find_best_match(query, target, char_positions, q_idx + 1, pos, memo, depth + 1)
 
         if sub_result is not None:
             sub_score, sub_positions = sub_result
@@ -268,6 +492,7 @@ def _find_best_match(
 
             if best_score is None or total_score > best_score:
                 best_score = total_score
+                # Build positions list efficiently
                 best_positions = [pos] + sub_positions
 
     if best_score is not None:

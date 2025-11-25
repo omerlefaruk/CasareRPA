@@ -80,6 +80,26 @@ from .data_operation_nodes import (
     GetPropertyNode
 )
 
+# File system nodes
+from .file_nodes import (
+    ReadFileNode,
+    WriteFileNode,
+    AppendFileNode,
+    DeleteFileNode,
+    CopyFileNode,
+    MoveFileNode,
+    CreateDirectoryNode,
+    ListDirectoryNode,
+    FileExistsNode,
+    GetFileInfoNode,
+    ReadCSVNode,
+    WriteCSVNode,
+    ReadJSONFileNode,
+    WriteJSONFileNode,
+    ZipFilesNode,
+    UnzipFilesNode
+)
+
 __all__ = [
     "__version__",
     # Basic nodes
@@ -135,4 +155,21 @@ __all__ = [
     "ListGetItemNode",
     "JsonParseNode",
     "GetPropertyNode",
+    # File system nodes
+    "ReadFileNode",
+    "WriteFileNode",
+    "AppendFileNode",
+    "DeleteFileNode",
+    "CopyFileNode",
+    "MoveFileNode",
+    "CreateDirectoryNode",
+    "ListDirectoryNode",
+    "FileExistsNode",
+    "GetFileInfoNode",
+    "ReadCSVNode",
+    "WriteCSVNode",
+    "ReadJSONFileNode",
+    "WriteJSONFileNode",
+    "ZipFilesNode",
+    "UnzipFilesNode",
 ]
