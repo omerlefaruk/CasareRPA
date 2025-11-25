@@ -501,10 +501,13 @@ class RobotAgent:
             "circuit_breaker": self.circuit_breaker.get_status(),
             "job_executor": self.job_executor.get_status(),
             "metrics": self.metrics.get_summary(),
-            "offline_queue": asyncio.get_event_loop().run_until_complete(
-                self.offline_queue.get_queue_stats()
-            ) if asyncio.get_event_loop().is_running() else {},
         }
+
+    async def get_status_async(self) -> dict:
+        """Get comprehensive agent status (async version with queue stats)."""
+        status = self.get_status()
+        status["offline_queue"] = await self.offline_queue.get_queue_stats()
+        return status
 
 
 # Convenience function for simple usage
