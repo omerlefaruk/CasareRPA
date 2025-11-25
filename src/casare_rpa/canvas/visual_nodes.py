@@ -26,7 +26,31 @@ from .data_operations_visual import (
     VisualCreateListNode,
     VisualListGetItemNode,
     VisualJsonParseNode,
-    VisualGetPropertyNode
+    VisualGetPropertyNode,
+    # List operation nodes
+    VisualListLengthNode,
+    VisualListAppendNode,
+    VisualListContainsNode,
+    VisualListSliceNode,
+    VisualListJoinNode,
+    VisualListSortNode,
+    VisualListReverseNode,
+    VisualListUniqueNode,
+    VisualListFilterNode,
+    VisualListMapNode,
+    VisualListReduceNode,
+    VisualListFlattenNode,
+    # Dict operation nodes
+    VisualDictGetNode,
+    VisualDictSetNode,
+    VisualDictRemoveNode,
+    VisualDictMergeNode,
+    VisualDictKeysNode,
+    VisualDictValuesNode,
+    VisualDictHasKeyNode,
+    VisualCreateDictNode,
+    VisualDictToJsonNode,
+    VisualDictItemsNode,
 )
 
 # Import Rich Comment Nodes
