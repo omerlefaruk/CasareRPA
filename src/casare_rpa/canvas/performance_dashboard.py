@@ -115,12 +115,10 @@ class HistogramWidget(QWidget):
         if not histogram_data:
             return
 
-        # Get max value for scaling
-        max_val = max(
-            histogram_data.get("p99", 0),
-            histogram_data.get("max", 0),
-            1
-        )
+        # Get max value for scaling (handle None values)
+        p99 = histogram_data.get("p99") or 0
+        max_raw = histogram_data.get("max") or 0
+        max_val = max(p99, max_raw, 1)
 
         for key in ["p50", "p90", "p99"]:
             value = histogram_data.get(key, 0)

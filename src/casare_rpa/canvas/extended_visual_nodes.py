@@ -35,10 +35,10 @@ class VisualRandomNumberNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("min_value", DataType.NUMBER)
-        self.add_typed_input("max_value", DataType.NUMBER)
+        self.add_typed_input("min_value", DataType.FLOAT)
+        self.add_typed_input("max_value", DataType.FLOAT)
         self.add_exec_output("exec_out")
-        self.add_typed_output("result", DataType.NUMBER)
+        self.add_typed_output("result", DataType.FLOAT)
 
 
 class VisualRandomChoiceNode(VisualNode):
@@ -133,7 +133,7 @@ class VisualGetCurrentDateTimeNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_exec_output("exec_out")
         self.add_typed_output("datetime", DataType.STRING)
-        self.add_typed_output("timestamp", DataType.NUMBER)
+        self.add_typed_output("timestamp", DataType.FLOAT)
         self.add_typed_output("year", DataType.INTEGER)
         self.add_typed_output("month", DataType.INTEGER)
         self.add_typed_output("day", DataType.INTEGER)
@@ -182,7 +182,7 @@ class VisualParseDateTimeNode(VisualNode):
         self.add_typed_output("hour", DataType.INTEGER)
         self.add_typed_output("minute", DataType.INTEGER)
         self.add_typed_output("second", DataType.INTEGER)
-        self.add_typed_output("timestamp", DataType.NUMBER)
+        self.add_typed_output("timestamp", DataType.FLOAT)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
@@ -202,7 +202,7 @@ class VisualDateTimeAddNode(VisualNode):
         self.add_typed_input("seconds", DataType.INTEGER)
         self.add_exec_output("exec_out")
         self.add_typed_output("result", DataType.STRING)
-        self.add_typed_output("timestamp", DataType.NUMBER)
+        self.add_typed_output("timestamp", DataType.FLOAT)
 
 
 class VisualDateTimeDiffNode(VisualNode):
@@ -217,10 +217,10 @@ class VisualDateTimeDiffNode(VisualNode):
         self.add_typed_input("datetime_1", DataType.ANY)
         self.add_typed_input("datetime_2", DataType.ANY)
         self.add_exec_output("exec_out")
-        self.add_typed_output("total_days", DataType.NUMBER)
-        self.add_typed_output("total_hours", DataType.NUMBER)
-        self.add_typed_output("total_minutes", DataType.NUMBER)
-        self.add_typed_output("total_seconds", DataType.NUMBER)
+        self.add_typed_output("total_days", DataType.FLOAT)
+        self.add_typed_output("total_hours", DataType.FLOAT)
+        self.add_typed_output("total_minutes", DataType.FLOAT)
+        self.add_typed_output("total_seconds", DataType.FLOAT)
         self.add_typed_output("days", DataType.INTEGER)
         self.add_typed_output("hours", DataType.INTEGER)
         self.add_typed_output("minutes", DataType.INTEGER)
@@ -259,7 +259,7 @@ class VisualGetTimestampNode(VisualNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_exec_output("exec_out")
-        self.add_typed_output("timestamp", DataType.NUMBER)
+        self.add_typed_output("timestamp", DataType.FLOAT)
 
 
 # =============================================================================
@@ -588,7 +588,7 @@ class VisualMessageBoxNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("title", "Title", text="Message", tab="properties")
-        self.add_combo_menu("icon", "Icon", items=["information", "warning", "error", "question"], tab="properties")
+        self.add_combo_menu("icon_type", "Icon", items=["information", "warning", "error", "question"], tab="properties")
         self.add_combo_menu("buttons", "Buttons", items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"], tab="properties")
 
     def setup_ports(self) -> None:
