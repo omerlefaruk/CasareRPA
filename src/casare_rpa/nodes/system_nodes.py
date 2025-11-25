@@ -239,16 +239,14 @@ class MessageBoxNode(BaseNode):
     Display a message box dialog.
 
     Config:
-        box_type: 'info', 'warning', 'error', 'question' (default: info)
+        title: Dialog title (default: 'Message')
+        message: Message to display (default: '')
+        icon_type: 'information', 'warning', 'error', 'question' (default: information)
         buttons: 'ok', 'ok_cancel', 'yes_no', 'yes_no_cancel' (default: ok)
-
-    Inputs:
-        title: Dialog title
-        message: Message to display
 
     Outputs:
         result: Button clicked ('ok', 'cancel', 'yes', 'no')
-        confirmed: True if OK/Yes was clicked
+        accepted: True if OK/Yes was clicked
     """
 
     def __init__(self, node_id: str, name: str = "Message Box", **kwargs) -> None:
@@ -259,23 +257,22 @@ class MessageBoxNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("title", PortType.INPUT, DataType.STRING)
-        self.add_input_port("message", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("confirmed", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("accepted", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
-            title = str(self.get_input_value("title", context) or "Message")
-            message = str(self.get_input_value("message", context) or "")
-            box_type = self.config.get("box_type", "info")
+            # Get values from config (set by visual node widgets)
+            title = str(self.config.get("title", "Message"))
+            message = str(self.config.get("message", ""))
+            icon_type = self.config.get("icon_type", "information")
             buttons = self.config.get("buttons", "ok")
 
             result = "ok"
-            confirmed = True
+            accepted = True
 
             # Try PySide6 first
             try:
@@ -288,12 +285,12 @@ class MessageBoxNode(BaseNode):
 
                 # Determine icon
                 icon_map = {
-                    "info": QMessageBox.Information,
+                    "information": QMessageBox.Information,
                     "warning": QMessageBox.Warning,
                     "error": QMessageBox.Critical,
                     "question": QMessageBox.Question
                 }
-                icon = icon_map.get(box_type, QMessageBox.Information)
+                icon = icon_map.get(icon_type, QMessageBox.Information)
 
                 # Determine buttons
                 button_map = {
@@ -319,7 +316,7 @@ class MessageBoxNode(BaseNode):
                     QMessageBox.No: "no"
                 }
                 result = result_map.get(response, "ok")
-                confirmed = result in ("ok", "yes")
+                accepted = result in ("ok", "yes")
 
             except ImportError:
                 # Fallback to Windows MessageBox
@@ -339,12 +336,12 @@ class MessageBoxNode(BaseNode):
                     MB_YESNOCANCEL = 0x3
 
                     icon_map = {
-                        "info": MB_ICONINFORMATION,
+                        "information": MB_ICONINFORMATION,
                         "warning": MB_ICONWARNING,
                         "error": MB_ICONERROR,
                         "question": MB_ICONQUESTION
                     }
-                    icon = icon_map.get(box_type, MB_ICONINFORMATION)
+                    icon = icon_map.get(icon_type, MB_ICONINFORMATION)
 
                     button_map = {
                         "ok": MB_OK,
@@ -369,25 +366,25 @@ class MessageBoxNode(BaseNode):
                         IDNO: "no"
                     }
                     result = result_map.get(response, "ok")
-                    confirmed = result in ("ok", "yes")
+                    accepted = result in ("ok", "yes")
                 else:
                     # For non-Windows without PySide6, just log and continue
                     result = "ok"
-                    confirmed = True
+                    accepted = True
 
             self.set_output_value("result", result)
-            self.set_output_value("confirmed", confirmed)
+            self.set_output_value("accepted", accepted)
             self.status = NodeStatus.SUCCESS
 
             return {
                 "success": True,
-                "data": {"result": result, "confirmed": confirmed},
+                "data": {"result": result, "accepted": accepted},
                 "next_nodes": ["exec_out"]
             }
 
         except Exception as e:
             self.set_output_value("result", "error")
-            self.set_output_value("confirmed", False)
+            self.set_output_value("accepted", False)
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
