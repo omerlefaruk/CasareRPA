@@ -300,12 +300,21 @@ class NodeGraphWidget(QWidget):
         self._graph.viewer().installEventFilter(self)
         # Also install on viewport to capture mouse events (right-click)
         self._graph.viewer().viewport().installEventFilter(self)
+        # Install on scene to capture connection drags
+        self._graph.viewer().scene().installEventFilter(self)
 
         # Install tooltip blocker
         self._tooltip_blocker = TooltipBlocker()
         self._graph.viewer().installEventFilter(self._tooltip_blocker)
         self._graph.viewer().viewport().installEventFilter(self._tooltip_blocker)
-        
+
+        # Connection drag tracking for search-on-release
+        self._connection_drag_start_port = None
+        self._connection_drag_active = False
+
+        # Monkey-patch viewer to detect connection drops
+        self._patch_viewer_for_connection_search()
+
         # Fix MMB panning over items
         self._fix_mmb_panning()
     
@@ -587,6 +596,55 @@ class NodeGraphWidget(QWidget):
                 # Let the event propagate to show the menu
                 return False
 
+        # Detect connection drag release in empty space
+        if event.type() == event.Type.MouseButtonRelease:
+            if event.button() == Qt.MouseButton.LeftButton:
+                viewer = self._graph.viewer()
+
+                # Debug: Check viewer attributes
+                logger.debug(f"Mouse release detected. Has _live_pipe: {hasattr(viewer, '_live_pipe')}")
+                if hasattr(viewer, '_live_pipe'):
+                    logger.debug(f"_live_pipe value: {viewer._live_pipe}")
+
+                # Check if there's a live pipe being dragged
+                if hasattr(viewer, '_live_pipe') and viewer._live_pipe:
+                    logger.debug("Live pipe detected during mouse release")
+
+                    # Get the scene position where mouse was released
+                    if hasattr(event, 'pos'):
+                        view_pos = event.pos()
+                    else:
+                        view_pos = event.position().toPoint()
+                    scene_pos = viewer.mapToScene(view_pos)
+
+                    logger.debug(f"Release position: {scene_pos.x()}, {scene_pos.y()}")
+
+                    # Check if released on empty space (not on a port)
+                    items_at_pos = viewer.scene().items(scene_pos)
+                    logger.debug(f"Items at position: {len(items_at_pos)}")
+
+                    port_at_pos = None
+                    for item in items_at_pos:
+                        logger.debug(f"Item type: {type(item).__name__}, has port: {hasattr(item, 'port')}")
+                        if hasattr(item, 'port') and item.port:
+                            port_at_pos = item.port
+                            break
+
+                    # If no port at release position, show search
+                    if not port_at_pos:
+                        logger.debug("No port at release position - showing search")
+                        # Get the source port from the live pipe
+                        source_port = getattr(viewer._live_pipe, 'output_port', None) or getattr(viewer._live_pipe, 'input_port', None)
+
+                        logger.debug(f"Source port: {source_port}")
+                        if source_port:
+                            logger.info(f"Connection dropped in empty space, showing search at ({scene_pos.x()}, {scene_pos.y()})")
+                            self._show_connection_search(source_port, scene_pos)
+                            # Let the pipe release complete normally
+                            return False
+                    else:
+                        logger.debug(f"Port found at release position: {port_at_pos}")
+
         if event.type() == event.Type.KeyPress:
             key_event = event
             if key_event.key() == Qt.Key.Key_Tab:
@@ -747,13 +805,19 @@ class NodeGraphWidget(QWidget):
                     node_type = casare_node.node_type if hasattr(casare_node, 'node_type') else "Node"
                     new_id = generate_node_id(node_type)
 
-                    # Update CasareRPA node
+                    # Update both locations synchronously
                     casare_node.node_id = new_id
-
-                    # Update visual node property
                     node.set_property("node_id", new_id)
 
-                    logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
+                    # Verify sync succeeded
+                    verify_id = node.get_property("node_id")
+                    if verify_id != new_id:
+                        logger.error(
+                            f"Property update failed for {node.name()}: "
+                            f"expected {new_id}, got {verify_id}"
+                        )
+                    else:
+                        logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
                 break
 
     # =========================================================================
@@ -893,6 +957,83 @@ class NodeGraphWidget(QWidget):
     def get_navigation_manager(self):
         """Get the snippet navigation manager."""
         return self._navigation_manager
+
+    def _show_connection_search(self, source_port, scene_pos):
+        """
+        Show node search dialog filtered by compatible connections.
+
+        Args:
+            source_port: The port that was dragged from
+            scene_pos: Scene position where connection was released
+        """
+        from .node_search_dialog import NodeSearchDialog
+
+        # Create search dialog
+        dialog = NodeSearchDialog(self)
+
+        # TODO: Filter nodes by port compatibility
+        # For now, show all nodes
+
+        # Show dialog at cursor position
+        cursor_pos = self.cursor().pos()
+        dialog.move(cursor_pos)
+
+        # Execute dialog
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            selected_node_type = dialog.get_selected_node()
+            if selected_node_type:
+                logger.info(f"Creating node from connection: {selected_node_type}")
+
+                # Create the node at the drop position
+                try:
+                    node = self._graph.create_node(
+                        selected_node_type,
+                        pos=[scene_pos.x(), scene_pos.y()]
+                    )
+
+                    if node:
+                        # Auto-connect the new node
+                        self._auto_connect_new_node(node, source_port)
+
+                except Exception as e:
+                    logger.error(f"Failed to create node from connection: {e}")
+
+    def _auto_connect_new_node(self, new_node, source_port):
+        """
+        Auto-connect a newly created node to the source port.
+
+        Args:
+            new_node: The newly created node
+            source_port: The port that was dragged from
+        """
+        try:
+            # Determine if source is input or output
+            is_source_output = source_port.port_type() == 1  # 1 = output, 2 = input
+
+            # Find compatible port on new node
+            if is_source_output:
+                # Source is output, find input on new node
+                for port in new_node.input_ports():
+                    # Try to connect
+                    try:
+                        source_port.connect_to(port)
+                        logger.info(f"Auto-connected {source_port.name()} -> {port.name()}")
+                        break
+                    except Exception:
+                        continue
+            else:
+                # Source is input, find output on new node
+                for port in new_node.output_ports():
+                    # Try to connect
+                    try:
+                        port.connect_to(source_port)
+                        logger.info(f"Auto-connected {port.name()} -> {source_port.name()}")
+                        break
+                    except Exception:
+                        continue
+
+        except Exception as e:
+            logger.error(f"Failed to auto-connect new node: {e}")
 
     def _on_parameter_requested(self, node_id: str, property_key: str, data_type: str, current_value) -> None:
         """

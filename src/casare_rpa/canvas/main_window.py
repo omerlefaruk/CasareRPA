@@ -296,6 +296,13 @@ class MainWindow(QMainWindow):
         self.action_toggle_variable_inspector.setStatusTip("Show/hide variable inspector (real-time variable values)")
         self.action_toggle_variable_inspector.triggered.connect(self._on_toggle_variable_inspector)
 
+        self.action_toggle_navigation = QAction("Snippet &Navigation", self)
+        self.action_toggle_navigation.setShortcut(QKeySequence("Ctrl+Shift+N"))
+        self.action_toggle_navigation.setCheckable(True)
+        self.action_toggle_navigation.setChecked(True)  # Shown by default
+        self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation breadcrumb and drop zone")
+        self.action_toggle_navigation.triggered.connect(self._on_toggle_navigation)
+
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
         self.action_validate.setStatusTip("Validate current workflow")
@@ -489,6 +496,7 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_bottom_panel)
         view_menu.addAction(self.action_toggle_variable_inspector)
+        view_menu.addAction(self.action_toggle_navigation)
         view_menu.addAction(self.action_toggle_minimap)
 
         # Workflow menu
@@ -911,6 +919,16 @@ class MainWindow(QMainWindow):
                 self._variable_inspector_dock.show()
             else:
                 self._variable_inspector_dock.hide()
+
+    def _on_toggle_navigation(self, checked: bool) -> None:
+        """Handle toggle snippet navigation UI action."""
+        if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
+            self._central_widget._snippet_breadcrumb.setVisible(checked)
+
+        # Note: Drop zone visibility is controlled by navigation depth
+        # It will auto-show/hide based on whether we're inside a snippet
+
+        logger.info(f"Snippet navigation UI {'shown' if checked else 'hidden'}")
 
     def _create_properties_panel(self) -> None:
         """Create the properties panel for selected node editing."""

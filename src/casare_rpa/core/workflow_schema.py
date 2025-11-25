@@ -199,8 +199,15 @@ class WorkflowSchema:
         }
 
     def add_node(self, node_data: SerializedNode) -> None:
-        """Add a node to the workflow."""
+        """
+        Add a node to the workflow.
+
+        Ensures consistency between node_id field and dict key
+        to prevent NODE_ID_MISMATCH errors.
+        """
         node_id = node_data["node_id"]
+
+        # Use node_id field as canonical source of truth
         self.nodes[node_id] = node_data
         logger.debug(f"Added node {node_id} to workflow")
 
@@ -333,8 +340,27 @@ class WorkflowSchema:
         metadata = WorkflowMetadata.from_dict(data.get("metadata", {}))
         workflow = cls(metadata)
 
-        # Load nodes
-        workflow.nodes = data.get("nodes", {})
+        # Load nodes with auto-correction for NODE_ID_MISMATCH
+        nodes_data = data.get("nodes", {})
+        repaired_count = 0
+
+        for dict_key, node_data in nodes_data.items():
+            node_id_field = node_data.get("node_id", dict_key)
+
+            # Auto-repair mismatch (silent)
+            if node_id_field != dict_key:
+                logger.warning(
+                    f"Auto-repaired NODE_ID_MISMATCH: "
+                    f"dict_key='{dict_key}' -> node_id='{node_id_field}'"
+                )
+                # Use dict_key as authoritative (preserves workflow structure)
+                node_data["node_id"] = dict_key
+                repaired_count += 1
+
+            workflow.nodes[dict_key] = node_data
+
+        if repaired_count > 0:
+            logger.info(f"Auto-repaired {repaired_count} node ID mismatches in workflow")
 
         # Load connections
         for conn_data in data.get("connections", []):
