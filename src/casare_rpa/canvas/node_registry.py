@@ -199,6 +199,9 @@ class NodeRegistry:
         class SearchLineEdit(QLineEdit):
             def keyPressEvent(self, event):
                 if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                    # Check if Shift is held for auto-connect mode
+                    auto_connect = bool(event.modifiers() & Qt.ShiftModifier)
+
                     # Create first matched node when Enter is pressed
                     if hasattr(qmenu, '_first_match') and qmenu._first_match:
                         # Use the initial mouse position captured when menu opened
@@ -207,6 +210,13 @@ class NodeRegistry:
                             # Fallback to current position if not captured
                             viewer = graph.viewer()
                             pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+
+                        # Get the last selected node before creating new one (for auto-connect)
+                        last_selected = None
+                        if auto_connect:
+                            selected_nodes = graph.selected_nodes()
+                            if selected_nodes:
+                                last_selected = selected_nodes[-1]
 
                         node = graph.create_node(
                             f'{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}',
@@ -218,13 +228,56 @@ class NodeRegistry:
                         casare_node = factory.create_casare_node(node)
                         if casare_node:
                             node.set_casare_node(casare_node)
+
+                        # Auto-connect to last selected node if Shift+Enter
+                        if auto_connect and last_selected:
+                            self._auto_connect_nodes(graph, last_selected, node)
+
+                        # Select the new node
+                        graph.clear_selection()
+                        node.set_selected(True)
+
                         qmenu.close()
                     event.accept()
                 else:
                     super().keyPressEvent(event)
 
+            def _auto_connect_nodes(self, graph, source_node, target_node):
+                """Auto-connect exec output of source to exec input of target."""
+                try:
+                    # Find exec_out port on source node (output_ports() returns list)
+                    source_output = None
+                    output_ports = source_node.output_ports()
+                    for port in output_ports:
+                        port_name = port.name().lower()
+                        if 'exec' in port_name or port_name in ('exec_out', 'output', 'out'):
+                            source_output = port
+                            break
+                    # Fallback: use first output port
+                    if not source_output and output_ports:
+                        source_output = output_ports[0]
+
+                    # Find exec_in port on target node (input_ports() returns list)
+                    target_input = None
+                    input_ports = target_node.input_ports()
+                    for port in input_ports:
+                        port_name = port.name().lower()
+                        if 'exec' in port_name or port_name in ('exec_in', 'input', 'in'):
+                            target_input = port
+                            break
+                    # Fallback: use first input port
+                    if not target_input and input_ports:
+                        target_input = input_ports[0]
+
+                    # Connect if both ports found
+                    if source_output and target_input:
+                        source_output.connect_to(target_input)
+                        logger.info(f"Auto-connected {source_node.name()} -> {target_node.name()}")
+                except Exception as e:
+                    logger.warning(f"Auto-connect failed: {e}")
+
         search_input = SearchLineEdit()
-        search_input.setPlaceholderText("Search nodes... (Press Enter to add first match)")
+        search_input.setPlaceholderText("Search... Enter=add, Shift+Enter=add+connect")
         search_input.setStyleSheet("""
             QLineEdit {
                 background-color: #2b2b2b;
