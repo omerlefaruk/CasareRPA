@@ -832,16 +832,34 @@ class CasareRPAApp:
         
         return workflow
     
+    def _reset_all_node_visuals(self) -> None:
+        """Reset visual state of all nodes before workflow execution."""
+        graph = self._node_graph.graph
+        for visual_node in graph.all_nodes():
+            visual_node.update_status("idle")
+            if hasattr(visual_node.view, 'clear_execution_state'):
+                visual_node.view.clear_execution_state()
+
     def _on_run_workflow(self) -> None:
         """Handle workflow execution."""
         try:
             logger.info("Starting workflow execution")
-            
+
+            # Reset all node visuals before starting
+            self._reset_all_node_visuals()
+
             # Create workflow from current graph
             workflow = self._create_workflow_from_graph()
-            
-            # Create workflow runner
-            self._workflow_runner = WorkflowRunner(workflow, self._event_bus)
+
+            # Get initial variables from bottom panel Variables Tab
+            initial_variables = self._get_initial_variables()
+
+            # Create workflow runner with initial variables
+            self._workflow_runner = WorkflowRunner(
+                workflow,
+                self._event_bus,
+                initial_variables=initial_variables
+            )
             
             # Apply debug settings from toolbar
             debug_toolbar = self._main_window.get_debug_toolbar()
@@ -911,14 +929,21 @@ class CasareRPAApp:
         try:
             logger.info(f"Starting run-to-node execution, target: {target_node_id}")
 
+            # Reset all node visuals before starting
+            self._reset_all_node_visuals()
+
             # Create workflow from current graph
             workflow = self._create_workflow_from_graph()
 
-            # Create workflow runner with target node
+            # Get initial variables from bottom panel Variables Tab
+            initial_variables = self._get_initial_variables()
+
+            # Create workflow runner with target node and initial variables
             self._workflow_runner = WorkflowRunner(
                 workflow,
                 self._event_bus,
-                target_node_id=target_node_id
+                target_node_id=target_node_id,
+                initial_variables=initial_variables
             )
 
             # Check if subgraph was successfully calculated
@@ -1113,19 +1138,20 @@ class CasareRPAApp:
         duration = event.data.get("duration", 0)
         executed_nodes = event.data.get("executed_nodes", 0)
         total_nodes = event.data.get("total_nodes", 0)
-        
+
         logger.info(f"Workflow completed in {duration:.2f}s ({executed_nodes}/{total_nodes} nodes)")
         self._main_window.statusBar().showMessage(
             f"Workflow completed! ({executed_nodes}/{total_nodes} nodes in {duration:.2f}s)",
             5000
         )
-        
-        # Reset UI
+
+        # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
+        self._main_window.action_run_to_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
-        
+
         # Keep selector buttons enabled if browser is still active
         # They will be disabled when browser is closed or page becomes invalid
     
@@ -1133,16 +1159,17 @@ class CasareRPAApp:
         """Handle workflow error event."""
         error = event.data.get("error", "Unknown error")
         executed_nodes = event.data.get("executed_nodes", 0)
-        
+
         logger.error(f"Workflow failed: {error}")
         self._main_window.statusBar().showMessage(f"Workflow failed: {error}", 5000)
-        
-        # Reset UI
+
+        # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
+        self._main_window.action_run_to_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
-        
+
         # Keep selector buttons enabled if browser is still active
         # They will be disabled when browser is closed or page becomes invalid
     
@@ -1586,15 +1613,16 @@ class CasareRPAApp:
         """Handle workflow stopped event."""
         executed_nodes = event.data.get("executed_nodes", 0)
         total_nodes = event.data.get("total_nodes", 0)
-        
+
         logger.info(f"Workflow stopped ({executed_nodes}/{total_nodes} nodes executed)")
         self._main_window.statusBar().showMessage(
             f"Workflow stopped ({executed_nodes}/{total_nodes} nodes)",
             5000
         )
-        
-        # Reset UI
+
+        # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
+        self._main_window.action_run_to_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
