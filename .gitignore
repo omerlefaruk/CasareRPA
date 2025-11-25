@@ -1,5 +1,14 @@
 # .gitignore for CasareRPA
 
+# Environment and Secrets - NEVER commit these!
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+credentials.json
+secrets.json
+
 # Python
 __pycache__/
 *.py[cod]

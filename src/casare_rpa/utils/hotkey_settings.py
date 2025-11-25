@@ -2,9 +2,10 @@
 Hotkey settings manager for persistent storage of keyboard shortcuts.
 
 This module handles loading and saving custom keyboard shortcuts to a JSON file.
+Uses orjson for fast serialization.
 """
 
-import json
+import orjson
 from pathlib import Path
 from typing import Dict, List, Optional
 from loguru import logger
@@ -56,8 +57,8 @@ class HotkeySettings:
         """Load hotkeys from file, or use defaults if file doesn't exist."""
         if self._settings_file.exists():
             try:
-                with open(self._settings_file, 'r', encoding='utf-8') as f:
-                    self._hotkeys = json.load(f)
+                data = self._settings_file.read_bytes()
+                self._hotkeys = orjson.loads(data)
                 logger.info(f"Loaded hotkeys from {self._settings_file}")
             except Exception as e:
                 logger.error(f"Failed to load hotkeys: {e}")
@@ -65,13 +66,13 @@ class HotkeySettings:
         else:
             logger.info("No hotkey settings file found, using defaults")
             self._hotkeys = DEFAULT_HOTKEYS.copy()
-    
+
     def save(self) -> None:
         """Save current hotkeys to file."""
         try:
             self._settings_file.parent.mkdir(parents=True, exist_ok=True)
-            with open(self._settings_file, 'w', encoding='utf-8') as f:
-                json.dump(self._hotkeys, f, indent=2)
+            data = orjson.dumps(self._hotkeys, option=orjson.OPT_INDENT_2)
+            self._settings_file.write_bytes(data)
             logger.info(f"Saved hotkeys to {self._settings_file}")
         except Exception as e:
             logger.error(f"Failed to save hotkeys: {e}")

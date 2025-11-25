@@ -3,16 +3,148 @@ Template Loader Utility
 
 Provides functionality to discover, load, and instantiate workflow templates.
 Templates are organized in categories and can be loaded into the GUI or run programmatically.
+
+Security: Templates are sandboxed to only allow importing from approved modules
+and are validated before execution.
 """
 
 import os
 import importlib.util
 import inspect
+import ast
+import re
 from pathlib import Path
-from typing import Dict, List, Optional, Callable, Any
+from typing import Dict, List, Optional, Callable, Any, Set
 from dataclasses import dataclass
 
 from loguru import logger
+
+
+# Allowed modules that templates can import
+ALLOWED_TEMPLATE_MODULES: Set[str] = {
+    # Core workflow modules
+    "casare_rpa.core",
+    "casare_rpa.core.workflow_schema",
+    "casare_rpa.core.base_node",
+    "casare_rpa.core.types",
+    # Node modules
+    "casare_rpa.nodes",
+    "casare_rpa.nodes.basic_nodes",
+    "casare_rpa.nodes.browser_nodes",
+    "casare_rpa.nodes.navigation_nodes",
+    "casare_rpa.nodes.interaction_nodes",
+    "casare_rpa.nodes.data_nodes",
+    "casare_rpa.nodes.control_flow_nodes",
+    "casare_rpa.nodes.error_handling_nodes",
+    "casare_rpa.nodes.data_operation_nodes",
+    "casare_rpa.nodes.desktop_nodes",
+    # Safe standard library
+    "typing",
+    "datetime",
+    "uuid",
+    "json",
+    "re",
+    "math",
+    "collections",
+    "dataclasses",
+    "enum",
+    "functools",
+    "itertools",
+}
+
+# Dangerous patterns that are not allowed in templates
+DANGEROUS_PATTERNS = [
+    r"\beval\s*\(",       # eval() function
+    r"\bexec\s*\(",       # exec() function
+    r"\bcompile\s*\(",    # compile() function
+    r"__import__\s*\(",   # __import__() function
+    r"\bopen\s*\(",       # open() for file access
+    r"\bos\.(system|popen|exec|spawn)",  # OS command execution
+    r"\bsubprocess\.",    # subprocess module
+    r"\bsocket\.",        # socket module
+    r"\brequests\.",      # requests module (use HTTP node instead)
+    r"\burllib\.",        # urllib module
+    r"\bpickle\.",        # pickle (deserialization attacks)
+    r"\bshelve\.",        # shelve module
+    r"\bglobals\s*\(\)",  # globals() access
+    r"\blocals\s*\(\)",   # locals() access
+    r"\bsetattr\s*\(",    # setattr() for attribute modification
+    r"\bdelattr\s*\(",    # delattr()
+    r"__builtins__",      # builtins access
+    r"__code__",          # code object access
+    r"__globals__",       # globals access
+]
+
+
+class TemplateValidationError(Exception):
+    """Raised when template validation fails."""
+    pass
+
+
+def validate_template_code(file_path: Path) -> List[str]:
+    """
+    Validate template code for security issues.
+
+    Args:
+        file_path: Path to the template file
+
+    Returns:
+        List of validation warnings/errors (empty if valid)
+
+    Raises:
+        TemplateValidationError: If critical security issues are found
+    """
+    issues = []
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        raise TemplateValidationError(f"Cannot read template file: {e}")
+
+    # Check for dangerous patterns
+    for pattern in DANGEROUS_PATTERNS:
+        if re.search(pattern, content):
+            issues.append(f"Dangerous pattern detected: {pattern}")
+
+    # Parse AST to check imports
+    try:
+        tree = ast.parse(content)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_name = alias.name.split('.')[0]
+                    if not _is_allowed_module(alias.name):
+                        issues.append(f"Disallowed import: {alias.name}")
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    if not _is_allowed_module(node.module):
+                        issues.append(f"Disallowed import from: {node.module}")
+
+    except SyntaxError as e:
+        issues.append(f"Syntax error in template: {e}")
+
+    if issues:
+        logger.warning(f"Template validation issues in {file_path}: {issues}")
+
+    return issues
+
+
+def _is_allowed_module(module_name: str) -> bool:
+    """Check if a module is in the allowed list."""
+    # Check exact match
+    if module_name in ALLOWED_TEMPLATE_MODULES:
+        return True
+
+    # Check if it's a submodule of an allowed module
+    for allowed in ALLOWED_TEMPLATE_MODULES:
+        if module_name.startswith(allowed + "."):
+            return True
+        if allowed.startswith(module_name + "."):
+            return True
+
+    return False
 
 
 @dataclass
@@ -187,20 +319,36 @@ class TemplateLoader:
             tags=tags
         )
     
-    def load_template_function(self, template_info: TemplateInfo) -> Optional[Callable]:
+    def load_template_function(
+        self,
+        template_info: TemplateInfo,
+        validate: bool = True
+    ) -> Optional[Callable]:
         """
         Load the create function from a template file.
-        
+
         Args:
             template_info: Template information
-        
+            validate: If True, validate template code before loading (default: True)
+
         Returns:
             Create function or None if not found
+
+        Raises:
+            TemplateValidationError: If validation fails and validate=True
         """
         if template_info.create_function:
             return template_info.create_function
-        
+
         try:
+            # Validate template before loading
+            if validate:
+                issues = validate_template_code(template_info.file_path)
+                if issues:
+                    error_msg = f"Template validation failed: {'; '.join(issues)}"
+                    logger.error(error_msg)
+                    raise TemplateValidationError(error_msg)
+
             # Load module from file
             spec = importlib.util.spec_from_file_location(
                 f"template_{template_info.category}_{template_info.file_path.stem}",

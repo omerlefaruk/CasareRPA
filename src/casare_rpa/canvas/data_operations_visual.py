@@ -17,17 +17,20 @@ from ..nodes.data_operation_nodes import (
 
 class VisualConcatenateNode(VisualNode):
     """Visual representation of ConcatenateNode."""
-    
+
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Concatenate Strings'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
+        self.add_text_input('separator', 'Separator', tab='properties')
+
+    def setup_ports(self):
+        """Setup ports for concatenate node."""
         self.add_input('string_1')
         self.add_input('string_2')
         self.add_output('result')
-        self.create_property('separator', '', widget_type='text_input')
 
     def get_node_class(self):
         return ConcatenateNode
@@ -87,38 +90,51 @@ class VisualRegexReplaceNode(VisualNode):
 
 class VisualMathOperationNode(VisualNode):
     """Visual representation of MathOperationNode."""
-    
+
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Math Operation'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
+        self.add_combo_menu(
+            'operation', 'Operation',
+            items=['add', 'subtract', 'multiply', 'divide', 'power', 'modulo'],
+            tab='properties'
+        )
+
+    def setup_ports(self):
+        """Setup ports for math operation node."""
         self.add_input('a')
         self.add_input('b')
         self.add_output('result')
-        
-        items = ['add', 'subtract', 'multiply', 'divide', 'power', 'modulo']
-        self.create_property('operation', 'add', items=items, widget_type='combo')
 
     def get_node_class(self):
         return MathOperationNode
 
 class VisualComparisonNode(VisualNode):
     """Visual representation of ComparisonNode."""
-    
+
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Compare Values'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
+        # Dropdown with common operators
+        self.add_combo_menu(
+            'operator', 'Operator',
+            items=['==', '!=', '>', '<', '>=', '<=', 'and', 'or', 'in', 'not in', 'is', 'is not'],
+            tab='properties'
+        )
+        # Text input for custom operator (overrides dropdown if not empty)
+        self.add_text_input('custom_operator', 'Custom Operator', tab='properties')
+
+    def setup_ports(self):
+        """Setup ports for comparison node."""
         self.add_input('a')
         self.add_input('b')
         self.add_output('result')
-        
-        items = ['==', '!=', '>', '<', '>=', '<=']
-        self.create_property('operator', '==', items=items, widget_type='combo')
 
     def get_node_class(self):
         return ComparisonNode
