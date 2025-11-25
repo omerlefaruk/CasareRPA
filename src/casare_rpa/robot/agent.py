@@ -40,6 +40,12 @@ from .audit import AuditLogger, init_audit_logger, AuditEventType, AuditSeverity
 from .progress_reporter import ProgressReporter, CancellationChecker, JobLocker
 from .job_executor import JobExecutor
 
+try:
+    from .websocket_client import RobotWebSocketClient
+    HAS_WEBSOCKET = True
+except ImportError:
+    HAS_WEBSOCKET = False
+
 load_dotenv()
 
 
@@ -169,6 +175,10 @@ class RobotAgent:
             on_job_complete=self._on_job_complete,
         )
 
+        # WebSocket client (optional, for orchestrator connection)
+        self._ws_client: Optional[RobotWebSocketClient] = None
+        self._ws_connected = False
+
     def _on_connected(self):
         """Callback when connection established."""
         if self.audit:
@@ -207,6 +217,16 @@ class RobotAgent:
 
     async def _on_job_complete(self, job_id: str, success: bool, error: Optional[str]):
         """Callback when job completes."""
+        # Report via WebSocket if connected
+        if self._ws_client and self._ws_client.is_connected:
+            try:
+                if success:
+                    await self._ws_client.send_job_complete(job_id, {"success": True})
+                else:
+                    await self._ws_client.send_job_failed(job_id, error or "Unknown error")
+            except Exception as e:
+                logger.error(f"Failed to report job via WebSocket: {e}")
+
         # Update job status in Supabase
         if self.connection.is_connected:
             try:
@@ -222,6 +242,120 @@ class RobotAgent:
                 logger.error(f"Failed to update job status: {e}")
                 # Cache for later sync
                 await self.offline_queue.mark_completed(job_id, success, error=error)
+
+    # ==================== ORCHESTRATOR WEBSOCKET CONNECTION ====================
+
+    async def connect_to_orchestrator(self, orchestrator_url: str = "ws://localhost:8765"):
+        """
+        Connect to orchestrator via WebSocket for job distribution.
+
+        This is an alternative to Supabase polling - the orchestrator
+        will push jobs directly to the robot.
+
+        Args:
+            orchestrator_url: WebSocket URL of the orchestrator server
+        """
+        if not HAS_WEBSOCKET:
+            logger.error("websockets package not installed, cannot connect to orchestrator")
+            return
+
+        logger.info(f"Connecting to orchestrator at {orchestrator_url}")
+
+        self._ws_client = RobotWebSocketClient(
+            robot_id=self.robot_id,
+            robot_name=self.name,
+            orchestrator_url=orchestrator_url,
+            max_concurrent_jobs=self.config.job_execution.max_concurrent_jobs,
+        )
+
+        self._ws_client.set_callbacks(
+            on_job_assigned=self._on_ws_job_assigned,
+            on_job_cancelled=self._on_ws_job_cancelled,
+            on_connected=self._on_ws_connected,
+            on_disconnected=self._on_ws_disconnected,
+        )
+
+        # Start connection (runs in background with auto-reconnect)
+        asyncio.create_task(self._ws_client.connect())
+
+        if self.audit:
+            self.audit.log(
+                AuditEventType.CONNECTION_ATTEMPT,
+                f"Connecting to orchestrator: {orchestrator_url}",
+            )
+
+    def _on_ws_connected(self):
+        """Callback when WebSocket connects to orchestrator."""
+        self._ws_connected = True
+        logger.info("Connected to orchestrator via WebSocket")
+
+        if self.audit:
+            self.audit.log(
+                AuditEventType.CONNECTION_ESTABLISHED,
+                "WebSocket connection to orchestrator established",
+            )
+
+    def _on_ws_disconnected(self):
+        """Callback when WebSocket disconnects from orchestrator."""
+        self._ws_connected = False
+        logger.warning("Disconnected from orchestrator WebSocket")
+
+        if self.audit:
+            self.audit.log(
+                AuditEventType.CONNECTION_LOST,
+                "WebSocket connection to orchestrator lost",
+            )
+
+    async def _on_ws_job_assigned(self, job_data: dict):
+        """
+        Handle job assigned by orchestrator via WebSocket.
+
+        Args:
+            job_data: Job assignment data from orchestrator
+        """
+        job_id = job_data.get("job_id")
+        workflow_json = job_data.get("workflow_json")
+        workflow_name = job_data.get("workflow_name", "Unknown")
+
+        logger.info(f"Job assigned via WebSocket: {job_id[:8]} - {workflow_name}")
+
+        if self.audit:
+            self.audit.job_received(job_id, workflow_name)
+
+        # Submit to job executor
+        try:
+            await self.job_executor.submit_job(job_id, workflow_json)
+        except Exception as e:
+            logger.error(f"Failed to submit job {job_id}: {e}")
+            if self._ws_client:
+                await self._ws_client.send_job_failed(job_id, str(e))
+
+    async def _on_ws_job_cancelled(self, job_id: str, reason: str):
+        """
+        Handle job cancellation from orchestrator.
+
+        Args:
+            job_id: Job ID to cancel
+            reason: Cancellation reason
+        """
+        logger.info(f"Job cancelled via WebSocket: {job_id[:8]} - {reason}")
+
+        # Cancel in job executor
+        await self.job_executor.cancel_job(job_id, reason)
+
+        if self.audit:
+            self.audit.log(
+                AuditEventType.JOB_CANCELLED,
+                f"Job cancelled: {reason}",
+                job_id=job_id,
+            )
+
+    async def disconnect_from_orchestrator(self, reason: str = ""):
+        """Disconnect from orchestrator WebSocket."""
+        if self._ws_client:
+            await self._ws_client.disconnect(reason)
+            self._ws_client = None
+            self._ws_connected = False
 
     async def start(self):
         """Start the robot agent."""
@@ -470,6 +604,10 @@ class RobotAgent:
         # Stop resource monitoring
         await self.metrics.stop_resource_monitoring()
 
+        # Disconnect from orchestrator WebSocket
+        if self._ws_client:
+            await self.disconnect_from_orchestrator("Robot stopping")
+
         # Update status to offline
         if self.connection.is_connected:
             try:
@@ -493,7 +631,7 @@ class RobotAgent:
 
     def get_status(self) -> dict:
         """Get comprehensive agent status."""
-        return {
+        status = {
             "robot_id": self.robot_id,
             "robot_name": self.name,
             "running": self.running,
@@ -502,6 +640,16 @@ class RobotAgent:
             "job_executor": self.job_executor.get_status(),
             "metrics": self.metrics.get_summary(),
         }
+
+        # Add WebSocket status if available
+        if self._ws_client:
+            status["orchestrator_websocket"] = {
+                "connected": self._ws_client.is_connected,
+                "url": self._ws_client.orchestrator_url,
+                "active_jobs": self._ws_client.current_job_count,
+            }
+
+        return status
 
     async def get_status_async(self) -> dict:
         """Get comprehensive agent status (async version with queue stats)."""
