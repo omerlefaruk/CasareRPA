@@ -339,17 +339,17 @@ class NodeGraphWidget(QWidget):
                     logger.debug(f"Has port at release: {has_port}")
 
                     if not has_port:
-                        # Save source port BEFORE calling original (which will clear it)
+                        # Save source port (don't call original yet - keep pipe visible)
                         source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
 
                         logger.debug(f"Source port: {source_port}")
 
                         if source_port:
                             logger.info(f"Connection dropped in empty space, showing search")
-                            # Call original first to clean up the pipe
-                            original_mouse_release(event)
-                            # Then show search
+                            # Show search while keeping the pipe visible
                             self._show_connection_search(source_port, scene_pos)
+                            # After menu closes, clean up the pipe
+                            viewer.end_live_connection()
                             return
 
             # Call original handler

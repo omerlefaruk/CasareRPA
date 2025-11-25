@@ -320,8 +320,55 @@ class CasareRPAApp:
             graph.delete_nodes(selected_nodes)
             logger.info(f"Deleted {len(selected_nodes)} nodes")
 
+            # Clean up any orphaned connection pipes
+            self._cleanup_orphaned_pipes()
+
         if frames_deleted > 0:
             logger.info(f"Deleted {frames_deleted} frames")
+
+    def _cleanup_orphaned_pipes(self) -> None:
+        """
+        Remove any orphaned connection pipes from the scene.
+
+        This is called after node deletion to clean up any pipes
+        that may not have been properly removed.
+        """
+        try:
+            from NodeGraphQt.qgraphics.pipe import PipeItem
+
+            viewer = self.node_graph.graph.viewer()
+            scene = viewer.scene()
+
+            # Find all pipe items in the scene
+            pipes_to_remove = []
+            for item in scene.items():
+                if isinstance(item, PipeItem):
+                    # Check if both ports still exist and have valid parent nodes
+                    input_port = getattr(item, 'input_port', None)
+                    output_port = getattr(item, 'output_port', None)
+
+                    should_remove = False
+
+                    # Check if pipe has both ports
+                    if not input_port or not output_port:
+                        should_remove = True
+                    # Check if ports have valid parent nodes
+                    elif not input_port.node or not output_port.node:
+                        should_remove = True
+                    # Check if parent nodes are still in the scene
+                    elif input_port.node not in scene.items() or output_port.node not in scene.items():
+                        should_remove = True
+
+                    if should_remove:
+                        pipes_to_remove.append(item)
+
+            # Remove orphaned pipes
+            if pipes_to_remove:
+                for pipe in pipes_to_remove:
+                    scene.removeItem(pipe)
+                logger.info(f"Cleaned up {len(pipes_to_remove)} orphaned connection pipes")
+        except Exception as e:
+            logger.error(f"Error cleaning up orphaned pipes: {e}")
 
     def _get_serialized_workflow_data(self) -> Optional[dict]:
         """
