@@ -9,6 +9,7 @@ Usage:
     python build_dev_installer.py [--skip-pyinstaller] [--sign]
 """
 
+import os
 import subprocess
 import sys
 import shutil
@@ -62,12 +63,23 @@ def run_command(cmd: list[str], cwd: Optional[Path] = None) -> bool:
         return False
 
 
+def remove_readonly(func, path, _):
+    """Handle read-only files during rmtree."""
+    import stat
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def clean_build_dirs():
     """Clean previous build artifacts."""
     print("Cleaning build directories...")
     for dir_path in [DIST_DIR, BUILD_DIR]:
         if dir_path.exists():
-            shutil.rmtree(dir_path)
+            try:
+                shutil.rmtree(dir_path, onerror=remove_readonly)
+            except PermissionError as e:
+                print(f"Warning: Could not fully clean {dir_path}: {e}")
+                print("Continuing with existing directory...")
     DIST_DIR.mkdir(exist_ok=True)
     BUILD_DIR.mkdir(exist_ok=True)
     OUTPUT_DIR.mkdir(exist_ok=True)
@@ -225,6 +237,8 @@ def main():
     parser = argparse.ArgumentParser(description="Build CasareRPA Developer Installer")
     parser.add_argument("--skip-pyinstaller", action="store_true",
                        help="Skip PyInstaller builds (use existing dist)")
+    parser.add_argument("--no-clean", action="store_true",
+                       help="Skip cleaning build directories")
     parser.add_argument("--sign", action="store_true",
                        help="Sign executables with code signing certificate")
     parser.add_argument("--version", type=str, default=None,
@@ -236,7 +250,13 @@ def main():
     print("=" * 50)
 
     if not args.skip_pyinstaller:
-        clean_build_dirs()
+        if not args.no_clean:
+            clean_build_dirs()
+        else:
+            print("Skipping clean (--no-clean specified)")
+            DIST_DIR.mkdir(exist_ok=True)
+            BUILD_DIR.mkdir(exist_ok=True)
+            OUTPUT_DIR.mkdir(exist_ok=True)
 
         # Build all components
         if not build_canvas():

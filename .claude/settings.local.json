@@ -1,15 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(set PYTHONPATH=src:*)",
-      "Bash(PYTHONPATH=src pytest:*)",
-      "Bash(python -m pytest:*)",
-      "Bash(pip show:*)",
-      "Bash(pip install:*)",
-      "Bash(git checkout:*)",
-      "Bash(python:*)",
-      "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(python installer/build_dev_installer.py:*)",
+      "Bash(python -c:*)",
+      "WebSearch",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(python -m pytest tests/ -v --tb=short -q)",
+      "Bash(python -m pytest tests/ -q --tb=no)"
     ],
     "deny": [],
     "ask": []

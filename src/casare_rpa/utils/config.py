@@ -3,6 +3,7 @@ CasareRPA - Configuration Module
 Handles application settings, paths, and logging configuration.
 """
 
+import os
 import sys
 from pathlib import Path
 from typing import Final
@@ -12,22 +13,41 @@ from loguru import logger
 # PATH CONFIGURATION
 # ============================================================================
 
-# Project root directory
-PROJECT_ROOT: Final[Path] = Path(__file__).parent.parent.parent
-SRC_ROOT: Final[Path] = PROJECT_ROOT / "src"
-LOGS_DIR: Final[Path] = PROJECT_ROOT / "logs"
-WORKFLOWS_DIR: Final[Path] = PROJECT_ROOT / "workflows"
-DOCS_DIR: Final[Path] = PROJECT_ROOT / "docs"
-CONFIG_DIR: Final[Path] = PROJECT_ROOT / "config"
+# Detect if running as frozen executable (PyInstaller)
+IS_FROZEN: Final[bool] = getattr(sys, 'frozen', False)
+
+if IS_FROZEN:
+    # When running as executable, use AppData for user-writable directories
+    _appdata = Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming'))
+    USER_DATA_DIR: Final[Path] = _appdata / "CasareRPA"
+
+    # Application installation directory (read-only)
+    APP_DIR: Final[Path] = Path(sys.executable).parent
+    PROJECT_ROOT: Final[Path] = APP_DIR
+    SRC_ROOT: Final[Path] = APP_DIR / "_internal" / "casare_rpa"
+    DOCS_DIR: Final[Path] = APP_DIR / "_internal" / "docs"
+
+    # User-writable directories in AppData
+    LOGS_DIR: Final[Path] = USER_DATA_DIR / "logs"
+    WORKFLOWS_DIR: Final[Path] = USER_DATA_DIR / "workflows"
+    CONFIG_DIR: Final[Path] = USER_DATA_DIR / "config"
+else:
+    # Development mode - use project directory
+    PROJECT_ROOT: Final[Path] = Path(__file__).parent.parent.parent
+    SRC_ROOT: Final[Path] = PROJECT_ROOT / "src"
+    LOGS_DIR: Final[Path] = PROJECT_ROOT / "logs"
+    WORKFLOWS_DIR: Final[Path] = PROJECT_ROOT / "workflows"
+    DOCS_DIR: Final[Path] = PROJECT_ROOT / "docs"
+    CONFIG_DIR: Final[Path] = PROJECT_ROOT / "config"
 
 # User settings
 SETTINGS_FILE: Final[Path] = CONFIG_DIR / "settings.json"
 HOTKEYS_FILE: Final[Path] = CONFIG_DIR / "hotkeys.json"
 
-# Ensure critical directories exist
-LOGS_DIR.mkdir(exist_ok=True)
-WORKFLOWS_DIR.mkdir(exist_ok=True)
-CONFIG_DIR.mkdir(exist_ok=True)
+# Ensure critical directories exist (these are now always writable)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # APPLICATION CONFIGURATION
