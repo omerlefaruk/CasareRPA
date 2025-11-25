@@ -5,6 +5,7 @@ This module provides nodes for controlling page navigation:
 going to URLs, back/forward navigation, and page refresh.
 """
 
+import asyncio
 from typing import Any, Optional
 
 from playwright.async_api import Page
@@ -46,6 +47,11 @@ class GoToURLNode(BaseNode):
             "timeout": timeout,
             "wait_until": "load",  # load, domcontentloaded, networkidle, commit
             "referer": "",  # Optional referer header
+            "retry_count": 0,  # Number of retries on navigation failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
+            "ignore_https_errors": False,  # Ignore HTTPS certificate errors
         }
 
         config = kwargs.get("config", {})
@@ -69,27 +75,27 @@ class GoToURLNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute navigation to URL.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with page instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get page from input or context
             page = self.get_input_value("page")
             logger.info(f"Page from input: {page} (type: {type(page).__name__ if page else 'None'})")
-            
+
             if page is None:
                 page = context.get_active_page()
                 logger.info(f"Page from context: {page} (type: {type(page).__name__ if page else 'None'})")
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Get URL from input or config
             url = self.get_input_value("url")
             logger.info(f"URL from input port: '{url}'")
@@ -110,22 +116,28 @@ class GoToURLNode(BaseNode):
 
                 url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
                 logger.info(f"URL after variable substitution: '{url}'")
-            
+
             if url is None:
                 url = self.config.get("url", "")
                 logger.info(f"URL from config: '{url}'")
-            
+
             if not url:
                 logger.error(f"URL validation failed. url='{url}', config={self.config}")
                 raise ValueError("URL is required")
-            
+
             # Add protocol if missing
             if not url.startswith(("http://", "https://", "file://")):
                 url = f"https://{url}"
-            
+
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
             referer = self.config.get("referer", "")
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
 
             logger.info(f"Navigating to URL: {url} (wait_until={wait_until})")
 
@@ -134,24 +146,65 @@ class GoToURLNode(BaseNode):
             if referer:
                 goto_options["referer"] = referer
 
-            # Navigate to URL
-            response = await page.goto(url, **goto_options)
-            
-            # Set output
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Navigation completed: {url} (status: {response.status if response else 'N/A'})")
-            
-            return {
-                "success": True,
-                "data": {
-                    "url": url,
-                    "status": response.status if response else None
-                },
-                "next_nodes": ["exec_out"]
-            }
-            
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}")
+
+                    # Navigate to URL
+                    response = await page.goto(url, **goto_options)
+
+                    # Set output
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Navigation completed: {url} (status: {response.status if response else 'N/A'}, attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "url": url,
+                            "status": response.status if response else None,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Navigation failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"navigation_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to navigate to URL: {e}")
@@ -192,6 +245,8 @@ class GoBackNode(BaseNode):
         default_config = {
             "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
             "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -232,21 +287,43 @@ class GoBackNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
 
             logger.info(f"Navigating back (wait_until={wait_until})")
 
-            await page.go_back(timeout=timeout, wait_until=wait_until)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("page", page)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go back")
 
-            self.status = NodeStatus.SUCCESS
-            logger.info("Back navigation completed")
+                    await page.go_back(timeout=timeout, wait_until=wait_until)
 
-            return {
-                "success": True,
-                "data": {"url": page.url},
-                "next_nodes": ["exec_out"]
-            }
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Back navigation completed (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"url": page.url, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Go back failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -279,6 +356,8 @@ class GoForwardNode(BaseNode):
         default_config = {
             "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
             "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -289,14 +368,14 @@ class GoForwardNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoForwardNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute forward navigation.
@@ -319,21 +398,43 @@ class GoForwardNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
 
             logger.info(f"Navigating forward (wait_until={wait_until})")
 
-            await page.go_forward(timeout=timeout, wait_until=wait_until)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("page", page)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go forward")
 
-            self.status = NodeStatus.SUCCESS
-            logger.info("Forward navigation completed")
+                    await page.go_forward(timeout=timeout, wait_until=wait_until)
 
-            return {
-                "success": True,
-                "data": {"url": page.url},
-                "next_nodes": ["exec_out"]
-            }
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Forward navigation completed (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"url": page.url, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Go forward failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -366,6 +467,8 @@ class RefreshPageNode(BaseNode):
         default_config = {
             "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
             "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -376,14 +479,14 @@ class RefreshPageNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RefreshPageNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute page refresh.
@@ -406,21 +509,43 @@ class RefreshPageNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
 
             logger.info(f"Refreshing page (wait_until={wait_until})")
 
-            await page.reload(timeout=timeout, wait_until=wait_until)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("page", page)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for page refresh")
 
-            self.status = NodeStatus.SUCCESS
-            logger.info("Page refreshed successfully")
+                    await page.reload(timeout=timeout, wait_until=wait_until)
 
-            return {
-                "success": True,
-                "data": {"url": page.url},
-                "next_nodes": ["exec_out"]
-            }
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Page refreshed successfully (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"url": page.url, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Refresh failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR

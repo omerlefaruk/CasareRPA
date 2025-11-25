@@ -5,6 +5,7 @@ This module provides nodes for interacting with page elements:
 clicking, typing, selecting, etc.
 """
 
+import asyncio
 from typing import Any, Optional
 
 from playwright.async_api import Page
@@ -54,6 +55,11 @@ class ClickElementNode(BaseNode):
             "modifiers": [],  # Modifier keys: 'Alt', 'Control', 'Meta', 'Shift'
             "no_wait_after": False,  # Skip waiting for navigations after click
             "trial": False,  # Perform actionability checks without clicking
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
+            "highlight_before_click": False,  # Highlight element before clicking
         }
 
         config = kwargs.get("config", {})

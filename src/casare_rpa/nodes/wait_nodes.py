@@ -170,34 +170,34 @@ class WaitForElementNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute wait for element.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Success result when element appears
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
                 selector = self.config.get("selector", "")
-            
+
             if not selector:
                 raise ValueError("Selector is required")
-            
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
-            
+
             # Safely parse timeout with default
             timeout_val = self.config.get("timeout")
             if timeout_val is None or timeout_val == "":
@@ -208,30 +208,100 @@ class WaitForElementNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             state = self.config.get("state", "visible")
-            
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+            highlight_on_find = self.config.get("highlight_on_find", False)
+            strict = self.config.get("strict", False)
+
             logger.info(f"Waiting for element: {normalized_selector} (state={state})")
-            
-            # Wait for element
-            await page.wait_for_selector(
-                normalized_selector,
-                timeout=timeout,
-                state=state
-            )
-            
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Element appeared: {selector}")
-            
-            return {
-                "success": True,
-                "data": {
-                    "selector": selector,
-                    "state": state
-                },
-                "next_nodes": ["exec_out"]
+
+            # Build wait options
+            wait_options = {
+                "timeout": timeout,
+                "state": state,
             }
-            
+            if strict:
+                wait_options["strict"] = True
+
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1  # Initial attempt + retries
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for element: {selector}")
+
+                    # Wait for element
+                    element = await page.wait_for_selector(normalized_selector, **wait_options)
+
+                    # Highlight element if requested
+                    if highlight_on_find and element:
+                        try:
+                            await element.evaluate("""
+                                el => {
+                                    const original = el.style.outline;
+                                    el.style.outline = '3px solid #00ff00';
+                                    setTimeout(() => { el.style.outline = original; }, 500);
+                                }
+                            """)
+                            await asyncio.sleep(0.5)  # Wait for highlight to show
+                        except Exception:
+                            pass  # Ignore highlight errors
+
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Element appeared: {selector} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "selector": selector,
+                            "state": state,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Wait for element failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)  # Convert ms to seconds
+                    else:
+                        # Last attempt failed
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        # Generate default path
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"wait_element_fail_{timestamp}.png"
+
+                    # Ensure directory exists
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to wait for element: {e}")
@@ -279,6 +349,10 @@ class WaitForNavigationNode(BaseNode):
             "wait_until": wait_until,
             "url_pattern": "",  # Optional URL pattern to wait for (glob or regex)
             "url_use_regex": False,  # Treat url_pattern as regex instead of glob
+            "retry_count": 0,  # Number of retries after timeout (0 = no retry)
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
         }
 
         config = kwargs.get("config", {})
@@ -301,23 +375,23 @@ class WaitForNavigationNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute wait for navigation.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Success result when navigation completes
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Safely parse timeout with default
             timeout_val = self.config.get("timeout")
             if timeout_val is None or timeout_val == "":
@@ -328,26 +402,76 @@ class WaitForNavigationNode(BaseNode):
                 except (ValueError, TypeError):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             wait_until = self.config.get("wait_until", "load")
-            
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Waiting for navigation (wait_until={wait_until})")
-            
-            # Wait for navigation
-            await page.wait_for_load_state(wait_until, timeout=timeout)
-            
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info("Navigation completed")
-            
-            return {
-                "success": True,
-                "data": {
-                    "url": page.url,
-                    "wait_until": wait_until
-                },
-                "next_nodes": ["exec_out"]
-            }
-            
+
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1  # Initial attempt + retries
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for navigation")
+
+                    # Wait for navigation
+                    await page.wait_for_load_state(wait_until, timeout=timeout)
+
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Navigation completed (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "url": page.url,
+                            "wait_until": wait_until,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Wait for navigation failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)  # Convert ms to seconds
+                    else:
+                        # Last attempt failed
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        # Generate default path
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"wait_navigation_fail_{timestamp}.png"
+
+                    # Ensure directory exists
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to wait for navigation: {e}")
