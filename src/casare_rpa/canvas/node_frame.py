@@ -105,29 +105,6 @@ class FrameBoundsManager(QObject):
         return self._timer.isActive()
 
 
-# Legacy helper for backward compatibility
-class FrameTimerHelper(QObject):
-    """
-    Helper QObject to host the timer for NodeFrame.
-
-    DEPRECATED: Use FrameBoundsManager instead for better performance.
-    Kept for backward compatibility.
-    """
-
-    check_bounds = Signal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.check_bounds.emit)
-
-    def start(self, interval):
-        self.timer.start(interval)
-
-    def stop(self):
-        self.timer.stop()
-
-
 # ============================================================================
 # COLLAPSE BUTTON
 # ============================================================================

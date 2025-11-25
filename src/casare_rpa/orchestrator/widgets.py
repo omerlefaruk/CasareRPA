@@ -1,13 +1,14 @@
 """
 Reusable widgets for CasareRPA Orchestrator.
+Modern, clean design without icons.
 """
-from typing import Optional, Callable
+from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QLineEdit, QComboBox, QProgressBar,
     QSizePolicy, QGraphicsDropShadowEffect
 )
-from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 
 from .styles import COLORS, get_status_badge_style
@@ -23,46 +24,38 @@ class KPICard(QFrame):
         title: str,
         value: str = "0",
         subtitle: str = "",
-        icon: str = "",
         trend: Optional[float] = None,
         parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self.setObjectName("card")
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumSize(200, 120)
+        self.setMinimumSize(200, 110)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        # Apply shadow effect
+        # Apply subtle shadow effect
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(20)
+        shadow.setBlurRadius(16)
         shadow.setXOffset(0)
-        shadow.setYOffset(4)
-        shadow.setColor(QColor(0, 0, 0, 60))
+        shadow.setYOffset(2)
+        shadow.setColor(QColor(0, 0, 0, 40))
         self.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 16, 20, 16)
         layout.setSpacing(8)
 
-        # Header with icon and title
-        header = QHBoxLayout()
-        if icon:
-            icon_label = QLabel(icon)
-            icon_label.setStyleSheet(f"font-size: 20px; color: {COLORS['accent_secondary']};")
-            header.addWidget(icon_label)
-
+        # Title label (no icons)
         title_label = QLabel(title)
         title_label.setObjectName("card_title")
         title_label.setStyleSheet(f"""
             color: {COLORS['text_secondary']};
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 11px;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         """)
-        header.addWidget(title_label)
-        header.addStretch()
-        layout.addLayout(header)
+        layout.addWidget(title_label)
 
         # Value
         self._value_label = QLabel(value)
@@ -70,18 +63,22 @@ class KPICard(QFrame):
             color: {COLORS['text_primary']};
             font-size: 32px;
             font-weight: 700;
+            letter-spacing: -1px;
         """)
         layout.addWidget(self._value_label)
 
         # Subtitle and trend
         footer = QHBoxLayout()
+        footer.setSpacing(8)
+
         if subtitle:
             subtitle_label = QLabel(subtitle)
             subtitle_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 12px;")
             footer.addWidget(subtitle_label)
 
         if trend is not None:
-            trend_text = f"↑ {trend:.1f}%" if trend >= 0 else f"↓ {abs(trend):.1f}%"
+            # Use simple text arrows instead of emoji
+            trend_text = f"+ {trend:.1f}%" if trend >= 0 else f"- {abs(trend):.1f}%"
             trend_color = COLORS['accent_success'] if trend >= 0 else COLORS['accent_error']
             trend_label = QLabel(trend_text)
             trend_label.setStyleSheet(f"color: {trend_color}; font-size: 12px; font-weight: 600;")
@@ -94,10 +91,10 @@ class KPICard(QFrame):
             QFrame#card {{
                 background-color: {COLORS['bg_card']};
                 border: 1px solid {COLORS['border']};
-                border-radius: 12px;
+                border-radius: 8px;
             }}
             QFrame#card:hover {{
-                border-color: {COLORS['accent_secondary']};
+                border-color: {COLORS['border_light']};
             }}
         """)
 
@@ -126,7 +123,7 @@ class StatusBadge(QLabel):
 
 
 class SearchBar(QWidget):
-    """Search bar with filter options."""
+    """Search bar with filter options - no icons."""
 
     search_changed = Signal(str)
     filter_changed = Signal(str)
@@ -143,9 +140,9 @@ class SearchBar(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        # Search input
+        # Search input (no icon)
         self._search_input = QLineEdit()
-        self._search_input.setPlaceholderText(f"🔍 {placeholder}")
+        self._search_input.setPlaceholderText(placeholder)
         self._search_input.textChanged.connect(self.search_changed.emit)
         self._search_input.setMinimumWidth(250)
         layout.addWidget(self._search_input)
@@ -173,31 +170,56 @@ class SearchBar(QWidget):
 
 
 class ActionButton(QPushButton):
-    """Styled action button with icon support."""
+    """Styled action button - no icons."""
 
     def __init__(
         self,
         text: str,
-        icon: str = "",
         primary: bool = True,
         parent: Optional[QWidget] = None
     ):
-        super().__init__(f"{icon} {text}".strip() if icon else text, parent)
+        super().__init__(text, parent)
 
-        if not primary:
+        if primary:
+            self.setProperty("primary", True)
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLORS['accent_primary']};
+                    color: #ffffff;
+                    border: none;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-weight: 500;
+                }}
+                QPushButton:hover {{
+                    background-color: #5ba8ff;
+                }}
+                QPushButton:pressed {{
+                    background-color: #3d8ae8;
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLORS['bg_light']};
+                    color: {COLORS['text_muted']};
+                }}
+            """)
+        else:
             self.setProperty("secondary", True)
             self.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {COLORS['bg_light']};
                     color: {COLORS['text_primary']};
                     border: 1px solid {COLORS['border']};
-                    border-radius: 6px;
+                    border-radius: 4px;
                     padding: 8px 16px;
-                    font-weight: 600;
+                    font-weight: 500;
                 }}
                 QPushButton:hover {{
                     background-color: {COLORS['bg_hover']};
-                    border-color: {COLORS['accent_secondary']};
+                    border-color: {COLORS['border_light']};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLORS['bg_medium']};
+                    color: {COLORS['text_muted']};
                 }}
             """)
 
@@ -235,7 +257,7 @@ class ProgressIndicator(QWidget):
 
 
 class SectionHeader(QWidget):
-    """Section header with title and optional action button."""
+    """Section header with title and optional action button - no icons."""
 
     action_clicked = Signal()
 
@@ -243,7 +265,6 @@ class SectionHeader(QWidget):
         self,
         title: str,
         action_text: str = "",
-        action_icon: str = "",
         parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
@@ -257,24 +278,24 @@ class SectionHeader(QWidget):
             color: {COLORS['text_primary']};
             font-size: 18px;
             font-weight: 600;
+            letter-spacing: -0.3px;
         """)
         layout.addWidget(title_label)
         layout.addStretch()
 
         if action_text:
-            action_btn = ActionButton(action_text, action_icon, primary=False)
+            action_btn = ActionButton(action_text, primary=False)
             action_btn.clicked.connect(self.action_clicked.emit)
             layout.addWidget(action_btn)
 
 
 class EmptyState(QWidget):
-    """Empty state placeholder widget."""
+    """Empty state placeholder widget - no emoji icons."""
 
     action_clicked = Signal()
 
     def __init__(
         self,
-        icon: str = "📭",
         title: str = "No data",
         description: str = "",
         action_text: str = "",
@@ -284,13 +305,9 @@ class EmptyState(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(16)
+        layout.setSpacing(12)
 
-        icon_label = QLabel(icon)
-        icon_label.setStyleSheet("font-size: 48px;")
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(icon_label)
-
+        # Large title text instead of emoji icon
         title_label = QLabel(title)
         title_label.setStyleSheet(f"""
             color: {COLORS['text_primary']};
@@ -302,33 +319,29 @@ class EmptyState(QWidget):
 
         if description:
             desc_label = QLabel(description)
-            desc_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 14px;")
+            desc_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 13px;")
             desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             desc_label.setWordWrap(True)
             layout.addWidget(desc_label)
 
         if action_text:
-            action_btn = ActionButton(action_text, "➕")
+            layout.addSpacing(8)
+            action_btn = ActionButton(action_text, primary=True)
             action_btn.clicked.connect(self.action_clicked.emit)
             layout.addWidget(action_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
 
 class LoadingSpinner(QWidget):
-    """Loading spinner widget."""
+    """Loading spinner widget - text-based indicator."""
 
     def __init__(self, text: str = "Loading...", parent: Optional[QWidget] = None):
         super().__init__(parent)
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setSpacing(16)
+        layout.setSpacing(12)
 
-        # Simple text-based loading indicator
-        spinner = QLabel("⏳")
-        spinner.setStyleSheet("font-size: 32px;")
-        spinner.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(spinner)
-
+        # Simple text loading indicator
         label = QLabel(text)
         label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 14px;")
         label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -361,3 +374,53 @@ class InfoRow(QWidget):
 
     def set_value(self, value: str):
         self._value_widget.setText(value)
+
+
+class DataCard(QFrame):
+    """Generic data card for displaying grouped information."""
+
+    def __init__(
+        self,
+        title: str,
+        parent: Optional[QWidget] = None
+    ):
+        super().__init__(parent)
+        self.setObjectName("dataCard")
+
+        self.setStyleSheet(f"""
+            QFrame#dataCard {{
+                background-color: {COLORS['bg_card']};
+                border: 1px solid {COLORS['border']};
+                border-radius: 8px;
+            }}
+        """)
+
+        self._layout = QVBoxLayout(self)
+        self._layout.setContentsMargins(20, 16, 20, 16)
+        self._layout.setSpacing(12)
+
+        # Title
+        title_label = QLabel(title)
+        title_label.setStyleSheet(f"""
+            color: {COLORS['text_secondary']};
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        """)
+        self._layout.addWidget(title_label)
+
+        # Content area
+        self._content_layout = QVBoxLayout()
+        self._content_layout.setSpacing(8)
+        self._layout.addLayout(self._content_layout)
+
+    def add_row(self, label: str, value: str) -> InfoRow:
+        """Add an info row to the card."""
+        row = InfoRow(label, value)
+        self._content_layout.addWidget(row)
+        return row
+
+    def add_widget(self, widget: QWidget):
+        """Add a custom widget to the card."""
+        self._content_layout.addWidget(widget)

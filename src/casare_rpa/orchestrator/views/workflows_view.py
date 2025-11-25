@@ -158,11 +158,11 @@ class WorkflowsView(QWidget):
 
         header_layout.addStretch()
 
-        import_btn = ActionButton("Import", "📥", primary=False)
+        import_btn = ActionButton("Import", primary=False)
         import_btn.clicked.connect(self._import_workflow)
         header_layout.addWidget(import_btn)
 
-        refresh_btn = ActionButton("Refresh", "🔄", primary=False)
+        refresh_btn = ActionButton("Refresh", primary=False)
         refresh_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
         header_layout.addWidget(refresh_btn)
 
@@ -206,7 +206,6 @@ class WorkflowsView(QWidget):
 
         # Empty state
         self._empty_state = EmptyState(
-            icon="📁",
             title="No Workflows Found",
             description="Import a workflow JSON file to get started.",
             action_text="Import Workflow"
@@ -250,26 +249,26 @@ class WorkflowsView(QWidget):
         workflow = self._workflows[row]
         menu = QMenu(self)
 
-        view_action = menu.addAction("👁️ View Details")
+        view_action = menu.addAction("View Details")
         view_action.triggered.connect(lambda: self._show_details(workflow))
 
-        dispatch_action = menu.addAction("▶️ Dispatch")
+        dispatch_action = menu.addAction("Dispatch")
         dispatch_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._dispatch_workflow(workflow)))
         dispatch_action.setEnabled(workflow.status == WorkflowStatus.PUBLISHED)
 
         menu.addSeparator()
 
         if workflow.status == WorkflowStatus.DRAFT:
-            publish_action = menu.addAction("📤 Publish")
+            publish_action = menu.addAction("Publish")
             publish_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._publish_workflow(workflow)))
 
         if workflow.status == WorkflowStatus.PUBLISHED:
-            archive_action = menu.addAction("📦 Archive")
+            archive_action = menu.addAction("Archive")
             archive_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._archive_workflow(workflow)))
 
         menu.addSeparator()
 
-        delete_action = menu.addAction("🗑️ Delete")
+        delete_action = menu.addAction("Delete")
         delete_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._delete_workflow(workflow)))
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
@@ -399,11 +398,11 @@ class WorkflowsView(QWidget):
             actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(4)
 
-            view_btn = ActionButton("View", "👁️", primary=False)
+            view_btn = ActionButton("View", primary=False)
             view_btn.clicked.connect(lambda checked, w=workflow: self._show_details(w))
             actions_layout.addWidget(view_btn)
 
-            dispatch_btn = ActionButton("Dispatch", "▶️", primary=True)
+            dispatch_btn = ActionButton("Dispatch", primary=True)
             dispatch_btn.setEnabled(workflow.status == WorkflowStatus.PUBLISHED)
             dispatch_btn.clicked.connect(lambda checked, w=workflow: asyncio.get_event_loop().create_task(self._dispatch_workflow(w)))
             actions_layout.addWidget(dispatch_btn)

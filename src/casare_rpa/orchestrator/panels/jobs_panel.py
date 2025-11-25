@@ -79,8 +79,8 @@ class JobsTableModel(QAbstractTableModel):
             return job
 
         elif role == Qt.ItemDataRole.DecorationRole:
-            if col_key == "name":
-                return "📋"  # Job icon
+            # No icons - return None
+            pass
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
             if col_key in ("progress", "priority", "duration"):

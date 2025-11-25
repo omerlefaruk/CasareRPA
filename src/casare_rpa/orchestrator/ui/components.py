@@ -1,20 +1,20 @@
 """
 Reusable UI components for Orchestrator.
-Professional widgets inspired by Deadline Monitor.
+Professional widgets - no icons, clean design.
 """
 from typing import Optional
 from PySide6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QLabel, QProgressBar,
-    QFrame, QSizePolicy, QStyle
+    QFrame, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QPainter
 
 from .theme import COLORS, get_status_color, get_job_status_color, get_priority_color
 
 
 class ProgressBarDelegate(QWidget):
-    """Custom progress bar for table cells - Deadline style."""
+    """Custom progress bar for table cells."""
 
     def __init__(
         self,
@@ -45,7 +45,7 @@ class ProgressBarDelegate(QWidget):
         # Background
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(COLORS["progress_bg"]))
-        painter.drawRoundedRect(rect, 2, 2)
+        painter.drawRoundedRect(rect, 3, 3)
 
         # Progress fill
         if self._value > 0:
@@ -53,7 +53,7 @@ class ProgressBarDelegate(QWidget):
             fill_width = int(rect.width() * self._value / 100)
             fill_rect = rect.adjusted(0, 0, -(rect.width() - fill_width), 0)
             painter.setBrush(QColor(fill_color))
-            painter.drawRoundedRect(fill_rect, 2, 2)
+            painter.drawRoundedRect(fill_rect, 3, 3)
 
         # Text
         if self._show_text:
@@ -154,10 +154,11 @@ class StatusBadge(QLabel):
                 background-color: rgba({bg_color.red()}, {bg_color.green()}, {bg_color.blue()}, 0.2);
                 color: {color};
                 border: 1px solid {color}40;
-                border-radius: 3px;
-                padding: 2px 8px;
+                border-radius: 4px;
+                padding: 4px 10px;
                 font-size: 10px;
                 font-weight: 600;
+                letter-spacing: 0.5px;
             }}
         """)
 
@@ -195,7 +196,7 @@ class InfoCard(QFrame):
         """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setContentsMargins(14, 12, 14, 12)
         layout.setSpacing(4)
 
         # Title
@@ -205,6 +206,7 @@ class InfoCard(QFrame):
             font-size: 10px;
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         """)
         layout.addWidget(title_label)
 
@@ -214,6 +216,7 @@ class InfoCard(QFrame):
             color: {COLORS['text_bright']};
             font-size: 24px;
             font-weight: 700;
+            letter-spacing: -1px;
         """)
         layout.addWidget(self._value_label)
 
@@ -259,12 +262,12 @@ class PoolHeader(QFrame):
         """)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(8)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(10)
 
-        # Expand/collapse icon
-        self._arrow = QLabel("▼" if expanded else "▶")
-        self._arrow.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 10px;")
+        # Expand/collapse indicator (text-based)
+        self._arrow = QLabel("v" if expanded else ">")
+        self._arrow.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 10px; font-family: monospace;")
         self._arrow.setFixedWidth(12)
         layout.addWidget(self._arrow)
 
@@ -284,8 +287,8 @@ class PoolHeader(QFrame):
         self._count_label.setStyleSheet(f"""
             background-color: {COLORS['bg_lighter']};
             color: {COLORS['text_secondary']};
-            border-radius: 8px;
-            padding: 2px 8px;
+            border-radius: 10px;
+            padding: 2px 10px;
             font-size: 10px;
             font-weight: 600;
         """)
@@ -296,7 +299,7 @@ class PoolHeader(QFrame):
 
     def set_expanded(self, expanded: bool):
         self._expanded = expanded
-        self._arrow.setText("▼" if expanded else "▶")
+        self._arrow.setText("v" if expanded else ">")
 
     def mousePressEvent(self, event):
         self._expanded = not self._expanded
@@ -320,8 +323,8 @@ class QuickFilterBar(QFrame):
         """)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(10, 6, 10, 6)
+        layout.setSpacing(6)
 
         self._buttons = {}
         self._active = None
@@ -352,8 +355,8 @@ class QuickFilterBar(QFrame):
                     QLabel {{
                         background-color: {COLORS['accent_blue']};
                         color: {COLORS['text_bright']};
-                        border-radius: 3px;
-                        padding: 4px 12px;
+                        border-radius: 4px;
+                        padding: 6px 14px;
                         font-size: 11px;
                         font-weight: 600;
                     }}
@@ -363,8 +366,8 @@ class QuickFilterBar(QFrame):
                     QLabel {{
                         background-color: transparent;
                         color: {COLORS['text_secondary']};
-                        border-radius: 3px;
-                        padding: 4px 12px;
+                        border-radius: 4px;
+                        padding: 6px 14px;
                         font-size: 11px;
                     }}
                     QLabel:hover {{
@@ -383,7 +386,7 @@ class TimeDisplay(QLabel):
         self.set_seconds(seconds)
         self.setStyleSheet(f"""
             color: {COLORS['text_secondary']};
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
             font-size: 11px;
         """)
 
@@ -397,3 +400,46 @@ class TimeDisplay(QLabel):
             text = f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
         self.setText(f"{self._prefix}{text}" if self._prefix else text)
+
+
+class SectionTitle(QLabel):
+    """Section title label for panels."""
+
+    def __init__(self, text: str, parent: Optional[QWidget] = None):
+        super().__init__(text, parent)
+        self.setStyleSheet(f"""
+            color: {COLORS['text_secondary']};
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 0;
+        """)
+
+
+class DataRow(QFrame):
+    """Data row for displaying key-value information."""
+
+    def __init__(
+        self,
+        label: str,
+        value: str,
+        parent: Optional[QWidget] = None
+    ):
+        super().__init__(parent)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 4, 0, 4)
+        layout.setSpacing(12)
+
+        label_widget = QLabel(label)
+        label_widget.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 12px;")
+        label_widget.setMinimumWidth(100)
+        layout.addWidget(label_widget)
+
+        self._value_widget = QLabel(value)
+        self._value_widget.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 12px;")
+        layout.addWidget(self._value_widget, stretch=1)
+
+    def set_value(self, value: str):
+        self._value_widget.setText(value)

@@ -1,90 +1,90 @@
 """
 Professional dark theme for CasareRPA Orchestrator.
-Inspired by Deadline Monitor / industrial monitoring UIs.
+Modern, clean styling without icons.
 """
 from dataclasses import dataclass
-from typing import Dict
 
 
 @dataclass
 class ThemeColors:
-    """Theme color palette."""
-    # Base backgrounds (darker, more industrial)
-    bg_darkest: str = "#0d0d0d"
-    bg_dark: str = "#141414"
-    bg_medium: str = "#1c1c1c"
-    bg_light: str = "#252525"
-    bg_lighter: str = "#2d2d2d"
-    bg_panel: str = "#1a1a1a"
-    bg_header: str = "#181818"
-    bg_row_alt: str = "#161616"
-    bg_hover: str = "#2a2a2a"
-    bg_selected: str = "#0a4d8c"
-    bg_selected_inactive: str = "#333333"
+    """Theme color palette - Modern Professional Dark Theme."""
+
+    # Base backgrounds (neutral dark grays with subtle blue undertone)
+    bg_darkest: str = "#0f1114"
+    bg_dark: str = "#121417"
+    bg_medium: str = "#1a1d21"
+    bg_light: str = "#22262b"
+    bg_lighter: str = "#2a2f36"
+    bg_panel: str = "#1e2126"
+    bg_header: str = "#15171a"
+    bg_row_alt: str = "#181b1f"
+    bg_hover: str = "#2a2f36"
+    bg_selected: str = "#2d4a6f"
+    bg_selected_inactive: str = "#2a2f36"
 
     # Borders
-    border_dark: str = "#0a0a0a"
-    border: str = "#2a2a2a"
-    border_light: str = "#3a3a3a"
-    border_focus: str = "#0078d4"
+    border_dark: str = "#1f2227"
+    border: str = "#2a2f36"
+    border_light: str = "#3a4046"
+    border_focus: str = "#4a9eff"
 
     # Text
-    text_primary: str = "#e0e0e0"
-    text_secondary: str = "#a0a0a0"
-    text_muted: str = "#666666"
-    text_disabled: str = "#4a4a4a"
-    text_header: str = "#b0b0b0"
+    text_primary: str = "#e8eaed"
+    text_secondary: str = "#9aa0a6"
+    text_muted: str = "#5f6368"
+    text_disabled: str = "#3d4043"
+    text_header: str = "#9aa0a6"
 
-    # Status colors (vibrant for visibility)
-    status_online: str = "#00cc66"      # Green
-    status_offline: str = "#666666"     # Gray
-    status_busy: str = "#ffaa00"        # Orange
-    status_error: str = "#ff3333"       # Red
-    status_warning: str = "#ffcc00"     # Yellow
-    status_idle: str = "#0099ff"        # Blue
-    status_rendering: str = "#9966ff"   # Purple
+    # Status colors (clear, distinct, professional)
+    status_online: str = "#66bb6a"
+    status_offline: str = "#5f6368"
+    status_busy: str = "#ffb74d"
+    status_error: str = "#ef5350"
+    status_warning: str = "#ffa726"
+    status_idle: str = "#42a5f5"
+    status_rendering: str = "#ab47bc"
 
     # Job status colors
-    job_pending: str = "#666666"
-    job_queued: str = "#0099ff"
-    job_active: str = "#00cc66"
-    job_running: str = "#ffaa00"
-    job_completed: str = "#00aa44"
-    job_failed: str = "#ff3333"
-    job_suspended: str = "#9966ff"
-    job_cancelled: str = "#cc6699"
+    job_pending: str = "#5f6368"
+    job_queued: str = "#42a5f5"
+    job_active: str = "#66bb6a"
+    job_running: str = "#ffb74d"
+    job_completed: str = "#4caf50"
+    job_failed: str = "#ef5350"
+    job_suspended: str = "#ab47bc"
+    job_cancelled: str = "#9575cd"
 
     # Priority colors
-    priority_critical: str = "#ff0000"
-    priority_high: str = "#ff6600"
-    priority_normal: str = "#00aaff"
-    priority_low: str = "#666666"
+    priority_critical: str = "#ef5350"
+    priority_high: str = "#ff7043"
+    priority_normal: str = "#42a5f5"
+    priority_low: str = "#5f6368"
 
     # Progress bar colors
-    progress_bg: str = "#1a1a1a"
-    progress_complete: str = "#00aa44"
-    progress_running: str = "#ffaa00"
-    progress_failed: str = "#ff3333"
-    progress_queued: str = "#0066aa"
+    progress_bg: str = "#22262b"
+    progress_complete: str = "#4caf50"
+    progress_running: str = "#ffb74d"
+    progress_failed: str = "#ef5350"
+    progress_queued: str = "#42a5f5"
 
     # Accent
-    accent_primary: str = "#0078d4"
-    accent_secondary: str = "#00aaff"
-    accent_success: str = "#00cc66"
-    accent_warning: str = "#ffaa00"
-    accent_error: str = "#ff4444"
+    accent_primary: str = "#4a9eff"
+    accent_secondary: str = "#64b5f6"
+    accent_success: str = "#66bb6a"
+    accent_warning: str = "#ffb74d"
+    accent_error: str = "#ef5350"
 
     # Dock/panel
-    dock_title_bg: str = "#1a1a1a"
-    dock_title_text: str = "#909090"
-    splitter_handle: str = "#0a0a0a"
+    dock_title_bg: str = "#15171a"
+    dock_title_text: str = "#9aa0a6"
+    splitter_handle: str = "#1f2227"
 
     # Toolbar
-    toolbar_bg: str = "#1c1c1c"
-    toolbar_border: str = "#2a2a2a"
-    toolbar_button_hover: str = "#333333"
-    toolbar_button_pressed: str = "#444444"
-    toolbar_separator: str = "#333333"
+    toolbar_bg: str = "#1a1d21"
+    toolbar_border: str = "#2a2f36"
+    toolbar_button_hover: str = "#2a2f36"
+    toolbar_button_pressed: str = "#3a4046"
+    toolbar_separator: str = "#2a2f36"
 
 
 THEME = ThemeColors()
@@ -112,7 +112,7 @@ QMainWindow::separator:hover {{
 QWidget {{
     background-color: transparent;
     color: {THEME.text_primary};
-    font-family: 'Segoe UI', 'SF Pro Text', -apple-system, sans-serif;
+    font-family: 'Segoe UI', 'SF Pro Text', system-ui, sans-serif;
     font-size: 12px;
 }}
 
@@ -127,10 +127,11 @@ QDockWidget {{
 QDockWidget::title {{
     background-color: {THEME.dock_title_bg};
     color: {THEME.dock_title_text};
-    padding: 6px 8px;
+    padding: 8px 12px;
     font-weight: 600;
     font-size: 11px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     border-bottom: 1px solid {THEME.border_dark};
 }}
 
@@ -142,6 +143,7 @@ QDockWidget::close-button, QDockWidget::float-button {{
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {{
     background: {THEME.bg_hover};
+    border-radius: 3px;
 }}
 
 /* === TOOLBAR === */
@@ -149,21 +151,21 @@ QToolBar {{
     background-color: {THEME.toolbar_bg};
     border: none;
     border-bottom: 1px solid {THEME.toolbar_border};
-    padding: 2px 4px;
-    spacing: 2px;
+    padding: 4px 6px;
+    spacing: 4px;
 }}
 
 QToolBar::separator {{
     background-color: {THEME.toolbar_separator};
     width: 1px;
-    margin: 4px 8px;
+    margin: 6px 8px;
 }}
 
 QToolButton {{
     background-color: transparent;
     border: none;
-    border-radius: 3px;
-    padding: 4px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
     color: {THEME.text_secondary};
     font-weight: 500;
 }}
@@ -179,7 +181,7 @@ QToolButton:pressed {{
 
 QToolButton:checked {{
     background-color: {THEME.accent_primary};
-    color: {THEME.text_primary};
+    color: #ffffff;
 }}
 
 QToolButton::menu-indicator {{
@@ -190,13 +192,13 @@ QToolButton::menu-indicator {{
 QMenuBar {{
     background-color: {THEME.bg_header};
     border-bottom: 1px solid {THEME.border_dark};
-    padding: 2px;
+    padding: 2px 4px;
 }}
 
 QMenuBar::item {{
     background: transparent;
-    padding: 4px 10px;
-    border-radius: 3px;
+    padding: 6px 10px;
+    border-radius: 4px;
 }}
 
 QMenuBar::item:selected {{
@@ -206,25 +208,27 @@ QMenuBar::item:selected {{
 QMenu {{
     background-color: {THEME.bg_light};
     border: 1px solid {THEME.border};
-    padding: 4px;
+    border-radius: 6px;
+    padding: 6px;
 }}
 
 QMenu::item {{
-    padding: 6px 24px 6px 12px;
-    border-radius: 2px;
+    padding: 8px 24px 8px 12px;
+    border-radius: 4px;
 }}
 
 QMenu::item:selected {{
     background-color: {THEME.accent_primary};
+    color: #ffffff;
 }}
 
 QMenu::separator {{
     height: 1px;
     background-color: {THEME.border};
-    margin: 4px 8px;
+    margin: 6px 8px;
 }}
 
-/* === TABLES (DEADLINE STYLE) === */
+/* === TABLES === */
 QTableView, QTableWidget, QTreeView, QTreeWidget, QListView, QListWidget {{
     background-color: {THEME.bg_panel};
     alternate-background-color: {THEME.bg_row_alt};
@@ -236,7 +240,7 @@ QTableView, QTableWidget, QTreeView, QTreeWidget, QListView, QListWidget {{
 }}
 
 QTableView::item, QTreeView::item, QListView::item {{
-    padding: 4px 6px;
+    padding: 6px 8px;
     border: none;
     border-bottom: 1px solid {THEME.border_dark};
 }}
@@ -257,43 +261,41 @@ QHeaderView {{
 QHeaderView::section {{
     background-color: {THEME.bg_header};
     color: {THEME.text_header};
-    padding: 6px 8px;
+    padding: 8px 10px;
     border: none;
     border-right: 1px solid {THEME.border_dark};
     border-bottom: 1px solid {THEME.border_dark};
     font-weight: 600;
     font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}}
+
+QHeaderView::section:last {{
+    border-right: none;
 }}
 
 QHeaderView::section:hover {{
     background-color: {THEME.bg_hover};
+    color: {THEME.text_primary};
 }}
 
 QHeaderView::section:pressed {{
     background-color: {THEME.bg_light};
 }}
 
-QHeaderView::down-arrow {{
-    width: 12px;
-    height: 12px;
-}}
-
-QHeaderView::up-arrow {{
-    width: 12px;
-    height: 12px;
-}}
-
 /* === SCROLLBARS === */
 QScrollBar:vertical {{
     background: {THEME.bg_dark};
-    width: 12px;
+    width: 10px;
     margin: 0;
 }}
 
 QScrollBar::handle:vertical {{
     background: {THEME.bg_lighter};
-    min-height: 30px;
-    border-radius: 0;
+    min-height: 32px;
+    border-radius: 5px;
+    margin: 2px;
 }}
 
 QScrollBar::handle:vertical:hover {{
@@ -311,14 +313,15 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
 
 QScrollBar:horizontal {{
     background: {THEME.bg_dark};
-    height: 12px;
+    height: 10px;
     margin: 0;
 }}
 
 QScrollBar::handle:horizontal {{
     background: {THEME.bg_lighter};
-    min-width: 30px;
-    border-radius: 0;
+    min-width: 32px;
+    border-radius: 5px;
+    margin: 2px;
 }}
 
 QScrollBar::handle:horizontal:hover {{
@@ -346,22 +349,24 @@ QTabBar {{
 }}
 
 QTabBar::tab {{
-    background-color: {THEME.bg_header};
+    background-color: transparent;
     color: {THEME.text_secondary};
-    padding: 6px 16px;
-    border: 1px solid {THEME.border_dark};
-    border-bottom: none;
-    margin-right: 1px;
+    padding: 10px 18px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+    font-weight: 500;
 }}
 
 QTabBar::tab:selected {{
     background-color: {THEME.bg_panel};
     color: {THEME.text_primary};
-    border-bottom: 1px solid {THEME.bg_panel};
+    border-bottom: 2px solid {THEME.accent_primary};
 }}
 
 QTabBar::tab:hover:!selected {{
     background-color: {THEME.bg_hover};
+    color: {THEME.text_primary};
 }}
 
 /* === BUTTONS === */
@@ -369,10 +374,10 @@ QPushButton {{
     background-color: {THEME.bg_light};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 5px 12px;
+    border-radius: 4px;
+    padding: 6px 14px;
     font-weight: 500;
-    min-height: 22px;
+    min-height: 24px;
 }}
 
 QPushButton:hover {{
@@ -393,15 +398,17 @@ QPushButton:disabled {{
 QPushButton[primary="true"] {{
     background-color: {THEME.accent_primary};
     border-color: {THEME.accent_primary};
+    color: #ffffff;
 }}
 
 QPushButton[primary="true"]:hover {{
-    background-color: #0086e6;
+    background-color: #5ba8ff;
 }}
 
 QPushButton[danger="true"] {{
     background-color: {THEME.accent_error};
     border-color: {THEME.accent_error};
+    color: #ffffff;
 }}
 
 /* === LINE EDIT === */
@@ -409,8 +416,8 @@ QLineEdit {{
     background-color: {THEME.bg_dark};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 5px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
     selection-background-color: {THEME.accent_primary};
 }}
 
@@ -428,9 +435,9 @@ QComboBox {{
     background-color: {THEME.bg_dark};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 4px 8px;
-    min-height: 22px;
+    border-radius: 4px;
+    padding: 6px 10px;
+    min-height: 24px;
 }}
 
 QComboBox:hover {{
@@ -466,20 +473,24 @@ QSpinBox, QDoubleSpinBox {{
     background-color: {THEME.bg_dark};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    padding: 4px;
+    border-radius: 4px;
+    padding: 6px;
+}}
+
+QSpinBox:focus, QDoubleSpinBox:focus {{
+    border-color: {THEME.border_focus};
 }}
 
 /* === CHECK BOX === */
 QCheckBox {{
-    spacing: 6px;
+    spacing: 8px;
 }}
 
 QCheckBox::indicator {{
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border: 1px solid {THEME.border};
-    border-radius: 2px;
+    border-radius: 3px;
     background-color: {THEME.bg_dark};
 }}
 
@@ -496,8 +507,8 @@ QCheckBox::indicator:hover {{
 QProgressBar {{
     background-color: {THEME.progress_bg};
     border: 1px solid {THEME.border_dark};
-    border-radius: 2px;
-    height: 16px;
+    border-radius: 3px;
+    height: 18px;
     text-align: center;
     color: {THEME.text_primary};
     font-size: 10px;
@@ -506,7 +517,7 @@ QProgressBar {{
 
 QProgressBar::chunk {{
     background-color: {THEME.accent_primary};
-    border-radius: 1px;
+    border-radius: 2px;
 }}
 
 /* === SPLITTER === */
@@ -530,16 +541,16 @@ QSplitter::handle:hover {{
 QGroupBox {{
     background-color: {THEME.bg_panel};
     border: 1px solid {THEME.border};
-    border-radius: 3px;
-    margin-top: 12px;
-    padding-top: 12px;
-    font-weight: 600;
+    border-radius: 4px;
+    margin-top: 14px;
+    padding-top: 14px;
+    font-weight: 500;
 }}
 
 QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 0 6px;
+    padding: 0 8px;
     color: {THEME.text_secondary};
 }}
 
@@ -548,7 +559,8 @@ QToolTip {{
     background-color: {THEME.bg_light};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border};
-    padding: 4px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
 }}
 
 /* === STATUS BAR === */
@@ -557,6 +569,7 @@ QStatusBar {{
     border-top: 1px solid {THEME.border_dark};
     color: {THEME.text_secondary};
     font-size: 11px;
+    padding: 2px 4px;
 }}
 
 QStatusBar::item {{
@@ -568,7 +581,7 @@ QTextEdit, QPlainTextEdit {{
     background-color: {THEME.bg_darkest};
     color: {THEME.text_primary};
     border: 1px solid {THEME.border_dark};
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
     font-size: 11px;
     selection-background-color: {THEME.accent_primary};
 }}

@@ -85,7 +85,7 @@ class RobotsView(QWidget):
         layout.setSpacing(16)
 
         # Header
-        header = SectionHeader("Robots", "Refresh", "🔄")
+        header = SectionHeader("Robots", "Refresh")
         header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
         layout.addWidget(header)
 
@@ -125,7 +125,6 @@ class RobotsView(QWidget):
 
         # Empty state (hidden by default)
         self._empty_state = EmptyState(
-            icon="🤖",
             title="No Robots Found",
             description="No robots are currently registered. Start a Robot agent to see it here."
         )
@@ -169,10 +168,10 @@ class RobotsView(QWidget):
         robot = self._robots[row]
         menu = QMenu(self)
 
-        view_action = menu.addAction("👁️ View Details")
+        view_action = menu.addAction("View Details")
         view_action.triggered.connect(lambda: self._show_details(robot))
 
-        dispatch_action = menu.addAction("▶️ Dispatch Workflow")
+        dispatch_action = menu.addAction("Dispatch Workflow")
         dispatch_action.triggered.connect(lambda: self.dispatch_requested.emit(robot.id))
         dispatch_action.setEnabled(robot.is_available)
 
@@ -235,7 +234,7 @@ class RobotsView(QWidget):
             actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(4)
 
-            dispatch_btn = ActionButton("Dispatch", "▶️", primary=True)
+            dispatch_btn = ActionButton("Dispatch", primary=True)
             dispatch_btn.setEnabled(robot.is_available)
             dispatch_btn.clicked.connect(lambda checked, r=robot: self.dispatch_requested.emit(r.id))
             actions_layout.addWidget(dispatch_btn)

@@ -79,8 +79,8 @@ class RobotsTableModel(QAbstractTableModel):
             return robot
 
         elif role == Qt.ItemDataRole.DecorationRole:
-            if col_key == "name":
-                return "🤖"
+            # No icons - return None
+            pass
 
         return None
 

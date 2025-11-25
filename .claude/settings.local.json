@@ -1,29 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)",
+      "Bash(set PYTHONPATH=src:*)",
+      "Bash(PYTHONPATH=src pytest:*)",
       "Bash(python -m pytest:*)",
-<<<<<<<<< Temporary merge branch 1
-      "Bash(python:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(set PYTHONPATH=src:*)",
-      "Bash($env:PYTHONPATH=\"src\")",
-      "Bash(PYTHONPATH=src python:*)",
-      "Bash(findstr:*)",
-      "Bash(find:*)",
-      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")"
-=========
-      "Bash(pip install:*)",
-      "Bash(playwright install:*)",
       "Bash(pip show:*)",
-      "Bash(git rm:*)",
-      "Bash(python:*)",
-      "Bash(set PYTHONPATH=src:*)",
-      "Bash($env:PYTHONPATH=\"src\")",
-      "Bash(PYTHONPATH=src python:*)",
-      "Bash(find:*)"
->>>>>>>>> Temporary merge branch 2
+      "Bash(pip install:*)",
+      "Bash(git checkout:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
