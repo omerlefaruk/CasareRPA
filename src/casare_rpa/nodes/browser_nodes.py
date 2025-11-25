@@ -97,6 +97,7 @@ class LaunchBrowserNode(BaseNode):
             
             # Create initial tab automatically
             browser_context = await browser.new_context()
+            context.add_browser_context(browser_context)  # Track for cleanup
             page = await browser_context.new_page()
             
             # Navigate to URL if provided
@@ -314,6 +315,7 @@ class NewTabNode(BaseNode):
             
             # Create new context and page
             browser_context = await browser.new_context()
+            context.add_browser_context(browser_context)  # Track for cleanup
             page = await browser_context.new_page()
             
             # Store page in context

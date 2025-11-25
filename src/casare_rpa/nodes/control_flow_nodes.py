@@ -10,6 +10,7 @@ from loguru import logger
 from ..core.base_node import BaseNode
 from ..core.execution_context import ExecutionContext
 from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
+from ..utils.safe_eval import safe_eval, is_safe_expression
 
 
 class IfNode(BaseNode):
@@ -53,9 +54,11 @@ class IfNode(BaseNode):
             if condition is None:
                 expression = self.config.get("expression", "")
                 if expression:
-                    # Evaluate expression with context variables
+                    # Safely evaluate expression with context variables
                     try:
-                        condition = eval(expression, {"__builtins__": {}}, context.variables)
+                        if not is_safe_expression(expression):
+                            raise ValueError(f"Unsafe expression detected: {expression}")
+                        condition = safe_eval(expression, context.variables)
                     except Exception as e:
                         logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
@@ -269,8 +272,11 @@ class WhileLoopNode(BaseNode):
             if condition is None:
                 expression = self.config.get("expression", "")
                 if expression:
+                    # Safely evaluate expression with context variables
                     try:
-                        condition = eval(expression, {"__builtins__": {}}, context.variables)
+                        if not is_safe_expression(expression):
+                            raise ValueError(f"Unsafe expression detected: {expression}")
+                        condition = safe_eval(expression, context.variables)
                     except Exception as e:
                         logger.warning(f"Failed to evaluate expression '{expression}': {e}")
                         condition = False
@@ -469,8 +475,10 @@ class SwitchNode(BaseNode):
             if value is None:
                 expression = self.config.get("expression", "")
                 if expression:
-                    # Evaluate expression with context variables
-                    value = eval(expression, {"__builtins__": {}}, context.variables)
+                    # Safely evaluate expression with context variables
+                    if not is_safe_expression(expression):
+                        raise ValueError(f"Unsafe expression detected: {expression}")
+                    value = safe_eval(expression, context.variables)
             
             # Convert to string for matching
             value_str = str(value) if value is not None else ""

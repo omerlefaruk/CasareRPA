@@ -1,7 +1,13 @@
 """
 CasareRPA - Nodes Package
 Contains all automation node implementations.
+
+This module uses lazy loading to improve startup performance.
+Node classes are only imported when first accessed.
 """
+
+import importlib
+from typing import TYPE_CHECKING, Any, Dict, List, Type
 
 __version__ = "0.1.0"
 
@@ -80,26 +86,6 @@ from .data_operation_nodes import (
     GetPropertyNode
 )
 
-# File system nodes
-from .file_nodes import (
-    ReadFileNode,
-    WriteFileNode,
-    AppendFileNode,
-    DeleteFileNode,
-    CopyFileNode,
-    MoveFileNode,
-    CreateDirectoryNode,
-    ListDirectoryNode,
-    FileExistsNode,
-    GetFileInfoNode,
-    ReadCSVNode,
-    WriteCSVNode,
-    ReadJSONFileNode,
-    WriteJSONFileNode,
-    ZipFilesNode,
-    UnzipFilesNode
-)
-
 __all__ = [
     "__version__",
     # Basic nodes
@@ -155,21 +141,4 @@ __all__ = [
     "ListGetItemNode",
     "JsonParseNode",
     "GetPropertyNode",
-    # File system nodes
-    "ReadFileNode",
-    "WriteFileNode",
-    "AppendFileNode",
-    "DeleteFileNode",
-    "CopyFileNode",
-    "MoveFileNode",
-    "CreateDirectoryNode",
-    "ListDirectoryNode",
-    "FileExistsNode",
-    "GetFileInfoNode",
-    "ReadCSVNode",
-    "WriteCSVNode",
-    "ReadJSONFileNode",
-    "WriteJSONFileNode",
-    "ZipFilesNode",
-    "UnzipFilesNode",
 ]
