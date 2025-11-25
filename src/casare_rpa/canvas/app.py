@@ -136,8 +136,8 @@ class CasareRPAApp:
         undo_stack.canUndoChanged.connect(self._main_window.action_undo.setEnabled)
         undo_stack.canRedoChanged.connect(self._main_window.action_redo.setEnabled)
         
-        # Other edit operations
-        self._main_window.action_delete.triggered.connect(lambda: graph.delete_nodes(graph.selected_nodes()))
+        # Other edit operations - delete both nodes and frames
+        self._main_window.action_delete.triggered.connect(self._on_delete_selected)
         self._main_window.action_cut.triggered.connect(graph.cut_nodes)
         self._main_window.action_copy.triggered.connect(graph.copy_nodes)
         self._main_window.action_paste.triggered.connect(graph.paste_nodes)
@@ -184,6 +184,35 @@ class CasareRPAApp:
 
         # Set workflow data provider for validation
         self._main_window.set_workflow_data_provider(self._get_serialized_workflow_data)
+
+    def _on_delete_selected(self) -> None:
+        """
+        Delete selected nodes and frames.
+
+        This handles both NodeGraphQt nodes and NodeFrame graphics items.
+        """
+        from .node_frame import NodeFrame
+
+        graph = self._node_graph.graph
+        viewer = graph.viewer()
+        scene = viewer.scene()
+
+        # Delete selected frames first
+        frames_deleted = 0
+        for item in list(scene.selectedItems()):
+            if isinstance(item, NodeFrame):
+                logger.info(f"Deleting frame: {item.frame_title}")
+                item._delete_frame()
+                frames_deleted += 1
+
+        # Delete selected nodes
+        selected_nodes = graph.selected_nodes()
+        if selected_nodes:
+            graph.delete_nodes(selected_nodes)
+            logger.info(f"Deleted {len(selected_nodes)} nodes")
+
+        if frames_deleted > 0:
+            logger.info(f"Deleted {frames_deleted} frames")
 
     def _get_serialized_workflow_data(self) -> Optional[dict]:
         """

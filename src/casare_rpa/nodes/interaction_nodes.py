@@ -179,20 +179,83 @@ class ClickElementNode(BaseNode):
 
             logger.debug(f"Click options: {click_options}")
 
-            # Click element
-            await page.click(normalized_selector, **click_options)
-            
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Element clicked successfully: {selector}")
-            
-            return {
-                "success": True,
-                "data": {"selector": selector},
-                "next_nodes": ["exec_out"]
-            }
-            
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+            highlight_before_click = self.config.get("highlight_before_click", False)
+
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for click: {selector}")
+
+                    # Highlight element before clicking if requested
+                    if highlight_before_click:
+                        try:
+                            element = await page.wait_for_selector(normalized_selector, timeout=timeout)
+                            if element:
+                                await element.evaluate("""
+                                    el => {
+                                        const original = el.style.outline;
+                                        el.style.outline = '3px solid #ff0000';
+                                        setTimeout(() => { el.style.outline = original; }, 300);
+                                    }
+                                """)
+                                await asyncio.sleep(0.3)
+                        except Exception:
+                            pass  # Ignore highlight errors
+
+                    # Click element
+                    await page.click(normalized_selector, **click_options)
+
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Element clicked successfully: {selector} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"selector": selector, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Click failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"click_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to click element: {e}")
@@ -250,6 +313,10 @@ class TypeTextNode(BaseNode):
             "strict": False,  # Require exactly one matching element
             "press_enter_after": False,  # Press Enter after typing
             "press_tab_after": False,  # Press Tab after typing
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
         }
 
         config = kwargs.get("config", {})
@@ -274,42 +341,42 @@ class TypeTextNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute text typing.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with success status
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
                 selector = self.config.get("selector", "")
-            
+
             if not selector:
                 raise ValueError("Selector is required")
-            
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
-            
+
             # Get text from input or config
             text = self.get_input_value("text")
             if text is None:
                 text = self.config.get("text", "")
-            
+
             if text is None:
                 text = ""
-            
+
             # Safely parse delay with default
             delay_val = self.config.get("delay")
             if delay_val is None or delay_val == "":
@@ -337,6 +404,12 @@ class TypeTextNode(BaseNode):
             press_enter_after = self.config.get("press_enter_after", False)
             press_tab_after = self.config.get("press_tab_after", False)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Typing text into element: {normalized_selector}")
 
             # Build fill/type options
@@ -348,41 +421,82 @@ class TypeTextNode(BaseNode):
             if strict:
                 fill_options["strict"] = True
 
-            # Type text - use fill() for immediate input, type() for character-by-character with delay
-            # Only use one method to avoid double-typing
-            if delay > 0 or press_sequentially:
-                # Clear the field first if configured, then type with delay
-                if clear_first:
-                    await page.fill(normalized_selector, "", **fill_options)
-                type_delay = delay if delay > 0 else 50  # Default 50ms for press_sequentially
-                await page.type(normalized_selector, text, delay=type_delay, timeout=timeout)
-            else:
-                # Use fill() for immediate input (faster)
-                # fill() always clears the field first, so clear_first doesn't affect behavior here
-                await page.fill(normalized_selector, text, **fill_options)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            # Press Enter after if requested
-            if press_enter_after:
-                await page.keyboard.press("Enter")
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for type text: {selector}")
 
-            # Press Tab after if requested
-            if press_tab_after:
-                await page.keyboard.press("Tab")
-            
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Text typed successfully: {selector}")
-            
-            return {
-                "success": True,
-                "data": {
-                    "selector": selector,
-                    "text_length": len(text)
-                },
-                "next_nodes": ["exec_out"]
-            }
-            
+                    # Type text - use fill() for immediate input, type() for character-by-character with delay
+                    # Only use one method to avoid double-typing
+                    if delay > 0 or press_sequentially:
+                        # Clear the field first if configured, then type with delay
+                        if clear_first:
+                            await page.fill(normalized_selector, "", **fill_options)
+                        type_delay = delay if delay > 0 else 50  # Default 50ms for press_sequentially
+                        await page.type(normalized_selector, text, delay=type_delay, timeout=timeout)
+                    else:
+                        # Use fill() for immediate input (faster)
+                        # fill() always clears the field first, so clear_first doesn't affect behavior here
+                        await page.fill(normalized_selector, text, **fill_options)
+
+                    # Press Enter after if requested
+                    if press_enter_after:
+                        await page.keyboard.press("Enter")
+
+                    # Press Tab after if requested
+                    if press_tab_after:
+                        await page.keyboard.press("Tab")
+
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Text typed successfully: {selector} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "selector": selector,
+                            "text_length": len(text),
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Type text failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"type_text_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to type text: {e}")
@@ -432,6 +546,10 @@ class SelectDropdownNode(BaseNode):
             "no_wait_after": False,  # Skip waiting for navigations after selection
             "strict": False,  # Require exactly one matching element
             "select_by": "value",  # value, label, or index
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
         }
 
         config = kwargs.get("config", {})
@@ -503,6 +621,12 @@ class SelectDropdownNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             select_by = self.config.get("select_by", "value")
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})")
 
             # Build select options
@@ -522,28 +646,69 @@ class SelectDropdownNode(BaseNode):
 
             logger.debug(f"Select options: {select_options}")
 
-            # Select option based on select_by mode
-            if select_by == "index":
-                await page.select_option(normalized_selector, index=int(value), **select_options)
-            elif select_by == "label":
-                await page.select_option(normalized_selector, label=value, **select_options)
-            else:  # value (default)
-                await page.select_option(normalized_selector, value=value, **select_options)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("page", page)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for select: {selector}")
 
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Dropdown selected successfully: {selector}")
+                    # Select option based on select_by mode
+                    if select_by == "index":
+                        await page.select_option(normalized_selector, index=int(value), **select_options)
+                    elif select_by == "label":
+                        await page.select_option(normalized_selector, label=value, **select_options)
+                    else:  # value (default)
+                        await page.select_option(normalized_selector, value=value, **select_options)
 
-            return {
-                "success": True,
-                "data": {
-                    "selector": selector,
-                    "value": value,
-                    "select_by": select_by
-                },
-                "next_nodes": ["exec_out"]
-            }
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Dropdown selected successfully: {selector} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "selector": selector,
+                            "value": value,
+                            "select_by": select_by,
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Select dropdown failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"select_dropdown_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR

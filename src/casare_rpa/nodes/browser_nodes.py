@@ -5,6 +5,7 @@ This module provides nodes for controlling browser lifecycle:
 launching browsers, managing tabs, and cleanup.
 """
 
+import asyncio
 from typing import Any, Optional
 
 from playwright.async_api import Browser, Page, BrowserContext
@@ -262,19 +263,32 @@ class LaunchBrowserNode(BaseNode):
 class CloseBrowserNode(BaseNode):
     """
     Close browser node - closes the browser instance.
-    
+
     Properly closes the browser and cleans up resources.
     """
-    
+
     def __init__(self, node_id: str, name: str = "Close Browser", **kwargs) -> None:
         """
         Initialize close browser node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
         """
+        # Default config with close options
+        default_config = {
+            "timeout": 30000,  # Timeout for close operation in ms
+            "force_close": False,  # Force close even if pages have unsaved changes
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "CloseBrowserNode"
@@ -288,42 +302,66 @@ class CloseBrowserNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute browser close.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Success result
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get browser from input or context
             browser = self.get_input_value("browser")
             if browser is None:
                 browser = context.browser
-            
+
             if browser is None:
                 raise ValueError("No browser instance found to close")
-            
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+
             logger.info("Closing browser")
-            
-            # Close browser
-            await browser.close()
-            
-            # Clear from context
-            context.browser = None
-            context.clear_pages()
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info("Browser closed successfully")
-            
-            return {
-                "success": True,
-                "data": {"message": "Browser closed"},
-                "next_nodes": ["exec_out"]
-            }
-            
+
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for browser close")
+
+                    # Close browser
+                    await browser.close()
+
+                    # Clear from context
+                    context.browser = None
+                    context.clear_pages()
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Browser closed successfully (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {"message": "Browser closed", "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Browser close failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to close browser: {e}")
@@ -332,7 +370,7 @@ class CloseBrowserNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -341,10 +379,10 @@ class CloseBrowserNode(BaseNode):
 class NewTabNode(BaseNode):
     """
     New tab node - creates a new browser tab/page.
-    
+
     Opens a new tab in the browser and optionally sets it as active.
     """
-    
+
     def __init__(
         self,
         node_id: str,
@@ -354,15 +392,30 @@ class NewTabNode(BaseNode):
     ) -> None:
         """
         Initialize new tab node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             tab_name: Name to identify this tab
         """
-        config = kwargs.get("config", {"tab_name": tab_name})
-        if "tab_name" not in config:
-            config["tab_name"] = tab_name
+        # Default config with all options
+        default_config = {
+            "tab_name": tab_name,
+            "url": "",  # Optional URL to navigate to after creating tab
+            "timeout": 30000,  # Navigation timeout in ms
+            "wait_until": "load",  # Navigation wait event
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "NewTabNode"
@@ -377,52 +430,122 @@ class NewTabNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute new tab creation.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with new page instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get browser from input or context
             browser = self.get_input_value("browser")
             if browser is None:
                 browser = context.browser
-            
+
             if browser is None:
                 raise ValueError("No browser instance found")
-            
+
             tab_name = self.config.get("tab_name", "main")
-            
+            url = self.config.get("url", "")
+
+            # Safely parse timeout
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = 30000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = 30000
+            wait_until = self.config.get("wait_until", "load")
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
+            screenshot_path = self.config.get("screenshot_path", "")
+
             logger.info(f"Creating new tab: {tab_name}")
-            
-            # Create new context and page
-            browser_context = await browser.new_context()
-            context.add_browser_context(browser_context)  # Track for cleanup
-            page = await browser_context.new_page()
-            
-            # Store page in context
-            context.add_page(page, tab_name)
-            context.set_active_page(page, tab_name)
-            
-            # Set output
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Tab created successfully: {tab_name}")
-            
-            return {
-                "success": True,
-                "data": {
-                    "tab_name": tab_name,
-                    "page": page
-                },
-                "next_nodes": ["exec_out"]
-            }
-            
+
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
+            page = None
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for new tab")
+
+                    # Create new context and page
+                    browser_context = await browser.new_context()
+                    context.add_browser_context(browser_context)  # Track for cleanup
+                    page = await browser_context.new_page()
+
+                    # Navigate to URL if specified
+                    if url and url.strip():
+                        nav_url = url.strip()
+                        # Add protocol if missing
+                        if not nav_url.startswith(("http://", "https://", "file://", "about:")):
+                            nav_url = f"https://{nav_url}"
+                        logger.info(f"Navigating new tab to: {nav_url}")
+                        await page.goto(nav_url, timeout=timeout, wait_until=wait_until)
+
+                    # Store page in context
+                    context.add_page(page, tab_name)
+                    context.set_active_page(page, tab_name)
+
+                    # Set output
+                    self.set_output_value("page", page)
+
+                    self.status = NodeStatus.SUCCESS
+                    logger.info(f"Tab created successfully: {tab_name} (attempt {attempts})")
+
+                    return {
+                        "success": True,
+                        "data": {
+                            "tab_name": tab_name,
+                            "page": page,
+                            "url": url if url else "about:blank",
+                            "attempts": attempts
+                        },
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"New tab creation failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            # All attempts failed - take screenshot if requested
+            if screenshot_on_fail and page:
+                try:
+                    import os
+                    from datetime import datetime
+                    if screenshot_path:
+                        path = screenshot_path
+                    else:
+                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        path = f"new_tab_fail_{timestamp}.png"
+
+                    dir_path = os.path.dirname(path)
+                    if dir_path:
+                        os.makedirs(dir_path, exist_ok=True)
+
+                    await page.screenshot(path=path)
+                    logger.info(f"Failure screenshot saved: {path}")
+                except Exception as ss_error:
+                    logger.warning(f"Failed to take screenshot: {ss_error}")
+
+            raise last_error
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to create tab: {e}")
@@ -431,7 +554,7 @@ class NewTabNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         tab_name = self.config.get("tab_name", "")

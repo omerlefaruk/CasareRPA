@@ -6,7 +6,11 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__get-library-docs",
       "Bash(python -c:*)",
-      "Bash(python -m pytest:*)"
+      "Bash(python -m pytest:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.n8n.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:deepwiki.com)"
     ],
     "deny": [],
     "ask": []

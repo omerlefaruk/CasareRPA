@@ -12,10 +12,13 @@ This module provides nodes for FTP/SFTP operations:
 - SFTPConnectNode: Connect to SFTP server
 """
 
+import asyncio
 import ftplib
 import os
 from pathlib import Path
 from typing import Any, Optional, List
+
+from loguru import logger
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -30,6 +33,8 @@ class FTPConnectNode(BaseNode):
         passive: Use passive mode (default: True)
         timeout: Connection timeout in seconds (default: 30)
         use_tls: Use FTPS/TLS (default: False)
+        retry_count: Number of connection retries (default: 0)
+        retry_interval: Delay between retries in ms (default: 2000)
 
     Inputs:
         host: FTP server hostname
@@ -43,7 +48,21 @@ class FTPConnectNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Connect", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "passive": True,
+            "timeout": 30,
+            "use_tls": False,
+            "retry_count": 0,  # Number of connection retries
+            "retry_interval": 2000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPConnectNode"
