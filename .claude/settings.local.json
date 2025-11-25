@@ -3,6 +3,7 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(python -m pytest:*)",
+<<<<<<< HEAD
       "Bash(pip install:*)",
       "Bash(playwright install:*)",
       "Bash(pip show:*)",
@@ -12,6 +13,17 @@
       "Bash($env:PYTHONPATH=\"src\")",
       "Bash(PYTHONPATH=src python:*)",
       "Bash(find:*)"
+=======
+      "Bash(python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(set PYTHONPATH=src:*)",
+      "Bash($env:PYTHONPATH=\"src\")",
+      "Bash(PYTHONPATH=src python:*)",
+      "Bash(findstr:*)",
+      "Bash(find:*)",
+      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")"
+>>>>>>> main
     ],
     "deny": [],
     "ask": []

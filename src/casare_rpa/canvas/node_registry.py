@@ -75,6 +75,38 @@ from .visual_nodes import (
     VisualTypeTextDesktopNode,
     VisualGetElementTextNode,
     VisualGetElementPropertyNode,
+    # Window Management
+    VisualResizeWindowNode,
+    VisualMoveWindowNode,
+    VisualMaximizeWindowNode,
+    VisualMinimizeWindowNode,
+    VisualRestoreWindowNode,
+    VisualGetWindowPropertiesNode,
+    VisualSetWindowStateNode,
+    # Advanced Interactions
+    VisualSelectFromDropdownNode,
+    VisualCheckCheckboxNode,
+    VisualSelectRadioButtonNode,
+    VisualSelectTabNode,
+    VisualExpandTreeItemNode,
+    VisualScrollElementNode,
+    # Mouse & Keyboard Control
+    VisualMoveMouseNode,
+    VisualMouseClickNode,
+    VisualSendKeysNode,
+    VisualSendHotKeyNode,
+    VisualGetMousePositionNode,
+    VisualDragMouseNode,
+    # Wait & Verification
+    VisualWaitForElementNode,
+    VisualWaitForWindowNode,
+    VisualVerifyElementExistsNode,
+    VisualVerifyElementPropertyNode,
+    # Screenshot & OCR
+    VisualCaptureScreenshotNode,
+    VisualCaptureElementImageNode,
+    VisualOCRExtractTextNode,
+    VisualCompareImagesNode,
 )
 
 from ..nodes import (
@@ -143,6 +175,38 @@ from ..nodes.desktop_nodes import (
     TypeTextNode as DesktopTypeTextNode,
     GetElementTextNode as DesktopGetElementTextNode,
     GetElementPropertyNode as DesktopGetElementPropertyNode,
+    # Window Management
+    ResizeWindowNode as DesktopResizeWindowNode,
+    MoveWindowNode as DesktopMoveWindowNode,
+    MaximizeWindowNode as DesktopMaximizeWindowNode,
+    MinimizeWindowNode as DesktopMinimizeWindowNode,
+    RestoreWindowNode as DesktopRestoreWindowNode,
+    GetWindowPropertiesNode as DesktopGetWindowPropertiesNode,
+    SetWindowStateNode as DesktopSetWindowStateNode,
+    # Advanced Interactions
+    SelectFromDropdownNode as DesktopSelectFromDropdownNode,
+    CheckCheckboxNode as DesktopCheckCheckboxNode,
+    SelectRadioButtonNode as DesktopSelectRadioButtonNode,
+    SelectTabNode as DesktopSelectTabNode,
+    ExpandTreeItemNode as DesktopExpandTreeItemNode,
+    ScrollElementNode as DesktopScrollElementNode,
+    # Mouse & Keyboard Control
+    MoveMouseNode as DesktopMoveMouseNode,
+    MouseClickNode as DesktopMouseClickNode,
+    SendKeysNode as DesktopSendKeysNode,
+    SendHotKeyNode as DesktopSendHotKeyNode,
+    GetMousePositionNode as DesktopGetMousePositionNode,
+    DragMouseNode as DesktopDragMouseNode,
+    # Wait & Verification
+    WaitForElementNode as DesktopWaitForElementNode,
+    WaitForWindowNode as DesktopWaitForWindowNode,
+    VerifyElementExistsNode as DesktopVerifyElementExistsNode,
+    VerifyElementPropertyNode as DesktopVerifyElementPropertyNode,
+    # Screenshot & OCR
+    CaptureScreenshotNode as DesktopCaptureScreenshotNode,
+    CaptureElementImageNode as DesktopCaptureElementImageNode,
+    OCRExtractTextNode as DesktopOCRExtractTextNode,
+    CompareImagesNode as DesktopCompareImagesNode,
 )
 
 
@@ -211,6 +275,38 @@ CASARE_NODE_MAPPING = {
     VisualTypeTextDesktopNode: DesktopTypeTextNode,
     VisualGetElementTextNode: DesktopGetElementTextNode,
     VisualGetElementPropertyNode: DesktopGetElementPropertyNode,
+    # Window Management
+    VisualResizeWindowNode: DesktopResizeWindowNode,
+    VisualMoveWindowNode: DesktopMoveWindowNode,
+    VisualMaximizeWindowNode: DesktopMaximizeWindowNode,
+    VisualMinimizeWindowNode: DesktopMinimizeWindowNode,
+    VisualRestoreWindowNode: DesktopRestoreWindowNode,
+    VisualGetWindowPropertiesNode: DesktopGetWindowPropertiesNode,
+    VisualSetWindowStateNode: DesktopSetWindowStateNode,
+    # Advanced Interactions
+    VisualSelectFromDropdownNode: DesktopSelectFromDropdownNode,
+    VisualCheckCheckboxNode: DesktopCheckCheckboxNode,
+    VisualSelectRadioButtonNode: DesktopSelectRadioButtonNode,
+    VisualSelectTabNode: DesktopSelectTabNode,
+    VisualExpandTreeItemNode: DesktopExpandTreeItemNode,
+    VisualScrollElementNode: DesktopScrollElementNode,
+    # Mouse & Keyboard Control
+    VisualMoveMouseNode: DesktopMoveMouseNode,
+    VisualMouseClickNode: DesktopMouseClickNode,
+    VisualSendKeysNode: DesktopSendKeysNode,
+    VisualSendHotKeyNode: DesktopSendHotKeyNode,
+    VisualGetMousePositionNode: DesktopGetMousePositionNode,
+    VisualDragMouseNode: DesktopDragMouseNode,
+    # Wait & Verification
+    VisualWaitForElementNode: DesktopWaitForElementNode,
+    VisualWaitForWindowNode: DesktopWaitForWindowNode,
+    VisualVerifyElementExistsNode: DesktopVerifyElementExistsNode,
+    VisualVerifyElementPropertyNode: DesktopVerifyElementPropertyNode,
+    # Screenshot & OCR
+    VisualCaptureScreenshotNode: DesktopCaptureScreenshotNode,
+    VisualCaptureElementImageNode: DesktopCaptureElementImageNode,
+    VisualOCRExtractTextNode: DesktopOCRExtractTextNode,
+    VisualCompareImagesNode: DesktopCompareImagesNode,
 }
 
 
@@ -289,8 +385,13 @@ class NodeRegistry:
                     # Create first matched node when Enter is pressed
                     if hasattr(qmenu, '_first_match') and qmenu._first_match:
                         logger.info(f"⏎ Enter pressed - creating node: {qmenu._first_match.NODE_NAME}")
-                        viewer = graph.viewer()
-                        pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                        # Use the initial mouse position captured when menu opened
+                        pos = qmenu._initial_scene_pos
+                        if pos is None:
+                            # Fallback to current position if not captured
+                            viewer = graph.viewer()
+                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+
                         node = graph.create_node(
                             f'{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}',
                             name=qmenu._first_match.NODE_NAME,
@@ -333,9 +434,10 @@ class NodeRegistry:
         qmenu._all_actions = []  # List of all QAction objects
         qmenu._category_menus = {}  # category -> QMenu
         qmenu._first_match = None  # Store first matched node for Enter key
+        qmenu._initial_scene_pos = None  # Store initial mouse position when menu opens
         
-        # Organize nodes by category and add to menu
-        for category, nodes in self._categories.items():
+        # Organize nodes by category and add to menu (sorted A-Z, case-insensitive)
+        for category, nodes in sorted(self._categories.items(), key=lambda x: x[0].lower()):
             category_label = category.replace('_', ' ').title()
             category_menu = qmenu.addMenu(category_label)
             qmenu._category_menus[category_label] = category_menu
@@ -351,11 +453,17 @@ class NodeRegistry:
                 # Create a function to instantiate this specific node class
                 def make_creator(cls):
                     def create_node():
-                        # Get the current mouse position in scene coordinates
-                        viewer = graph.viewer()
-                        pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
-                        
-                        # Create node at mouse cursor position (centered)
+                        # Use the initial mouse position captured when menu opened
+                        pos = qmenu._initial_scene_pos
+                        if pos is None:
+                            # Fallback to current position if not captured
+                            viewer = graph.viewer()
+                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                            logger.info(f"📍 Creating node at FALLBACK position: ({pos.x()}, {pos.y()})")
+                        else:
+                            logger.info(f"📍 Creating node at STORED position: ({pos.x()}, {pos.y()})")
+
+                        # Create node at initial mouse position (centered)
                         node = graph.create_node(
                             f'{cls.__identifier__}.{cls.__name__}',
                             name=cls.NODE_NAME,
@@ -412,8 +520,13 @@ class NodeRegistry:
                     for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                         def make_creator(cls):
                             def create_node():
-                                viewer = graph.viewer()
-                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                                # Use the initial mouse position captured when menu opened
+                                pos = qmenu._initial_scene_pos
+                                if pos is None:
+                                    # Fallback to current position if not captured
+                                    viewer = graph.viewer()
+                                    pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+
                                 node = graph.create_node(
                                     f'{cls.__identifier__}.{cls.__name__}',
                                     name=cls.NODE_NAME,
@@ -448,11 +561,16 @@ class NodeRegistry:
                 # Get the node class for this match
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
-                    
+
                     def make_creator(cls):
                         def create_node():
-                            viewer = graph.viewer()
-                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                            # Use the initial mouse position captured when menu opened
+                            pos = qmenu._initial_scene_pos
+                            if pos is None:
+                                # Fallback to current position if not captured
+                                viewer = graph.viewer()
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+
                             node = graph.create_node(
                                 f'{cls.__identifier__}.{cls.__name__}',
                                 name=cls.NODE_NAME,
@@ -484,13 +602,25 @@ class NodeRegistry:
         
         search_input.textChanged.connect(on_search_changed)
         
-        # Focus search when menu is shown
+        # Focus search when menu is shown and capture initial mouse position if not already set
         def on_menu_shown():
+            # Only capture position if not already set by event filter (right-click or Tab)
+            if qmenu._initial_scene_pos is None:
+                viewer = graph.viewer()
+                qmenu._initial_scene_pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                logger.info(f"📍 Menu opened (fallback) at scene position: ({qmenu._initial_scene_pos.x()}, {qmenu._initial_scene_pos.y()})")
+            else:
+                logger.info(f"📍 Menu opened with pre-captured position: ({qmenu._initial_scene_pos.x()}, {qmenu._initial_scene_pos.y()})")
             search_input.setFocus()
             search_input.clear()
-        
+
         qmenu.aboutToShow.connect(on_menu_shown)
-        
+
+        # Note: Don't reset position on aboutToHide because it fires BEFORE
+        # the action's triggered signal, which would cause the position to be None
+        # when create_node() is called. The position will be overwritten on each
+        # new right-click anyway.
+
         logger.info(f"Registered {len(VISUAL_NODE_CLASSES)} node types in context menu")
     
     def get_node_class(self, node_name: str) -> Optional[Type[VisualNode]]:

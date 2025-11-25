@@ -113,10 +113,12 @@ class NodeGraphWidget(QWidget):
         layout.addWidget(self._graph.widget)
         
         self.setLayout(layout)
-        
+
         # Install event filter on graph viewer to capture Tab key for context menu
         self._graph.viewer().installEventFilter(self)
-        
+        # Also install on viewport to capture mouse events (right-click)
+        self._graph.viewer().viewport().installEventFilter(self)
+
         # Install tooltip blocker
         self._tooltip_blocker = TooltipBlocker()
         self._graph.viewer().installEventFilter(self._tooltip_blocker)
@@ -292,27 +294,53 @@ class NodeGraphWidget(QWidget):
     
     def eventFilter(self, obj, event):
         """
-        Event filter to capture Tab key press to show context menu.
-        
+        Event filter to capture Tab key press and right-click for context menu.
+
         Args:
             obj: Object that received the event
             event: The event
-            
+
         Returns:
             True if event was handled, False otherwise
         """
+        # Capture right-click position BEFORE context menu is shown
+        # We intercept MouseButtonPress with RightButton to capture position early
+        if event.type() == event.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.RightButton:
+                viewer = self._graph.viewer()
+                # Capture the position where right-click occurred
+                if hasattr(event, 'globalPos'):
+                    global_pos = event.globalPos()
+                else:
+                    global_pos = event.globalPosition().toPoint()
+                scene_pos = viewer.mapToScene(viewer.mapFromGlobal(global_pos))
+
+                # Store position on the context menu for node creation
+                context_menu = self._graph.get_context_menu('graph')
+                if context_menu and context_menu.qmenu:
+                    context_menu.qmenu._initial_scene_pos = scene_pos
+                    from loguru import logger
+                    logger.info(f"🖱️ Right-click captured at scene position: ({scene_pos.x()}, {scene_pos.y()})")
+
+                # Let the event propagate to show the menu
+                return False
+
         if event.type() == event.Type.KeyPress:
             key_event = event
             if key_event.key() == Qt.Key.Key_Tab:
                 # Show context menu at cursor position
                 viewer = self._graph.viewer()
                 cursor_pos = viewer.cursor().pos()
-                
+
                 # Get the context menu and show it
                 context_menu = self._graph.get_context_menu('graph')
                 if context_menu and context_menu.qmenu:
+                    # Capture initial scene position BEFORE showing the menu
+                    # This is stored so nodes are created at the original position
+                    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(cursor_pos))
+                    context_menu.qmenu._initial_scene_pos = scene_pos
                     context_menu.qmenu.exec(cursor_pos)
-                
+
                 return True  # Event handled
-        
+
         return super().eventFilter(obj, event)
