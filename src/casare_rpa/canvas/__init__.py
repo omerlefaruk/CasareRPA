@@ -20,8 +20,6 @@ from .visual_nodes import (
     NODE_COLORS
 )
 from .debug_toolbar import DebugToolbar
-from .variable_inspector import VariableInspectorPanel
-from .execution_history_viewer import ExecutionHistoryViewer
 from .auto_connect import AutoConnectManager
 from .connection_cutter import ConnectionCutter
 from .minimap import Minimap
@@ -40,8 +38,6 @@ __all__ = [
     "VISUAL_NODE_CLASSES",
     "NODE_COLORS",
     "DebugToolbar",
-    "VariableInspectorPanel",
-    "ExecutionHistoryViewer",
     "AutoConnectManager",
     "ConnectionCutter",
     "Minimap",

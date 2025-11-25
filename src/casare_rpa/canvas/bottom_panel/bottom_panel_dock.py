@@ -1,11 +1,11 @@
 """
 Bottom Panel Dock for CasareRPA.
 
-Main dockable container with tabs for Variables, Output, Log, and Validation.
+Main dockable container with tabs for Variables, Output, Log, Validation, and History.
 Provides Power Automate/UiPath-style bottom panel functionality.
 """
 
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import Optional, Dict, Any, List, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -24,31 +24,35 @@ if TYPE_CHECKING:
 
 class BottomPanelDock(QDockWidget):
     """
-    Dockable bottom panel with tabs for Variables, Output, Log, and Validation.
+    Dockable bottom panel with tabs for Variables, Output, Log, Validation, and History.
 
     This panel provides a Power Automate/UiPath-style interface for:
     - Variables: Global workflow variables with design/runtime modes
     - Output: Workflow outputs and return values
     - Log: Real-time execution logs
     - Validation: Workflow validation issues
+    - History: Execution history with timing and status
 
     Signals:
         variables_changed: Emitted when variables are modified
         validation_requested: Emitted when user requests manual validation
         issue_clicked: Emitted when a validation issue is clicked (location: str)
         navigate_to_node: Emitted when user wants to navigate to a node (node_id: str)
+        history_clear_requested: Emitted when user requests to clear history
     """
 
     variables_changed = Signal(dict)  # {name: VariableDefinition}
     validation_requested = Signal()
     issue_clicked = Signal(str)  # location string
     navigate_to_node = Signal(str)  # node_id
+    history_clear_requested = Signal()
 
     # Tab indices
     TAB_VARIABLES = 0
     TAB_OUTPUT = 1
     TAB_LOG = 2
     TAB_VALIDATION = 3
+    TAB_HISTORY = 4
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -106,6 +110,7 @@ class BottomPanelDock(QDockWidget):
         from .output_tab import OutputTab
         from .log_tab import LogTab
         from .validation_tab import ValidationTab
+        from .history_tab import HistoryTab
 
         # Variables tab
         self._variables_tab = VariablesTab()
@@ -128,6 +133,12 @@ class BottomPanelDock(QDockWidget):
         self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
         self._tab_widget.addTab(self._validation_tab, "Validation")
 
+        # History tab
+        self._history_tab = HistoryTab()
+        self._history_tab.node_selected.connect(self.navigate_to_node.emit)
+        self._history_tab.clear_requested.connect(self._on_history_clear_requested)
+        self._tab_widget.addTab(self._history_tab, "History")
+
     def _update_tab_badges(self) -> None:
         """Update tab titles with badge counts."""
         # Variables tab - show count if > 0
@@ -149,14 +160,19 @@ class BottomPanelDock(QDockWidget):
         if hasattr(self._validation_tab, 'get_issue_count'):
             error_count, warning_count = self._validation_tab.get_issue_count()
             if error_count > 0:
-                val_title = f"Validation (⚠ {error_count})"
+                val_title = f"Validation ({error_count})"
             elif warning_count > 0:
                 val_title = f"Validation ({warning_count})"
             else:
-                val_title = "Validation ✓"
+                val_title = "Validation"
         else:
             val_title = "Validation"
         self._tab_widget.setTabText(self.TAB_VALIDATION, val_title)
+
+        # History tab - show count if > 0
+        history_count = self._history_tab.get_entry_count() if hasattr(self._history_tab, 'get_entry_count') else 0
+        history_title = f"History ({history_count})" if history_count > 0 else "History"
+        self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -197,6 +213,12 @@ class BottomPanelDock(QDockWidget):
         """Handle variables changed from Variables tab."""
         self.variables_changed.emit(variables)
 
+    def _on_history_clear_requested(self) -> None:
+        """Handle history clear request from History tab."""
+        self._history_tab.clear()
+        self._update_tab_badges()
+        self.history_clear_requested.emit()
+
     # ==================== Public API ====================
 
     def get_variables_tab(self) -> 'VariablesTab':
@@ -234,6 +256,15 @@ class BottomPanelDock(QDockWidget):
         """Show and focus the Validation tab."""
         self.show()
         self._tab_widget.setCurrentIndex(self.TAB_VALIDATION)
+
+    def get_history_tab(self) -> 'HistoryTab':
+        """Get the History tab widget."""
+        return self._history_tab
+
+    def show_history_tab(self) -> None:
+        """Show and focus the History tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_HISTORY)
 
     # ==================== Variables API ====================
 
@@ -353,6 +384,38 @@ class BottomPanelDock(QDockWidget):
         """Check if there are validation errors."""
         return self._validation_tab.has_errors()
 
+    # ==================== History API ====================
+
+    def update_history(self, history: List[Dict[str, Any]]) -> None:
+        """
+        Update the execution history display.
+
+        Args:
+            history: List of execution history entries
+        """
+        self._history_tab.update_history(history)
+        self._update_tab_badges()
+
+    def append_history_entry(self, entry: Dict[str, Any]) -> None:
+        """
+        Append a single entry to the execution history.
+
+        Args:
+            entry: Execution history entry with keys:
+                   - timestamp: ISO timestamp string
+                   - node_id: Node identifier
+                   - node_type: Type of the node
+                   - execution_time: Time in seconds
+                   - status: 'success' or 'failed'
+        """
+        self._history_tab.append_entry(entry)
+        self._update_tab_badges()
+
+    def clear_history(self) -> None:
+        """Clear execution history."""
+        self._history_tab.clear()
+        self._update_tab_badges()
+
     # ==================== State Management ====================
 
     def prepare_for_execution(self) -> None:
@@ -360,6 +423,7 @@ class BottomPanelDock(QDockWidget):
         self.set_runtime_mode(True)
         self.clear_log()
         self.clear_outputs()
+        self.clear_history()
         self.show_log_tab()
 
     def execution_finished(self) -> None:
@@ -372,4 +436,6 @@ class BottomPanelDock(QDockWidget):
         self._output_tab.clear()
         self._log_tab.clear()
         self._validation_tab.clear()
+        self._history_tab.clear()
         self.set_runtime_mode(False)
+        self._update_tab_badges()

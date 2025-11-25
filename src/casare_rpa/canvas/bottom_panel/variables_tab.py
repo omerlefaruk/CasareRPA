@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
     QStyleOptionViewItem,
 )
-from PySide6.QtCore import Qt, Signal, QModelIndex
+from PySide6.QtCore import Qt, Signal, QModelIndex, QTimer
 from PySide6.QtGui import QColor, QBrush, QAction, QFont
 from loguru import logger
 
@@ -94,15 +94,18 @@ class VariablesTab(QWidget):
 
     Signals:
         variables_changed: Emitted when variables are modified
+        refresh_requested: Emitted when user requests manual refresh (runtime mode)
     """
 
     variables_changed = Signal(dict)  # {name: variable_definition}
+    refresh_requested = Signal()
 
     # Table columns
     COL_NAME = 0
     COL_TYPE = 1
     COL_SCOPE = 2
     COL_DEFAULT = 3
+    COL_CURRENT = 4  # Current runtime value (visible in runtime mode)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -118,6 +121,11 @@ class VariablesTab(QWidget):
         self._is_creating = False
         self._variable_counter = 1
 
+        # Auto-refresh timer for runtime mode
+        self._auto_refresh_timer = QTimer(self)
+        self._auto_refresh_timer.timeout.connect(self._on_auto_refresh)
+        self._auto_refresh_interval = 500  # ms
+
         self._setup_ui()
         self._apply_styles()
 
@@ -127,11 +135,35 @@ class VariablesTab(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        # Runtime header (hidden in design mode)
+        self._runtime_header = QWidget()
+        runtime_layout = QHBoxLayout(self._runtime_header)
+        runtime_layout.setContentsMargins(5, 5, 5, 5)
+
+        self._label_count = QLabel("Variables: 0")
+        runtime_layout.addWidget(self._label_count)
+
+        runtime_layout.addStretch()
+
+        self._btn_refresh = QPushButton("Refresh")
+        self._btn_refresh.setToolTip("Refresh variable values")
+        self._btn_refresh.clicked.connect(self._on_refresh)
+        runtime_layout.addWidget(self._btn_refresh)
+
+        self._btn_auto_refresh = QPushButton("Auto-Refresh")
+        self._btn_auto_refresh.setCheckable(True)
+        self._btn_auto_refresh.setToolTip("Automatically refresh variables during execution")
+        self._btn_auto_refresh.toggled.connect(self._on_auto_refresh_toggled)
+        runtime_layout.addWidget(self._btn_auto_refresh)
+
+        layout.addWidget(self._runtime_header)
+        self._runtime_header.setVisible(False)  # Hidden by default (design mode)
+
         # Variables table
         self._table = QTableWidget()
-        self._table.setColumnCount(4)
+        self._table.setColumnCount(5)
         self._table.setHorizontalHeaderLabels([
-            "Name", "Data Type", "Scope", "Default Value"
+            "Name", "Data Type", "Scope", "Default Value", "Current Value"
         ])
 
         # Configure table
@@ -154,10 +186,14 @@ class VariablesTab(QWidget):
         header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(self.COL_DEFAULT, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self.COL_CURRENT, QHeaderView.ResizeMode.Stretch)
 
         # Set minimum column widths
         self._table.setColumnWidth(self.COL_TYPE, 100)
         self._table.setColumnWidth(self.COL_SCOPE, 80)
+
+        # Hide Current Value column by default (shown in runtime mode)
+        self._table.setColumnHidden(self.COL_CURRENT, True)
 
         # Hide vertical header
         self._table.verticalHeader().setVisible(False)
@@ -239,10 +275,15 @@ class VariablesTab(QWidget):
         default_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
         default_item.setData(Qt.ItemDataRole.UserRole, "CREATE_PLACEHOLDER")
 
+        current_item = QTableWidgetItem("")
+        current_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+        current_item.setData(Qt.ItemDataRole.UserRole, "CREATE_PLACEHOLDER")
+
         self._table.setItem(row, self.COL_NAME, create_item)
         self._table.setItem(row, self.COL_TYPE, type_item)
         self._table.setItem(row, self.COL_SCOPE, scope_item)
         self._table.setItem(row, self.COL_DEFAULT, default_item)
+        self._table.setItem(row, self.COL_CURRENT, current_item)
 
         self._table.blockSignals(False)
 
@@ -284,10 +325,16 @@ class VariablesTab(QWidget):
         default_item = QTableWidgetItem("{}")
         default_item.setForeground(QBrush(QColor("#888888")))
 
+        # Current runtime value (empty initially)
+        current_item = QTableWidgetItem("-")
+        current_item.setForeground(QBrush(QColor("#666666")))
+        current_item.setFlags(current_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
         self._table.setItem(row, self.COL_NAME, name_item)
         self._table.setItem(row, self.COL_TYPE, type_item)
         self._table.setItem(row, self.COL_SCOPE, scope_item)
         self._table.setItem(row, self.COL_DEFAULT, default_item)
+        self._table.setItem(row, self.COL_CURRENT, current_item)
 
         # Add to variables dict
         self._variables[var_name] = {
@@ -511,10 +558,16 @@ class VariablesTab(QWidget):
         default_item = QTableWidgetItem(self._format_default_value(default_val))
         default_item.setForeground(QBrush(QColor("#888888")))
 
+        # Current runtime value (empty initially)
+        current_item = QTableWidgetItem("-")
+        current_item.setForeground(QBrush(QColor("#666666")))
+        current_item.setFlags(current_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
         self._table.setItem(row, self.COL_NAME, name_item)
         self._table.setItem(row, self.COL_TYPE, type_item)
         self._table.setItem(row, self.COL_SCOPE, scope_item)
         self._table.setItem(row, self.COL_DEFAULT, default_item)
+        self._table.setItem(row, self.COL_CURRENT, current_item)
 
         self._table.blockSignals(False)
 
@@ -578,10 +631,11 @@ class VariablesTab(QWidget):
             if item:
                 var_name = item.data(Qt.ItemDataRole.UserRole)
                 if var_name in values:
-                    default_item = self._table.item(row, self.COL_DEFAULT)
-                    if default_item:
-                        default_item.setText(self._format_default_value(values[var_name]))
-                        default_item.setForeground(QBrush(QColor("#4CAF50")))
+                    # Update the Current Value column (side-by-side with Default)
+                    current_item = self._table.item(row, self.COL_CURRENT)
+                    if current_item:
+                        current_item.setText(self._format_default_value(values[var_name]))
+                        current_item.setForeground(QBrush(QColor("#4CAF50")))  # Green for active
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
@@ -592,16 +646,35 @@ class VariablesTab(QWidget):
         """
         self._is_runtime_mode = enabled
 
+        # Show/hide runtime header
+        self._runtime_header.setVisible(enabled)
+
+        # Show/hide Current Value column (only visible in runtime mode)
+        self._table.setColumnHidden(self.COL_CURRENT, not enabled)
+
         # Update "Create variable" row visibility/editability
         if enabled:
             # Hide create row in runtime mode
             self._table.setRowHidden(0, True)
+            self._update_variable_count()
         else:
             self._table.setRowHidden(0, False)
+            # Stop auto-refresh when leaving runtime mode
+            if self._auto_refresh_timer.isActive():
+                self._auto_refresh_timer.stop()
+                self._btn_auto_refresh.setChecked(False)
+            # Reset Current Value column to "-" when exiting runtime mode
+            for row in range(1, self._table.rowCount()):
+                current_item = self._table.item(row, self.COL_CURRENT)
+                if current_item:
+                    current_item.setText("-")
+                    current_item.setForeground(QBrush(QColor("#666666")))
 
-        # Make table read-only in runtime mode
+        # Make table read-only in runtime mode (except Current Value which is always read-only)
         for row in range(1, self._table.rowCount()):
             for col in range(self._table.columnCount()):
+                if col == self.COL_CURRENT:
+                    continue  # Current value is always read-only
                 item = self._table.item(row, col)
                 if item:
                     if enabled:
@@ -631,3 +704,40 @@ class VariablesTab(QWidget):
         if isinstance(value, dict):
             return "Dict"
         return "String"
+
+    def _update_variable_count(self) -> None:
+        """Update the variable count label."""
+        count = len(self._variables)
+        self._label_count.setText(f"Variables: {count}")
+
+    def _on_refresh(self) -> None:
+        """Handle refresh button click."""
+        logger.debug("Variable refresh requested")
+        self.refresh_requested.emit()
+
+    def _on_auto_refresh(self) -> None:
+        """Handle auto-refresh timer tick."""
+        self.refresh_requested.emit()
+
+    def _on_auto_refresh_toggled(self, checked: bool) -> None:
+        """Handle auto-refresh toggle."""
+        if checked:
+            self._btn_auto_refresh.setText("Stop Auto")
+            self._auto_refresh_timer.start(self._auto_refresh_interval)
+            logger.debug(f"Auto-refresh enabled ({self._auto_refresh_interval}ms)")
+        else:
+            self._btn_auto_refresh.setText("Auto-Refresh")
+            self._auto_refresh_timer.stop()
+            logger.debug("Auto-refresh disabled")
+
+    def set_auto_refresh_interval(self, interval_ms: int) -> None:
+        """
+        Set the auto-refresh interval.
+
+        Args:
+            interval_ms: Refresh interval in milliseconds
+        """
+        self._auto_refresh_interval = interval_ms
+        if self._auto_refresh_timer.isActive():
+            self._auto_refresh_timer.start(interval_ms)
+        logger.debug(f"Auto-refresh interval set to {interval_ms}ms")
