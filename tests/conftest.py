@@ -1,19 +1,23 @@
 """
 CasareRPA Test Configuration and Fixtures.
 
-Provides pytest fixtures and helpers for testing all node types.
+Provides pytest fixtures and helpers for testing all node types and GUI components.
 """
 
 import asyncio
+import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Configure Qt for testing (must be before PySide6 imports)
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from casare_rpa.core.execution_context import ExecutionContext
 from casare_rpa.core.types import DataType, ExecutionMode, NodeStatus, PortType
@@ -289,3 +293,124 @@ def temp_output_dir(tmp_path):
     output_dir = tmp_path / "output"
     output_dir.mkdir()
     return output_dir
+
+
+# =============================================================================
+# Qt/GUI Testing Fixtures
+# =============================================================================
+
+@pytest.fixture(scope="session")
+def qapp():
+    """
+    Create QApplication instance for GUI tests.
+    This is session-scoped to avoid creating multiple QApplication instances.
+    """
+    from PySide6.QtWidgets import QApplication
+
+    # Check if QApplication already exists
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    yield app
+    # Don't quit the app here as it may be needed by other tests
+
+
+@pytest.fixture
+def main_window(qapp, qtbot):
+    """
+    Create a MainWindow instance for testing.
+
+    Uses qtbot from pytest-qt for proper event handling.
+    """
+    from casare_rpa.canvas.main_window import MainWindow
+
+    window = MainWindow()
+    qtbot.addWidget(window)
+    yield window
+    window.close()
+
+
+@pytest.fixture
+def main_window_with_file(main_window, tmp_path):
+    """MainWindow with a mock current file set."""
+    test_file = tmp_path / "test_workflow.json"
+    test_file.write_text('{"nodes": [], "connections": []}')
+    main_window.set_current_file(test_file)
+    return main_window
+
+
+@pytest.fixture
+def mock_file_dialog():
+    """Mock QFileDialog for testing file operations."""
+    with patch("casare_rpa.canvas.main_window.QFileDialog") as mock_dialog:
+        yield mock_dialog
+
+
+@pytest.fixture
+def mock_message_box():
+    """Mock QMessageBox for testing dialogs."""
+    with patch("casare_rpa.canvas.main_window.QMessageBox") as mock_box:
+        yield mock_box
+
+
+@pytest.fixture
+def schedule_dialog(qapp, qtbot, tmp_path):
+    """Create a ScheduleDialog for testing."""
+    from casare_rpa.canvas.schedule_dialog import ScheduleDialog
+
+    test_file = tmp_path / "test_workflow.json"
+    test_file.write_text('{}')
+
+    dialog = ScheduleDialog(
+        workflow_path=test_file,
+        workflow_name="Test Workflow"
+    )
+    qtbot.addWidget(dialog)
+    yield dialog
+    dialog.close()
+
+
+@pytest.fixture
+def schedule_manager_dialog(qapp, qtbot):
+    """Create a ScheduleManagerDialog for testing."""
+    from casare_rpa.canvas.schedule_dialog import ScheduleManagerDialog
+
+    dialog = ScheduleManagerDialog(schedules=[])
+    qtbot.addWidget(dialog)
+    yield dialog
+    dialog.close()
+
+
+@pytest.fixture
+def node_search_dialog(qapp, qtbot):
+    """Create a NodeSearchDialog for testing."""
+    from casare_rpa.canvas.node_search_dialog import NodeSearchDialog
+
+    # Mock node categories
+    mock_categories = {
+        "Browser": ["Open Browser", "Navigate", "Click"],
+        "Control Flow": ["If", "Loop", "Wait"],
+    }
+
+    dialog = NodeSearchDialog(node_categories=mock_categories)
+    qtbot.addWidget(dialog)
+    yield dialog
+    dialog.close()
+
+
+# Helper functions for GUI testing
+def click_action(qtbot, action):
+    """Helper to trigger a QAction in tests."""
+    action.trigger()
+    qtbot.wait(10)  # Small delay for event processing
+
+
+def get_menu_action(window, menu_name: str, action_text: str):
+    """Find a menu action by menu and action text."""
+    for menu_action in window.menuBar().actions():
+        if menu_action.text() == menu_name:
+            menu = menu_action.menu()
+            for action in menu.actions():
+                if action.text() == action_text:
+                    return action
+    return None

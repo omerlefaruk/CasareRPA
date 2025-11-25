@@ -419,7 +419,7 @@ class GetXMLElementNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"found": self.outputs.get("found", {}).get("value", False)},
+                "data": {"found": self.get_output_value("found")},
                 "next_nodes": ["exec_out"]
             }
 
@@ -492,7 +492,7 @@ class GetXMLAttributeNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"found": self.outputs.get("found", {}).get("value", False)},
+                "data": {"found": self.get_output_value("found")},
                 "next_nodes": ["exec_out"]
             }
 

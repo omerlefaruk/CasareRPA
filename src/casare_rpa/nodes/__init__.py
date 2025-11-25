@@ -145,6 +145,18 @@ if TYPE_CHECKING:
         HttpUploadFileNode,
         BuildUrlNode,
     )
+    from .database_nodes import (
+        DatabaseConnectNode,
+        ExecuteQueryNode,
+        ExecuteNonQueryNode,
+        BeginTransactionNode,
+        CommitTransactionNode,
+        RollbackTransactionNode,
+        CloseDatabaseNode,
+        TableExistsNode,
+        GetTableColumnsNode,
+        ExecuteBatchNode,
+    )
     from .random_nodes import (
         RandomNumberNode,
         RandomChoiceNode,
@@ -358,6 +370,17 @@ _NODE_REGISTRY: Dict[str, str] = {
     "HttpDownloadFileNode": "http_nodes",
     "HttpUploadFileNode": "http_nodes",
     "BuildUrlNode": "http_nodes",
+    # Database nodes
+    "DatabaseConnectNode": "database_nodes",
+    "ExecuteQueryNode": "database_nodes",
+    "ExecuteNonQueryNode": "database_nodes",
+    "BeginTransactionNode": "database_nodes",
+    "CommitTransactionNode": "database_nodes",
+    "RollbackTransactionNode": "database_nodes",
+    "CloseDatabaseNode": "database_nodes",
+    "TableExistsNode": "database_nodes",
+    "GetTableColumnsNode": "database_nodes",
+    "ExecuteBatchNode": "database_nodes",
     # Random nodes
     "RandomNumberNode": "random_nodes",
     "RandomChoiceNode": "random_nodes",
@@ -659,6 +682,17 @@ __all__ = [
     "HttpDownloadFileNode",
     "HttpUploadFileNode",
     "BuildUrlNode",
+    # Database nodes
+    "DatabaseConnectNode",
+    "ExecuteQueryNode",
+    "ExecuteNonQueryNode",
+    "BeginTransactionNode",
+    "CommitTransactionNode",
+    "RollbackTransactionNode",
+    "CloseDatabaseNode",
+    "TableExistsNode",
+    "GetTableColumnsNode",
+    "ExecuteBatchNode",
     # Random nodes
     "RandomNumberNode",
     "RandomChoiceNode",

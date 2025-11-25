@@ -1,8 +1,8 @@
 # CasareRPA Development Roadmap
 
 **Last Updated**: November 25, 2025
-**Current Status**: Phase 8 - IN PROGRESS 🚧 | File System ✅ | REST API ✅ | Email ✅ | Error Handling ✅
-**Total Tests**: 501 passing (100% success rate) ✅
+**Current Status**: Phase 8 - IN PROGRESS 🚧 | File System ✅ | REST API ✅ | Email ✅ | Database ✅ | Scheduling ✅ | Error Handling ✅
+**Total Tests**: 586+ passing (100% success rate) ✅
 
 ---
 
@@ -355,8 +355,8 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 ## 🚀 Phase 8: File System & External Integrations
 
 **Target**: Q2 2026
-**Status**: 🚧 IN PROGRESS (4/6 bites complete)
-**Tests**: 195+ new tests
+**Status**: ✅ COMPLETE (6/6 bites complete)
+**Tests**: 280+ new tests
 
 ### Goals
 
@@ -447,38 +447,48 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-#### 3. Database Connectivity (Priority: MEDIUM)
-**Estimated Tests**: +10
+#### 3. Database Connectivity (Priority: MEDIUM) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 46 tests passing
 
-**Planned Nodes**:
-- **DatabaseConnectNode** - Establish connection (PostgreSQL, MySQL, SQLite)
-- **ExecuteQueryNode** - Run SELECT queries
-- **ExecuteUpdateNode** - INSERT, UPDATE, DELETE
-- **FetchOneNode** - Get single row
-- **FetchAllNode** - Get all rows
-- **TransactionNode** - Begin/commit/rollback transaction
-- **CloseConnectionNode** - Close DB connection
+**Implemented Nodes**:
+- ✅ **DatabaseConnectNode** - Connect to SQLite, PostgreSQL, MySQL
+- ✅ **ExecuteQueryNode** - Run SELECT queries with parameters
+- ✅ **ExecuteNonQueryNode** - Run INSERT, UPDATE, DELETE statements
+- ✅ **BeginTransactionNode** - Start database transaction
+- ✅ **CommitTransactionNode** - Commit current transaction
+- ✅ **RollbackTransactionNode** - Rollback current transaction
+- ✅ **CloseDatabaseNode** - Close database connection
+- ✅ **TableExistsNode** - Check if table exists
+- ✅ **GetTableColumnsNode** - Get column info for a table
+- ✅ **ExecuteBatchNode** - Execute multiple SQL statements
 
 **Supported Databases**:
-- SQLite (embedded)
-- PostgreSQL
-- MySQL/MariaDB
-- SQL Server
-- MongoDB (NoSQL)
+- ✅ SQLite (built-in, no extra dependencies)
+- ✅ PostgreSQL (via asyncpg, optional)
+- ✅ MySQL/MariaDB (via aiomysql, optional)
 
 **Key Features**:
-- Connection pooling
+- Async database operations for all database types
 - Parameterized queries (SQL injection prevention)
-- Transaction management
-- Result set iteration
-- Error handling for DB operations
+- Full transaction management (begin/commit/rollback)
+- Batch statement execution with error handling
+- Table introspection (check existence, get columns)
+- Connection wrapper with unified interface
+- Visual node wrappers for all 10 nodes
+
+**Files Created**:
+- `src/casare_rpa/nodes/database_nodes.py`
+- `tests/test_database_nodes.py`
+- Visual nodes added to `visual_nodes.py`
 
 **Use Cases**:
-- Database testing
-- Data migration
-- ETL workflows
-- Report generation from DB
-- Database health checks
+- Database testing and validation
+- Data migration workflows
+- ETL (Extract, Transform, Load) processes
+- Report generation from databases
+- Database health checks and monitoring
+- Automated data entry and updates
 
 ---
 
@@ -522,29 +532,42 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ---
 
-#### 5. Scheduling System (Priority: HIGH)
-**Estimated Tests**: +10
+#### 5. Scheduling System (Priority: HIGH) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 39 tests passing
 
-**Planned Features**:
-- **Workflow Scheduler** - Cron-like scheduling
-- **Trigger System** - Event-based execution
-- **Recurring Workflows** - Daily, weekly, monthly schedules
-- **Schedule Manager UI** - Visual schedule editor
-- **Execution History** - Track scheduled runs
-- **Notification System** - Alert on success/failure
+**Implemented Features**:
+- ✅ **WorkflowSchedule** - Complete schedule data model with serialization
+- ✅ **ScheduleStorage** - JSON-based persistence for schedules
+- ✅ **WorkflowSchedulerService** - APScheduler-based execution service
+- ✅ **ExecutionHistory** - Track scheduled runs with statistics
+- ✅ **ScheduleDialog** - Canvas UI for creating/editing schedules
+- ✅ **ScheduleManagerDialog** - UI for managing all schedules
 
 **Scheduling Options**:
-- One-time execution at specific time
-- Recurring (daily, weekly, monthly, custom cron)
-- Interval-based (every N minutes/hours)
-- Event-triggered (file change, webhook, etc.)
+- ✅ One-time execution at specific datetime
+- ✅ Recurring (hourly, daily, weekly, monthly)
+- ✅ Cron expression support (5 or 6 field)
+- ✅ Next run time calculation
+- ✅ Enable/disable schedules
 
-**UI Components**:
-- Schedule calendar view
-- Workflow assignment to schedules
-- Enable/disable schedules
-- Execution history viewer
-- Next run time display
+**Key Features**:
+- Canvas menu integration (Workflow > Schedule Workflow)
+- Schedule persistence to ~/.casare_rpa/canvas/schedules.json
+- Execution history with retention and cleanup
+- Success rate tracking per schedule
+- Statistics and analytics (by day, by schedule)
+- APScheduler integration for reliable scheduling
+- Concurrent execution management with semaphore
+- Callback system for start/complete/error events
+
+**Files Created**:
+- `src/casare_rpa/canvas/schedule_dialog.py` (WorkflowSchedule, ScheduleDialog, ScheduleManagerDialog)
+- `src/casare_rpa/canvas/schedule_storage.py` (ScheduleStorage, get_schedule_storage)
+- `src/casare_rpa/scheduler/__init__.py`
+- `src/casare_rpa/scheduler/workflow_scheduler.py` (WorkflowSchedulerService, SchedulerConfig)
+- `src/casare_rpa/scheduler/execution_history.py` (ExecutionHistory, ExecutionHistoryEntry)
+- `tests/test_scheduler.py` (39 tests)
 
 **Use Cases**:
 - Nightly data backups
@@ -552,6 +575,7 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 - Periodic website monitoring
 - Scheduled scraping jobs
 - Recurring testing
+- Automated workflow execution
 
 ---
 
@@ -590,46 +614,61 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 
 ## 🎨 Phase 9: Polish, Distribution & Advanced Features
 
-**Target**: Q3 2026  
-**Status**: 📅 Planned  
+**Target**: Q3 2026
+**Status**: 🚧 In Progress
 **Estimated Tests**: +50
 
 ### Goals
 
-#### 1. Performance Optimization (Priority: HIGH)
-**Estimated Tests**: +10
+#### 1. Performance Optimization (Priority: HIGH) ✅ COMPLETE
+**Completed**: November 25, 2025
+**Tests**: 52 tests passing
 
-**Planned Improvements**:
+**Already Implemented (Before Phase 9)**:
+- ✅ **Browser Context Pool** (`utils/browser_pool.py`) - Connection pooling with min/max, aging, idle cleanup
+- ✅ **Selector Cache** (`utils/selector_cache.py`) - LRU + TTL cache (500 entries, 60s default)
+- ✅ **Parallel Executor** (`utils/parallel_executor.py`) - Dependency graph, semaphore-based concurrency
+- ✅ **Viewport Culling** (`canvas/viewport_culling.py`) - Spatial hash grid for 100+ node graphs
+- ✅ **Rate Limiting** (`utils/rate_limiter.py`) - Token bucket + sliding window algorithms
+- ✅ **Circuit Breaker** (`robot/circuit_breaker.py`) - Failure threshold with state transitions
+- ✅ **Retry Logic** (`utils/retry.py`) - Exponential backoff with jitter
+- ✅ **Lazy Loading** (`nodes/__init__.py`) - Deferred node imports
+- ✅ **Fuzzy Search Index** (`utils/fuzzy_search.py`) - Pre-computed with `__slots__`
 
-##### Parallel Execution:
-- Execute independent branches concurrently
-- Worker pool for parallel nodes
-- Thread/process pool management
-- Async-first architecture refinement
+**New Implementations (Phase 9)**:
+- ✅ **Database Connection Pool** (`utils/database_pool.py`) - Pool for SQLite/PostgreSQL/MySQL
+  - Min/max connection limits
+  - Connection aging and health checks
+  - Automatic idle cleanup
+  - Pool statistics tracking
+  - Native asyncpg pool integration for PostgreSQL
+- ✅ **HTTP Session Pool** (`utils/http_session_pool.py`) - Session pooling for HTTP keep-alive
+  - Per-host session management
+  - Automatic session recycling
+  - Request/response statistics
+  - Connection reuse for reduced SSL overhead
+- ✅ **Performance Metrics System** (`utils/performance_metrics.py`) - Unified metrics collection
+  - Counter, gauge, histogram, timer metric types
+  - Label support for dimensional metrics
+  - Node execution timing and error tracking
+  - Workflow execution statistics
+  - System resource monitoring (CPU, memory)
+  - Percentile calculations (p50, p90, p99)
+  - Background metrics collection
 
-##### Resource Pooling:
-- Browser instance pooling (reuse browsers)
-- Database connection pooling
-- HTTP session pooling
-- Memory management for large workflows
+**Files Created**:
+- `src/casare_rpa/utils/database_pool.py`
+- `src/casare_rpa/utils/http_session_pool.py`
+- `src/casare_rpa/utils/performance_metrics.py`
+- `tests/test_performance_optimizations.py`
 
-##### Caching System:
-- Cache node outputs (configurable TTL)
-- Workflow-level caching
-- Variable caching
-- Smart cache invalidation
-
-##### Performance Metrics:
-- Node execution timing
-- Memory usage tracking
-- CPU profiling
-- Bottleneck identification
-- Performance dashboard
-
-**Performance Targets**:
-- 50% faster execution for independent branches
-- 70% memory reduction for large workflows
-- Sub-second node execution for non-I/O operations
+**Key Features**:
+- Connection pooling for all database types (SQLite, PostgreSQL, MySQL)
+- HTTP session pooling with keep-alive support
+- Histogram-based performance tracking with percentiles
+- Timer context managers for easy instrumentation
+- System resource monitoring (CPU, memory, GC)
+- Singleton managers for global pool access
 
 ---
 
