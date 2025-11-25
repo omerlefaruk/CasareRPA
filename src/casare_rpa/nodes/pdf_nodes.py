@@ -26,21 +26,36 @@ class ReadPDFTextNode(BaseNode):
 
     Config:
         page_separator: Separator between pages (default: newline)
+        password: Password for encrypted PDFs (default: None)
+        extract_tables: Attempt to extract tables (default: False)
+        preserve_layout: Try to preserve text layout (default: False)
 
     Inputs:
         file_path: Path to PDF file
         start_page: Start page (1-indexed, default: 1)
         end_page: End page (default: all pages)
+        password: Password for encrypted PDFs (optional input)
 
     Outputs:
         text: Extracted text
         page_count: Total number of pages
         pages: List of text per page
+        is_encrypted: Whether the PDF is encrypted
         success: Whether extraction succeeded
     """
 
     def __init__(self, node_id: str, name: str = "Read PDF Text", **kwargs) -> None:
+        # Default config with all options
+        default_config = {
+            "page_separator": "\n\n",
+            "password": "",
+            "extract_tables": False,
+            "preserve_layout": False,
+        }
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadPDFTextNode"
@@ -50,10 +65,12 @@ class ReadPDFTextNode(BaseNode):
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("start_page", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("end_page", PortType.INPUT, DataType.INTEGER)
+        self.add_input_port("password", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("pages", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("is_encrypted", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -64,6 +81,11 @@ class ReadPDFTextNode(BaseNode):
             start_page = self.get_input_value("start_page", context)
             end_page = self.get_input_value("end_page", context)
             page_separator = self.config.get("page_separator", "\n\n")
+
+            # Get password from input or config
+            password = self.get_input_value("password", context)
+            if password is None:
+                password = self.config.get("password", "")
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -78,6 +100,17 @@ class ReadPDFTextNode(BaseNode):
                 raise ImportError("PyPDF2 is required for PDF operations. Install with: pip install PyPDF2")
 
             reader = PdfReader(path)
+
+            # Handle encrypted PDFs
+            is_encrypted = reader.is_encrypted
+            self.set_output_value("is_encrypted", is_encrypted)
+
+            if is_encrypted:
+                if password:
+                    if not reader.decrypt(password):
+                        raise ValueError("Invalid password for encrypted PDF")
+                else:
+                    raise ValueError("PDF is encrypted. Please provide a password.")
             page_count = len(reader.pages)
 
             # Handle page range
@@ -111,6 +144,7 @@ class ReadPDFTextNode(BaseNode):
             self.set_output_value("text", "")
             self.set_output_value("page_count", 0)
             self.set_output_value("pages", [])
+            self.set_output_value("is_encrypted", False)
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}

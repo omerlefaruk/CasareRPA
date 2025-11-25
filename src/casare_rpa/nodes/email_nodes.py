@@ -133,8 +133,37 @@ class SendEmailNode(BaseNode):
     - SSL/TLS encryption
     """
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
         """Initialize SendEmail node."""
+        # Default config with all SMTP options
+        default_config = {
+            "smtp_server": "smtp.gmail.com",
+            "smtp_port": 587,
+            "username": "",
+            "password": "",
+            "from_email": "",
+            "to_email": "",
+            "subject": "",
+            "body": "",
+            "cc": "",
+            "bcc": "",
+            "use_tls": True,
+            "use_ssl": False,
+            "is_html": False,
+            # Advanced options
+            "timeout": 30,  # SMTP connection timeout in seconds
+            "reply_to": "",  # Reply-To address
+            "priority": "normal",  # high, normal, low
+            "read_receipt": False,  # Request read receipt
+            "sender_name": "",  # Display name for sender
+        }
+
+        config = config or kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = "Send Email"
         self.node_type = "SendEmailNode"
@@ -169,6 +198,7 @@ class SendEmailNode(BaseNode):
             password = self.get_input_value("password") or self.config.get("password", "")
             use_tls = self.config.get("use_tls", True)
             use_ssl = self.config.get("use_ssl", False)
+            timeout = self.config.get("timeout", 30)
 
             # Get email content
             from_email = self.get_input_value("from_email") or self.config.get("from_email", username)
@@ -179,6 +209,12 @@ class SendEmailNode(BaseNode):
             bcc = self.get_input_value("bcc") or self.config.get("bcc", "")
             attachments = self.get_input_value("attachments") or []
             is_html = self.config.get("is_html", False)
+
+            # Advanced options
+            reply_to = self.config.get("reply_to", "")
+            priority = self.config.get("priority", "normal")
+            read_receipt = self.config.get("read_receipt", False)
+            sender_name = self.config.get("sender_name", "")
 
             if not to_email:
                 self.set_output_value("success", False)
@@ -191,7 +227,13 @@ class SendEmailNode(BaseNode):
 
             # Create message
             msg = MIMEMultipart()
-            msg['From'] = from_email
+
+            # Set From with optional sender name
+            if sender_name:
+                msg['From'] = f"{sender_name} <{from_email}>"
+            else:
+                msg['From'] = from_email
+
             msg['To'] = to_email
             msg['Subject'] = subject
 
@@ -199,6 +241,22 @@ class SendEmailNode(BaseNode):
                 msg['Cc'] = cc
             if bcc:
                 msg['Bcc'] = bcc
+
+            # Reply-To header
+            if reply_to:
+                msg['Reply-To'] = reply_to
+
+            # Priority header
+            if priority == "high":
+                msg['X-Priority'] = '1'
+                msg['Importance'] = 'High'
+            elif priority == "low":
+                msg['X-Priority'] = '5'
+                msg['Importance'] = 'Low'
+
+            # Read receipt request
+            if read_receipt and from_email:
+                msg['Disposition-Notification-To'] = from_email
 
             # Add body
             if is_html:
@@ -222,11 +280,13 @@ class SendEmailNode(BaseNode):
             if bcc:
                 all_recipients.extend([addr.strip() for addr in bcc.split(',')])
 
-            # Send email
+            logger.info(f"Sending email to {to_email} via {smtp_server}:{smtp_port}")
+
+            # Send email with timeout
             if use_ssl:
-                server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+                server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=timeout)
             else:
-                server = smtplib.SMTP(smtp_server, smtp_port)
+                server = smtplib.SMTP(smtp_server, smtp_port, timeout=timeout)
                 if use_tls:
                     server.starttls()
 
@@ -279,8 +339,31 @@ class ReadEmailsNode(BaseNode):
     - Search criteria
     """
 
-    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+    def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
         """Initialize ReadEmails node."""
+        # Default config with all IMAP options
+        default_config = {
+            "imap_server": "imap.gmail.com",
+            "imap_port": 993,
+            "username": "",
+            "password": "",
+            "folder": "INBOX",
+            "limit": 10,
+            "search_criteria": "ALL",
+            "use_ssl": True,
+            # Advanced options
+            "timeout": 30,  # IMAP connection timeout
+            "mark_as_read": False,  # Mark emails as read after fetching
+            "include_body": True,  # Include email body content
+            "newest_first": True,  # Return newest emails first
+        }
+
+        config = config or kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = "Read Emails"
         self.node_type = "ReadEmailsNode"

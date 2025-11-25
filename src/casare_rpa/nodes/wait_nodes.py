@@ -112,10 +112,10 @@ class WaitNode(BaseNode):
 class WaitForElementNode(BaseNode):
     """
     Wait for element node - waits for an element to appear.
-    
+
     Waits until an element matching the selector is visible on the page.
     """
-    
+
     def __init__(
         self,
         node_id: str,
@@ -127,7 +127,7 @@ class WaitForElementNode(BaseNode):
     ) -> None:
         """
         Initialize wait for element node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
@@ -135,13 +135,21 @@ class WaitForElementNode(BaseNode):
             timeout: Timeout in milliseconds
             state: Element state to wait for (visible, hidden, attached, detached)
         """
-        config = kwargs.get("config", {"selector": selector, "timeout": timeout, "state": state})
-        if "selector" not in config:
-            config["selector"] = selector
-        if "timeout" not in config:
-            config["timeout"] = timeout
-        if "state" not in config:
-            config["state"] = state
+        # Default config with all Playwright wait_for_selector options
+        default_config = {
+            "selector": selector,
+            "timeout": timeout,
+            "state": state,
+            "strict": False,  # Require exactly one matching element
+            "poll_interval": 100,  # Polling interval in ms (custom, for retry logic)
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WaitForElementNode"
@@ -231,10 +239,10 @@ class WaitForElementNode(BaseNode):
 class WaitForNavigationNode(BaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.
-    
+
     Waits for the page to navigate to a new URL or reload.
     """
-    
+
     def __init__(
         self,
         node_id: str,
@@ -245,18 +253,27 @@ class WaitForNavigationNode(BaseNode):
     ) -> None:
         """
         Initialize wait for navigation node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             timeout: Timeout in milliseconds
-            wait_until: Event to wait for (load, domcontentloaded, networkidle)
+            wait_until: Event to wait for (load, domcontentloaded, networkidle, commit)
         """
-        config = kwargs.get("config", {"timeout": timeout, "wait_until": wait_until})
-        if "timeout" not in config:
-            config["timeout"] = timeout
-        if "wait_until" not in config:
-            config["wait_until"] = wait_until
+        # Default config with all Playwright wait_for_load_state options
+        default_config = {
+            "timeout": timeout,
+            "wait_until": wait_until,
+            "url_pattern": "",  # Optional URL pattern to wait for (glob or regex)
+            "url_use_regex": False,  # Treat url_pattern as regex instead of glob
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WaitForNavigationNode"

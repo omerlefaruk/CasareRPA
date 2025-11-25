@@ -24,14 +24,25 @@ class MoveMouseNode(BaseNode):
         - y: Y coordinate
         - duration: Animation duration in seconds (0 for instant)
 
+    Config:
+        - ease: Easing function ('linear', 'ease_in', 'ease_out', 'ease_in_out')
+        - steps: Number of interpolation steps for smooth movement
+
     Outputs:
         - success: Whether the operation succeeded
+        - final_x: Final X position
+        - final_y: Final Y position
     """
 
     def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Move Mouse"):
-        if config is None:
-            config = {"duration": 0.0}
-        super().__init__(node_id, config)
+        default_config = {
+            "duration": 0.0,
+            "ease": "linear",  # linear, ease_in, ease_out, ease_in_out
+            "steps": 10,  # Number of interpolation steps
+        }
+        if config:
+            default_config.update(config)
+        super().__init__(node_id, default_config)
         self.name = name
         self.node_type = "MoveMouseNode"
 
@@ -41,12 +52,16 @@ class MoveMouseNode(BaseNode):
         self.add_input_port("y", DataType.INTEGER, "Y coordinate")
         self.add_input_port("duration", DataType.FLOAT, "Animation duration (seconds)")
         self.add_output_port("success", DataType.BOOLEAN, "Operation success")
+        self.add_output_port("final_x", DataType.INTEGER, "Final X position")
+        self.add_output_port("final_y", DataType.INTEGER, "Final Y position")
 
     async def execute(self, context) -> Dict[str, Any]:
         """Execute mouse movement"""
         x = self.get_input_value("x")
         y = self.get_input_value("y")
         duration = self.get_input_value("duration") or self.config.get("duration", 0.0)
+        ease = self.config.get("ease", "linear")
+        steps = self.config.get("steps", 10)
 
         if x is None:
             raise ValueError("X coordinate is required")
@@ -57,16 +72,29 @@ class MoveMouseNode(BaseNode):
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
-        success = desktop_ctx.move_mouse(int(x), int(y), float(duration))
+        # Pass ease and steps to desktop context if supported
+        move_kwargs = {}
+        if hasattr(desktop_ctx, 'move_mouse'):
+            import inspect
+            sig = inspect.signature(desktop_ctx.move_mouse)
+            if 'ease' in sig.parameters:
+                move_kwargs['ease'] = ease
+            if 'steps' in sig.parameters:
+                move_kwargs['steps'] = steps
+
+        success = desktop_ctx.move_mouse(int(x), int(y), float(duration), **move_kwargs)
 
         self.set_output_value("success", success)
+        self.set_output_value("final_x", int(x))
+        self.set_output_value("final_y", int(y))
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
 
         return {
             "success": success,
             "x": x,
             "y": y,
-            "duration": duration
+            "duration": duration,
+            "ease": ease
         }
 
 
@@ -81,15 +109,27 @@ class MouseClickNode(BaseNode):
     Config:
         - button: "left", "right", or "middle"
         - click_type: "single", "double", or "triple"
+        - click_count: Number of clicks (alternative to click_type)
+        - ctrl: Hold Ctrl key during click
+        - shift: Hold Shift key during click
+        - alt: Hold Alt key during click
+        - delay: Delay between click down and up (ms)
 
     Outputs:
         - success: Whether the click succeeded
+        - click_x: X coordinate where click occurred
+        - click_y: Y coordinate where click occurred
     """
 
     def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Mouse Click"):
         default_config = {
             "button": "left",
-            "click_type": "single"
+            "click_type": "single",
+            "click_count": 1,
+            "ctrl": False,
+            "shift": False,
+            "alt": False,
+            "delay": 0,  # ms between down and up
         }
         if config:
             default_config.update(config)
@@ -102,6 +142,8 @@ class MouseClickNode(BaseNode):
         self.add_input_port("x", DataType.INTEGER, "X coordinate (optional)")
         self.add_input_port("y", DataType.INTEGER, "Y coordinate (optional)")
         self.add_output_port("success", DataType.BOOLEAN, "Operation success")
+        self.add_output_port("click_x", DataType.INTEGER, "X coordinate of click")
+        self.add_output_port("click_y", DataType.INTEGER, "Y coordinate of click")
 
     async def execute(self, context) -> Dict[str, Any]:
         """Execute mouse click"""
@@ -109,19 +151,55 @@ class MouseClickNode(BaseNode):
         y = self.get_input_value("y")
         button = self.config.get("button", "left")
         click_type = self.config.get("click_type", "single")
+        click_count = self.config.get("click_count", 1)
+        ctrl = self.config.get("ctrl", False)
+        shift = self.config.get("shift", False)
+        alt = self.config.get("alt", False)
+        delay = self.config.get("delay", 0)
+
+        # Determine actual click count from click_type or click_count
+        if click_type == "double":
+            click_count = 2
+        elif click_type == "triple":
+            click_count = 3
 
         desktop_ctx = getattr(context, 'desktop_context', None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
-        success = desktop_ctx.click_mouse(
-            x=int(x) if x is not None else None,
-            y=int(y) if y is not None else None,
-            button=button,
-            click_type=click_type
-        )
+        # Build modifiers list
+        modifiers = []
+        if ctrl:
+            modifiers.append("ctrl")
+        if shift:
+            modifiers.append("shift")
+        if alt:
+            modifiers.append("alt")
+
+        # Check if desktop context supports modifiers
+        click_kwargs = {
+            "x": int(x) if x is not None else None,
+            "y": int(y) if y is not None else None,
+            "button": button,
+            "click_type": click_type,
+        }
+
+        # Add optional parameters if supported
+        import inspect
+        if hasattr(desktop_ctx, 'click_mouse'):
+            sig = inspect.signature(desktop_ctx.click_mouse)
+            if 'modifiers' in sig.parameters and modifiers:
+                click_kwargs['modifiers'] = modifiers
+            if 'click_count' in sig.parameters:
+                click_kwargs['click_count'] = click_count
+            if 'delay' in sig.parameters and delay > 0:
+                click_kwargs['delay'] = delay
+
+        success = desktop_ctx.click_mouse(**click_kwargs)
 
         self.set_output_value("success", success)
+        self.set_output_value("click_x", int(x) if x is not None else 0)
+        self.set_output_value("click_y", int(y) if y is not None else 0)
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
 
         return {
@@ -129,7 +207,8 @@ class MouseClickNode(BaseNode):
             "x": x,
             "y": y,
             "button": button,
-            "click_type": click_type
+            "click_type": click_type,
+            "modifiers": modifiers
         }
 
 
@@ -141,15 +220,29 @@ class SendKeysNode(BaseNode):
         - keys: Text or key sequence to send
         - interval: Delay between keystrokes (seconds)
 
+    Config:
+        - interval: Default delay between keystrokes (seconds)
+        - with_shift: Hold Shift while typing
+        - with_ctrl: Hold Ctrl while typing
+        - with_alt: Hold Alt while typing
+        - press_enter_after: Press Enter after typing
+        - clear_first: Send Ctrl+A, Delete before typing to clear field
+
     Outputs:
         - success: Whether the operation succeeded
+        - keys_sent: Number of keys sent
 
     Special keys can be enclosed in braces: {Enter}, {Tab}, {Ctrl}, etc.
     """
 
     def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Send Keys"):
         default_config = {
-            "interval": 0.0
+            "interval": 0.0,
+            "with_shift": False,
+            "with_ctrl": False,
+            "with_alt": False,
+            "press_enter_after": False,
+            "clear_first": False,
         }
         if config:
             default_config.update(config)
@@ -162,11 +255,17 @@ class SendKeysNode(BaseNode):
         self.add_input_port("keys", DataType.STRING, "Keys to send")
         self.add_input_port("interval", DataType.FLOAT, "Delay between keys (seconds)")
         self.add_output_port("success", DataType.BOOLEAN, "Operation success")
+        self.add_output_port("keys_sent", DataType.INTEGER, "Number of keys sent")
 
     async def execute(self, context) -> Dict[str, Any]:
         """Execute key sending"""
         keys = self.get_input_value("keys")
         interval = self.get_input_value("interval") or self.config.get("interval", 0.0)
+        with_shift = self.config.get("with_shift", False)
+        with_ctrl = self.config.get("with_ctrl", False)
+        with_alt = self.config.get("with_alt", False)
+        press_enter_after = self.config.get("press_enter_after", False)
+        clear_first = self.config.get("clear_first", False)
 
         if not keys:
             raise ValueError("Keys to send are required")
@@ -175,15 +274,39 @@ class SendKeysNode(BaseNode):
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
-        success = desktop_ctx.send_keys(str(keys), float(interval))
+        # Clear field first if requested
+        if clear_first:
+            desktop_ctx.send_hotkey("Ctrl", "a")
+            desktop_ctx.send_keys("{Delete}", 0)
+
+        # Build modifiers
+        modifiers = []
+        if with_shift:
+            modifiers.append("shift")
+        if with_ctrl:
+            modifiers.append("ctrl")
+        if with_alt:
+            modifiers.append("alt")
+
+        # Send keys with or without modifiers
+        if modifiers and hasattr(desktop_ctx, 'send_keys_with_modifiers'):
+            success = desktop_ctx.send_keys_with_modifiers(str(keys), modifiers, float(interval))
+        else:
+            success = desktop_ctx.send_keys(str(keys), float(interval))
+
+        # Press Enter after if requested
+        if press_enter_after and success:
+            desktop_ctx.send_keys("{Enter}", 0)
 
         self.set_output_value("success", success)
+        self.set_output_value("keys_sent", len(str(keys)))
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
 
         return {
             "success": success,
             "keys": keys,
-            "interval": interval
+            "interval": interval,
+            "modifiers": modifiers
         }
 
 

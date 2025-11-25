@@ -537,18 +537,7 @@ def _validate_workflow_semantics(
             suggestion="Remove extra StartNodes, only one is allowed",
         )
 
-    # Check for End node
-    end_nodes = [
-        nid for nid, n in nodes.items()
-        if n.get("node_type") == "EndNode"
-    ]
-
-    if not end_nodes:
-        result.add_warning(
-            "NO_END_NODE",
-            "Workflow has no EndNode",
-            suggestion="Add an EndNode to mark workflow completion",
-        )
+    # End node is optional - workflows can end naturally without explicit EndNode
 
     # Check for circular dependencies
     if _has_circular_dependency(nodes, connections):

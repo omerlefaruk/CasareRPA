@@ -61,16 +61,33 @@ class HttpRequestNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP Request", **kwargs: Any) -> None:
+        # Default config with all HTTP request options
+        default_config = {
+            "method": "GET",
+            "url": "",
+            "headers": {},
+            "body": "",
+            "params": {},
+            "timeout": 30.0,
+            "verify_ssl": True,
+            "follow_redirects": True,
+            "max_redirects": 10,  # Maximum number of redirects to follow
+            "content_type": "application/json",
+            # Proxy settings
+            "proxy": "",  # Proxy URL (e.g., http://proxy:8080)
+            # Retry settings
+            "retry_count": 0,  # Number of retry attempts (0 = no retries)
+            "retry_delay": 1.0,  # Delay between retries in seconds
+            # Response handling
+            "response_encoding": "",  # Force response encoding (empty = auto-detect)
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("method", "GET")
-        config.setdefault("url", "")
-        config.setdefault("headers", {})
-        config.setdefault("body", "")
-        config.setdefault("params", {})
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
-        config.setdefault("follow_redirects", True)
-        config.setdefault("content_type", "application/json")
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpRequestNode"
@@ -109,7 +126,12 @@ class HttpRequestNode(BaseNode):
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
             follow_redirects = self.config.get("follow_redirects", True)
+            max_redirects = self.config.get("max_redirects", 10)
             content_type = self.config.get("content_type", "application/json")
+            proxy = self.config.get("proxy", "")
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
+            response_encoding = self.config.get("response_encoding", "")
 
             # Validate URL
             if not url:
@@ -140,52 +162,79 @@ class HttpRequestNode(BaseNode):
             # Create SSL context
             ssl_context = None if verify_ssl else False
 
+            # Build connector with proxy if specified
+            connector = None
+            if proxy:
+                logger.debug(f"Using proxy: {proxy}")
+
             logger.debug(f"HTTP {method} request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    data=request_body,
-                    params=params,
-                    ssl=ssl_context,
-                    allow_redirects=follow_redirects
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
-                    response_headers = dict(response.headers)
-
-                    # Try to parse JSON
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
-
-                    # Determine success
-                    success = 200 <= status_code < 300
-
-                    # Set outputs
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("response_headers", response_headers)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
-
-                    logger.info(f"HTTP {method} {url} -> {status_code}")
-
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {
-                            "status_code": status_code,
+            # Retry loop
+            last_error = None
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        request_kwargs = {
+                            "method": method,
                             "url": url,
-                            "method": method
-                        },
-                        "next_nodes": ["exec_out"]
-                    }
+                            "headers": headers,
+                            "data": request_body,
+                            "params": params,
+                            "ssl": ssl_context,
+                            "allow_redirects": follow_redirects,
+                            "max_redirects": max_redirects,
+                        }
+                        if proxy:
+                            request_kwargs["proxy"] = proxy
+
+                        async with session.request(**request_kwargs) as response:
+                            # Handle response encoding
+                            if response_encoding:
+                                response_body = await response.text(encoding=response_encoding)
+                            else:
+                                response_body = await response.text()
+                            status_code = response.status
+                            response_headers = dict(response.headers)
+
+                            # Try to parse JSON
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
+
+                            # Determine success
+                            success = 200 <= status_code < 300
+
+                            # Set outputs
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("response_headers", response_headers)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+
+                            logger.info(f"HTTP {method} {url} -> {status_code}")
+
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "method": method,
+                                    "attempts": attempt + 1
+                                },
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    last_error = e
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP request failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except aiohttp.ClientError as e:
             error_msg = f"HTTP request failed: {str(e)}"
@@ -1118,13 +1167,30 @@ class HttpDownloadFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP Download File", **kwargs: Any) -> None:
+        # Default config with all download options
+        default_config = {
+            "url": "",
+            "save_path": "",
+            "headers": {},
+            "timeout": 300.0,  # 5 minutes for large files
+            "overwrite": True,
+            "verify_ssl": True,
+            # Proxy settings
+            "proxy": "",  # Proxy URL (e.g., http://proxy:8080)
+            # Retry settings
+            "retry_count": 0,  # Number of retry attempts
+            "retry_delay": 2.0,  # Delay between retries
+            # Download options
+            "chunk_size": 8192,  # Download chunk size in bytes
+            "resume": False,  # Resume partial downloads if supported
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("save_path", "")
-        config.setdefault("headers", {})
-        config.setdefault("timeout", 300.0)  # 5 minutes for large files
-        config.setdefault("overwrite", True)
-        config.setdefault("verify_ssl", True)
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpDownloadFileNode"
@@ -1153,6 +1219,10 @@ class HttpDownloadFileNode(BaseNode):
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 300.0)
             overwrite = self.config.get("overwrite", True)
             verify_ssl = self.config.get("verify_ssl", True)
+            proxy = self.config.get("proxy", "")
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 2.0)
+            chunk_size = self.config.get("chunk_size", 8192)
 
             if not url:
                 raise ValueError("URL is required")
@@ -1179,31 +1249,52 @@ class HttpDownloadFileNode(BaseNode):
 
             logger.info(f"Downloading file from {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(url, headers=headers, ssl=ssl_context) as response:
-                    if response.status != 200:
-                        raise aiohttp.ClientError(f"HTTP {response.status}")
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        request_kwargs = {
+                            "headers": headers,
+                            "ssl": ssl_context,
+                        }
+                        if proxy:
+                            request_kwargs["proxy"] = proxy
 
-                    # Download and write file
-                    with open(save_path, 'wb') as f:
-                        async for chunk in response.content.iter_chunked(8192):
-                            f.write(chunk)
+                        async with session.get(url, **request_kwargs) as response:
+                            if response.status != 200:
+                                raise aiohttp.ClientError(f"HTTP {response.status}")
 
-                    file_size = save_path.stat().st_size
+                            # Download and write file
+                            with open(save_path, 'wb') as f:
+                                async for chunk in response.content.iter_chunked(chunk_size):
+                                    f.write(chunk)
 
-                    self.set_output_value("file_path", str(save_path))
-                    self.set_output_value("file_size", file_size)
-                    self.set_output_value("success", True)
-                    self.set_output_value("error", "")
+                            file_size = save_path.stat().st_size
 
-                    logger.info(f"Downloaded {file_size} bytes to {save_path}")
+                            self.set_output_value("file_path", str(save_path))
+                            self.set_output_value("file_size", file_size)
+                            self.set_output_value("success", True)
+                            self.set_output_value("error", "")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"file_path": str(save_path), "file_size": file_size},
-                        "next_nodes": ["exec_out"]
-                    }
+                            logger.info(f"Downloaded {file_size} bytes to {save_path}")
+
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {
+                                    "file_path": str(save_path),
+                                    "file_size": file_size,
+                                    "attempts": attempt + 1
+                                },
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"Download failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"Download error: {str(e)}"
