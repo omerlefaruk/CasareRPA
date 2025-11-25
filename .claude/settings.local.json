@@ -3,7 +3,7 @@
     "allow": [
       "Bash(dir:*)",
       "Bash(python -m pytest:*)",
-<<<<<<< HEAD
+<<<<<<<<< Temporary merge branch 1
       "Bash(python:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
@@ -12,9 +12,8 @@
       "Bash(PYTHONPATH=src python:*)",
       "Bash(findstr:*)",
       "Bash(find:*)",
-      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")",
-      "Bash(pip show:*)"
-=======
+      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")"
+=========
       "Bash(pip install:*)",
       "Bash(playwright install:*)",
       "Bash(pip show:*)",
@@ -24,7 +23,7 @@
       "Bash($env:PYTHONPATH=\"src\")",
       "Bash(PYTHONPATH=src python:*)",
       "Bash(find:*)"
->>>>>>> admiring-knuth
+>>>>>>>>> Temporary merge branch 2
     ],
     "deny": [],
     "ask": []

@@ -20,8 +20,13 @@ class VisualConcatenateNode(VisualNode):
 
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Concatenate Strings'
-    NODE_CATEGORY = 'Data Operations'
+<<<<<<<<< Temporary merge branch 1
+    NODE_CATEGORY = 'data_operations'
     
+=========
+    NODE_CATEGORY = 'Data Operations'
+
+>>>>>>>>> Temporary merge branch 2
     def __init__(self):
         super().__init__()
         self.add_text_input('separator', 'Separator', tab='properties')
@@ -93,8 +98,13 @@ class VisualMathOperationNode(VisualNode):
 
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Math Operation'
-    NODE_CATEGORY = 'Data Operations'
+<<<<<<<<< Temporary merge branch 1
+    NODE_CATEGORY = 'data_operations'
     
+=========
+    NODE_CATEGORY = 'Data Operations'
+
+>>>>>>>>> Temporary merge branch 2
     def __init__(self):
         super().__init__()
         self.add_combo_menu(
@@ -117,8 +127,13 @@ class VisualComparisonNode(VisualNode):
 
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Compare Values'
-    NODE_CATEGORY = 'Data Operations'
+<<<<<<<<< Temporary merge branch 1
+    NODE_CATEGORY = 'data_operations'
     
+=========
+    NODE_CATEGORY = 'Data Operations'
+
+>>>>>>>>> Temporary merge branch 2
     def __init__(self):
         super().__init__()
         # Dropdown with common operators
