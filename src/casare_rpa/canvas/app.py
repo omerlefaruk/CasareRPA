@@ -306,6 +306,16 @@ class CasareRPAApp:
             for node_id, node in workflow.nodes.items():
                 try:
                     serialized_node = node.serialize()
+
+                    # Validate consistency between dict key and node_id field
+                    if serialized_node.get("node_id") != node_id:
+                        logger.error(
+                            f"NODE_ID_MISMATCH during serialization: "
+                            f"dict_key={node_id}, field={serialized_node.get('node_id')}"
+                        )
+                        # Auto-repair: use dict key as authoritative
+                        serialized_node["node_id"] = node_id
+
                     serialized_data["nodes"][node_id] = serialized_node
                 except Exception as e:
                     logger.debug(f"Could not serialize node {node_id}: {e}")
@@ -1182,13 +1192,17 @@ class CasareRPAApp:
             # Get the underlying CasareRPA node
             casare_node = visual_node.get_casare_node()
             if casare_node:
-                # Use the visual node's stored node_id property (set by set_casare_node)
-                stored_node_id = visual_node.get_property("node_id")
-                if stored_node_id:
-                    node_id = stored_node_id
-                else:
-                    node_id = casare_node.node_id
-                
+                # ALWAYS use casare_node.node_id as single source of truth
+                node_id = casare_node.node_id
+
+                # Defensive sync of visual property
+                stored_id = visual_node.get_property("node_id")
+                if stored_id and stored_id != node_id:
+                    logger.warning(
+                        f"Syncing visual property: {stored_id} -> {node_id} for {visual_node.name()}"
+                    )
+                    visual_node.set_property("node_id", node_id)
+
                 logger.info(f"Processing visual node: {visual_node.name()} -> {casare_node.node_type} (id={node_id})")
                 # Sync visual node properties to CasareRPA node config
                 self._sync_visual_properties_to_node(visual_node, casare_node)
