@@ -660,7 +660,9 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 - `src/casare_rpa/utils/database_pool.py`
 - `src/casare_rpa/utils/http_session_pool.py`
 - `src/casare_rpa/utils/performance_metrics.py`
+- `src/casare_rpa/canvas/performance_dashboard.py`
 - `tests/test_performance_optimizations.py`
+- `tests/test_performance_dashboard.py`
 
 **Key Features**:
 - Connection pooling for all database types (SQLite, PostgreSQL, MySQL)
@@ -669,6 +671,14 @@ Comprehensive Windows desktop automation using `uiautomation` library for:
 - Timer context managers for easy instrumentation
 - System resource monitoring (CPU, memory, GC)
 - Singleton managers for global pool access
+
+**Performance Dashboard UI** (Tools > Performance Dashboard or Ctrl+Shift+P):
+- **Overview Tab**: System resources (CPU, memory, threads, GC), workflow execution stats
+- **Nodes Tab**: Node execution counts, errors, timing percentiles (p50/p90/p99)
+- **Pools Tab**: Connection pool status (browser, database, HTTP)
+- **Raw Metrics Tab**: All counters and gauges
+- Live auto-refresh (1s/2s/5s/10s intervals)
+- Visual progress bars and color-coded status indicators
 
 ---
 

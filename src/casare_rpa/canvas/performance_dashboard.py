@@ -121,7 +121,7 @@ class HistogramWidget(QWidget):
         max_val = max(p99, max_raw, 1)
 
         for key in ["p50", "p90", "p99"]:
-            value = histogram_data.get(key, 0)
+            value = histogram_data.get(key) or 0
             if key in self._bars:
                 # Scale to percentage of max
                 scaled = int((value / max_val) * 100) if max_val > 0 else 0
@@ -378,10 +378,10 @@ class WorkflowMetricsPanel(QGroupBox):
         if timings:
             self.histogram_widget.update_data(timings)
 
-            self.min_label.setText(f"Min: {timings.get('min', 0):.1f} ms")
-            self.max_label.setText(f"Max: {timings.get('max', 0):.1f} ms")
-            self.mean_label.setText(f"Mean: {timings.get('mean', 0):.1f} ms")
-            self.count_label.setText(f"Samples: {timings.get('count', 0)}")
+            self.min_label.setText(f"Min: {timings.get('min') or 0:.1f} ms")
+            self.max_label.setText(f"Max: {timings.get('max') or 0:.1f} ms")
+            self.mean_label.setText(f"Mean: {timings.get('mean') or 0:.1f} ms")
+            self.count_label.setText(f"Samples: {timings.get('count') or 0}")
 
 
 class PoolMetricsPanel(QGroupBox):
@@ -666,46 +666,32 @@ class PerformanceDashboardDialog(QDialog):
 
         # Try to get browser pool stats
         try:
-            from ..utils.browser_pool import get_browser_pool_manager
-            import asyncio
-
-            async def get_browser_stats():
-                manager = await get_browser_pool_manager()
-                return manager.get_all_stats() if hasattr(manager, 'get_all_stats') else {}
-
-            # Run in event loop if available
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Can't run synchronously, skip
-                    pass
-                else:
-                    stats = loop.run_until_complete(get_browser_stats())
-                    for name, data in stats.items():
-                        pool_data[f"browser_{name}"] = data
-            except RuntimeError:
-                pass
-        except ImportError:
+            from ..utils.browser_pool import BrowserPoolManager
+            manager = getattr(BrowserPoolManager, '_instance', None)
+            if manager and hasattr(manager, 'get_all_stats'):
+                for name, data in manager.get_all_stats().items():
+                    pool_data[f"browser_{name}"] = data
+        except Exception:
             pass
 
         # Try to get database pool stats
         try:
             from ..utils.database_pool import DatabasePoolManager
-            manager = DatabasePoolManager._instance
-            if manager:
+            manager = getattr(DatabasePoolManager, '_instance', None)
+            if manager and hasattr(manager, 'get_all_stats'):
                 for name, data in manager.get_all_stats().items():
                     pool_data[f"db_{name}"] = data
-        except (ImportError, AttributeError):
+        except Exception:
             pass
 
         # Try to get HTTP session pool stats
         try:
             from ..utils.http_session_pool import HttpSessionManager
-            manager = HttpSessionManager._instance
-            if manager:
+            manager = getattr(HttpSessionManager, '_instance', None)
+            if manager and hasattr(manager, 'get_all_stats'):
                 for name, data in manager.get_all_stats().items():
                     pool_data[f"http_{name}"] = data
-        except (ImportError, AttributeError):
+        except Exception:
             pass
 
         return pool_data

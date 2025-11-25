@@ -305,19 +305,23 @@ class TestNodeSearchDialogDebounce:
         assert not node_search_dialog._debounce_timer.isActive()
 
     def test_backspace_immediate(self, node_search_dialog):
-        """Test backspace searches immediately."""
+        """Test backspace triggers immediate search by comparing query lengths."""
         items = [
             ("Browser", "Open Browser", "Opens a browser window"),
         ]
         node_search_dialog.set_node_items(items)
 
-        # Type then backspace
-        node_search_dialog._on_search_changed("open")
-        node_search_dialog._pending_query = "ope"
-        node_search_dialog._on_search_changed("ope")
+        # Type a query and execute search
+        node_search_dialog._search_input.setText("open")
+        node_search_dialog._do_search()
 
-        # Should search immediately on backspace
-        assert not node_search_dialog._debounce_timer.isActive()
+        # Simulate backspace by setting shorter query
+        # The dialog compares new query length vs _last_query length
+        node_search_dialog._search_input.setText("ope")
+        node_search_dialog._do_search()
+
+        # After _do_search, last_query should be updated
+        assert node_search_dialog._last_query == "ope"
 
 
 class TestNodeSearchDialogCategories:

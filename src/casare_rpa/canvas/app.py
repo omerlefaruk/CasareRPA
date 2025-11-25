@@ -175,7 +175,54 @@ class CasareRPAApp:
         self._selector_integration.recording_complete.connect(self._on_recording_complete)
         self._main_window.action_pick_selector.triggered.connect(self._on_start_selector_picking)
         self._main_window.action_record_workflow.triggered.connect(self._on_toggle_recording)
-    
+
+        # Set workflow data provider for validation
+        self._main_window.set_workflow_data_provider(self._get_serialized_workflow_data)
+
+    def _get_serialized_workflow_data(self) -> Optional[dict]:
+        """
+        Get the current workflow as serialized data for validation.
+
+        Returns:
+            Workflow data dictionary suitable for validation
+        """
+        try:
+            # Ensure all nodes are valid
+            self._ensure_all_nodes_have_casare_nodes()
+
+            # Create workflow from graph
+            workflow = self._create_workflow_from_graph()
+
+            if not workflow:
+                return None
+
+            # Build serialized workflow data
+            serialized_data = {
+                "metadata": workflow.metadata.to_dict() if hasattr(workflow.metadata, 'to_dict') else {},
+                "nodes": {},
+                "connections": [],
+                "variables": getattr(workflow, 'variables', {}),
+                "settings": getattr(workflow, 'settings', {}),
+            }
+
+            # Serialize nodes
+            for node_id, node in workflow.nodes.items():
+                try:
+                    serialized_node = node.serialize()
+                    serialized_data["nodes"][node_id] = serialized_node
+                except Exception as e:
+                    logger.debug(f"Could not serialize node {node_id}: {e}")
+
+            # Serialize connections
+            for conn in workflow.connections:
+                serialized_data["connections"].append(conn.to_dict())
+
+            return serialized_data
+
+        except Exception as e:
+            logger.debug(f"Could not get workflow data for validation: {e}")
+            return None
+
     def _on_new_workflow(self) -> None:
         """Handle new workflow creation."""
         logger.info("Creating new workflow")

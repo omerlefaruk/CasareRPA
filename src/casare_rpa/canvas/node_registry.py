@@ -188,7 +188,6 @@ class NodeRegistry:
                 if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                     # Create first matched node when Enter is pressed
                     if hasattr(qmenu, '_first_match') and qmenu._first_match:
-                        logger.info(f"⏎ Enter pressed - creating node: {qmenu._first_match.NODE_NAME}")
                         # Use the initial mouse position captured when menu opened
                         pos = qmenu._initial_scene_pos
                         if pos is None:
@@ -263,9 +262,6 @@ class NodeRegistry:
                             # Fallback to current position if not captured
                             viewer = graph.viewer()
                             pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
-                            logger.info(f"📍 Creating node at FALLBACK position: ({pos.x()}, {pos.y()})")
-                        else:
-                            logger.info(f"📍 Creating node at STORED position: ({pos.x()}, {pos.y()})")
 
                         # Create node at initial mouse position (centered)
                         node = graph.create_node(
@@ -302,8 +298,6 @@ class NodeRegistry:
             """Rebuild menu as flat list during search, categorized when empty."""
             from ..utils.fuzzy_search import fuzzy_search
 
-            logger.info(f"🔍 Search text changed: '{text}'")
-
             # Remove all menu items except search widget and separator
             actions_to_remove = []
             for action in qmenu.actions():
@@ -315,7 +309,6 @@ class NodeRegistry:
 
             if not text.strip():
                 # Restore full categorized menu structure
-                logger.info("Empty search - restoring categorized menu")
 
                 for category, nodes in self._categories.items():
                     category_label = category.replace('_', ' ').title()
@@ -352,7 +345,6 @@ class NodeRegistry:
 
             # Perform fuzzy search and show ALL matching nodes in flat list
             results = fuzzy_search(text, qmenu._node_items)
-            logger.info(f"Found {len(results)} matching nodes")
 
             if not results:
                 no_results_action = qmenu.addAction("No matching nodes found")
@@ -402,8 +394,6 @@ class NodeRegistry:
                         action.setFont(font)
                         qmenu._first_match = node_class
 
-            logger.info(f"Added {len(results)} nodes to flat list, first match: {qmenu._first_match.NODE_NAME if qmenu._first_match else 'None'}")
-
         search_input.textChanged.connect(on_search_changed)
 
         # Focus search when menu is shown and capture initial mouse position if not already set
@@ -412,9 +402,6 @@ class NodeRegistry:
             if qmenu._initial_scene_pos is None:
                 viewer = graph.viewer()
                 qmenu._initial_scene_pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
-                logger.info(f"📍 Menu opened (fallback) at scene position: ({qmenu._initial_scene_pos.x()}, {qmenu._initial_scene_pos.y()})")
-            else:
-                logger.info(f"📍 Menu opened with pre-captured position: ({qmenu._initial_scene_pos.x()}, {qmenu._initial_scene_pos.y()})")
             search_input.setFocus()
             search_input.clear()
 
