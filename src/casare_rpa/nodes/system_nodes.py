@@ -251,11 +251,16 @@ class MessageBoxNode(BaseNode):
     Config:
         title: Dialog title (default: 'Message')
         message: Message to display (default: '')
+        detailed_text: Expandable details section (default: '')
         icon_type: 'information', 'warning', 'error', 'question' (default: information)
         buttons: 'ok', 'ok_cancel', 'yes_no', 'yes_no_cancel' (default: ok)
+        default_button: Which button is focused by default (default: first button)
+        always_on_top: Keep dialog above other windows (default: True)
+        play_sound: Play system sound when dialog appears (default: False)
+        auto_close_timeout: Auto-dismiss after X seconds, 0 to disable (default: 0)
 
     Outputs:
-        result: Button clicked ('ok', 'cancel', 'yes', 'no')
+        result: Button clicked ('ok', 'cancel', 'yes', 'no', 'timeout')
         accepted: True if OK/Yes was clicked
     """
 
@@ -280,22 +285,51 @@ class MessageBoxNode(BaseNode):
             title = str(self.config.get("title", "Message"))
             icon_type = self.config.get("icon_type", "information")
             buttons = self.config.get("buttons", "ok")
+            default_button = self.config.get("default_button", "")
+            always_on_top = self.config.get("always_on_top", True)
+            play_sound = self.config.get("play_sound", False)
+            detailed_text = str(self.config.get("detailed_text", ""))
+
+            # Parse auto_close_timeout safely
+            timeout_val = self.config.get("auto_close_timeout", 0)
+            try:
+                auto_close_timeout = int(timeout_val) if timeout_val else 0
+            except (ValueError, TypeError):
+                auto_close_timeout = 0
 
             # Get message from input port first, fallback to config
             message = self.get_input_value("message")
             if message is None:
                 message = str(self.config.get("message", ""))
 
-            # Resolve {{variable}} patterns in title and message
+            # Resolve {{variable}} patterns in title, message, and detailed_text
             title = context.resolve_value(title)
             message = context.resolve_value(str(message))
+            if detailed_text:
+                detailed_text = context.resolve_value(detailed_text)
 
             result = "ok"
             accepted = True
 
+            # Play sound if enabled
+            if play_sound:
+                try:
+                    import winsound
+                    # Map icon type to system sound
+                    sound_map = {
+                        "information": winsound.MB_ICONASTERISK,
+                        "warning": winsound.MB_ICONEXCLAMATION,
+                        "error": winsound.MB_ICONHAND,
+                        "question": winsound.MB_ICONQUESTION
+                    }
+                    winsound.MessageBeep(sound_map.get(icon_type, winsound.MB_OK))
+                except Exception:
+                    pass  # Ignore sound errors
+
             # Try PySide6 first
             try:
-                from PySide6.QtWidgets import QMessageBox, QApplication
+                from PySide6.QtWidgets import QMessageBox, QApplication, QPushButton
+                from PySide6.QtCore import Qt, QTimer
 
                 # Ensure QApplication exists
                 app = QApplication.instance()
@@ -326,16 +360,53 @@ class MessageBoxNode(BaseNode):
                 msg_box.setIcon(icon)
                 msg_box.setStandardButtons(btns)
 
+                # Set detailed text if provided
+                if detailed_text:
+                    msg_box.setDetailedText(detailed_text)
+
+                # Set default button if specified
+                if default_button:
+                    default_btn_map = {
+                        "ok": QMessageBox.Ok,
+                        "cancel": QMessageBox.Cancel,
+                        "yes": QMessageBox.Yes,
+                        "no": QMessageBox.No
+                    }
+                    default_btn = default_btn_map.get(default_button.lower())
+                    if default_btn:
+                        msg_box.setDefaultButton(default_btn)
+
+                # Set always on top if enabled
+                if always_on_top:
+                    msg_box.setWindowFlags(msg_box.windowFlags() | Qt.WindowStaysOnTopHint)
+
+                # Setup auto-close timer if enabled
+                timed_out = False
+                if auto_close_timeout > 0:
+                    def on_timeout():
+                        nonlocal timed_out
+                        timed_out = True
+                        msg_box.done(0)  # Close with result 0
+
+                    timer = QTimer(msg_box)
+                    timer.setSingleShot(True)
+                    timer.timeout.connect(on_timeout)
+                    timer.start(auto_close_timeout * 1000)
+
                 response = msg_box.exec()
 
-                result_map = {
-                    QMessageBox.Ok: "ok",
-                    QMessageBox.Cancel: "cancel",
-                    QMessageBox.Yes: "yes",
-                    QMessageBox.No: "no"
-                }
-                result = result_map.get(response, "ok")
-                accepted = result in ("ok", "yes")
+                if timed_out:
+                    result = "timeout"
+                    accepted = False
+                else:
+                    result_map = {
+                        QMessageBox.Ok: "ok",
+                        QMessageBox.Cancel: "cancel",
+                        QMessageBox.Yes: "yes",
+                        QMessageBox.No: "no"
+                    }
+                    result = result_map.get(response, "ok")
+                    accepted = result in ("ok", "yes")
 
             except ImportError:
                 # Fallback to Windows MessageBox
@@ -354,6 +425,9 @@ class MessageBoxNode(BaseNode):
                     MB_YESNO = 0x4
                     MB_YESNOCANCEL = 0x3
 
+                    # Modifiers
+                    MB_TOPMOST = 0x40000
+
                     icon_map = {
                         "information": MB_ICONINFORMATION,
                         "warning": MB_ICONWARNING,
@@ -370,7 +444,11 @@ class MessageBoxNode(BaseNode):
                     }
                     btns = button_map.get(buttons, MB_OK)
 
-                    response = ctypes.windll.user32.MessageBoxW(0, message, title, btns | icon)
+                    flags = btns | icon
+                    if always_on_top:
+                        flags |= MB_TOPMOST
+
+                    response = ctypes.windll.user32.MessageBoxW(0, message, title, flags)
 
                     # Response codes
                     IDOK = 1

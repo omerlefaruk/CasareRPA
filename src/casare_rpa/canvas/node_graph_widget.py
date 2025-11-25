@@ -7,7 +7,7 @@ to integrate it with the PySide6 application.
 
 from typing import Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox
 from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor, QKeyEvent
 from PySide6.QtCore import Qt, QObject, QEvent, Signal
 from NodeGraphQt import NodeGraph
@@ -28,6 +28,56 @@ try:
 except ImportError:
     HAS_CONNECTION_VALIDATOR = False
     logger.warning("ConnectionValidator not available - connection validation disabled")
+
+
+# ============================================================================
+# FIX: Combo box dropdown z-order issue in QGraphicsProxyWidget
+# ============================================================================
+# When QComboBox is embedded in a QGraphicsProxyWidget, the dropdown popup
+# can get clipped by other widgets in the same node. This fix ensures the
+# popup appears as a top-level window above all graphics items.
+
+try:
+    from NodeGraphQt.widgets.node_widgets import NodeComboBox
+    from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
+
+    # Store original z-value for restoration
+    COMBO_RAISED_Z = 10000  # Very high z-value when popup is open
+
+    _original_node_combo_init = NodeComboBox.__init__
+
+    def _patched_node_combo_init(self, parent=None, name='', label='', items=None):
+        """Patched init to fix combo dropdown z-order."""
+        _original_node_combo_init(self, parent, name, label, items)
+        self._original_z = self.zValue()
+
+        # Get the combo widget and patch showPopup/hidePopup
+        combo = self.get_custom_widget()
+        if combo and isinstance(combo, QComboBox):
+            node_widget = self  # Capture reference for closures
+
+            # Store original methods
+            _original_show_popup = combo.showPopup
+            _original_hide_popup = combo.hidePopup
+
+            def patched_show_popup():
+                # Raise z-value when popup opens
+                node_widget.setZValue(COMBO_RAISED_Z)
+                _original_show_popup()
+
+            def patched_hide_popup():
+                _original_hide_popup()
+                # Restore original z-value when popup closes
+                node_widget.setZValue(node_widget._original_z)
+
+            combo.showPopup = patched_show_popup
+            combo.hidePopup = patched_hide_popup
+
+    NodeComboBox.__init__ = _patched_node_combo_init
+    logger.debug("Patched NodeComboBox for proper dropdown z-order")
+
+except Exception as e:
+    logger.warning(f"Could not patch NodeComboBox: {e}")
 
 
 class TooltipBlocker(QObject):
