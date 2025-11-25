@@ -9,8 +9,20 @@ Provides nodes for waiting and verifying desktop element states:
 """
 
 from typing import Any, Dict, Optional
+from loguru import logger
+
 from ...core.base_node import BaseNode
 from ...core.types import PortType, DataType, NodeStatus
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class WaitForElementNode(BaseNode):
@@ -139,6 +151,15 @@ class WaitForWindowNode(BaseNode):
         timeout = self.get_input_value("timeout") or self.config.get("timeout", 10.0)
         state = self.config.get("state", "visible")
         poll_interval = self.config.get("poll_interval", 0.5)
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if title:
+                title = context.resolve_value(title)
+            if title_regex:
+                title_regex = context.resolve_value(title_regex)
+            if class_name:
+                class_name = context.resolve_value(class_name)
 
         if not title and not title_regex and not class_name:
             raise ValueError("Must provide at least one of: title, title_regex, class_name")

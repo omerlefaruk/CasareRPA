@@ -311,3 +311,14 @@ class ValidationTab(QWidget):
     def has_errors(self) -> bool:
         """Check if there are validation errors."""
         return self._last_result is not None and not self._last_result.is_valid
+
+    def get_issue_count(self) -> tuple:
+        """
+        Get the count of errors and warnings.
+
+        Returns:
+            Tuple of (error_count, warning_count)
+        """
+        if self._last_result is None:
+            return (0, 0)
+        return (self._last_result.error_count, self._last_result.warning_count)

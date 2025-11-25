@@ -23,6 +23,16 @@ from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
@@ -64,8 +74,11 @@ class RunPythonScriptNode(BaseNode):
         try:
             code = str(self.get_input_value("code", context) or "")
             variables = self.get_input_value("variables", context) or {}
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
             isolated = self.config.get("isolated", False)
+
+            # Resolve {{variable}} patterns in code
+            code = context.resolve_value(code)
 
             if not code:
                 raise ValueError("code is required")
@@ -252,13 +265,19 @@ class RunPythonFileNode(BaseNode):
             file_path = str(self.get_input_value("file_path", context) or "")
             args = self.get_input_value("args", context)
             working_dir = self.get_input_value("working_dir", context)
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
             python_path = self.config.get("python_path", sys.executable)
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             retry_on_nonzero = self.config.get("retry_on_nonzero", False)
+
+            # Resolve {{variable}} patterns
+            file_path = context.resolve_value(file_path)
+            python_path = context.resolve_value(python_path)
+            if working_dir:
+                working_dir = context.resolve_value(working_dir)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -400,6 +419,9 @@ class EvalExpressionNode(BaseNode):
             expression = str(self.get_input_value("expression", context) or "")
             variables = self.get_input_value("variables", context) or {}
 
+            # Resolve {{variable}} patterns in expression
+            expression = context.resolve_value(expression)
+
             if not expression:
                 raise ValueError("expression is required")
 
@@ -502,12 +524,17 @@ class RunBatchScriptNode(BaseNode):
         try:
             script = str(self.get_input_value("script", context) or "")
             working_dir = self.get_input_value("working_dir", context)
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             retry_on_nonzero = self.config.get("retry_on_nonzero", False)
+
+            # Resolve {{variable}} patterns
+            script = context.resolve_value(script)
+            if working_dir:
+                working_dir = context.resolve_value(working_dir)
 
             if not script:
                 raise ValueError("script is required")
@@ -671,8 +698,12 @@ class RunJavaScriptNode(BaseNode):
 
             code = str(self.get_input_value("code", context) or "")
             input_data = self.get_input_value("input_data", context)
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
             node_path = self.config.get("node_path", "node")
+
+            # Resolve {{variable}} patterns
+            code = context.resolve_value(code)
+            node_path = context.resolve_value(node_path)
 
             if not code:
                 raise ValueError("code is required")

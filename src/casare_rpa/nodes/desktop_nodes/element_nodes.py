@@ -12,6 +12,16 @@ from ...core.types import NodeStatus
 from ...desktop import DesktopContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class FindElementNode(Node):
     """
     Find a desktop UI element within a window.
@@ -291,6 +301,10 @@ class TypeTextNode(Node):
         # Get text to type
         text = self.get_input_value('text') or self.config.get('text', '')
 
+        # Resolve {{variable}} patterns in text
+        if hasattr(context, 'resolve_value') and text:
+            text = context.resolve_value(text)
+
         if not text:
             error_msg = "Text is required. Provide text to type."
             logger.error(f"[{self.name}] {error_msg}")
@@ -436,6 +450,9 @@ class GetElementTextNode(Node):
 
             # Store in context variable if specified
             variable_name = self.config.get('variable_name', '')
+            # Resolve {{variable}} patterns in variable_name
+            if hasattr(context, 'resolve_value') and variable_name:
+                variable_name = context.resolve_value(variable_name)
             if variable_name and hasattr(context, 'set_variable'):
                 context.set_variable(variable_name, text)
                 logger.debug(f"[{self.name}] Stored text in variable: {variable_name}")

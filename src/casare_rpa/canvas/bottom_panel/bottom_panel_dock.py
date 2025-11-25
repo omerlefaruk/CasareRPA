@@ -110,6 +110,7 @@ class BottomPanelDock(QDockWidget):
         # Variables tab
         self._variables_tab = VariablesTab()
         self._variables_tab.variables_changed.connect(self._on_variables_changed)
+        self._variables_tab.variables_changed.connect(self._update_tab_badges)
         self._tab_widget.addTab(self._variables_tab, "Variables")
 
         # Output tab
@@ -126,6 +127,36 @@ class BottomPanelDock(QDockWidget):
         self._validation_tab.validation_requested.connect(self.validation_requested.emit)
         self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
         self._tab_widget.addTab(self._validation_tab, "Validation")
+
+    def _update_tab_badges(self) -> None:
+        """Update tab titles with badge counts."""
+        # Variables tab - show count if > 0
+        var_count = len(self._variables_tab.get_variables())
+        var_title = f"Variables ({var_count})" if var_count > 0 else "Variables"
+        self._tab_widget.setTabText(self.TAB_VARIABLES, var_title)
+
+        # Output tab - show count if > 0
+        output_count = self._output_tab.get_output_count() if hasattr(self._output_tab, 'get_output_count') else 0
+        output_title = f"Output ({output_count})" if output_count > 0 else "Output"
+        self._tab_widget.setTabText(self.TAB_OUTPUT, output_title)
+
+        # Log tab - show count if > 0
+        log_count = self._log_tab.get_entry_count() if hasattr(self._log_tab, 'get_entry_count') else 0
+        log_title = f"Log ({log_count})" if log_count > 0 else "Log"
+        self._tab_widget.setTabText(self.TAB_LOG, log_title)
+
+        # Validation tab - show error/warning count
+        if hasattr(self._validation_tab, 'get_issue_count'):
+            error_count, warning_count = self._validation_tab.get_issue_count()
+            if error_count > 0:
+                val_title = f"Validation (⚠ {error_count})"
+            elif warning_count > 0:
+                val_title = f"Validation ({warning_count})"
+            else:
+                val_title = "Validation ✓"
+        else:
+            val_title = "Validation"
+        self._tab_widget.setTabText(self.TAB_VALIDATION, val_title)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
@@ -255,10 +286,12 @@ class BottomPanelDock(QDockWidget):
             timestamp: Optional timestamp string
         """
         self._output_tab.add_output(name, value, timestamp)
+        self._update_tab_badges()
 
     def clear_outputs(self) -> None:
         """Clear all outputs."""
         self._output_tab.clear()
+        self._update_tab_badges()
 
     def set_workflow_result(self, success: bool, message: str) -> None:
         """
@@ -280,6 +313,7 @@ class BottomPanelDock(QDockWidget):
             event: Event to log
         """
         self._log_tab.log_event(event)
+        self._update_tab_badges()
 
     def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
         """
@@ -291,10 +325,12 @@ class BottomPanelDock(QDockWidget):
             node_id: Optional associated node ID
         """
         self._log_tab.log_message(message, level, node_id)
+        self._update_tab_badges()
 
     def clear_log(self) -> None:
         """Clear the execution log."""
         self._log_tab.clear()
+        self._update_tab_badges()
 
     # ==================== Validation API ====================
 
@@ -306,10 +342,12 @@ class BottomPanelDock(QDockWidget):
             result: ValidationResult to display
         """
         self._validation_tab.set_result(result)
+        self._update_tab_badges()
 
     def clear_validation(self) -> None:
         """Clear validation results."""
         self._validation_tab.clear()
+        self._update_tab_badges()
 
     def has_validation_errors(self) -> bool:
         """Check if there are validation errors."""

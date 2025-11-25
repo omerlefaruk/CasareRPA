@@ -12,6 +12,16 @@ from ...core.types import NodeStatus
 from ...desktop import DesktopContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class LaunchApplicationNode(Node):
     """
     Launch a Windows desktop application.
@@ -72,7 +82,16 @@ class LaunchApplicationNode(Node):
         app_path = self.get_input_value('application_path') or self.config.get('application_path', '')
         arguments = self.get_input_value('arguments') or self.config.get('arguments', '')
         working_dir = self.get_input_value('working_directory') or self.config.get('working_directory') or None
-        
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if app_path:
+                app_path = context.resolve_value(app_path)
+            if arguments:
+                arguments = context.resolve_value(arguments)
+            if working_dir:
+                working_dir = context.resolve_value(working_dir)
+
         if not app_path:
             error_msg = "Application path is required. Please enter the full path to the executable."
             logger.error(f"[{self.name}] {error_msg}")
@@ -333,11 +352,15 @@ class ActivateWindowNode(Node):
         # Get inputs
         window = self.get_input_value('window')
         window_title = self.get_input_value('window_title')
-        
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value') and window_title:
+            window_title = context.resolve_value(window_title)
+
         # Get configuration
         match_partial = self.config.get('match_partial', True)
         timeout = self.config.get('timeout', 5.0)
-        
+
         # Validate inputs
         if not window and not window_title:
             raise ValueError("Must provide either 'window' or 'window_title'")

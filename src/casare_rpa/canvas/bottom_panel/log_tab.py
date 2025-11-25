@@ -352,6 +352,10 @@ class LogTab(QWidget):
         """Clear the log."""
         self._table.setRowCount(0)
 
+    def get_entry_count(self) -> int:
+        """Get the number of log entries."""
+        return self._table.rowCount()
+
     def set_max_entries(self, max_entries: int) -> None:
         """Set maximum number of log entries."""
         self._max_entries = max_entries

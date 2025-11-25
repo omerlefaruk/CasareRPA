@@ -347,6 +347,10 @@ class OutputTab(QWidget):
         self._result_bar.hide()
         self._update_status()
 
+    def get_output_count(self) -> int:
+        """Get the number of outputs."""
+        return self._table.rowCount()
+
     def get_outputs(self) -> dict:
         """
         Get all outputs as a dictionary.

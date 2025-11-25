@@ -25,6 +25,16 @@ from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -82,16 +92,21 @@ class FTPConnectNode(BaseNode):
 
         try:
             host = str(self.get_input_value("host", context) or "")
-            port = int(self.get_input_value("port", context) or 21)
+            port = safe_int(self.get_input_value("port", context), 21)
             username = str(self.get_input_value("username", context) or "anonymous")
             password = str(self.get_input_value("password", context) or "")
             passive = self.config.get("passive", True)
-            timeout = self.config.get("timeout", 30)
+            timeout = safe_int(self.config.get("timeout"), 30)
             use_tls = self.config.get("use_tls", False)
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+
+            # Resolve {{variable}} patterns
+            host = context.resolve_value(host)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
 
             if not host:
                 raise ValueError("host is required")
@@ -214,8 +229,12 @@ class FTPUploadNode(BaseNode):
             create_dirs = self.config.get("create_dirs", False)
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+
+            # Resolve {{variable}} patterns
+            local_path = context.resolve_value(local_path)
+            remote_path = context.resolve_value(remote_path)
 
             if not local_path:
                 raise ValueError("local_path is required")
@@ -348,8 +367,12 @@ class FTPDownloadNode(BaseNode):
             overwrite = self.config.get("overwrite", False)
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
+            local_path = context.resolve_value(local_path)
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -461,6 +484,9 @@ class FTPListNode(BaseNode):
             remote_path = str(self.get_input_value("remote_path", context) or "")
             detailed = self.config.get("detailed", False)
 
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
+
             ftp = context.get_variable("_ftp_connection")
             if ftp is None:
                 raise RuntimeError("No FTP connection. Use FTP Connect node first.")
@@ -523,6 +549,9 @@ class FTPDeleteNode(BaseNode):
         try:
             remote_path = str(self.get_input_value("remote_path", context) or "")
 
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
+
             if not remote_path:
                 raise ValueError("remote_path is required")
 
@@ -582,6 +611,9 @@ class FTPMakeDirNode(BaseNode):
         try:
             remote_path = str(self.get_input_value("remote_path", context) or "")
             parents = self.config.get("parents", False)
+
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -651,6 +683,9 @@ class FTPRemoveDirNode(BaseNode):
         try:
             remote_path = str(self.get_input_value("remote_path", context) or "")
 
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
+
             if not remote_path:
                 raise ValueError("remote_path is required")
 
@@ -709,6 +744,10 @@ class FTPRenameNode(BaseNode):
         try:
             old_path = str(self.get_input_value("old_path", context) or "")
             new_path = str(self.get_input_value("new_path", context) or "")
+
+            # Resolve {{variable}} patterns
+            old_path = context.resolve_value(old_path)
+            new_path = context.resolve_value(new_path)
 
             if not old_path or not new_path:
                 raise ValueError("old_path and new_path are required")
@@ -816,6 +855,9 @@ class FTPGetSizeNode(BaseNode):
 
         try:
             remote_path = str(self.get_input_value("remote_path", context) or "")
+
+            # Resolve {{variable}} patterns
+            remote_path = context.resolve_value(remote_path)
 
             if not remote_path:
                 raise ValueError("remote_path is required")

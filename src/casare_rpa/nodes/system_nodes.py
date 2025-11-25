@@ -20,6 +20,16 @@ from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class SecurityError(Exception):
     """Raised when a security check fails."""
     pass
@@ -271,6 +281,10 @@ class MessageBoxNode(BaseNode):
             icon_type = self.config.get("icon_type", "information")
             buttons = self.config.get("buttons", "ok")
 
+            # Resolve {{variable}} patterns in title and message
+            title = context.resolve_value(title)
+            message = context.resolve_value(message)
+
             result = "ok"
             accepted = True
 
@@ -433,6 +447,11 @@ class InputDialogNode(BaseNode):
             default_value = str(self.get_input_value("default_value", context) or "")
             password_mode = self.config.get("password_mode", False)
 
+            # Resolve {{variable}} patterns
+            title = context.resolve_value(title)
+            prompt = context.resolve_value(prompt)
+            default_value = context.resolve_value(default_value)
+
             value = ""
             confirmed = False
 
@@ -517,7 +536,11 @@ class TooltipNode(BaseNode):
         try:
             title = str(self.get_input_value("title", context) or "Notification")
             message = str(self.get_input_value("message", context) or "")
-            duration = self.config.get("duration", 3000)
+            duration = safe_int(self.config.get("duration"), 3000)
+
+            # Resolve {{variable}} patterns
+            title = context.resolve_value(title)
+            message = context.resolve_value(message)
 
             # Try Windows toast notification
             if sys.platform == "win32":
@@ -621,11 +644,16 @@ class RunCommandNode(BaseNode):
             args = self.get_input_value("args", context)
             # SECURITY: Default to shell=False to prevent command injection
             shell = self.config.get("shell", False)
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
             working_dir = self.config.get("working_dir")
             capture_output = self.config.get("capture_output", True)
             # SECURITY: Allow bypassing security checks only if explicitly enabled
             allow_dangerous = self.config.get("allow_dangerous", False)
+
+            # Resolve {{variable}} patterns
+            command = context.resolve_value(command)
+            if working_dir:
+                working_dir = context.resolve_value(working_dir)
 
             if not command:
                 raise ValueError("command is required")
@@ -801,11 +829,14 @@ class RunPowerShellNode(BaseNode):
 
         try:
             script = str(self.get_input_value("script", context) or "")
-            timeout = self.config.get("timeout", 60)
+            timeout = safe_int(self.config.get("timeout"), 60)
             # SECURITY: Default to RemoteSigned instead of Bypass
             execution_policy = self.config.get("execution_policy", "RemoteSigned")
             allow_dangerous = self.config.get("allow_dangerous", False)
             constrained_mode = self.config.get("constrained_mode", False)
+
+            # Resolve {{variable}} patterns in script
+            script = context.resolve_value(script)
 
             if not script:
                 raise ValueError("script is required")
@@ -912,6 +943,9 @@ class GetServiceStatusNode(BaseNode):
         try:
             service_name = str(self.get_input_value("service_name", context) or "")
 
+            # Resolve {{variable}} patterns
+            service_name = context.resolve_value(service_name)
+
             if not service_name:
                 raise ValueError("service_name is required")
 
@@ -1008,6 +1042,9 @@ class StartServiceNode(BaseNode):
         try:
             service_name = str(self.get_input_value("service_name", context) or "")
 
+            # Resolve {{variable}} patterns
+            service_name = context.resolve_value(service_name)
+
             if not service_name:
                 raise ValueError("service_name is required")
 
@@ -1073,6 +1110,9 @@ class StopServiceNode(BaseNode):
 
         try:
             service_name = str(self.get_input_value("service_name", context) or "")
+
+            # Resolve {{variable}} patterns
+            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
@@ -1143,7 +1183,10 @@ class RestartServiceNode(BaseNode):
 
         try:
             service_name = str(self.get_input_value("service_name", context) or "")
-            wait_time = self.config.get("wait_time", 2)
+            wait_time = safe_int(self.config.get("wait_time"), 2)
+
+            # Resolve {{variable}} patterns
+            service_name = context.resolve_value(service_name)
 
             if not service_name:
                 raise ValueError("service_name is required")
