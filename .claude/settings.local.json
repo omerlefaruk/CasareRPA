@@ -11,7 +11,8 @@
       "Bash(PYTHONPATH=src python:*)",
       "Bash(findstr:*)",
       "Bash(find:*)",
-      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")"
+      "Bash(cmd /c \"dir src\\casare_rpa\\canvas\\*.py | head -20\")",
+      "Bash(pip show:*)"
     ],
     "deny": [],
     "ask": []
