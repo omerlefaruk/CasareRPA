@@ -328,17 +328,29 @@ class SendKeysNode(BaseNode):
 
 class SendHotKeyNode(BaseNode):
     """
-    Node to send hotkey combinations (e.g., Ctrl+C, Alt+Tab).
+    Node to send hotkey combinations (e.g., Ctrl+C, Alt+Tab, Enter).
+
+    Config:
+        - modifier: Modifier key (none, Ctrl, Alt, Shift, Win)
+        - key: Main key to press (e.g., Enter, C, Delete)
+        - keys: Custom comma-separated keys (overrides modifier+key if provided)
 
     Inputs:
-        - keys: Comma-separated list of keys (e.g., "Ctrl,C" or "Alt,Tab")
+        - keys: Comma-separated list of keys (overrides config)
 
     Outputs:
         - success: Whether the operation succeeded
     """
 
     def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Send Hotkey"):
-        super().__init__(node_id, config)
+        default_config = {
+            "modifier": "none",
+            "key": "Enter",
+            "keys": ""
+        }
+        if config:
+            default_config.update(config)
+        super().__init__(node_id, default_config)
         self.name = name
         self.node_type = "SendHotKeyNode"
 
@@ -349,17 +361,43 @@ class SendHotKeyNode(BaseNode):
 
     async def execute(self, context) -> Dict[str, Any]:
         """Execute hotkey combination"""
+        # Priority: input port > config.keys > config.modifier+key
         keys_input = self.get_input_value("keys")
 
-        # Resolve {{variable}} patterns in keys
+        # Resolve {{variable}} patterns
         if hasattr(context, 'resolve_value') and keys_input:
             keys_input = context.resolve_value(keys_input)
 
-        if not keys_input:
+        # Determine which keys to send
+        if keys_input:
+            # Input port has highest priority
+            keys_str = keys_input
+        elif self.config.get("keys"):
+            # Custom keys from config
+            keys_str = self.config.get("keys")
+            if hasattr(context, 'resolve_value'):
+                keys_str = context.resolve_value(keys_str)
+        else:
+            # Build from modifier + key
+            modifier = self.config.get("modifier", "none")
+            key = self.config.get("key", "Enter")
+
+            # Resolve variables
+            if hasattr(context, 'resolve_value'):
+                modifier = context.resolve_value(str(modifier))
+                key = context.resolve_value(str(key))
+
+            # Build keys string
+            if modifier and modifier.lower() != "none":
+                keys_str = f"{modifier},{key}"
+            else:
+                keys_str = key
+
+        if not keys_str:
             raise ValueError("Hotkey combination is required")
 
         # Parse comma-separated keys
-        keys = [k.strip() for k in str(keys_input).split(",")]
+        keys = [k.strip() for k in str(keys_str).split(",")]
 
         desktop_ctx = getattr(context, 'desktop_context', None)
         if desktop_ctx is None:

@@ -20,6 +20,11 @@ from .auto_connect import AutoConnectManager
 from .connection_cutter import ConnectionCutter
 from .node_quick_actions import NodeQuickActions
 from .custom_pipe import CasarePipe
+from .snippet_breadcrumb_bar import SnippetBreadcrumbBar
+from .snippet_navigation import SnippetNavigationManager, set_navigation_manager
+from .parameter_drop_zone import ParameterDropZone
+from .parameter_naming_dialog import ParameterNamingDialog
+from .property_drag_enabler import enable_property_dragging
 
 # Import connection validator for strict type checking
 try:
@@ -78,6 +83,61 @@ try:
 
 except Exception as e:
     logger.warning(f"Could not patch NodeComboBox: {e}")
+
+
+# ============================================================================
+# FIX: Checkbox styling in nodes - dark blue with white checkmark
+# ============================================================================
+try:
+    from NodeGraphQt.widgets.node_widgets import NodeCheckBox
+    from pathlib import Path
+
+    # Get checkmark asset path
+    CHECKMARK_PATH = (Path(__file__).parent / "assets" / "checkmark.svg").as_posix()
+
+    _original_node_checkbox_init = NodeCheckBox.__init__
+
+    def _patched_node_checkbox_init(self, parent=None, name='', label='', text='', state=False):
+        """Patched init to add dark blue styling with white checkmark."""
+        _original_node_checkbox_init(self, parent, name, label, text, state)
+
+        # Get the checkbox widget and add custom styling
+        checkbox = self.get_custom_widget()
+        if checkbox:
+            # Apply dark blue checkbox styling with white checkmark
+            checkbox_style = f"""
+                QCheckBox::indicator {{
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid #3E3E42;
+                    border-radius: 3px;
+                    background-color: #252526;
+                }}
+
+                QCheckBox::indicator:unchecked:hover {{
+                    border-color: #0063B1;
+                }}
+
+                QCheckBox::indicator:checked {{
+                    background-color: #0063B1;
+                    border-color: #0063B1;
+                    image: url({CHECKMARK_PATH});
+                }}
+
+                QCheckBox::indicator:checked:hover {{
+                    background-color: #005A9E;
+                    border-color: #005A9E;
+                }}
+            """
+            # Append to existing stylesheet
+            existing_style = checkbox.styleSheet()
+            checkbox.setStyleSheet(existing_style + checkbox_style)
+
+    NodeCheckBox.__init__ = _patched_node_checkbox_init
+    logger.debug("Patched NodeCheckBox for dark blue styling with white checkmark")
+
+except Exception as e:
+    logger.warning(f"Could not patch NodeCheckBox: {e}")
 
 
 class TooltipBlocker(QObject):
@@ -202,15 +262,38 @@ class NodeGraphWidget(QWidget):
         # Setup paste hook for duplicate ID detection
         self._setup_paste_hook()
 
+        # Enable property dragging for snippet parameter creation
+        enable_property_dragging()
+
         # Import callbacks (set by app.py)
         self._import_callback = None
         self._import_file_callback = None
 
+        # Create snippet navigation system
+        self._snippet_breadcrumb = SnippetBreadcrumbBar(self)
+        self._navigation_manager = SnippetNavigationManager(self)
+
+        # Set as global navigation manager
+        set_navigation_manager(self._navigation_manager)
+
+        # Create parameter drop zone (shown only when inside snippet)
+        self._parameter_drop_zone = ParameterDropZone(self)
+        self._parameter_drop_zone.setVisible(False)  # Hidden by default
+
+        # Connect navigation signals
+        self._navigation_manager.navigation_changed.connect(self._on_navigation_changed)
+        self._snippet_breadcrumb.level_clicked.connect(self._on_breadcrumb_clicked)
+
+        # Connect drop zone signal
+        self._parameter_drop_zone.parameter_requested.connect(self._on_parameter_requested)
+
         # Create layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._graph.widget)
-        
+        layout.addWidget(self._snippet_breadcrumb)  # Breadcrumb at top
+        layout.addWidget(self._parameter_drop_zone)  # Drop zone below breadcrumb
+        layout.addWidget(self._graph.widget)  # Graph below
+
         self.setLayout(layout)
 
         # Install event filter on graph viewer to capture Tab key for context menu
@@ -784,3 +867,108 @@ class NodeGraphWidget(QWidget):
                     logger.warning(f"Dropped text is not valid JSON: {e}")
 
         event.ignore()
+
+    def _on_navigation_changed(self) -> None:
+        """Handle navigation stack changes - update breadcrumb display and drop zone visibility."""
+        path = self._navigation_manager.get_breadcrumb_path()
+        self._snippet_breadcrumb.set_path(path)
+
+        # Show drop zone only when inside a snippet (depth > 0)
+        depth = self._navigation_manager.get_depth()
+        is_inside_snippet = depth > 0
+        self._parameter_drop_zone.setVisible(is_inside_snippet)
+
+        logger.debug(f"Navigation changed, depth: {depth}, drop zone visible: {is_inside_snippet}")
+
+    def _on_breadcrumb_clicked(self, level_index: int) -> None:
+        """
+        Handle breadcrumb level click - navigate back to that level.
+
+        Args:
+            level_index: Index of level clicked (0 = root workflow)
+        """
+        logger.info(f"Navigating back to level {level_index}")
+        self._navigation_manager.navigate_back_to_level(level_index)
+
+    def get_navigation_manager(self):
+        """Get the snippet navigation manager."""
+        return self._navigation_manager
+
+    def _on_parameter_requested(self, node_id: str, property_key: str, data_type: str, current_value) -> None:
+        """
+        Handle parameter creation request from drop zone.
+
+        Args:
+            node_id: ID of node containing the property
+            property_key: Key of the property being exposed
+            data_type: Data type of the property
+            current_value: Current value of the property
+        """
+        from PySide6.QtWidgets import QMessageBox
+        from ..core.snippet_definition import ParameterMapping
+
+        logger.info(f"Parameter requested: {node_id}.{property_key} (type: {data_type})")
+
+        # Show parameter naming dialog
+        dialog = ParameterNamingDialog(node_id, property_key, data_type, current_value, self)
+        if dialog.exec() != ParameterNamingDialog.DialogCode.Accepted:
+            logger.debug("Parameter creation cancelled by user")
+            return
+
+        # Get dialog results
+        param_name = dialog.get_parameter_name()
+        description = dialog.get_description()
+        required = dialog.is_required()
+        default_value = dialog.get_default_value()
+
+        logger.info(f"Creating parameter: {param_name} -> {node_id}.{property_key}")
+
+        # Get current snippet definition from navigation manager
+        current_level = self._navigation_manager.get_current_level()
+        if not current_level or not current_level.snippet_definition:
+            QMessageBox.critical(
+                self,
+                "Navigation Error",
+                "Cannot create parameter: not currently inside a snippet"
+            )
+            return
+
+        snippet_def = current_level.snippet_definition
+
+        # Check if parameter name already exists
+        if any(p.name == param_name for p in snippet_def.parameters):
+            QMessageBox.warning(
+                self,
+                "Duplicate Parameter",
+                f"Parameter '{param_name}' already exists in this snippet.\n\n"
+                f"Please choose a different name."
+            )
+            return
+
+        # Create parameter mapping
+        param_mapping = ParameterMapping(
+            name=param_name,
+            target_node_id=node_id,
+            target_property=property_key,
+            data_type=data_type,
+            default_value=default_value,
+            required=required,
+            description=description
+        )
+
+        # Add to snippet definition
+        snippet_def.parameters.append(param_mapping)
+
+        logger.info(f"Parameter '{param_name}' created successfully")
+
+        # TODO: Update the VisualSnippetNode in the parent level to show the new parameter port
+        # This requires finding the snippet node at the parent level and dynamically adding a port
+
+        QMessageBox.information(
+            self,
+            "Parameter Created",
+            f"Parameter '{param_name}' has been created.\n\n"
+            f"Maps to: {node_id}.{property_key}\n"
+            f"Type: {data_type}\n"
+            f"Required: {required}"
+        )
