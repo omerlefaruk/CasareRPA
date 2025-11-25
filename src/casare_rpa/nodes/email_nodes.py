@@ -5,6 +5,7 @@ Provides nodes for sending and receiving emails via SMTP and IMAP,
 with support for attachments, HTML content, and email management.
 """
 
+import asyncio
 import smtplib
 import imaplib
 import email
@@ -156,6 +157,9 @@ class SendEmailNode(BaseNode):
             "priority": "normal",  # high, normal, low
             "read_receipt": False,  # Request read receipt
             "sender_name": "",  # Display name for sender
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 2000,  # Delay between retries in ms
         }
 
         config = config or kwargs.get("config", {})
@@ -199,6 +203,10 @@ class SendEmailNode(BaseNode):
             use_tls = self.config.get("use_tls", True)
             use_ssl = self.config.get("use_ssl", False)
             timeout = self.config.get("timeout", 30)
+
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
 
             # Get email content
             from_email = self.get_input_value("from_email") or self.config.get("from_email", username)
@@ -282,31 +290,53 @@ class SendEmailNode(BaseNode):
 
             logger.info(f"Sending email to {to_email} via {smtp_server}:{smtp_port}")
 
-            # Send email with timeout
-            if use_ssl:
-                server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=timeout)
-            else:
-                server = smtplib.SMTP(smtp_server, smtp_port, timeout=timeout)
-                if use_tls:
-                    server.starttls()
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            if username and password:
-                server.login(username, password)
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for send email")
 
-            server.sendmail(from_email, all_recipients, msg.as_string())
-            server.quit()
+                    # Send email with timeout
+                    if use_ssl:
+                        server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=timeout)
+                    else:
+                        server = smtplib.SMTP(smtp_server, smtp_port, timeout=timeout)
+                        if use_tls:
+                            server.starttls()
 
-            message_id = msg.get('Message-ID', '')
-            self.set_output_value("success", True)
-            self.set_output_value("message_id", message_id)
+                    if username and password:
+                        server.login(username, password)
 
-            logger.info(f"Email sent successfully to {to_email}")
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"message_id": message_id, "recipients": len(all_recipients)},
-                "next_nodes": ["exec_out"]
-            }
+                    server.sendmail(from_email, all_recipients, msg.as_string())
+                    server.quit()
+
+                    message_id = msg.get('Message-ID', '')
+                    self.set_output_value("success", True)
+                    self.set_output_value("message_id", message_id)
+
+                    logger.info(f"Email sent successfully to {to_email} (attempt {attempts})")
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"message_id": message_id, "recipients": len(all_recipients), "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except smtplib.SMTPAuthenticationError:
+                    raise  # Don't retry auth errors
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Send email failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except smtplib.SMTPAuthenticationError as e:
             self.set_output_value("success", False)
@@ -356,6 +386,9 @@ class ReadEmailsNode(BaseNode):
             "mark_as_read": False,  # Mark emails as read after fetching
             "include_body": True,  # Include email body content
             "newest_first": True,  # Return newest emails first
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 2000,  # Delay between retries in ms
         }
 
         config = config or kwargs.get("config", {})
@@ -397,6 +430,10 @@ class ReadEmailsNode(BaseNode):
             search_criteria = self.get_input_value("search_criteria") or self.config.get("search_criteria", "ALL")
             use_ssl = self.config.get("use_ssl", True)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
+
             if not username or not password:
                 self.set_output_value("emails", [])
                 self.set_output_value("count", 0)
@@ -407,55 +444,79 @@ class ReadEmailsNode(BaseNode):
                     "next_nodes": []
                 }
 
-            # Connect to IMAP server
-            if use_ssl:
-                mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-            else:
-                mail = imaplib.IMAP4(imap_server, imap_port)
+            logger.info(f"Reading emails from {imap_server}:{imap_port}/{folder}")
 
-            mail.login(username, password)
-            mail.select(folder)
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            # Search for emails
-            status, message_ids = mail.search(None, search_criteria)
-            if status != 'OK':
-                mail.logout()
-                self.set_output_value("emails", [])
-                self.set_output_value("count", 0)
-                self.status = NodeStatus.ERROR
-                return {
-                    "success": False,
-                    "error": "Failed to search emails",
-                    "next_nodes": []
-                }
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for read emails")
 
-            # Get message IDs (most recent first)
-            id_list = message_ids[0].split()
-            id_list = id_list[-limit:] if limit else id_list
-            id_list.reverse()  # Most recent first
+                    # Connect to IMAP server
+                    if use_ssl:
+                        mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    else:
+                        mail = imaplib.IMAP4(imap_server, imap_port)
 
-            emails = []
-            for msg_id in id_list:
-                status, msg_data = mail.fetch(msg_id, '(RFC822)')
-                if status == 'OK':
-                    raw_email = msg_data[0][1]
-                    msg = email.message_from_bytes(raw_email)
-                    parsed = _parse_email_message(msg)
-                    parsed['uid'] = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
-                    emails.append(parsed)
+                    mail.login(username, password)
+                    mail.select(folder)
 
-            mail.logout()
+                    # Search for emails
+                    status, message_ids = mail.search(None, search_criteria)
+                    if status != 'OK':
+                        mail.logout()
+                        raise Exception("Failed to search emails")
 
-            self.set_output_value("emails", emails)
-            self.set_output_value("count", len(emails))
+                    # Get message IDs (most recent first)
+                    id_list = message_ids[0].split()
+                    id_list = id_list[-limit:] if limit else id_list
+                    id_list.reverse()  # Most recent first
 
-            logger.info(f"Read {len(emails)} emails from {folder}")
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"count": len(emails)},
-                "next_nodes": ["exec_out"]
-            }
+                    emails = []
+                    for msg_id in id_list:
+                        status, msg_data = mail.fetch(msg_id, '(RFC822)')
+                        if status == 'OK':
+                            raw_email = msg_data[0][1]
+                            msg = email.message_from_bytes(raw_email)
+                            parsed = _parse_email_message(msg)
+                            parsed['uid'] = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
+                            emails.append(parsed)
+
+                    mail.logout()
+
+                    self.set_output_value("emails", emails)
+                    self.set_output_value("count", len(emails))
+
+                    logger.info(f"Read {len(emails)} emails from {folder} (attempt {attempts})")
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"count": len(emails), "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except imaplib.IMAP4.error as e:
+                    if "authentication" in str(e).lower():
+                        raise  # Don't retry auth errors
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Read emails failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Read emails failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except imaplib.IMAP4.error as e:
             self.set_output_value("emails", [])

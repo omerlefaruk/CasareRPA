@@ -25,6 +25,7 @@ from ..utils.parallel_executor import (
     ParallelExecutor,
     analyze_workflow_dependencies,
 )
+from ..utils.subgraph_calculator import SubgraphCalculator
 
 # Default timeout for node execution (in seconds)
 DEFAULT_NODE_EXECUTION_TIMEOUT = 120  # 2 minutes
@@ -63,6 +64,7 @@ class WorkflowRunner:
         continue_on_error: bool = False,
         parallel_execution: bool = False,
         max_parallel_nodes: int = 4,
+        target_node_id: Optional[NodeId] = None,
     ) -> None:
         """
         Initialize workflow runner.
@@ -75,6 +77,9 @@ class WorkflowRunner:
             continue_on_error: If True, continue workflow on node errors
             parallel_execution: If True, execute independent nodes in parallel
             max_parallel_nodes: Maximum number of nodes to run in parallel
+            target_node_id: Optional target node for "Run To Node" feature.
+                            If set, only nodes in the path to this target will be executed,
+                            and execution will pause when the target is reached.
         """
         self.workflow = workflow
 
@@ -128,9 +133,19 @@ class WorkflowRunner:
         if self.parallel_execution:
             self._build_dependency_graph()
 
+        # Run-to-node support (F4 feature)
+        self._target_node_id = target_node_id
+        self._subgraph_nodes: Optional[Set[NodeId]] = None
+        self._target_reached = False
+
+        # Calculate subgraph if target node is specified
+        if target_node_id:
+            self._calculate_subgraph(target_node_id)
+
         logger.info(
             f"WorkflowRunner initialized for workflow: {workflow.metadata.name} "
-            f"(parallel={parallel_execution}, max_parallel={max_parallel_nodes})"
+            f"(parallel={parallel_execution}, max_parallel={max_parallel_nodes}"
+            f"{f', target={target_node_id}' if target_node_id else ''})"
         )
     
     @property
@@ -166,7 +181,92 @@ class WorkflowRunner:
             if node.__class__.__name__ == "StartNode":
                 return node
         return None
-    
+
+    def _calculate_subgraph(self, target_node_id: NodeId) -> None:
+        """
+        Calculate the subgraph of nodes required for Run-To-Node execution.
+
+        This finds all nodes on paths from StartNode to the target node.
+        Only these nodes will be executed when running to the target.
+
+        Args:
+            target_node_id: The target node to run to
+        """
+        start_node = self._find_start_node()
+        if not start_node:
+            logger.error("Cannot calculate subgraph: no StartNode found")
+            return
+
+        calculator = SubgraphCalculator(
+            self.workflow.nodes,
+            self.workflow.connections
+        )
+
+        # Check if target is reachable
+        if not calculator.is_reachable(start_node.node_id, target_node_id):
+            logger.error(f"Target node {target_node_id} is not reachable from StartNode")
+            return
+
+        # Calculate the subgraph
+        self._subgraph_nodes = calculator.calculate_subgraph(
+            start_node.node_id,
+            target_node_id
+        )
+
+        # Update total_nodes to reflect only the subgraph
+        self.total_nodes = len(self._subgraph_nodes)
+        logger.info(f"Subgraph calculated: {self.total_nodes} nodes to execute")
+
+    def _should_execute_node(self, node_id: NodeId) -> bool:
+        """
+        Check if a node should be executed based on subgraph filtering.
+
+        If no target is set (full workflow run), all nodes are executed.
+        If a target is set, only nodes in the subgraph are executed.
+
+        Args:
+            node_id: The node ID to check
+
+        Returns:
+            True if the node should be executed
+        """
+        if self._subgraph_nodes is None:
+            return True  # No subgraph filter - execute all nodes
+        return node_id in self._subgraph_nodes
+
+    def _check_target_reached(self, node_id: NodeId) -> bool:
+        """
+        Check if the target node was just executed.
+
+        If so, mark target as reached and pause execution.
+
+        Args:
+            node_id: The node that was just executed
+
+        Returns:
+            True if this was the target node
+        """
+        if self._target_node_id and node_id == self._target_node_id:
+            self._target_reached = True
+            logger.info(f"Target node {node_id} reached - pausing execution")
+            return True
+        return False
+
+    @property
+    def target_reached(self) -> bool:
+        """Check if the target node has been reached."""
+        return self._target_reached
+
+    @property
+    def has_target(self) -> bool:
+        """Check if a target node is set for Run-To-Node mode."""
+        return self._target_node_id is not None
+
+    @property
+    def subgraph_valid(self) -> bool:
+        """Check if the subgraph was successfully calculated."""
+        return self._subgraph_nodes is not None or self._target_node_id is None
+
     def _get_next_nodes(self, current_node_id: NodeId) -> List[BaseNode]:
         """
         Get the next nodes to execute based on connections.
@@ -592,6 +692,11 @@ class WorkflowRunner:
             if current_node.node_id in self.executed_nodes and not is_loop_node:
                 continue
 
+            # Skip nodes not in subgraph (Run-To-Node filtering)
+            if not self._should_execute_node(current_node.node_id):
+                logger.debug(f"Skipping node {current_node.node_id} (not in subgraph)")
+                continue
+
             # Transfer data from connected input ports
             for connection in self.workflow.connections:
                 if connection.target_node == current_node.node_id:
@@ -634,6 +739,24 @@ class WorkflowRunner:
                     # Stop on error
                     logger.warning(f"Stopping workflow due to node error: {current_node.node_id}")
                     break
+
+            # Check if target node was reached (Run-To-Node feature)
+            if success and self._check_target_reached(current_node.node_id):
+                # Emit event indicating target was reached
+                self._emit_event(EventType.NODE_COMPLETED, {
+                    "node_id": current_node.node_id,
+                    "message": "Target node reached - execution paused",
+                    "progress": self.progress,
+                    "target_reached": True
+                })
+                # Pause execution at target
+                self.pause()
+                # Wait for resume or stop
+                await self._pause_event.wait()
+                # If stop was requested while paused, exit
+                if self._stop_requested:
+                    break
+                # Otherwise, continue execution from here if resumed
 
             # Check for control flow signals (break/continue)
             control_flow = result.get("control_flow") if result else None

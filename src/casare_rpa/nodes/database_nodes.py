@@ -139,6 +139,9 @@ class DatabaseConnectNode(BaseNode):
             "pool_size": 5,  # Connection pool size (PostgreSQL/MySQL)
             "auto_commit": True,  # Auto-commit mode
             "charset": "utf8mb4",  # Character set (MySQL)
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 2000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -179,29 +182,55 @@ class DatabaseConnectNode(BaseNode):
             password = self.get_input_value("password") or self.config.get("password", "")
             connection_string = self.get_input_value("connection_string") or self.config.get("connection_string", "")
 
-            connection: Optional[DatabaseConnection] = None
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 2000))
 
-            if db_type == "sqlite":
-                connection = await self._connect_sqlite(database)
-            elif db_type == "postgresql":
-                connection = await self._connect_postgresql(host, port, database, username, password, connection_string)
-            elif db_type == "mysql":
-                connection = await self._connect_mysql(host, port, database, username, password)
-            else:
-                raise ValueError(f"Unsupported database type: {db_type}")
+            logger.info(f"Connecting to {db_type} database")
 
-            self.set_output_value("connection", connection)
-            self.set_output_value("success", True)
-            self.set_output_value("error", "")
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            logger.info(f"Connected to {db_type} database")
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for database connection")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"db_type": db_type},
-                "next_nodes": ["exec_out"]
-            }
+                    connection: Optional[DatabaseConnection] = None
+
+                    if db_type == "sqlite":
+                        connection = await self._connect_sqlite(database)
+                    elif db_type == "postgresql":
+                        connection = await self._connect_postgresql(host, port, database, username, password, connection_string)
+                    elif db_type == "mysql":
+                        connection = await self._connect_mysql(host, port, database, username, password)
+                    else:
+                        raise ValueError(f"Unsupported database type: {db_type}")
+
+                    self.set_output_value("connection", connection)
+                    self.set_output_value("success", True)
+                    self.set_output_value("error", "")
+
+                    logger.info(f"Connected to {db_type} database (attempt {attempts})")
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"db_type": db_type, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Database connection failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             error_msg = f"Database connection error: {str(e)}"
@@ -296,9 +325,21 @@ class ExecuteQueryNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Execute Query", **kwargs: Any) -> None:
+        # Default config with all query options
+        default_config = {
+            "query": "",
+            "parameters": [],
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("query", "")
-        config.setdefault("parameters", [])
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteQueryNode"

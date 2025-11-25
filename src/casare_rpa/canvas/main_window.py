@@ -1188,7 +1188,7 @@ class MainWindow(QMainWindow):
     def _on_create_frame(self) -> None:
         """Create a frame around selected nodes."""
         try:
-            from .node_frame import group_selected_nodes, create_frame
+            from .node_frame import group_selected_nodes, create_frame, NodeFrame
 
             # Get the node graph from central widget
             if not self._central_widget or not hasattr(self._central_widget, 'graph'):
@@ -1198,6 +1198,9 @@ class MainWindow(QMainWindow):
             graph = self._central_widget.graph
             viewer = graph.viewer()
             selected_nodes = graph.selected_nodes()
+
+            # Set graph reference for all frames
+            NodeFrame.set_graph(graph)
 
             if selected_nodes:
                 # Group selected nodes
@@ -1211,7 +1214,8 @@ class MainWindow(QMainWindow):
                     title="Frame",
                     color_name="blue",
                     position=(0, 0),
-                    size=(400, 300)
+                    size=(400, 300),
+                    graph=graph
                 )
                 logger.info("Created empty frame")
 

@@ -279,6 +279,15 @@ class NodeFrame(QGraphicsRectItem):
     COLLAPSED_WIDTH = 200
     COLLAPSED_HEIGHT = 50
 
+    # Class-level reference to the graph (set when first frame is created)
+    _graph_ref = None
+
+    @classmethod
+    def set_graph(cls, graph):
+        """Set the graph reference for all frames to use for node lookup."""
+        cls._graph_ref = graph
+        logger.debug(f"NodeFrame graph reference set")
+
     def __init__(
         self,
         title: str = "Group",
@@ -554,28 +563,26 @@ class NodeFrame(QGraphicsRectItem):
 
         frame_rect = self.sceneBoundingRect()
 
-        # Get all items in the scene
-        for item in self.scene().items():
-            # Check if item looks like a node (has view attribute pointing to itself
-            # or is a node object with a view)
-            node = None
+        # Get all nodes from the graph reference
+        all_nodes = []
+        if NodeFrame._graph_ref:
+            try:
+                all_nodes = NodeFrame._graph_ref.all_nodes()
+            except Exception as e:
+                logger.debug(f"Could not get nodes from graph: {e}")
+                return
 
-            # Try to find the node object from the item
-            if hasattr(item, 'node') and callable(item.node):
-                try:
-                    node = item.node()
-                except Exception:
-                    pass
-
-            # Skip if already in contained_nodes or if it's the frame itself
-            if node is None or node in self.contained_nodes or item == self:
+        # Check each node
+        for node in all_nodes:
+            # Skip if already in contained_nodes
+            if node in self.contained_nodes:
                 continue
 
             # Check if node has a view and position
-            if hasattr(node, 'view') and hasattr(node, 'pos'):
+            if hasattr(node, 'view') and node.view and hasattr(node, 'pos'):
                 try:
                     node_view = node.view
-                    if node_view and hasattr(node_view, 'sceneBoundingRect'):
+                    if hasattr(node_view, 'sceneBoundingRect'):
                         node_rect = node_view.sceneBoundingRect()
 
                         # Check if node center is inside the frame
@@ -892,17 +899,13 @@ class NodeFrame(QGraphicsRectItem):
 
         frame_rect = self.sceneBoundingRect()
 
-        # Get all node objects from the scene
-        # NodeItem (visual representation) has a node() method to get the actual node
-        scene_nodes = []
-        for item in self.scene().items():
-            if hasattr(item, 'node') and callable(item.node):
-                try:
-                    node_obj = item.node()
-                    if node_obj and node_obj not in scene_nodes:
-                        scene_nodes.append(node_obj)
-                except Exception:
-                    pass
+        # Get all nodes from the graph reference
+        all_nodes = []
+        if NodeFrame._graph_ref:
+            try:
+                all_nodes = NodeFrame._graph_ref.all_nodes()
+            except Exception as e:
+                logger.debug(f"Could not get nodes from graph: {e}")
 
         # Track if any node is being dragged over this frame
         has_hovering_node = False
@@ -925,7 +928,7 @@ class NodeFrame(QGraphicsRectItem):
                             logger.debug(f"Ungrouped node from frame (moved outside)")
 
         # Check for nodes being dragged over the frame (for highlighting and auto-grouping)
-        for node in scene_nodes:
+        for node in all_nodes:
             if node in self.contained_nodes:
                 continue  # Skip nodes already in this frame
 
@@ -1218,7 +1221,8 @@ def create_frame(
     title: str = "Group",
     color_name: str = "blue",
     position: Tuple[float, float] = (0, 0),
-    size: Tuple[float, float] = (400, 300)
+    size: Tuple[float, float] = (400, 300),
+    graph = None
 ) -> NodeFrame:
     """
     Create a node frame in the graph view.
@@ -1229,11 +1233,24 @@ def create_frame(
         color_name: Color theme name from FRAME_COLORS
         position: (x, y) position tuple
         size: (width, height) size tuple
+        graph: NodeGraph instance for node lookup (optional, will try to detect)
 
     Returns:
         Created NodeFrame instance
     """
     color = FRAME_COLORS.get(color_name, FRAME_COLORS['gray'])
+
+    # Try to get graph reference if not provided
+    if graph is None and hasattr(graph_view, 'parent') and graph_view.parent():
+        parent = graph_view.parent()
+        if hasattr(parent, 'graph'):
+            graph = parent.graph
+        elif hasattr(parent, '_graph'):
+            graph = parent._graph
+
+    # Set graph reference for all frames
+    if graph:
+        NodeFrame.set_graph(graph)
 
     frame = NodeFrame(
         title=title,
