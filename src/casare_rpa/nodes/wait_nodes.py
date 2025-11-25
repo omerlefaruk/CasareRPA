@@ -142,6 +142,11 @@ class WaitForElementNode(BaseNode):
             "state": state,
             "strict": False,  # Require exactly one matching element
             "poll_interval": 100,  # Polling interval in ms (custom, for retry logic)
+            "retry_count": 0,  # Number of retries after timeout (0 = no retry)
+            "retry_interval": 1000,  # Delay between retries in ms
+            "screenshot_on_fail": False,  # Take screenshot on failure
+            "screenshot_path": "",  # Path for failure screenshot
+            "highlight_on_find": False,  # Briefly highlight element when found
         }
 
         config = kwargs.get("config", {})
