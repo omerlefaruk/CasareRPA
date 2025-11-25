@@ -166,6 +166,9 @@ class ReadFileNode(BaseNode):
     Config:
         encoding: Text encoding (default: utf-8)
         binary_mode: Read as binary (default: False)
+        errors: Error handling mode (strict, ignore, replace, etc.)
+        max_size: Maximum file size to read in bytes (0 = unlimited)
+        newline: Newline handling mode (None, '', '\n', '\r', '\r\n')
 
     Inputs:
         file_path: Path to the file to read
@@ -177,7 +180,22 @@ class ReadFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Read File", **kwargs) -> None:
+        # Default config with all file read options
+        default_config = {
+            "encoding": "utf-8",
+            "binary_mode": False,
+            "errors": "strict",  # strict, ignore, replace, backslashreplace, xmlcharrefreplace
+            "max_size": 0,  # 0 = unlimited, otherwise max bytes to read
+            "newline": None,  # None = universal newlines, '' = no translation, or specific
+            "allow_dangerous_paths": False,
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadFileNode"
@@ -197,6 +215,9 @@ class ReadFileNode(BaseNode):
             file_path = self.get_input_value("file_path", context)
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
+            errors = self.config.get("errors", "strict")
+            max_size = self.config.get("max_size", 0)
+            newline = self.config.get("newline", None)
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
@@ -208,14 +229,20 @@ class ReadFileNode(BaseNode):
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 
+            # Check file size against max_size limit
+            size = path.stat().st_size
+            if max_size > 0 and size > max_size:
+                raise ValueError(f"File size ({size} bytes) exceeds max_size limit ({max_size} bytes)")
+
+            logger.info(f"Reading file: {path} (binary={binary_mode}, encoding={encoding})")
+
             if binary_mode:
                 with open(path, "rb") as f:
                     content = f.read()
             else:
-                with open(path, "r", encoding=encoding) as f:
+                # Use newline and errors options for text mode
+                with open(path, "r", encoding=encoding, errors=errors, newline=newline) as f:
                     content = f.read()
-
-            size = path.stat().st_size
 
             self.set_output_value("content", content)
             self.set_output_value("size", size)
@@ -251,6 +278,9 @@ class WriteFileNode(BaseNode):
         encoding: Text encoding (default: utf-8)
         binary_mode: Write as binary (default: False)
         create_dirs: Create parent directories if needed (default: True)
+        errors: Error handling mode (strict, ignore, replace, etc.)
+        newline: Newline handling mode (None, '', '\n', '\r', '\r\n')
+        append_mode: Append to file instead of overwrite (default: False)
 
     Inputs:
         file_path: Path to write to
@@ -263,7 +293,23 @@ class WriteFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Write File", **kwargs) -> None:
+        # Default config with all file write options
+        default_config = {
+            "encoding": "utf-8",
+            "binary_mode": False,
+            "create_dirs": True,
+            "errors": "strict",  # strict, ignore, replace, backslashreplace, xmlcharrefreplace
+            "newline": None,  # None = universal, '' = no translation, or specific
+            "append_mode": False,  # Append instead of overwrite
+            "allow_dangerous_paths": False,
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WriteFileNode"
@@ -286,6 +332,9 @@ class WriteFileNode(BaseNode):
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             create_dirs = self.config.get("create_dirs", True)
+            errors = self.config.get("errors", "strict")
+            newline = self.config.get("newline", None)
+            append_mode = self.config.get("append_mode", False)
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
@@ -297,13 +346,21 @@ class WriteFileNode(BaseNode):
             if create_dirs and path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
 
+            # Determine file mode based on binary and append settings
+            if binary_mode:
+                mode = "ab" if append_mode else "wb"
+            else:
+                mode = "a" if append_mode else "w"
+
+            logger.info(f"Writing file: {path} (mode={mode}, encoding={encoding})")
+
             if binary_mode:
                 if isinstance(content, str):
                     content = content.encode(encoding)
-                with open(path, "wb") as f:
+                with open(path, mode) as f:
                     bytes_written = f.write(content)
             else:
-                with open(path, "w", encoding=encoding) as f:
+                with open(path, mode, encoding=encoding, errors=errors, newline=newline) as f:
                     bytes_written = f.write(str(content) if content else "")
 
             self.set_output_value("file_path", str(path))
@@ -316,6 +373,12 @@ class WriteFileNode(BaseNode):
                 "data": {"file_path": str(path), "bytes_written": bytes_written},
                 "next_nodes": ["exec_out"]
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in WriteFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -952,6 +1015,10 @@ class ReadCSVNode(BaseNode):
         delimiter: Field delimiter (default: ,)
         has_header: First row is header (default: True)
         encoding: File encoding (default: utf-8)
+        quotechar: Character for quoting fields (default: ")
+        skip_rows: Number of initial rows to skip (default: 0)
+        max_rows: Maximum rows to read, 0 = unlimited (default: 0)
+        strict: Strict mode - error on malformed rows (default: False)
 
     Inputs:
         file_path: Path to CSV file
@@ -964,7 +1031,25 @@ class ReadCSVNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Read CSV", **kwargs) -> None:
+        # Default config with all CSV read options
+        default_config = {
+            "delimiter": ",",
+            "has_header": True,
+            "encoding": "utf-8",
+            "quotechar": '"',
+            "skip_rows": 0,  # Number of initial rows to skip
+            "max_rows": 0,  # Maximum rows to read, 0 = unlimited
+            "strict": False,  # Error on malformed rows
+            "doublequote": True,  # Whether to interpret "" as escaped "
+            "escapechar": None,  # Character to escape special chars
+        }
+
         config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadCSVNode"
@@ -986,6 +1071,12 @@ class ReadCSVNode(BaseNode):
             delimiter = self.config.get("delimiter", ",")
             has_header = self.config.get("has_header", True)
             encoding = self.config.get("encoding", "utf-8")
+            quotechar = self.config.get("quotechar", '"')
+            skip_rows = self.config.get("skip_rows", 0)
+            max_rows = self.config.get("max_rows", 0)
+            strict = self.config.get("strict", False)
+            doublequote = self.config.get("doublequote", True)
+            escapechar = self.config.get("escapechar", None)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -997,20 +1088,54 @@ class ReadCSVNode(BaseNode):
             data = []
             headers = []
 
+            logger.info(f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})")
+
             with open(path, "r", encoding=encoding, newline="") as f:
+                # Build CSV reader options
+                csv_options = {
+                    "delimiter": delimiter,
+                    "quotechar": quotechar,
+                    "doublequote": doublequote,
+                    "strict": strict,
+                }
+                if escapechar:
+                    csv_options["escapechar"] = escapechar
+
+                # Skip initial rows if configured
+                for _ in range(skip_rows):
+                    next(f, None)
+
                 if has_header:
-                    reader = csv.DictReader(f, delimiter=delimiter)
+                    reader = csv.DictReader(f, **csv_options)
                     headers = reader.fieldnames or []
-                    data = list(reader)
+
+                    # Read data with optional max_rows limit
+                    if max_rows > 0:
+                        for i, row in enumerate(reader):
+                            if i >= max_rows:
+                                break
+                            data.append(row)
+                    else:
+                        data = list(reader)
                 else:
-                    reader = csv.reader(f, delimiter=delimiter)
-                    data = list(reader)
+                    reader = csv.reader(f, **csv_options)
+
+                    # Read data with optional max_rows limit
+                    if max_rows > 0:
+                        for i, row in enumerate(reader):
+                            if i >= max_rows:
+                                break
+                            data.append(row)
+                    else:
+                        data = list(reader)
 
             self.set_output_value("data", data)
             self.set_output_value("headers", headers)
             self.set_output_value("row_count", len(data))
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
+
+            logger.info(f"CSV read successfully: {len(data)} rows, {len(headers)} columns")
 
             return {
                 "success": True,

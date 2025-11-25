@@ -104,8 +104,14 @@ class LaunchBrowserNode(BaseNode):
 
             # Add slow_mo if specified (for debugging)
             slow_mo = self.config.get("slow_mo", 0)
-            if slow_mo and int(slow_mo) > 0:
-                launch_options["slow_mo"] = int(slow_mo)
+            # Handle empty strings and convert to int safely
+            if slow_mo and str(slow_mo).strip():
+                try:
+                    slow_mo_int = int(slow_mo)
+                    if slow_mo_int > 0:
+                        launch_options["slow_mo"] = slow_mo_int
+                except (ValueError, TypeError):
+                    pass  # Ignore invalid slow_mo values
 
             # Add channel for chromium-based browsers
             channel = self.config.get("channel", "")
@@ -131,9 +137,17 @@ class LaunchBrowserNode(BaseNode):
             # Build browser context options
             context_options = {}
 
-            # Viewport settings
-            viewport_width = int(self.config.get("viewport_width", 1280))
-            viewport_height = int(self.config.get("viewport_height", 720))
+            # Viewport settings - safely parse with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
+            viewport_width = safe_int(self.config.get("viewport_width"), 1280)
+            viewport_height = safe_int(self.config.get("viewport_height"), 720)
             context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
 
             # User agent

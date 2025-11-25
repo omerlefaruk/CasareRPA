@@ -123,15 +123,30 @@ class DatabaseConnectNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Database Connect", **kwargs: Any) -> None:
+        # Default config with all database connection options
+        default_config = {
+            "db_type": "sqlite",
+            "host": "localhost",
+            "port": 5432,
+            "database": "",
+            "username": "",
+            "password": "",
+            "connection_string": "",
+            "timeout": 30.0,
+            # Advanced options
+            "ssl": False,  # Use SSL for connection
+            "ssl_ca": "",  # Path to CA certificate
+            "pool_size": 5,  # Connection pool size (PostgreSQL/MySQL)
+            "auto_commit": True,  # Auto-commit mode
+            "charset": "utf8mb4",  # Character set (MySQL)
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("db_type", "sqlite")
-        config.setdefault("host", "localhost")
-        config.setdefault("port", 5432)
-        config.setdefault("database", "")
-        config.setdefault("username", "")
-        config.setdefault("password", "")
-        config.setdefault("connection_string", "")
-        config.setdefault("timeout", 30.0)
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "DatabaseConnectNode"

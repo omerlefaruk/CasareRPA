@@ -51,6 +51,9 @@ class ClickElementNode(BaseNode):
             "force": False,  # Bypass actionability checks
             "position_x": None,  # Click position X offset
             "position_y": None,  # Click position Y offset
+            "modifiers": [],  # Modifier keys: 'Alt', 'Control', 'Meta', 'Shift'
+            "no_wait_after": False,  # Skip waiting for navigations after click
+            "trial": False,  # Perform actionability checks without clicking
         }
 
         config = kwargs.get("config", {})
@@ -137,6 +140,19 @@ class ClickElementNode(BaseNode):
                 except (ValueError, TypeError):
                     pass  # Ignore invalid position values
 
+            # Modifiers (Alt, Control, Meta, Shift)
+            modifiers = self.config.get("modifiers", [])
+            if modifiers:
+                click_options["modifiers"] = modifiers
+
+            # No wait after (skip waiting for navigations)
+            if self.config.get("no_wait_after", False):
+                click_options["no_wait_after"] = True
+
+            # Trial mode (actionability checks only)
+            if self.config.get("trial", False):
+                click_options["trial"] = True
+
             logger.debug(f"Click options: {click_options}")
 
             # Click element
@@ -204,6 +220,12 @@ class TypeTextNode(BaseNode):
             "delay": delay,
             "timeout": DEFAULT_NODE_TIMEOUT * 1000,  # Element wait timeout
             "clear_first": True,  # Clear field before typing
+            "press_sequentially": False,  # Use type() for character-by-character (overrides delay)
+            "force": False,  # Bypass actionability checks
+            "no_wait_after": False,  # Skip waiting for navigations
+            "strict": False,  # Require exactly one matching element
+            "press_enter_after": False,  # Press Enter after typing
+            "press_tab_after": False,  # Press Tab after typing
         }
 
         config = kwargs.get("config", {})
@@ -267,20 +289,44 @@ class TypeTextNode(BaseNode):
             delay = self.config.get("delay", 0)
             timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
             clear_first = self.config.get("clear_first", True)
+            press_sequentially = self.config.get("press_sequentially", False)
+            force = self.config.get("force", False)
+            no_wait_after = self.config.get("no_wait_after", False)
+            strict = self.config.get("strict", False)
+            press_enter_after = self.config.get("press_enter_after", False)
+            press_tab_after = self.config.get("press_tab_after", False)
 
             logger.info(f"Typing text into element: {normalized_selector}")
 
+            # Build fill/type options
+            fill_options = {"timeout": timeout}
+            if force:
+                fill_options["force"] = True
+            if no_wait_after:
+                fill_options["no_wait_after"] = True
+            if strict:
+                fill_options["strict"] = True
+
             # Type text - use fill() for immediate input, type() for character-by-character with delay
             # Only use one method to avoid double-typing
-            if delay > 0:
+            if delay > 0 or press_sequentially:
                 # Clear the field first if configured, then type with delay
                 if clear_first:
-                    await page.fill(normalized_selector, "", timeout=timeout)
-                await page.type(normalized_selector, text, delay=delay, timeout=timeout)
+                    await page.fill(normalized_selector, "", **fill_options)
+                type_delay = delay if delay > 0 else 50  # Default 50ms for press_sequentially
+                await page.type(normalized_selector, text, delay=type_delay, timeout=timeout)
             else:
                 # Use fill() for immediate input (faster)
                 # fill() always clears the field first, so clear_first doesn't affect behavior here
-                await page.fill(normalized_selector, text, timeout=timeout)
+                await page.fill(normalized_selector, text, **fill_options)
+
+            # Press Enter after if requested
+            if press_enter_after:
+                await page.keyboard.press("Enter")
+
+            # Press Tab after if requested
+            if press_tab_after:
+                await page.keyboard.press("Tab")
             
             self.set_output_value("page", page)
             
@@ -313,32 +359,46 @@ class TypeTextNode(BaseNode):
 class SelectDropdownNode(BaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
-    
+
     Finds a select element and chooses an option by value, label, or index.
     """
-    
+
     def __init__(
         self,
         node_id: str,
         name: str = "Select Dropdown",
         selector: str = "",
         value: str = "",
+        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs
     ) -> None:
         """
         Initialize select dropdown node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             selector: CSS or XPath selector for the select element
             value: Value or label to select
+            timeout: Timeout in milliseconds
         """
-        config = kwargs.get("config", {"selector": selector, "value": value})
-        if "selector" not in config:
-            config["selector"] = selector
-        if "value" not in config:
-            config["value"] = value
+        # Default config with all Playwright select_option options
+        default_config = {
+            "selector": selector,
+            "value": value,
+            "timeout": timeout,
+            "force": False,  # Bypass actionability checks
+            "no_wait_after": False,  # Skip waiting for navigations after selection
+            "strict": False,  # Require exactly one matching element
+            "select_by": "value",  # value, label, or index
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, val in default_config.items():
+            if key not in config:
+                config[key] = val
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SelectDropdownNode"
@@ -355,61 +415,88 @@ class SelectDropdownNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute dropdown selection.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with success status
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
                 selector = self.config.get("selector", "")
-            
+
             if not selector:
                 raise ValueError("Selector is required")
-            
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
-            
+
             # Get value from input or config
             value = self.get_input_value("value")
             if value is None:
                 value = self.config.get("value", "")
-            
+
             if not value:
                 raise ValueError("Value is required")
-            
-            logger.info(f"Selecting dropdown option: {normalized_selector} = {value}")
-            
-            # Select option
-            await page.select_option(normalized_selector, value)
-            
+
+            # Get Playwright options from config
+            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            select_by = self.config.get("select_by", "value")
+
+            logger.info(f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})")
+
+            # Build select options
+            select_options = {"timeout": timeout}
+
+            # Force option (bypass actionability checks)
+            if self.config.get("force", False):
+                select_options["force"] = True
+
+            # No wait after (skip waiting for navigations)
+            if self.config.get("no_wait_after", False):
+                select_options["no_wait_after"] = True
+
+            # Strict mode (require exactly one element)
+            if self.config.get("strict", False):
+                select_options["strict"] = True
+
+            logger.debug(f"Select options: {select_options}")
+
+            # Select option based on select_by mode
+            if select_by == "index":
+                await page.select_option(normalized_selector, index=int(value), **select_options)
+            elif select_by == "label":
+                await page.select_option(normalized_selector, label=value, **select_options)
+            else:  # value (default)
+                await page.select_option(normalized_selector, value=value, **select_options)
+
             self.set_output_value("page", page)
-            
+
             self.status = NodeStatus.SUCCESS
             logger.info(f"Dropdown selected successfully: {selector}")
-            
+
             return {
                 "success": True,
                 "data": {
                     "selector": selector,
-                    "value": value
+                    "value": value,
+                    "select_by": select_by
                 },
                 "next_nodes": ["exec_out"]
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to select dropdown: {e}")
