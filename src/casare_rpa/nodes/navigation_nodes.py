@@ -33,18 +33,27 @@ class GoToURLNode(BaseNode):
     ) -> None:
         """
         Initialize go to URL node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
             url: URL to navigate to
             timeout: Page load timeout in milliseconds
         """
-        config = kwargs.get("config", {"url": url, "timeout": timeout})
-        if "url" not in config:
-            config["url"] = url
-        if "timeout" not in config:
-            config["timeout"] = timeout
+        # Default config with all Playwright options
+        default_config = {
+            "url": url,
+            "timeout": timeout,
+            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+            "referer": "",  # Optional referer header
+        }
+
+        config = kwargs.get("config", {})
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoToURLNode"
@@ -115,11 +124,18 @@ class GoToURLNode(BaseNode):
                 url = f"https://{url}"
             
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
-            
-            logger.info(f"Navigating to URL: {url}")
-            
+            wait_until = self.config.get("wait_until", "load")
+            referer = self.config.get("referer", "")
+
+            logger.info(f"Navigating to URL: {url} (wait_until={wait_until})")
+
+            # Build navigation options
+            goto_options = {"timeout": timeout, "wait_until": wait_until}
+            if referer:
+                goto_options["referer"] = referer
+
             # Navigate to URL
-            response = await page.goto(url, timeout=timeout)
+            response = await page.goto(url, **goto_options)
             
             # Set output
             self.set_output_value("page", page)
@@ -163,62 +179,75 @@ class GoBackNode(BaseNode):
     """
     Go back node - navigates back in browser history.
     """
-    
+
     def __init__(self, node_id: str, name: str = "Go Back", **kwargs) -> None:
         """
         Initialize go back node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
         """
+        # Default config with Playwright options
+        default_config = {
+            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
+            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+        }
+
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoBackNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute back navigation.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with page instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
-            logger.info("Navigating back")
-            
-            await page.go_back()
-            
+
+            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.config.get("wait_until", "load")
+
+            logger.info(f"Navigating back (wait_until={wait_until})")
+
+            await page.go_back(timeout=timeout, wait_until=wait_until)
+
             self.set_output_value("page", page)
-            
+
             self.status = NodeStatus.SUCCESS
             logger.info("Back navigation completed")
-            
+
             return {
                 "success": True,
                 "data": {"url": page.url},
                 "next_nodes": ["exec_out"]
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to go back: {e}")
@@ -227,7 +256,7 @@ class GoBackNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -237,16 +266,26 @@ class GoForwardNode(BaseNode):
     """
     Go forward node - navigates forward in browser history.
     """
-    
+
     def __init__(self, node_id: str, name: str = "Go Forward", **kwargs) -> None:
         """
         Initialize go forward node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
         """
+        # Default config with Playwright options
+        default_config = {
+            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
+            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+        }
+
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoForwardNode"
@@ -261,38 +300,41 @@ class GoForwardNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute forward navigation.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with page instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
-            logger.info("Navigating forward")
-            
-            await page.go_forward()
-            
+
+            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.config.get("wait_until", "load")
+
+            logger.info(f"Navigating forward (wait_until={wait_until})")
+
+            await page.go_forward(timeout=timeout, wait_until=wait_until)
+
             self.set_output_value("page", page)
-            
+
             self.status = NodeStatus.SUCCESS
             logger.info("Forward navigation completed")
-            
+
             return {
                 "success": True,
                 "data": {"url": page.url},
                 "next_nodes": ["exec_out"]
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to go forward: {e}")
@@ -301,7 +343,7 @@ class GoForwardNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -311,16 +353,26 @@ class RefreshPageNode(BaseNode):
     """
     Refresh page node - reloads the current page.
     """
-    
+
     def __init__(self, node_id: str, name: str = "Refresh Page", **kwargs) -> None:
         """
         Initialize refresh page node.
-        
+
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
         """
+        # Default config with Playwright options
+        default_config = {
+            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
+            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
+        }
+
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RefreshPageNode"
@@ -335,38 +387,41 @@ class RefreshPageNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute page refresh.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with page instance
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
-            logger.info("Refreshing page")
-            
-            await page.reload()
-            
+
+            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.config.get("wait_until", "load")
+
+            logger.info(f"Refreshing page (wait_until={wait_until})")
+
+            await page.reload(timeout=timeout, wait_until=wait_until)
+
             self.set_output_value("page", page)
-            
+
             self.status = NodeStatus.SUCCESS
             logger.info("Page refreshed successfully")
-            
+
             return {
                 "success": True,
                 "data": {"url": page.url},
                 "next_nodes": ["exec_out"]
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to refresh page: {e}")
@@ -375,7 +430,7 @@ class RefreshPageNode(BaseNode):
                 "error": str(e),
                 "next_nodes": []
             }
-    
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
