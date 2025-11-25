@@ -587,9 +587,17 @@ class VisualMessageBoxNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
+        # Basic properties
+        self.add_text_input("title", "Title", text="Message", tab="properties")
         self.add_text_input("message", "Message", text="Hello!", tab="properties")
         self.add_combo_menu("icon_type", "Icon", items=["information", "warning", "error", "question"], tab="properties")
         self.add_combo_menu("buttons", "Buttons", items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"], tab="properties")
+        # Advanced options
+        self.add_text_input("detailed_text", "Detailed Text", placeholder_text="Expandable details...", tab="advanced")
+        self.add_combo_menu("default_button", "Default Button", items=["", "ok", "cancel", "yes", "no"], tab="advanced")
+        self.add_checkbox("always_on_top", "Always On Top", state=True, tab="advanced")
+        self.add_checkbox("play_sound", "Play Sound", state=False, tab="advanced")
+        self.add_text_input("auto_close_timeout", "Auto-Close (sec)", placeholder_text="0 = disabled", tab="advanced")
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
