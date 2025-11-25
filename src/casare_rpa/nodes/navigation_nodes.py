@@ -17,6 +17,16 @@ from ..utils.config import DEFAULT_PAGE_LOAD_TIMEOUT
 from loguru import logger
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class GoToURLNode(BaseNode):
     """
     Go to URL node - navigates to a specified URL.
@@ -101,25 +111,12 @@ class GoToURLNode(BaseNode):
             logger.info(f"URL from input port: '{url}'")
             logger.info(f"Node config: {self.config}")
 
-            # Support template substitution for variables in the form {{var_name}}
-            # If url is provided via input or config and contains placeholders,
-            # replace them with values from the execution context variables.
-            if isinstance(url, str) and "{{" in url and "}}" in url:
-                import re
-
-                def _replace(match: re.Match) -> str:
-                    var_name = match.group(1).strip()
-                    value = context.get_variable(var_name)
-                    if value is None:
-                        raise ValueError(f"Variable '{var_name}' not found in workflow context")
-                    return str(value)
-
-                url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
-                logger.info(f"URL after variable substitution: '{url}'")
-
             if url is None:
                 url = self.config.get("url", "")
                 logger.info(f"URL from config: '{url}'")
+
+            # Resolve {{variable}} patterns in url
+            url = context.resolve_value(url)
 
             if not url:
                 logger.error(f"URL validation failed. url='{url}', config={self.config}")
@@ -134,10 +131,14 @@ class GoToURLNode(BaseNode):
             referer = self.config.get("referer", "")
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
+
+            # Resolve {{variable}} patterns in referer and screenshot_path
+            referer = context.resolve_value(referer)
+            screenshot_path = context.resolve_value(screenshot_path)
 
             logger.info(f"Navigating to URL: {url} (wait_until={wait_until})")
 
@@ -287,8 +288,8 @@ class GoBackNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.info(f"Navigating back (wait_until={wait_until})")
 
@@ -398,8 +399,8 @@ class GoForwardNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.info(f"Navigating forward (wait_until={wait_until})")
 
@@ -509,8 +510,8 @@ class RefreshPageNode(BaseNode):
 
             timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
             wait_until = self.config.get("wait_until", "load")
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.info(f"Refreshing page (wait_until={wait_until})")
 

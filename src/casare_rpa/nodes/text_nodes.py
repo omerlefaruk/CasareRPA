@@ -18,9 +18,21 @@ This module provides extended text manipulation nodes:
 import re
 from typing import Any, Optional
 
+from loguru import logger
+
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class TextSplitNode(BaseNode):

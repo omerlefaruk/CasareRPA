@@ -16,7 +16,8 @@
       "Bash(then echo \"$f\")",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(python run.py:*)"
+      "Bash(python run.py:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

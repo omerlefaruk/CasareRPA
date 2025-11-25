@@ -26,6 +26,7 @@ from ..utils.parallel_executor import (
     analyze_workflow_dependencies,
 )
 from ..utils.subgraph_calculator import SubgraphCalculator
+from ..utils.performance_metrics import get_metrics
 
 # Default timeout for node execution (in seconds)
 DEFAULT_NODE_EXECUTION_TIMEOUT = 120  # 2 minutes
@@ -431,6 +432,10 @@ class WorkflowRunner:
         import time
         start_time = time.time()
 
+        # Record metrics for performance dashboard
+        node_type = node.__class__.__name__
+        get_metrics().record_node_start(node_type, node.node_id)
+
         try:
             # Validate node before execution
             if not node.validate():
@@ -542,6 +547,10 @@ class WorkflowRunner:
                 })
 
                 logger.info(f"Node executed successfully: {node.node_id}")
+                # Record successful execution in metrics
+                get_metrics().record_node_complete(
+                    node_type, node.node_id, execution_time * 1000, success=True
+                )
                 return True, result
             else:
                 node.status = NodeStatus.ERROR
@@ -552,18 +561,28 @@ class WorkflowRunner:
                     "execution_time": execution_time
                 })
                 logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
+                # Record failed execution in metrics
+                get_metrics().record_node_complete(
+                    node_type, node.node_id, execution_time * 1000, success=False
+                )
                 return False, result
 
         except Exception as e:
             node.status = NodeStatus.ERROR
             error_msg = str(e)
+            execution_time = time.time() - start_time
 
             self._emit_event(EventType.NODE_ERROR, {
                 "node_id": node.node_id,
-                "error": error_msg
+                "error": error_msg,
+                "execution_time": execution_time
             })
 
             logger.exception(f"Exception during node execution: {node.node_id}")
+            # Record exception in metrics
+            get_metrics().record_node_complete(
+                node_type, node.node_id, execution_time * 1000, success=False
+            )
             return False, None
     
     async def _execute_workflow(self) -> None:
@@ -1033,7 +1052,10 @@ class WorkflowRunner:
             "workflow_name": self.workflow.metadata.name,
             "total_nodes": self.total_nodes
         })
-        
+
+        # Record workflow start for performance dashboard
+        get_metrics().record_workflow_start(self.workflow.metadata.name)
+
         logger.info(f"Starting workflow execution: {self.workflow.metadata.name}")
         
         try:
@@ -1042,11 +1064,17 @@ class WorkflowRunner:
             # Check if completed successfully
             if self._stop_requested:
                 self.state = ExecutionState.STOPPED
+                self.end_time = datetime.now()
+                duration = (self.end_time - self.start_time).total_seconds()
                 self._emit_event(EventType.WORKFLOW_STOPPED, {
                     "executed_nodes": len(self.executed_nodes),
                     "total_nodes": self.total_nodes
                 })
                 logger.info("Workflow execution stopped by user")
+                # Record stopped workflow as failed for metrics
+                get_metrics().record_workflow_complete(
+                    self.workflow.metadata.name, duration * 1000, success=False
+                )
                 return False
             else:
                 self.state = ExecutionState.COMPLETED
@@ -1063,18 +1091,27 @@ class WorkflowRunner:
                     f"Workflow completed successfully in {duration:.2f}s "
                     f"({len(self.executed_nodes)}/{self.total_nodes} nodes)"
                 )
+                # Record workflow completion for performance dashboard
+                get_metrics().record_workflow_complete(
+                    self.workflow.metadata.name, duration * 1000, success=True
+                )
                 return True
-                
+
         except Exception as e:
             self.state = ExecutionState.ERROR
             self.end_time = datetime.now()
-            
+            duration = (self.end_time - self.start_time).total_seconds()
+
             self._emit_event(EventType.WORKFLOW_ERROR, {
                 "error": str(e),
                 "executed_nodes": len(self.executed_nodes)
             })
-            
+
             logger.exception("Workflow execution failed with exception")
+            # Record workflow failure for performance dashboard
+            get_metrics().record_workflow_complete(
+                self.workflow.metadata.name, duration * 1000, success=False
+            )
             return False
         
         finally:

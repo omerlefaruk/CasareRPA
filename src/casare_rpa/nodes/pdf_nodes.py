@@ -90,6 +90,11 @@ class ReadPDFTextNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path and password
+            file_path = context.resolve_value(file_path)
+            if password:
+                password = context.resolve_value(password)
+
             path = Path(file_path)
             if not path.exists():
                 raise FileNotFoundError(f"PDF file not found: {file_path}")
@@ -203,6 +208,9 @@ class GetPDFInfoNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             path = Path(file_path)
             if not path.exists():
                 raise FileNotFoundError(f"PDF file not found: {file_path}")
@@ -282,6 +290,9 @@ class MergePDFsNode(BaseNode):
                 raise ValueError("input_files list is required")
             if not output_path:
                 raise ValueError("output_path is required")
+
+            # Resolve {{variable}} patterns in output_path
+            output_path = context.resolve_value(output_path)
 
             try:
                 from PyPDF2 import PdfReader, PdfWriter
@@ -372,6 +383,10 @@ class SplitPDFNode(BaseNode):
                 raise ValueError("input_file is required")
             if not output_dir:
                 raise ValueError("output_dir is required")
+
+            # Resolve {{variable}} patterns in paths
+            input_file = context.resolve_value(input_file)
+            output_dir = context.resolve_value(output_dir)
 
             input_path = Path(input_file)
             if not input_path.exists():
@@ -467,6 +482,10 @@ class ExtractPDFPagesNode(BaseNode):
                 raise ValueError("output_path is required")
             if not pages:
                 raise ValueError("pages list is required")
+
+            # Resolve {{variable}} patterns in paths
+            input_file = context.resolve_value(input_file)
+            output_path = context.resolve_value(output_path)
 
             input_path = Path(input_file)
             if not input_path.exists():
@@ -566,6 +585,10 @@ class PDFToImagesNode(BaseNode):
                 raise ValueError("input_file is required")
             if not output_dir:
                 raise ValueError("output_dir is required")
+
+            # Resolve {{variable}} patterns in paths
+            input_file = context.resolve_value(input_file)
+            output_dir = context.resolve_value(output_dir)
 
             input_path = Path(input_file)
             if not input_path.exists():

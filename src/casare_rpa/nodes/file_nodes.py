@@ -223,6 +223,9 @@ class ReadFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "read", allow_dangerous)
 
@@ -340,6 +343,10 @@ class WriteFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path and content
+            file_path = context.resolve_value(file_path)
+            content = context.resolve_value(content)
+
             # SECURITY: Validate path before any operation
             path = validate_path_security(file_path, "write", allow_dangerous)
 
@@ -434,6 +441,10 @@ class AppendFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path and content
+            file_path = context.resolve_value(file_path)
+            content = context.resolve_value(content)
+
             path = Path(file_path)
 
             if not path.exists() and not create_if_missing:
@@ -503,6 +514,9 @@ class DeleteFileNode(BaseNode):
 
             if not file_path:
                 raise ValueError("file_path is required")
+
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
 
             # SECURITY: Validate path before delete operation (extra important for delete!)
             path = validate_path_security(file_path, "delete", allow_dangerous)
@@ -594,6 +608,10 @@ class CopyFileNode(BaseNode):
             if not source_path or not dest_path:
                 raise ValueError("source_path and dest_path are required")
 
+            # Resolve {{variable}} patterns in paths
+            source_path = context.resolve_value(source_path)
+            dest_path = context.resolve_value(dest_path)
+
             source = Path(source_path)
             dest = Path(dest_path)
 
@@ -672,6 +690,10 @@ class MoveFileNode(BaseNode):
             if not source_path or not dest_path:
                 raise ValueError("source_path and dest_path are required")
 
+            # Resolve {{variable}} patterns in paths
+            source_path = context.resolve_value(source_path)
+            dest_path = context.resolve_value(dest_path)
+
             source = Path(source_path)
             dest = Path(dest_path)
 
@@ -748,6 +770,9 @@ class CreateDirectoryNode(BaseNode):
             if not dir_path:
                 raise ValueError("dir_path is required")
 
+            # Resolve {{variable}} patterns in dir_path
+            dir_path = context.resolve_value(dir_path)
+
             path = Path(dir_path)
             path.mkdir(parents=parents, exist_ok=exist_ok)
 
@@ -815,6 +840,10 @@ class ListDirectoryNode(BaseNode):
 
             if not dir_path:
                 raise ValueError("dir_path is required")
+
+            # Resolve {{variable}} patterns in dir_path and pattern
+            dir_path = context.resolve_value(dir_path)
+            pattern = context.resolve_value(pattern)
 
             path = Path(dir_path)
             if not path.exists():
@@ -896,6 +925,9 @@ class FileExistsNode(BaseNode):
             if not file_path:
                 raise ValueError("path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             path = Path(file_path)
             exists = path.exists()
             is_file = path.is_file() if exists else False
@@ -972,6 +1004,9 @@ class GetFileInfoNode(BaseNode):
 
             if not file_path:
                 raise ValueError("file_path is required")
+
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
 
             path = Path(file_path)
             if not path.exists():
@@ -1080,6 +1115,9 @@ class ReadCSVNode(BaseNode):
 
             if not file_path:
                 raise ValueError("file_path is required")
+
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
 
             path = Path(file_path)
             if not path.exists():
@@ -1202,6 +1240,9 @@ class WriteCSVNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             path = Path(file_path)
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -1283,6 +1324,9 @@ class ReadJSONFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             path = Path(file_path)
             if not path.exists():
                 raise FileNotFoundError(f"JSON file not found: {file_path}")
@@ -1358,6 +1402,9 @@ class WriteJSONFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
             path = Path(file_path)
             if path.parent:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -1429,6 +1476,11 @@ class ZipFilesNode(BaseNode):
 
             if not zip_path:
                 raise ValueError("zip_path is required")
+
+            # Resolve {{variable}} patterns in zip_path and base_dir
+            zip_path = context.resolve_value(zip_path)
+            if base_dir:
+                base_dir = context.resolve_value(base_dir)
 
             if not files:
                 raise ValueError("files list is required")
@@ -1528,6 +1580,10 @@ class UnzipFilesNode(BaseNode):
                 raise ValueError("zip_path is required")
             if not extract_to:
                 raise ValueError("extract_to is required")
+
+            # Resolve {{variable}} patterns in zip_path and extract_to
+            zip_path = context.resolve_value(zip_path)
+            extract_to = context.resolve_value(extract_to)
 
             # SECURITY: Validate paths
             zip_file = validate_path_security(zip_path, "read", allow_dangerous)
