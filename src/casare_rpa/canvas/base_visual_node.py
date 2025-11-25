@@ -371,16 +371,20 @@ class VisualNode(NodeGraphQtBaseNode):
                 self.view.set_running(False)
             if hasattr(self.view, 'set_completed'):
                 self.view.set_completed(True)
+            if hasattr(self.view, 'set_error'):
+                self.view.set_error(False)
         elif status == "error":
-            # Show error state (red background)
+            # Show error state with icon (keep dark background, red border + error icon)
             self.set_property("_is_running", False)
             self.set_property("_is_completed", False)
-            self.set_color(244, 67, 54)  # Red background
+            self.set_color(45, 45, 45)  # Keep dark background - icon shows error
             self.model.border_color = (244, 67, 54, 255)  # Red border
             if hasattr(self.view, 'set_running'):
                 self.view.set_running(False)
             if hasattr(self.view, 'set_completed'):
                 self.view.set_completed(False)
+            if hasattr(self.view, 'set_error'):
+                self.view.set_error(True)
         else:  # idle
             # Restore default appearance
             self.set_property("_is_running", False)
@@ -391,3 +395,15 @@ class VisualNode(NodeGraphQtBaseNode):
                 self.view.set_running(False)
             if hasattr(self.view, 'set_completed'):
                 self.view.set_completed(False)
+            if hasattr(self.view, 'set_error'):
+                self.view.set_error(False)
+
+    def update_execution_time(self, time_seconds: Optional[float]) -> None:
+        """
+        Update the displayed execution time.
+
+        Args:
+            time_seconds: Execution time in seconds, or None to clear
+        """
+        if hasattr(self.view, 'set_execution_time'):
+            self.view.set_execution_time(time_seconds)

@@ -61,6 +61,7 @@ class MainWindow(QMainWindow):
     workflow_save = Signal()
     workflow_save_as = Signal(str)
     workflow_run = Signal()
+    workflow_run_to_node = Signal(str)  # Run to selected node ID (F4)
     workflow_pause = Signal()
     workflow_resume = Signal()
     workflow_stop = Signal()
@@ -100,6 +101,9 @@ class MainWindow(QMainWindow):
         self._auto_validate: bool = True  # Enable real-time validation
         self._workflow_data_provider: Optional[callable] = None  # Callback to get workflow data
 
+        # Bottom panel dock (unified panel with Variables, Output, Log, Validation tabs)
+        self._bottom_panel: Optional['BottomPanelDock'] = None
+
         # Setup window
         self._setup_window()
         self._create_actions()
@@ -108,6 +112,7 @@ class MainWindow(QMainWindow):
         self._create_status_bar()
         self._create_log_viewer()
         self._create_validation_panel()
+        self._create_bottom_panel()
         self._create_debug_components()
         
         # Set initial state
@@ -223,6 +228,12 @@ class MainWindow(QMainWindow):
         self.action_toggle_validation.setStatusTip("Show/hide validation panel")
         self.action_toggle_validation.triggered.connect(self._on_toggle_validation)
 
+        self.action_toggle_bottom_panel = QAction("&Bottom Panel", self)
+        self.action_toggle_bottom_panel.setShortcut(QKeySequence("Ctrl+`"))
+        self.action_toggle_bottom_panel.setCheckable(True)
+        self.action_toggle_bottom_panel.setStatusTip("Show/hide bottom panel (Variables, Output, Log, Validation)")
+        self.action_toggle_bottom_panel.triggered.connect(self._on_toggle_bottom_panel)
+
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
         self.action_validate.setStatusTip("Validate current workflow")
@@ -242,10 +253,15 @@ class MainWindow(QMainWindow):
         
         # Workflow actions
         self.action_run = QAction("&Run Workflow", self)
-        self.action_run.setShortcut(QKeySequence("F5"))
-        self.action_run.setStatusTip("Execute the workflow (F5)")
+        self.action_run.setShortcut(QKeySequence("F3"))
+        self.action_run.setStatusTip("Execute the entire workflow (F3)")
         self.action_run.triggered.connect(self._on_run_workflow)
-        
+
+        self.action_run_to_node = QAction("Run &To Node", self)
+        self.action_run_to_node.setShortcut(QKeySequence("F4"))
+        self.action_run_to_node.setStatusTip("Execute workflow up to selected node (F4)")
+        self.action_run_to_node.triggered.connect(self._on_run_to_node)
+
         self.action_pause = QAction("&Pause Workflow", self)
         self.action_pause.setShortcut(QKeySequence("F6"))
         self.action_pause.setStatusTip("Pause/Resume workflow execution (F6)")
@@ -385,6 +401,7 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.action_toggle_log)
         view_menu.addAction(self.action_toggle_validation)
+        view_menu.addAction(self.action_toggle_bottom_panel)
         view_menu.addAction(self.action_toggle_minimap)
 
         # Workflow menu
@@ -392,6 +409,8 @@ class MainWindow(QMainWindow):
         workflow_menu.addAction(self.action_validate)
         workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_run)
+        workflow_menu.addAction(self.action_run_to_node)
+        workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
         workflow_menu.addSeparator()
@@ -429,6 +448,7 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_redo)
         toolbar.addSeparator()
         toolbar.addAction(self.action_run)
+        toolbar.addAction(self.action_run_to_node)
         toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
         toolbar.addSeparator()
@@ -499,6 +519,65 @@ class MainWindow(QMainWindow):
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(500)  # 500ms debounce
         self._validation_timer.timeout.connect(self._do_deferred_validation)
+
+    def _create_bottom_panel(self) -> None:
+        """Create the unified bottom panel with Variables, Output, Log, Validation tabs."""
+        from .bottom_panel import BottomPanelDock
+
+        self._bottom_panel = BottomPanelDock(self)
+
+        # Connect signals
+        self._bottom_panel.validation_requested.connect(self._on_validate_workflow)
+        self._bottom_panel.issue_clicked.connect(self._on_validation_issue_clicked)
+        self._bottom_panel.navigate_to_node.connect(self._on_navigate_to_node)
+        self._bottom_panel.variables_changed.connect(self._on_panel_variables_changed)
+
+        # Add to main window
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._bottom_panel)
+
+        # Initially visible
+        self._bottom_panel.show()
+        self.action_toggle_bottom_panel.setChecked(True)
+
+        logger.info("Bottom panel created with Variables, Output, Log, Validation tabs")
+
+    def get_bottom_panel(self) -> Optional['BottomPanelDock']:
+        """
+        Get the bottom panel dock.
+
+        Returns:
+            BottomPanelDock instance or None
+        """
+        return self._bottom_panel
+
+    def show_bottom_panel(self) -> None:
+        """Show the bottom panel."""
+        if self._bottom_panel:
+            self._bottom_panel.show()
+            self.action_toggle_bottom_panel.setChecked(True)
+
+    def hide_bottom_panel(self) -> None:
+        """Hide the bottom panel."""
+        if self._bottom_panel:
+            self._bottom_panel.hide()
+            self.action_toggle_bottom_panel.setChecked(False)
+
+    def _on_toggle_bottom_panel(self, checked: bool) -> None:
+        """Handle bottom panel toggle."""
+        if checked:
+            self.show_bottom_panel()
+        else:
+            self.hide_bottom_panel()
+
+    def _on_navigate_to_node(self, node_id: str) -> None:
+        """Handle navigation to a node from bottom panel."""
+        self._select_node_by_id(node_id)
+
+    def _on_panel_variables_changed(self, variables: dict) -> None:
+        """Handle variables changed from bottom panel."""
+        # Mark workflow as modified
+        self.set_modified(True)
+        logger.debug(f"Variables updated: {len(variables)} variables")
 
     def get_validation_panel(self) -> Optional['ValidationPanel']:
         """
@@ -886,18 +965,60 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)
     
     def _on_run_workflow(self) -> None:
-        """Handle run workflow request."""
+        """Handle run workflow request (F3)."""
         # Validate before running - block if errors
         if not self._check_validation_before_run():
             return
 
         self.workflow_run.emit()
         self.action_run.setEnabled(False)
+        self.action_run_to_node.setEnabled(False)
         self.action_pause.setEnabled(True)
         self.action_pause.setChecked(False)
         self.action_stop.setEnabled(True)
         self.statusBar().showMessage("Workflow execution started...", 0)
-    
+
+    def _on_run_to_node(self) -> None:
+        """Handle run to selected node request (F4)."""
+        # Get selected node from the graph
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            self._on_run_workflow()  # Fallback to full run
+            return
+
+        graph = self._central_widget.graph
+        selected_nodes = graph.selected_nodes()
+
+        # If no node is selected, fall back to full workflow run
+        if not selected_nodes:
+            self.statusBar().showMessage("No node selected - running full workflow", 3000)
+            self._on_run_workflow()
+            return
+
+        # Get the first selected node's ID
+        target_node = selected_nodes[0]
+        target_node_id = target_node.get_property("node_id")
+
+        if not target_node_id:
+            self.statusBar().showMessage("Selected node has no ID - running full workflow", 3000)
+            self._on_run_workflow()
+            return
+
+        # Validate before running
+        if not self._check_validation_before_run():
+            return
+
+        # Get the node name for display
+        node_name = target_node.name() if hasattr(target_node, 'name') else target_node_id
+
+        # Emit signal with target node ID
+        self.workflow_run_to_node.emit(target_node_id)
+        self.action_run.setEnabled(False)
+        self.action_run_to_node.setEnabled(False)
+        self.action_pause.setEnabled(True)
+        self.action_pause.setChecked(False)
+        self.action_stop.setEnabled(True)
+        self.statusBar().showMessage(f"Running to node: {node_name}...", 0)
+
     def _on_pause_workflow(self, checked: bool) -> None:
         """Handle pause/resume workflow request."""
         if checked:
@@ -911,6 +1032,7 @@ class MainWindow(QMainWindow):
         """Handle stop workflow request."""
         self.workflow_stop.emit()
         self.action_run.setEnabled(True)
+        self.action_run_to_node.setEnabled(True)
         self.action_pause.setEnabled(False)
         self.action_pause.setChecked(False)
         self.action_stop.setEnabled(False)
@@ -940,6 +1062,7 @@ class MainWindow(QMainWindow):
             "zoom_reset": self.action_zoom_reset,
             "fit_view": self.action_fit_view,
             "run": self.action_run,
+            "run_to_node": self.action_run_to_node,
             "pause": self.action_pause,
             "stop": self.action_stop,
             "hotkey_manager": self.action_hotkey_manager,

@@ -371,32 +371,58 @@ class ExecuteQueryNode(BaseNode):
             if not query:
                 raise ValueError("Query is required")
 
-            results: List[Dict[str, Any]] = []
-            columns: List[str] = []
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
 
-            if connection.db_type == "sqlite":
-                results, columns = await self._execute_sqlite(connection, query, parameters)
-            elif connection.db_type == "postgresql":
-                results, columns = await self._execute_postgresql(connection, query, parameters)
-            elif connection.db_type == "mysql":
-                results, columns = await self._execute_mysql(connection, query, parameters)
+            logger.debug(f"Executing query: {query[:100]}...")
 
-            connection.last_results = results
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("results", results)
-            self.set_output_value("row_count", len(results))
-            self.set_output_value("columns", columns)
-            self.set_output_value("success", True)
-            self.set_output_value("error", "")
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for query")
 
-            logger.debug(f"Query returned {len(results)} rows")
+                    results: List[Dict[str, Any]] = []
+                    columns: List[str] = []
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"row_count": len(results)},
-                "next_nodes": ["exec_out"]
-            }
+                    if connection.db_type == "sqlite":
+                        results, columns = await self._execute_sqlite(connection, query, parameters)
+                    elif connection.db_type == "postgresql":
+                        results, columns = await self._execute_postgresql(connection, query, parameters)
+                    elif connection.db_type == "mysql":
+                        results, columns = await self._execute_mysql(connection, query, parameters)
+
+                    connection.last_results = results
+
+                    self.set_output_value("results", results)
+                    self.set_output_value("row_count", len(results))
+                    self.set_output_value("columns", columns)
+                    self.set_output_value("success", True)
+                    self.set_output_value("error", "")
+
+                    logger.debug(f"Query returned {len(results)} rows (attempt {attempts})")
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"row_count": len(results), "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Query execution failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             error_msg = f"Query execution error: {str(e)}"
@@ -488,9 +514,21 @@ class ExecuteNonQueryNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any) -> None:
+        # Default config with all non-query options
+        default_config = {
+            "query": "",
+            "parameters": [],
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("query", "")
-        config.setdefault("parameters", [])
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteNonQueryNode"
@@ -521,32 +559,58 @@ class ExecuteNonQueryNode(BaseNode):
             if not query:
                 raise ValueError("Query is required")
 
-            rows_affected = 0
-            last_insert_id = None
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
 
-            if connection.db_type == "sqlite":
-                rows_affected, last_insert_id = await self._execute_sqlite(connection, query, parameters)
-            elif connection.db_type == "postgresql":
-                rows_affected, last_insert_id = await self._execute_postgresql(connection, query, parameters)
-            elif connection.db_type == "mysql":
-                rows_affected, last_insert_id = await self._execute_mysql(connection, query, parameters)
+            logger.debug(f"Executing statement: {query[:100]}...")
 
-            connection.last_rowcount = rows_affected
-            connection.last_lastrowid = last_insert_id
+            last_error = None
+            attempts = 0
+            max_attempts = retry_count + 1
 
-            self.set_output_value("rows_affected", rows_affected)
-            self.set_output_value("last_insert_id", last_insert_id)
-            self.set_output_value("success", True)
-            self.set_output_value("error", "")
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for statement")
 
-            logger.debug(f"Statement affected {rows_affected} rows")
+                    rows_affected = 0
+                    last_insert_id = None
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"rows_affected": rows_affected},
-                "next_nodes": ["exec_out"]
-            }
+                    if connection.db_type == "sqlite":
+                        rows_affected, last_insert_id = await self._execute_sqlite(connection, query, parameters)
+                    elif connection.db_type == "postgresql":
+                        rows_affected, last_insert_id = await self._execute_postgresql(connection, query, parameters)
+                    elif connection.db_type == "mysql":
+                        rows_affected, last_insert_id = await self._execute_mysql(connection, query, parameters)
+
+                    connection.last_rowcount = rows_affected
+                    connection.last_lastrowid = last_insert_id
+
+                    self.set_output_value("rows_affected", rows_affected)
+                    self.set_output_value("last_insert_id", last_insert_id)
+                    self.set_output_value("success", True)
+                    self.set_output_value("error", "")
+
+                    logger.debug(f"Statement affected {rows_affected} rows (attempt {attempts})")
+
+                    self.status = NodeStatus.SUCCESS
+                    return {
+                        "success": True,
+                        "data": {"rows_affected": rows_affected, "attempts": attempts},
+                        "next_nodes": ["exec_out"]
+                    }
+
+                except Exception as e:
+                    last_error = e
+                    if attempts < max_attempts:
+                        logger.warning(f"Statement execution failed (attempt {attempts}): {e}")
+                        await asyncio.sleep(retry_interval / 1000)
+                    else:
+                        break
+
+            raise last_error
 
         except Exception as e:
             error_msg = f"Statement execution error: {str(e)}"
@@ -1210,9 +1274,21 @@ class ExecuteBatchNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Execute Batch", **kwargs: Any) -> None:
+        # Default config with all batch options
+        default_config = {
+            "statements": [],
+            "stop_on_error": True,
+            # Retry options (per-statement)
+            "retry_count": 0,  # Number of retries per statement on failure
+            "retry_interval": 1000,  # Delay between retries in ms
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("statements", [])
-        config.setdefault("stop_on_error", True)
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteBatchNode"
@@ -1237,41 +1313,68 @@ class ExecuteBatchNode(BaseNode):
             statements = self.get_input_value("statements") or self.config.get("statements", [])
             stop_on_error = self.config.get("stop_on_error", True)
 
+            # Get retry options
+            retry_count = int(self.config.get("retry_count", 0))
+            retry_interval = int(self.config.get("retry_interval", 1000))
+
             if not connection:
                 raise ValueError("Database connection is required")
             if not statements:
                 raise ValueError("Statements list is required")
+
+            logger.debug(f"Executing batch of {len(statements)} statements")
 
             results = []
             total_rows = 0
             errors = []
 
             for i, stmt in enumerate(statements):
-                try:
-                    if connection.db_type == "sqlite":
-                        conn = connection.connection
-                        if AIOSQLITE_AVAILABLE:
-                            cursor = await conn.execute(stmt)
-                            rows = cursor.rowcount
+                # Per-statement retry logic
+                stmt_attempts = 0
+                stmt_max_attempts = retry_count + 1
+                stmt_success = False
+
+                while stmt_attempts < stmt_max_attempts and not stmt_success:
+                    try:
+                        stmt_attempts += 1
+                        if stmt_attempts > 1:
+                            logger.info(f"Retry attempt {stmt_attempts - 1}/{retry_count} for statement {i}")
+
+                        rows = 0
+                        if connection.db_type == "sqlite":
+                            conn = connection.connection
+                            if AIOSQLITE_AVAILABLE:
+                                cursor = await conn.execute(stmt)
+                                rows = cursor.rowcount
+                            else:
+                                cursor = conn.execute(stmt)
+                                rows = cursor.rowcount
+                        elif connection.db_type == "postgresql":
+                            result = await connection.connection.execute(stmt)
+                            rows = int(result.split()[-1]) if result else 0
+                        elif connection.db_type == "mysql":
+                            async with connection.connection.cursor() as cursor:
+                                await cursor.execute(stmt)
+                                rows = cursor.rowcount
+
+                        results.append({"statement": i, "rows_affected": rows, "success": True, "attempts": stmt_attempts})
+                        total_rows += rows
+                        stmt_success = True
+
+                    except Exception as e:
+                        if stmt_attempts < stmt_max_attempts:
+                            logger.warning(f"Statement {i} failed (attempt {stmt_attempts}): {e}")
+                            await asyncio.sleep(retry_interval / 1000)
                         else:
-                            cursor = conn.execute(stmt)
-                            rows = cursor.rowcount
-                    elif connection.db_type == "postgresql":
-                        result = await connection.connection.execute(stmt)
-                        rows = int(result.split()[-1]) if result else 0
-                    elif connection.db_type == "mysql":
-                        async with connection.connection.cursor() as cursor:
-                            await cursor.execute(stmt)
-                            rows = cursor.rowcount
+                            # All retries exhausted for this statement
+                            results.append({"statement": i, "rows_affected": 0, "success": False, "error": str(e), "attempts": stmt_attempts})
+                            errors.append(f"Statement {i}: {str(e)}")
+                            if stop_on_error:
+                                break
 
-                    results.append({"statement": i, "rows_affected": rows, "success": True})
-                    total_rows += rows
-
-                except Exception as e:
-                    results.append({"statement": i, "rows_affected": 0, "success": False, "error": str(e)})
-                    errors.append(f"Statement {i}: {str(e)}")
-                    if stop_on_error:
-                        break
+                # If stop_on_error and we had an error, break outer loop
+                if stop_on_error and not stmt_success:
+                    break
 
             # Commit if not in transaction
             if not connection.in_transaction:

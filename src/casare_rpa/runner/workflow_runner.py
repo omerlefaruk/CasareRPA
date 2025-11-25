@@ -1132,11 +1132,12 @@ class WorkflowRunner:
         self._pause_event.set()
         self._step_event.set()
         self.execution_history.clear()
-        
+        self._target_reached = False
+
         # Reset all node statuses
         for node in self.workflow.nodes.values():
             node.reset()
-        
+
         logger.info("WorkflowRunner reset to initial state")
     
     # Debug Mode Methods

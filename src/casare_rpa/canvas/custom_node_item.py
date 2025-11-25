@@ -109,20 +109,34 @@ class AnimationCoordinator:
 class CasareNodeItem(NodeItem):
     """
     Custom node item with enhanced visual feedback.
-    
+
     Features:
     - Yellow border on selection
     - Animated dotted border when running
     - Checkmark overlay when completed
+    - Error icon when failed
+    - Execution time badge
     - Icon display
     """
-    
+
+    # Class-level font cache for execution time (single instance for all nodes)
+    _time_font: Optional[QFont] = None
+
+    @classmethod
+    def get_time_font(cls) -> QFont:
+        """Get cached font for execution time display."""
+        if cls._time_font is None:
+            cls._time_font = QFont("Segoe UI", 8)
+        return cls._time_font
+
     def __init__(self, name='node', parent=None):
         super().__init__(name, parent)
 
         # Execution state
         self._is_running = False
         self._is_completed = False
+        self._has_error = False
+        self._execution_time_ms: Optional[float] = None
         self._animation_offset = 0
 
         # Use centralized animation coordinator instead of per-node timer
@@ -191,13 +205,18 @@ class CasareNodeItem(NodeItem):
             icon_rect = QRectF(icon_x, icon_y, icon_size, icon_size)
             painter.drawPixmap(icon_rect.toRect(), self._icon_pixmap)
         
-        # Draw completion checkmark
-        if self._is_completed:
+        # Draw status indicator (mutually exclusive - error takes precedence)
+        if self._has_error:
+            self._draw_error_icon(painter, rect)
+        elif self._is_completed:
             self._draw_checkmark(painter, rect)
-        
+
+        # Draw execution time badge at bottom
+        self._draw_execution_time(painter, rect)
+
         # Draw node text (name)
         self._draw_text(painter, rect)
-        
+
         painter.restore()
     
     def _draw_checkmark(self, painter, rect):
@@ -222,7 +241,71 @@ class CasareNodeItem(NodeItem):
         check_path.lineTo(x + size * 0.45, y + size * 0.7)
         check_path.lineTo(x + size * 0.75, y + size * 0.3)
         painter.drawPath(check_path)
-    
+
+    def _draw_error_icon(self, painter, rect):
+        """Draw an error X icon in the top-right corner."""
+        size = 20
+        margin = 8
+        x = rect.right() - size - margin
+        y = rect.top() + margin
+
+        # Red circle background
+        painter.setBrush(QBrush(QColor(244, 67, 54)))  # Material Red
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(x + size/2, y + size/2), size/2, size/2)
+
+        # White X symbol
+        painter.setPen(QPen(Qt.GlobalColor.white, 2, Qt.PenStyle.SolidLine,
+                            Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        inset = size * 0.3
+        painter.drawLine(QPointF(x + inset, y + inset),
+                         QPointF(x + size - inset, y + size - inset))
+        painter.drawLine(QPointF(x + size - inset, y + inset),
+                         QPointF(x + inset, y + size - inset))
+
+    def _draw_execution_time(self, painter, rect):
+        """Draw execution time badge at bottom-center of node (n8n-style)."""
+        if self._execution_time_ms is None:
+            return
+
+        # Format time appropriately
+        if self._execution_time_ms < 1000:
+            time_text = f"{int(self._execution_time_ms)}ms"
+        elif self._execution_time_ms < 60000:
+            time_text = f"{self._execution_time_ms / 1000:.1f}s"
+        else:
+            mins = int(self._execution_time_ms // 60000)
+            secs = int((self._execution_time_ms % 60000) // 1000)
+            time_text = f"{mins}:{secs:02d}"
+
+        # Measure text for badge sizing
+        painter.setFont(self.get_time_font())
+        fm = painter.fontMetrics()
+        text_width = fm.horizontalAdvance(time_text)
+        text_height = fm.height()
+
+        # Badge dimensions
+        padding_h = 6
+        padding_v = 2
+        badge_width = text_width + padding_h * 2
+        badge_height = text_height + padding_v * 2
+        badge_radius = 4
+
+        # Position at bottom-center
+        badge_x = rect.center().x() - badge_width / 2
+        badge_y = rect.bottom() - badge_height - 6
+
+        badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
+
+        # Draw badge background (semi-transparent dark)
+        badge_path = QPainterPath()
+        badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
+        painter.fillPath(badge_path, QBrush(QColor(0, 0, 0, 160)))
+
+        # Draw text (light gray)
+        painter.setPen(QColor(220, 220, 220))
+        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
+
     def _draw_text(self, painter, rect):
         """Draw node name text."""
         text_rect = QRectF(rect.left() + 45, rect.top() + 10, rect.width() - 55, 30)
@@ -257,7 +340,37 @@ class CasareNodeItem(NodeItem):
         """Set node completed state."""
         self._is_completed = completed
         self.update()
-    
+
+    def set_error(self, has_error: bool):
+        """Set node error state."""
+        self._has_error = has_error
+        if has_error:
+            self._is_completed = False  # Error takes precedence
+        self.update()
+
+    def set_execution_time(self, time_seconds: Optional[float]):
+        """
+        Set execution time to display.
+
+        Args:
+            time_seconds: Execution time in seconds, or None to clear
+        """
+        if time_seconds is not None:
+            self._execution_time_ms = time_seconds * 1000
+        else:
+            self._execution_time_ms = None
+        self.update()
+
+    def clear_execution_state(self):
+        """Reset all execution state for workflow restart."""
+        self._is_running = False
+        self._is_completed = False
+        self._has_error = False
+        self._execution_time_ms = None
+        self._animation_offset = 0
+        self._animation_coordinator.unregister(self)
+        self.update()
+
     def set_icon(self, pixmap: QPixmap):
         """Set node icon."""
         self._icon_pixmap = pixmap

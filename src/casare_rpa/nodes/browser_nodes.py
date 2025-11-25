@@ -60,6 +60,9 @@ class LaunchBrowserNode(BaseNode):
             # Security options
             "ignore_https_errors": False,
             "proxy_server": "",  # Proxy server URL
+            # Retry options
+            "retry_count": 0,  # Number of retries on failure
+            "retry_interval": 2000,  # Delay between retries in ms
         }
 
         config = kwargs.get("config", {})
@@ -92,166 +95,188 @@ class LaunchBrowserNode(BaseNode):
         """
         self.status = NodeStatus.RUNNING
 
-        try:
-            from playwright.async_api import async_playwright
+        # Get retry options
+        retry_count = int(self.config.get("retry_count", 0))
+        retry_interval = int(self.config.get("retry_interval", 2000))
 
-            browser_type = self.config.get("browser_type", DEFAULT_BROWSER)
-            headless = self.config.get("headless", HEADLESS_MODE)
+        last_error = None
+        attempts = 0
+        max_attempts = retry_count + 1
 
-            logger.info(f"Launching {browser_type} browser (headless={headless})")
+        while attempts < max_attempts:
+            try:
+                attempts += 1
+                if attempts > 1:
+                    logger.info(f"Retry attempt {attempts - 1}/{retry_count} for browser launch")
 
-            # Build launch options
-            launch_options = {"headless": headless}
+                from playwright.async_api import async_playwright
 
-            # Add slow_mo if specified (for debugging)
-            slow_mo = self.config.get("slow_mo", 0)
-            # Handle empty strings and convert to int safely
-            if slow_mo and str(slow_mo).strip():
-                try:
-                    slow_mo_int = int(slow_mo)
-                    if slow_mo_int > 0:
-                        launch_options["slow_mo"] = slow_mo_int
-                except (ValueError, TypeError):
-                    pass  # Ignore invalid slow_mo values
+                browser_type = self.config.get("browser_type", DEFAULT_BROWSER)
+                headless = self.config.get("headless", HEADLESS_MODE)
 
-            # Add channel for chromium-based browsers
-            channel = self.config.get("channel", "")
-            if channel and browser_type == "chromium":
-                launch_options["channel"] = channel
+                logger.info(f"Launching {browser_type} browser (headless={headless})")
 
-            # Launch playwright
-            playwright = await async_playwright().start()
+                # Build launch options
+                launch_options = {"headless": headless}
 
-            # Get browser type and launch with options
-            if browser_type == "firefox":
-                browser = await playwright.firefox.launch(**launch_options)
-            elif browser_type == "webkit":
-                browser = await playwright.webkit.launch(**launch_options)
-            else:  # chromium (default)
-                # Add chromium-specific args
-                launch_options["args"] = BROWSER_ARGS
-                browser = await playwright.chromium.launch(**launch_options)
+                # Add slow_mo if specified (for debugging)
+                slow_mo = self.config.get("slow_mo", 0)
+                # Handle empty strings and convert to int safely
+                if slow_mo and str(slow_mo).strip():
+                    try:
+                        slow_mo_int = int(slow_mo)
+                        if slow_mo_int > 0:
+                            launch_options["slow_mo"] = slow_mo_int
+                    except (ValueError, TypeError):
+                        pass  # Ignore invalid slow_mo values
 
-            # Store browser in context
-            context.browser = browser
+                # Add channel for chromium-based browsers
+                channel = self.config.get("channel", "")
+                if channel and browser_type == "chromium":
+                    launch_options["channel"] = channel
 
-            # Build browser context options
-            context_options = {}
+                # Launch playwright
+                playwright = await async_playwright().start()
 
-            # Viewport settings - safely parse with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
+                # Get browser type and launch with options
+                if browser_type == "firefox":
+                    browser = await playwright.firefox.launch(**launch_options)
+                elif browser_type == "webkit":
+                    browser = await playwright.webkit.launch(**launch_options)
+                else:  # chromium (default)
+                    # Add chromium-specific args
+                    launch_options["args"] = BROWSER_ARGS
+                    browser = await playwright.chromium.launch(**launch_options)
 
-            viewport_width = safe_int(self.config.get("viewport_width"), 1280)
-            viewport_height = safe_int(self.config.get("viewport_height"), 720)
-            context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
+                # Store browser in context
+                context.browser = browser
 
-            # User agent
-            user_agent = self.config.get("user_agent", "")
-            if user_agent:
-                context_options["user_agent"] = user_agent
+                # Build browser context options
+                context_options = {}
 
-            # Locale
-            locale = self.config.get("locale", "")
-            if locale:
-                context_options["locale"] = locale
+                # Viewport settings - safely parse with defaults
+                def safe_int(value, default: int) -> int:
+                    if value is None or value == "":
+                        return default
+                    try:
+                        return int(value)
+                    except (ValueError, TypeError):
+                        return default
 
-            # Timezone
-            timezone_id = self.config.get("timezone_id", "")
-            if timezone_id:
-                context_options["timezone_id"] = timezone_id
+                viewport_width = safe_int(self.config.get("viewport_width"), 1280)
+                viewport_height = safe_int(self.config.get("viewport_height"), 720)
+                context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
 
-            # Color scheme
-            color_scheme = self.config.get("color_scheme", "light")
-            if color_scheme and color_scheme != "light":
-                context_options["color_scheme"] = color_scheme
+                # User agent
+                user_agent = self.config.get("user_agent", "")
+                if user_agent:
+                    context_options["user_agent"] = user_agent
 
-            # HTTPS errors
-            if self.config.get("ignore_https_errors", False):
-                context_options["ignore_https_errors"] = True
+                # Locale
+                locale = self.config.get("locale", "")
+                if locale:
+                    context_options["locale"] = locale
 
-            # Proxy
-            proxy_server = self.config.get("proxy_server", "")
-            if proxy_server:
-                context_options["proxy"] = {"server": proxy_server}
+                # Timezone
+                timezone_id = self.config.get("timezone_id", "")
+                if timezone_id:
+                    context_options["timezone_id"] = timezone_id
 
-            logger.debug(f"Browser context options: {context_options}")
+                # Color scheme
+                color_scheme = self.config.get("color_scheme", "light")
+                if color_scheme and color_scheme != "light":
+                    context_options["color_scheme"] = color_scheme
 
-            # Create initial tab automatically with context options
-            browser_context = await browser.new_context(**context_options)
-            context.add_browser_context(browser_context)  # Track for cleanup
-            page = await browser_context.new_page()
-            
-            # Navigate to URL if provided
-            # Check input port first, then config
-            url = self.get_input_value("url")
-            if url is None:
-                # Only use config if no input connection exists
-                url = self.config.get("url", "")
-            
-            # Strip whitespace and normalize to empty string if None or whitespace-only
-            url = url.strip() if url else ""
-            # Substitute variables in URL like {{var_name}} using execution context
-            if isinstance(url, str) and "{{" in url and "}}" in url:
-                import re
+                # HTTPS errors
+                if self.config.get("ignore_https_errors", False):
+                    context_options["ignore_https_errors"] = True
 
-                def _replace(match: re.Match) -> str:
-                    var_name = match.group(1).strip()
-                    value = context.get_variable(var_name)
-                    if value is None:
-                        raise ValueError(f"Variable '{var_name}' not found in workflow context")
-                    return str(value)
+                # Proxy
+                proxy_server = self.config.get("proxy_server", "")
+                if proxy_server:
+                    context_options["proxy"] = {"server": proxy_server}
 
-                url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
-                logger.info(f"LaunchBrowserNode URL after substitution: '{url}'")
+                logger.debug(f"Browser context options: {context_options}")
 
-            if url:
-                # Add protocol if missing
-                if not url.startswith(("http://", "https://", "file://", "about:")):
-                    url = f"https://{url}"
-                logger.info(f"Navigating to URL: {url}")
-                await page.goto(url)
-            else:
-                logger.info("Opening blank page")
-                await page.goto("about:blank")
-            
-            # Store page in context
-            tab_name = "main"
-            context.add_page(page, tab_name)
-            context.set_active_page(page, tab_name)
-            
-            # Set outputs
-            self.set_output_value("browser", browser)
-            self.set_output_value("page", page)
-            
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Browser launched successfully: {browser_type} with initial tab")
-            
-            return {
-                "success": True,
-                "data": {
-                    "browser": browser,
-                    "page": page,
-                    "browser_type": browser_type,
-                    "headless": headless
-                },
-                "next_nodes": ["exec_out"]
-            }
-            
-        except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to launch browser: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-    
+                # Create initial tab automatically with context options
+                browser_context = await browser.new_context(**context_options)
+                context.add_browser_context(browser_context)  # Track for cleanup
+                page = await browser_context.new_page()
+
+                # Navigate to URL if provided
+                # Check input port first, then config
+                url = self.get_input_value("url")
+                if url is None:
+                    # Only use config if no input connection exists
+                    url = self.config.get("url", "")
+
+                # Strip whitespace and normalize to empty string if None or whitespace-only
+                url = url.strip() if url else ""
+                # Substitute variables in URL like {{var_name}} using execution context
+                if isinstance(url, str) and "{{" in url and "}}" in url:
+                    import re
+
+                    def _replace(match: re.Match) -> str:
+                        var_name = match.group(1).strip()
+                        value = context.get_variable(var_name)
+                        if value is None:
+                            raise ValueError(f"Variable '{var_name}' not found in workflow context")
+                        return str(value)
+
+                    url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
+                    logger.info(f"LaunchBrowserNode URL after substitution: '{url}'")
+
+                if url:
+                    # Add protocol if missing
+                    if not url.startswith(("http://", "https://", "file://", "about:")):
+                        url = f"https://{url}"
+                    logger.info(f"Navigating to URL: {url}")
+                    await page.goto(url)
+                else:
+                    logger.info("Opening blank page")
+                    await page.goto("about:blank")
+
+                # Store page in context
+                tab_name = "main"
+                context.add_page(page, tab_name)
+                context.set_active_page(page, tab_name)
+
+                # Set outputs
+                self.set_output_value("browser", browser)
+                self.set_output_value("page", page)
+
+                self.status = NodeStatus.SUCCESS
+                logger.info(f"Browser launched successfully: {browser_type} with initial tab (attempt {attempts})")
+
+                return {
+                    "success": True,
+                    "data": {
+                        "browser": browser,
+                        "page": page,
+                        "browser_type": browser_type,
+                        "headless": headless,
+                        "attempts": attempts
+                    },
+                    "next_nodes": ["exec_out"]
+                }
+
+            except Exception as e:
+                last_error = e
+                if attempts < max_attempts:
+                    logger.warning(f"Browser launch failed (attempt {attempts}): {e}")
+                    await asyncio.sleep(retry_interval / 1000)
+                else:
+                    break
+
+        # All retries exhausted
+        self.status = NodeStatus.ERROR
+        logger.error(f"Failed to launch browser after {attempts} attempts: {last_error}")
+        return {
+            "success": False,
+            "error": str(last_error),
+            "next_nodes": []
+        }
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         browser_type = self.config.get("browser_type", "")

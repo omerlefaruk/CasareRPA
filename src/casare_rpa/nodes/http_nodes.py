@@ -283,12 +283,24 @@ class HttpGetNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP GET", **kwargs: Any) -> None:
+        # Default config with all GET options
+        default_config = {
+            "url": "",
+            "params": {},
+            "headers": {},
+            "timeout": 30.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,  # Number of retry attempts
+            "retry_delay": 1.0,  # Delay between retries in seconds
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("params", {})
-        config.setdefault("headers", {})
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpGetNode"
@@ -317,6 +329,8 @@ class HttpGetNode(BaseNode):
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
 
             if not url:
                 raise ValueError("URL is required")
@@ -338,38 +352,48 @@ class HttpGetNode(BaseNode):
 
             logger.debug(f"HTTP GET request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.get(
-                    url,
-                    params=params,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.get(
+                            url,
+                            params=params,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
 
-                    success = 200 <= status_code < 300
+                            success = 200 <= status_code < 300
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    logger.info(f"HTTP GET {url} -> {status_code}")
+                            logger.info(f"HTTP GET {url} -> {status_code} (attempt {attempt + 1})")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "url": url},
-                        "next_nodes": ["exec_out"]
-                    }
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP GET failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"HTTP GET error: {str(e)}"
@@ -402,13 +426,25 @@ class HttpPostNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP POST", **kwargs: Any) -> None:
+        # Default config with all POST options
+        default_config = {
+            "url": "",
+            "body": "",
+            "headers": {},
+            "content_type": "application/json",
+            "timeout": 30.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,  # Number of retry attempts
+            "retry_delay": 1.0,  # Delay between retries in seconds
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("body", "")
-        config.setdefault("headers", {})
-        config.setdefault("content_type", "application/json")
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
+        # Merge with defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPostNode"
@@ -438,6 +474,8 @@ class HttpPostNode(BaseNode):
             content_type = self.config.get("content_type", "application/json")
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
 
             if not url:
                 raise ValueError("URL is required")
@@ -465,38 +503,48 @@ class HttpPostNode(BaseNode):
 
             logger.debug(f"HTTP POST request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(
-                    url,
-                    data=request_body,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.post(
+                            url,
+                            data=request_body,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
 
-                    success = 200 <= status_code < 300
+                            success = 200 <= status_code < 300
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    logger.info(f"HTTP POST {url} -> {status_code}")
+                            logger.info(f"HTTP POST {url} -> {status_code} (attempt {attempt + 1})")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "url": url},
-                        "next_nodes": ["exec_out"]
-                    }
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP POST failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"HTTP POST error: {str(e)}"
@@ -528,13 +576,24 @@ class HttpPutNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP PUT", **kwargs: Any) -> None:
+        # Default config with all PUT options
+        default_config = {
+            "url": "",
+            "body": "",
+            "headers": {},
+            "content_type": "application/json",
+            "timeout": 30.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,
+            "retry_delay": 1.0,
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("body", "")
-        config.setdefault("headers", {})
-        config.setdefault("content_type", "application/json")
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPutNode"
@@ -564,6 +623,8 @@ class HttpPutNode(BaseNode):
             content_type = self.config.get("content_type", "application/json")
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
 
             if not url:
                 raise ValueError("URL is required")
@@ -589,38 +650,48 @@ class HttpPutNode(BaseNode):
 
             logger.debug(f"HTTP PUT request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.put(
-                    url,
-                    data=request_body,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.put(
+                            url,
+                            data=request_body,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
 
-                    success = 200 <= status_code < 300
+                            success = 200 <= status_code < 300
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    logger.info(f"HTTP PUT {url} -> {status_code}")
+                            logger.info(f"HTTP PUT {url} -> {status_code} (attempt {attempt + 1})")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "url": url},
-                        "next_nodes": ["exec_out"]
-                    }
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP PUT failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"HTTP PUT error: {str(e)}"
@@ -652,13 +723,24 @@ class HttpPatchNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP PATCH", **kwargs: Any) -> None:
+        # Default config with all PATCH options
+        default_config = {
+            "url": "",
+            "body": "",
+            "headers": {},
+            "content_type": "application/json",
+            "timeout": 30.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,
+            "retry_delay": 1.0,
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("body", "")
-        config.setdefault("headers", {})
-        config.setdefault("content_type", "application/json")
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPatchNode"
@@ -688,6 +770,8 @@ class HttpPatchNode(BaseNode):
             content_type = self.config.get("content_type", "application/json")
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
 
             if not url:
                 raise ValueError("URL is required")
@@ -713,38 +797,48 @@ class HttpPatchNode(BaseNode):
 
             logger.debug(f"HTTP PATCH request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.patch(
-                    url,
-                    data=request_body,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.patch(
+                            url,
+                            data=request_body,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
 
-                    success = 200 <= status_code < 300
+                            success = 200 <= status_code < 300
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    logger.info(f"HTTP PATCH {url} -> {status_code}")
+                            logger.info(f"HTTP PATCH {url} -> {status_code} (attempt {attempt + 1})")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "url": url},
-                        "next_nodes": ["exec_out"]
-                    }
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP PATCH failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"HTTP PATCH error: {str(e)}"
@@ -774,11 +868,22 @@ class HttpDeleteNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP DELETE", **kwargs: Any) -> None:
+        # Default config with all DELETE options
+        default_config = {
+            "url": "",
+            "headers": {},
+            "timeout": 30.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,
+            "retry_delay": 1.0,
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("headers", {})
-        config.setdefault("timeout", 30.0)
-        config.setdefault("verify_ssl", True)
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpDeleteNode"
@@ -804,6 +909,8 @@ class HttpDeleteNode(BaseNode):
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
             verify_ssl = self.config.get("verify_ssl", True)
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 1.0)
 
             if not url:
                 raise ValueError("URL is required")
@@ -819,30 +926,40 @@ class HttpDeleteNode(BaseNode):
 
             logger.debug(f"HTTP DELETE request to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.delete(
-                    url,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.delete(
+                            url,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    success = 200 <= status_code < 300
+                            success = 200 <= status_code < 300
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    logger.info(f"HTTP DELETE {url} -> {status_code}")
+                            logger.info(f"HTTP DELETE {url} -> {status_code} (attempt {attempt + 1})")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "url": url},
-                        "next_nodes": ["exec_out"]
-                    }
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"HTTP DELETE failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"HTTP DELETE error: {str(e)}"
@@ -1327,14 +1444,25 @@ class HttpUploadFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any) -> None:
+        # Default config with all upload options
+        default_config = {
+            "url": "",
+            "file_path": "",
+            "field_name": "file",
+            "headers": {},
+            "extra_fields": {},
+            "timeout": 300.0,
+            "verify_ssl": True,
+            # Retry options
+            "retry_count": 0,
+            "retry_delay": 2.0,
+        }
+
         config = kwargs.get("config", {})
-        config.setdefault("url", "")
-        config.setdefault("file_path", "")
-        config.setdefault("field_name", "file")
-        config.setdefault("headers", {})
-        config.setdefault("extra_fields", {})
-        config.setdefault("timeout", 300.0)
-        config.setdefault("verify_ssl", True)
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpUploadFileNode"
@@ -1392,54 +1520,63 @@ class HttpUploadFileNode(BaseNode):
             timeout = ClientTimeout(total=float(timeout_seconds))
             ssl_context = None if verify_ssl else False
 
-            # Create form data
-            data = FormData()
-
-            # Add file
-            data.add_field(
-                field_name,
-                open(file_path, 'rb'),
-                filename=file_path.name
-            )
-
-            # Add extra fields
-            for key, value in extra_fields.items():
-                data.add_field(key, str(value))
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 2.0)
 
             logger.info(f"Uploading file {file_path} to {url}")
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(
-                    url,
-                    data=data,
-                    headers=headers,
-                    ssl=ssl_context
-                ) as response:
-                    response_body = await response.text()
-                    status_code = response.status
+            # Retry loop
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    # Need to create FormData inside the loop since it can only be read once
+                    data = FormData()
+                    data.add_field(
+                        field_name,
+                        open(file_path, 'rb'),
+                        filename=file_path.name
+                    )
+                    for key, value in extra_fields.items():
+                        data.add_field(key, str(value))
 
-                    response_json = None
-                    try:
-                        response_json = json.loads(response_body)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
+                    async with aiohttp.ClientSession(timeout=timeout) as session:
+                        async with session.post(
+                            url,
+                            data=data,
+                            headers=headers,
+                            ssl=ssl_context
+                        ) as response:
+                            response_body = await response.text()
+                            status_code = response.status
 
-                    success = 200 <= status_code < 300
+                            response_json = None
+                            try:
+                                response_json = json.loads(response_body)
+                            except (json.JSONDecodeError, ValueError):
+                                pass
 
-                    self.set_output_value("response_body", response_body)
-                    self.set_output_value("response_json", response_json)
-                    self.set_output_value("status_code", status_code)
-                    self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            success = 200 <= status_code < 300
 
-                    logger.info(f"Upload completed: HTTP {status_code}")
+                            self.set_output_value("response_body", response_body)
+                            self.set_output_value("response_json", response_json)
+                            self.set_output_value("status_code", status_code)
+                            self.set_output_value("success", success)
+                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
 
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "data": {"status_code": status_code, "file": str(file_path)},
-                        "next_nodes": ["exec_out"]
-                    }
+                            logger.info(f"Upload completed: HTTP {status_code} (attempt {attempt + 1})")
+
+                            self.status = NodeStatus.SUCCESS
+                            return {
+                                "success": True,
+                                "data": {"status_code": status_code, "file": str(file_path), "attempts": attempt + 1},
+                                "next_nodes": ["exec_out"]
+                            }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"Upload failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        raise
 
         except Exception as e:
             error_msg = f"Upload error: {str(e)}"
