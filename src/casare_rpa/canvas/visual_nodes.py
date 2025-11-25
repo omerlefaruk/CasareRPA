@@ -1617,16 +1617,17 @@ class VisualDragMouseNode(VisualNode):
 
 # Wait & Verification Nodes
 
-class VisualWaitForElementNode(VisualNode):
-    """Visual representation of WaitForElementNode."""
+class VisualDesktopWaitForElementNode(VisualNode):
+    """Visual representation of desktop WaitForElementNode."""
 
     __identifier__ = "casare_rpa.desktop"
-    NODE_NAME = "Wait For Element"
+    NODE_NAME = "Wait For Desktop Element"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
+    CASARE_NODE_CLASS = "WaitForElementNode"
 
     def __init__(self) -> None:
-        """Initialize Wait For Element node."""
+        """Initialize Wait For Desktop Element node."""
         super().__init__()
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
         self.create_property("state", "visible",

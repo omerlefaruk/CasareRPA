@@ -91,6 +91,9 @@ class TextReplaceNode(BaseNode):
     Config:
         count: Maximum replacements (default: -1 for all)
         use_regex: Use regex for matching (default: False)
+        ignore_case: Case-insensitive matching (default: False)
+        multiline: ^ and $ match line boundaries (default: False)
+        dotall: . matches newlines (default: False)
 
     Inputs:
         text: The text to modify
@@ -103,7 +106,17 @@ class TextReplaceNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Text Replace", **kwargs) -> None:
+        default_config = {
+            "count": -1,
+            "use_regex": False,
+            "ignore_case": False,
+            "multiline": False,
+            "dotall": False,
+        }
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TextReplaceNode"
@@ -128,10 +141,19 @@ class TextReplaceNode(BaseNode):
             use_regex = self.config.get("use_regex", False)
 
             if use_regex:
+                # Build regex flags
+                flags = 0
+                if self.config.get("ignore_case", False):
+                    flags |= re.IGNORECASE
+                if self.config.get("multiline", False):
+                    flags |= re.MULTILINE
+                if self.config.get("dotall", False):
+                    flags |= re.DOTALL
+
                 if count >= 0:
-                    result, replacements = re.subn(old_value, new_value, text, count=count)
+                    result, replacements = re.subn(old_value, new_value, text, count=count, flags=flags)
                 else:
-                    result, replacements = re.subn(old_value, new_value, text)
+                    result, replacements = re.subn(old_value, new_value, text, flags=flags)
             else:
                 original_count = text.count(old_value)
                 if count >= 0:
@@ -854,6 +876,9 @@ class TextExtractNode(BaseNode):
 
     Config:
         all_matches: Return all matches instead of just first (default: False)
+        ignore_case: Case-insensitive matching (default: False)
+        multiline: ^ and $ match line boundaries (default: False)
+        dotall: . matches newlines (default: False)
 
     Inputs:
         text: The source text
@@ -863,10 +888,20 @@ class TextExtractNode(BaseNode):
         match: First match (or all matches if all_matches=True)
         groups: Captured groups from first match
         found: Whether any match was found
+        match_count: Number of matches found
     """
 
     def __init__(self, node_id: str, name: str = "Text Extract", **kwargs) -> None:
+        default_config = {
+            "all_matches": False,
+            "ignore_case": False,
+            "multiline": False,
+            "dotall": False,
+        }
         config = kwargs.get("config", {})
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TextExtractNode"
@@ -879,6 +914,7 @@ class TextExtractNode(BaseNode):
         self.add_output_port("match", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("groups", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -891,25 +927,37 @@ class TextExtractNode(BaseNode):
             if not pattern:
                 raise ValueError("pattern is required")
 
+            # Build regex flags
+            flags = 0
+            if self.config.get("ignore_case", False):
+                flags |= re.IGNORECASE
+            if self.config.get("multiline", False):
+                flags |= re.MULTILINE
+            if self.config.get("dotall", False):
+                flags |= re.DOTALL
+
             if all_matches:
-                matches = re.findall(pattern, text)
+                matches = re.findall(pattern, text, flags=flags)
                 found = len(matches) > 0
                 match = matches if found else []
                 groups = []
+                match_count = len(matches)
             else:
-                result = re.search(pattern, text)
+                result = re.search(pattern, text, flags=flags)
                 found = result is not None
                 match = result.group(0) if found else ""
                 groups = list(result.groups()) if found and result.groups() else []
+                match_count = 1 if found else 0
 
             self.set_output_value("match", match)
             self.set_output_value("groups", groups)
             self.set_output_value("found", found)
+            self.set_output_value("match_count", match_count)
             self.status = NodeStatus.SUCCESS
 
             return {
                 "success": True,
-                "data": {"found": found},
+                "data": {"found": found, "match_count": match_count},
                 "next_nodes": ["exec_out"]
             }
 
