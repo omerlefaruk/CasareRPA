@@ -3563,6 +3563,67 @@ class VisualBuildUrlNode(VisualNode):
         self.add_output("url")
 
 
+
+
+# Snippet Nodes
+
+class VisualSnippetNode(VisualNode):
+    """
+    Visual representation of SnippetNode.
+    
+    Container node that executes reusable snippet subgraphs with
+    dynamic ports based on snippet parameters.
+    """
+    
+    __identifier__ = "casare_rpa.snippets"
+    NODE_NAME = "Snippet"
+    NODE_CATEGORY = "snippets"
+    CASARE_NODE_CLASS = "SnippetNode"
+    CASARE_NODE_MODULE = "snippet_node"
+    
+    def __init__(self) -> None:
+        """Initialize snippet node."""
+        super().__init__()
+        
+        # Add snippet selector (will be populated by snippet browser)
+        self.add_text_input(
+            "snippet_name",
+            "Snippet Name",
+            placeholder_text="Select snippet...",
+            tab="properties"
+        )
+        
+        # Display snippet version
+        self.add_text_input(
+            "snippet_version",
+            "Version",
+            placeholder_text="",
+            tab="properties"
+        )
+        
+        # Collapse/expand control
+        self.add_checkbox(
+            "is_collapsed",
+            "Collapsed",
+            state=True,
+            tab="properties"
+        )
+    
+    def setup_ports(self) -> None:
+        """
+        Setup ports for snippet node.
+        
+        Note: Ports are dynamically created based on snippet definition.
+        """
+        # Default execution ports
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+    
+    def get_custom_color(self) -> tuple:
+        """Return custom color for snippet nodes."""
+        return (120, 140, 200)  # Purple/blue
+
+
 # Dynamic node discovery
 def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""

@@ -12,20 +12,20 @@ import tempfile
 import os
 
 
-# Category color scheme - vibrant and distinctive
+# Category color scheme - VSCode Dark+ syntax colors for semantic consistency
 CATEGORY_COLORS = {
-    'basic': QColor(100, 181, 246),          # Light Blue - Start/End/Comment
-    'browser': QColor(156, 39, 176),         # Purple - Browser operations
-    'navigation': QColor(66, 165, 245),      # Blue - Navigation
-    'interaction': QColor(255, 167, 38),     # Orange - Click/Type interactions
-    'data': QColor(102, 187, 106),           # Green - Data operations
-    'wait': QColor(255, 202, 40),            # Yellow - Wait operations
-    'variable': QColor(171, 71, 188),        # Deep Purple - Variables
-    'control_flow': QColor(239, 83, 80),     # Red - If/Loop/Switch
-    'error_handling': QColor(244, 67, 54),   # Dark Red - Try/Catch
-    'desktop_automation': QColor(138, 43, 226),  # Blue-Violet - Desktop
-    'debug': QColor(255, 112, 67),           # Coral - Breakpoints/Log
-    'file': QColor(121, 134, 203),           # Indigo - File operations
+    'basic': QColor(0x56, 0x9C, 0xD6),           # #569CD6 - Keyword blue
+    'browser': QColor(0xC5, 0x86, 0xC0),         # #C586C0 - Control flow purple
+    'navigation': QColor(0x4E, 0xC9, 0xB0),      # #4EC9B0 - Type teal
+    'interaction': QColor(0xCE, 0x91, 0x78),     # #CE9178 - String orange
+    'data': QColor(0x89, 0xD1, 0x85),            # #89D185 - Success green
+    'wait': QColor(0xD7, 0xBA, 0x7D),            # #D7BA7D - Warning yellow
+    'variable': QColor(0x9C, 0xDC, 0xFE),        # #9CDCFE - Variable light blue
+    'control_flow': QColor(0xF4, 0x87, 0x71),    # #F48771 - Error red
+    'error_handling': QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
+    'desktop_automation': QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
+    'debug': QColor(0xD7, 0xBA, 0x7D),           # #D7BA7D - Yellow
+    'file': QColor(0x4E, 0xC9, 0xB0),            # #4EC9B0 - Teal
 }
 
 

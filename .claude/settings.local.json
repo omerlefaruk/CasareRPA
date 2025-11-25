@@ -1,25 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"C:\\Users\\Rau\\.claude\\plans\")",
-      "Bash(dir:*)",
-      "mcp__context7__resolve-library-id",
-      "mcp__context7__get-library-docs",
-      "Bash(python -c:*)",
-      "Bash(python -m pytest:*)",
-      "WebSearch",
-      "WebFetch(domain:docs.n8n.io)",
-      "WebFetch(domain:github.com)",
-      "WebFetch(domain:deepwiki.com)",
-      "Bash(for:*)",
-      "Bash(do if ! grep -q \"retry_count\" \"$f\")",
-      "Bash(then echo \"$f\")",
-      "Bash(fi)",
-      "Bash(done)",
-      "Bash(python run.py:*)",
-      "Bash(python:*)",
-      "Bash(timeout 5 python:*)",
-      "WebFetch(domain:code.visualstudio.com)"
+      "Bash(timeout 3 python:*)"
     ],
     "deny": [],
     "ask": []

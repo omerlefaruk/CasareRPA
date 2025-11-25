@@ -67,8 +67,9 @@ class ValidationTab(QWidget):
         header.setSpacing(8)
 
         # Status label
+        from ..theme import THEME
         self._status_label = QLabel("No validation run")
-        self._status_label.setStyleSheet("color: #888888; font-weight: bold;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-weight: bold;")
 
         # Validate button
         validate_btn = QPushButton("Validate")
@@ -118,53 +119,55 @@ class ValidationTab(QWidget):
 
         # Summary bar
         self._summary_label = QLabel("")
-        self._summary_label.setStyleSheet("""
-            QLabel {
-                background-color: #3c3f41;
-                color: #888888;
+        self._summary_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_muted};
                 padding: 4px 8px;
                 font-size: 9pt;
-            }
+            }}
         """)
         layout.addWidget(self._summary_label)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QTreeWidget {
-                background-color: #2b2b2b;
-                color: #d4d4d4;
-                border: 1px solid #404040;
+        """Apply VSCode Dark+ theme styling."""
+        from ..theme import THEME
+
+        self.setStyleSheet(f"""
+            QTreeWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
                 font-family: 'Segoe UI', 'Arial', sans-serif;
                 font-size: 9pt;
-            }
-            QTreeWidget::item {
+            }}
+            QTreeWidget::item {{
                 padding: 4px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #4b6eaf;
-            }
-            QTreeWidget::item:hover {
-                background-color: #3c3f41;
-            }
-            QHeaderView::section {
-                background-color: #3c3f41;
-                color: #bbbbbb;
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_header};
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #404040;
-            }
-            QPushButton {
-                background-color: #3c3f41;
-                color: #cccccc;
-                border: 1px solid #555555;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
                 border-radius: 2px;
                 padding: 0px 2px;
                 font-size: 9px;
-            }
-            QPushButton:hover {
-                background-color: #4c4f51;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
         """)
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int) -> None:
@@ -180,13 +183,14 @@ class ValidationTab(QWidget):
             self.issue_clicked.emit(data["location"])
 
     def _get_severity_color(self, severity: str) -> QColor:
-        """Get color for severity level."""
+        """Get color for severity level using VSCode Dark+ theme."""
+        from ..theme import THEME
         colors = {
-            "ERROR": QColor("#ff6b6b"),
-            "WARNING": QColor("#FFA500"),
-            "INFO": QColor("#6bb5ff"),
+            "ERROR": QColor(THEME.status_error),
+            "WARNING": QColor(THEME.status_warning),
+            "INFO": QColor(THEME.status_info),
         }
-        return colors.get(severity.upper(), QColor("#d4d4d4"))
+        return colors.get(severity.upper(), QColor(THEME.text_primary))
 
     def _get_severity_prefix(self, severity: str) -> str:
         """Get prefix for severity level."""
@@ -278,13 +282,13 @@ class ValidationTab(QWidget):
         if result.is_valid:
             if result.warning_count > 0:
                 self._status_label.setText(f"Valid with {result.warning_count} warning(s)")
-                self._status_label.setStyleSheet("color: #FFA500; font-weight: bold;")
+                self._status_label.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
             else:
                 self._status_label.setText("Valid")
-                self._status_label.setStyleSheet("color: #6bff6b; font-weight: bold;")
+                self._status_label.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
         else:
             self._status_label.setText(f"Invalid: {result.error_count} error(s)")
-            self._status_label.setStyleSheet("color: #ff6b6b; font-weight: bold;")
+            self._status_label.setStyleSheet(f"color: {THEME.status_error}; font-weight: bold;")
 
         # Summary
         parts = []

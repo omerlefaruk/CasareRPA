@@ -58,9 +58,9 @@ def _patched_paint(self, painter, option, widget):
     border_color = QColor(*self.border_color)
     
     if self.selected:
-        # Thicker yellow border when selected (3px instead of 1.2px)
+        # VSCode-style selection: 3px blue border
         border_width = 3.0
-        border_color = QColor(255, 215, 0, 255)  # Bright yellow
+        border_color = QColor(0, 122, 204, 255)  # VSCode focus border (#007ACC)
         # Keep background the same (no overlay)
     else:
         border_width = 1.0
@@ -209,8 +209,8 @@ class NodeGraphWidget(QWidget):
 
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""
-        # Set graph background color to match image (very dark gray, almost black)
-        self._graph.set_background_color(35, 35, 35)  # #232323
+        # Set graph background color to VSCode Dark+ editor background
+        self._graph.set_background_color(30, 30, 30)  # #1E1E1E (VSCode editor background)
 
         # Set grid styling
         self._graph.set_grid_mode(1)  # Show grid

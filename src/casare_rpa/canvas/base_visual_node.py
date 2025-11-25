@@ -15,9 +15,9 @@ from ..core.port_type_system import PortTypeRegistry, get_port_type_registry
 from .custom_node_item import CasareNodeItem
 from loguru import logger
 
-# Unified color scheme for all nodes matching the image colors
-# Using dark teal/gray with cyan accent border (matches reference image)
-UNIFIED_NODE_COLOR = QColor(52, 58, 64)  # Dark gray node body - #343a40
+# VSCode Dark+ color scheme for nodes
+# Node body should be slightly lighter than canvas (#1E1E1E) to be visible
+UNIFIED_NODE_COLOR = QColor(37, 37, 38)  # VSCode sidebar background - #252526
 
 class VisualNode(NodeGraphQtBaseNode):
     """
@@ -46,9 +46,9 @@ class VisualNode(NodeGraphQtBaseNode):
         # Set node colors with category-based accents
         self._apply_category_colors()
         
-        # Configure selection colors - transparent overlay, yellow border
-        self.model.selected_color = (0, 0, 0, 0)  # Transparent selection overlay (no body color change)
-        self.model.selected_border_color = (255, 215, 0, 255)  # Bright yellow border when selected
+        # Configure selection colors - VSCode selection style
+        self.model.selected_color = (38, 79, 120, 128)  # VSCode editor selection (#264F78) with transparency
+        self.model.selected_border_color = (0, 122, 204, 255)  # VSCode focus border (#007ACC)
         
         # Set temporary icon (will be updated with actual icons later)
         icon_pixmap = self._create_temp_icon()
@@ -74,24 +74,24 @@ class VisualNode(NodeGraphQtBaseNode):
         self._style_text_inputs()
 
     def _apply_category_colors(self) -> None:
-        """Apply category-based colors to the node."""
+        """Apply VSCode Dark+ category-based colors to the node."""
         from .node_icons import get_node_color, CATEGORY_COLORS
 
         # Get category color
-        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(68, 68, 68))
+        category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
 
-        # Dark background (same for all nodes)
-        self.set_color(45, 45, 45)
+        # VSCode sidebar background for all nodes (#252526)
+        self.set_color(37, 37, 38)
 
-        # Category-colored border (subtle accent)
-        # Use darker/more subtle version of category color for border
-        border_r = int(category_color.red() * 0.7)
-        border_g = int(category_color.green() * 0.7)
-        border_b = int(category_color.blue() * 0.7)
+        # Category-colored border (use VSCode syntax colors)
+        # Slightly darker for subtlety
+        border_r = int(category_color.red() * 0.8)
+        border_g = int(category_color.green() * 0.8)
+        border_b = int(category_color.blue() * 0.8)
         self.model.border_color = (border_r, border_g, border_b, 255)
 
-        # Light gray text
-        self.model.text_color = (220, 220, 220, 255)
+        # VSCode text color (#D4D4D4)
+        self.model.text_color = (212, 212, 212, 255)
 
     def _create_temp_icon(self) -> str:
         """Create a professional icon for this node type."""

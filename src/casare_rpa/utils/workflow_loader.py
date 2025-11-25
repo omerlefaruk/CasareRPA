@@ -317,6 +317,8 @@ from casare_rpa.nodes.desktop_nodes import (
     OutlookSendEmailNode, OutlookReadEmailsNode, OutlookGetInboxCountNode,
 )
 
+# Snippet nodes
+from casare_rpa.nodes.snippet_node import SnippetNode
 
 # Map node types to classes
 NODE_TYPE_MAP = {
@@ -616,6 +618,9 @@ NODE_TYPE_MAP = {
     "OutlookSendEmailNode": OutlookSendEmailNode,
     "OutlookReadEmailsNode": OutlookReadEmailsNode,
     "OutlookGetInboxCountNode": OutlookGetInboxCountNode,
+
+    # Snippet nodes
+    "SnippetNode": SnippetNode,
 }
 
 
