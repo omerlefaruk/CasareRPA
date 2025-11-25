@@ -308,10 +308,6 @@ class NodeGraphWidget(QWidget):
         self._graph.viewer().installEventFilter(self._tooltip_blocker)
         self._graph.viewer().viewport().installEventFilter(self._tooltip_blocker)
 
-        # Connection drag tracking for search-on-release
-        self._connection_drag_start_port = None
-        self._connection_drag_active = False
-
         # Monkey-patch viewer to detect connection drops
         self._patch_viewer_for_connection_search()
 
@@ -647,6 +643,18 @@ class NodeGraphWidget(QWidget):
                 viewer = self._graph.viewer()
                 cursor_pos = viewer.cursor().pos()
 
+                # Check if we're dragging a connection
+                source_port = None
+                live_pipe_was_visible = False
+                if hasattr(viewer, '_LIVE_PIPE') and viewer._LIVE_PIPE.isVisible():
+                    # Save the source port for auto-connection
+                    source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
+                    if source_port:
+                        live_pipe_was_visible = True
+                        # Hide the connection line while menu is open
+                        viewer._LIVE_PIPE.setVisible(False)
+                        logger.debug("Tab pressed during connection drag - hiding live pipe")
+
                 # Get the context menu and show it
                 context_menu = self._graph.get_context_menu('graph')
                 if context_menu and context_menu.qmenu:
@@ -654,7 +662,35 @@ class NodeGraphWidget(QWidget):
                     # This is stored so nodes are created at the original position
                     scene_pos = viewer.mapToScene(viewer.mapFromGlobal(cursor_pos))
                     context_menu.qmenu._initial_scene_pos = scene_pos
+
+                    # If dragging a connection, setup auto-connect
+                    if source_port:
+                        def on_node_created(node):
+                            """Auto-connect newly created node to source port."""
+                            try:
+                                self._auto_connect_new_node(node, source_port)
+                                # End the live connection since we've completed it
+                                viewer.end_live_connection()
+                                logger.info(f"Auto-connected node from Tab search")
+                            except Exception as e:
+                                logger.error(f"Failed to auto-connect node: {e}")
+                            finally:
+                                # Disconnect this one-time handler
+                                try:
+                                    self._graph.node_created.disconnect(on_node_created)
+                                except:
+                                    pass
+
+                        # Connect temporary handler for this node creation
+                        if hasattr(self._graph, 'node_created'):
+                            self._graph.node_created.connect(on_node_created)
+
                     context_menu.qmenu.exec(cursor_pos)
+
+                    # If menu was cancelled and we were dragging, end the connection
+                    if live_pipe_was_visible and hasattr(viewer, '_start_port') and viewer._start_port:
+                        viewer.end_live_connection()
+                        logger.debug("Tab menu cancelled - ending live connection")
 
                 return True  # Event handled
 
@@ -955,80 +991,98 @@ class NodeGraphWidget(QWidget):
 
     def _show_connection_search(self, source_port, scene_pos):
         """
-        Show node search dialog filtered by compatible connections.
+        Show node context menu (same as Tab search) and auto-connect created node.
 
         Args:
             source_port: The port that was dragged from
             scene_pos: Scene position where connection was released
         """
-        from .node_search_dialog import NodeSearchDialog
+        # Get the context menu (same as Tab search)
+        context_menu = self._graph.get_context_menu('graph')
+        if not context_menu or not context_menu.qmenu:
+            logger.warning("Context menu not available")
+            return
 
-        # Create search dialog
-        dialog = NodeSearchDialog(self)
+        # Store scene position for node creation
+        context_menu.qmenu._initial_scene_pos = scene_pos
 
-        # TODO: Filter nodes by port compatibility
-        # For now, show all nodes
-
-        # Show dialog at cursor position
-        cursor_pos = self.cursor().pos()
-        dialog.move(cursor_pos)
-
-        # Execute dialog
-        if dialog.exec() == dialog.DialogCode.Accepted:
-            selected_node_type = dialog.get_selected_node()
-            if selected_node_type:
-                logger.info(f"Creating node from connection: {selected_node_type}")
-
-                # Create the node at the drop position
+        # Store source port for auto-connection after node is created
+        # We'll connect to node_created signal temporarily
+        def on_node_created(node):
+            """Auto-connect newly created node to source port."""
+            try:
+                self._auto_connect_new_node(node, source_port)
+            except Exception as e:
+                logger.error(f"Failed to auto-connect node: {e}")
+            finally:
+                # Disconnect this one-time handler
                 try:
-                    node = self._graph.create_node(
-                        selected_node_type,
-                        pos=[scene_pos.x(), scene_pos.y()]
-                    )
+                    self._graph.node_created.disconnect(on_node_created)
+                except:
+                    pass
 
-                    if node:
-                        # Auto-connect the new node
-                        self._auto_connect_new_node(node, source_port)
+        # Connect temporary handler for this node creation
+        if hasattr(self._graph, 'node_created'):
+            self._graph.node_created.connect(on_node_created)
 
-                except Exception as e:
-                    logger.error(f"Failed to create node from connection: {e}")
+        # Show context menu at the release position (map scene to global coordinates)
+        viewer = self._graph.viewer()
+        view_pos = viewer.mapFromScene(scene_pos)
+        global_pos = viewer.mapToGlobal(view_pos)
+        context_menu.qmenu.exec(global_pos)
 
-    def _auto_connect_new_node(self, new_node, source_port):
+        logger.debug(f"Context menu shown at scene position: ({scene_pos.x()}, {scene_pos.y()})")
+
+    def _auto_connect_new_node(self, new_node, source_port_item):
         """
         Auto-connect a newly created node to the source port.
 
         Args:
             new_node: The newly created node
-            source_port: The port that was dragged from
+            source_port_item: The port item that was dragged from (PortItem from viewer)
         """
         try:
-            # Determine if source is input or output
-            is_source_output = source_port.port_type() == 1  # 1 = output, 2 = input
+            # Import port type enum
+            from NodeGraphQt.constants import PortTypeEnum
 
-            # Find compatible port on new node
+            # Determine if source is input or output
+            # PortItem has .port_type property: IN=2, OUT=1
+            is_source_output = source_port_item.port_type == PortTypeEnum.OUT.value
+
+            logger.debug(f"Auto-connecting from {'output' if is_source_output else 'input'} port: {source_port_item.name}")
+
+            # Find compatible port on new node and connect using PortItem.connect_to()
             if is_source_output:
                 # Source is output, find input on new node
                 for port in new_node.input_ports():
-                    # Try to connect
+                    # Get the PortItem view from the Port object
+                    target_port_item = port.view
+                    # Try to connect at the PortItem level
                     try:
-                        source_port.connect_to(port)
-                        logger.info(f"Auto-connected {source_port.name()} -> {port.name()}")
+                        source_port_item.connect_to(target_port_item)
+                        logger.info(f"Auto-connected {source_port_item.name} -> {target_port_item.name}")
                         break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Could not connect to {target_port_item.name}: {e}")
                         continue
             else:
                 # Source is input, find output on new node
                 for port in new_node.output_ports():
-                    # Try to connect
+                    # Get the PortItem view from the Port object
+                    target_port_item = port.view
+                    # Try to connect at the PortItem level
                     try:
-                        port.connect_to(source_port)
-                        logger.info(f"Auto-connected {port.name()} -> {source_port.name()}")
+                        target_port_item.connect_to(source_port_item)
+                        logger.info(f"Auto-connected {target_port_item.name} -> {source_port_item.name}")
                         break
-                    except Exception:
+                    except Exception as e:
+                        logger.debug(f"Could not connect to {target_port_item.name}: {e}")
                         continue
 
         except Exception as e:
             logger.error(f"Failed to auto-connect new node: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
 
     def _on_parameter_requested(self, node_id: str, property_key: str, data_type: str, current_value) -> None:
         """

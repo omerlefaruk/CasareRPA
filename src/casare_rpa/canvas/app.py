@@ -155,6 +155,7 @@ class CasareRPAApp:
         self._main_window.action_cut.triggered.connect(graph.cut_nodes)
         self._main_window.action_copy.triggered.connect(graph.copy_nodes)
         self._main_window.action_paste.triggered.connect(graph.paste_nodes)
+        self._main_window.action_duplicate.triggered.connect(self._on_duplicate_nodes)
         self._main_window.action_select_all.triggered.connect(graph.select_all)
         self._main_window.action_deselect_all.triggered.connect(graph.clear_selection)
         
@@ -215,11 +216,57 @@ class CasareRPAApp:
         quick_actions.delete_requested.connect(self._on_delete_selected)
 
     def _on_duplicate_nodes(self) -> None:
-        """Duplicate the selected nodes."""
+        """Duplicate the selected nodes at mouse cursor position."""
         graph = self._node_graph.graph
+        viewer = graph.viewer()
+
+        # Check if there are selected nodes
+        if not graph.selected_nodes():
+            return
+
+        # Get mouse cursor position in scene coordinates
+        cursor_pos = viewer.cursor().pos()
+        scene_pos = viewer.mapToScene(viewer.mapFromGlobal(cursor_pos))
+
+        # Copy and paste (this will select the pasted nodes)
         graph.copy_nodes()
         graph.paste_nodes()
-        logger.debug("Duplicated selected nodes")
+
+        # Get the newly pasted nodes (they will be selected after paste)
+        pasted_nodes = graph.selected_nodes()
+        if not pasted_nodes:
+            return
+
+        # Calculate the bounding box center of pasted nodes (accounting for node sizes)
+        min_x = min_y = float('inf')
+        max_x = max_y = float('-inf')
+
+        for node in pasted_nodes:
+            pos = node.pos()
+            # Get node's view (QGraphicsItem) to access bounding rect
+            node_view = node.view
+            rect = node_view.boundingRect()
+
+            # Calculate bounds
+            min_x = min(min_x, pos[0])
+            min_y = min(min_y, pos[1])
+            max_x = max(max_x, pos[0] + rect.width())
+            max_y = max(max_y, pos[1] + rect.height())
+
+        # Calculate actual center of the selection
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
+
+        # Calculate offset to move selection center to mouse cursor
+        offset_x = scene_pos.x() - center_x
+        offset_y = scene_pos.y() - center_y
+
+        # Move all pasted nodes by the offset
+        for node in pasted_nodes:
+            current_pos = node.pos()
+            node.set_pos(current_pos[0] + offset_x, current_pos[1] + offset_y)
+
+        logger.debug(f"Duplicated {len(pasted_nodes)} nodes with center at ({scene_pos.x()}, {scene_pos.y()})")
 
     def _on_node_selected_for_properties(self, node) -> None:
         """Update properties panel and breadcrumb when a node is selected."""

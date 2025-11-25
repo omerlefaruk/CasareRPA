@@ -230,6 +230,10 @@ class MainWindow(QMainWindow):
         self.action_paste.setShortcut(QKeySequence.StandardKey.Paste)
         self.action_paste.setStatusTip("Paste nodes")
 
+        self.action_duplicate = QAction("D&uplicate", self)
+        self.action_duplicate.setShortcut(QKeySequence("Ctrl+D"))
+        self.action_duplicate.setStatusTip("Duplicate selected nodes")
+
         self.action_paste_workflow = QAction("Paste Workflow JSON", self)
         self.action_paste_workflow.setShortcut(QKeySequence("Ctrl+Shift+V"))
         self.action_paste_workflow.setStatusTip("Paste workflow JSON from clipboard and import nodes")
@@ -471,6 +475,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action_cut)
         edit_menu.addAction(self.action_copy)
         edit_menu.addAction(self.action_paste)
+        edit_menu.addAction(self.action_duplicate)
         edit_menu.addAction(self.action_paste_workflow)
         edit_menu.addAction(self.action_delete)
         edit_menu.addSeparator()
