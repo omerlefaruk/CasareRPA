@@ -8,9 +8,20 @@ Provides nodes for automating Microsoft Office applications:
 """
 
 from typing import Any, Dict, List, Optional
+from loguru import logger
+
 from ...core.base_node import BaseNode
 from ...core.types import PortType, DataType, NodeStatus
-from loguru import logger
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 # Try to import win32com for Office automation
 try:
@@ -67,6 +78,10 @@ class ExcelOpenNode(BaseNode):
         file_path = self.get_input_value("file_path")
         visible = self.config.get("visible", False)
         create_if_missing = self.config.get("create_if_missing", False)
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value') and file_path:
+            file_path = context.resolve_value(file_path)
 
         try:
             import os
@@ -137,6 +152,13 @@ class ExcelReadCellNode(BaseNode):
         sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
         cell = self.get_input_value("cell")
 
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if isinstance(sheet, str):
+                sheet = context.resolve_value(sheet)
+            if cell:
+                cell = context.resolve_value(cell)
+
         if not workbook:
             raise ValueError("Workbook is required")
         if not cell:
@@ -202,6 +224,13 @@ class ExcelWriteCellNode(BaseNode):
         sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
         cell = self.get_input_value("cell")
         value = self.get_input_value("value")
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if isinstance(sheet, str):
+                sheet = context.resolve_value(sheet)
+            if cell:
+                cell = context.resolve_value(cell)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -422,6 +451,10 @@ class WordOpenNode(BaseNode):
         visible = self.config.get("visible", False)
         create_if_missing = self.config.get("create_if_missing", False)
 
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value') and file_path:
+            file_path = context.resolve_value(file_path)
+
         try:
             import os
 
@@ -547,6 +580,13 @@ class WordReplaceTextNode(BaseNode):
         replace_text = self.get_input_value("replace_text")
         match_case = self.config.get("match_case", False)
         replace_all = self.config.get("replace_all", True)
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if find_text:
+                find_text = context.resolve_value(find_text)
+            if replace_text:
+                replace_text = context.resolve_value(replace_text)
 
         if not document:
             raise ValueError("Document is required")
@@ -702,6 +742,19 @@ class OutlookSendEmailNode(BaseNode):
         bcc = self.get_input_value("bcc")
         attachments = self.get_input_value("attachments")
         html_body = self.config.get("html_body", False)
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if to:
+                to = context.resolve_value(to)
+            if subject:
+                subject = context.resolve_value(subject)
+            if body:
+                body = context.resolve_value(body)
+            if cc:
+                cc = context.resolve_value(cc)
+            if bcc:
+                bcc = context.resolve_value(bcc)
 
         if not to:
             raise ValueError("Recipient is required")

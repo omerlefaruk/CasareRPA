@@ -767,11 +767,12 @@ class WorkflowRunner:
 
             # Check if target node was reached (Run-To-Node feature)
             if success and self._check_target_reached(current_node.node_id):
-                # Emit event indicating target was reached
+                # Emit event indicating target was reached (include execution_time for badge)
                 self._emit_event(EventType.NODE_COMPLETED, {
                     "node_id": current_node.node_id,
                     "message": "Target node reached - execution paused",
                     "progress": self.progress,
+                    "execution_time": current_node.last_execution_time,
                     "target_reached": True
                 })
                 # Pause execution at target

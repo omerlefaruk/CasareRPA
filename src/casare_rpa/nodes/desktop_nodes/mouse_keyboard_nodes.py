@@ -11,8 +11,20 @@ Provides nodes for direct mouse and keyboard input:
 """
 
 from typing import Any, Dict, Optional
+from loguru import logger
+
 from ...core.base_node import BaseNode
 from ...core.types import PortType, DataType, NodeStatus
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class MoveMouseNode(BaseNode):
@@ -267,6 +279,10 @@ class SendKeysNode(BaseNode):
         press_enter_after = self.config.get("press_enter_after", False)
         clear_first = self.config.get("clear_first", False)
 
+        # Resolve {{variable}} patterns in keys
+        if hasattr(context, 'resolve_value') and keys:
+            keys = context.resolve_value(keys)
+
         if not keys:
             raise ValueError("Keys to send are required")
 
@@ -334,6 +350,10 @@ class SendHotKeyNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute hotkey combination"""
         keys_input = self.get_input_value("keys")
+
+        # Resolve {{variable}} patterns in keys
+        if hasattr(context, 'resolve_value') and keys_input:
+            keys_input = context.resolve_value(keys_input)
 
         if not keys_input:
             raise ValueError("Hotkey combination is required")

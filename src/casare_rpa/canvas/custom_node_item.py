@@ -379,6 +379,11 @@ class CasareNodeItem(NodeItem):
         else:
             self._execution_time_ms = None
         self.update()
+        # Force scene to repaint the badge area (above the node)
+        if self.scene():
+            rect = self.boundingRect()
+            scene_rect = self.mapRectToScene(rect)
+            self.scene().update(scene_rect)
 
     def clear_execution_state(self):
         """Reset all execution state for workflow restart."""

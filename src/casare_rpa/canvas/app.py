@@ -120,6 +120,7 @@ class CasareRPAApp:
         # Workflow execution
         self._main_window.workflow_run.connect(self._on_run_workflow)
         self._main_window.workflow_run_to_node.connect(self._on_run_to_node)
+        self._main_window.workflow_run_single_node.connect(self._on_run_single_node)
         self._main_window.workflow_pause.connect(self._on_pause_workflow)
         self._main_window.workflow_resume.connect(self._on_resume_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
@@ -186,6 +187,39 @@ class CasareRPAApp:
 
         # Set workflow data provider for validation
         self._main_window.set_workflow_data_provider(self._get_serialized_workflow_data)
+
+        # Properties panel - connect to node selection changes
+        if hasattr(graph, 'node_selected'):
+            graph.node_selected.connect(self._on_node_selected_for_properties)
+        # Also connect to selection cleared
+        if hasattr(graph, 'node_selection_changed'):
+            graph.node_selection_changed.connect(self._on_selection_changed_for_properties)
+
+    def _on_node_selected_for_properties(self, node) -> None:
+        """Update properties panel and breadcrumb when a node is selected."""
+        self._main_window.update_properties_panel(node)
+        # Update breadcrumb
+        if node:
+            node_name = node.name() if hasattr(node, 'name') else "Node"
+            node_id = node.get_property("node_id") if hasattr(node, 'get_property') else None
+            self._main_window.update_breadcrumb_node(node_name, node_id)
+        else:
+            self._main_window.update_breadcrumb_node(None)
+
+    def _on_selection_changed_for_properties(self, selected, deselected) -> None:
+        """Handle selection changes for properties panel and breadcrumb."""
+        graph = self._node_graph.graph
+        selected_nodes = graph.selected_nodes()
+        if selected_nodes:
+            node = selected_nodes[0]
+            self._main_window.update_properties_panel(node)
+            # Update breadcrumb
+            node_name = node.name() if hasattr(node, 'name') else "Node"
+            node_id = node.get_property("node_id") if hasattr(node, 'get_property') else None
+            self._main_window.update_breadcrumb_node(node_name, node_id)
+        else:
+            self._main_window.update_properties_panel(None)
+            self._main_window.update_breadcrumb_node(None)
 
     def _on_delete_selected(self) -> None:
         """
@@ -924,11 +958,7 @@ class CasareRPAApp:
                 
                 # Update toolbar state
                 debug_toolbar.set_execution_state(True)
-            
-            # Show log viewer
-            self._main_window.show_log_viewer()
-            self._main_window.action_toggle_bottom_panel.setChecked(True)
-            
+
             # Start debug update timer if in debug mode
             if self._workflow_runner.debug_mode:
                 self._start_debug_updates()
@@ -1009,6 +1039,7 @@ class CasareRPAApp:
                 # Re-enable run buttons
                 self._main_window.action_run.setEnabled(True)
                 self._main_window.action_run_to_node.setEnabled(True)
+                self._main_window.action_run_single_node.setEnabled(True)
                 self._main_window.action_pause.setEnabled(False)
                 self._main_window.action_stop.setEnabled(False)
                 return
@@ -1031,10 +1062,6 @@ class CasareRPAApp:
             debug_toolbar = self._main_window.get_debug_toolbar()
             if debug_toolbar:
                 debug_toolbar.set_execution_state(True)
-
-            # Show log viewer
-            self._main_window.show_log_viewer()
-            self._main_window.action_toggle_bottom_panel.setChecked(True)
 
             # Start debug update timer
             self._start_debug_updates()
@@ -1065,6 +1092,7 @@ class CasareRPAApp:
                     # Re-enable run buttons when done
                     self._main_window.action_run.setEnabled(True)
                     self._main_window.action_run_to_node.setEnabled(True)
+                    self._main_window.action_run_single_node.setEnabled(True)
 
                     # Show status message based on result
                     if runner.target_reached:
@@ -1087,6 +1115,106 @@ class CasareRPAApp:
             # Re-enable run buttons on error
             self._main_window.action_run.setEnabled(True)
             self._main_window.action_run_to_node.setEnabled(True)
+            self._main_window.action_run_single_node.setEnabled(True)
+
+    def _on_run_single_node(self, node_id: str) -> None:
+        """
+        Handle run single node execution (F5).
+
+        Executes only the selected node using existing input data from the
+        last execution context. If no previous context exists, the node's
+        input ports will be empty.
+
+        Args:
+            node_id: The node ID to execute
+        """
+        try:
+            logger.info(f"Starting single node execution: {node_id}")
+
+            # Find the visual node and its CasareRPA node
+            visual_node = None
+            casare_node = None
+            graph = self._node_graph.graph
+
+            for vn in graph.all_nodes():
+                if vn.get_property("node_id") == node_id:
+                    visual_node = vn
+                    casare_node = vn.get_casare_node()
+                    break
+
+            if not visual_node or not casare_node:
+                logger.error(f"Node not found: {node_id}")
+                self._main_window.statusBar().showMessage(f"Node not found", 3000)
+                self._main_window.action_run_single_node.setEnabled(True)
+                return
+
+            # Clear only this node's visual state
+            visual_node.update_status("running")
+            if hasattr(visual_node.view, 'set_running'):
+                visual_node.view.set_running(True)
+
+            # Sync widget values to node config before execution
+            self._sync_visual_properties_to_node(visual_node, casare_node)
+
+            # Get execution context - reuse existing one if available
+            if self._workflow_runner and self._workflow_runner.context:
+                context = self._workflow_runner.context
+                logger.info("Reusing existing execution context with inputs")
+            else:
+                # Create a minimal context
+                from ..core.execution_context import ExecutionContext
+                context = ExecutionContext()
+                # Load initial variables from panel
+                initial_variables = self._get_initial_variables()
+                for name, value in initial_variables.items():
+                    context.set_variable(name, value)
+                logger.info("Created new execution context")
+
+            # Execute the single node
+            async def execute_single_node():
+                import time
+                try:
+                    start_time = time.time()
+
+                    # Execute the node
+                    result = await casare_node.execute(context)
+
+                    execution_time = time.time() - start_time
+
+                    # Update visual feedback
+                    if result.success:
+                        visual_node.update_status("success")
+                        visual_node.update_execution_time(execution_time)
+                        logger.info(f"Node {node_id} completed in {execution_time:.2f}s")
+                        self._main_window.statusBar().showMessage(
+                            f"Node completed in {execution_time:.2f}s", 3000
+                        )
+                    else:
+                        visual_node.update_status("error")
+                        visual_node.update_execution_time(execution_time)
+                        error_msg = result.error or "Unknown error"
+                        logger.error(f"Node {node_id} failed: {error_msg}")
+                        self._main_window.statusBar().showMessage(
+                            f"Node failed: {error_msg}", 5000
+                        )
+
+                except Exception as e:
+                    visual_node.update_status("error")
+                    logger.exception(f"Error executing node {node_id}")
+                    self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+
+                finally:
+                    # Re-enable the action
+                    self._main_window.action_run_single_node.setEnabled(True)
+                    if hasattr(visual_node.view, 'set_running'):
+                        visual_node.view.set_running(False)
+
+            asyncio.ensure_future(execute_single_node())
+
+        except Exception as e:
+            logger.exception("Failed to start single node execution")
+            self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+            self._main_window.action_run_single_node.setEnabled(True)
 
     def _on_pause_workflow(self) -> None:
         """Handle workflow pause."""
@@ -1169,11 +1297,12 @@ class CasareRPAApp:
 
         # Check if target node was reached (Run-To-Node mode)
         if target_reached:
-            # Re-enable F4 so user can run again to the same node
+            # Re-enable run buttons so user can run again
             self._main_window.action_run.setEnabled(True)
             self._main_window.action_run_to_node.setEnabled(True)
+            self._main_window.action_run_single_node.setEnabled(True)
             self._main_window.statusBar().showMessage(
-                f"Target node reached - paused. Press F4 to re-run, F8 to continue, F7 to stop.",
+                f"Target node reached - paused. Press F4 to re-run, F5 to run this node, F8 to continue, F7 to stop.",
                 0
             )
             return
@@ -1220,13 +1349,14 @@ class CasareRPAApp:
         # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
         self._main_window.action_run_to_node.setEnabled(True)
+        self._main_window.action_run_single_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
 
         # Keep selector buttons enabled if browser is still active
         # They will be disabled when browser is closed or page becomes invalid
-    
+
     def _on_workflow_error(self, event) -> None:
         """Handle workflow error event."""
         error = event.data.get("error", "Unknown error")
@@ -1238,13 +1368,14 @@ class CasareRPAApp:
         # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
         self._main_window.action_run_to_node.setEnabled(True)
+        self._main_window.action_run_single_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
 
         # Keep selector buttons enabled if browser is still active
         # They will be disabled when browser is closed or page becomes invalid
-    
+
     def _on_debug_mode_toggled(self, enabled: bool) -> None:
         """Handle debug mode toggle."""
         logger.debug(f"Debug mode {'enabled' if enabled else 'disabled'}")
@@ -1695,10 +1826,11 @@ class CasareRPAApp:
         # Reset UI - re-enable all run actions
         self._main_window.action_run.setEnabled(True)
         self._main_window.action_run_to_node.setEnabled(True)
+        self._main_window.action_run_single_node.setEnabled(True)
         self._main_window.action_pause.setEnabled(False)
         self._main_window.action_pause.setChecked(False)
         self._main_window.action_stop.setEnabled(False)
-    
+
     @property
     def main_window(self) -> MainWindow:
         """

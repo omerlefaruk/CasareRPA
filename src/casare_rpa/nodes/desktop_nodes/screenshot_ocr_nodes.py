@@ -226,6 +226,13 @@ class OCRExtractTextNode(BaseNode):
         language = self.config.get("language", "eng")
         ocr_config = self.config.get("config", "")
 
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value'):
+            if image_path:
+                image_path = context.resolve_value(image_path)
+            language = context.resolve_value(language)
+            ocr_config = context.resolve_value(ocr_config)
+
         desktop_ctx = getattr(context, 'desktop_context', None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")

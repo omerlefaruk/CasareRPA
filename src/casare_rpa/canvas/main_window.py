@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
     workflow_save_as = Signal(str)
     workflow_run = Signal()
     workflow_run_to_node = Signal(str)  # Run to selected node ID (F4)
+    workflow_run_single_node = Signal(str)  # Run only selected node (F5)
     workflow_pause = Signal()
     workflow_resume = Signal()
     workflow_stop = Signal()
@@ -88,8 +89,6 @@ class MainWindow(QMainWindow):
         
         # Debug components
         self._debug_toolbar: Optional['DebugToolbar'] = None
-        self._variable_inspector: Optional['VariableInspectorPanel'] = None
-        self._execution_history: Optional['ExecutionHistoryViewer'] = None
 
         # Validation components (timer and settings for auto-validation)
         self._validation_timer: Optional['QTimer'] = None
@@ -99,14 +98,26 @@ class MainWindow(QMainWindow):
         # Bottom panel dock (unified panel with Variables, Output, Log, Validation tabs)
         self._bottom_panel: Optional['BottomPanelDock'] = None
 
+        # Properties panel (right dock for selected node properties)
+        self._properties_panel: Optional['PropertiesPanel'] = None
+
+        # Breadcrumb navigation bar
+        self._breadcrumb_bar: Optional['BreadcrumbBar'] = None
+
+        # Command palette
+        self._command_palette: Optional['CommandPalette'] = None
+
         # Setup window
         self._setup_window()
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
+        self._create_breadcrumb_bar()
         self._create_status_bar()
         self._create_bottom_panel()
+        self._create_properties_panel()
         self._create_debug_components()
+        self._create_command_palette()
         self._setup_validation_timer()
         
         # Set initial state
@@ -243,6 +254,11 @@ class MainWindow(QMainWindow):
         self.action_run_to_node.setShortcut(QKeySequence("F4"))
         self.action_run_to_node.setStatusTip("Execute workflow up to selected node (F4)")
         self.action_run_to_node.triggered.connect(self._on_run_to_node)
+
+        self.action_run_single_node = QAction("⊙ This Node", self)
+        self.action_run_single_node.setShortcut(QKeySequence("F5"))
+        self.action_run_single_node.setStatusTip("Re-run only the selected node with existing inputs (F5)")
+        self.action_run_single_node.triggered.connect(self._on_run_single_node)
 
         self.action_pause = QAction("⏸ Pause", self)
         self.action_pause.setShortcut(QKeySequence("F6"))
@@ -396,6 +412,7 @@ class MainWindow(QMainWindow):
         workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_run)
         workflow_menu.addAction(self.action_run_to_node)
+        workflow_menu.addAction(self.action_run_single_node)
         workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
@@ -466,6 +483,7 @@ class MainWindow(QMainWindow):
         # === Execution Controls ===
         toolbar.addAction(self.action_run)
         toolbar.addAction(self.action_run_to_node)
+        toolbar.addAction(self.action_run_single_node)
         toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
 
@@ -477,13 +495,269 @@ class MainWindow(QMainWindow):
 
         self.addToolBar(toolbar)
         self._main_toolbar = toolbar
-    
+
+    def _create_breadcrumb_bar(self) -> None:
+        """Create the breadcrumb navigation bar below the toolbar."""
+        from .breadcrumb_bar import BreadcrumbBar
+
+        self._breadcrumb_bar = BreadcrumbBar(self)
+
+        # Create a toolbar to hold the breadcrumb bar
+        breadcrumb_toolbar = QToolBar("Breadcrumb")
+        breadcrumb_toolbar.setObjectName("BreadcrumbToolbar")
+        breadcrumb_toolbar.setMovable(False)
+        breadcrumb_toolbar.setFloatable(False)
+        breadcrumb_toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
+
+        # Add breadcrumb widget
+        breadcrumb_toolbar.addWidget(self._breadcrumb_bar)
+
+        # Style to remove toolbar chrome
+        breadcrumb_toolbar.setStyleSheet("""
+            QToolBar {
+                background: #2b2b2b;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+        """)
+
+        # Add below main toolbar
+        self.addToolBarBreak()
+        self.addToolBar(breadcrumb_toolbar)
+
+        # Connect signals
+        self._breadcrumb_bar.workflow_clicked.connect(self._on_breadcrumb_workflow_clicked)
+        self._breadcrumb_bar.node_clicked.connect(self._on_breadcrumb_node_clicked)
+
+        logger.debug("Breadcrumb bar created")
+
+    def _on_breadcrumb_workflow_clicked(self) -> None:
+        """Handle workflow breadcrumb click - center view on all nodes."""
+        if self._central_widget and hasattr(self._central_widget, 'center_on_nodes'):
+            self._central_widget.center_on_nodes()
+
+    def _on_breadcrumb_node_clicked(self, node_id: str) -> None:
+        """Handle node breadcrumb click - select and center on node."""
+        self._select_node_by_id(node_id)
+
+    def get_breadcrumb_bar(self) -> Optional['BreadcrumbBar']:
+        """Get the breadcrumb navigation bar."""
+        return self._breadcrumb_bar
+
+    def update_breadcrumb_node(self, node_name: Optional[str], node_id: Optional[str] = None) -> None:
+        """
+        Update the breadcrumb bar with selected node info.
+
+        Args:
+            node_name: Name of selected node, or None to clear
+            node_id: ID of selected node
+        """
+        if self._breadcrumb_bar:
+            self._breadcrumb_bar.set_selected_node(node_name, node_id)
+
     def _create_status_bar(self) -> None:
-        """Create status bar."""
+        """Create enhanced status bar with zoom, node count, and quick toggles."""
+        from PySide6.QtWidgets import QLabel, QPushButton, QHBoxLayout, QWidget
+
         status_bar = QStatusBar()
         self.setStatusBar(status_bar)
+
+        # Style the status bar
+        status_bar.setStyleSheet("""
+            QStatusBar {
+                background: #2b2b2b;
+                color: #e0e0e0;
+                border-top: 1px solid #3d3d3d;
+            }
+            QStatusBar::item {
+                border: none;
+            }
+            QLabel {
+                color: #a0a0a0;
+                padding: 0 8px;
+            }
+            QPushButton {
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px 6px;
+                color: #a0a0a0;
+                font-size: 11px;
+            }
+            QPushButton:hover {
+                background: #3d3d3d;
+                color: #e0e0e0;
+            }
+            QPushButton:checked {
+                background: #4a6a8a;
+                color: #ffffff;
+            }
+        """)
+
+        # Zoom indicator
+        self._zoom_label = QLabel("100%")
+        self._zoom_label.setToolTip("Current zoom level")
+        status_bar.addPermanentWidget(self._zoom_label)
+
+        # Separator
+        sep1 = QLabel("|")
+        sep1.setStyleSheet("color: #4a4a4a;")
+        status_bar.addPermanentWidget(sep1)
+
+        # Node count
+        self._node_count_label = QLabel("Nodes: 0")
+        self._node_count_label.setToolTip("Number of nodes in workflow")
+        status_bar.addPermanentWidget(self._node_count_label)
+
+        # Separator
+        sep2 = QLabel("|")
+        sep2.setStyleSheet("color: #4a4a4a;")
+        status_bar.addPermanentWidget(sep2)
+
+        # Quick tab toggles
+        self._btn_variables = QPushButton("Vars")
+        self._btn_variables.setCheckable(True)
+        self._btn_variables.setToolTip("Toggle Variables tab")
+        self._btn_variables.clicked.connect(lambda: self._toggle_panel_tab("variables"))
+        status_bar.addPermanentWidget(self._btn_variables)
+
+        self._btn_output = QPushButton("Out")
+        self._btn_output.setCheckable(True)
+        self._btn_output.setToolTip("Toggle Output tab")
+        self._btn_output.clicked.connect(lambda: self._toggle_panel_tab("output"))
+        status_bar.addPermanentWidget(self._btn_output)
+
+        self._btn_log = QPushButton("Log")
+        self._btn_log.setCheckable(True)
+        self._btn_log.setToolTip("Toggle Log tab")
+        self._btn_log.clicked.connect(lambda: self._toggle_panel_tab("log"))
+        status_bar.addPermanentWidget(self._btn_log)
+
+        self._btn_validation = QPushButton("Valid")
+        self._btn_validation.setCheckable(True)
+        self._btn_validation.setToolTip("Toggle Validation tab")
+        self._btn_validation.clicked.connect(lambda: self._toggle_panel_tab("validation"))
+        status_bar.addPermanentWidget(self._btn_validation)
+
+        # Separator
+        sep3 = QLabel("|")
+        sep3.setStyleSheet("color: #4a4a4a;")
+        status_bar.addPermanentWidget(sep3)
+
+        # Execution status indicator
+        self._exec_status_label = QLabel("● Ready")
+        self._exec_status_label.setStyleSheet("color: #4CAF50;")  # Green
+        self._exec_status_label.setToolTip("Workflow execution status")
+        status_bar.addPermanentWidget(self._exec_status_label)
+
         status_bar.showMessage("Ready", 3000)
-    
+
+    def _toggle_panel_tab(self, tab_name: str) -> None:
+        """Toggle bottom panel to specific tab."""
+        if self._bottom_panel:
+            if self._bottom_panel.isVisible():
+                # Switch to tab or hide if already on that tab
+                current_idx = self._bottom_panel._tab_widget.currentIndex()
+                tab_map = {"variables": 0, "output": 1, "log": 2, "validation": 3, "history": 4}
+                target_idx = tab_map.get(tab_name, 0)
+                if current_idx == target_idx:
+                    self._bottom_panel.hide()
+                else:
+                    self._bottom_panel._tab_widget.setCurrentIndex(target_idx)
+            else:
+                self._bottom_panel.show()
+                tab_map = {"variables": 0, "output": 1, "log": 2, "validation": 3, "history": 4}
+                self._bottom_panel._tab_widget.setCurrentIndex(tab_map.get(tab_name, 0))
+            self._update_status_bar_buttons()
+
+    def _update_status_bar_buttons(self) -> None:
+        """Update status bar button states."""
+        if not self._bottom_panel:
+            return
+        visible = self._bottom_panel.isVisible()
+        current_idx = self._bottom_panel._tab_widget.currentIndex() if visible else -1
+        self._btn_variables.setChecked(visible and current_idx == 0)
+        self._btn_output.setChecked(visible and current_idx == 1)
+        self._btn_log.setChecked(visible and current_idx == 2)
+        self._btn_validation.setChecked(visible and current_idx == 3)
+
+    def update_zoom_display(self, zoom_percent: float) -> None:
+        """Update the zoom level display in status bar."""
+        if hasattr(self, '_zoom_label'):
+            self._zoom_label.setText(f"{int(zoom_percent)}%")
+
+    def update_node_count(self, count: int) -> None:
+        """Update the node count display in status bar."""
+        if hasattr(self, '_node_count_label'):
+            self._node_count_label.setText(f"Nodes: {count}")
+
+    def set_execution_status(self, status: str) -> None:
+        """
+        Update execution status indicator.
+
+        Args:
+            status: One of 'ready', 'running', 'paused', 'error', 'success'
+        """
+        if not hasattr(self, '_exec_status_label'):
+            return
+
+        status_config = {
+            "ready": ("● Ready", "#4CAF50"),      # Green
+            "running": ("● Running", "#FFA500"),   # Orange
+            "paused": ("● Paused", "#2196F3"),     # Blue
+            "error": ("● Error", "#f44336"),       # Red
+            "success": ("✓ Complete", "#4CAF50"),  # Green
+        }
+        text, color = status_config.get(status, ("● Ready", "#4CAF50"))
+        self._exec_status_label.setText(text)
+        self._exec_status_label.setStyleSheet(f"color: {color};")
+
+    def _create_command_palette(self) -> None:
+        """Create and populate the command palette."""
+        from .command_palette import CommandPalette
+
+        self._command_palette = CommandPalette(self)
+
+        # Register File actions
+        self._command_palette.register_action(self.action_new, "File", "Create new workflow")
+        self._command_palette.register_action(self.action_new_from_template, "File", "Create from template")
+        self._command_palette.register_action(self.action_open, "File", "Open existing workflow")
+        self._command_palette.register_action(self.action_save, "File", "Save current workflow")
+        self._command_palette.register_action(self.action_save_as, "File", "Save with new name")
+
+        # Register Edit actions
+        self._command_palette.register_action(self.action_undo, "Edit")
+        self._command_palette.register_action(self.action_redo, "Edit")
+        self._command_palette.register_action(self.action_cut, "Edit")
+        self._command_palette.register_action(self.action_copy, "Edit")
+        self._command_palette.register_action(self.action_paste, "Edit")
+        self._command_palette.register_action(self.action_delete, "Edit")
+        self._command_palette.register_action(self.action_select_all, "Edit")
+
+        # Register View actions
+        self._command_palette.register_action(self.action_zoom_in, "View")
+        self._command_palette.register_action(self.action_zoom_out, "View")
+        self._command_palette.register_action(self.action_zoom_reset, "View")
+        self._command_palette.register_action(self.action_fit_view, "View")
+        self._command_palette.register_action(self.action_toggle_bottom_panel, "View")
+        self._command_palette.register_action(self.action_toggle_minimap, "View")
+
+        # Register Workflow actions
+        self._command_palette.register_action(self.action_run, "Workflow", "Execute workflow")
+        self._command_palette.register_action(self.action_run_to_node, "Workflow", "Run to selected node")
+        self._command_palette.register_action(self.action_pause, "Workflow", "Pause execution")
+        self._command_palette.register_action(self.action_stop, "Workflow", "Stop execution")
+        self._command_palette.register_action(self.action_validate, "Workflow", "Validate workflow")
+
+        # Register Tools actions
+        self._command_palette.register_action(self.action_pick_selector, "Tools")
+        self._command_palette.register_action(self.action_record_workflow, "Tools")
+        self._command_palette.register_action(self.action_create_frame, "Tools")
+        self._command_palette.register_action(self.action_hotkey_manager, "Tools")
+
+        logger.debug("Command palette created with actions")
+
     def _setup_validation_timer(self) -> None:
         """Setup validation timer for debounced real-time validation."""
         from PySide6.QtCore import QTimer
@@ -512,6 +786,57 @@ class MainWindow(QMainWindow):
         self.action_toggle_bottom_panel.setChecked(True)
 
         logger.info("Bottom panel created with Variables, Output, Log, Validation tabs")
+
+    def _create_properties_panel(self) -> None:
+        """Create the properties panel for selected node editing."""
+        from .properties_panel import PropertiesPanel
+
+        self._properties_panel = PropertiesPanel(self)
+
+        # Connect property changes to mark workflow as modified
+        self._properties_panel.property_changed.connect(self._on_property_panel_changed)
+
+        # Add to main window (right side)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._properties_panel)
+
+        # Add toggle action to View menu
+        view_menu = None
+        for action in self.menuBar().actions():
+            if action.text() == "&View":
+                view_menu = action.menu()
+                break
+
+        if view_menu:
+            self.action_toggle_properties = self._properties_panel.toggleViewAction()
+            self.action_toggle_properties.setText("&Properties Panel")
+            self.action_toggle_properties.setShortcut(QKeySequence("Ctrl+P"))
+            view_menu.addAction(self.action_toggle_properties)
+
+        logger.info("Properties panel created")
+
+    def get_properties_panel(self) -> Optional['PropertiesPanel']:
+        """
+        Get the properties panel.
+
+        Returns:
+            PropertiesPanel instance or None
+        """
+        return self._properties_panel
+
+    def update_properties_panel(self, node) -> None:
+        """
+        Update the properties panel with the selected node.
+
+        Args:
+            node: The selected node, or None to clear
+        """
+        if self._properties_panel:
+            self._properties_panel.set_node(node)
+
+    def _on_property_panel_changed(self, node_id: str, prop_name: str, value) -> None:
+        """Handle property change from properties panel."""
+        self.set_modified(True)
+        logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
     def get_bottom_panel(self) -> Optional['BottomPanelDock']:
         """
@@ -817,6 +1142,10 @@ class MainWindow(QMainWindow):
         self._is_modified = modified
         self._update_window_title()
 
+        # Update breadcrumb bar
+        if self._breadcrumb_bar:
+            self._breadcrumb_bar.set_modified(modified)
+
         # Trigger real-time validation when workflow is modified
         if modified:
             self.on_workflow_changed()
@@ -833,12 +1162,16 @@ class MainWindow(QMainWindow):
     def set_current_file(self, file_path: Optional[Path]) -> None:
         """
         Set the current workflow file path.
-        
+
         Args:
             file_path: Path to the workflow file, or None for new workflow
         """
         self._current_file = file_path
         self._update_window_title()
+
+        # Update breadcrumb bar
+        if self._breadcrumb_bar:
+            self._breadcrumb_bar.set_workflow_file(file_path)
     
     def get_current_file(self) -> Optional[Path]:
         """
@@ -999,6 +1332,36 @@ class MainWindow(QMainWindow):
         self.action_stop.setEnabled(True)
         self.statusBar().showMessage(f"Running to node: {node_name}...", 0)
 
+    def _on_run_single_node(self) -> None:
+        """Handle run single selected node request (F5)."""
+        # Get selected node from the graph
+        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            self.statusBar().showMessage("No graph available", 3000)
+            return
+
+        graph = self._central_widget.graph
+        selected_nodes = graph.selected_nodes()
+
+        # If no node is selected, show message
+        if not selected_nodes:
+            self.statusBar().showMessage("No node selected - select a node to run", 3000)
+            return
+
+        # Get the first selected node's ID
+        target_node = selected_nodes[0]
+        target_node_id = target_node.get_property("node_id")
+
+        if not target_node_id:
+            self.statusBar().showMessage("Selected node has no ID", 3000)
+            return
+
+        # Get the node name for display
+        node_name = target_node.name() if hasattr(target_node, 'name') else target_node_id
+
+        # Emit signal with target node ID
+        self.workflow_run_single_node.emit(target_node_id)
+        self.statusBar().showMessage(f"Running node: {node_name}...", 0)
+
     def _on_pause_workflow(self, checked: bool) -> None:
         """Handle pause/resume workflow request."""
         if checked:
@@ -1065,8 +1428,8 @@ class MainWindow(QMainWindow):
 
     def _on_open_command_palette(self) -> None:
         """Open the command palette dialog."""
-        # TODO: Implement full command palette dialog
-        self.statusBar().showMessage("Command Palette (Ctrl+Shift+P) - coming soon", 3000)
+        if self._command_palette:
+            self._command_palette.show_palette()
 
     def _on_about(self) -> None:
         """Show about dialog."""
@@ -1188,64 +1551,66 @@ class MainWindow(QMainWindow):
         return True
 
     def _create_debug_components(self) -> None:
-        """Create debug toolbar and panels."""
+        """Create debug toolbar."""
         from .debug_toolbar import DebugToolbar
-        from .variable_inspector import VariableInspectorPanel
-        from .execution_history_viewer import ExecutionHistoryViewer
-        
+
         # Create debug toolbar
         self._debug_toolbar = DebugToolbar(self)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self._debug_toolbar)
-        
-        # Create variable inspector panel
-        self._variable_inspector = VariableInspectorPanel(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._variable_inspector)
-        self._variable_inspector.hide()  # Hidden by default
-        
-        # Create execution history viewer
-        self._execution_history = ExecutionHistoryViewer(self)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._execution_history)
-        self._execution_history.hide()  # Hidden by default
-        
-        # Add view menu options for debug panels
+
+        # Add view menu option for debug toolbar
         view_menu = None
         for action in self.menuBar().actions():
             if action.text() == "&View":
                 view_menu = action.menu()
                 break
-        
+
         if view_menu:
             view_menu.addSeparator()
             view_menu.addAction(self._debug_toolbar.toggleViewAction())
-            view_menu.addAction(self._variable_inspector.toggleViewAction())
-            view_menu.addAction(self._execution_history.toggleViewAction())
     
     def get_debug_toolbar(self) -> Optional['DebugToolbar']:
         """
         Get the debug toolbar.
-        
+
         Returns:
             DebugToolbar instance or None
         """
         return self._debug_toolbar if hasattr(self, '_debug_toolbar') else None
-    
-    def get_variable_inspector(self) -> Optional['VariableInspectorPanel']:
+
+    def get_variable_inspector(self):
         """
-        Get the variable inspector panel.
-        
+        Get the variables tab from bottom panel for variable inspection.
+
         Returns:
-            VariableInspectorPanel instance or None
+            VariablesTab instance or None
         """
-        return self._variable_inspector if hasattr(self, '_variable_inspector') else None
-    
-    def get_execution_history_viewer(self) -> Optional['ExecutionHistoryViewer']:
+        if self._bottom_panel:
+            return self._bottom_panel.get_variables_tab()
+        return None
+
+    def show_variable_inspector(self) -> None:
+        """Show the bottom panel and switch to variables tab."""
+        if self._bottom_panel:
+            self._bottom_panel.show_variables_tab()
+            self.action_toggle_bottom_panel.setChecked(True)
+
+    def get_execution_history_viewer(self):
         """
-        Get the execution history viewer.
-        
+        Get the history tab from bottom panel.
+
         Returns:
-            ExecutionHistoryViewer instance or None
+            HistoryTab instance or None
         """
-        return self._execution_history if hasattr(self, '_execution_history') else None
+        if self._bottom_panel:
+            return self._bottom_panel.get_history_tab()
+        return None
+
+    def show_execution_history(self) -> None:
+        """Show the bottom panel and switch to history tab."""
+        if self._bottom_panel:
+            self._bottom_panel.show_history_tab()
+            self.action_toggle_bottom_panel.setChecked(True)
     
     def _on_pick_selector(self) -> None:
         """Handle pick selector action."""
