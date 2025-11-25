@@ -79,11 +79,33 @@ class VariableInspectorPanel(QDockWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        
+
         # Set column widths
         self.table.setColumnWidth(0, 150)
-        
+
         layout.addWidget(self.table)
+
+        # Empty state guidance
+        self.empty_state_label = QLabel(
+            "No variables yet.\n\n"
+            "Variables will appear here when:\n"
+            "- A workflow is running\n"
+            "- SetVariable nodes create variables\n"
+            "- Loop nodes create iterator variables\n\n"
+            "Use SetVariableNode to create variables\n"
+            "in your workflow."
+        )
+        self.empty_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.empty_state_label.setWordWrap(True)
+        self.empty_state_label.setProperty("empty-state", True)
+        self.empty_state_label.setStyleSheet("""
+            QLabel {
+                color: #7a7f85;
+                font-size: 12px;
+                padding: 20px;
+            }
+        """)
+        layout.addWidget(self.empty_state_label)
         
         # Auto-refresh toggle
         refresh_layout = QHBoxLayout()
@@ -102,13 +124,17 @@ class VariableInspectorPanel(QDockWidget):
         self._auto_refresh_timer = QTimer(self)
         self._auto_refresh_timer.timeout.connect(self._on_refresh)
         self._auto_refresh_interval = 500  # ms
-        
+
+        # Show empty state initially
+        self.table.setVisible(False)
+        self.empty_state_label.setVisible(True)
+
         logger.debug("Variable inspector panel initialized")
     
     def update_variables(self, variables: Dict[str, Any]) -> None:
         """
         Update the displayed variables.
-        
+
         Args:
             variables: Dictionary of variable names to values
         """
@@ -117,12 +143,17 @@ class VariableInspectorPanel(QDockWidget):
         current_var = None
         if current_row >= 0 and current_row < self.table.rowCount():
             current_var = self.table.item(current_row, 0).text()
-        
+
         # Clear table
         self.table.setRowCount(0)
-        
+
         # Update count
         self.label_count.setText(f"Variables: {len(variables)}")
+
+        # Toggle empty state visibility
+        has_variables = len(variables) > 0
+        self.table.setVisible(has_variables)
+        self.empty_state_label.setVisible(not has_variables)
         
         # Populate table
         for name, value in sorted(variables.items()):
@@ -197,6 +228,9 @@ class VariableInspectorPanel(QDockWidget):
         """Clear all variables from display."""
         self.table.setRowCount(0)
         self.label_count.setText("Variables: 0")
+        # Show empty state
+        self.table.setVisible(False)
+        self.empty_state_label.setVisible(True)
         logger.debug("Variable inspector cleared")
     
     def set_auto_refresh_interval(self, interval_ms: int) -> None:

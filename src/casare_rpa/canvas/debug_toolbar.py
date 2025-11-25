@@ -73,8 +73,8 @@ class DebugToolbar(QToolBar):
         # Debug Mode toggle
         self.action_debug_mode = QAction("Debug Mode", self)
         self.action_debug_mode.setCheckable(True)
-        self.action_debug_mode.setToolTip("Enable debug mode to track execution history and use breakpoints")
-        self.action_debug_mode.setShortcut("F5")
+        self.action_debug_mode.setToolTip("Enable debug mode to track execution history and use breakpoints (Ctrl+F5)")
+        self.action_debug_mode.setShortcut("Ctrl+F5")
         self.action_debug_mode.toggled.connect(self._on_debug_mode_toggled)
         self.addAction(self.action_debug_mode)
         

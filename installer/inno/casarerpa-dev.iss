@@ -129,6 +129,11 @@ Root: HKLM; Subkey: "SOFTWARE\CasareRPA"; ValueType: string; ValueName: "Install
 Root: HKLM; Subkey: "SOFTWARE\CasareRPA"; ValueType: string; ValueName: "Version"; ValueData: "{#AppVersion}"; Flags: uninsdeletekey
 
 [Run]
+; Install Playwright browsers (required for web automation)
+; This runs the bundled playwright to install Chromium
+Filename: "{app}\Canvas\CasareRPA-Canvas\_internal\playwright.exe"; Parameters: "install chromium"; Description: "Install Chromium browser for web automation"; Flags: postinstall runhidden waituntilterminated; Components: canvas; StatusMsg: "Installing Chromium browser..."
+Filename: "{app}\Robot\CasareRPA-Robot\_internal\playwright.exe"; Parameters: "install chromium"; Description: "Install Chromium browser for web automation"; Flags: postinstall runhidden waituntilterminated; Components: robot not canvas; StatusMsg: "Installing Chromium browser..."
+
 ; Option to launch Canvas after install
 Filename: "{app}\Canvas\CasareRPA-Canvas\CasareRPA-Canvas.exe"; Description: "{cm:LaunchProgram,CasareRPA Canvas}"; Flags: nowait postinstall skipifsilent; Components: canvas
 

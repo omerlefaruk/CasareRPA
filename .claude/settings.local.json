@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"C:\\Users\\Rau\\.claude\\plans\")"
+      "Bash(dir \"C:\\Users\\Rau\\.claude\\plans\")",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

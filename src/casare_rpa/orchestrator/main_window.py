@@ -13,23 +13,27 @@ from loguru import logger
 from pathlib import Path
 
 from casare_rpa.orchestrator.cloud_service import CloudService
+from casare_rpa.orchestrator.theme import get_main_stylesheet, THEME
 
 class OrchestratorWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CasareRPA Orchestrator")
         self.resize(1000, 700)
-        
+
+        # Apply unified theme
+        self.setStyleSheet(get_main_stylesheet())
+
         self.cloud = CloudService()
-        
+
         # Central Widget
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        
+
         # Header
         header = QLabel("Orchestrator Dashboard")
-        header.setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 10px;")
+        header.setStyleSheet(f"font-size: 24px; font-weight: bold; margin-bottom: 10px; color: {THEME.text_primary};")
         main_layout.addWidget(header)
         
         # Tabs
