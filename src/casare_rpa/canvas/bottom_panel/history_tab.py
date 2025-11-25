@@ -194,8 +194,9 @@ class HistoryTab(QWidget):
                 background-color: #3c3f41;
                 color: #cccccc;
                 border: 1px solid #555555;
-                padding: 4px 12px;
-                border-radius: 3px;
+                padding: 2px 6px;
+                border-radius: 2px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #4a4d50;
@@ -207,8 +208,9 @@ class HistoryTab(QWidget):
                 background-color: #3c3f41;
                 color: #cccccc;
                 border: 1px solid #555555;
-                padding: 4px 8px;
-                border-radius: 3px;
+                padding: 2px 4px;
+                border-radius: 2px;
+                font-size: 11px;
             }
             QComboBox::drop-down {
                 border: none;

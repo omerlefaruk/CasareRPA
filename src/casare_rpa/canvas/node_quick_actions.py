@@ -4,9 +4,9 @@ Node Quick Actions for CasareRPA.
 Provides a context menu with quick actions when right-clicking on nodes.
 """
 
-from typing import TYPE_CHECKING, Optional, Callable
-from PySide6.QtWidgets import QMenu, QApplication
-from PySide6.QtCore import QObject, Signal
+from typing import TYPE_CHECKING, Optional
+from PySide6.QtWidgets import QMenu, QApplication, QInputDialog
+from PySide6.QtCore import QObject, Signal, QEvent, Qt, QPointF
 from PySide6.QtGui import QAction
 from loguru import logger
 
@@ -54,88 +54,146 @@ class NodeQuickActions(QObject):
         self._setup_context_menu()
 
     def _setup_context_menu(self) -> None:
-        """Setup the node context menu."""
-        # Get or create the nodes context menu
+        """Setup the node context menu by installing an event filter."""
         try:
-            # NodeGraphQt has a context menu system
-            # We need to add our custom menu items to the "nodes" context menu
-            nodes_menu = self._graph.get_context_menu("nodes")
-            if nodes_menu:
-                self._add_quick_actions_to_menu(nodes_menu.qmenu)
-                logger.debug("Quick actions added to existing nodes context menu")
-            else:
-                # Create new nodes context menu
-                nodes_menu = self._graph.set_context_menu_from_file(None, "nodes")
-                if nodes_menu:
-                    self._add_quick_actions_to_menu(nodes_menu.qmenu)
-                    logger.debug("Quick actions added to new nodes context menu")
+            viewer = self._graph.viewer()
+            # Install event filter on the viewport to intercept right-clicks
+            viewer.viewport().installEventFilter(self)
+            logger.debug("Node quick actions event filter installed on viewport")
         except Exception as e:
             logger.warning(f"Could not setup node context menu: {e}")
-            # Fallback: connect to the viewer's context menu event
-            self._setup_fallback_menu()
 
-    def _setup_fallback_menu(self) -> None:
-        """Setup fallback context menu handling."""
-        # Install event filter on viewer to intercept right-clicks on nodes
-        viewer = self._graph.viewer()
-        viewer.setContextMenuPolicy(viewer.contextMenuPolicy())
-        logger.debug("Using fallback context menu approach")
-
-    def _add_quick_actions_to_menu(self, menu: QMenu) -> None:
+    def _get_node_at_pos(self, pos: QPointF):
         """
-        Add quick action items to the context menu.
+        Get the node at the given scene position.
 
         Args:
-            menu: The QMenu to add actions to
+            pos: Position in view coordinates
+
+        Returns:
+            Node object if found, None otherwise
         """
-        # Clear existing items and add our custom ones
-        menu.clear()
+        try:
+            viewer = self._graph.viewer()
+            # Convert view pos to scene pos
+            scene_pos = viewer.mapToScene(pos.toPoint())
+
+            # Get item at position
+            item = viewer.scene().itemAt(scene_pos, viewer.transform())
+            if not item:
+                return None
+
+            # Check if item is a node or part of a node
+            # NodeGraphQt nodes have a specific structure
+            from NodeGraphQt.qgraphics.node_base import NodeItem
+
+            # Walk up the parent chain to find a NodeItem
+            current = item
+            while current:
+                if isinstance(current, NodeItem):
+                    # Found a node item, get the actual node object
+                    for node in self._graph.all_nodes():
+                        if hasattr(node, 'view') and node.view == current:
+                            return node
+                    break
+                current = current.parentItem()
+
+            return None
+        except Exception as e:
+            logger.debug(f"Error getting node at position: {e}")
+            return None
+
+    def eventFilter(self, obj, event) -> bool:
+        """
+        Event filter to intercept right-clicks on nodes.
+
+        Args:
+            obj: Object that received the event
+            event: The event
+
+        Returns:
+            True if event was handled, False otherwise
+        """
+        if event.type() == QEvent.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.RightButton:
+                # Check if click is directly on a node
+                node = self._get_node_at_pos(event.position())
+                if node:
+                    # Select the node if not already selected
+                    if not node.selected():
+                        self._graph.clear_selection()
+                        node.set_selected(True)
+
+                    # Show our custom context menu
+                    self._show_node_context_menu(event.globalPosition().toPoint())
+                    return True  # Consume the event - we handled the node right-click
+
+        return False  # Let other events pass through (including canvas right-clicks)
+
+    def _show_node_context_menu(self, pos) -> None:
+        """
+        Show the node context menu at the given position.
+
+        Args:
+            pos: Global position for the menu
+        """
+        menu = QMenu()
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2b2b2b;
+                border: 1px solid #3d3d3d;
+                padding: 4px;
+            }
+            QMenu::item {
+                padding: 6px 20px;
+                color: #e0e0e0;
+            }
+            QMenu::item:selected {
+                background-color: #3a5a7a;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #3d3d3d;
+                margin: 4px 8px;
+            }
+        """)
 
         # === Execution Actions ===
-        run_node_action = QAction("▶ Run This Node (F5)", menu)
+        run_node_action = menu.addAction("Run This Node (F5)")
         run_node_action.triggered.connect(self._on_run_node)
-        menu.addAction(run_node_action)
 
-        run_to_action = QAction("▷ Run To Here (F4)", menu)
+        run_to_action = menu.addAction("Run To Here (F4)")
         run_to_action.triggered.connect(self._on_run_to_node)
-        menu.addAction(run_to_action)
 
         menu.addSeparator()
 
         # === Edit Actions ===
-        copy_action = QAction("Copy (Ctrl+C)", menu)
+        copy_action = menu.addAction("Copy (Ctrl+C)")
         copy_action.triggered.connect(self._on_copy)
-        menu.addAction(copy_action)
 
-        duplicate_action = QAction("Duplicate (Ctrl+D)", menu)
+        duplicate_action = menu.addAction("Duplicate (Ctrl+D)")
         duplicate_action.triggered.connect(self._on_duplicate)
-        menu.addAction(duplicate_action)
 
-        delete_action = QAction("Delete (X)", menu)
+        delete_action = menu.addAction("Delete (X)")
         delete_action.triggered.connect(self._on_delete)
-        menu.addAction(delete_action)
 
         menu.addSeparator()
 
         # === Node Actions ===
-        rename_action = QAction("Rename (F2)", menu)
+        rename_action = menu.addAction("Rename (F2)")
         rename_action.triggered.connect(self._on_rename)
-        menu.addAction(rename_action)
 
-        center_action = QAction("Center in View", menu)
+        center_action = menu.addAction("Center in View")
         center_action.triggered.connect(self._on_center_view)
-        menu.addAction(center_action)
 
         menu.addSeparator()
 
         # === Info Actions ===
-        copy_id_action = QAction("Copy Node ID", menu)
+        copy_id_action = menu.addAction("Copy Node ID")
         copy_id_action.triggered.connect(self._on_copy_node_id)
-        menu.addAction(copy_id_action)
 
-        properties_action = QAction("Show Properties", menu)
-        properties_action.triggered.connect(self._on_show_properties)
-        menu.addAction(properties_action)
+        # Show the menu
+        menu.exec(pos)
 
     def _get_selected_node_id(self) -> Optional[str]:
         """Get the ID of the first selected node."""
@@ -185,8 +243,6 @@ class NodeQuickActions(QObject):
 
     def _show_rename_dialog(self) -> None:
         """Show dialog to rename the selected node."""
-        from PySide6.QtWidgets import QInputDialog
-
         selected = self._graph.selected_nodes()
         if not selected:
             return
@@ -224,15 +280,6 @@ class NodeQuickActions(QObject):
             clipboard = QApplication.clipboard()
             clipboard.setText(node_id)
             logger.debug(f"Copied node ID to clipboard: {node_id}")
-
-    def _on_show_properties(self) -> None:
-        """Show the properties panel for the selected node."""
-        # This will be handled by the main window
-        selected = self._graph.selected_nodes()
-        if selected:
-            # Trigger node selection signal to update properties panel
-            # The main window should already handle this via node_selected signal
-            logger.debug("Quick action: Show properties")
 
 
 def setup_node_quick_actions(graph: 'NodeGraph') -> NodeQuickActions:

@@ -8,7 +8,7 @@ GUI container for the RPA platform.
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtCore import Qt, QSize, Signal, QSettings, QByteArray, QTimer
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -128,7 +128,16 @@ class MainWindow(QMainWindow):
         # Set initial state
         self._update_window_title()
         self._update_actions()
-    
+
+        # Setup UI state persistence
+        self._settings = QSettings("CasareRPA", "Canvas")
+        self._state_save_timer = QTimer(self)
+        self._state_save_timer.setSingleShot(True)
+        self._state_save_timer.timeout.connect(self._save_ui_state)
+
+        # Restore UI state from previous session
+        self._restore_ui_state()
+
     def _setup_window(self) -> None:
         """Configure window properties."""
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
@@ -821,6 +830,11 @@ class MainWindow(QMainWindow):
         # Add to main window
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._bottom_panel)
 
+        # Connect dock state changes to auto-save
+        self._bottom_panel.dockLocationChanged.connect(self._schedule_ui_state_save)
+        self._bottom_panel.visibilityChanged.connect(self._schedule_ui_state_save)
+        self._bottom_panel.topLevelChanged.connect(self._schedule_ui_state_save)
+
         # Initially visible
         self._bottom_panel.show()
         self.action_toggle_bottom_panel.setChecked(True)
@@ -839,6 +853,11 @@ class MainWindow(QMainWindow):
         # Split dock horizontally with bottom panel (side-by-side)
         if self._bottom_panel:
             self.splitDockWidget(self._bottom_panel, self._variable_inspector_dock, Qt.Orientation.Horizontal)
+
+        # Connect dock state changes to auto-save
+        self._variable_inspector_dock.dockLocationChanged.connect(self._schedule_ui_state_save)
+        self._variable_inspector_dock.visibilityChanged.connect(self._schedule_ui_state_save)
+        self._variable_inspector_dock.topLevelChanged.connect(self._schedule_ui_state_save)
 
         # Initially hidden (user can show via View menu)
         self._variable_inspector_dock.hide()
@@ -866,6 +885,11 @@ class MainWindow(QMainWindow):
         # Add to main window (right side)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._properties_panel)
 
+        # Connect dock state changes to auto-save
+        self._properties_panel.dockLocationChanged.connect(self._schedule_ui_state_save)
+        self._properties_panel.visibilityChanged.connect(self._schedule_ui_state_save)
+        self._properties_panel.topLevelChanged.connect(self._schedule_ui_state_save)
+
         # Add toggle action to View menu
         view_menu = None
         for action in self.menuBar().actions():
@@ -880,6 +904,55 @@ class MainWindow(QMainWindow):
             view_menu.addAction(self.action_toggle_properties)
 
         logger.info("Properties panel created")
+
+    def _create_execution_timeline_dock(self) -> None:
+        """Create the Execution Timeline dock for visualizing workflow execution."""
+        from .execution_timeline import ExecutionTimeline
+
+        self._execution_timeline = ExecutionTimeline(self)
+
+        # Create dock widget
+        self._execution_timeline_dock = QDockWidget("Execution Timeline", self)
+        self._execution_timeline_dock.setWidget(self._execution_timeline)
+        self._execution_timeline_dock.setAllowedAreas(
+            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea
+        )
+
+        # Add to main window (bottom area)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._execution_timeline_dock)
+
+        # Connect dock state changes to auto-save
+        self._execution_timeline_dock.dockLocationChanged.connect(self._schedule_ui_state_save)
+        self._execution_timeline_dock.visibilityChanged.connect(self._schedule_ui_state_save)
+        self._execution_timeline_dock.topLevelChanged.connect(self._schedule_ui_state_save)
+
+        # Tabify with variable inspector if exists
+        if hasattr(self, '_variable_inspector_dock') and self._variable_inspector_dock:
+            self.tabifyDockWidget(self._variable_inspector_dock, self._execution_timeline_dock)
+
+        # Add toggle action to View menu
+        view_menu = None
+        for action in self.menuBar().actions():
+            if action.text() == "&View":
+                view_menu = action.menu()
+                break
+
+        if view_menu:
+            self.action_toggle_timeline = self._execution_timeline_dock.toggleViewAction()
+            self.action_toggle_timeline.setText("&Execution Timeline")
+            view_menu.addAction(self.action_toggle_timeline)
+
+        # Connect node clicked signal
+        self._execution_timeline.node_clicked.connect(self._select_node_by_id)
+
+        # Initially hidden
+        self._execution_timeline_dock.hide()
+
+        logger.info("Execution Timeline dock created")
+
+    def get_execution_timeline(self) -> Optional['ExecutionTimeline']:
+        """Get the execution timeline widget."""
+        return getattr(self, '_execution_timeline', None)
 
     def get_properties_panel(self) -> Optional['PropertiesPanel']:
         """
@@ -2039,11 +2112,121 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:
         """
         Handle window close event.
-        
+
         Args:
             event: Close event
         """
         if self._check_unsaved_changes():
+            # Save UI state before closing
+            self._save_ui_state()
             event.accept()
         else:
             event.ignore()
+
+    # ==================== UI State Persistence ====================
+
+    def _save_ui_state(self) -> None:
+        """Save current UI state (window geometry, dock positions, etc.)."""
+        try:
+            self._settings.setValue("geometry", self.saveGeometry())
+            self._settings.setValue("windowState", self.saveState())
+
+            # Save dock visibility states
+            if self._bottom_panel:
+                self._settings.setValue("bottomPanelVisible", self._bottom_panel.isVisible())
+                self._settings.setValue("bottomPanelTab", self._bottom_panel._tab_widget.currentIndex())
+
+            if self._variable_inspector_dock:
+                self._settings.setValue("variableInspectorVisible", self._variable_inspector_dock.isVisible())
+
+            if self._properties_panel:
+                self._settings.setValue("propertiesPanelVisible", self._properties_panel.isVisible())
+
+            # Save execution timeline visibility
+            if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
+                self._settings.setValue("executionTimelineVisible", self._execution_timeline_dock.isVisible())
+
+            # Save minimap visibility
+            if hasattr(self, '_minimap') and self._minimap:
+                self._settings.setValue("minimapVisible", self._minimap.isVisible())
+
+            self._settings.sync()
+            logger.debug("UI state saved")
+        except Exception as e:
+            logger.warning(f"Failed to save UI state: {e}")
+
+    def reset_ui_state(self) -> None:
+        """Reset/clear all saved UI state settings."""
+        try:
+            self._settings.clear()
+            self._settings.sync()
+            logger.info("UI state settings cleared")
+        except Exception as e:
+            logger.warning(f"Failed to clear UI state: {e}")
+
+    def _restore_ui_state(self) -> None:
+        """Restore UI state from previous session."""
+        try:
+            # Skip restore on first run or if settings are empty
+            if not self._settings.contains("geometry"):
+                logger.debug("No saved UI state found, using defaults")
+                return
+
+            # Restore window geometry
+            geometry = self._settings.value("geometry")
+            if geometry:
+                try:
+                    self.restoreGeometry(geometry)
+                except Exception:
+                    pass  # Ignore invalid geometry
+
+            # Restore window state (dock positions)
+            state = self._settings.value("windowState")
+            if state:
+                try:
+                    self.restoreState(state)
+                except Exception:
+                    pass  # Ignore invalid state
+
+            # Restore dock visibility states
+            if self._bottom_panel:
+                visible = self._settings.value("bottomPanelVisible", True, type=bool)
+                self._bottom_panel.setVisible(visible)
+                self.action_toggle_bottom_panel.setChecked(visible)
+
+                tab_index = self._settings.value("bottomPanelTab", 0, type=int)
+                self._bottom_panel._tab_widget.setCurrentIndex(tab_index)
+
+            if self._variable_inspector_dock:
+                visible = self._settings.value("variableInspectorVisible", False, type=bool)
+                self._variable_inspector_dock.setVisible(visible)
+                self.action_toggle_variable_inspector.setChecked(visible)
+
+            if self._properties_panel:
+                visible = self._settings.value("propertiesPanelVisible", True, type=bool)
+                self._properties_panel.setVisible(visible)
+
+            # Restore execution timeline visibility
+            if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
+                visible = self._settings.value("executionTimelineVisible", False, type=bool)
+                self._execution_timeline_dock.setVisible(visible)
+                if hasattr(self, 'action_toggle_timeline'):
+                    self.action_toggle_timeline.setChecked(visible)
+
+            # Restore minimap visibility
+            if hasattr(self, '_minimap') and self._minimap:
+                visible = self._settings.value("minimapVisible", False, type=bool)
+                self._minimap.setVisible(visible)
+                if hasattr(self, 'action_toggle_minimap'):
+                    self.action_toggle_minimap.setChecked(visible)
+
+            logger.debug("UI state restored from previous session")
+        except Exception as e:
+            logger.warning(f"Failed to restore UI state: {e}")
+
+    def _schedule_ui_state_save(self) -> None:
+        """Schedule UI state save (debounced to avoid too frequent saves)."""
+        # Check if timer exists (it's created after dock widgets)
+        if hasattr(self, '_state_save_timer') and self._state_save_timer:
+            # Restart the timer - this provides debouncing
+            self._state_save_timer.start(1000)  # Save after 1 second of inactivity

@@ -175,8 +175,9 @@ class OutputTab(QWidget):
                 background-color: #3c3f41;
                 color: #cccccc;
                 border: 1px solid #555555;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border-radius: 2px;
+                padding: 2px 6px;
+                font-size: 11px;
             }
             QPushButton:hover {
                 background-color: #4c4f51;
