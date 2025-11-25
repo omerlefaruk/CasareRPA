@@ -151,6 +151,10 @@ class VisualLaunchBrowserNode(VisualNode):
         self.add_checkbox("ignore_https_errors", "Ignore HTTPS Errors", state=False, tab="advanced")
         self.add_text_input("proxy_server", "Proxy Server", placeholder_text="http://proxy:8080", tab="advanced")
 
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="2000", tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -502,7 +506,12 @@ class VisualWaitForElementNode(VisualNode):
         # Advanced options
         self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
         self.add_text_input("poll_interval", "Poll Interval (ms)", placeholder_text="100", tab="advanced")
-    
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
+        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
+        self.add_checkbox("highlight_on_find", "Highlight on Find", state=False, tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -527,7 +536,11 @@ class VisualWaitForNavigationNode(VisualNode):
         # Advanced options
         self.add_text_input("url_pattern", "URL Pattern", placeholder_text="Optional glob or regex", tab="advanced")
         self.add_checkbox("url_use_regex", "Use Regex", state=False, tab="advanced")
-    
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
+        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -2294,6 +2307,9 @@ class VisualSendEmailNode(VisualNode):
         self.add_combo_menu("priority", "Priority", items=["normal", "high", "low"], tab="advanced")
         self.create_property("read_receipt", False, widget_type=1, tab="advanced")
         self.add_text_input("sender_name", "Sender Name", placeholder_text="Optional", tab="advanced")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2331,6 +2347,9 @@ class VisualReadEmailsNode(VisualNode):
         self.create_property("mark_as_read", False, widget_type=1, tab="advanced")
         self.create_property("include_body", True, widget_type=1, tab="advanced")
         self.create_property("newest_first", True, widget_type=1, tab="advanced")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2932,6 +2951,9 @@ class VisualDatabaseConnectNode(VisualNode):
         self.add_text_input("pool_size", "Pool Size", placeholder_text="5", tab="advanced")
         self.create_property("auto_commit", True, widget_type=1, tab="advanced")
         self.add_text_input("charset", "Charset", text="utf8mb4", tab="advanced")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2959,6 +2981,9 @@ class VisualExecuteQueryNode(VisualNode):
         """Initialize Execute Query node."""
         super().__init__()
         self.add_text_input("query", "SQL Query", text="", tab="inputs")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2986,6 +3011,9 @@ class VisualExecuteNonQueryNode(VisualNode):
         """Initialize Execute Non-Query node."""
         super().__init__()
         self.add_text_input("query", "SQL Statement", text="", tab="inputs")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3217,6 +3245,9 @@ class VisualHttpGetNode(VisualNode):
         self.add_text_input("url", "URL", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3248,6 +3279,9 @@ class VisualHttpPostNode(VisualNode):
         self.add_combo_menu("content_type", "Content Type", items=["application/json", "application/x-www-form-urlencoded", "text/plain"], tab="config")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3278,6 +3312,9 @@ class VisualHttpPutNode(VisualNode):
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3308,6 +3345,9 @@ class VisualHttpPatchNode(VisualNode):
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3337,6 +3377,9 @@ class VisualHttpDeleteNode(VisualNode):
         self.add_text_input("url", "URL", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
 
     def setup_ports(self) -> None:
         """Setup ports."""

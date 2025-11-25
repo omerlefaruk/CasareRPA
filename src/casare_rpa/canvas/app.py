@@ -7,7 +7,7 @@ PySide6 with asyncio using qasync for async workflow execution.
 
 import sys
 import asyncio
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
@@ -709,7 +709,43 @@ class CasareRPAApp:
         
         if synced_count == 0:
             logger.info(f"No widgets synced for {casare_node.node_type}")
-    
+
+    def _get_initial_variables(self) -> Dict[str, Any]:
+        """
+        Get initial variables from the bottom panel Variables Tab.
+
+        These variables will be loaded into ExecutionContext at workflow start,
+        enabling {{variable_name}} substitution in node properties.
+
+        Returns:
+            Dict of variable_name -> default_value
+        """
+        initial_variables = {}
+
+        try:
+            # Get bottom panel from main window
+            bottom_panel = self._main_window.get_bottom_panel()
+            if bottom_panel:
+                variables_tab = bottom_panel.get_variables_tab()
+                if variables_tab:
+                    # Get all variables from the Variables Tab
+                    for name, var_def in variables_tab.get_variables().items():
+                        # Extract the default value from the variable definition
+                        if isinstance(var_def, dict):
+                            initial_variables[name] = var_def.get("default_value", "")
+                        else:
+                            initial_variables[name] = var_def
+
+                    if initial_variables:
+                        logger.info(
+                            f"Loaded {len(initial_variables)} variables from Variables Tab: "
+                            f"{list(initial_variables.keys())}"
+                        )
+        except Exception as e:
+            logger.warning(f"Could not get initial variables from bottom panel: {e}")
+
+        return initial_variables
+
     def _create_workflow_from_graph(self) -> WorkflowSchema:
         """
         Create a WorkflowSchema from the current node graph.

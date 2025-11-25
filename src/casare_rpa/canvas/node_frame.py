@@ -19,7 +19,6 @@ from PySide6.QtCore import QRectF, Qt, QPointF, QTimer, QObject, Signal
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QKeyEvent, QPainterPath
 from NodeGraphQt import BaseNode
 from NodeGraphQt.base.node import NodeObject
-from loguru import logger
 
 
 # ============================================================================
@@ -72,7 +71,6 @@ class FrameDeletedCmd(QUndoCommand):
                 self._frame._bounds_manager.register_frame(self._frame)
 
             self._was_deleted = False
-            logger.info(f"Undo: Restored frame '{self._frame_data['title']}'")
 
     def redo(self):
         """Delete the frame again."""
@@ -84,7 +82,6 @@ class FrameDeletedCmd(QUndoCommand):
             # Remove from scene (but keep the frame object)
             self._scene.removeItem(self._frame)
             self._was_deleted = True
-            logger.info(f"Redo: Deleted frame '{self._frame_data['title']}'")
 
 
 # ============================================================================
@@ -133,7 +130,6 @@ class FrameBoundsManager(QObject):
         self._frames.add(frame)
         if not self._timer.isActive():
             self._timer.start(self._interval)
-        logger.debug(f"Registered frame '{frame.frame_title}', total frames: {len(self._frames)}")
 
     def unregister_frame(self, frame: "NodeFrame") -> None:
         """
@@ -145,7 +141,6 @@ class FrameBoundsManager(QObject):
         self._frames.discard(frame)
         if not self._frames and self._timer.isActive():
             self._timer.stop()
-        logger.debug(f"Unregistered frame, total frames: {len(self._frames)}")
 
     def _batch_check(self) -> None:
         """Check all frames in a single pass."""
@@ -157,8 +152,8 @@ class FrameBoundsManager(QObject):
             try:
                 if frame.scene():  # Frame still in scene
                     frame._check_node_bounds()
-            except Exception as e:
-                logger.debug(f"Error checking frame bounds: {e}")
+            except Exception:
+                pass
 
     @property
     def frame_count(self) -> int:
@@ -352,7 +347,6 @@ class NodeFrame(QGraphicsRectItem):
     def set_graph(cls, graph):
         """Set the graph reference for all frames to use for node lookup."""
         cls._graph_ref = graph
-        logger.debug(f"NodeFrame graph reference set")
 
     def __init__(
         self,
@@ -415,8 +409,6 @@ class NodeFrame(QGraphicsRectItem):
         # This significantly reduces CPU usage when there are many frames
         self._bounds_manager = FrameBoundsManager.get_instance()
         self._bounds_manager.register_frame(self)
-
-        logger.info(f"Created node frame: {title} (using centralized bounds manager)")
 
     def _apply_style(self):
         """Apply visual styling to the frame."""
@@ -486,7 +478,6 @@ class NodeFrame(QGraphicsRectItem):
         # First, capture any nodes that are inside the frame bounds but not yet tracked
         self._capture_nodes_in_bounds()
 
-        logger.info(f"Collapsing frame: {self.frame_title} with {len(self.contained_nodes)} nodes")
 
         # Store current expanded rect
         self._expanded_rect = QRectF(self.rect())
@@ -506,8 +497,8 @@ class NodeFrame(QGraphicsRectItem):
                 if hasattr(node, 'view') and node.view:
                     self._hidden_node_views.append(node.view)
                     node.view.setVisible(False)
-            except Exception as e:
-                logger.warning(f"Error hiding node during collapse: {e}")
+            except Exception:
+                pass
 
         # Force pipe visibility update by triggering redraw through ports
         # This is more reliable than calling draw_path directly
@@ -542,7 +533,6 @@ class NodeFrame(QGraphicsRectItem):
         if self.scene():
             self.scene().invalidate()
 
-        logger.info(f"Frame '{self.frame_title}' collapsed - hid {len(self._hidden_node_views)} nodes, {len(self._hidden_pipes)} pipes")
 
     def expand(self) -> None:
         """
@@ -556,7 +546,6 @@ class NodeFrame(QGraphicsRectItem):
         if not self._is_collapsed:
             return
 
-        logger.info(f"Expanding frame: {self.frame_title}")
 
         # Remove exposed port indicators
         self._clear_exposed_ports()
@@ -611,7 +600,6 @@ class NodeFrame(QGraphicsRectItem):
         if self.scene():
             self.scene().invalidate()
 
-        logger.info(f"Frame '{self.frame_title}' expanded")
 
     def _capture_nodes_in_bounds(self) -> None:
         """
@@ -630,8 +618,8 @@ class NodeFrame(QGraphicsRectItem):
         if NodeFrame._graph_ref:
             try:
                 all_nodes = NodeFrame._graph_ref.all_nodes()
-            except Exception as e:
-                logger.debug(f"Could not get nodes from graph: {e}")
+            except Exception:
+                pass
                 return
 
         # Check each node
@@ -651,9 +639,8 @@ class NodeFrame(QGraphicsRectItem):
                         node_center = node_rect.center()
                         if frame_rect.contains(node_center):
                             self.add_node(node)
-                            logger.debug(f"Auto-captured node in frame bounds")
-                except Exception as e:
-                    logger.debug(f"Error checking node bounds: {e}")
+                except Exception:
+                    pass
 
     def _collect_pipes(self, node) -> None:
         """Collect all pipes from a node and store them (without hiding)."""
@@ -672,8 +659,8 @@ class NodeFrame(QGraphicsRectItem):
                 if hasattr(port, 'view') and port.view:
                     for pipe in port.view.connected_pipes():
                         self._hidden_pipes.add(pipe)
-        except Exception as e:
-            logger.debug(f"Error collecting pipes: {e}")
+        except Exception:
+            pass
 
     def _create_exposed_ports(self) -> None:
         """Create indicators for ports connected to nodes outside this frame."""
@@ -701,8 +688,8 @@ class NodeFrame(QGraphicsRectItem):
                         connected_node = connected_port.node()
                         if connected_node not in self.contained_nodes:
                             output_ports.append((port.name(), self._get_port_color(port)))
-            except Exception as e:
-                logger.debug(f"Error collecting exposed ports: {e}")
+            except Exception:
+                pass
 
         # Create indicators
         rect = self.rect()
@@ -746,8 +733,8 @@ class NodeFrame(QGraphicsRectItem):
                     registry = get_port_type_registry()
                     color_tuple = registry.get_type_color(data_type)
                     return QColor(*color_tuple)
-        except Exception as e:
-            logger.debug(f"Could not get port color: {e}")
+        except Exception:
+            pass
 
         return default_color
 
@@ -801,8 +788,6 @@ class NodeFrame(QGraphicsRectItem):
         """
         if node not in self.contained_nodes:
             self.contained_nodes.append(node)
-            node_name = node.name() if hasattr(node, 'name') else str(node)
-            logger.debug(f"Added node '{node_name}' to frame '{self.frame_title}' (total: {len(self.contained_nodes)})")
             # Store the node's relative position to the frame
             if hasattr(node, 'pos'):
                 node_pos = node.pos()
@@ -873,7 +858,6 @@ class NodeFrame(QGraphicsRectItem):
         if event.button() == Qt.MouseButton.LeftButton:
             # Ensure frame receives keyboard focus for key events (like X for delete)
             self.setFocus()
-            logger.info(f"🎯 Frame '{self.frame_title}' received focus")
 
             # Check if clicking on a resize handle
             self._resize_corner = self._get_resize_corner(event.pos())
@@ -924,7 +908,6 @@ class NodeFrame(QGraphicsRectItem):
             if self._resizing:
                 self._resizing = False
                 self._resize_corner = None
-                logger.info(f"Frame resized to: {self.rect().width()}x{self.rect().height()}")
             else:
                 self._is_moving = False
                 # Check for nodes that should be ungrouped
@@ -966,8 +949,8 @@ class NodeFrame(QGraphicsRectItem):
         if NodeFrame._graph_ref:
             try:
                 all_nodes = NodeFrame._graph_ref.all_nodes()
-            except Exception as e:
-                logger.debug(f"Could not get nodes from graph: {e}")
+            except Exception:
+                pass
 
         # Track if any node is being dragged over this frame
         has_hovering_node = False
@@ -987,7 +970,6 @@ class NodeFrame(QGraphicsRectItem):
                         overlap_ratio = (intersection.width() * intersection.height()) / node_area
                         if overlap_ratio < 0.25:
                             self.remove_node(node)
-                            logger.debug(f"Ungrouped node from frame (moved outside)")
 
         # Check for nodes being dragged over the frame (for highlighting and auto-grouping)
         for node in all_nodes:
@@ -1039,7 +1021,6 @@ class NodeFrame(QGraphicsRectItem):
                     if pos_changed and overlap_ratio > 0.7:
                         if not self._is_moving:
                             self.add_node(node)
-                            logger.info(f"Node added to frame by dragging")
                             if node_id in self._last_overlap_check:
                                 del self._last_overlap_check[node_id]
                             continue
@@ -1077,7 +1058,6 @@ class NodeFrame(QGraphicsRectItem):
 
         if ok and new_title:
             self.set_title(new_title)
-            logger.info(f"Frame title changed to: {new_title}")
 
     def contextMenuEvent(self, event):
         """Show context menu with frame options."""
@@ -1140,8 +1120,8 @@ class NodeFrame(QGraphicsRectItem):
                     cmd = FrameDeletedCmd(self, scene, f"Delete Frame '{self.frame_title}'")
                     undo_stack.push(cmd)
                     return  # The redo() of the command will do the actual deletion
-            except Exception as e:
-                logger.debug(f"Could not use undo stack: {e}")
+            except Exception:
+                pass
 
         # Direct deletion (no undo)
         self._do_delete()
@@ -1159,7 +1139,6 @@ class NodeFrame(QGraphicsRectItem):
         # Remove from scene
         if self.scene():
             self.scene().removeItem(self)
-            logger.info(f"Deleted frame: {self.frame_title}")
 
     # =========================================================================
     # SERIALIZATION
@@ -1257,7 +1236,6 @@ class NodeFrame(QGraphicsRectItem):
         if data.get("is_collapsed", False):
             frame.collapse()
 
-        logger.info(f"Deserialized frame: {frame.frame_title}")
         return frame
 
 
@@ -1297,7 +1275,6 @@ class FrameNode(NodeObject):
         # Hide standard node appearance (no ports, minimal chrome)
         self.set_color(0, 0, 0, 0)  # Transparent
 
-        logger.info("Frame node created")
 
     def get_frame_rect(self) -> QRectF:
         """Get the frame's bounding rectangle."""
@@ -1357,7 +1334,6 @@ def create_frame(
     # Position the frame
     frame.setPos(position[0], position[1])
 
-    logger.info(f"Created frame '{title}' at {position}")
     return frame
 
 
@@ -1377,11 +1353,9 @@ def group_selected_nodes(graph_view, title: str = "Group", selected_nodes: List 
         if hasattr(graph_view, 'selected_nodes'):
             selected_nodes = graph_view.selected_nodes()
         else:
-            logger.warning("No nodes provided and graph_view has no selected_nodes method")
             return None
 
     if not selected_nodes:
-        logger.warning("No nodes selected for grouping")
         return None
 
     # Calculate bounding box of selected nodes
@@ -1410,7 +1384,6 @@ def group_selected_nodes(graph_view, title: str = "Group", selected_nodes: List 
     for node in selected_nodes:
         frame.add_node(node)
 
-    logger.info(f"Created frame around {len(selected_nodes)} nodes and grouped them")
     return frame
 
 
@@ -1446,4 +1419,3 @@ def add_frame_menu_actions(graph_menu):
         )
         frame_menu.addAction(action)
 
-    logger.debug("Frame menu actions added")

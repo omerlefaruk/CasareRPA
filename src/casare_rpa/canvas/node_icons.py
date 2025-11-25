@@ -167,7 +167,8 @@ def create_node_icon(
     painter.drawEllipse(margin, margin, size - margin*2, size - margin*2)
 
     # Draw icon symbol
-    font = QFont("Segoe UI Emoji", int(size * 0.5))  # Use emoji font
+    font_size = max(1, int(size * 0.5))  # Ensure font size is at least 1
+    font = QFont("Segoe UI Emoji", font_size)  # Use emoji font
     painter.setFont(font)
     painter.setPen(QPen(Qt.GlobalColor.white))
 

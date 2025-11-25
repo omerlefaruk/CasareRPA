@@ -18,12 +18,7 @@ from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 from PySide6.QtCore import Qt, QRectF, QTimer, QPointF, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QLinearGradient, QPixmap, QFont
 from NodeGraphQt.qgraphics.node_base import NodeItem
-from NodeGraphQt.constants import (
-    Z_VAL_NODE,
-    ITEM_CACHE_MODE,
-    NODE_SEL_COLOR,
-    NODE_SEL_BORDER_COLOR
-)
+from NodeGraphQt.constants import Z_VAL_NODE, ITEM_CACHE_MODE
 
 from loguru import logger
 
@@ -143,12 +138,8 @@ class CasareNodeItem(NodeItem):
         # This significantly improves performance when many nodes are running
         self._animation_coordinator = AnimationCoordinator.get_instance()
 
-        # Icon
-        self._icon_pixmap = None
-        self._icon_item = None
-
-        # Checkmark for completed state
-        self._checkmark_item = None
+        # Custom icon pixmap (separate from parent's _icon_item)
+        self._custom_icon_pixmap = None
 
         # Colors matching the reference image
         self._normal_border_color = QColor(68, 68, 68)  # Dark gray border
@@ -197,13 +188,13 @@ class CasareNodeItem(NodeItem):
         
         painter.strokePath(path, pen)
         
-        # Draw icon if available
-        if self._icon_pixmap and not self._icon_pixmap.isNull():
+        # Draw custom icon if available
+        if self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
             icon_size = 24
             icon_x = rect.left() + 12
             icon_y = rect.top() + 12
             icon_rect = QRectF(icon_x, icon_y, icon_size, icon_size)
-            painter.drawPixmap(icon_rect.toRect(), self._icon_pixmap)
+            painter.drawPixmap(icon_rect.toRect(), self._custom_icon_pixmap)
         
         # Draw status indicator (mutually exclusive - error takes precedence)
         if self._has_error:
@@ -264,7 +255,7 @@ class CasareNodeItem(NodeItem):
                          QPointF(x + inset, y + size - inset))
 
     def _draw_execution_time(self, painter, rect):
-        """Draw execution time badge at bottom-center of node (n8n-style)."""
+        """Draw execution time badge at top-center of node."""
         if self._execution_time_ms is None:
             return
 
@@ -291,9 +282,9 @@ class CasareNodeItem(NodeItem):
         badge_height = text_height + padding_v * 2
         badge_radius = 4
 
-        # Position at bottom-center
+        # Position at top-center (above node, offset by -badge_height - 4)
         badge_x = rect.center().x() - badge_width / 2
-        badge_y = rect.bottom() - badge_height - 6
+        badge_y = rect.top() - badge_height - 4
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 
@@ -372,8 +363,8 @@ class CasareNodeItem(NodeItem):
         self.update()
 
     def set_icon(self, pixmap: QPixmap):
-        """Set node icon."""
-        self._icon_pixmap = pixmap
+        """Set custom node icon."""
+        self._custom_icon_pixmap = pixmap
         self.update()
     
     def borderColor(self):

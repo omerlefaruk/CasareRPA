@@ -104,10 +104,13 @@ class ClickElementNode(BaseNode):
             selector = self.get_input_value("selector")
             if selector is None:
                 selector = self.config.get("selector", "")
-            
+
             if not selector:
                 raise ValueError("Selector is required")
-            
+
+            # Resolve {{variable}} patterns in selector
+            selector = context.resolve_value(selector)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -366,6 +369,9 @@ class TypeTextNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
 
+            # Resolve {{variable}} patterns in selector
+            selector = context.resolve_value(selector)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -376,6 +382,9 @@ class TypeTextNode(BaseNode):
 
             if text is None:
                 text = ""
+
+            # Resolve {{variable}} patterns in text
+            text = context.resolve_value(text)
 
             # Safely parse delay with default
             delay_val = self.config.get("delay")
@@ -599,6 +608,9 @@ class SelectDropdownNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
 
+            # Resolve {{variable}} patterns in selector
+            selector = context.resolve_value(selector)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -609,6 +621,9 @@ class SelectDropdownNode(BaseNode):
 
             if not value:
                 raise ValueError("Value is required")
+
+            # Resolve {{variable}} patterns in value
+            value = context.resolve_value(value)
 
             # Get Playwright options from config - safely parse timeout
             timeout_val = self.config.get("timeout")

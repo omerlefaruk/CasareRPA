@@ -1171,6 +1171,9 @@ class VisualFTPConnectNode(VisualNode):
         self.add_checkbox("passive", "Passive Mode", state=True, tab="properties")
         self.add_checkbox("use_tls", "Use TLS", state=False, tab="properties")
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1194,6 +1197,9 @@ class VisualFTPUploadNode(VisualNode):
         super().__init__()
         self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
         self.add_checkbox("create_dirs", "Create Dirs", state=False, tab="properties")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -1215,6 +1221,9 @@ class VisualFTPDownloadNode(VisualNode):
         super().__init__()
         self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
         self.add_checkbox("overwrite", "Overwrite", state=False, tab="properties")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
