@@ -96,14 +96,14 @@ class MainToolbar(QToolBar):
         """)
 
         # View buttons (toggleable)
-        self._dashboard_btn = self._create_view_button("Dashboard", "📊")
+        self._dashboard_btn = self._create_view_button("Dashboard")
         self._dashboard_btn.setChecked(True)
         self.addWidget(self._dashboard_btn)
 
-        self._jobs_btn = self._create_view_button("Jobs", "📋")
+        self._jobs_btn = self._create_view_button("Jobs")
         self.addWidget(self._jobs_btn)
 
-        self._robots_btn = self._create_view_button("Robots", "🤖")
+        self._robots_btn = self._create_view_button("Robots")
         self.addWidget(self._robots_btn)
 
         self.addSeparator()
@@ -138,9 +138,9 @@ class MainToolbar(QToolBar):
         """)
         self.addWidget(self._auto_refresh)
 
-    def _create_view_button(self, text: str, icon: str) -> QToolButton:
+    def _create_view_button(self, text: str) -> QToolButton:
         btn = QToolButton()
-        btn.setText(f"{icon} {text}")
+        btn.setText(text)
         btn.setCheckable(True)
         btn.clicked.connect(lambda: self._on_view_clicked(text.lower()))
         return btn
@@ -290,7 +290,7 @@ class OrchestratorMonitor(QMainWindow):
         self._status_label = QLabel("Ready")
         self._statusbar.addWidget(self._status_label)
 
-        self._connection_label = QLabel("● Connected")
+        self._connection_label = QLabel("Connected")
         self._connection_label.setStyleSheet(f"color: {THEME.status_online};")
         self._statusbar.addPermanentWidget(self._connection_label)
 
@@ -466,12 +466,12 @@ class OrchestratorMonitor(QMainWindow):
 
             # Update status
             self._status_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
-            self._connection_label.setText("● Connected")
+            self._connection_label.setText("Connected")
             self._connection_label.setStyleSheet(f"color: {THEME.status_online};")
 
         except Exception as e:
             self._status_label.setText(f"Error: {str(e)}")
-            self._connection_label.setText("● Disconnected")
+            self._connection_label.setText("Disconnected")
             self._connection_label.setStyleSheet(f"color: {THEME.status_error};")
 
     def _job_to_dict(self, job: Job) -> Dict:

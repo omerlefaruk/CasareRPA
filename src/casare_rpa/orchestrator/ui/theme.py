@@ -1,70 +1,71 @@
 """
 Dark theme for CasareRPA Orchestrator.
-Professional Deadline Monitor-inspired styling.
+Professional styling without icons - modern, clean design.
 """
 
-# Color Palette - Dark Professional Theme
+# Color Palette - Modern Professional Dark Theme
+# Consistent with main orchestrator styles
 COLORS = {
     # Backgrounds (darkest to lightest)
-    "bg_darkest": "#0d0d0d",      # Main background
-    "bg_darker": "#141414",       # Panel backgrounds
-    "bg_dark": "#1a1a1a",         # Secondary panels
-    "bg_medium": "#242424",       # Elevated surfaces
-    "bg_light": "#2d2d2d",        # Hover states
-    "bg_lighter": "#363636",      # Selected states
-    "bg_header": "#1e1e1e",       # Table headers
+    "bg_darkest": "#0f1114",      # Main background
+    "bg_darker": "#121417",       # Panel backgrounds
+    "bg_dark": "#1a1d21",         # Secondary panels
+    "bg_medium": "#22262b",       # Elevated surfaces
+    "bg_light": "#2a2f36",        # Hover states
+    "bg_lighter": "#3a4046",      # Selected states
+    "bg_header": "#15171a",       # Table headers
 
     # Text
-    "text_primary": "#e0e0e0",    # Primary text
-    "text_secondary": "#a0a0a0",  # Secondary text
-    "text_muted": "#666666",      # Muted/disabled text
+    "text_primary": "#e8eaed",    # Primary text
+    "text_secondary": "#9aa0a6",  # Secondary text
+    "text_muted": "#5f6368",      # Muted/disabled text
     "text_bright": "#ffffff",     # Bright/emphasis text
 
     # Accent colors
-    "accent_blue": "#0078d4",     # Primary accent (selection)
-    "accent_cyan": "#00b4d8",     # Secondary accent
-    "accent_green": "#10b981",    # Success/online
-    "accent_yellow": "#f59e0b",   # Warning/busy
-    "accent_orange": "#f97316",   # High priority
-    "accent_red": "#ef4444",      # Error/critical
-    "accent_purple": "#8b5cf6",   # Special
-    "accent_pink": "#ec4899",     # Critical priority
+    "accent_blue": "#4a9eff",     # Primary accent (selection)
+    "accent_cyan": "#64b5f6",     # Secondary accent
+    "accent_green": "#66bb6a",    # Success/online
+    "accent_yellow": "#ffb74d",   # Warning/busy
+    "accent_orange": "#ff7043",   # High priority
+    "accent_red": "#ef5350",      # Error/critical
+    "accent_purple": "#ab47bc",   # Special
+    "accent_pink": "#ec407a",     # Critical priority
 
     # Status colors
-    "status_idle": "#4b5563",     # Idle/offline
-    "status_online": "#10b981",   # Online/ready
-    "status_busy": "#f59e0b",     # Busy/rendering
-    "status_error": "#ef4444",    # Error/failed
-    "status_stalled": "#f97316",  # Stalled/warning
-    "status_offline": "#374151",  # Offline
+    "status_idle": "#5f6368",     # Idle/offline
+    "status_online": "#66bb6a",   # Online/ready
+    "status_busy": "#ffb74d",     # Busy/rendering
+    "status_error": "#ef5350",    # Error/failed
+    "status_stalled": "#ff7043",  # Stalled/warning
+    "status_offline": "#5f6368",  # Offline
 
     # Job status
-    "job_queued": "#6b7280",      # Queued
-    "job_rendering": "#3b82f6",   # Rendering/running (blue)
-    "job_completed": "#10b981",   # Completed
-    "job_failed": "#ef4444",      # Failed
-    "job_suspended": "#8b5cf6",   # Suspended
-    "job_pending": "#f59e0b",     # Pending dependencies
+    "job_queued": "#5f6368",      # Queued
+    "job_rendering": "#42a5f5",   # Rendering/running (blue)
+    "job_completed": "#66bb6a",   # Completed
+    "job_failed": "#ef5350",      # Failed
+    "job_suspended": "#ab47bc",   # Suspended
+    "job_pending": "#ffb74d",     # Pending dependencies
 
     # Priority colors
-    "priority_critical": "#ec4899",  # Critical (pink)
-    "priority_high": "#f97316",      # High (orange)
-    "priority_normal": "#3b82f6",    # Normal (blue)
-    "priority_low": "#6b7280",       # Low (gray)
+    "priority_critical": "#ec407a",  # Critical (pink)
+    "priority_high": "#ff7043",      # High (orange)
+    "priority_normal": "#42a5f5",    # Normal (blue)
+    "priority_low": "#5f6368",       # Low (gray)
 
     # Progress bar
-    "progress_bg": "#1a1a1a",
-    "progress_fill": "#3b82f6",
+    "progress_bg": "#22262b",
+    "progress_fill": "#4a9eff",
     "progress_text": "#ffffff",
 
     # Borders
-    "border_dark": "#1f1f1f",
-    "border_medium": "#2a2a2a",
-    "border_light": "#3a3a3a",
+    "border_dark": "#1f2227",
+    "border_medium": "#2a2f36",
+    "border_light": "#3a4046",
 
     # Splitter
-    "splitter": "#2a2a2a",
-    "splitter_hover": "#0078d4",
+    "splitter": "#1f2227",
+    "splitter_hover": "#4a9eff",
 }
 
 # Main stylesheet
@@ -73,7 +74,7 @@ STYLESHEET = f"""
 QMainWindow, QWidget {{
     background-color: {COLORS['bg_darkest']};
     color: {COLORS['text_primary']};
-    font-family: 'Segoe UI', 'SF Pro Display', -apple-system, sans-serif;
+    font-family: 'Segoe UI', 'SF Pro Display', system-ui, sans-serif;
     font-size: 12px;
 }}
 
@@ -92,12 +93,13 @@ QMenuBar {{
     background-color: {COLORS['bg_header']};
     color: {COLORS['text_primary']};
     border-bottom: 1px solid {COLORS['border_dark']};
-    padding: 2px;
+    padding: 2px 4px;
 }}
 
 QMenuBar::item {{
-    padding: 4px 8px;
+    padding: 6px 10px;
     background: transparent;
+    border-radius: 4px;
 }}
 
 QMenuBar::item:selected {{
@@ -107,21 +109,24 @@ QMenuBar::item:selected {{
 QMenu {{
     background-color: {COLORS['bg_medium']};
     border: 1px solid {COLORS['border_medium']};
-    padding: 4px;
+    border-radius: 6px;
+    padding: 6px;
 }}
 
 QMenu::item {{
-    padding: 6px 24px 6px 12px;
+    padding: 8px 24px 8px 12px;
+    border-radius: 4px;
 }}
 
 QMenu::item:selected {{
     background-color: {COLORS['accent_blue']};
+    color: {COLORS['text_bright']};
 }}
 
 QMenu::separator {{
     height: 1px;
     background-color: {COLORS['border_medium']};
-    margin: 4px 8px;
+    margin: 6px 8px;
 }}
 
 /* ==================== TAB WIDGET ==================== */
@@ -135,12 +140,13 @@ QTabBar {{
 }}
 
 QTabBar::tab {{
-    background-color: {COLORS['bg_dark']};
+    background-color: transparent;
     color: {COLORS['text_secondary']};
-    padding: 8px 16px;
+    padding: 10px 18px;
     border: none;
-    border-right: 1px solid {COLORS['border_dark']};
-    min-width: 80px;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+    font-weight: 500;
 }}
 
 QTabBar::tab:selected {{
@@ -159,22 +165,23 @@ QToolBar {{
     background-color: {COLORS['bg_header']};
     border: none;
     border-bottom: 1px solid {COLORS['border_dark']};
-    spacing: 2px;
-    padding: 2px 4px;
+    spacing: 4px;
+    padding: 4px 6px;
 }}
 
 QToolBar::separator {{
     width: 1px;
     background-color: {COLORS['border_medium']};
-    margin: 4px 6px;
+    margin: 6px 8px;
 }}
 
 QToolButton {{
     background-color: transparent;
     border: 1px solid transparent;
-    border-radius: 3px;
-    padding: 4px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
     color: {COLORS['text_primary']};
+    font-weight: 500;
 }}
 
 QToolButton:hover {{
@@ -203,7 +210,7 @@ QTableWidget, QTableView, QTreeWidget, QTreeView, QListWidget, QListView {{
 }}
 
 QTableWidget::item, QTreeWidget::item, QListWidget::item {{
-    padding: 4px;
+    padding: 6px 8px;
     border: none;
 }}
 
@@ -222,13 +229,18 @@ QHeaderView {{
 QHeaderView::section {{
     background-color: {COLORS['bg_header']};
     color: {COLORS['text_secondary']};
-    padding: 6px 8px;
+    padding: 8px 10px;
     border: none;
     border-right: 1px solid {COLORS['border_dark']};
     border-bottom: 1px solid {COLORS['border_dark']};
     font-weight: 600;
     text-transform: uppercase;
     font-size: 11px;
+    letter-spacing: 0.5px;
+}}
+
+QHeaderView::section:last {{
+    border-right: none;
 }}
 
 QHeaderView::section:hover {{
@@ -239,14 +251,14 @@ QHeaderView::section:hover {{
 /* ==================== SCROLLBARS ==================== */
 QScrollBar:vertical {{
     background-color: {COLORS['bg_darker']};
-    width: 12px;
+    width: 10px;
     margin: 0;
 }}
 
 QScrollBar::handle:vertical {{
     background-color: {COLORS['bg_light']};
-    min-height: 30px;
-    border-radius: 2px;
+    min-height: 32px;
+    border-radius: 5px;
     margin: 2px;
 }}
 
@@ -260,14 +272,14 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
 
 QScrollBar:horizontal {{
     background-color: {COLORS['bg_darker']};
-    height: 12px;
+    height: 10px;
     margin: 0;
 }}
 
 QScrollBar::handle:horizontal {{
     background-color: {COLORS['bg_light']};
-    min-width: 30px;
-    border-radius: 2px;
+    min-width: 32px;
+    border-radius: 5px;
     margin: 2px;
 }}
 
@@ -306,11 +318,12 @@ QDockWidget {{
 QDockWidget::title {{
     background-color: {COLORS['bg_header']};
     color: {COLORS['text_secondary']};
-    padding: 6px 8px;
+    padding: 8px 12px;
     border-bottom: 1px solid {COLORS['border_dark']};
     font-weight: 600;
     text-transform: uppercase;
     font-size: 11px;
+    letter-spacing: 0.5px;
 }}
 
 QDockWidget::close-button, QDockWidget::float-button {{
@@ -321,6 +334,7 @@ QDockWidget::close-button, QDockWidget::float-button {{
 
 QDockWidget::close-button:hover, QDockWidget::float-button:hover {{
     background-color: {COLORS['bg_light']};
+    border-radius: 3px;
 }}
 
 /* ==================== BUTTONS ==================== */
@@ -328,9 +342,10 @@ QPushButton {{
     background-color: {COLORS['bg_medium']};
     color: {COLORS['text_primary']};
     border: 1px solid {COLORS['border_medium']};
-    border-radius: 3px;
-    padding: 6px 12px;
-    min-height: 24px;
+    border-radius: 4px;
+    padding: 6px 14px;
+    min-height: 26px;
+    font-weight: 500;
 }}
 
 QPushButton:hover {{
@@ -354,7 +369,7 @@ QPushButton[primary="true"] {{
 }}
 
 QPushButton[primary="true"]:hover {{
-    background-color: #0066b8;
+    background-color: #5ba8ff;
 }}
 
 /* ==================== INPUTS ==================== */
@@ -362,8 +377,8 @@ QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{
     background-color: {COLORS['bg_dark']};
     color: {COLORS['text_primary']};
     border: 1px solid {COLORS['border_medium']};
-    border-radius: 3px;
-    padding: 4px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
     selection-background-color: {COLORS['accent_blue']};
 }}
 
@@ -375,9 +390,9 @@ QComboBox {{
     background-color: {COLORS['bg_dark']};
     color: {COLORS['text_primary']};
     border: 1px solid {COLORS['border_medium']};
-    border-radius: 3px;
-    padding: 4px 8px;
-    min-height: 24px;
+    border-radius: 4px;
+    padding: 6px 10px;
+    min-height: 26px;
 }}
 
 QComboBox:hover {{
@@ -406,8 +421,8 @@ QComboBox QAbstractItemView {{
 QProgressBar {{
     background-color: {COLORS['progress_bg']};
     border: none;
-    border-radius: 2px;
-    height: 16px;
+    border-radius: 3px;
+    height: 18px;
     text-align: center;
     color: {COLORS['progress_text']};
     font-size: 10px;
@@ -416,7 +431,7 @@ QProgressBar {{
 
 QProgressBar::chunk {{
     background-color: {COLORS['progress_fill']};
-    border-radius: 2px;
+    border-radius: 3px;
 }}
 
 /* ==================== GROUP BOX ==================== */
@@ -424,32 +439,32 @@ QGroupBox {{
     background-color: {COLORS['bg_dark']};
     border: 1px solid {COLORS['border_medium']};
     border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 8px;
+    margin-top: 14px;
+    padding-top: 10px;
 }}
 
 QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 0 6px;
+    padding: 0 8px;
     color: {COLORS['text_secondary']};
     font-weight: 600;
 }}
 
 /* ==================== CHECKBOX & RADIO ==================== */
 QCheckBox, QRadioButton {{
-    spacing: 6px;
+    spacing: 8px;
     color: {COLORS['text_primary']};
 }}
 
 QCheckBox::indicator, QRadioButton::indicator {{
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }}
 
 QCheckBox::indicator {{
     border: 1px solid {COLORS['border_medium']};
-    border-radius: 2px;
+    border-radius: 3px;
     background-color: {COLORS['bg_dark']};
 }}
 
@@ -460,7 +475,7 @@ QCheckBox::indicator:checked {{
 
 QRadioButton::indicator {{
     border: 1px solid {COLORS['border_medium']};
-    border-radius: 7px;
+    border-radius: 8px;
     background-color: {COLORS['bg_dark']};
 }}
 
@@ -474,6 +489,7 @@ QStatusBar {{
     background-color: {COLORS['bg_header']};
     color: {COLORS['text_secondary']};
     border-top: 1px solid {COLORS['border_dark']};
+    padding: 2px 4px;
 }}
 
 QStatusBar::item {{
@@ -485,7 +501,8 @@ QToolTip {{
     background-color: {COLORS['bg_medium']};
     color: {COLORS['text_primary']};
     border: 1px solid {COLORS['border_medium']};
-    padding: 4px 8px;
+    border-radius: 4px;
+    padding: 6px 10px;
 }}
 
 /* ==================== LABELS ==================== */
@@ -504,12 +521,14 @@ QLabel[subheading="true"] {{
     font-size: 11px;
     color: {COLORS['text_secondary']};
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }}
 
 QLabel[muted="true"] {{
     color: {COLORS['text_muted']};
 }}
 """
+
 
 # Additional style functions
 def get_status_color(status: str) -> str:

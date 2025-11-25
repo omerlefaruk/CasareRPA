@@ -182,7 +182,7 @@ class RobotMetricsCard(QFrame):
         header = QHBoxLayout()
 
         name = robot.get("name", "Unknown Robot")
-        self._name_label = QLabel(f"🤖 {name}")
+        self._name_label = QLabel(name)
         self._name_label.setStyleSheet(f"""
             color: {THEME.text_primary};
             font-size: 14px;
@@ -195,7 +195,7 @@ class RobotMetricsCard(QFrame):
         # Status indicator
         status = robot.get("status", "offline")
         status_color = self._get_status_color(status)
-        self._status_label = QLabel(f"● {status.upper()}")
+        self._status_label = QLabel(status.upper())
         self._status_label.setStyleSheet(f"""
             color: {status_color};
             font-size: 11px;
@@ -288,7 +288,7 @@ class RobotMetricsCard(QFrame):
         """Update the card with new metrics."""
         status = robot.get("status", "offline")
         status_color = self._get_status_color(status)
-        self._status_label.setText(f"● {status.upper()}")
+        self._status_label.setText(status.upper())
         self._status_label.setStyleSheet(f"""
             color: {status_color};
             font-size: 11px;

@@ -304,7 +304,7 @@ class DashboardView(QWidget):
         layout.setSpacing(24)
 
         # Header
-        header = SectionHeader("Dashboard", "Refresh", "🔄")
+        header = SectionHeader("Dashboard", "Refresh")
         header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
         layout.addWidget(header)
 
@@ -312,18 +312,18 @@ class DashboardView(QWidget):
         kpi_layout = QHBoxLayout()
         kpi_layout.setSpacing(16)
 
-        self._kpi_jobs_today = KPICard("Jobs Today", "0", "executions", "📋")
+        self._kpi_jobs_today = KPICard("Jobs Today", "0", "executions")
         self._kpi_jobs_today.clicked.connect(lambda: self.navigate_to.emit("jobs"))
         kpi_layout.addWidget(self._kpi_jobs_today)
 
-        self._kpi_success_rate = KPICard("Success Rate", "0%", "today", "✅")
+        self._kpi_success_rate = KPICard("Success Rate", "0%", "today")
         kpi_layout.addWidget(self._kpi_success_rate)
 
-        self._kpi_robots_online = KPICard("Robots Online", "0", "available", "🤖")
+        self._kpi_robots_online = KPICard("Robots Online", "0", "available")
         self._kpi_robots_online.clicked.connect(lambda: self.navigate_to.emit("robots"))
         kpi_layout.addWidget(self._kpi_robots_online)
 
-        self._kpi_queue_depth = KPICard("Queue Depth", "0", "pending jobs", "📊")
+        self._kpi_queue_depth = KPICard("Queue Depth", "0", "pending jobs")
         self._kpi_queue_depth.clicked.connect(lambda: self.navigate_to.emit("jobs"))
         kpi_layout.addWidget(self._kpi_queue_depth)
 
@@ -354,17 +354,17 @@ class DashboardView(QWidget):
         metrics_row = QHBoxLayout()
         metrics_row.setSpacing(16)
 
-        self._kpi_throughput = KPICard("Throughput", "0/hr", "jobs per hour", "⚡")
+        self._kpi_throughput = KPICard("Throughput", "0/hr", "jobs per hour")
         metrics_row.addWidget(self._kpi_throughput)
 
-        self._kpi_avg_time = KPICard("Avg Execution", "-", "time per job", "⏱️")
+        self._kpi_avg_time = KPICard("Avg Execution", "-", "time per job")
         metrics_row.addWidget(self._kpi_avg_time)
 
-        self._kpi_workflows = KPICard("Workflows", "0", "published", "📁")
+        self._kpi_workflows = KPICard("Workflows", "0", "published")
         self._kpi_workflows.clicked.connect(lambda: self.navigate_to.emit("workflows"))
         metrics_row.addWidget(self._kpi_workflows)
 
-        self._kpi_schedules = KPICard("Active Schedules", "0", "running", "📅")
+        self._kpi_schedules = KPICard("Active Schedules", "0", "running")
         self._kpi_schedules.clicked.connect(lambda: self.navigate_to.emit("schedules"))
         metrics_row.addWidget(self._kpi_schedules)
 

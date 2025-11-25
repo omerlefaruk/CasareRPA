@@ -1,6 +1,6 @@
 """
 CasareRPA Orchestrator Main Window.
-Modern dashboard with sidebar navigation.
+Modern dashboard with sidebar navigation - no icons.
 """
 import sys
 import asyncio
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QMessageBox
 )
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QIcon, QFont
+from PySide6.QtGui import QFont
 import qasync
 from loguru import logger
 from pathlib import Path
@@ -22,10 +22,10 @@ from .views import DashboardView, RobotsView, JobsView, WorkflowsView, Schedules
 
 
 class NavButton(QPushButton):
-    """Navigation button for sidebar."""
+    """Navigation button for sidebar - text only, no icons."""
 
-    def __init__(self, icon: str, text: str, parent: Optional[QWidget] = None):
-        super().__init__(f"  {icon}  {text}", parent)
+    def __init__(self, text: str, parent: Optional[QWidget] = None):
+        super().__init__(text, parent)
         self.setObjectName("nav_button")
         self.setCheckable(True)
         self.setMinimumHeight(44)
@@ -33,14 +33,14 @@ class NavButton(QPushButton):
 
 
 class Sidebar(QFrame):
-    """Sidebar navigation panel."""
+    """Sidebar navigation panel - clean design without icons."""
 
     navigation_changed = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setObjectName("sidebar")
-        self.setFixedWidth(240)
+        self.setFixedWidth(220)
         self.setStyleSheet(SIDEBAR_STYLESHEET)
 
         layout = QVBoxLayout(self)
@@ -55,15 +55,17 @@ class Sidebar(QFrame):
             font-size: 20px;
             font-weight: 700;
             padding: 8px 4px;
+            letter-spacing: -0.5px;
         """)
         layout.addWidget(title)
 
-        subtitle = QLabel("Orchestrator")
+        subtitle = QLabel("ORCHESTRATOR")
         subtitle.setObjectName("sidebar_subtitle")
         subtitle.setStyleSheet(f"""
             color: {COLORS['accent_primary']};
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
             padding: 0 4px 16px 4px;
         """)
         layout.addWidget(subtitle)
@@ -76,19 +78,19 @@ class Sidebar(QFrame):
         layout.addWidget(sep)
         layout.addSpacing(12)
 
-        # Navigation buttons
+        # Navigation buttons (text only - no emoji icons)
         self._buttons: Dict[str, NavButton] = {}
         nav_items = [
-            ("dashboard", "📊", "Dashboard"),
-            ("robots", "🤖", "Robots"),
-            ("jobs", "📋", "Jobs"),
-            ("workflows", "⚡", "Workflows"),
-            ("schedules", "📅", "Schedules"),
-            ("metrics", "📈", "Metrics"),
+            ("dashboard", "Dashboard"),
+            ("robots", "Robots"),
+            ("jobs", "Jobs"),
+            ("workflows", "Workflows"),
+            ("schedules", "Schedules"),
+            ("metrics", "Metrics"),
         ]
 
-        for name, icon, text in nav_items:
-            btn = NavButton(icon, text)
+        for name, text in nav_items:
+            btn = NavButton(text)
             btn.clicked.connect(lambda checked, n=name: self._on_nav_click(n))
             self._buttons[name] = btn
             layout.addWidget(btn)
@@ -103,11 +105,12 @@ class Sidebar(QFrame):
         layout.addWidget(sep2)
         layout.addSpacing(8)
 
-        # Connection status
-        self._status_label = QLabel("● Offline")
+        # Connection status (text-based indicator)
+        self._status_label = QLabel("Offline")
         self._status_label.setStyleSheet(f"""
             color: {COLORS['status_offline']};
             font-size: 12px;
+            font-weight: 500;
             padding: 4px;
         """)
         layout.addWidget(self._status_label)
@@ -138,14 +141,29 @@ class Sidebar(QFrame):
         """Update connection status indicator."""
         if connected:
             if mode == "local":
-                self._status_label.setText("● Local Mode")
-                self._status_label.setStyleSheet(f"color: {COLORS['accent_warning']}; font-size: 12px; padding: 4px;")
+                self._status_label.setText("Local Mode")
+                self._status_label.setStyleSheet(f"""
+                    color: {COLORS['accent_warning']};
+                    font-size: 12px;
+                    font-weight: 500;
+                    padding: 4px;
+                """)
             else:
-                self._status_label.setText("● Connected")
-                self._status_label.setStyleSheet(f"color: {COLORS['status_online']}; font-size: 12px; padding: 4px;")
+                self._status_label.setText("Connected")
+                self._status_label.setStyleSheet(f"""
+                    color: {COLORS['status_online']};
+                    font-size: 12px;
+                    font-weight: 500;
+                    padding: 4px;
+                """)
         else:
-            self._status_label.setText("● Offline")
-            self._status_label.setStyleSheet(f"color: {COLORS['status_offline']}; font-size: 12px; padding: 4px;")
+            self._status_label.setText("Offline")
+            self._status_label.setStyleSheet(f"""
+                color: {COLORS['status_offline']};
+                font-size: 12px;
+                font-weight: 500;
+                padding: 4px;
+            """)
 
 
 class OrchestratorMainWindow(QMainWindow):

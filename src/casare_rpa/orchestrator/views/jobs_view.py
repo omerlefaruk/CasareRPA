@@ -127,7 +127,7 @@ class JobsView(QWidget):
         layout.setSpacing(16)
 
         # Header
-        header = SectionHeader("Jobs", "Refresh", "🔄")
+        header = SectionHeader("Jobs", "Refresh")
         header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
         layout.addWidget(header)
 
@@ -135,19 +135,19 @@ class JobsView(QWidget):
         stats_layout = QHBoxLayout()
         stats_layout.setSpacing(16)
 
-        self._running_label = QLabel("🔄 Running: 0")
+        self._running_label = QLabel("Running: 0")
         self._running_label.setStyleSheet(f"color: {COLORS['job_running']}; font-weight: 600;")
         stats_layout.addWidget(self._running_label)
 
-        self._queued_label = QLabel("📋 Queued: 0")
+        self._queued_label = QLabel("Queued: 0")
         self._queued_label.setStyleSheet(f"color: {COLORS['job_queued']}; font-weight: 600;")
         stats_layout.addWidget(self._queued_label)
 
-        self._completed_label = QLabel("✅ Completed: 0")
+        self._completed_label = QLabel("Completed: 0")
         self._completed_label.setStyleSheet(f"color: {COLORS['job_completed']}; font-weight: 600;")
         stats_layout.addWidget(self._completed_label)
 
-        self._failed_label = QLabel("❌ Failed: 0")
+        self._failed_label = QLabel("Failed: 0")
         self._failed_label.setStyleSheet(f"color: {COLORS['job_failed']}; font-weight: 600;")
         stats_layout.addWidget(self._failed_label)
 
@@ -192,7 +192,6 @@ class JobsView(QWidget):
 
         # Empty state
         self._empty_state = EmptyState(
-            icon="📋",
             title="No Jobs Found",
             description="No jobs have been executed yet. Dispatch a workflow to get started."
         )
@@ -236,17 +235,17 @@ class JobsView(QWidget):
         job = self._jobs[row]
         menu = QMenu(self)
 
-        view_action = menu.addAction("👁️ View Details")
+        view_action = menu.addAction("View Details")
         view_action.triggered.connect(lambda: self._show_details(job))
 
         menu.addSeparator()
 
         if not job.is_terminal:
-            cancel_action = menu.addAction("⏹️ Cancel Job")
+            cancel_action = menu.addAction("Cancel Job")
             cancel_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._cancel_job(job)))
 
         if job.status == JobStatus.FAILED:
-            retry_action = menu.addAction("🔄 Retry Job")
+            retry_action = menu.addAction("Retry Job")
             retry_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._retry_job(job)))
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
@@ -295,10 +294,10 @@ class JobsView(QWidget):
         completed = sum(1 for j in self._jobs if j.status == JobStatus.COMPLETED)
         failed = sum(1 for j in self._jobs if j.status == JobStatus.FAILED)
 
-        self._running_label.setText(f"🔄 Running: {running}")
-        self._queued_label.setText(f"📋 Queued: {queued}")
-        self._completed_label.setText(f"✅ Completed: {completed}")
-        self._failed_label.setText(f"❌ Failed: {failed}")
+        self._running_label.setText(f"Running: {running}")
+        self._queued_label.setText(f"Queued: {queued}")
+        self._completed_label.setText(f"Completed: {completed}")
+        self._failed_label.setText(f"Failed: {failed}")
 
         if not self._jobs:
             self._table.hide()
@@ -347,12 +346,12 @@ class JobsView(QWidget):
             actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(4)
 
-            view_btn = ActionButton("View", "👁️", primary=False)
+            view_btn = ActionButton("View", primary=False)
             view_btn.clicked.connect(lambda checked, j=job: self._show_details(j))
             actions_layout.addWidget(view_btn)
 
             if not job.is_terminal:
-                cancel_btn = ActionButton("Cancel", "⏹️", primary=False)
+                cancel_btn = ActionButton("Cancel", primary=False)
                 cancel_btn.clicked.connect(lambda checked, j=job: asyncio.get_event_loop().create_task(self._cancel_job(j)))
                 actions_layout.addWidget(cancel_btn)
 

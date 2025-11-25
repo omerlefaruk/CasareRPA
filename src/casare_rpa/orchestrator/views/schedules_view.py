@@ -290,11 +290,11 @@ class SchedulesView(QWidget):
 
         header_layout.addStretch()
 
-        create_btn = ActionButton("Create Schedule", "➕", primary=True)
+        create_btn = ActionButton("Create Schedule", primary=True)
         create_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self._create_schedule()))
         header_layout.addWidget(create_btn)
 
-        refresh_btn = ActionButton("Refresh", "🔄", primary=False)
+        refresh_btn = ActionButton("Refresh", primary=False)
         refresh_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
         header_layout.addWidget(refresh_btn)
 
@@ -336,7 +336,6 @@ class SchedulesView(QWidget):
 
         # Empty state
         self._empty_state = EmptyState(
-            icon="📅",
             title="No Schedules Found",
             description="Create a schedule to automatically run workflows.",
             action_text="Create Schedule"
@@ -521,11 +520,11 @@ class SchedulesView(QWidget):
             actions_layout.setContentsMargins(4, 4, 4, 4)
             actions_layout.setSpacing(4)
 
-            edit_btn = ActionButton("Edit", "✏️", primary=False)
+            edit_btn = ActionButton("Edit", primary=False)
             edit_btn.clicked.connect(lambda checked, s=schedule: asyncio.get_event_loop().create_task(self._edit_schedule(s)))
             actions_layout.addWidget(edit_btn)
 
-            run_btn = ActionButton("Run", "▶️", primary=True)
+            run_btn = ActionButton("Run", primary=True)
             run_btn.clicked.connect(lambda checked, s=schedule: asyncio.get_event_loop().create_task(self._run_now(s)))
             actions_layout.addWidget(run_btn)
 
