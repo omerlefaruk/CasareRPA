@@ -842,7 +842,7 @@ class NodeFrame(QGraphicsRectItem):
                             node_id = id(node)
                             try:
                                 current_pos = (float(node.pos()[0]), float(node.pos()[1]))
-                            except:
+                            except Exception:
                                 continue
 
                             # If more than 40% of the node is inside the frame, highlight

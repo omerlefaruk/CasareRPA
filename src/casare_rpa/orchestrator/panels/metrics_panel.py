@@ -242,7 +242,7 @@ class RobotMetricsCard(QFrame):
                 if isinstance(last_seen, str):
                     dt = datetime.fromisoformat(last_seen.replace('Z', '+00:00').replace('+00:00', ''))
                     last_seen = dt.strftime("%H:%M:%S")
-            except:
+            except (ValueError, TypeError):
                 pass
         self._add_stat(stats_layout, 1, 1, "Last Seen", last_seen or "-")
 

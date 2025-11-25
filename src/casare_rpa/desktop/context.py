@@ -240,7 +240,7 @@ class DesktopContext:
                         if w._control.ProcessId == window_or_pid:
                             window = w
                             break
-                    except:
+                    except Exception:
                         pass
                 else:
                     raise ValueError(f"No window found for PID: {window_or_pid}")
@@ -268,9 +268,9 @@ class DesktopContext:
                 # Try to close window using WindowPattern
                 try:
                     window._control.GetWindowPattern().Close()
-                except:
+                except Exception as e:
                     # Fallback: send Alt+F4
-                    logger.debug("WindowPattern.Close() failed, trying Alt+F4")
+                    logger.debug(f"WindowPattern.Close() failed, trying Alt+F4: {e}")
                     window._control.SetFocus()
                     window._control.SendKeys('{Alt}F4')
                 
@@ -628,8 +628,9 @@ class DesktopContext:
                                             sel_item_pattern.Select()
                                             logger.info(f"Selected '{item.Name}' from dropdown")
                                             return True
-                                    except:
+                                    except Exception as e:
                                         # Fallback: click the item
+                                        logger.debug(f"SelectionItemPattern failed, clicking item: {e}")
                                         item.Click()
                                         logger.info(f"Clicked '{item.Name}' in dropdown")
                                         return True

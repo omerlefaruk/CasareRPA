@@ -158,7 +158,7 @@ class ElementPickerOverlay(QWidget):
 
             return False
 
-        except:
+        except Exception:
             return False
 
     def _update_element_info(self, element: DesktopElement):

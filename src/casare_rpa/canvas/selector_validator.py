@@ -216,7 +216,7 @@ class SelectorValidator:
         try:
             element = find_element(self.parent_control, selector, timeout=1.0)
             return element is not None
-        except:
+        except Exception:
             return False
 
     def highlight_matches(self, selector: Dict[str, Any], max_count: int = 10):
