@@ -232,8 +232,8 @@ class DesktopElement:
                         invoke_pattern.Invoke()
                         logger.info(f"Clicked element using InvokePattern: {self._control.Name}")
                         return True
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"InvokePattern not available, falling back to mouse click: {e}")
             
             # Fallback to mouse click
             rect = self._control.BoundingRectangle
@@ -285,8 +285,9 @@ class DesktopElement:
                     value_pattern = self._control.GetValuePattern()
                     if value_pattern:
                         value_pattern.SetValue("")
-                except:
+                except Exception as e:
                     # Fallback: select all and delete
+                    logger.debug(f"ValuePattern not available for clear, using SendKeys: {e}")
                     self._control.SendKeys('{Ctrl}a{Delete}')
             
             # Type the text
@@ -298,8 +299,8 @@ class DesktopElement:
                         value_pattern.SetValue(text)
                         logger.info(f"Set text using ValuePattern: '{text[:50]}...'")
                         return True
-                except:
-                    pass
+                except Exception as e:
+                    logger.debug(f"ValuePattern not available for set text, using SendKeys: {e}")
                 
                 # Fallback: send keys
                 self._control.SendKeys(text, interval=interval)
@@ -328,8 +329,8 @@ class DesktopElement:
                     text = value_pattern.Value
                     if text:
                         return text
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"ValuePattern not available for get_text: {e}")
             
             # Try Name property
             if self._control.Name:
@@ -340,8 +341,8 @@ class DesktopElement:
                 legacy_pattern = self._control.GetLegacyIAccessiblePattern()
                 if legacy_pattern and legacy_pattern.Value:
                     return legacy_pattern.Value
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"LegacyIAccessiblePattern not available: {e}")
             
             # Return empty string if no text found
             return ""
@@ -397,27 +398,27 @@ class DesktopElement:
     def exists(self) -> bool:
         """
         Check if element still exists in UI tree.
-        
+
         Returns:
             True if element exists
         """
         try:
             return self._control.Exists(0, 0)
-        except:
+        except Exception:
             return False
-    
+
     def is_enabled(self) -> bool:
         """Check if element is enabled."""
         try:
             return self._control.IsEnabled
-        except:
+        except Exception:
             return False
-    
+
     def is_visible(self) -> bool:
         """Check if element is visible."""
         try:
             return self._control.IsOffscreen == False
-        except:
+        except Exception:
             return False
     
     def get_bounding_rect(self) -> Dict[str, int]:
@@ -445,5 +446,5 @@ class DesktopElement:
         """String representation of element."""
         try:
             return f"DesktopElement({self._control.ControlTypeName}: '{self._control.Name}')"
-        except:
+        except Exception:
             return "DesktopElement(<invalid>)"

@@ -369,9 +369,9 @@ class ActivateWindowNode(Node):
                 hwnd = window._control.NativeWindowHandle
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.SetForegroundWindow(hwnd)
-            except:
+            except Exception as e:
                 # Fallback - just set focus
-                pass
+                logger.debug(f"Win32 foreground failed, using SetFocus: {e}")
             
             logger.info(f"[{self.name}] Window activated: {window.get_text()}")
             

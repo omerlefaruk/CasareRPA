@@ -161,7 +161,7 @@ def generate_selectors(element: DesktopElement, parent_control: Optional[auto.Co
         if parent_control:
             try:
                 index = _calculate_element_index(element, parent_control, control_type_clean)
-            except:
+            except Exception:
                 pass
 
         strategies.append(SelectorStrategy(
@@ -274,7 +274,7 @@ def _generate_path_selector(element: DesktopElement) -> str:
                 if not parent or parent == current:
                     break
                 current = parent
-            except:
+            except Exception:
                 break
 
         return "/" + "/".join(path_parts) if path_parts else ""

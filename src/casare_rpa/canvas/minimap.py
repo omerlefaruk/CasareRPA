@@ -337,7 +337,7 @@ class Minimap(QWidget):
                 else:
                     width = 200
                     height = 80
-            except:
+            except Exception:
                 width = 200
                 height = 80
             

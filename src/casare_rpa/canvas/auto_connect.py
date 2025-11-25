@@ -265,7 +265,7 @@ class AutoConnectManager(QObject):
                 rect = node.view.boundingRect()
                 center = rect.center()
                 return node.view.mapToScene(center)
-        except:
+        except Exception:
             pass
         return None
     
@@ -284,7 +284,7 @@ class AutoConnectManager(QObject):
                 for connected_port in connected_ports:
                     if connected_port.node() == to_node:
                         return True
-        except:
+        except Exception:
             pass
         return False
     
@@ -392,9 +392,9 @@ class AutoConnectManager(QObject):
                         rect = port.view.boundingRect()
                         center = rect.center()
                         return port.view.mapToScene(center)
-        except:
+        except Exception:
             pass
-        
+
         # Fallback to node center
         return self._get_node_center(node)
     
@@ -406,9 +406,9 @@ class AutoConnectManager(QObject):
                 scene = viewer.scene()
                 for line in self._suggestion_lines:
                     scene.removeItem(line)
-        except:
+        except Exception:
             pass
-        
+
         self._suggestion_lines.clear()
         self._suggested_connections.clear()
     

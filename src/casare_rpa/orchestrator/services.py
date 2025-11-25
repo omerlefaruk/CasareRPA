@@ -655,7 +655,7 @@ class OrchestratorService:
                 return None
             try:
                 return datetime.fromisoformat(date_str.replace('Z', '+00:00').replace('+00:00', ''))
-            except:
+            except (ValueError, TypeError):
                 return None
 
         jobs_today = []
@@ -729,7 +729,7 @@ class OrchestratorService:
             if isinstance(created, str):
                 try:
                     created = datetime.fromisoformat(created.replace('Z', '+00:00').replace('+00:00', ''))
-                except:
+                except (ValueError, TypeError):
                     continue
 
             if created:

@@ -486,8 +486,8 @@ class DesktopSelectorBuilder(QDialog):
                     self.parent_control,
                     timeout=1.0
                 )
-            except:
-                pass
+            except Exception as e:
+                logger.debug(f"Selector uniqueness validation failed: {e}")
 
         # Filter to best strategies
         self.selector_strategies = filter_best_selectors(self.selector_strategies, max_count=8)
