@@ -9,7 +9,7 @@ async def test_robot_initialization():
     assert agent.robot_id is not None
     assert agent.name is not None
     assert agent.running is False
-    assert agent.connected is False
+    assert agent.connection.is_connected is False
 
 @pytest.mark.asyncio
 async def test_robot_id_persistence(tmp_path, monkeypatch):
