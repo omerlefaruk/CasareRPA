@@ -195,8 +195,19 @@ class NodeRegistry:
         from PySide6.QtWidgets import QWidgetAction, QLineEdit
         from PySide6.QtCore import Qt
 
+        # Track last created node ID for chaining with Shift+Enter
+        qmenu._last_created_node_id = None
+
         # Create search input widget with Enter key handler
         class SearchLineEdit(QLineEdit):
+            def _find_node_by_id(self, node_id):
+                """Find a node in the graph by its ID."""
+                for n in graph.all_nodes():
+                    n_id = n.id() if callable(n.id) else n.id
+                    if n_id == node_id:
+                        return n
+                return None
+
             def keyPressEvent(self, event):
                 if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                     # Check if Shift is held for auto-connect mode
@@ -204,24 +215,40 @@ class NodeRegistry:
 
                     # Create first matched node when Enter is pressed
                     if hasattr(qmenu, '_first_match') and qmenu._first_match:
-                        # Use the initial mouse position captured when menu opened
-                        pos = qmenu._initial_scene_pos
-                        if pos is None:
-                            # Fallback to current position if not captured
-                            viewer = graph.viewer()
-                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
-
-                        # Get the last selected node before creating new one (for auto-connect)
-                        last_selected = None
+                        # Determine source node for auto-connect
+                        source_node = None
                         if auto_connect:
-                            selected_nodes = graph.selected_nodes()
-                            if selected_nodes:
-                                last_selected = selected_nodes[-1]
+                            # First try: use last created node (for chaining)
+                            if qmenu._last_created_node_id:
+                                source_node = self._find_node_by_id(qmenu._last_created_node_id)
+                            # Fallback: use selected node
+                            if not source_node:
+                                selected_nodes = graph.selected_nodes()
+                                if selected_nodes:
+                                    source_node = selected_nodes[-1]
+
+                        # Calculate position
+                        if auto_connect and source_node:
+                            # Place to the right of the source node
+                            source_pos = source_node.pos()
+                            # Get node width + spacing
+                            node_width = 220
+                            spacing = 80
+                            pos_x = source_pos[0] + node_width + spacing
+                            pos_y = source_pos[1]
+                        else:
+                            # Use mouse position
+                            pos = qmenu._initial_scene_pos
+                            if pos is None:
+                                viewer = graph.viewer()
+                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                            pos_x = pos.x() - 100
+                            pos_y = pos.y() - 30
 
                         node = graph.create_node(
                             f'{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}',
                             name=qmenu._first_match.NODE_NAME,
-                            pos=[pos.x() - 100, pos.y() - 30]
+                            pos=[pos_x, pos_y]
                         )
                         # Attach CasareRPA node immediately with unique ID
                         factory = get_node_factory()
@@ -229,9 +256,15 @@ class NodeRegistry:
                         if casare_node:
                             node.set_casare_node(casare_node)
 
-                        # Auto-connect to last selected node if Shift+Enter
-                        if auto_connect and last_selected:
-                            self._auto_connect_nodes(graph, last_selected, node)
+                        # Auto-connect to source node if Shift+Enter
+                        if auto_connect and source_node:
+                            self._auto_connect_nodes(graph, source_node, node)
+
+                        # Track this node's ID for chaining (use graph ID, not custom ID)
+                        # NodeGraphQt nodes: id() is a method, but handle both cases
+                        node_id = node.id() if callable(node.id) else node.id
+                        qmenu._last_created_node_id = node_id
+                        logger.debug(f"Stored last created node ID: {node_id}")
 
                         # Select the new node
                         graph.clear_selection()
@@ -588,9 +621,9 @@ class NodeFactory:
             logger.error(f"No CasareRPA node mapping for {type(visual_node).__name__}")
             return None
 
-        # Generate unique node ID
-        self._node_counter += 1
-        node_id = f"{node_class.__name__}_{self._node_counter}"
+        # Generate unique node ID using UUID
+        from ..utils.id_generator import generate_node_id
+        node_id = generate_node_id(node_class.__name__)
 
         # Create CasareRPA node
         casare_node = node_class(node_id=node_id, **kwargs)

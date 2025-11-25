@@ -146,11 +146,13 @@ class VariablesTab(QWidget):
         runtime_layout.addStretch()
 
         self._btn_refresh = QPushButton("Refresh")
+        self._btn_refresh.setFixedSize(42, 14)
         self._btn_refresh.setToolTip("Refresh variable values")
         self._btn_refresh.clicked.connect(self._on_refresh)
         runtime_layout.addWidget(self._btn_refresh)
 
-        self._btn_auto_refresh = QPushButton("Auto-Refresh")
+        self._btn_auto_refresh = QPushButton("Auto")
+        self._btn_auto_refresh.setFixedSize(30, 14)
         self._btn_auto_refresh.setCheckable(True)
         self._btn_auto_refresh.setToolTip("Automatically refresh variables during execution")
         self._btn_auto_refresh.toggled.connect(self._on_auto_refresh_toggled)
@@ -209,7 +211,7 @@ class VariablesTab(QWidget):
             QTableWidget {
                 background-color: #1e1e1e;
                 color: #d4d4d4;
-                border: none;
+                border: 1px solid #404040;
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 9pt;
             }
@@ -228,7 +230,7 @@ class VariablesTab(QWidget):
                 color: #888888;
                 padding: 8px;
                 border: none;
-                border-bottom: 1px solid #2d2d2d;
+                border-bottom: 1px solid #404040;
                 font-weight: normal;
                 font-size: 9pt;
             }
@@ -241,8 +243,23 @@ class VariablesTab(QWidget):
             QComboBox {
                 background-color: #3c3f41;
                 color: #d4d4d4;
-                border: none;
+                border: 1px solid #404040;
                 padding: 2px 4px;
+            }
+            QPushButton {
+                background-color: #3c3f41;
+                color: #cccccc;
+                border: 1px solid #555555;
+                border-radius: 1px;
+                padding: 0px 1px;
+                font-size: 8px;
+            }
+            QPushButton:hover {
+                background-color: #4c4f51;
+            }
+            QPushButton:checked {
+                background-color: #094771;
+                border-color: #1177bb;
             }
         """)
 

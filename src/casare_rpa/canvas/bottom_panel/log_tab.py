@@ -79,25 +79,25 @@ class LogTab(QWidget):
         # Filter dropdown
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
+        self._filter_combo.setFixedSize(70, 16)
         self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
-        self._filter_combo.setFixedWidth(100)
 
         # Auto-scroll toggle
         self._auto_scroll_btn = QPushButton("Auto-scroll: ON")
         self._auto_scroll_btn.setCheckable(True)
         self._auto_scroll_btn.setChecked(True)
-        self._auto_scroll_btn.setFixedWidth(110)
+        self._auto_scroll_btn.setFixedSize(80, 16)
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
 
         # Clear button
         clear_btn = QPushButton("Clear")
-        clear_btn.setFixedWidth(60)
+        clear_btn.setFixedSize(40, 16)
         clear_btn.clicked.connect(self.clear)
 
         # Export button
         export_btn = QPushButton("Export")
-        export_btn.setFixedWidth(60)
+        export_btn.setFixedSize(45, 16)
         export_btn.clicked.connect(self._on_export)
 
         toolbar.addWidget(filter_label)
@@ -136,8 +136,8 @@ class LogTab(QWidget):
             QTableWidget {
                 background-color: #1e1e1e;
                 color: #d4d4d4;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
+                border: 1px solid #404040;
+                gridline-color: #404040;
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
             }
@@ -152,14 +152,15 @@ class LogTab(QWidget):
                 color: #bbbbbb;
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #1e1e1e;
+                border-bottom: 1px solid #404040;
             }
             QPushButton {
                 background-color: #3c3f41;
                 color: #cccccc;
-                border: 1px solid #555555;
-                border-radius: 3px;
-                padding: 4px 8px;
+                border: 1px solid #4a4a4a;
+                border-radius: 2px;
+                padding: 0px 2px;
+                font-size: 9px;
             }
             QPushButton:hover {
                 background-color: #4c4f51;
@@ -170,9 +171,10 @@ class LogTab(QWidget):
             QComboBox {
                 background-color: #3c3f41;
                 color: #cccccc;
-                border: 1px solid #555555;
-                border-radius: 3px;
-                padding: 4px;
+                border: 1px solid #4a4a4a;
+                border-radius: 2px;
+                padding: 0px 2px;
+                font-size: 9px;
             }
             QLabel {
                 color: #cccccc;

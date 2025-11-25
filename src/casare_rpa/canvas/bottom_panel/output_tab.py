@@ -71,7 +71,7 @@ class OutputTab(QWidget):
 
         # Clear button
         clear_btn = QPushButton("Clear")
-        clear_btn.setFixedWidth(60)
+        clear_btn.setFixedSize(40, 16)
         clear_btn.clicked.connect(self.clear)
 
         toolbar.addWidget(self._status_label)
@@ -146,8 +146,8 @@ class OutputTab(QWidget):
             QTableWidget {
                 background-color: #2b2b2b;
                 color: #d4d4d4;
-                border: 1px solid #3d3d3d;
-                gridline-color: #3d3d3d;
+                border: 1px solid #404040;
+                gridline-color: #404040;
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 9pt;
             }
@@ -162,22 +162,22 @@ class OutputTab(QWidget):
                 color: #bbbbbb;
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #1e1e1e;
+                border-bottom: 1px solid #404040;
             }
             QTextEdit {
                 background-color: #1e1e1e;
                 color: #d4d4d4;
-                border: 1px solid #3d3d3d;
+                border: 1px solid #404040;
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
             }
             QPushButton {
                 background-color: #3c3f41;
                 color: #cccccc;
-                border: 1px solid #555555;
+                border: 1px solid #4a4a4a;
                 border-radius: 2px;
-                padding: 2px 6px;
-                font-size: 11px;
+                padding: 0px 2px;
+                font-size: 9px;
             }
             QPushButton:hover {
                 background-color: #4c4f51;

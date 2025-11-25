@@ -80,6 +80,7 @@ class HistoryTab(QWidget):
         # Filter by status
         header_layout.addWidget(QLabel("Filter:"))
         self._combo_filter = QComboBox()
+        self._combo_filter.setFixedHeight(14)
         self._combo_filter.addItems(["All", "Success", "Failed"])
         self._combo_filter.currentTextChanged.connect(self._on_filter_changed)
         header_layout.addWidget(self._combo_filter)
@@ -87,6 +88,7 @@ class HistoryTab(QWidget):
         header_layout.addStretch()
 
         self._btn_clear = QPushButton("Clear")
+        self._btn_clear.setFixedSize(32, 14)
         self._btn_clear.setToolTip("Clear execution history")
         self._btn_clear.clicked.connect(self._on_clear)
         header_layout.addWidget(self._btn_clear)
@@ -171,8 +173,8 @@ class HistoryTab(QWidget):
             QTableWidget {
                 background-color: #1e1e1e;
                 color: #d4d4d4;
-                border: none;
-                gridline-color: #3d3d3d;
+                border: 1px solid #404040;
+                gridline-color: #404040;
             }
             QTableWidget::item {
                 padding: 4px;
@@ -188,15 +190,15 @@ class HistoryTab(QWidget):
                 color: #cccccc;
                 padding: 6px;
                 border: none;
-                border-right: 1px solid #3d3d3d;
+                border-right: 1px solid #404040;
             }
             QPushButton {
                 background-color: #3c3f41;
                 color: #cccccc;
-                border: 1px solid #555555;
-                padding: 2px 6px;
-                border-radius: 2px;
-                font-size: 11px;
+                border: 1px solid #4a4a4a;
+                padding: 0px 1px;
+                border-radius: 1px;
+                font-size: 8px;
             }
             QPushButton:hover {
                 background-color: #4a4d50;
@@ -207,10 +209,10 @@ class HistoryTab(QWidget):
             QComboBox {
                 background-color: #3c3f41;
                 color: #cccccc;
-                border: 1px solid #555555;
-                padding: 2px 4px;
-                border-radius: 2px;
-                font-size: 11px;
+                border: 1px solid #4a4a4a;
+                padding: 0px 1px;
+                border-radius: 1px;
+                font-size: 8px;
             }
             QComboBox::drop-down {
                 border: none;

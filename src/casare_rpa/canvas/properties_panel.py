@@ -109,6 +109,7 @@ class PropertiesPanel(QDockWidget):
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__("Properties", parent)
+        self.setObjectName("PropertiesDock")
         self._current_node = None
         self._property_widgets: Dict[str, QWidget] = {}
 

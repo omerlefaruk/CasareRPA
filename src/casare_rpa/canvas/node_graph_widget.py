@@ -135,7 +135,14 @@ class NodeGraphWidget(QWidget):
         self._validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
         if self._validator:
             self._setup_connection_validation()
-        
+
+        # Setup paste hook for duplicate ID detection
+        self._setup_paste_hook()
+
+        # Import callbacks (set by app.py)
+        self._import_callback = None
+        self._import_file_callback = None
+
         # Create layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -487,3 +494,167 @@ class NodeGraphWidget(QWidget):
 
         except Exception as e:
             logger.debug(f"Connection validation error: {e}")
+
+    # =========================================================================
+    # PASTE HOOK FOR DUPLICATE ID DETECTION
+    # =========================================================================
+
+    def _setup_paste_hook(self) -> None:
+        """
+        Setup hooks to regenerate node IDs after paste operations.
+
+        NodeGraphQt emits node_created for each pasted node.
+        We intercept this to detect and fix duplicate IDs.
+        """
+        try:
+            if hasattr(self._graph, 'node_created'):
+                self._graph.node_created.connect(self._on_node_created_check_duplicate)
+                logger.debug("Paste hook for duplicate ID detection enabled")
+        except Exception as e:
+            logger.warning(f"Could not setup paste hook: {e}")
+
+    def _on_node_created_check_duplicate(self, node) -> None:
+        """
+        Handle node creation/paste events.
+
+        Detects pasted nodes with duplicate IDs and regenerates them.
+        This prevents self-connection errors from copy/paste operations.
+        """
+        from ..utils.id_generator import generate_node_id
+
+        # Get current node_id property
+        current_id = node.get_property("node_id")
+        if not current_id:
+            return  # New node creation handled by factory
+
+        # Check if another node already has this ID (duplicate from paste)
+        for other_node in self._graph.all_nodes():
+            if other_node is not node and other_node.get_property("node_id") == current_id:
+                # Duplicate detected - regenerate ID
+                casare_node = node.get_casare_node() if hasattr(node, 'get_casare_node') else None
+
+                if casare_node:
+                    # Get node type for ID generation
+                    node_type = casare_node.node_type if hasattr(casare_node, 'node_type') else "Node"
+                    new_id = generate_node_id(node_type)
+
+                    # Update CasareRPA node
+                    casare_node.node_id = new_id
+
+                    # Update visual node property
+                    node.set_property("node_id", new_id)
+
+                    logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
+                break
+
+    # =========================================================================
+    # IMPORT CALLBACKS
+    # =========================================================================
+
+    def set_import_callback(self, callback) -> None:
+        """
+        Set callback for importing workflow data.
+
+        Args:
+            callback: Function(data: dict, position: tuple) -> ImportResult
+        """
+        self._import_callback = callback
+
+    def set_import_file_callback(self, callback) -> None:
+        """
+        Set callback for importing workflow from file.
+
+        Args:
+            callback: Function(file_path: str, position: tuple) -> None
+        """
+        self._import_file_callback = callback
+
+    # =========================================================================
+    # DRAG AND DROP SUPPORT
+    # =========================================================================
+
+    def setup_drag_drop(self) -> None:
+        """
+        Enable drag and drop support for importing workflow JSON files.
+
+        Must be called after widget is initialized. Enables dropping
+        .json files directly onto the canvas to import nodes.
+        """
+        # Enable drops on the graph viewer widget
+        viewer = self._graph.viewer()
+        viewer.setAcceptDrops(True)
+
+        # Override drag/drop events on the viewer
+        viewer.dragEnterEvent = self._handle_drag_enter
+        viewer.dragMoveEvent = self._handle_drag_move
+        viewer.dropEvent = self._handle_drop
+
+        logger.debug("Drag-drop support enabled for workflow import")
+
+    def _handle_drag_enter(self, event) -> None:
+        """Handle drag enter event - accept JSON files."""
+        mime_data = event.mimeData()
+
+        if mime_data.hasUrls():
+            for url in mime_data.urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if file_path.lower().endswith('.json'):
+                        event.acceptProposedAction()
+                        return
+
+        # Also accept plain text (for JSON text drops)
+        if mime_data.hasText():
+            text = mime_data.text()
+            if text.strip().startswith('{') and '"nodes"' in text:
+                event.acceptProposedAction()
+                return
+
+        event.ignore()
+
+    def _handle_drag_move(self, event) -> None:
+        """Handle drag move event."""
+        # Same logic as drag enter
+        self._handle_drag_enter(event)
+
+    def _handle_drop(self, event) -> None:
+        """Handle drop event - import workflow file or JSON text."""
+        from PySide6.QtCore import QPointF
+
+        mime_data = event.mimeData()
+        drop_pos = event.position() if hasattr(event, 'position') else event.posF()
+
+        # Convert to scene coordinates for node positioning
+        viewer = self._graph.viewer()
+        scene_pos = viewer.mapToScene(drop_pos.toPoint())
+        position = (scene_pos.x(), scene_pos.y())
+
+        # Handle file drops
+        if mime_data.hasUrls():
+            for url in mime_data.urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if file_path.lower().endswith('.json'):
+                        logger.info(f"Dropped workflow file: {file_path}")
+                        if self._import_file_callback:
+                            self._import_file_callback(file_path, position)
+                        event.acceptProposedAction()
+                        return
+
+        # Handle JSON text drops
+        if mime_data.hasText():
+            text = mime_data.text()
+            if text.strip().startswith('{'):
+                try:
+                    import orjson
+                    data = orjson.loads(text)
+                    if "nodes" in data:
+                        logger.info("Dropped workflow JSON text")
+                        if self._import_callback:
+                            self._import_callback(data, position)
+                        event.acceptProposedAction()
+                        return
+                except Exception as e:
+                    logger.warning(f"Dropped text is not valid JSON: {e}")
+
+        event.ignore()

@@ -73,7 +73,10 @@ class CasareRPAApp:
         
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
-        
+
+        # Setup drag-drop support for importing workflow JSON files
+        self._setup_drag_drop_import()
+
         # Workflow runner
         self._workflow_runner: Optional[WorkflowRunner] = None
         self._workflow_task: Optional[asyncio.Task] = None
@@ -114,9 +117,12 @@ class CasareRPAApp:
         self._main_window.workflow_new.connect(self._on_new_workflow)
         self._main_window.workflow_new_from_template.connect(self._on_new_from_template)
         self._main_window.workflow_open.connect(self._on_open_workflow)
+        self._main_window.workflow_import.connect(self._on_import_workflow)
+        self._main_window.workflow_import_json.connect(self._on_import_workflow_json)
+        self._main_window.workflow_export_selected.connect(self._on_export_selected)
         self._main_window.workflow_save.connect(self._on_save_workflow)
         self._main_window.workflow_save_as.connect(self._on_save_as_workflow)
-        
+
         # Workflow execution
         self._main_window.workflow_run.connect(self._on_run_workflow)
         self._main_window.workflow_run_to_node.connect(self._on_run_to_node)
@@ -540,7 +546,347 @@ class CasareRPAApp:
         except Exception as e:
             logger.exception("Failed to open workflow")
             self._main_window.statusBar().showMessage(f"Error opening file: {str(e)}", 5000)
-    
+
+    def _on_import_workflow(self, file_path: str) -> None:
+        """
+        Handle workflow importing/merging.
+
+        Imports nodes from a workflow file into the current canvas.
+
+        Args:
+            file_path: Path to workflow file to import
+        """
+        try:
+            import orjson
+            from pathlib import Path
+            from .workflow_import import import_workflow_data
+
+            logger.info(f"Importing workflow: {file_path}")
+
+            # Load workflow data
+            data = orjson.loads(Path(file_path).read_bytes())
+
+            # Prepare for import (remap IDs and position)
+            prepared_data, id_mapping = import_workflow_data(
+                self._node_graph.graph,
+                get_node_factory(),
+                data,
+                drop_position=None  # Use default offset
+            )
+
+            # Create nodes from prepared data
+            self._load_workflow_to_graph_merge(prepared_data)
+
+            self._main_window.set_modified(True)
+            self._main_window.statusBar().showMessage(
+                f"Imported {len(prepared_data.get('nodes', {}))} nodes from {Path(file_path).name}",
+                5000
+            )
+
+        except Exception as e:
+            logger.exception("Failed to import workflow")
+            self._main_window.statusBar().showMessage(f"Error importing file: {str(e)}", 5000)
+
+    def _on_import_workflow_json(self, json_text: str) -> None:
+        """
+        Handle workflow import from JSON string (clipboard paste).
+
+        Args:
+            json_text: JSON string containing workflow data
+        """
+        try:
+            import orjson
+            from .workflow_import import import_workflow_data
+
+            logger.info("Importing workflow from clipboard JSON")
+
+            # Parse JSON
+            data = orjson.loads(json_text)
+
+            # Prepare for import (remap IDs and position)
+            prepared_data, id_mapping = import_workflow_data(
+                self._node_graph.graph,
+                get_node_factory(),
+                data,
+                drop_position=None  # Use default offset
+            )
+
+            # Create nodes from prepared data
+            self._load_workflow_to_graph_merge(prepared_data)
+
+            self._main_window.set_modified(True)
+            self._main_window.statusBar().showMessage(
+                f"Pasted {len(prepared_data.get('nodes', {}))} nodes from clipboard",
+                5000
+            )
+
+        except Exception as e:
+            logger.exception("Failed to import workflow from JSON")
+            self._main_window.statusBar().showMessage(f"Error pasting workflow: {str(e)}", 5000)
+
+    def _on_export_selected(self, file_path: str) -> None:
+        """
+        Handle export selected nodes to file.
+
+        Creates a minimal workflow JSON containing only the selected nodes
+        and their internal connections.
+
+        Args:
+            file_path: Destination file path
+        """
+        try:
+            import orjson
+            from pathlib import Path
+            from datetime import datetime
+
+            graph = self._node_graph.graph
+            selected_nodes = graph.selected_nodes()
+
+            if not selected_nodes:
+                self._main_window.statusBar().showMessage("No nodes selected", 3000)
+                return
+
+            # Collect selected node IDs
+            selected_ids = set()
+            for visual_node in selected_nodes:
+                node_id = visual_node.get_property("node_id")
+                if node_id:
+                    selected_ids.add(node_id)
+
+            logger.info(f"Exporting {len(selected_ids)} selected nodes")
+
+            # Build export data structure
+            export_data = {
+                "metadata": {
+                    "name": f"Exported Nodes",
+                    "description": f"Exported {len(selected_ids)} nodes",
+                    "created_at": datetime.now().isoformat(),
+                    "schema_version": "1.0.0",
+                },
+                "nodes": {},
+                "connections": [],
+                "frames": [],
+                "variables": {},
+                "settings": {},
+            }
+
+            # Export nodes
+            for visual_node in selected_nodes:
+                node_id = visual_node.get_property("node_id")
+                if not node_id:
+                    continue
+
+                casare_node = visual_node.get_casare_node() if hasattr(visual_node, 'get_casare_node') else None
+                pos = visual_node.pos()
+
+                node_data = {
+                    "node_id": node_id,
+                    "node_type": casare_node.node_type if casare_node else visual_node.type_,
+                    "position": {"x": pos[0], "y": pos[1]},
+                    "config": casare_node.config.copy() if casare_node else {},
+                }
+                export_data["nodes"][node_id] = node_data
+
+            # Export connections between selected nodes only
+            for visual_node in selected_nodes:
+                node_id = visual_node.get_property("node_id")
+                if not node_id:
+                    continue
+
+                # Get output ports and their connections
+                for port_name, port in visual_node.outputs().items():
+                    for connected_port in port.connected_ports():
+                        connected_node = connected_port.node()
+                        connected_node_id = connected_node.get_property("node_id")
+
+                        # Only include connection if both nodes are selected
+                        if connected_node_id in selected_ids:
+                            export_data["connections"].append({
+                                "source_node": node_id,
+                                "source_port": port_name,
+                                "target_node": connected_node_id,
+                                "target_port": connected_port.name(),
+                            })
+
+            # Write to file
+            json_bytes = orjson.dumps(
+                export_data,
+                option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS
+            )
+            Path(file_path).write_bytes(json_bytes)
+
+            self._main_window.statusBar().showMessage(
+                f"Exported {len(selected_ids)} nodes to {Path(file_path).name}",
+                5000
+            )
+            logger.info(f"Exported {len(selected_ids)} nodes to {file_path}")
+
+        except Exception as e:
+            logger.exception("Failed to export selected nodes")
+            self._main_window.statusBar().showMessage(f"Error exporting nodes: {str(e)}", 5000)
+
+    def _setup_drag_drop_import(self) -> None:
+        """
+        Setup drag-and-drop support for importing workflow JSON files.
+
+        Allows users to drag .json workflow files directly onto the canvas
+        to import nodes at the drop position.
+        """
+        from .workflow_import import import_workflow_data
+
+        def on_import_file(file_path: str, position: tuple) -> None:
+            """Handle file drop."""
+            try:
+                import orjson
+                from pathlib import Path
+
+                logger.info(f"Importing dropped file: {file_path}")
+
+                # Load workflow data
+                data = orjson.loads(Path(file_path).read_bytes())
+
+                # Prepare for import (remap IDs and position at drop location)
+                prepared_data, id_mapping = import_workflow_data(
+                    self._node_graph.graph,
+                    get_node_factory(),
+                    data,
+                    drop_position=position
+                )
+
+                # Create nodes from prepared data
+                self._load_workflow_to_graph_merge(prepared_data)
+
+                self._main_window.set_modified(True)
+                self._main_window.statusBar().showMessage(
+                    f"Imported {len(prepared_data.get('nodes', {}))} nodes from {Path(file_path).name}",
+                    5000
+                )
+            except Exception as e:
+                logger.exception(f"Failed to import dropped file: {e}")
+                self._main_window.statusBar().showMessage(f"Error importing file: {str(e)}", 5000)
+
+        def on_import_data(data: dict, position: tuple) -> None:
+            """Handle JSON data drop."""
+            try:
+                logger.info("Importing dropped JSON data")
+
+                # Prepare for import (remap IDs and position at drop location)
+                prepared_data, id_mapping = import_workflow_data(
+                    self._node_graph.graph,
+                    get_node_factory(),
+                    data,
+                    drop_position=position
+                )
+
+                # Create nodes from prepared data
+                self._load_workflow_to_graph_merge(prepared_data)
+
+                self._main_window.set_modified(True)
+                self._main_window.statusBar().showMessage(
+                    f"Imported {len(prepared_data.get('nodes', {}))} nodes",
+                    5000
+                )
+            except Exception as e:
+                logger.exception(f"Failed to import dropped JSON: {e}")
+                self._main_window.statusBar().showMessage(f"Error importing JSON: {str(e)}", 5000)
+
+        # Set callbacks and enable drag-drop
+        self._node_graph.set_import_file_callback(on_import_file)
+        self._node_graph.set_import_callback(on_import_data)
+        self._node_graph.setup_drag_drop()
+
+        logger.info("Drag-drop import support configured")
+
+    def _load_workflow_to_graph_merge(self, workflow_data: dict) -> None:
+        """
+        Load workflow data into graph without clearing existing nodes (merge mode).
+
+        Args:
+            workflow_data: Prepared workflow data with remapped IDs
+        """
+        from .node_registry import get_node_factory
+
+        graph = self._node_graph.graph
+        factory = get_node_factory()
+
+        # Create nodes
+        for node_id, node_data in workflow_data.get("nodes", {}).items():
+            try:
+                # Call _load_node_to_graph to reuse existing logic
+                # This handles visual node creation and CasareRPA node linking
+                visual_node = self._create_visual_node_from_data(graph, node_data, factory)
+                if visual_node:
+                    logger.debug(f"Created node {node_id} during import")
+            except Exception as e:
+                logger.error(f"Failed to create node {node_id}: {e}")
+
+        # Restore connections
+        node_map = {}
+        for visual_node in graph.all_nodes():
+            node_id = visual_node.get_property("node_id")
+            if node_id:
+                node_map[node_id] = visual_node
+
+        for conn in workflow_data.get("connections", []):
+            try:
+                source_node = node_map.get(conn["source_node"])
+                target_node = node_map.get(conn["target_node"])
+
+                if source_node and target_node:
+                    source_port = source_node.get_output(conn["source_port"])
+                    target_port = target_node.get_input(conn["target_port"])
+
+                    if source_port and target_port:
+                        source_port.connect_to(target_port)
+            except Exception as e:
+                logger.warning(f"Failed to restore connection: {e}")
+
+        logger.debug(f"Imported workflow with {len(workflow_data.get('nodes', {}))} nodes")
+
+    def _create_visual_node_from_data(self, graph, node_data: dict, factory):
+        """Create a visual node from workflow data."""
+        node_type = node_data.get("node_type")
+        node_id = node_data.get("node_id")
+        pos = node_data.get("position", {"x": 0, "y": 0})
+
+        # Map node type to identifier (this should match _load_workflow_to_graph)
+        # This is a simplified version - actual implementation uses NODE_TYPE_MAP
+        identifier = f"casare_rpa.nodes.Visual{node_type}"
+
+        try:
+            visual_node = graph.create_node(
+                identifier,
+                pos=[pos.get("x", 0), pos.get("y", 0)]
+            )
+
+            if visual_node:
+                # Create CasareRPA node
+                casare_node = factory.create_casare_node(visual_node)
+
+                # Override ID if different (from remapping)
+                if casare_node and node_id:
+                    casare_node.node_id = node_id
+                    visual_node.set_property("node_id", node_id)
+
+                # Restore config values
+                config = node_data.get("config", {})
+                if hasattr(visual_node, '_widgets'):
+                    for widget_name, value in config.items():
+                        if widget_name in visual_node._widgets:
+                            try:
+                                visual_node._widgets[widget_name].set_value(value)
+                            except Exception as e:
+                                logger.debug(f"Could not restore widget {widget_name}: {e}")
+
+                # Restore custom name
+                if "name" in node_data:
+                    visual_node.set_name(node_data["name"])
+
+                return visual_node
+        except Exception as e:
+            logger.error(f"Failed to create visual node {node_type}: {e}")
+            return None
+
     def _on_save_workflow(self) -> None:
         """Handle workflow saving."""
         current_file = self._main_window.get_current_file()

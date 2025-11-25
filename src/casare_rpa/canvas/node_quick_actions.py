@@ -119,14 +119,8 @@ class NodeQuickActions(QObject):
                 # Check if click is directly on a node
                 node = self._get_node_at_pos(event.position())
                 if node:
-                    # Select the node if not already selected
-                    if not node.selected():
-                        self._graph.clear_selection()
-                        node.set_selected(True)
-
-                    # Show our custom context menu
-                    self._show_node_context_menu(event.globalPosition().toPoint())
-                    return True  # Consume the event - we handled the node right-click
+                    # Right-click on nodes is disabled - just consume the event
+                    return True
 
         return False  # Let other events pass through (including canvas right-clicks)
 
