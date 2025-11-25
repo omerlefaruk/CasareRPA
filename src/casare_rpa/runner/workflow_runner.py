@@ -548,7 +548,8 @@ class WorkflowRunner:
                 error_msg = result.get("error", "Unknown error") if result else str(last_exception or "No result")
                 self._emit_event(EventType.NODE_ERROR, {
                     "node_id": node.node_id,
-                    "error": error_msg
+                    "error": error_msg,
+                    "execution_time": execution_time
                 })
                 logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
                 return False, result

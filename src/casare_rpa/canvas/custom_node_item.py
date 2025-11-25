@@ -124,6 +124,9 @@ class CasareNodeItem(NodeItem):
             cls._time_font = QFont("Segoe UI", 8)
         return cls._time_font
 
+    # Height reserved above node for execution time badge
+    BADGE_AREA_HEIGHT = 24
+
     def __init__(self, name='node', parent=None):
         super().__init__(name, parent)
 
@@ -146,16 +149,39 @@ class CasareNodeItem(NodeItem):
         self._selected_border_color = QColor(255, 215, 0)  # Bright yellow
         self._running_border_color = QColor(255, 215, 0)  # Bright yellow animated
         self._node_bg_color = QColor(45, 45, 45)  # Dark background
-        
+
+        # Hide parent's text item to avoid double title
+        if hasattr(self, '_text_item') and self._text_item:
+            self._text_item.setVisible(False)
+
+    def boundingRect(self) -> QRectF:
+        """
+        Override bounding rect to include space above for execution time badge.
+        """
+        rect = super().boundingRect()
+        # Extend the bounding rect upward to include badge area
+        if self._execution_time_ms is not None:
+            return QRectF(
+                rect.x(),
+                rect.y() - self.BADGE_AREA_HEIGHT,
+                rect.width(),
+                rect.height() + self.BADGE_AREA_HEIGHT
+            )
+        return rect
+
+    def _get_node_rect(self) -> QRectF:
+        """Get the actual node rectangle (without badge area)."""
+        return super().boundingRect()
+
     def paint(self, painter, option, widget):
         """
         Custom paint method for the node.
         """
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        
-        # Get node rectangle
-        rect = self.boundingRect()
+
+        # Get node rectangle (actual node area, not including badge space)
+        rect = self._get_node_rect()
         border_width = 2.0
         
         # Determine border color and style
@@ -282,9 +308,9 @@ class CasareNodeItem(NodeItem):
         badge_height = text_height + padding_v * 2
         badge_radius = 4
 
-        # Position at top-center (above node, offset by -badge_height - 4)
+        # Position at top-center inside the node (below the top edge)
         badge_x = rect.center().x() - badge_width / 2
-        badge_y = rect.top() - badge_height - 4
+        badge_y = rect.top() + 4
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 

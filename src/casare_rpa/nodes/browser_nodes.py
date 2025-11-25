@@ -328,6 +328,15 @@ class CloseBrowserNode(BaseNode):
         """
         self.status = NodeStatus.RUNNING
 
+        # Helper to safely parse int values with defaults
+        def safe_int(value, default: int) -> int:
+            if value is None or value == "":
+                return default
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+
         try:
             # Get browser from input or context
             browser = self.get_input_value("browser")
@@ -338,8 +347,8 @@ class CloseBrowserNode(BaseNode):
                 raise ValueError("No browser instance found to close")
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.info("Closing browser")
 
@@ -468,20 +477,22 @@ class NewTabNode(BaseNode):
             tab_name = self.config.get("tab_name", "main")
             url = self.config.get("url", "")
 
-            # Safely parse timeout
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = 30000
-            else:
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
                 try:
-                    timeout = int(timeout_val)
+                    return int(value)
                 except (ValueError, TypeError):
-                    timeout = 30000
+                    return default
+
+            # Safely parse timeout
+            timeout = safe_int(self.config.get("timeout"), 30000)
             wait_until = self.config.get("wait_until", "load")
 
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 

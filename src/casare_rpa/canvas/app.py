@@ -1128,6 +1128,7 @@ class CasareRPAApp:
         """Handle node completed event."""
         node_id = event.data.get("node_id")
         progress = event.data.get("progress", 0)
+        execution_time = event.data.get("execution_time")
 
         if node_id:
             # Find visual node and update status
@@ -1136,10 +1137,9 @@ class CasareRPAApp:
                 if visual_node.get_property("node_id") == node_id:
                     visual_node.update_status("success")
 
-                    # Update execution time from the CasareRPA node
-                    casare_node = visual_node.get_casare_node()
-                    if casare_node and casare_node.last_execution_time is not None:
-                        visual_node.update_execution_time(casare_node.last_execution_time)
+                    # Update execution time from event data
+                    if execution_time is not None:
+                        visual_node.update_execution_time(execution_time)
                     break
 
         # Update progress in status bar
@@ -1152,6 +1152,7 @@ class CasareRPAApp:
         """Handle node error event."""
         node_id = event.data.get("node_id")
         error = event.data.get("error", "Unknown error")
+        execution_time = event.data.get("execution_time")
 
         if node_id:
             # Find visual node and update status
@@ -1160,10 +1161,9 @@ class CasareRPAApp:
                 if visual_node.get_property("node_id") == node_id:
                     visual_node.update_status("error")
 
-                    # Update execution time from the CasareRPA node (even on error)
-                    casare_node = visual_node.get_casare_node()
-                    if casare_node and casare_node.last_execution_time is not None:
-                        visual_node.update_execution_time(casare_node.last_execution_time)
+                    # Update execution time from event data (even on error)
+                    if execution_time is not None:
+                        visual_node.update_execution_time(execution_time)
                     break
 
         logger.error(f"Node error: {node_id} - {error}")
