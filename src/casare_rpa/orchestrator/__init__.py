@@ -77,6 +77,29 @@ from .distribution import (
     JobRouter,
 )
 
+# Result Collection
+from .results import (
+    JobResult,
+    ExecutionStatistics,
+    ResultCollector,
+    ResultExporter,
+)
+
+# Resilience (Error Recovery, Health Monitoring, Security)
+from .resilience import (
+    RecoveryStrategy,
+    RecoveryAction,
+    RetryPolicy,
+    ErrorRecoveryManager,
+    HealthStatus,
+    HealthMetrics,
+    HealthThresholds,
+    HealthMonitor,
+    TokenType,
+    AuthToken,
+    SecurityManager,
+)
+
 
 def main():
     """Entry point for orchestrator application."""
@@ -108,6 +131,12 @@ __all__ = [
     # Distribution
     "DistributionStrategy", "DistributionRule", "DistributionResult",
     "RobotSelector", "WorkflowDistributor", "JobRouter",
+    # Result Collection
+    "JobResult", "ExecutionStatistics", "ResultCollector", "ResultExporter",
+    # Resilience
+    "RecoveryStrategy", "RecoveryAction", "RetryPolicy", "ErrorRecoveryManager",
+    "HealthStatus", "HealthMetrics", "HealthThresholds", "HealthMonitor",
+    "TokenType", "AuthToken", "SecurityManager",
     # UI
     "OrchestratorMonitor", "run_orchestrator", "main",
 ]
