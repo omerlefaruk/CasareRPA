@@ -152,59 +152,61 @@ class VariableInspectorDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background-color: #252525;
-                color: #cccccc;
-            }
-            QDockWidget::title {
-                background-color: #2d2d2d;
+        from .theme import THEME
+
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_secondary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME.dock_title_bg};
                 padding: 6px;
                 text-align: left;
-            }
-            QTableWidget {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #404040;
-                gridline-color: #404040;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+                gridline-color: {THEME.border_dark};
+            }}
+            QTableWidget::item {{
                 padding: 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #094771;
-            }
-            QTableWidget::item:alternate {
-                background-color: #2a2a2a;
-            }
-            QHeaderView::section {
-                background-color: #2d2d2d;
-                color: #cccccc;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QTableWidget::item:alternate {{
+                background-color: {THEME.bg_dark};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_secondary};
                 padding: 6px;
                 border: none;
-                border-right: 1px solid #404040;
-            }
-            QPushButton {
-                background-color: #3c3f41;
-                color: #cccccc;
-                border: 1px solid #555555;
+                border-right: 1px solid {THEME.border_dark};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
                 padding: 4px 8px;
                 border-radius: 3px;
                 font-size: 11px;
-            }
-            QPushButton:hover {
-                background-color: #4a4d50;
-            }
-            QPushButton:pressed {
-                background-color: #2d2d2d;
-            }
-            QPushButton:checked {
-                background-color: #094771;
-                border-color: #1177bb;
-            }
-            QLabel {
-                color: #cccccc;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_medium};
+            }}
+            QPushButton:checked {{
+                background-color: {THEME.accent_primary};
+                border-color: {THEME.accent_secondary};
+            }}
+            QLabel {{
+                color: {THEME.text_secondary};
+            }}
         """)
 
     def _on_toggle_auto_refresh(self, checked: bool) -> None:

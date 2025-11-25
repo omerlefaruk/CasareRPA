@@ -66,8 +66,9 @@ class OutputTab(QWidget):
         toolbar.setSpacing(8)
 
         # Status label
+        from ..theme import THEME
         self._status_label = QLabel("No outputs")
-        self._status_label.setStyleSheet("color: #888888;")
+        self._status_label.setStyleSheet(f"color: {THEME.text_muted};")
 
         # Clear button
         clear_btn = QPushButton("Clear")
@@ -111,7 +112,7 @@ class OutputTab(QWidget):
         preview_layout.setSpacing(2)
 
         preview_label = QLabel("Value Preview:")
-        preview_label.setStyleSheet("color: #888888; font-size: 9pt;")
+        preview_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9pt;")
         preview_layout.addWidget(preview_label)
 
         self._preview_text = QTextEdit()
@@ -129,62 +130,64 @@ class OutputTab(QWidget):
 
         # Result bar
         self._result_bar = QLabel("")
-        self._result_bar.setStyleSheet("""
-            QLabel {
-                background-color: #3c3f41;
-                color: #888888;
+        self._result_bar.setStyleSheet(f"""
+            QLabel {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_muted};
                 padding: 6px 8px;
                 font-size: 9pt;
-            }
+            }}
         """)
         self._result_bar.hide()
         layout.addWidget(self._result_bar)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QTableWidget {
-                background-color: #2b2b2b;
-                color: #d4d4d4;
-                border: 1px solid #404040;
-                gridline-color: #404040;
+        """Apply VSCode Dark+ theme styling."""
+        from ..theme import THEME
+
+        self.setStyleSheet(f"""
+            QTableWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+                gridline-color: {THEME.border_dark};
                 font-family: 'Segoe UI', sans-serif;
                 font-size: 9pt;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget::item {{
                 padding: 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #4b6eaf;
-            }
-            QHeaderView::section {
-                background-color: #3c3f41;
-                color: #bbbbbb;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_header};
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #404040;
-            }
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #404040;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QTextEdit {{
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
-            }
-            QPushButton {
-                background-color: #3c3f41;
-                color: #cccccc;
-                border: 1px solid #4a4a4a;
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
                 border-radius: 2px;
                 padding: 0px 2px;
                 font-size: 9px;
-            }
-            QPushButton:hover {
-                background-color: #4c4f51;
-            }
-            QLabel {
-                color: #cccccc;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QLabel {{
+                color: {THEME.text_secondary};
+            }}
         """)
 
     def _on_selection_changed(self) -> None:
@@ -283,16 +286,16 @@ class OutputTab(QWidget):
         # Time
         time_str = timestamp or datetime.now().strftime("%H:%M:%S.%f")[:-3]
         time_item = QTableWidgetItem(time_str)
-        time_item.setForeground(QBrush(QColor("#888888")))
+        time_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
         # Name
         name_item = QTableWidgetItem(name)
-        name_item.setForeground(QBrush(QColor("#6bb5ff")))
+        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))  # VSCode blue
 
         # Type
         type_name = self._get_type_name(value)
         type_item = QTableWidgetItem(type_name)
-        type_item.setForeground(QBrush(QColor("#cc99ff")))
+        type_item.setForeground(QBrush(QColor(THEME.wire_dict)))  # VSCode teal for types
 
         # Value (truncated for display, full stored in user data)
         value_item = QTableWidgetItem(self._format_value(value))

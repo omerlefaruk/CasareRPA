@@ -176,38 +176,42 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background-color: #252525;
-                color: #cccccc;
-            }
-            QDockWidget::title {
-                background-color: #2d2d2d;
+        """Apply VSCode Dark+ theme styling."""
+        from ..theme import THEME
+
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_secondary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME.dock_title_bg};
                 padding: 6px;
                 text-align: left;
-            }
-            QTabWidget::pane {
-                border: 1px solid #404040;
-                background: #252525;
+            }}
+            QTabWidget::pane {{
+                border: 1px solid {THEME.border_dark};
+                background: {THEME.bg_panel};
                 border-top: none;
-            }
-            QTabBar::tab {
-                background: #2d2d2d;
-                color: #cccccc;
+            }}
+            QTabBar::tab {{
+                background: {THEME.bg_medium};
+                color: {THEME.text_secondary};
                 padding: 8px 16px;
-                border: 1px solid #404040;
+                border: 1px solid {THEME.border_dark};
                 border-bottom: none;
                 margin-right: 2px;
-            }
-            QTabBar::tab:selected {
-                background: #3d3d3d;
-                color: #ffffff;
-                border-bottom: 2px solid #FFA500;
-            }
-            QTabBar::tab:hover:!selected {
-                background: #353535;
-            }
+                font-weight: 500;
+            }}
+            QTabBar::tab:selected {{
+                background: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                border-bottom: 2px solid {THEME.accent_primary};
+            }}
+            QTabBar::tab:hover:!selected {{
+                background: {THEME.bg_hover};
+                color: {THEME.text_primary};
+            }}
         """)
 
     def _on_variables_changed(self, variables: Dict[str, Any]) -> None:

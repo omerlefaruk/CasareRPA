@@ -12,84 +12,83 @@ from typing import Dict
 @dataclass
 class CanvasThemeColors:
     """
-    Canvas theme color palette.
+    VSCode Dark+ theme colors - exact replication from microsoft/vscode repository.
 
-    Aligned with Orchestrator theme for consistency across applications.
-    Uses a modern professional dark theme with subtle blue undertones.
+    Colors sourced from dark_vs.json and dark_plus.json for pixel-perfect VSCode appearance.
     """
 
-    # Base backgrounds (neutral dark grays)
-    bg_darkest: str = "#0f1114"
-    bg_dark: str = "#121417"
-    bg_medium: str = "#1a1d21"
-    bg_light: str = "#22262b"
-    bg_lighter: str = "#2a2f36"
-    bg_panel: str = "#1e2126"
-    bg_header: str = "#15171a"
-    bg_hover: str = "#2a2f36"
-    bg_selected: str = "#2d4a6f"
+    # Base backgrounds (from VSCode dark_vs.json)
+    bg_darkest: str = "#1E1E1E"        # VSCode editor background
+    bg_dark: str = "#252526"           # VSCode sidebar/panel
+    bg_medium: str = "#2D2D30"         # VSCode inactive tab
+    bg_light: str = "#3E3E42"          # VSCode borders
+    bg_lighter: str = "#454545"        # VSCode menu separator
+    bg_panel: str = "#252526"          # Panel background
+    bg_header: str = "#2D2D30"         # Header background
+    bg_hover: str = "#2A2D2E"          # VSCode hover state
+    bg_selected: str = "#0078D4"       # VSCode selection blue
 
     # Node graph specific
-    bg_canvas: str = "#1a1d21"
-    bg_node: str = "#2a2f36"
-    bg_node_selected: str = "#3a4555"
-    bg_node_header: str = "#22262b"
+    bg_canvas: str = "#1E1E1E"         # Match editor background
+    bg_node: str = "#252526"           # Nodes lighter than canvas
+    bg_node_selected: str = "#264F78"  # VSCode editor selection
+    bg_node_header: str = "#2D2D30"    # Node header
 
-    # Borders
-    border_dark: str = "#1f2227"
-    border: str = "#2a2f36"
-    border_light: str = "#3a4046"
-    border_focus: str = "#4a9eff"
+    # Borders (VSCode)
+    border_dark: str = "#252526"       # Dark border
+    border: str = "#3E3E42"            # Standard border
+    border_light: str = "#454545"      # Light border
+    border_focus: str = "#007ACC"      # Focus ring (VSCode blue)
 
-    # Text - Minimum #9a9a9a for accessibility
-    text_primary: str = "#e8eaed"
-    text_secondary: str = "#9aa0a6"  # Above #9a9a9a threshold
-    text_muted: str = "#7a7f85"      # Above #9a9a9a when used on dark bg
-    text_disabled: str = "#5f6368"
-    text_header: str = "#9aa0a6"
+    # Text (VSCode)
+    text_primary: str = "#D4D4D4"      # VSCode editor foreground
+    text_secondary: str = "#CCCCCC"    # VSCode menu foreground
+    text_muted: str = "#A6A6A6"        # VSCode placeholder
+    text_disabled: str = "#6B6B6B"     # VSCode checkbox border
+    text_header: str = "#BBBBBB"       # VSCode sidebar title
 
-    # Status colors
-    status_success: str = "#66bb6a"
-    status_warning: str = "#ffb74d"
-    status_error: str = "#ef5350"
-    status_info: str = "#42a5f5"
-    status_running: str = "#ffb74d"
-    status_idle: str = "#5f6368"
+    # Status colors (align with VSCode semantic colors from Dark+)
+    status_success: str = "#89D185"    # Green (from Dark+)
+    status_warning: str = "#D7BA7D"    # Yellow (from Dark+)
+    status_error: str = "#F48771"      # Red (from Dark+)
+    status_info: str = "#75BEFF"       # Info blue
+    status_running: str = "#D7BA7D"    # Yellow
+    status_idle: str = "#6B6B6B"       # Disabled gray
 
-    # Node status colors
-    node_idle: str = "#5f6368"
-    node_running: str = "#ffb74d"
-    node_success: str = "#66bb6a"
-    node_error: str = "#ef5350"
-    node_skipped: str = "#9575cd"
-    node_breakpoint: str = "#ef5350"
+    # Node status
+    node_idle: str = "#6B6B6B"
+    node_running: str = "#D7BA7D"      # Warning yellow
+    node_success: str = "#89D185"      # Success green
+    node_error: str = "#F48771"        # Error red
+    node_skipped: str = "#C586C0"      # Purple (control flow)
+    node_breakpoint: str = "#F48771"   # Error red
 
-    # Accent colors
-    accent_primary: str = "#4a9eff"
-    accent_secondary: str = "#64b5f6"
-    accent_success: str = "#66bb6a"
-    accent_warning: str = "#ffb74d"
-    accent_error: str = "#ef5350"
+    # Accent colors (VSCode blue)
+    accent_primary: str = "#007ACC"    # VSCode signature blue
+    accent_secondary: str = "#0078D4"  # Selection blue
+    accent_success: str = "#89D185"
+    accent_warning: str = "#D7BA7D"
+    accent_error: str = "#F48771"
 
-    # Connection/wire colors
-    wire_exec: str = "#ffffff"
-    wire_data: str = "#4a9eff"
-    wire_bool: str = "#ef5350"
-    wire_string: str = "#66bb6a"
-    wire_number: str = "#ffb74d"
-    wire_list: str = "#ab47bc"
-    wire_dict: str = "#42a5f5"
+    # Wire colors (use VSCode syntax colors from Dark+)
+    wire_exec: str = "#FFFFFF"         # White for execution
+    wire_data: str = "#007ACC"         # Blue (VSCode accent)
+    wire_bool: str = "#F48771"         # Red (error color)
+    wire_string: str = "#CE9178"       # Orange (string color from Dark+)
+    wire_number: str = "#B5CEA8"       # Light green (number color from Dark+)
+    wire_list: str = "#C586C0"         # Purple (control flow from Dark+)
+    wire_dict: str = "#4EC9B0"         # Teal (type color from Dark+)
 
     # Toolbar
-    toolbar_bg: str = "#1a1d21"
-    toolbar_border: str = "#2a2f36"
-    toolbar_button_hover: str = "#2a2f36"
-    toolbar_button_pressed: str = "#3a4046"
+    toolbar_bg: str = "#2D2D30"        # VSCode header
+    toolbar_border: str = "#3E3E42"    # VSCode border
+    toolbar_button_hover: str = "#2A2D2E"
+    toolbar_button_pressed: str = "#0078D4"
 
     # Dock/panel
-    dock_title_bg: str = "#15171a"
-    dock_title_text: str = "#9aa0a6"
-    splitter_handle: str = "#1f2227"
+    dock_title_bg: str = "#2D2D30"     # VSCode header
+    dock_title_text: str = "#BBBBBB"   # VSCode sidebar title
+    splitter_handle: str = "#3E3E42"   # VSCode border
 
 
 # Global theme instance
@@ -212,11 +211,11 @@ QToolButton::menu-indicator {{
 
 /* ==================== STATUS BAR ==================== */
 QStatusBar {{
-    background-color: {THEME.bg_header};
-    border-top: 1px solid {THEME.border_dark};
-    color: {THEME.text_secondary};
+    background-color: {THEME.accent_primary};  /* VSCode signature blue #007ACC */
+    border-top: none;
+    color: #FFFFFF;  /* White text like VSCode */
     font-size: 11px;
-    padding: 2px 4px;
+    padding: 2px 8px;
 }}
 
 QStatusBar::item {{

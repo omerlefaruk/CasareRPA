@@ -131,54 +131,55 @@ class LogTab(QWidget):
         layout.addWidget(self._table)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QTableWidget {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #404040;
-                gridline-color: #404040;
+        """Apply VSCode Dark+ theme styling."""
+        from ..theme import THEME
+        self.setStyleSheet(f"""
+            QTableWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+                gridline-color: {THEME.border_dark};
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 9pt;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget::item {{
                 padding: 2px 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #4b6eaf;
-            }
-            QHeaderView::section {
-                background-color: #3c3f41;
-                color: #bbbbbb;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_header};
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid #404040;
-            }
-            QPushButton {
-                background-color: #3c3f41;
-                color: #cccccc;
-                border: 1px solid #4a4a4a;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
                 border-radius: 2px;
                 padding: 0px 2px;
                 font-size: 9px;
-            }
-            QPushButton:hover {
-                background-color: #4c4f51;
-            }
-            QPushButton:checked {
-                background-color: #4b6eaf;
-            }
-            QComboBox {
-                background-color: #3c3f41;
-                color: #cccccc;
-                border: 1px solid #4a4a4a;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QPushButton:checked {{
+                background-color: {THEME.accent_primary};
+            }}
+            QComboBox {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
                 border-radius: 2px;
                 padding: 0px 2px;
                 font-size: 9px;
-            }
-            QLabel {
-                color: #cccccc;
-            }
+            }}
+            QLabel {{
+                color: {THEME.text_secondary};
+            }}
         """)
 
     def _on_filter_changed(self, filter_text: str) -> None:
@@ -250,14 +251,15 @@ class LogTab(QWidget):
                 logger.error(f"Failed to export log: {e}")
 
     def _get_level_color(self, level: str) -> QColor:
-        """Get color for log level."""
+        """Get color for log level using VSCode Dark+ theme."""
+        from ..theme import THEME
         colors = {
-            "info": QColor("#d4d4d4"),
-            "warning": QColor("#FFA500"),
-            "error": QColor("#ff6b6b"),
-            "success": QColor("#4CAF50"),
+            "info": QColor(THEME.status_info),
+            "warning": QColor(THEME.status_warning),
+            "error": QColor(THEME.status_error),
+            "success": QColor(THEME.status_success),
         }
-        return colors.get(level.lower(), QColor("#d4d4d4"))
+        return colors.get(level.lower(), QColor(THEME.text_primary))
 
     def _trim_log(self) -> None:
         """Trim log to max entries."""
@@ -315,9 +317,10 @@ class LogTab(QWidget):
         self._table.insertRow(row)
 
         # Time
+        from ..theme import THEME
         timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         time_item = QTableWidgetItem(timestamp)
-        time_item.setForeground(QBrush(QColor("#888888")))
+        time_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
         # Level
         level_item = QTableWidgetItem(level.upper())
@@ -328,7 +331,7 @@ class LogTab(QWidget):
         node_item = QTableWidgetItem(node_id[:12] + "..." if node_id and len(node_id) > 15 else node_id or "")
         node_item.setData(Qt.ItemDataRole.UserRole, node_id)
         if node_id:
-            node_item.setForeground(QBrush(QColor("#6bb5ff")))
+            node_item.setForeground(QBrush(QColor(THEME.accent_primary)))
 
         # Message
         msg_item = QTableWidgetItem(message)

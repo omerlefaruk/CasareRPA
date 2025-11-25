@@ -254,6 +254,18 @@ class MainWindow(QMainWindow):
         self.action_toggle_disable.setStatusTip("Disable/enable selected node - inputs bypass to outputs (4)")
         self.action_toggle_disable.triggered.connect(self._on_toggle_disable_node)
 
+        # Snippet actions
+        self.action_create_snippet = QAction("Create &Snippet from Selection...", self)
+        self.action_create_snippet.setShortcut(QKeySequence("Ctrl+Shift+G"))
+        self.action_create_snippet.setStatusTip("Create a reusable snippet from selected nodes (Ctrl+Shift+G)")
+        self.action_create_snippet.triggered.connect(self._on_create_snippet)
+
+        self.action_snippet_library = QAction("Snippet &Library...", self)
+        self.action_snippet_library.setShortcut(QKeySequence("Ctrl+Shift+L"))
+        self.action_snippet_library.setStatusTip("Browse and insert snippets from library (Ctrl+Shift+L)")
+        self.action_snippet_library.triggered.connect(self._on_open_snippet_library)
+
+
         # View actions
         self.action_zoom_in = QAction("Zoom &In", self)
         self.action_zoom_in.setShortcut(QKeySequence.StandardKey.ZoomIn)
@@ -447,6 +459,8 @@ class MainWindow(QMainWindow):
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(self.action_undo)
         edit_menu.addAction(self.action_redo)
+        edit_menu.addAction(self.action_create_snippet)
+        edit_menu.addAction(self.action_snippet_library)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_cut)
         edit_menu.addAction(self.action_copy)
@@ -459,6 +473,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action_select_nearest)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_toggle_disable)
+        edit_menu.addAction(self.action_create_snippet)
+        edit_menu.addAction(self.action_snippet_library)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_find_node)
 
@@ -1477,19 +1493,80 @@ class MainWindow(QMainWindow):
                     "Expected a JSON object with a 'nodes' key."
                 )
                 return
-
-            # Emit signal with JSON string
-            self.workflow_import_json.emit(text)
-            node_count = len(data.get("nodes", {}))
-            self.statusBar().showMessage(f"Pasting {node_count} nodes from clipboard...", 3000)
-
-        except orjson.JSONDecodeError:
+        except Exception as e:
             QMessageBox.warning(
                 self,
                 "Invalid JSON",
-                "The clipboard content is not valid JSON.\n"
-                "Please copy a valid workflow JSON to the clipboard."
+                f"The clipboard content is not valid JSON.\n\nError: {str(e)}"
             )
+            return
+
+    def _on_create_snippet(self) -> None:
+        """Handle create snippet from selection request."""
+        # Get selected nodes from the graph
+        selected_nodes = self.graph_widget.graph.selected_nodes()
+
+        if not selected_nodes:
+            QMessageBox.information(
+                self,
+                "No Selection",
+                "Please select nodes to create a snippet.\n\n"
+                "Select multiple nodes by dragging a selection box or holding Shift while clicking nodes."
+            )
+            return
+
+        # TODO: Open SnippetCreatorDialog
+        # For now, show a placeholder message
+        QMessageBox.information(
+            self,
+            "Create Snippet",
+            f"Creating snippet from {len(selected_nodes)} selected nodes.\n\n"
+            "Snippet Creator Dialog will be implemented next."
+        )
+        logger.info(f"Create snippet requested for {len(selected_nodes)} nodes")
+
+    def _on_open_snippet_library(self) -> None:
+        """Handle open snippet library browser request."""
+        # TODO: Open SnippetBrowserDialog
+        # For now, show a placeholder message
+        QMessageBox.information(
+            self,
+            "Snippet Library",
+            "Snippet Library Browser will be implemented next.\n\n"
+            "This dialog will allow you to browse, search, and insert snippets."
+        )
+        logger.info("Snippet library browser requested")
+
+        if not selected_nodes:
+            QMessageBox.information(
+                self,
+                "No Selection",
+                "Please select nodes to create a snippet.\n\n"
+                "Select multiple nodes by dragging a selection box or holding Shift while clicking nodes."
+            )
+            return
+
+        # TODO: Open SnippetCreatorDialog
+        # For now, show a placeholder message
+        QMessageBox.information(
+            self,
+            "Create Snippet",
+            f"Creating snippet from {len(selected_nodes)} selected nodes.\n\n"
+            "Snippet Creator Dialog will be implemented next."
+        )
+        logger.info(f"Create snippet requested for {len(selected_nodes)} nodes")
+
+    def _on_open_snippet_library(self) -> None:
+        """Handle open snippet library browser request."""
+        # TODO: Open SnippetBrowserDialog
+        # For now, show a placeholder message
+        QMessageBox.information(
+            self,
+            "Snippet Library",
+            "Snippet Library Browser will be implemented next.\n\n"
+            "This dialog will allow you to browse, search, and insert snippets."
+        )
+        logger.info("Snippet library browser requested")
 
     def _on_save_workflow(self) -> None:
         """Handle save workflow request."""
