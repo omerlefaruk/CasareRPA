@@ -15,7 +15,8 @@
       "Bash(do if ! grep -q \"retry_count\" \"$f\")",
       "Bash(then echo \"$f\")",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(python run.py:*)"
     ],
     "deny": [],
     "ask": []

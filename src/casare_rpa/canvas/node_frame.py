@@ -10,6 +10,7 @@ References:
 """
 
 from typing import Any, List, Optional, Tuple, Set, Dict, TYPE_CHECKING
+from PySide6.QtGui import QUndoCommand
 from PySide6.QtWidgets import (
     QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem,
     QGraphicsEllipseItem, QMenu, QInputDialog
@@ -19,6 +20,71 @@ from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QKeyEvent, QPai
 from NodeGraphQt import BaseNode
 from NodeGraphQt.base.node import NodeObject
 from loguru import logger
+
+
+# ============================================================================
+# UNDO COMMANDS
+# ============================================================================
+
+
+class FrameDeletedCmd(QUndoCommand):
+    """
+    Undo command for frame deletion.
+
+    Stores all frame state to allow restoring the frame on undo.
+    """
+
+    def __init__(self, frame: "NodeFrame", scene, description: str = "Delete Frame"):
+        super().__init__(description)
+        self._scene = scene
+        self._frame_data = None
+        self._frame = frame
+        self._was_deleted = False
+
+        # Store frame state before deletion
+        self._store_frame_state()
+
+    def _store_frame_state(self):
+        """Store all frame state for restoration."""
+        self._frame_data = {
+            'title': self._frame.frame_title,
+            'color': self._frame.frame_color,
+            'pos': (self._frame.pos().x(), self._frame.pos().y()),
+            'rect': (self._frame.rect().width(), self._frame.rect().height()),
+            'contained_node_ids': [node.id if hasattr(node, 'id') else id(node)
+                                    for node in self._frame.contained_nodes],
+            'is_collapsed': self._frame._is_collapsed,
+            'expanded_rect': (self._frame._expanded_rect.width(),
+                            self._frame._expanded_rect.height()) if self._frame._expanded_rect else None
+        }
+
+    def undo(self):
+        """Restore the deleted frame."""
+        if not self._was_deleted or not self._frame_data:
+            return
+
+        # Re-add frame to scene
+        if self._scene and self._frame:
+            self._scene.addItem(self._frame)
+
+            # Re-register with bounds manager
+            if hasattr(self._frame, '_bounds_manager') and self._frame._bounds_manager:
+                self._frame._bounds_manager.register_frame(self._frame)
+
+            self._was_deleted = False
+            logger.info(f"Undo: Restored frame '{self._frame_data['title']}'")
+
+    def redo(self):
+        """Delete the frame again."""
+        if self._frame and self._frame.scene():
+            # Unregister from bounds manager
+            if hasattr(self._frame, '_bounds_manager') and self._frame._bounds_manager:
+                self._frame._bounds_manager.unregister_frame(self._frame)
+
+            # Remove from scene (but keep the frame object)
+            self._scene.removeItem(self._frame)
+            self._was_deleted = True
+            logger.info(f"Redo: Deleted frame '{self._frame_data['title']}'")
 
 
 # ============================================================================
@@ -367,10 +433,11 @@ class NodeFrame(QGraphicsRectItem):
         """Create title label for the frame."""
         self.title_label = QGraphicsTextItem(self.frame_title, self)
 
-        # Style the title
-        font = QFont("Arial", 14, QFont.Weight.Bold)
+        # Style the title - use a light color for better visibility
+        font = QFont("Segoe UI", 14, QFont.Weight.Bold)
         self.title_label.setFont(font)
-        self.title_label.setDefaultTextColor(self.frame_color.darker(200))
+        # Use a light, semi-transparent white that's visible on any frame color
+        self.title_label.setDefaultTextColor(QColor(255, 255, 255, 200))
 
         # Position at top-left
         self.title_label.setPos(10, 5)
@@ -385,8 +452,7 @@ class NodeFrame(QGraphicsRectItem):
         """Change the frame color."""
         self.frame_color = color
         self._apply_style()
-        if self.title_label:
-            self.title_label.setDefaultTextColor(color.darker(200))
+        # Title stays light white for visibility regardless of frame color
 
     # =========================================================================
     # COLLAPSE FUNCTIONALITY
@@ -429,41 +495,30 @@ class NodeFrame(QGraphicsRectItem):
         self._hidden_node_views.clear()
         self._hidden_pipes.clear()
 
-        # Disable scene updates during batch operation to prevent visual glitches
-        scene = self.scene()
-        if scene:
-            for view in scene.views():
-                view.setUpdatesEnabled(False)
+        # Collect all pipes FIRST (before hiding nodes)
+        for node in self.contained_nodes:
+            self._collect_pipes(node)
 
-        try:
-            # First, collect all pipes and node views
-            for node in self.contained_nodes:
-                try:
-                    # Collect node view
-                    if hasattr(node, 'view') and node.view:
-                        self._hidden_node_views.append(node.view)
-                    # Collect pipes
-                    self._collect_pipes(node)
-                except Exception as e:
-                    logger.warning(f"Error collecting items during collapse: {e}")
+        # Hide node views FIRST - this is critical because pipe visibility
+        # in NodeGraphQt depends on node visibility
+        for node in self.contained_nodes:
+            try:
+                if hasattr(node, 'view') and node.view:
+                    self._hidden_node_views.append(node.view)
+                    node.view.setVisible(False)
+            except Exception as e:
+                logger.warning(f"Error hiding node during collapse: {e}")
 
-            # Now hide everything at once
-            for node_view in self._hidden_node_views:
-                try:
-                    node_view.setVisible(False)
-                except Exception:
-                    pass
-
-            for pipe in self._hidden_pipes:
-                try:
-                    pipe.setVisible(False)
-                except Exception:
-                    pass
-        finally:
-            # Re-enable scene updates
-            if scene:
-                for view in scene.views():
-                    view.setUpdatesEnabled(True)
+        # Now force all pipes to redraw - NodeGraphQt's draw_path will
+        # automatically hide them since their nodes are now hidden
+        for pipe in self._hidden_pipes:
+            try:
+                if pipe and hasattr(pipe, 'draw_path'):
+                    # Force redraw which triggers visibility check
+                    if pipe._output_port and pipe._input_port:
+                        pipe.draw_path(pipe._output_port, pipe._input_port)
+            except Exception:
+                pass
 
         # Resize to collapsed dimensions
         self.prepareGeometryChange()
@@ -479,7 +534,11 @@ class NodeFrame(QGraphicsRectItem):
         self._is_collapsed = True
         self.update()
 
-        logger.info(f"Frame '{self.frame_title}' collapsed - hid {len(self._hidden_node_views)} node views")
+        # Force full scene invalidation to ensure all visibility changes are applied
+        if self.scene():
+            self.scene().invalidate()
+
+        logger.info(f"Frame '{self.frame_title}' collapsed - hid {len(self._hidden_node_views)} nodes, {len(self._hidden_pipes)} pipes")
 
     def expand(self) -> None:
         """
@@ -506,41 +565,32 @@ class NodeFrame(QGraphicsRectItem):
         if hasattr(self, '_collapse_button'):
             self._collapse_button._update_position()
 
-        # Disable scene updates during batch operation to prevent visual glitches
-        scene = self.scene()
-        if scene:
-            for view in scene.views():
-                view.setUpdatesEnabled(False)
+        # Show all node views FIRST
+        for node_view in self._hidden_node_views:
+            try:
+                if node_view:
+                    node_view.setVisible(True)
+            except Exception:
+                pass
 
-        try:
-            # Show all stored node views
-            for node_view in self._hidden_node_views:
-                try:
-                    if node_view:
-                        node_view.setVisible(True)
-                except Exception:
-                    pass
+        # Also ensure all contained nodes are visible
+        for node in self.contained_nodes:
+            try:
+                if hasattr(node, 'view') and node.view:
+                    node.view.setVisible(True)
+            except Exception:
+                pass
 
-            # Also ensure all contained nodes are visible
-            for node in self.contained_nodes:
-                try:
-                    if hasattr(node, 'view') and node.view:
-                        node.view.setVisible(True)
-                except Exception:
-                    pass
-
-            # Show all stored pipes
-            for pipe in self._hidden_pipes:
-                try:
-                    if pipe:
-                        pipe.setVisible(True)
-                except Exception:
-                    pass
-        finally:
-            # Re-enable scene updates
-            if scene:
-                for view in scene.views():
-                    view.setUpdatesEnabled(True)
+        # Force all pipes to redraw - NodeGraphQt's draw_path will
+        # automatically show them since their nodes are now visible
+        for pipe in self._hidden_pipes:
+            try:
+                if pipe and hasattr(pipe, 'draw_path'):
+                    # Force redraw which triggers visibility check
+                    if pipe._output_port and pipe._input_port:
+                        pipe.draw_path(pipe._output_port, pipe._input_port)
+            except Exception:
+                pass
 
         # Clear the stored views and pipes
         self._hidden_node_views.clear()
@@ -548,6 +598,10 @@ class NodeFrame(QGraphicsRectItem):
 
         self._is_collapsed = False
         self.update()
+
+        # Force full scene invalidation to ensure all visibility changes are applied
+        if self.scene():
+            self.scene().invalidate()
 
         logger.info(f"Frame '{self.frame_title}' expanded")
 
@@ -962,22 +1016,22 @@ class NodeFrame(QGraphicsRectItem):
             except Exception:
                 continue
 
-            # If more than 30% of the node is inside the frame, show highlight
-            if overlap_ratio > 0.3:
+            # If more than 25% of the node is inside the frame, show highlight
+            if overlap_ratio > 0.25:
                 has_hovering_node = True
 
-                # Check if node position changed (being dragged)
+                # Track this node's position
                 if node_id in self._last_overlap_check:
                     last_pos, _ = self._last_overlap_check[node_id]
                     pos_changed = (abs(last_pos[0] - current_pos[0]) > 2 or
                                    abs(last_pos[1] - current_pos[1]) > 2)
 
-                    # If position changed and overlap is significant, add the node
-                    if pos_changed and overlap_ratio > 0.5:
+                    # If position changed and overlap is very significant (70%+), add the node
+                    # This higher threshold allows the green highlight to stay visible longer
+                    if pos_changed and overlap_ratio > 0.7:
                         if not self._is_moving:
                             self.add_node(node)
                             logger.info(f"Node added to frame by dragging")
-                            # Remove from tracking after adding
                             if node_id in self._last_overlap_check:
                                 del self._last_overlap_check[node_id]
                             continue
@@ -985,14 +1039,17 @@ class NodeFrame(QGraphicsRectItem):
                 # Update position tracking
                 self._last_overlap_check[node_id] = (current_pos, overlap_ratio)
             else:
-                # Remove from tracking if no longer overlapping significantly
+                # Remove from tracking if no longer overlapping
                 if node_id in self._last_overlap_check:
                     del self._last_overlap_check[node_id]
 
-        # Update highlight state
+        # Always update highlight state (force repaint if hovering)
         if self._is_drop_target != has_hovering_node:
             self._is_drop_target = has_hovering_node
-            self.update()  # Trigger repaint
+            self.update()
+        elif has_hovering_node:
+            # Force update while hovering to keep visual state current
+            self.update()
 
     def _edit_title(self):
         """Open a dialog to edit the frame title."""
@@ -1055,13 +1112,39 @@ class NodeFrame(QGraphicsRectItem):
         else:
             super().keyPressEvent(event)
 
-    def _delete_frame(self):
-        """Delete this frame from the scene."""
+    def _delete_frame(self, use_undo: bool = True):
+        """
+        Delete this frame from the scene.
+
+        Args:
+            use_undo: If True and graph is available, push to undo stack
+        """
+        scene = self.scene()
+        if not scene:
+            return
+
+        # Try to use undo stack if available
+        if use_undo and NodeFrame._graph_ref:
+            try:
+                undo_stack = NodeFrame._graph_ref.undo_stack()
+                if undo_stack:
+                    # Create and push undo command
+                    cmd = FrameDeletedCmd(self, scene, f"Delete Frame '{self.frame_title}'")
+                    undo_stack.push(cmd)
+                    return  # The redo() of the command will do the actual deletion
+            except Exception as e:
+                logger.debug(f"Could not use undo stack: {e}")
+
+        # Direct deletion (no undo)
+        self._do_delete()
+
+    def _do_delete(self):
+        """Perform the actual frame deletion (used by undo command)."""
         # Unregister from centralized bounds manager
         if hasattr(self, '_bounds_manager') and self._bounds_manager:
             self._bounds_manager.unregister_frame(self)
 
-        # Ungroup all contained nodes
+        # Ungroup all contained nodes (but keep them in the scene)
         for node in list(self.contained_nodes):
             self.remove_node(node)
 

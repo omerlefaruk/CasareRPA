@@ -3,6 +3,7 @@ CasareRPA - Workflow Schema
 Defines the JSON structure for saving and loading workflows.
 """
 
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
@@ -18,6 +19,42 @@ from .types import (
     SerializedWorkflow,
     SCHEMA_VERSION,
 )
+
+
+@dataclass
+class VariableDefinition:
+    """
+    Definition of a workflow variable.
+
+    Attributes:
+        name: Variable name (must be valid identifier)
+        type: Variable type (String, Integer, Float, Boolean, List, Dict, DataTable)
+        default_value: Default value for the variable
+        description: Optional description
+    """
+    name: str
+    type: str = "String"
+    default_value: Any = ""
+    description: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize to dictionary."""
+        return {
+            "name": self.name,
+            "type": self.type,
+            "default_value": self.default_value,
+            "description": self.description,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VariableDefinition":
+        """Create from dictionary."""
+        return cls(
+            name=data.get("name", ""),
+            type=data.get("type", "String"),
+            default_value=data.get("default_value", ""),
+            description=data.get("description", ""),
+        )
 
 
 class WorkflowMetadata:
@@ -244,14 +281,43 @@ class WorkflowSchema:
         Returns:
             Complete workflow data structure
         """
+        # Serialize variables - support both VariableDefinition objects and plain dicts
+        serialized_vars = {}
+        for name, var in self.variables.items():
+            if isinstance(var, VariableDefinition):
+                serialized_vars[name] = var.to_dict()
+            elif isinstance(var, dict):
+                serialized_vars[name] = var
+            else:
+                # Plain value - wrap in dict
+                serialized_vars[name] = {
+                    "type": self._infer_type(var),
+                    "default_value": var,
+                    "description": "",
+                }
+
         return {
             "metadata": self.metadata.to_dict(),
             "nodes": self.nodes,
             "connections": [conn.to_dict() for conn in self.connections],
             "frames": self.frames,
-            "variables": self.variables,
+            "variables": serialized_vars,
             "settings": self.settings,
         }
+
+    def _infer_type(self, value: Any) -> str:
+        """Infer variable type from value."""
+        if isinstance(value, bool):
+            return "Boolean"
+        if isinstance(value, int):
+            return "Integer"
+        if isinstance(value, float):
+            return "Float"
+        if isinstance(value, list):
+            return "List"
+        if isinstance(value, dict):
+            return "Dict"
+        return "String"
 
     @classmethod
     def from_dict(cls, data: SerializedWorkflow) -> "WorkflowSchema":

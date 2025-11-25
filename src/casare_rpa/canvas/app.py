@@ -118,6 +118,7 @@ class CasareRPAApp:
         
         # Workflow execution
         self._main_window.workflow_run.connect(self._on_run_workflow)
+        self._main_window.workflow_run_to_node.connect(self._on_run_to_node)
         self._main_window.workflow_pause.connect(self._on_pause_workflow)
         self._main_window.workflow_resume.connect(self._on_resume_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
@@ -892,11 +893,116 @@ class CasareRPAApp:
                         debug_toolbar.set_execution_state(False)
             
             asyncio.ensure_future(run_and_cleanup())
-            
+
         except Exception as e:
             logger.exception("Failed to start workflow execution")
             self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
-    
+
+    def _on_run_to_node(self, target_node_id: str) -> None:
+        """
+        Handle run-to-node execution (F4).
+
+        Executes the workflow from StartNode to the specified target node,
+        then pauses at that node for inspection.
+
+        Args:
+            target_node_id: The node ID to run to
+        """
+        try:
+            logger.info(f"Starting run-to-node execution, target: {target_node_id}")
+
+            # Create workflow from current graph
+            workflow = self._create_workflow_from_graph()
+
+            # Create workflow runner with target node
+            self._workflow_runner = WorkflowRunner(
+                workflow,
+                self._event_bus,
+                target_node_id=target_node_id
+            )
+
+            # Check if subgraph was successfully calculated
+            if not self._workflow_runner.subgraph_valid:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self._main_window,
+                    "Cannot Run To Node",
+                    f"Target node is not reachable from StartNode.\n\n"
+                    "Make sure the node is connected to the workflow."
+                )
+                # Re-enable run buttons
+                self._main_window.action_run.setEnabled(True)
+                self._main_window.action_run_to_node.setEnabled(True)
+                self._main_window.action_pause.setEnabled(False)
+                self._main_window.action_stop.setEnabled(False)
+                return
+
+            # Enable debug mode for inspection after reaching target
+            self._workflow_runner.enable_debug_mode(True)
+            logger.info("Debug mode enabled for run-to-node (for inspection at target)")
+
+            # Show debug panels for inspection
+            var_inspector = self._main_window.get_variable_inspector()
+            exec_history = self._main_window.get_execution_history_viewer()
+            if var_inspector:
+                var_inspector.show()
+                var_inspector.clear()
+            if exec_history:
+                exec_history.show()
+                exec_history.clear()
+
+            # Update debug toolbar state
+            debug_toolbar = self._main_window.get_debug_toolbar()
+            if debug_toolbar:
+                debug_toolbar.set_execution_state(True)
+
+            # Show log viewer
+            self._main_window.show_log_viewer()
+            self._main_window.action_toggle_log.setChecked(True)
+
+            # Start debug update timer
+            self._start_debug_updates()
+
+            # Run workflow asynchronously
+            async def run_and_cleanup():
+                try:
+                    await self._workflow_runner.run()
+                finally:
+                    # Update debug panels one final time
+                    if self._workflow_runner.debug_mode:
+                        self._update_debug_panels()
+                        self._stop_debug_updates()
+
+                    # Update toolbar state
+                    if debug_toolbar:
+                        debug_toolbar.set_execution_state(False)
+
+                    # Re-enable run buttons when done
+                    self._main_window.action_run.setEnabled(True)
+                    self._main_window.action_run_to_node.setEnabled(True)
+
+                    # Show status message based on result
+                    if self._workflow_runner.target_reached:
+                        self._main_window.statusBar().showMessage(
+                            f"Reached target node - paused for inspection. "
+                            f"Press F8 to continue or F7 to stop.",
+                            0
+                        )
+                    elif self._workflow_runner.state == "completed":
+                        self._main_window.statusBar().showMessage(
+                            "Workflow completed (target may not have been on execution path)",
+                            5000
+                        )
+
+            asyncio.ensure_future(run_and_cleanup())
+
+        except Exception as e:
+            logger.exception("Failed to start run-to-node execution")
+            self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+            # Re-enable run buttons on error
+            self._main_window.action_run.setEnabled(True)
+            self._main_window.action_run_to_node.setEnabled(True)
+
     def _on_pause_workflow(self) -> None:
         """Handle workflow pause."""
         if self._workflow_runner:
@@ -961,15 +1067,20 @@ class CasareRPAApp:
         """Handle node completed event."""
         node_id = event.data.get("node_id")
         progress = event.data.get("progress", 0)
-        
+
         if node_id:
             # Find visual node and update status
             graph = self._node_graph.graph
             for visual_node in graph.all_nodes():
                 if visual_node.get_property("node_id") == node_id:
                     visual_node.update_status("success")
+
+                    # Update execution time from the CasareRPA node
+                    casare_node = visual_node.get_casare_node()
+                    if casare_node and casare_node.last_execution_time is not None:
+                        visual_node.update_execution_time(casare_node.last_execution_time)
                     break
-        
+
         # Update progress in status bar
         self._main_window.statusBar().showMessage(
             f"Workflow progress: {progress:.1f}%",
@@ -980,15 +1091,20 @@ class CasareRPAApp:
         """Handle node error event."""
         node_id = event.data.get("node_id")
         error = event.data.get("error", "Unknown error")
-        
+
         if node_id:
             # Find visual node and update status
             graph = self._node_graph.graph
             for visual_node in graph.all_nodes():
                 if visual_node.get_property("node_id") == node_id:
                     visual_node.update_status("error")
+
+                    # Update execution time from the CasareRPA node (even on error)
+                    casare_node = visual_node.get_casare_node()
+                    if casare_node and casare_node.last_execution_time is not None:
+                        visual_node.update_execution_time(casare_node.last_execution_time)
                     break
-        
+
         logger.error(f"Node error: {node_id} - {error}")
         self._main_window.statusBar().showMessage(f"Error in node: {error}", 5000)
     

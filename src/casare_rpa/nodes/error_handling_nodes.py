@@ -393,7 +393,22 @@ class WebhookNotifyNode(BaseNode):
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize WebhookNotify node."""
-        super().__init__(node_id, config)
+        # Default config with all options
+        default_config = {
+            "webhook_url": "",
+            "message": "Error notification from CasareRPA",
+            "format": "generic",  # generic, slack, discord, teams
+            "timeout": 30,
+            # Retry options
+            "retry_count": 0,  # Number of retry attempts
+            "retry_delay": 2.0,  # Delay between retries in seconds
+        }
+
+        if config:
+            for key, value in config.items():
+                default_config[key] = value
+
+        super().__init__(node_id, default_config)
         self.name = "Webhook Notify"
         self.node_type = "WebhookNotifyNode"
 
@@ -444,40 +459,55 @@ class WebhookNotifyNode(BaseNode):
             # Build payload
             payload = self._build_payload(message, error_details)
 
-            # Send webhook
+            # Get retry options
+            retry_count = self.config.get("retry_count", 0)
+            retry_delay = self.config.get("retry_delay", 2.0)
+            timeout_seconds = self.config.get("timeout", 30)
+
+            # Send webhook with retry
             import aiohttp
-            async with aiohttp.ClientSession() as session:
-                timeout = aiohttp.ClientTimeout(total=30)
-                headers = {"Content-Type": "application/json"}
 
-                async with session.post(
-                    webhook_url,
-                    json=payload,
-                    headers=headers,
-                    timeout=timeout
-                ) as response:
-                    response_text = await response.text()
-                    success = response.status < 400
+            for attempt in range(max(1, retry_count + 1)):
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        timeout = aiohttp.ClientTimeout(total=timeout_seconds)
+                        headers = {"Content-Type": "application/json"}
 
-                    self.set_output_value("success", success)
-                    self.set_output_value("response", response_text)
+                        async with session.post(
+                            webhook_url,
+                            json=payload,
+                            headers=headers,
+                            timeout=timeout
+                        ) as response:
+                            response_text = await response.text()
+                            success = response.status < 400
 
-                    if success:
-                        logger.info(f"Webhook notification sent successfully to {webhook_url}")
-                        self.status = NodeStatus.SUCCESS
-                        return {
-                            "success": True,
-                            "data": {"response": response_text},
-                            "next_nodes": ["exec_out"]
-                        }
+                            self.set_output_value("success", success)
+                            self.set_output_value("response", response_text)
+
+                            if success:
+                                logger.info(f"Webhook notification sent successfully to {webhook_url} (attempt {attempt + 1})")
+                                self.status = NodeStatus.SUCCESS
+                                return {
+                                    "success": True,
+                                    "data": {"response": response_text, "attempts": attempt + 1},
+                                    "next_nodes": ["exec_out"]
+                                }
+                            else:
+                                logger.warning(f"Webhook notification failed: {response.status}")
+                                self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
+                                return {
+                                    "success": True,
+                                    "data": {"webhook_failed": True, "status": response.status},
+                                    "next_nodes": ["exec_out"]
+                                }
+
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    if attempt < retry_count:
+                        logger.warning(f"Webhook request failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        await asyncio.sleep(retry_delay)
                     else:
-                        logger.warning(f"Webhook notification failed: {response.status}")
-                        self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
-                        return {
-                            "success": True,
-                            "data": {"webhook_failed": True, "status": response.status},
-                            "next_nodes": ["exec_out"]
-                        }
+                        raise
 
         except ImportError:
             self.set_output_value("success", False)
