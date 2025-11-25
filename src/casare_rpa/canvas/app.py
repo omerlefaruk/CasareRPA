@@ -926,7 +926,7 @@ class CasareRPAApp:
             
             # Show log viewer
             self._main_window.show_log_viewer()
-            self._main_window.action_toggle_log.setChecked(True)
+            self._main_window.action_toggle_bottom_panel.setChecked(True)
             
             # Start debug update timer if in debug mode
             if self._workflow_runner.debug_mode:
@@ -1019,7 +1019,7 @@ class CasareRPAApp:
 
             # Show log viewer
             self._main_window.show_log_viewer()
-            self._main_window.action_toggle_log.setChecked(True)
+            self._main_window.action_toggle_bottom_panel.setChecked(True)
 
             # Start debug update timer
             self._start_debug_updates()

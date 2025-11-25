@@ -281,7 +281,7 @@ class CasareNodeItem(NodeItem):
                          QPointF(x + inset, y + size - inset))
 
     def _draw_execution_time(self, painter, rect):
-        """Draw execution time badge at top-center of node."""
+        """Draw execution time badge above the node."""
         if self._execution_time_ms is None:
             return
 
@@ -308,19 +308,19 @@ class CasareNodeItem(NodeItem):
         badge_height = text_height + padding_v * 2
         badge_radius = 4
 
-        # Position at top-center inside the node (below the top edge)
+        # Position above the node (centered horizontally)
         badge_x = rect.center().x() - badge_width / 2
-        badge_y = rect.top() + 4
+        badge_y = rect.top() - badge_height - 6
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 
-        # Draw badge background (semi-transparent dark)
+        # Draw badge background (lower opacity - more transparent)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
-        painter.fillPath(badge_path, QBrush(QColor(0, 0, 0, 160)))
+        painter.fillPath(badge_path, QBrush(QColor(0, 0, 0, 100)))  # Lower opacity (100 vs 160)
 
-        # Draw text (light gray)
-        painter.setPen(QColor(220, 220, 220))
+        # Draw text (light gray, slightly transparent)
+        painter.setPen(QColor(220, 220, 220, 200))
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
 
     def _draw_text(self, painter, rect):
@@ -372,6 +372,8 @@ class CasareNodeItem(NodeItem):
         Args:
             time_seconds: Execution time in seconds, or None to clear
         """
+        # Notify Qt that bounding rect will change (badge area above node)
+        self.prepareGeometryChange()
         if time_seconds is not None:
             self._execution_time_ms = time_seconds * 1000
         else:
@@ -380,6 +382,7 @@ class CasareNodeItem(NodeItem):
 
     def clear_execution_state(self):
         """Reset all execution state for workflow restart."""
+        self.prepareGeometryChange()  # Bounding rect changes when badge is removed
         self._is_running = False
         self._is_completed = False
         self._has_error = False

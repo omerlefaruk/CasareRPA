@@ -387,9 +387,21 @@ class ExecuteQueryNode(BaseNode):
             if not query:
                 raise ValueError("Query is required")
 
+            # Resolve {{variable}} patterns in query
+            query = context.resolve_value(query)
+
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.debug(f"Executing query: {query[:100]}...")
 
@@ -575,9 +587,21 @@ class ExecuteNonQueryNode(BaseNode):
             if not query:
                 raise ValueError("Query is required")
 
+            # Resolve {{variable}} patterns in query
+            query = context.resolve_value(query)
+
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.debug(f"Executing statement: {query[:100]}...")
 
@@ -1043,6 +1067,9 @@ class TableExistsNode(BaseNode):
             if not table_name:
                 raise ValueError("Table name is required")
 
+            # Resolve {{variable}} patterns in table_name
+            table_name = context.resolve_value(table_name)
+
             exists = False
 
             if connection.db_type == "sqlite":
@@ -1154,6 +1181,9 @@ class GetTableColumnsNode(BaseNode):
                 raise ValueError("Database connection is required")
             if not table_name:
                 raise ValueError("Table name is required")
+
+            # Resolve {{variable}} patterns in table_name
+            table_name = context.resolve_value(table_name)
 
             columns: List[Dict[str, Any]] = []
 
@@ -1329,9 +1359,18 @@ class ExecuteBatchNode(BaseNode):
             statements = self.get_input_value("statements") or self.config.get("statements", [])
             stop_on_error = self.config.get("stop_on_error", True)
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             if not connection:
                 raise ValueError("Database connection is required")

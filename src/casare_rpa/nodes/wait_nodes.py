@@ -195,6 +195,9 @@ class WaitForElementNode(BaseNode):
             if not selector:
                 raise ValueError("Selector is required")
 
+            # Resolve {{variable}} patterns in selector
+            selector = context.resolve_value(selector)
+
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
@@ -209,13 +212,26 @@ class WaitForElementNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             state = self.config.get("state", "visible")
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
             highlight_on_find = self.config.get("highlight_on_find", False)
             strict = self.config.get("strict", False)
+
+            # Resolve {{variable}} patterns in screenshot_path if provided
+            if screenshot_path:
+                screenshot_path = context.resolve_value(screenshot_path)
 
             logger.info(f"Waiting for element: {normalized_selector} (state={state})")
 
@@ -403,11 +419,24 @@ class WaitForNavigationNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
             wait_until = self.config.get("wait_until", "load")
 
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 1000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
+
+            # Resolve {{variable}} patterns in screenshot_path if provided
+            if screenshot_path:
+                screenshot_path = context.resolve_value(screenshot_path)
 
             logger.info(f"Waiting for navigation (wait_until={wait_until})")
 

@@ -82,9 +82,6 @@ class MainWindow(QMainWindow):
         # Hotkey settings
         self._hotkey_settings = get_hotkey_settings()
         
-        # Log viewer dock
-        self._log_dock: Optional[QDockWidget] = None
-        
         # Minimap overlay
         self._minimap: Optional[Minimap] = None
         self._central_widget: Optional[QWidget] = None
@@ -94,9 +91,7 @@ class MainWindow(QMainWindow):
         self._variable_inspector: Optional['VariableInspectorPanel'] = None
         self._execution_history: Optional['ExecutionHistoryViewer'] = None
 
-        # Validation components
-        self._validation_dock: Optional[QDockWidget] = None
-        self._validation_panel: Optional['ValidationPanel'] = None
+        # Validation components (timer and settings for auto-validation)
         self._validation_timer: Optional['QTimer'] = None
         self._auto_validate: bool = True  # Enable real-time validation
         self._workflow_data_provider: Optional[callable] = None  # Callback to get workflow data
@@ -110,10 +105,9 @@ class MainWindow(QMainWindow):
         self._create_menus()
         self._create_toolbar()
         self._create_status_bar()
-        self._create_log_viewer()
-        self._create_validation_panel()
         self._create_bottom_panel()
         self._create_debug_components()
+        self._setup_validation_timer()
         
         # Set initial state
         self._update_window_title()
@@ -216,18 +210,6 @@ class MainWindow(QMainWindow):
         self.action_fit_view.setShortcut(QKeySequence("Ctrl+F"))
         self.action_fit_view.setStatusTip("Fit all nodes in view")
         
-        self.action_toggle_log = QAction("Execution &Log", self)
-        self.action_toggle_log.setShortcut(QKeySequence("Ctrl+L"))
-        self.action_toggle_log.setCheckable(True)
-        self.action_toggle_log.setStatusTip("Show/hide execution log viewer")
-        self.action_toggle_log.triggered.connect(self._on_toggle_log)
-
-        self.action_toggle_validation = QAction("&Validation Panel", self)
-        self.action_toggle_validation.setShortcut(QKeySequence("Ctrl+Shift+V"))
-        self.action_toggle_validation.setCheckable(True)
-        self.action_toggle_validation.setStatusTip("Show/hide validation panel")
-        self.action_toggle_validation.triggered.connect(self._on_toggle_validation)
-
         self.action_toggle_bottom_panel = QAction("&Bottom Panel", self)
         self.action_toggle_bottom_panel.setShortcut(QKeySequence("Ctrl+`"))
         self.action_toggle_bottom_panel.setCheckable(True)
@@ -399,8 +381,6 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
-        view_menu.addAction(self.action_toggle_log)
-        view_menu.addAction(self.action_toggle_validation)
         view_menu.addAction(self.action_toggle_bottom_panel)
         view_menu.addAction(self.action_toggle_minimap)
 
@@ -434,19 +414,12 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.action_about)
     
     def _create_toolbar(self) -> None:
-        """Create toolbar with common actions."""
+        """Create compact toolbar with essential actions only."""
         toolbar = QToolBar("Main Toolbar")
         toolbar.setMovable(False)
-        toolbar.setIconSize(QSize(24, 24))
-        
-        # Add actions to toolbar
-        toolbar.addAction(self.action_new)
-        toolbar.addAction(self.action_open)
-        toolbar.addAction(self.action_save)
-        toolbar.addSeparator()
-        toolbar.addAction(self.action_undo)
-        toolbar.addAction(self.action_redo)
-        toolbar.addSeparator()
+        toolbar.setIconSize(QSize(20, 20))  # Smaller icons for compact look
+
+        # Workflow execution actions only
         toolbar.addAction(self.action_run)
         toolbar.addAction(self.action_run_to_node)
         toolbar.addAction(self.action_pause)
@@ -454,11 +427,7 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
         toolbar.addAction(self.action_pick_selector)
         toolbar.addAction(self.action_record_workflow)
-        toolbar.addSeparator()
-        toolbar.addAction(self.action_zoom_in)
-        toolbar.addAction(self.action_zoom_out)
-        toolbar.addAction(self.action_zoom_reset)
-        
+
         self.addToolBar(toolbar)
     
     def _create_status_bar(self) -> None:
@@ -467,53 +436,8 @@ class MainWindow(QMainWindow):
         self.setStatusBar(status_bar)
         status_bar.showMessage("Ready", 3000)
     
-    def _create_log_viewer(self) -> None:
-        """Create execution log viewer as dockable widget."""
-        from .log_viewer import ExecutionLogViewer
-        
-        # Create dock widget
-        self._log_dock = QDockWidget("Execution Log", self)
-        self._log_dock.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
-        )
-        
-        # Create log viewer widget
-        self._log_viewer = ExecutionLogViewer()
-        self._log_dock.setWidget(self._log_viewer)
-        
-        # Add to main window (bottom by default)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._log_dock)
-        
-        # Initially hidden
-        self._log_dock.hide()
-
-    def _create_validation_panel(self) -> None:
-        """Create validation panel as dockable widget."""
-        from .validation_panel import ValidationPanel
-
-        # Create dock widget
-        self._validation_dock = QDockWidget("Validation", self)
-        self._validation_dock.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea
-        )
-
-        # Create validation panel widget
-        self._validation_panel = ValidationPanel()
-        self._validation_panel.validation_requested.connect(self._on_validate_workflow)
-        self._validation_panel.issue_clicked.connect(self._on_validation_issue_clicked)
-        self._validation_dock.setWidget(self._validation_panel)
-
-        # Add to main window (bottom by default, tabbed with log)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._validation_dock)
-
-        # Tab with log dock if it exists
-        if self._log_dock:
-            self.tabifyDockWidget(self._log_dock, self._validation_dock)
-
-        # Initially hidden
-        self._validation_dock.hide()
-
-        # Setup validation timer for debounced real-time validation
+    def _setup_validation_timer(self) -> None:
+        """Setup validation timer for debounced real-time validation."""
         from PySide6.QtCore import QTimer
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
@@ -579,25 +503,28 @@ class MainWindow(QMainWindow):
         self.set_modified(True)
         logger.debug(f"Variables updated: {len(variables)} variables")
 
-    def get_validation_panel(self) -> Optional['ValidationPanel']:
+    def get_validation_panel(self):
         """
-        Get the validation panel.
+        Get the validation tab from bottom panel.
 
         Returns:
-            ValidationPanel instance or None
+            ValidationTab instance or None
         """
-        return self._validation_panel
+        if self._bottom_panel:
+            return self._bottom_panel.get_validation_tab()
+        return None
 
     def show_validation_panel(self) -> None:
-        """Show the validation panel."""
-        if self._validation_dock:
-            self._validation_dock.show()
-            self._validation_dock.raise_()
+        """Show the bottom panel and switch to validation tab."""
+        if self._bottom_panel:
+            self._bottom_panel.show_validation_tab()
+            self.action_toggle_bottom_panel.setChecked(True)
 
     def hide_validation_panel(self) -> None:
-        """Hide the validation panel."""
-        if self._validation_dock:
-            self._validation_dock.hide()
+        """Hide the bottom panel."""
+        if self._bottom_panel:
+            self._bottom_panel.hide()
+            self.action_toggle_bottom_panel.setChecked(False)
 
     def _on_validate_workflow(self) -> None:
         """Handle validation request from panel."""
@@ -661,9 +588,10 @@ class MainWindow(QMainWindow):
         else:
             result = validate_workflow(workflow_data)
 
-        # Update validation panel
-        if self._validation_panel:
-            self._validation_panel.set_result(result)
+        # Update validation tab in bottom panel
+        validation_tab = self.get_validation_panel()
+        if validation_tab:
+            validation_tab.set_result(result)
 
         if show_panel:
             self.show_validation_panel()
@@ -726,8 +654,8 @@ class MainWindow(QMainWindow):
 
     def _do_deferred_validation(self) -> None:
         """Perform deferred validation after debounce timeout."""
-        # Only update if validation panel is visible
-        if self._validation_dock and self._validation_dock.isVisible():
+        # Only update if bottom panel is visible
+        if self._bottom_panel and self._bottom_panel.isVisible():
             self.validate_current_workflow(show_panel=False)
         else:
             # Still validate but don't show panel
@@ -753,24 +681,28 @@ class MainWindow(QMainWindow):
         """Check if auto-validation is enabled."""
         return self._auto_validate
 
-    def get_log_viewer(self) -> Optional['ExecutionLogViewer']:
+    def get_log_viewer(self):
         """
-        Get the execution log viewer.
-        
+        Get the log tab from bottom panel.
+
         Returns:
-            ExecutionLogViewer instance or None
+            LogTab instance or None
         """
-        return self._log_viewer if hasattr(self, '_log_viewer') else None
-    
+        if self._bottom_panel:
+            return self._bottom_panel.get_log_tab()
+        return None
+
     def show_log_viewer(self) -> None:
-        """Show the execution log viewer."""
-        if self._log_dock:
-            self._log_dock.show()
-    
+        """Show the bottom panel and switch to log tab."""
+        if self._bottom_panel:
+            self._bottom_panel.show_log_tab()
+            self.action_toggle_bottom_panel.setChecked(True)
+
     def hide_log_viewer(self) -> None:
-        """Hide the execution log viewer."""
-        if self._log_dock:
-            self._log_dock.hide()
+        """Hide the bottom panel."""
+        if self._bottom_panel:
+            self._bottom_panel.hide()
+            self.action_toggle_bottom_panel.setChecked(False)
     
     def _create_minimap(self, node_graph) -> None:
         """Create minimap overlay widget."""
@@ -1071,20 +1003,6 @@ class MainWindow(QMainWindow):
         dialog = HotkeyManagerDialog(actions, self)
         dialog.exec()
     
-    def _on_toggle_log(self, checked: bool) -> None:
-        """Handle log viewer toggle."""
-        if checked:
-            self.show_log_viewer()
-        else:
-            self.hide_log_viewer()
-
-    def _on_toggle_validation(self, checked: bool) -> None:
-        """Handle validation panel toggle."""
-        if checked:
-            self.show_validation_panel()
-        else:
-            self.hide_validation_panel()
-
     def _on_toggle_auto_connect(self, checked: bool) -> None:
         """Handle auto-connect toggle."""
         # This will be connected by the app when the node graph is available

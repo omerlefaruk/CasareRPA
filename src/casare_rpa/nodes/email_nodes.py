@@ -204,9 +204,23 @@ class SendEmailNode(BaseNode):
             use_ssl = self.config.get("use_ssl", False)
             timeout = self.config.get("timeout", 30)
 
+            # Resolve {{variable}} patterns in connection parameters
+            smtp_server = context.resolve_value(smtp_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
             # Get email content
             from_email = self.get_input_value("from_email") or self.config.get("from_email", username)
@@ -215,6 +229,14 @@ class SendEmailNode(BaseNode):
             body = self.get_input_value("body") or self.config.get("body", "")
             cc = self.get_input_value("cc") or self.config.get("cc", "")
             bcc = self.get_input_value("bcc") or self.config.get("bcc", "")
+
+            # Resolve {{variable}} patterns in email content
+            from_email = context.resolve_value(from_email)
+            to_email = context.resolve_value(to_email)
+            subject = context.resolve_value(subject)
+            body = context.resolve_value(body)
+            cc = context.resolve_value(cc)
+            bcc = context.resolve_value(bcc)
             attachments = self.get_input_value("attachments") or []
             is_html = self.config.get("is_html", False)
 
@@ -430,9 +452,25 @@ class ReadEmailsNode(BaseNode):
             search_criteria = self.get_input_value("search_criteria") or self.config.get("search_criteria", "ALL")
             use_ssl = self.config.get("use_ssl", True)
 
+            # Resolve {{variable}} patterns in connection parameters
+            imap_server = context.resolve_value(imap_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            folder = context.resolve_value(folder)
+            search_criteria = context.resolve_value(search_criteria)
+
+            # Helper to safely parse int values with defaults
+            def safe_int(value, default: int) -> int:
+                if value is None or value == "":
+                    return default
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    return default
+
             # Get retry options
-            retry_count = int(self.config.get("retry_count", 0))
-            retry_interval = int(self.config.get("retry_interval", 2000))
+            retry_count = safe_int(self.config.get("retry_count"), 0)
+            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
             if not username or not password:
                 self.set_output_value("emails", [])
@@ -646,6 +684,14 @@ class SaveAttachmentNode(BaseNode):
             save_path = self.get_input_value("save_path") or self.config.get("save_path", ".")
             folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
 
+            # Resolve {{variable}} patterns
+            imap_server = context.resolve_value(imap_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            email_uid = context.resolve_value(email_uid)
+            save_path = context.resolve_value(save_path)
+            folder = context.resolve_value(folder)
+
             if not email_uid:
                 self.set_output_value("saved_files", [])
                 self.set_output_value("count", 0)
@@ -761,6 +807,10 @@ class FilterEmailsNode(BaseNode):
             from_contains = self.get_input_value("from_contains") or ""
             has_attachments = self.get_input_value("has_attachments")
 
+            # Resolve {{variable}} patterns
+            subject_contains = context.resolve_value(subject_contains)
+            from_contains = context.resolve_value(from_contains)
+
             filtered = []
             for email_data in emails:
                 if not isinstance(email_data, dict):
@@ -849,6 +899,14 @@ class MarkEmailNode(BaseNode):
             folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
             mark_as = self.get_input_value("mark_as") or self.config.get("mark_as", "read")
 
+            # Resolve {{variable}} patterns
+            imap_server = context.resolve_value(imap_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            email_uid = context.resolve_value(email_uid)
+            folder = context.resolve_value(folder)
+            mark_as = context.resolve_value(mark_as)
+
             if not email_uid:
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
@@ -931,6 +989,13 @@ class DeleteEmailNode(BaseNode):
             folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
             permanent = self.config.get("permanent", False)
 
+            # Resolve {{variable}} patterns
+            imap_server = context.resolve_value(imap_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            email_uid = context.resolve_value(email_uid)
+            folder = context.resolve_value(folder)
+
             if not email_uid:
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
@@ -1008,6 +1073,14 @@ class MoveEmailNode(BaseNode):
             email_uid = self.get_input_value("email_uid") or ""
             source_folder = self.get_input_value("source_folder") or self.config.get("source_folder", "INBOX")
             target_folder = self.get_input_value("target_folder") or self.config.get("target_folder", "")
+
+            # Resolve {{variable}} patterns
+            imap_server = context.resolve_value(imap_server)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
+            email_uid = context.resolve_value(email_uid)
+            source_folder = context.resolve_value(source_folder)
+            target_folder = context.resolve_value(target_folder)
 
             if not email_uid or not target_folder:
                 self.set_output_value("success", False)
