@@ -33,6 +33,7 @@ from ..utils.config import (
 )
 from ..utils.hotkey_settings import get_hotkey_settings
 from .minimap import Minimap
+from .visual_nodes import VisualSnippetNode
 from loguru import logger
 
 
@@ -1597,7 +1598,7 @@ class MainWindow(QMainWindow):
 
             # Create SnippetNode visual node
             visual_node = graph.create_node(
-                "casare_rpa.snippets.Snippet",
+                f"{VisualSnippetNode.__identifier__}.{VisualSnippetNode.__name__}",
                 pos=[view_center.x(), view_center.y()]
             )
 

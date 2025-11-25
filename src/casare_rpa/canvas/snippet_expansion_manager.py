@@ -6,6 +6,7 @@ Handles expansion and collapse of snippet nodes between single-node and inline m
 from typing import List, Dict, Optional, Tuple
 from loguru import logger
 
+from .visual_nodes import VisualSnippetNode
 from ..core.snippet_definition import SnippetDefinition
 from ..core.workflow_schema import NodeConnection
 from ..core.types import NodeId
@@ -238,7 +239,7 @@ class SnippetExpansionManager:
 
             # Create collapsed SnippetNode
             snippet_visual_node = self.graph.create_node(
-                "casare_rpa.snippets.Snippet",
+                f"{VisualSnippetNode.__identifier__}.{VisualSnippetNode.__name__}",
                 pos=[avg_x, avg_y]
             )
 
