@@ -71,7 +71,11 @@ class TextSplitNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             separator = self.get_input_value("separator", context)
-            max_split = self.config.get("max_split", -1)
+            max_split = safe_int(self.config.get("max_split"), -1)
+
+            # Resolve {{variable}} patterns in separator
+            if separator is not None:
+                separator = context.resolve_value(separator)
 
             if separator is None or separator == "":
                 result = text.split(maxsplit=max_split) if max_split >= 0 else text.split()
@@ -90,6 +94,7 @@ class TextSplitNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextSplitNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -149,7 +154,12 @@ class TextReplaceNode(BaseNode):
             text = str(self.get_input_value("text", context) or "")
             old_value = str(self.get_input_value("old_value", context) or "")
             new_value = str(self.get_input_value("new_value", context) or "")
-            count = self.config.get("count", -1)
+
+            # Resolve {{variable}} patterns
+            old_value = context.resolve_value(old_value)
+            new_value = context.resolve_value(new_value)
+
+            count = safe_int(self.config.get("count"), -1)
             use_regex = self.config.get("use_regex", False)
 
             if use_regex:
@@ -228,6 +238,10 @@ class TextTrimNode(BaseNode):
             mode = self.config.get("mode", "both")
             chars = self.config.get("characters")
 
+            # Resolve {{variable}} patterns in characters
+            if chars is not None:
+                chars = context.resolve_value(chars)
+
             if mode == "left":
                 result = text.lstrip(chars)
             elif mode == "right":
@@ -246,6 +260,7 @@ class TextTrimNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextTrimNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -349,9 +364,12 @@ class TextPadNode(BaseNode):
 
         try:
             text = str(self.get_input_value("text", context) or "")
-            length = int(self.get_input_value("length", context) or 0)
+            length = safe_int(self.get_input_value("length", context), 0)
             mode = self.config.get("mode", "left")
             fill_char = self.config.get("fill_char", " ")
+
+            # Resolve {{variable}} patterns in fill_char
+            fill_char = context.resolve_value(fill_char)
 
             if len(fill_char) != 1:
                 fill_char = " "
@@ -374,6 +392,7 @@ class TextPadNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextPadNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -417,8 +436,8 @@ class TextSubstringNode(BaseNode):
             start = self.get_input_value("start", context)
             end = self.get_input_value("end", context)
 
-            start = int(start) if start is not None else 0
-            end = int(end) if end is not None else None
+            start = safe_int(start, 0) if start is not None else 0
+            end = safe_int(end, 0) if end is not None else None
 
             result = text[start:end]
 
@@ -434,6 +453,7 @@ class TextSubstringNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextSubstringNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -478,6 +498,10 @@ class TextContainsNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             search = str(self.get_input_value("search", context) or "")
+
+            # Resolve {{variable}} patterns in search
+            search = context.resolve_value(search)
+
             case_sensitive = self.config.get("case_sensitive", True)
 
             if not case_sensitive:
@@ -504,6 +528,7 @@ class TextContainsNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextContainsNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -544,6 +569,10 @@ class TextStartsWithNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             prefix = str(self.get_input_value("prefix", context) or "")
+
+            # Resolve {{variable}} patterns in prefix
+            prefix = context.resolve_value(prefix)
+
             case_sensitive = self.config.get("case_sensitive", True)
 
             if not case_sensitive:
@@ -562,6 +591,7 @@ class TextStartsWithNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextStartsWithNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -602,6 +632,10 @@ class TextEndsWithNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             suffix = str(self.get_input_value("suffix", context) or "")
+
+            # Resolve {{variable}} patterns in suffix
+            suffix = context.resolve_value(suffix)
+
             case_sensitive = self.config.get("case_sensitive", True)
 
             if not case_sensitive:
@@ -620,6 +654,7 @@ class TextEndsWithNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextEndsWithNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -665,6 +700,9 @@ class TextLinesNode(BaseNode):
             separator = self.config.get("line_separator", "\n")
             keep_ends = self.config.get("keep_ends", False)
 
+            # Resolve {{variable}} patterns in separator
+            separator = context.resolve_value(separator)
+
             if mode == "split":
                 text = str(input_val or "")
                 if keep_ends:
@@ -692,6 +730,7 @@ class TextLinesNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextLinesNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -860,6 +899,9 @@ class TextJoinNode(BaseNode):
             if separator is None:
                 separator = self.config.get("separator", "")
 
+            # Resolve {{variable}} patterns in separator
+            separator = context.resolve_value(separator)
+
             if not isinstance(items, (list, tuple)):
                 items = [items]
 
@@ -876,6 +918,7 @@ class TextJoinNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            logger.error(f"TextJoinNode failed: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
@@ -934,6 +977,10 @@ class TextExtractNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             pattern = str(self.get_input_value("pattern", context) or "")
+
+            # Resolve {{variable}} patterns in pattern
+            pattern = context.resolve_value(pattern)
+
             all_matches = self.config.get("all_matches", False)
 
             if not pattern:

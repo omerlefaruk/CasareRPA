@@ -76,6 +76,7 @@ class CasareRPAApp:
         
         # Workflow runner
         self._workflow_runner: Optional[WorkflowRunner] = None
+        self._workflow_task: Optional[asyncio.Task] = None
         
         # Selector integration (browser element picker)
         self._selector_integration = SelectorIntegration(self._main_window)
@@ -946,7 +947,7 @@ class CasareRPAApp:
                     if debug_toolbar:
                         debug_toolbar.set_execution_state(False)
             
-            asyncio.ensure_future(run_and_cleanup())
+            self._workflow_task = asyncio.ensure_future(run_and_cleanup())
 
         except Exception as e:
             logger.exception("Failed to start workflow execution")
@@ -959,11 +960,25 @@ class CasareRPAApp:
         Executes the workflow from StartNode to the specified target node,
         then pauses at that node for inspection.
 
+        Can be called multiple times - will stop any existing run and restart.
+
         Args:
             target_node_id: The node ID to run to
         """
         try:
             logger.info(f"Starting run-to-node execution, target: {target_node_id}")
+
+            # Stop any existing workflow runner first
+            if self._workflow_runner is not None:
+                if self._workflow_runner.state in ("running", "paused"):
+                    logger.info("Stopping existing workflow runner before restart")
+                    self._workflow_runner.stop()
+                    # Cancel the task if it exists
+                    if self._workflow_task and not self._workflow_task.done():
+                        self._workflow_task.cancel()
+                        self._workflow_task = None
+                # Clear reference
+                self._workflow_runner = None
 
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
@@ -1025,12 +1040,21 @@ class CasareRPAApp:
             self._start_debug_updates()
 
             # Run workflow asynchronously
+            # Store reference locally to handle case where F4 is pressed again
+            runner = self._workflow_runner
+
             async def run_and_cleanup():
                 try:
-                    await self._workflow_runner.run()
+                    await runner.run()
                 finally:
+                    # Check if this runner is still the active one
+                    # (user may have pressed F4 again, creating a new runner)
+                    if self._workflow_runner is not runner:
+                        logger.debug("Workflow runner replaced - skipping cleanup")
+                        return
+
                     # Update debug panels one final time
-                    if self._workflow_runner.debug_mode:
+                    if runner.debug_mode:
                         self._update_debug_panels()
                         self._stop_debug_updates()
 
@@ -1043,19 +1067,19 @@ class CasareRPAApp:
                     self._main_window.action_run_to_node.setEnabled(True)
 
                     # Show status message based on result
-                    if self._workflow_runner.target_reached:
+                    if runner.target_reached:
                         self._main_window.statusBar().showMessage(
                             f"Reached target node - paused for inspection. "
                             f"Press F8 to continue or F7 to stop.",
                             0
                         )
-                    elif self._workflow_runner.state == "completed":
+                    elif runner.state == "completed":
                         self._main_window.statusBar().showMessage(
                             "Workflow completed (target may not have been on execution path)",
                             5000
                         )
 
-            asyncio.ensure_future(run_and_cleanup())
+            self._workflow_task = asyncio.ensure_future(run_and_cleanup())
 
         except Exception as e:
             logger.exception("Failed to start run-to-node execution")
@@ -1129,6 +1153,7 @@ class CasareRPAApp:
         node_id = event.data.get("node_id")
         progress = event.data.get("progress", 0)
         execution_time = event.data.get("execution_time")
+        target_reached = event.data.get("target_reached", False)
 
         if node_id:
             # Find visual node and update status
@@ -1141,6 +1166,17 @@ class CasareRPAApp:
                     if execution_time is not None:
                         visual_node.update_execution_time(execution_time)
                     break
+
+        # Check if target node was reached (Run-To-Node mode)
+        if target_reached:
+            # Re-enable F4 so user can run again to the same node
+            self._main_window.action_run.setEnabled(True)
+            self._main_window.action_run_to_node.setEnabled(True)
+            self._main_window.statusBar().showMessage(
+                f"Target node reached - paused. Press F4 to re-run, F8 to continue, F7 to stop.",
+                0
+            )
+            return
 
         # Update progress in status bar
         self._main_window.statusBar().showMessage(

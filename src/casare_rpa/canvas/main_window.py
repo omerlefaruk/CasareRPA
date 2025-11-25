@@ -233,25 +233,25 @@ class MainWindow(QMainWindow):
         self.action_auto_connect.setStatusTip("Automatically suggest connections while dragging nodes (right-click to connect/disconnect)")
         self.action_auto_connect.triggered.connect(self._on_toggle_auto_connect)
         
-        # Workflow actions
-        self.action_run = QAction("&Run Workflow", self)
+        # Workflow actions with Unicode icons
+        self.action_run = QAction("▶ Run", self)
         self.action_run.setShortcut(QKeySequence("F3"))
         self.action_run.setStatusTip("Execute the entire workflow (F3)")
         self.action_run.triggered.connect(self._on_run_workflow)
 
-        self.action_run_to_node = QAction("Run &To Node", self)
+        self.action_run_to_node = QAction("▷ To Node", self)
         self.action_run_to_node.setShortcut(QKeySequence("F4"))
         self.action_run_to_node.setStatusTip("Execute workflow up to selected node (F4)")
         self.action_run_to_node.triggered.connect(self._on_run_to_node)
 
-        self.action_pause = QAction("&Pause Workflow", self)
+        self.action_pause = QAction("⏸ Pause", self)
         self.action_pause.setShortcut(QKeySequence("F6"))
         self.action_pause.setStatusTip("Pause/Resume workflow execution (F6)")
         self.action_pause.setEnabled(False)
         self.action_pause.setCheckable(True)
         self.action_pause.triggered.connect(self._on_pause_workflow)
-        
-        self.action_stop = QAction("&Stop Workflow", self)
+
+        self.action_stop = QAction("■ Stop", self)
         self.action_stop.setShortcut(QKeySequence("F7"))
         self.action_stop.setStatusTip("Stop workflow execution (F7)")
         self.action_stop.setEnabled(False)
@@ -267,14 +267,14 @@ class MainWindow(QMainWindow):
         self.action_manage_schedules.setStatusTip("View and manage all scheduled workflows")
         self.action_manage_schedules.triggered.connect(self._on_manage_schedules)
 
-        # Tools actions
-        self.action_pick_selector = QAction("🎯 Pick Element Selector", self)
+        # Tools actions with Unicode icons
+        self.action_pick_selector = QAction("⌖ Pick", self)
         self.action_pick_selector.setShortcut(QKeySequence("Ctrl+Shift+S"))
         self.action_pick_selector.setStatusTip("Pick an element from the browser (Ctrl+Shift+S)")
         self.action_pick_selector.setEnabled(False)  # Enabled when browser is running
         self.action_pick_selector.triggered.connect(self._on_pick_selector)
-        
-        self.action_record_workflow = QAction("⏺ Record Workflow", self)
+
+        self.action_record_workflow = QAction("⏺ Record", self)
         self.action_record_workflow.setShortcut(QKeySequence("Ctrl+Shift+R"))
         self.action_record_workflow.setStatusTip("Record browser interactions as workflow (Ctrl+Shift+R)")
         self.action_record_workflow.setCheckable(True)
@@ -300,6 +300,12 @@ class MainWindow(QMainWindow):
         self.action_performance_dashboard.setShortcut(QKeySequence("Ctrl+Shift+P"))
         self.action_performance_dashboard.setStatusTip("View performance metrics and statistics (Ctrl+Shift+P)")
         self.action_performance_dashboard.triggered.connect(self._on_open_performance_dashboard)
+
+        # Command palette action
+        self.action_command_palette = QAction("Command Palette...", self)
+        self.action_command_palette.setShortcut(QKeySequence("Ctrl+Shift+P"))
+        self.action_command_palette.setStatusTip("Open command palette to search actions (Ctrl+Shift+P)")
+        self.action_command_palette.triggered.connect(self._on_open_command_palette)
 
         # Help actions
         self.action_about = QAction("&About", self)
@@ -414,21 +420,63 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.action_about)
     
     def _create_toolbar(self) -> None:
-        """Create compact toolbar with essential actions only."""
+        """Create unified compact toolbar with execution and debug controls."""
         toolbar = QToolBar("Main Toolbar")
+        toolbar.setObjectName("MainToolbar")
         toolbar.setMovable(False)
-        toolbar.setIconSize(QSize(20, 20))  # Smaller icons for compact look
+        toolbar.setFloatable(False)
 
-        # Workflow execution actions only
+        # Style the toolbar for a modern compact look
+        toolbar.setStyleSheet("""
+            QToolBar {
+                background: #2b2b2b;
+                border: none;
+                spacing: 2px;
+                padding: 2px 4px;
+            }
+            QToolButton {
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 4px;
+                padding: 4px 8px;
+                color: #e0e0e0;
+                font-size: 12px;
+            }
+            QToolButton:hover {
+                background: #3d3d3d;
+                border: 1px solid #4a4a4a;
+            }
+            QToolButton:pressed {
+                background: #4a4a4a;
+            }
+            QToolButton:checked {
+                background: #4a6a8a;
+                border: 1px solid #5a7a9a;
+            }
+            QToolButton:disabled {
+                color: #666666;
+            }
+            QToolBar::separator {
+                background: #4a4a4a;
+                width: 1px;
+                margin: 4px 6px;
+            }
+        """)
+
+        # === Execution Controls ===
         toolbar.addAction(self.action_run)
         toolbar.addAction(self.action_run_to_node)
         toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
+
         toolbar.addSeparator()
+
+        # === Browser Tools ===
         toolbar.addAction(self.action_pick_selector)
         toolbar.addAction(self.action_record_workflow)
 
         self.addToolBar(toolbar)
+        self._main_toolbar = toolbar
     
     def _create_status_bar(self) -> None:
         """Create status bar."""
@@ -1014,6 +1062,11 @@ class MainWindow(QMainWindow):
 
         dialog = PerformanceDashboardDialog(self)
         dialog.exec()
+
+    def _on_open_command_palette(self) -> None:
+        """Open the command palette dialog."""
+        # TODO: Implement full command palette dialog
+        self.statusBar().showMessage("Command Palette (Ctrl+Shift+P) - coming soon", 3000)
 
     def _on_about(self) -> None:
         """Show about dialog."""

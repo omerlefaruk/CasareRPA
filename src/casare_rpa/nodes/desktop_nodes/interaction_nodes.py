@@ -13,6 +13,16 @@ from ...core.types import NodeStatus
 from ...desktop import DesktopContext
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class SelectFromDropdownNode(Node):
     """
     Select an item from a dropdown/combobox.
@@ -68,6 +78,10 @@ class SelectFromDropdownNode(Node):
         element = self.get_input_value('element')
         value = self.get_input_value('value') or self.config.get('value', '')
         by_text = self.config.get('by_text', True)
+
+        # Resolve {{variable}} patterns in value
+        if hasattr(context, 'resolve_value') and value:
+            value = context.resolve_value(value)
 
         if not element:
             raise ValueError("Dropdown element is required")
@@ -322,9 +336,13 @@ class SelectTabNode(Node):
         tab_name = self.get_input_value('tab_name') or self.config.get('tab_name') or None
         tab_index = self.get_input_value('tab_index')
         if tab_index is None:
-            tab_index = self.config.get('tab_index', -1)
+            tab_index = safe_int(self.config.get('tab_index'), -1)
         if tab_index == -1:
             tab_index = None
+
+        # Resolve {{variable}} patterns in tab_name
+        if hasattr(context, 'resolve_value') and tab_name:
+            tab_name = context.resolve_value(tab_name)
 
         if not tab_control:
             raise ValueError("Tab control element is required")

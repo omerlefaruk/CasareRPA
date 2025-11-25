@@ -21,9 +21,21 @@ import json
 from typing import Any, Optional, List, Dict
 from pathlib import Path
 
+from loguru import logger
+
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class ParseXMLNode(BaseNode):
@@ -134,6 +146,10 @@ class ReadXMLFileNode(BaseNode):
             file_path = str(self.get_input_value("file_path", context) or "")
             encoding = self.config.get("encoding", "utf-8")
 
+            # Resolve {{variable}} patterns
+            file_path = context.resolve_value(file_path)
+            encoding = context.resolve_value(encoding)
+
             if not file_path:
                 raise ValueError("file_path is required")
 
@@ -211,6 +227,10 @@ class WriteXMLFileNode(BaseNode):
             encoding = self.config.get("encoding", "utf-8")
             pretty_print = self.config.get("pretty_print", True)
             xml_declaration = self.config.get("xml_declaration", True)
+
+            # Resolve {{variable}} patterns
+            file_path = context.resolve_value(file_path)
+            encoding = context.resolve_value(encoding)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -294,6 +314,9 @@ class XPathQueryNode(BaseNode):
         try:
             xml_string = self.get_input_value("xml_string", context)
             xpath = str(self.get_input_value("xpath", context) or "")
+
+            # Resolve {{variable}} patterns
+            xpath = context.resolve_value(xpath)
 
             if not xpath:
                 raise ValueError("xpath is required")
@@ -386,7 +409,10 @@ class GetXMLElementNode(BaseNode):
         try:
             xml_string = self.get_input_value("xml_string", context)
             tag_name = str(self.get_input_value("tag_name", context) or "")
-            index = int(self.get_input_value("index", context) or 0)
+            index = safe_int(self.get_input_value("index", context), 0)
+
+            # Resolve {{variable}} patterns
+            tag_name = context.resolve_value(tag_name)
 
             if not tag_name:
                 raise ValueError("tag_name is required")
@@ -468,6 +494,10 @@ class GetXMLAttributeNode(BaseNode):
             xml_string = self.get_input_value("xml_string", context)
             xpath = str(self.get_input_value("xpath", context) or ".")
             attribute_name = str(self.get_input_value("attribute_name", context) or "")
+
+            # Resolve {{variable}} patterns
+            xpath = context.resolve_value(xpath)
+            attribute_name = context.resolve_value(attribute_name)
 
             if not attribute_name:
                 raise ValueError("attribute_name is required")

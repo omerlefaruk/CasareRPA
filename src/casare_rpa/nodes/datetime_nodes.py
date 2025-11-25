@@ -18,9 +18,21 @@ try:
 except ImportError:
     ZoneInfo = None
 
+from loguru import logger
+
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class GetCurrentDateTimeNode(BaseNode):
@@ -63,6 +75,10 @@ class GetCurrentDateTimeNode(BaseNode):
         try:
             tz_name = self.config.get("timezone", "")
             fmt = self.config.get("format", "")
+
+            # Resolve {{variable}} patterns
+            tz_name = context.resolve_value(tz_name)
+            fmt = context.resolve_value(fmt)
 
             if tz_name and ZoneInfo:
                 try:
@@ -140,6 +156,11 @@ class FormatDateTimeNode(BaseNode):
             dt_input = self.get_input_value("datetime", context)
             input_format = self.get_input_value("input_format", context)
             output_format = self.config.get("format", "%Y-%m-%d %H:%M:%S")
+
+            # Resolve {{variable}} patterns
+            if input_format:
+                input_format = context.resolve_value(input_format)
+            output_format = context.resolve_value(output_format)
 
             # Parse input
             if isinstance(dt_input, datetime):
@@ -224,6 +245,12 @@ class ParseDateTimeNode(BaseNode):
         try:
             dt_string = self.get_input_value("datetime_string", context)
             fmt = self.config.get("format", "")
+
+            # Resolve {{variable}} patterns
+            if dt_string:
+                dt_string = context.resolve_value(dt_string)
+            if fmt:
+                fmt = context.resolve_value(fmt)
 
             if not dt_string:
                 raise ValueError("datetime_string is required")
@@ -326,13 +353,13 @@ class DateTimeAddNode(BaseNode):
 
         try:
             dt_input = self.get_input_value("datetime", context)
-            years = int(self.get_input_value("years", context) or 0)
-            months = int(self.get_input_value("months", context) or 0)
-            weeks = int(self.get_input_value("weeks", context) or 0)
-            days = int(self.get_input_value("days", context) or 0)
-            hours = int(self.get_input_value("hours", context) or 0)
-            minutes = int(self.get_input_value("minutes", context) or 0)
-            seconds = int(self.get_input_value("seconds", context) or 0)
+            years = safe_int(self.get_input_value("years", context), 0)
+            months = safe_int(self.get_input_value("months", context), 0)
+            weeks = safe_int(self.get_input_value("weeks", context), 0)
+            days = safe_int(self.get_input_value("days", context), 0)
+            hours = safe_int(self.get_input_value("hours", context), 0)
+            minutes = safe_int(self.get_input_value("minutes", context), 0)
+            seconds = safe_int(self.get_input_value("seconds", context), 0)
 
             # Parse input datetime
             if dt_input is None:

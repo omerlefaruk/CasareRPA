@@ -16,6 +16,16 @@ from ...desktop import DesktopContext
 DEFAULT_WINDOW_TIMEOUT = 10
 
 
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 class ResizeWindowNode(Node):
     """
     Resize a Windows desktop window.
@@ -88,7 +98,7 @@ class ResizeWindowNode(Node):
             raise ValueError("Window input is required")
 
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
         bring_to_front = self.config.get('bring_to_front', False)
 
@@ -213,7 +223,7 @@ class MoveWindowNode(Node):
             raise ValueError("Window input is required")
 
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
         bring_to_front = self.config.get('bring_to_front', False)
 
@@ -331,7 +341,7 @@ class MaximizeWindowNode(Node):
             raise ValueError("Window input is required")
 
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
 
         logger.info(f"[{self.name}] Maximizing window")
@@ -441,7 +451,7 @@ class MinimizeWindowNode(Node):
             raise ValueError("Window input is required")
 
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
 
         logger.info(f"[{self.name}] Minimizing window")
@@ -551,7 +561,7 @@ class RestoreWindowNode(Node):
             raise ValueError("Window input is required")
 
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
 
         logger.info(f"[{self.name}] Restoring window")
@@ -760,8 +770,12 @@ class SetWindowStateNode(Node):
         if not window:
             raise ValueError("Window input is required")
 
+        # Resolve {{variable}} patterns in state
+        if hasattr(context, 'resolve_value') and state:
+            state = context.resolve_value(state)
+
         # Get retry options
-        retry_count = int(self.config.get('retry_count', 0))
+        retry_count = safe_int(self.config.get('retry_count'), 0)
         retry_interval = float(self.config.get('retry_interval', 1.0))
 
         logger.info(f"[{self.name}] Setting window state to '{state}'")

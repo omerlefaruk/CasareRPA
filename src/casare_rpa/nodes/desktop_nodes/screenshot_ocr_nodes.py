@@ -9,8 +9,20 @@ Provides nodes for capturing screenshots and extracting text:
 """
 
 from typing import Any, Dict, Optional
+from loguru import logger
+
 from ...core.base_node import BaseNode
 from ...core.types import PortType, DataType, NodeStatus
+
+
+def safe_int(value, default: int) -> int:
+    """Safely parse int values with defaults."""
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class CaptureScreenshotNode(BaseNode):
@@ -53,6 +65,10 @@ class CaptureScreenshotNode(BaseNode):
         file_path = self.get_input_value("file_path")
         region = self.get_input_value("region")
         format_type = self.config.get("format", "PNG")
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value') and file_path:
+            file_path = context.resolve_value(file_path)
 
         desktop_ctx = getattr(context, 'desktop_context', None)
         if desktop_ctx is None:
@@ -123,6 +139,12 @@ class CaptureElementImageNode(BaseNode):
         file_path = self.get_input_value("file_path")
         padding = self.get_input_value("padding") or self.config.get("padding", 0)
         format_type = self.config.get("format", "PNG")
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, 'resolve_value') and file_path:
+            file_path = context.resolve_value(file_path)
+
+        padding = safe_int(padding, 0)
 
         if not element:
             raise ValueError("Element is required")
