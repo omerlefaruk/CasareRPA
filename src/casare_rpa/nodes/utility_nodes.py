@@ -700,7 +700,9 @@ class LogNode(BaseNode):
 
         try:
             # Get message from input or config
-            message = self.get_input_value("message") or self.config.get("message", "")
+            message_input = self.get_input_value("message") or self.config.get("message", "")
+            # Ensure message is a string (could be Page object or other type from connected node)
+            message = str(message_input) if message_input else ""
 
             # Get optional data to log
             data = self.get_input_value("data")

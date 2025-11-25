@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt, QSize
 from ..core.base_node import BaseNode as CasareBaseNode
 from ..core.types import PortType, DataType
 from ..core.port_type_system import PortTypeRegistry, get_port_type_registry
+from .custom_node_item import CasareNodeItem
 from loguru import logger
 
 # Unified color scheme for all nodes matching the image colors
@@ -32,7 +33,8 @@ class VisualNode(NodeGraphQtBaseNode):
     
     def __init__(self) -> None:
         """Initialize visual node."""
-        super().__init__()
+        # Pass CasareNodeItem as the graphics item class for custom rendering
+        super().__init__(qgraphics_item=CasareNodeItem)
 
         # Reference to the underlying CasareRPA node
         self._casare_node: Optional[CasareBaseNode] = None

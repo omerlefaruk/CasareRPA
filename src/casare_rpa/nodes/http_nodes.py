@@ -133,6 +133,11 @@ class HttpRequestNode(BaseNode):
             retry_delay = self.config.get("retry_delay", 1.0)
             response_encoding = self.config.get("response_encoding", "")
 
+            # Resolve {{variable}} patterns in URL and body
+            url = context.resolve_value(url)
+            if isinstance(body, str):
+                body = context.resolve_value(body)
+
             # Validate URL
             if not url:
                 raise ValueError("URL is required")
@@ -332,6 +337,9 @@ class HttpGetNode(BaseNode):
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
 
+            # Resolve {{variable}} patterns in URL
+            url = context.resolve_value(url)
+
             if not url:
                 raise ValueError("URL is required")
 
@@ -476,6 +484,11 @@ class HttpPostNode(BaseNode):
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
+
+            # Resolve {{variable}} patterns in URL and body
+            url = context.resolve_value(url)
+            if isinstance(body, str):
+                body = context.resolve_value(body)
 
             if not url:
                 raise ValueError("URL is required")
@@ -626,6 +639,11 @@ class HttpPutNode(BaseNode):
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
 
+            # Resolve {{variable}} patterns in URL and body
+            url = context.resolve_value(url)
+            if isinstance(body, str):
+                body = context.resolve_value(body)
+
             if not url:
                 raise ValueError("URL is required")
 
@@ -773,6 +791,11 @@ class HttpPatchNode(BaseNode):
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
 
+            # Resolve {{variable}} patterns in URL and body
+            url = context.resolve_value(url)
+            if isinstance(body, str):
+                body = context.resolve_value(body)
+
             if not url:
                 raise ValueError("URL is required")
 
@@ -911,6 +934,9 @@ class HttpDeleteNode(BaseNode):
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
+
+            # Resolve {{variable}} patterns in URL
+            url = context.resolve_value(url)
 
             if not url:
                 raise ValueError("URL is required")
@@ -1107,6 +1133,11 @@ class HttpAuthNode(BaseNode):
             password = self.get_input_value("password") or self.config.get("password", "")
             api_key_name = self.get_input_value("api_key_name") or self.config.get("api_key_name", "X-API-Key")
             base_headers = self.get_input_value("base_headers") or {}
+
+            # Resolve {{variable}} patterns in credentials
+            token = context.resolve_value(token)
+            username = context.resolve_value(username)
+            password = context.resolve_value(password)
 
             headers = dict(base_headers)
 
@@ -1341,6 +1372,10 @@ class HttpDownloadFileNode(BaseNode):
             retry_delay = self.config.get("retry_delay", 2.0)
             chunk_size = self.config.get("chunk_size", 8192)
 
+            # Resolve {{variable}} patterns in URL and save_path
+            url = context.resolve_value(url)
+            save_path = context.resolve_value(save_path)
+
             if not url:
                 raise ValueError("URL is required")
             if not save_path:
@@ -1496,6 +1531,10 @@ class HttpUploadFileNode(BaseNode):
             timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 300.0)
             verify_ssl = self.config.get("verify_ssl", True)
 
+            # Resolve {{variable}} patterns in URL and file_path
+            url = context.resolve_value(url)
+            file_path = context.resolve_value(file_path)
+
             if not url:
                 raise ValueError("URL is required")
             if not file_path:
@@ -1629,6 +1668,10 @@ class BuildUrlNode(BaseNode):
             base_url = self.get_input_value("base_url") or self.config.get("base_url", "")
             path = self.get_input_value("path") or self.config.get("path", "")
             params = self.get_input_value("params") or self.config.get("params", {})
+
+            # Resolve {{variable}} patterns in base_url and path
+            base_url = context.resolve_value(base_url)
+            path = context.resolve_value(path)
 
             if not base_url:
                 raise ValueError("Base URL is required")

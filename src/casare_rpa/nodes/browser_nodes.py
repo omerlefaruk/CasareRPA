@@ -95,9 +95,18 @@ class LaunchBrowserNode(BaseNode):
         """
         self.status = NodeStatus.RUNNING
 
+        # Helper to safely parse int values with defaults
+        def safe_int(value, default: int) -> int:
+            if value is None or value == "":
+                return default
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+
         # Get retry options
-        retry_count = int(self.config.get("retry_count", 0))
-        retry_interval = int(self.config.get("retry_interval", 2000))
+        retry_count = safe_int(self.config.get("retry_count"), 0)
+        retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
         last_error = None
         attempts = 0
@@ -154,15 +163,7 @@ class LaunchBrowserNode(BaseNode):
                 # Build browser context options
                 context_options = {}
 
-                # Viewport settings - safely parse with defaults
-                def safe_int(value, default: int) -> int:
-                    if value is None or value == "":
-                        return default
-                    try:
-                        return int(value)
-                    except (ValueError, TypeError):
-                        return default
-
+                # Viewport settings - safely parse with defaults (using safe_int defined above)
                 viewport_width = safe_int(self.config.get("viewport_width"), 1280)
                 viewport_height = safe_int(self.config.get("viewport_height"), 720)
                 context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
@@ -212,19 +213,10 @@ class LaunchBrowserNode(BaseNode):
 
                 # Strip whitespace and normalize to empty string if None or whitespace-only
                 url = url.strip() if url else ""
-                # Substitute variables in URL like {{var_name}} using execution context
-                if isinstance(url, str) and "{{" in url and "}}" in url:
-                    import re
 
-                    def _replace(match: re.Match) -> str:
-                        var_name = match.group(1).strip()
-                        value = context.get_variable(var_name)
-                        if value is None:
-                            raise ValueError(f"Variable '{var_name}' not found in workflow context")
-                        return str(value)
-
-                    url = re.sub(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}", _replace, url)
-                    logger.info(f"LaunchBrowserNode URL after substitution: '{url}'")
+                # Resolve {{variable}} patterns in URL using context variables
+                url = context.resolve_value(url)
+                logger.debug(f"LaunchBrowserNode URL after variable resolution: '{url}'")
 
                 if url:
                     # Add protocol if missing
@@ -514,6 +506,9 @@ class NewTabNode(BaseNode):
                     # Navigate to URL if specified
                     if url and url.strip():
                         nav_url = url.strip()
+                        # Resolve {{variable}} patterns in URL
+                        nav_url = context.resolve_value(nav_url)
+                        logger.debug(f"NewTabNode URL after variable resolution: '{nav_url}'")
                         # Add protocol if missing
                         if not nav_url.startswith(("http://", "https://", "file://", "about:")):
                             nav_url = f"https://{nav_url}"

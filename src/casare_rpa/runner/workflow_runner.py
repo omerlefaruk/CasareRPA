@@ -537,7 +537,8 @@ class WorkflowRunner:
                 self._emit_event(EventType.NODE_COMPLETED, {
                     "node_id": node.node_id,
                     "message": result.get("data", {}).get("message", "Completed"),
-                    "progress": self.progress
+                    "progress": self.progress,
+                    "execution_time": execution_time
                 })
 
                 logger.info(f"Node executed successfully: {node.node_id}")
