@@ -279,6 +279,8 @@ class ValidationTab(QWidget):
 
     def _update_status(self, result: 'ValidationResult') -> None:
         """Update status label and summary."""
+        from ..theme import THEME
+
         if result.is_valid:
             if result.warning_count > 0:
                 self._status_label.setText(f"Valid with {result.warning_count} warning(s)")

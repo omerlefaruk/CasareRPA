@@ -51,8 +51,9 @@ class VisualNode(NodeGraphQtBaseNode):
         self.model.selected_border_color = (0, 122, 204, 255)  # VSCode focus border (#007ACC)
         
         # Set temporary icon (will be updated with actual icons later)
-        icon_pixmap = self._create_temp_icon()
-        self.model.icon = icon_pixmap
+        # Use file path for model.icon (required for JSON serialization in copy/paste)
+        icon_path = self._create_temp_icon()
+        self.model.icon = icon_path
         
         # Create and initialize node properties
         self.create_property("node_id", "")
@@ -94,12 +95,16 @@ class VisualNode(NodeGraphQtBaseNode):
         self.model.text_color = (212, 212, 212, 255)
 
     def _create_temp_icon(self) -> str:
-        """Create a professional icon for this node type."""
-        from .node_icons import get_cached_node_icon
+        """
+        Create a professional icon for this node type.
+        Returns cached file path for NodeGraphQt model.icon (required for JSON serialization).
+        The file is only generated once per node type thanks to path caching.
+        """
+        from .node_icons import get_cached_node_icon_path
 
-        # Use the node name to get the appropriate icon
+        # Use the node name to get the appropriate icon path
         node_name = self.NODE_NAME
-        return get_cached_node_icon(node_name, size=24)
+        return get_cached_node_icon_path(node_name, size=24)
     
     def setup_ports(self) -> None:
         """

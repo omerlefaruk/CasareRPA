@@ -3623,6 +3623,119 @@ class VisualSnippetNode(VisualNode):
         """Return custom color for snippet nodes."""
         return (120, 140, 200)  # Purple/blue
 
+    def on_double_click(self, event):
+        """
+        Handle double-click event to open snippet editor.
+
+        Args:
+            event: Mouse event
+        """
+        super().on_double_click(event)
+
+        # Open snippet editor dialog
+        self._open_snippet_editor()
+
+    def _open_snippet_editor(self):
+        """Open the snippet editor dialog."""
+        from .snippet_editor_dialog import SnippetEditorDialog
+        from ..core.snippet_library import get_snippet_library
+        from PySide6.QtWidgets import QMessageBox, QDialog
+
+        # Get the casare SnippetNode
+        if not hasattr(self, "_casare_node"):
+            logger.warning("SnippetNode has no casare node attached")
+            return
+
+        from ..nodes.snippet_node import SnippetNode
+        casare_node = self._casare_node
+
+        if not isinstance(casare_node, SnippetNode):
+            logger.warning(f"Node is not a SnippetNode: {type(casare_node)}")
+            return
+
+        if not casare_node.snippet_definition:
+            QMessageBox.warning(
+                None,
+                "No Snippet Loaded",
+                "This snippet node has no snippet definition loaded.\n\n"
+                "Please select a snippet from the library first."
+            )
+            return
+
+        # Open editor
+        snippet_def = casare_node.snippet_definition
+        editor_dialog = SnippetEditorDialog(snippet_def, parent=None)
+
+        if editor_dialog.exec() == QDialog.DialogCode.Accepted:
+            logger.info(f"Snippet '{snippet_def.name}' updated via double-click")
+
+            # Reload snippet definition in casare node
+            library = get_snippet_library()
+            updated_snippet = library.load_snippet(snippet_def.snippet_id)
+            if updated_snippet:
+                casare_node.set_snippet_definition(updated_snippet)
+
+                # Update visual display
+                self.set_name(updated_snippet.name)
+
+                if hasattr(self, "view"):
+                    snippet_name_widget = self.view.get_widget("snippet_name")
+                    if snippet_name_widget:
+                        snippet_name_widget.set_value(updated_snippet.name)
+
+                    snippet_version_widget = self.view.get_widget("snippet_version")
+                    if snippet_version_widget:
+                        snippet_version_widget.set_value(updated_snippet.version)
+
+    def add_custom_context_menu_actions(self, menu):
+        """
+        Add custom context menu actions for snippet operations.
+
+        Args:
+            menu: QMenu to add actions to
+        """
+        from PySide6.QtGui import QAction
+
+        # Add separator
+        menu.addSeparator()
+
+        # Edit snippet action
+        edit_action = QAction("Edit Snippet...", menu)
+        edit_action.triggered.connect(self._open_snippet_editor)
+        menu.addAction(edit_action)
+
+        # Expand snippet action
+        expand_action = QAction("Expand Snippet", menu)
+        expand_action.triggered.connect(self._expand_snippet)
+        menu.addAction(expand_action)
+
+    def _expand_snippet(self):
+        """Expand this snippet node to show internal nodes."""
+        from .snippet_expansion_manager import SnippetExpansionManager
+        from PySide6.QtWidgets import QMessageBox
+
+        # Get the graph
+        graph = self.graph
+        if not graph:
+            logger.error("No graph associated with snippet node")
+            return
+
+        # Create expansion manager
+        manager = SnippetExpansionManager(graph)
+
+        # Expand the snippet
+        success = manager.expand_snippet(self)
+
+        if success:
+            logger.info("Snippet expanded successfully")
+        else:
+            QMessageBox.warning(
+                None,
+                "Expansion Failed",
+                "Failed to expand snippet.\n\n"
+                "Please check the logs for details."
+            )
+
 
 # Dynamic node discovery
 def _get_visual_node_classes():
@@ -3636,3 +3749,7 @@ def _get_visual_node_classes():
     return classes
 
 VISUAL_NODE_CLASSES = _get_visual_node_classes() + EXTENDED_VISUAL_NODE_CLASSES
+
+# Ensure VisualSnippetNode is included (explicit registration)
+if VisualSnippetNode not in VISUAL_NODE_CLASSES:
+    VISUAL_NODE_CLASSES.append(VisualSnippetNode)

@@ -122,6 +122,15 @@ class NodeGraphWidget(QWidget):
         # Configure graph
         self._setup_graph()
 
+        # Enable viewport culling for smooth 60 FPS panning with 100+ nodes
+        from .viewport_culling import ViewportCullingManager
+        self._culler = ViewportCullingManager(
+            cell_size=500,
+            margin=200
+        )
+        self._culler.set_enabled(True)
+        logger.info("Viewport culling enabled for performance optimization")
+
         # Create auto-connect manager
         self._auto_connect = AutoConnectManager(self._graph, self)
 
@@ -251,7 +260,70 @@ class NodeGraphWidget(QWidget):
             viewer._port_color = (100, 181, 246, 255)  # Light blue for ports
         if hasattr(viewer, '_port_border_color'):
             viewer._port_border_color = (66, 165, 245, 255)  # Darker blue border
-    
+
+        # ==================== PERFORMANCE OPTIMIZATIONS ====================
+
+        # Qt rendering optimizations for high FPS (60/120/144 Hz support)
+        from PySide6.QtWidgets import QGraphicsView
+        from PySide6.QtCore import Qt
+
+        # Enable optimization flags
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontSavePainterState, True)
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.DontAdjustForAntialiasing, True)
+        viewer.setOptimizationFlag(QGraphicsView.OptimizationFlag.IndirectPainting, True)
+
+        # Smart viewport updates (only redraw changed regions)
+        viewer.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.SmartViewportUpdate)
+
+        # Enable caching for static content
+        viewer.setCacheMode(QGraphicsView.CacheMode.CacheBackground)
+
+        # High refresh rate optimizations
+        viewer.viewport().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
+        viewer.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+
+        # Detect and adapt to screen refresh rate
+        screen = viewer.screen() if hasattr(viewer, 'screen') else viewer.window().screen()
+        refresh_rate = screen.refreshRate()
+        logger.info(f"Display refresh rate detected: {refresh_rate}Hz")
+
+        # Configure frame timing based on refresh rate
+        if refresh_rate >= 120:
+            # High refresh rate display - prioritize low latency
+            viewer.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate)
+            logger.info("Optimized for high refresh rate (120+ Hz)")
+        elif refresh_rate >= 60:
+            # Standard display - balance quality and performance
+            viewer.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.SmartViewportUpdate)
+            logger.info("Optimized for standard refresh rate (60 Hz)")
+
+        # GPU-accelerated rendering (with automatic fallback to CPU)
+        try:
+            from PySide6.QtOpenGLWidgets import QOpenGLWidget
+            from PySide6.QtGui import QSurfaceFormat
+
+            # Configure OpenGL format for high performance
+            gl_format = QSurfaceFormat()
+            gl_format.setVersion(3, 3)  # OpenGL 3.3+ for modern features
+            gl_format.setProfile(QSurfaceFormat.OpenGLContextProfile.CoreProfile)
+            gl_format.setSwapBehavior(QSurfaceFormat.SwapBehavior.DoubleBuffer)
+            gl_format.setSwapInterval(0)  # Disable vsync for maximum FPS (120/144/240 Hz support)
+            gl_format.setSamples(4)  # 4x MSAA antialiasing
+
+            # Create OpenGL viewport
+            gl_widget = QOpenGLWidget()
+            gl_widget.setFormat(gl_format)
+
+            viewer.setViewport(gl_widget)
+
+            # Set as default format for future widgets
+            QSurfaceFormat.setDefaultFormat(gl_format)
+
+            logger.info(f"GPU-accelerated rendering enabled (vsync disabled for {refresh_rate}Hz)")
+        except Exception as e:
+            logger.warning(f"GPU rendering unavailable, using CPU rendering: {e}")
+            # Continue with default CPU-based QPainter rendering
+
     @property
     def graph(self) -> NodeGraph:
         """

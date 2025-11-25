@@ -392,10 +392,13 @@ class NodeRegistry:
             for node_class in nodes:
                 qmenu._category_data[node_class.NODE_NAME] = (category_label, node_class)
 
+        # Pre-build SearchIndex for lightning-fast search (avoids rebuilding on every keystroke)
+        from ..utils.fuzzy_search import SearchIndex
+        qmenu._search_index = SearchIndex(qmenu._node_items)
+
         # Connect search functionality
         def on_search_changed(text):
             """Rebuild menu as flat list during search, categorized when empty."""
-            from ..utils.fuzzy_search import fuzzy_search
 
             # Remove all menu items except search widget and separator
             actions_to_remove = []
@@ -442,8 +445,8 @@ class NodeRegistry:
                 qmenu._first_match = None
                 return
 
-            # Perform fuzzy search and show ALL matching nodes in flat list
-            results = fuzzy_search(text, qmenu._node_items)
+            # Perform fuzzy search using pre-built SearchIndex (lightning-fast, top 15 results)
+            results = qmenu._search_index.search(text)
 
             if not results:
                 no_results_action = qmenu.addAction("No matching nodes found")
@@ -493,6 +496,7 @@ class NodeRegistry:
                         action.setFont(font)
                         qmenu._first_match = node_class
 
+        # Connect search directly for instant results (SearchIndex makes it fast enough)
         search_input.textChanged.connect(on_search_changed)
 
         # Focus search when menu is shown and capture initial mouse position if not already set

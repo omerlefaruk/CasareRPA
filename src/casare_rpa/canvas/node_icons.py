@@ -264,30 +264,123 @@ def get_all_node_icons() -> Dict[str, Tuple[str, str]]:
     return NODE_ICONS.copy()
 
 
-# Cache for generated icons
-_icon_cache: Dict[str, str] = {}
+# Dual-cache system for performance + serialization:
+# - QPixmap cache for fast rendering (in-memory)
+# - File path cache for NodeGraphQt model.icon (required for copy/paste serialization)
+_icon_pixmap_cache: Dict[str, QPixmap] = {}
+_icon_path_cache: Dict[str, str] = {}
 
 
-def get_cached_node_icon(node_name: str, size: int = 24) -> str:
+def create_node_icon_pixmap(
+    node_name: str,
+    size: int = 24,
+    custom_color: Optional[QColor] = None
+) -> QPixmap:
     """
-    Get a cached node icon or create it if not cached.
+    Create a professional icon for a node type and return QPixmap directly.
+    This is the optimized version that avoids file I/O.
+
+    Args:
+        node_name: Name of the node (e.g., "Click Element")
+        size: Icon size in pixels
+        custom_color: Override category color
+
+    Returns:
+        QPixmap containing the rendered icon
+    """
+    # Get icon symbol and category
+    icon_data = NODE_ICONS.get(node_name)
+
+    if icon_data:
+        symbol, category = icon_data
+        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+    else:
+        # Fallback for unknown nodes
+        symbol = '●'
+        base_color = custom_color or QColor(158, 158, 158)
+
+    # Create pixmap
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
+
+    # Draw background circle with gradient
+    from PySide6.QtGui import QRadialGradient
+
+    gradient = QRadialGradient(size/2, size/2, size/2)
+    gradient.setColorAt(0, base_color.lighter(120))
+    gradient.setColorAt(1, base_color)
+
+    painter.setBrush(QBrush(gradient))
+    painter.setPen(QPen(base_color.darker(130), 1.5))
+
+    margin = 2
+    painter.drawEllipse(margin, margin, size - margin*2, size - margin*2)
+
+    # Draw icon symbol
+    font_size = max(1, int(size * 0.5))
+    font = QFont("Segoe UI Emoji", font_size)
+    painter.setFont(font)
+    painter.setPen(QPen(Qt.GlobalColor.white))
+
+    # Center the text
+    rect = QRectF(0, 0, size, size)
+    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, symbol)
+
+    painter.end()
+
+    return pixmap
+
+
+def get_cached_node_icon(node_name: str, size: int = 24) -> QPixmap:
+    """
+    Get a cached node icon QPixmap or create it if not cached.
+    Uses in-memory QPixmap cache for lightning-fast rendering performance.
 
     Args:
         node_name: Name of the node
         size: Icon size
 
     Returns:
-        Path to icon file
+        QPixmap containing the icon
     """
     cache_key = f"{node_name}_{size}"
 
-    if cache_key not in _icon_cache:
-        _icon_cache[cache_key] = create_node_icon(node_name, size)
+    if cache_key not in _icon_pixmap_cache:
+        _icon_pixmap_cache[cache_key] = create_node_icon_pixmap(node_name, size)
 
-    return _icon_cache[cache_key]
+    return _icon_pixmap_cache[cache_key]
+
+
+def get_cached_node_icon_path(node_name: str, size: int = 24) -> str:
+    """
+    Get a cached node icon file path or create it if not cached.
+    Uses file path cache for NodeGraphQt model.icon (required for JSON serialization).
+
+    This function generates the file only once per node type and caches the path,
+    avoiding repeated file I/O while still providing a serializable path.
+
+    Args:
+        node_name: Name of the node
+        size: Icon size
+
+    Returns:
+        File path to the cached icon PNG
+    """
+    cache_key = f"{node_name}_{size}"
+
+    if cache_key not in _icon_path_cache:
+        # Create icon and save to temp file (but only once per node type)
+        _icon_path_cache[cache_key] = create_node_icon(node_name, size)
+
+    return _icon_path_cache[cache_key]
 
 
 def clear_icon_cache():
-    """Clear the icon cache."""
-    global _icon_cache
-    _icon_cache = {}
+    """Clear both icon caches (pixmap and path)."""
+    global _icon_pixmap_cache, _icon_path_cache
+    _icon_pixmap_cache = {}
+    _icon_path_cache = {}
