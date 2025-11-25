@@ -24,6 +24,13 @@ try:
 except ImportError:
     HAS_DISPATCHER = False
 
+try:
+    from .server import OrchestratorServer
+    HAS_SERVER = True
+except ImportError:
+    HAS_SERVER = False
+    logger.warning("websockets not installed. Server features disabled.")
+
 
 class OrchestratorEngine:
     """
@@ -88,6 +95,11 @@ class OrchestratorEngine:
         self._on_job_complete: Optional[Callable[[Job], None]] = None
         self._on_job_failed: Optional[Callable[[Job], None]] = None
 
+        # WebSocket server
+        self._server: Optional["OrchestratorServer"] = None
+        self._server_host: str = "0.0.0.0"
+        self._server_port: int = 8765
+
         # Running state
         self._running = False
         self._background_tasks: List[asyncio.Task] = []
@@ -145,6 +157,11 @@ class OrchestratorEngine:
                 pass
         self._background_tasks.clear()
 
+        # Stop server
+        if self._server:
+            await self._server.stop()
+            self._server = None
+
         # Stop scheduler
         if self._scheduler:
             await self._scheduler.stop()
@@ -154,6 +171,119 @@ class OrchestratorEngine:
             await self._dispatcher.stop()
 
         logger.info("OrchestratorEngine stopped")
+
+    async def start_server(self, host: str = "0.0.0.0", port: int = 8765):
+        """
+        Start WebSocket server for robot connections.
+
+        Args:
+            host: Server bind address
+            port: Server port
+        """
+        if not HAS_SERVER:
+            logger.error("Cannot start server: websockets not installed")
+            return
+
+        self._server_host = host
+        self._server_port = port
+
+        self._server = OrchestratorServer(host=host, port=port)
+
+        # Wire callbacks from server to engine
+        self._server.set_callbacks(
+            on_robot_connect=self._on_server_robot_connect,
+            on_robot_disconnect=self._on_server_robot_disconnect,
+            on_job_progress=self._on_server_job_progress,
+            on_job_complete=self._on_server_job_complete,
+            on_job_failed=self._on_server_job_failed,
+        )
+
+        await self._server.start()
+        logger.info(f"Orchestrator server started on ws://{host}:{port}")
+
+    async def _on_server_robot_connect(self, robot: Robot):
+        """Handle robot connection via WebSocket."""
+        logger.info(f"Robot connected via WebSocket: {robot.name} ({robot.id})")
+
+        # Register with dispatcher
+        if self._dispatcher:
+            self._dispatcher.register_robot(robot, robot.environment)
+
+        # Persist
+        await self._service.update_robot_status(robot.id, RobotStatus.ONLINE)
+
+    async def _on_server_robot_disconnect(self, robot_id: str):
+        """Handle robot disconnection."""
+        logger.info(f"Robot disconnected: {robot_id}")
+
+        if self._dispatcher:
+            robot = self._dispatcher.get_robot(robot_id)
+            if robot:
+                robot.status = RobotStatus.OFFLINE
+                self._dispatcher.update_robot(robot)
+
+        await self._service.update_robot_status(robot_id, RobotStatus.OFFLINE)
+
+    async def _on_server_job_progress(self, job_id: str, progress: int, current_node: str):
+        """Handle job progress from robot."""
+        await self.update_job_progress(job_id, progress, current_node)
+
+    async def _on_server_job_complete(self, job_id: str, result: Dict):
+        """Handle job completion from robot."""
+        await self.complete_job(job_id, result)
+
+    async def _on_server_job_failed(self, job_id: str, error_message: str):
+        """Handle job failure from robot."""
+        await self.fail_job(job_id, error_message)
+
+    async def dispatch_job_to_robot(self, job: Job, robot_id: str) -> bool:
+        """
+        Dispatch a job to a specific robot via WebSocket.
+
+        Args:
+            job: Job to dispatch
+            robot_id: Target robot ID
+
+        Returns:
+            True if dispatched successfully
+        """
+        if not self._server:
+            logger.error("Server not started, cannot dispatch job")
+            return False
+
+        # Send job via WebSocket
+        result = await self._server.send_job(robot_id, job)
+
+        if result.get("accepted"):
+            job.status = JobStatus.RUNNING
+            job.robot_id = robot_id
+            job.started_at = datetime.utcnow().isoformat()
+            await self._persist_job(job)
+            logger.info(f"Job {job.id[:8]} dispatched to robot {robot_id}")
+            return True
+        else:
+            reason = result.get("reason", "Unknown")
+            logger.warning(f"Job {job.id[:8]} rejected by robot {robot_id}: {reason}")
+            return False
+
+    @property
+    def server_port(self) -> int:
+        """Get the server port."""
+        return self._server_port
+
+    @property
+    def connected_robots(self) -> List[str]:
+        """Get list of connected robot IDs."""
+        if self._server:
+            return [r.id for r in self._server.get_connected_robots()]
+        return []
+
+    @property
+    def available_robots(self) -> List[Robot]:
+        """Get list of available robots."""
+        if self._server:
+            return self._server.get_available_robots()
+        return []
 
     async def _load_robots(self):
         """Load robots from persistence."""

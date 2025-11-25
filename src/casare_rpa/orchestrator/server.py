@@ -217,7 +217,7 @@ class OrchestratorServer:
 
         logger.info("OrchestratorServer stopped")
 
-    async def _handle_connection(self, websocket: WebSocketServerProtocol, path: str):
+    async def _handle_connection(self, websocket: "WebSocketServerProtocol"):
         """Handle new WebSocket connection."""
         robot_id = None
         try:
