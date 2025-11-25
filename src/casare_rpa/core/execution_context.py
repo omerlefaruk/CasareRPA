@@ -21,6 +21,7 @@ class ExecutionContext:
         self,
         workflow_name: str = "Untitled",
         mode: ExecutionMode = ExecutionMode.NORMAL,
+        initial_variables: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Initialize execution context.
@@ -28,14 +29,17 @@ class ExecutionContext:
         Args:
             workflow_name: Name of the workflow being executed
             mode: Execution mode (NORMAL, DEBUG, VALIDATE)
+            initial_variables: Optional dict of variables to initialize (from Variables Tab)
         """
         self.workflow_name = workflow_name
         self.mode = mode
         self.started_at = datetime.now()
         self.completed_at: Optional[datetime] = None
 
-        # Variable storage
-        self.variables: Dict[str, Any] = {}
+        # Variable storage - initialize with provided variables if any
+        self.variables: Dict[str, Any] = initial_variables.copy() if initial_variables else {}
+        if initial_variables:
+            logger.info(f"Initialized with {len(initial_variables)} variables: {list(initial_variables.keys())}")
 
         # Shared resources (Playwright instances)
         self.browser: Optional[Browser] = None
@@ -92,6 +96,29 @@ class ExecutionContext:
         """Clear all variables."""
         self.variables.clear()
         logger.debug("All variables cleared")
+
+    def resolve_value(self, value: Any) -> Any:
+        """
+        Resolve {{variable_name}} patterns in a value.
+
+        This enables UiPath/Power Automate style variable substitution
+        where users can reference global variables in node properties
+        using the {{variable_name}} syntax.
+
+        Args:
+            value: The value to resolve (only strings are processed)
+
+        Returns:
+            The resolved value with all {{variable}} patterns replaced.
+            Non-string values are returned unchanged.
+
+        Examples:
+            >>> context.set_variable("website", "google.com")
+            >>> context.resolve_value("https://{{website}}")
+            "https://google.com"
+        """
+        from .variable_resolver import resolve_variables
+        return resolve_variables(value, self.variables)
 
     def set_browser(self, browser: Browser) -> None:
         """Set the active browser instance."""

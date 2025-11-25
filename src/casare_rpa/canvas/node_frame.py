@@ -509,14 +509,18 @@ class NodeFrame(QGraphicsRectItem):
             except Exception as e:
                 logger.warning(f"Error hiding node during collapse: {e}")
 
-        # Now force all pipes to redraw - NodeGraphQt's draw_path will
-        # automatically hide them since their nodes are now hidden
-        for pipe in self._hidden_pipes:
+        # Force pipe visibility update by triggering redraw through ports
+        # This is more reliable than calling draw_path directly
+        for node in self.contained_nodes:
             try:
-                if pipe and hasattr(pipe, 'draw_path'):
-                    # Force redraw which triggers visibility check
-                    if pipe._output_port and pipe._input_port:
-                        pipe.draw_path(pipe._output_port, pipe._input_port)
+                for port in node.input_ports():
+                    if hasattr(port, 'view') and port.view:
+                        if hasattr(port.view, 'redraw_connected_pipes'):
+                            port.view.redraw_connected_pipes()
+                for port in node.output_ports():
+                    if hasattr(port, 'view') and port.view:
+                        if hasattr(port.view, 'redraw_connected_pipes'):
+                            port.view.redraw_connected_pipes()
             except Exception:
                 pass
 
@@ -581,14 +585,18 @@ class NodeFrame(QGraphicsRectItem):
             except Exception:
                 pass
 
-        # Force all pipes to redraw - NodeGraphQt's draw_path will
-        # automatically show them since their nodes are now visible
-        for pipe in self._hidden_pipes:
+        # Force pipe visibility update by triggering redraw through ports
+        # This is more reliable than calling draw_path directly
+        for node in self.contained_nodes:
             try:
-                if pipe and hasattr(pipe, 'draw_path'):
-                    # Force redraw which triggers visibility check
-                    if pipe._output_port and pipe._input_port:
-                        pipe.draw_path(pipe._output_port, pipe._input_port)
+                for port in node.input_ports():
+                    if hasattr(port, 'view') and port.view:
+                        if hasattr(port.view, 'redraw_connected_pipes'):
+                            port.view.redraw_connected_pipes()
+                for port in node.output_ports():
+                    if hasattr(port, 'view') and port.view:
+                        if hasattr(port.view, 'redraw_connected_pipes'):
+                            port.view.redraw_connected_pipes()
             except Exception:
                 pass
 

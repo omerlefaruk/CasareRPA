@@ -65,6 +65,7 @@ class WorkflowRunner:
         parallel_execution: bool = False,
         max_parallel_nodes: int = 4,
         target_node_id: Optional[NodeId] = None,
+        initial_variables: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
         Initialize workflow runner.
@@ -80,8 +81,11 @@ class WorkflowRunner:
             target_node_id: Optional target node for "Run To Node" feature.
                             If set, only nodes in the path to this target will be executed,
                             and execution will pause when the target is reached.
+            initial_variables: Optional dict of variables to initialize in context
+                               (from Variables Tab in bottom panel)
         """
         self.workflow = workflow
+        self._initial_variables = initial_variables or {}
 
         # Import get_event_bus to get the global instance
         from ..core.events import get_event_bus
@@ -1017,9 +1021,10 @@ class WorkflowRunner:
         self._stop_requested = False
         self.executed_nodes.clear()
         
-        # Create execution context
+        # Create execution context with initial variables from Variables Tab
         self.context = ExecutionContext(
-            workflow_name=self.workflow.metadata.name
+            workflow_name=self.workflow.metadata.name,
+            initial_variables=self._initial_variables
         )
         
         self._emit_event(EventType.WORKFLOW_STARTED, {
