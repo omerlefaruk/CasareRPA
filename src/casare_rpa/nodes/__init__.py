@@ -74,6 +74,24 @@ if TYPE_CHECKING:
         TransformNode,
         LogNode,
     )
+    from .file_nodes import (
+        ReadFileNode,
+        WriteFileNode,
+        AppendFileNode,
+        DeleteFileNode,
+        CopyFileNode,
+        MoveFileNode,
+        CreateDirectoryNode,
+        ListDirectoryNode,
+        FileExistsNode,
+        GetFileInfoNode,
+        ReadCSVNode,
+        WriteCSVNode,
+        ReadJSONFileNode,
+        WriteJSONFileNode,
+        ZipFilesNode,
+        UnzipFilesNode,
+    )
 
 
 # Lazy loading registry - maps node class names to their module paths
@@ -136,6 +154,23 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
     "LogNode": "utility_nodes",
+    # File system nodes
+    "ReadFileNode": "file_nodes",
+    "WriteFileNode": "file_nodes",
+    "AppendFileNode": "file_nodes",
+    "DeleteFileNode": "file_nodes",
+    "CopyFileNode": "file_nodes",
+    "MoveFileNode": "file_nodes",
+    "CreateDirectoryNode": "file_nodes",
+    "ListDirectoryNode": "file_nodes",
+    "FileExistsNode": "file_nodes",
+    "GetFileInfoNode": "file_nodes",
+    "ReadCSVNode": "file_nodes",
+    "WriteCSVNode": "file_nodes",
+    "ReadJSONFileNode": "file_nodes",
+    "WriteJSONFileNode": "file_nodes",
+    "ZipFilesNode": "file_nodes",
+    "UnzipFilesNode": "file_nodes",
 }
 
 # Cache for loaded modules and classes
@@ -164,28 +199,6 @@ def _lazy_import(name: str) -> Type:
     if name not in _NODE_REGISTRY:
         raise AttributeError(f"module 'casare_rpa.nodes' has no attribute '{name}'")
 
-<<<<<<<<< Temporary merge branch 1
-# File system nodes
-from .file_nodes import (
-    ReadFileNode,
-    WriteFileNode,
-    AppendFileNode,
-    DeleteFileNode,
-    CopyFileNode,
-    MoveFileNode,
-    CreateDirectoryNode,
-    ListDirectoryNode,
-    FileExistsNode,
-    GetFileInfoNode,
-    ReadCSVNode,
-    WriteCSVNode,
-    ReadJSONFileNode,
-    WriteJSONFileNode,
-    ZipFilesNode,
-    UnzipFilesNode
-)
-
-=========
     module_name = _NODE_REGISTRY[name]
 
     # Load the module if not already loaded
@@ -256,7 +269,6 @@ def preload_nodes(node_names: List[str] = None) -> None:
 
 
 # Export __all__ for explicit imports
->>>>>>>>> Temporary merge branch 2
 __all__ = [
     "__version__",
     # Basic nodes
@@ -312,7 +324,11 @@ __all__ = [
     "ListGetItemNode",
     "JsonParseNode",
     "GetPropertyNode",
-<<<<<<<<< Temporary merge branch 1
+    # Utility nodes
+    "HttpRequestNode",
+    "ValidateNode",
+    "TransformNode",
+    "LogNode",
     # File system nodes
     "ReadFileNode",
     "WriteFileNode",
@@ -330,14 +346,7 @@ __all__ = [
     "WriteJSONFileNode",
     "ZipFilesNode",
     "UnzipFilesNode",
-=========
-    # Utility nodes
-    "HttpRequestNode",
-    "ValidateNode",
-    "TransformNode",
-    "LogNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",
->>>>>>>>> Temporary merge branch 2
 ]

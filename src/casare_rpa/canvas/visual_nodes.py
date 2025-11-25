@@ -43,7 +43,6 @@ NODE_COLORS = {
     "basic": UNIFIED_NODE_COLOR,
     "browser": UNIFIED_NODE_COLOR,
     "variable": UNIFIED_NODE_COLOR,
-    "utility": UNIFIED_NODE_COLOR,
 }
 
 
@@ -722,6 +721,7 @@ class VisualLaunchApplicationNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Launch Application"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
     
     def __init__(self) -> None:
         """Initialize Launch Application node."""
@@ -753,6 +753,7 @@ class VisualCloseApplicationNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Close Application"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
     
     def __init__(self) -> None:
         """Initialize Close Application node."""
@@ -777,6 +778,7 @@ class VisualActivateWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Activate Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
     
     def __init__(self) -> None:
         """Initialize Activate Window node."""
@@ -801,6 +803,7 @@ class VisualGetWindowListNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Window List"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Get Window List node."""
@@ -822,6 +825,7 @@ class VisualFindElementNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Find Element"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Find Element node."""
@@ -841,10 +845,12 @@ class VisualFindElementNode(VisualNode):
 
 class VisualClickElementDesktopNode(VisualNode):
     """Visual representation of ClickElementNode (Desktop)."""
+    CASARE_NODE_CLASS = "ClickElementNode"
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Click Element (Desktop)"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Click Element node."""
@@ -866,10 +872,12 @@ class VisualClickElementDesktopNode(VisualNode):
 
 class VisualTypeTextDesktopNode(VisualNode):
     """Visual representation of TypeTextNode (Desktop)."""
+    CASARE_NODE_CLASS = "TypeTextNode"
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Type Text (Desktop)"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Type Text node."""
@@ -895,6 +903,7 @@ class VisualGetElementTextNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Element Text"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Get Element Text node."""
@@ -919,6 +928,7 @@ class VisualGetElementPropertyNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Element Property"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Get Element Property node."""
@@ -937,7 +947,6 @@ class VisualGetElementPropertyNode(VisualNode):
         self.add_output("element")
 
 
-<<<<<<<<< Temporary merge branch 1
 # Window Management Nodes
 
 class VisualResizeWindowNode(VisualNode):
@@ -946,6 +955,7 @@ class VisualResizeWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Resize Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Resize Window node."""
@@ -953,37 +963,10 @@ class VisualResizeWindowNode(VisualNode):
         # Use window_width/window_height to avoid conflict with reserved "width"/"height" properties
         self.create_property("window_width", 800, widget_type=2, tab="config")
         self.create_property("window_height", 600, widget_type=2, tab="config")
-=========
-# =============================================================================
-# Utility Nodes
-# =============================================================================
-
-class VisualHttpRequestNode(VisualNode):
-    """Visual representation of HttpRequestNode."""
-
-    __identifier__ = "casare_rpa.utility"
-    NODE_NAME = "HTTP Request"
-    NODE_CATEGORY = "utility"
-
-    def __init__(self) -> None:
-        """Initialize HTTP Request node."""
-        super().__init__()
-        self.add_text_input("url", "URL", placeholder_text="https://api.example.com", tab="inputs")
-        self.add_combo_menu("method", "Method", items=[
-            "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
-        ], tab="inputs")
-        self.add_text_input("headers", "Headers (JSON)", text="{}", tab="inputs")
-        self.add_text_input("body", "Body", text="", tab="inputs")
-        self.create_property("timeout", 30.0, widget_type=2, tab="config")
-        self.create_property("verify_ssl", True, widget_type=1, tab="config")
-        self.create_property("follow_redirects", True, widget_type=1, tab="config")
-        self.add_text_input("variable_name", "Variable Name", text="http_response", tab="config")
->>>>>>>>> Temporary merge branch 2
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-<<<<<<<<< Temporary merge branch 1
         self.add_input("window")
         self.add_input("window_width")
         self.add_input("window_height")
@@ -997,6 +980,7 @@ class VisualMoveWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Move Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Move Window node."""
@@ -1004,53 +988,10 @@ class VisualMoveWindowNode(VisualNode):
         # Use pos_x/pos_y to avoid conflict with reserved "x"/"y" properties
         self.create_property("pos_x", 100, widget_type=2, tab="config")
         self.create_property("pos_y", 100, widget_type=2, tab="config")
-=========
-        self.add_input("url")
-        self.add_input("headers")
-        self.add_input("body")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("status_code")
-        self.add_output("headers")
-        self.add_output("success")
-        self.add_output("error")
-
-
-class VisualValidateNode(VisualNode):
-    """Visual representation of ValidateNode."""
-
-    __identifier__ = "casare_rpa.utility"
-    NODE_NAME = "Validate"
-    NODE_CATEGORY = "utility"
-
-    def __init__(self) -> None:
-        """Initialize Validate node."""
-        super().__init__()
-        self.add_combo_menu("validation_type", "Validation Type", items=[
-            "not_empty",
-            "is_string",
-            "is_number",
-            "is_integer",
-            "is_boolean",
-            "is_list",
-            "is_dict",
-            "matches_regex",
-            "min_length",
-            "max_length",
-            "min_value",
-            "max_value",
-            "in_list",
-            "is_email",
-            "is_url"
-        ], tab="inputs")
-        self.add_text_input("validation_param", "Parameter", text="", tab="inputs")
-        self.add_text_input("error_message", "Error Message", text="Validation failed", tab="config")
->>>>>>>>> Temporary merge branch 2
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-<<<<<<<<< Temporary merge branch 1
         self.add_input("window")
         self.add_input("pos_x")
         self.add_input("pos_y")
@@ -1064,6 +1005,7 @@ class VisualMaximizeWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Maximize Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1079,6 +1021,7 @@ class VisualMinimizeWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Minimize Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1094,6 +1037,7 @@ class VisualRestoreWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Restore Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1109,6 +1053,7 @@ class VisualGetWindowPropertiesNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Window Properties"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1132,6 +1077,7 @@ class VisualSetWindowStateNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Set Window State"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Set Window State node."""
@@ -1157,6 +1103,7 @@ class VisualSelectFromDropdownNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select From Dropdown"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Select From Dropdown node."""
@@ -1179,57 +1126,16 @@ class VisualCheckCheckboxNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Check Checkbox"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Check Checkbox node."""
         super().__init__()
         self.create_property("check", True, widget_type=1, tab="config")
-=========
-        self.add_input("value")
-        self.add_output("valid")
-        self.add_output("invalid")
-        self.add_output("is_valid")
-        self.add_output("error_message")
-
-
-class VisualTransformNode(VisualNode):
-    """Visual representation of TransformNode."""
-
-    __identifier__ = "casare_rpa.utility"
-    NODE_NAME = "Transform"
-    NODE_CATEGORY = "utility"
-
-    def __init__(self) -> None:
-        """Initialize Transform node."""
-        super().__init__()
-        self.add_combo_menu("transform_type", "Transform Type", items=[
-            "to_string",
-            "to_integer",
-            "to_float",
-            "to_boolean",
-            "to_list",
-            "to_json",
-            "from_json",
-            "uppercase",
-            "lowercase",
-            "trim",
-            "split",
-            "join",
-            "replace",
-            "regex_extract",
-            "get_key",
-            "get_index",
-            "map_values",
-            "filter_values"
-        ], tab="inputs")
-        self.add_text_input("transform_param", "Parameter", text="", tab="inputs")
-        self.add_text_input("variable_name", "Variable Name", text="transformed", tab="config")
->>>>>>>>> Temporary merge branch 2
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-<<<<<<<<< Temporary merge branch 1
         self.add_input("element")
         self.add_output("exec_out")
         self.add_output("success")
@@ -1241,6 +1147,7 @@ class VisualSelectRadioButtonNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select Radio Button"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1256,6 +1163,7 @@ class VisualSelectTabNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select Tab"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Select Tab node."""
@@ -1279,6 +1187,7 @@ class VisualExpandTreeItemNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Expand Tree Item"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Expand Tree Item node."""
@@ -1299,6 +1208,7 @@ class VisualScrollElementNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Scroll Element"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Scroll Element node."""
@@ -1324,6 +1234,7 @@ class VisualMoveMouseNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Move Mouse"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Move Mouse node."""
@@ -1348,6 +1259,7 @@ class VisualMouseClickNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Mouse Click"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Mouse Click node."""
@@ -1376,6 +1288,7 @@ class VisualSendKeysNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Keys"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Send Keys node."""
@@ -1398,6 +1311,7 @@ class VisualSendHotKeyNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Hotkey"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Send Hotkey node."""
@@ -1418,6 +1332,7 @@ class VisualGetMousePositionNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Mouse Position"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1433,6 +1348,7 @@ class VisualDragMouseNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Drag Mouse"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Drag Mouse node."""
@@ -1466,6 +1382,7 @@ class VisualWaitForElementNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Wait For Element"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Wait For Element node."""
@@ -1492,6 +1409,7 @@ class VisualWaitForWindowNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Wait For Window"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Wait For Window node."""
@@ -1523,6 +1441,7 @@ class VisualVerifyElementExistsNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Verify Element Exists"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Verify Element Exists node."""
@@ -1545,6 +1464,7 @@ class VisualVerifyElementPropertyNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Verify Element Property"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Verify Element Property node."""
@@ -1577,6 +1497,7 @@ class VisualCaptureScreenshotNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Capture Screenshot"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Capture Screenshot node."""
@@ -1602,6 +1523,7 @@ class VisualCaptureElementImageNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Capture Element Image"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Capture Element Image node."""
@@ -1611,37 +1533,10 @@ class VisualCaptureElementImageNode(VisualNode):
         self.create_property("format", "PNG",
                            items=["PNG", "JPEG", "BMP"],
                            widget_type=3, tab="config")
-=========
-        self.add_input("value")
-        self.add_input("param")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("success")
-        self.add_output("error")
-
-
-class VisualLogNode(VisualNode):
-    """Visual representation of LogNode."""
-
-    __identifier__ = "casare_rpa.utility"
-    NODE_NAME = "Log"
-    NODE_CATEGORY = "utility"
-
-    def __init__(self) -> None:
-        """Initialize Log node."""
-        super().__init__()
-        self.add_text_input("message", "Message", text="", tab="inputs")
-        self.add_combo_menu("level", "Level", items=[
-            "critical", "error", "warning", "info", "debug"
-        ], tab="inputs")
-        self.create_property("include_timestamp", True, widget_type=1, tab="config")
-        self.create_property("include_node_id", True, widget_type=1, tab="config")
->>>>>>>>> Temporary merge branch 2
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-<<<<<<<<< Temporary merge branch 1
         self.add_input("element")
         self.add_input("file_path")
         self.add_input("padding")
@@ -1656,6 +1551,7 @@ class VisualOCRExtractTextNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "OCR Extract Text"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize OCR Extract Text node."""
@@ -1683,6 +1579,7 @@ class VisualCompareImagesNode(VisualNode):
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Compare Images"
     NODE_CATEGORY = "desktop_automation"
+    CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
         """Initialize Compare Images node."""
@@ -1707,299 +1604,17 @@ class VisualCompareImagesNode(VisualNode):
         self.add_output("method")
 
 
-# ============================================================
-# Office Automation Visual Nodes (Bite 11)
-# ============================================================
-
-class VisualExcelOpenNode(VisualNode):
-    """Visual representation of ExcelOpenNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Excel Open"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Excel Open node."""
-        super().__init__()
-        self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("show_window", False, widget_type=1, tab="config")
-        self.create_property("create_if_missing", False, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("file_path")
-        self.add_output("exec_out")
-        self.add_output("workbook")
-        self.add_output("app")
-        self.add_output("success")
-
-
-class VisualExcelReadCellNode(VisualNode):
-    """Visual representation of ExcelReadCellNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Excel Read Cell"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Excel Read Cell node."""
-        super().__init__()
-        self.add_text_input("cell", "Cell (e.g., A1)", text="A1", tab="inputs")
-        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("sheet")
-        self.add_input("cell")
-        self.add_output("exec_out")
-        self.add_output("value")
-        self.add_output("success")
-
-
-class VisualExcelWriteCellNode(VisualNode):
-    """Visual representation of ExcelWriteCellNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Excel Write Cell"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Excel Write Cell node."""
-        super().__init__()
-        self.add_text_input("cell", "Cell (e.g., A1)", text="A1", tab="inputs")
-        self.add_text_input("value", "Value", text="", tab="inputs")
-        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("sheet")
-        self.add_input("cell")
-        self.add_input("value")
-        self.add_output("exec_out")
-        self.add_output("success")
-
-
-class VisualExcelGetRangeNode(VisualNode):
-    """Visual representation of ExcelGetRangeNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Excel Get Range"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Excel Get Range node."""
-        super().__init__()
-        self.add_text_input("range", "Range (e.g., A1:C10)", text="A1:C10", tab="inputs")
-        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("sheet")
-        self.add_input("range")
-        self.add_output("exec_out")
-        self.add_output("data")
-        self.add_output("rows")
-        self.add_output("columns")
-        self.add_output("success")
-
-
-class VisualExcelCloseNode(VisualNode):
-    """Visual representation of ExcelCloseNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Excel Close"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Excel Close node."""
-        super().__init__()
-        self.create_property("save", True, widget_type=1, tab="config")
-        self.create_property("quit_app", True, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("app")
-        self.add_output("exec_out")
-        self.add_output("success")
-
-
-class VisualWordOpenNode(VisualNode):
-    """Visual representation of WordOpenNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Word Open"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Word Open node."""
-        super().__init__()
-        self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("show_window", False, widget_type=1, tab="config")
-        self.create_property("create_if_missing", False, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("file_path")
-        self.add_output("exec_out")
-        self.add_output("document")
-        self.add_output("app")
-        self.add_output("success")
-
-
-class VisualWordGetTextNode(VisualNode):
-    """Visual representation of WordGetTextNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Word Get Text"
-    NODE_CATEGORY = "office_automation"
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_output("exec_out")
-        self.add_output("text")
-        self.add_output("word_count")
-        self.add_output("success")
-
-
-class VisualWordReplaceTextNode(VisualNode):
-    """Visual representation of WordReplaceTextNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Word Replace Text"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Word Replace Text node."""
-        super().__init__()
-        self.add_text_input("find_text", "Find Text", text="", tab="inputs")
-        self.add_text_input("replace_text", "Replace With", text="", tab="inputs")
-        self.create_property("match_case", False, widget_type=1, tab="config")
-        self.create_property("replace_all", True, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_input("find_text")
-        self.add_input("replace_text")
-        self.add_output("exec_out")
-        self.add_output("replacements")
-        self.add_output("success")
-
-
-class VisualWordCloseNode(VisualNode):
-    """Visual representation of WordCloseNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Word Close"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Word Close node."""
-        super().__init__()
-        self.create_property("save", True, widget_type=1, tab="config")
-        self.create_property("quit_app", True, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_input("app")
-        self.add_output("exec_out")
-        self.add_output("success")
-
-
-class VisualOutlookSendEmailNode(VisualNode):
-    """Visual representation of OutlookSendEmailNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Outlook Send Email"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Outlook Send Email node."""
-        super().__init__()
-        self.add_text_input("to", "To", text="", tab="inputs")
-        self.add_text_input("subject", "Subject", text="", tab="inputs")
-        self.add_text_input("body", "Body", text="", tab="inputs")
-        self.add_text_input("cc", "CC", text="", tab="inputs")
-        self.add_text_input("bcc", "BCC", text="", tab="inputs")
-        self.create_property("html_body", False, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("to")
-        self.add_input("subject")
-        self.add_input("body")
-        self.add_input("cc")
-        self.add_input("bcc")
-        self.add_input("attachments")
-        self.add_output("exec_out")
-        self.add_output("success")
-
-
-class VisualOutlookReadEmailsNode(VisualNode):
-    """Visual representation of OutlookReadEmailsNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Outlook Read Emails"
-    NODE_CATEGORY = "office_automation"
-
-    def __init__(self) -> None:
-        """Initialize Outlook Read Emails node."""
-        super().__init__()
-        self.add_text_input("folder", "Folder", text="Inbox", tab="config")
-        self.create_property("count", 10, widget_type=2, tab="config")
-        self.create_property("unread_only", False, widget_type=1, tab="config")
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
-        self.add_output("emails")
-        self.add_output("count")
-        self.add_output("success")
-
-
-class VisualOutlookGetInboxCountNode(VisualNode):
-    """Visual representation of OutlookGetInboxCountNode."""
-
-    __identifier__ = "casare_rpa.office"
-    NODE_NAME = "Outlook Get Inbox Count"
-    NODE_CATEGORY = "office_automation"
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
-        self.add_output("total_count")
-        self.add_output("unread_count")
-        self.add_output("success")
-
-
-# ============================================================
-# File System Visual Nodes (Phase 8)
-# ============================================================
+# =============================================================================
+# File System Nodes
+# =============================================================================
 
 class VisualReadFileNode(VisualNode):
     """Visual representation of ReadFileNode."""
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Read File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Read File node."""
@@ -2023,12 +1638,14 @@ class VisualWriteFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Write File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Write File node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.add_text_input("content", "Content", text="", tab="inputs")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("create_dirs", True, widget_type=1, tab="config")
 
@@ -2038,7 +1655,6 @@ class VisualWriteFileNode(VisualNode):
         self.add_input("file_path")
         self.add_input("content")
         self.add_output("exec_out")
-        self.add_output("file_path")
         self.add_output("bytes_written")
         self.add_output("success")
 
@@ -2048,14 +1664,15 @@ class VisualAppendFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Append File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Append File node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.add_text_input("content", "Content", text="", tab="inputs")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
-        self.create_property("create_if_missing", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2063,7 +1680,6 @@ class VisualAppendFileNode(VisualNode):
         self.add_input("file_path")
         self.add_input("content")
         self.add_output("exec_out")
-        self.add_output("file_path")
         self.add_output("bytes_written")
         self.add_output("success")
 
@@ -2073,20 +1689,20 @@ class VisualDeleteFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Delete File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Delete File node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("ignore_missing", False, widget_type=1, tab="config")
+        self.create_property("ignore_errors", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("file_path")
         self.add_output("exec_out")
-        self.add_output("deleted_path")
         self.add_output("success")
 
 
@@ -2095,7 +1711,8 @@ class VisualCopyFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Copy File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Copy File node."""
@@ -2103,7 +1720,6 @@ class VisualCopyFileNode(VisualNode):
         self.add_text_input("source_path", "Source Path", text="", tab="inputs")
         self.add_text_input("dest_path", "Destination Path", text="", tab="inputs")
         self.create_property("overwrite", False, widget_type=1, tab="config")
-        self.create_property("create_dirs", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2112,7 +1728,6 @@ class VisualCopyFileNode(VisualNode):
         self.add_input("dest_path")
         self.add_output("exec_out")
         self.add_output("dest_path")
-        self.add_output("bytes_copied")
         self.add_output("success")
 
 
@@ -2121,7 +1736,8 @@ class VisualMoveFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Move File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Move File node."""
@@ -2129,7 +1745,6 @@ class VisualMoveFileNode(VisualNode):
         self.add_text_input("source_path", "Source Path", text="", tab="inputs")
         self.add_text_input("dest_path", "Destination Path", text="", tab="inputs")
         self.create_property("overwrite", False, widget_type=1, tab="config")
-        self.create_property("create_dirs", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2146,21 +1761,22 @@ class VisualCreateDirectoryNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Create Directory"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Create Directory node."""
         super().__init__()
-        self.add_text_input("dir_path", "Directory Path", text="", tab="inputs")
+        self.add_text_input("directory_path", "Directory Path", text="", tab="inputs")
         self.create_property("parents", True, widget_type=1, tab="config")
         self.create_property("exist_ok", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-        self.add_input("dir_path")
+        self.add_input("directory_path")
         self.add_output("exec_out")
-        self.add_output("dir_path")
+        self.add_output("directory_path")
         self.add_output("success")
 
 
@@ -2169,23 +1785,22 @@ class VisualListDirectoryNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "List Directory"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize List Directory node."""
         super().__init__()
-        self.add_text_input("dir_path", "Directory Path", text="", tab="inputs")
+        self.add_text_input("directory_path", "Directory Path", text=".", tab="inputs")
         self.add_text_input("pattern", "Pattern", text="*", tab="config")
         self.create_property("recursive", False, widget_type=1, tab="config")
-        self.create_property("files_only", False, widget_type=1, tab="config")
-        self.create_property("dirs_only", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-        self.add_input("dir_path")
+        self.add_input("directory_path")
         self.add_output("exec_out")
-        self.add_output("items")
+        self.add_output("files")
         self.add_output("count")
         self.add_output("success")
 
@@ -2195,22 +1810,22 @@ class VisualFileExistsNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "File Exists"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize File Exists node."""
         super().__init__()
-        self.add_text_input("path", "Path", text="", tab="inputs")
-        self.add_text_input("check_type", "Type (file/directory/any)", text="any", tab="config")
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-        self.add_input("path")
+        self.add_input("file_path")
         self.add_output("exec_out")
         self.add_output("exists")
         self.add_output("is_file")
-        self.add_output("is_directory")
+        self.add_output("is_dir")
 
 
 class VisualGetFileInfoNode(VisualNode):
@@ -2218,7 +1833,8 @@ class VisualGetFileInfoNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Get File Info"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Get File Info node."""
@@ -2244,15 +1860,16 @@ class VisualReadCSVNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Read CSV"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Read CSV node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("has_header", True, widget_type=1, tab="config")
         self.add_text_input("delimiter", "Delimiter", text=",", tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
-        self.create_property("has_header", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2270,15 +1887,16 @@ class VisualWriteCSVNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Write CSV"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Write CSV node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("write_header", True, widget_type=1, tab="config")
         self.add_text_input("delimiter", "Delimiter", text=",", tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
-        self.create_property("write_header", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2287,8 +1905,7 @@ class VisualWriteCSVNode(VisualNode):
         self.add_input("data")
         self.add_input("headers")
         self.add_output("exec_out")
-        self.add_output("file_path")
-        self.add_output("row_count")
+        self.add_output("rows_written")
         self.add_output("success")
 
 
@@ -2297,7 +1914,8 @@ class VisualReadJSONFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Read JSON File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Read JSON File node."""
@@ -2319,15 +1937,15 @@ class VisualWriteJSONFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Write JSON File"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Write JSON File node."""
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("indent", 2, widget_type=2, tab="config")
-        self.create_property("ensure_ascii", False, widget_type=1, tab="config")
+        self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2335,7 +1953,6 @@ class VisualWriteJSONFileNode(VisualNode):
         self.add_input("file_path")
         self.add_input("data")
         self.add_output("exec_out")
-        self.add_output("file_path")
         self.add_output("success")
 
 
@@ -2344,20 +1961,19 @@ class VisualZipFilesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Zip Files"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Zip Files node."""
         super().__init__()
         self.add_text_input("zip_path", "ZIP Path", text="", tab="inputs")
-        self.add_text_input("compression", "Compression", text="ZIP_DEFLATED", tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("zip_path")
         self.add_input("files")
-        self.add_input("base_dir")
         self.add_output("exec_out")
         self.add_output("zip_path")
         self.add_output("file_count")
@@ -2369,7 +1985,8 @@ class VisualUnzipFilesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file"
     NODE_NAME = "Unzip Files"
-    NODE_CATEGORY = "file_system"
+    NODE_CATEGORY = "file_operations"
+    CASARE_NODE_MODULE = "file"
 
     def __init__(self) -> None:
         """Initialize Unzip Files node."""
@@ -2387,11 +2004,411 @@ class VisualUnzipFilesNode(VisualNode):
         self.add_output("files")
         self.add_output("file_count")
         self.add_output("success")
-=========
+
+
+# =============================================================================
+# Utility Nodes
+# =============================================================================
+
+class VisualHttpRequestNode(VisualNode):
+    """Visual representation of HttpRequestNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "HTTP Request"
+    NODE_CATEGORY = "utility"
+    CASARE_NODE_MODULE = "utility"
+
+    def __init__(self) -> None:
+        """Initialize HTTP Request node."""
+        super().__init__()
+        self.add_text_input("url", "URL", placeholder_text="https://api.example.com", tab="inputs")
+        self.add_combo_menu("method", "Method", items=[
+            "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
+        ], tab="inputs")
+        self.add_text_input("headers", "Headers (JSON)", text="{}", tab="inputs")
+        self.add_text_input("body", "Body", text="", tab="inputs")
+        self.create_property("timeout", 30.0, widget_type=2, tab="config")
+        self.create_property("verify_ssl", True, widget_type=1, tab="config")
+        self.create_property("follow_redirects", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_input("headers")
+        self.add_input("body")
+        self.add_output("exec_out")
+        self.add_output("response")
+        self.add_output("status_code")
+        self.add_output("headers")
+        self.add_output("success")
+
+
+class VisualValidateNode(VisualNode):
+    """Visual representation of ValidateNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Validate"
+    NODE_CATEGORY = "utility"
+    CASARE_NODE_MODULE = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Validate node."""
+        super().__init__()
+        self.add_combo_menu("validation_type", "Validation Type", items=[
+            "not_empty", "is_numeric", "is_integer", "min_length", "max_length",
+            "min_value", "max_value", "in_list", "is_email", "is_url"
+        ], tab="inputs")
+        self.add_text_input("validation_param", "Parameter", text="", tab="inputs")
+        self.add_text_input("error_message", "Error Message", text="Validation failed", tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("value")
+        self.add_output("exec_out")
+        self.add_output("is_valid")
+        self.add_output("error_message")
+
+
+class VisualTransformNode(VisualNode):
+    """Visual representation of TransformNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Transform"
+    NODE_CATEGORY = "utility"
+    CASARE_NODE_MODULE = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Transform node."""
+        super().__init__()
+        self.add_combo_menu("transform_type", "Transform Type", items=[
+            "uppercase", "lowercase", "trim", "strip", "replace",
+            "split", "join", "to_int", "to_float", "to_string", "to_bool"
+        ], tab="inputs")
+        self.add_text_input("transform_param", "Parameter", text="", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("value")
+        self.add_output("exec_out")
+        self.add_output("result")
+        self.add_output("success")
+
+
+class VisualLogNode(VisualNode):
+    """Visual representation of LogNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Log"
+    NODE_CATEGORY = "utility"
+    CASARE_NODE_MODULE = "utility"
+
+    def __init__(self) -> None:
+        """Initialize Log node."""
+        super().__init__()
+        self.add_text_input("message", "Message", text="", tab="inputs")
+        self.add_combo_menu("level", "Level", items=[
+            "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
+        ], tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
         self.add_input("message")
         self.add_input("data")
         self.add_output("exec_out")
->>>>>>>>> Temporary merge branch 2
+
+
+# =============================================================================
+# Office Automation Nodes
+# =============================================================================
+
+class VisualExcelOpenNode(VisualNode):
+    """Visual representation of ExcelOpenNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Open"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Excel Open node."""
+        super().__init__()
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("show_window", True, widget_type=1, tab="config")
+        self.create_property("read_only", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("file_path")
+        self.add_output("exec_out")
+        self.add_output("workbook")
+        self.add_output("success")
+
+
+class VisualExcelReadCellNode(VisualNode):
+    """Visual representation of ExcelReadCellNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Read Cell"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Excel Read Cell node."""
+        super().__init__()
+        self.add_text_input("cell_address", "Cell Address", text="A1", tab="inputs")
+        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("cell_address")
+        self.add_input("sheet_name")
+        self.add_output("exec_out")
+        self.add_output("value")
+        self.add_output("success")
+
+
+class VisualExcelWriteCellNode(VisualNode):
+    """Visual representation of ExcelWriteCellNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Write Cell"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Excel Write Cell node."""
+        super().__init__()
+        self.add_text_input("cell_address", "Cell Address", text="A1", tab="inputs")
+        self.add_text_input("value", "Value", text="", tab="inputs")
+        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("cell_address")
+        self.add_input("value")
+        self.add_input("sheet_name")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualExcelGetRangeNode(VisualNode):
+    """Visual representation of ExcelGetRangeNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Get Range"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Excel Get Range node."""
+        super().__init__()
+        self.add_text_input("range_address", "Range Address", text="A1:B10", tab="inputs")
+        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_input("range_address")
+        self.add_input("sheet_name")
+        self.add_output("exec_out")
+        self.add_output("data")
+        self.add_output("success")
+
+
+class VisualExcelCloseNode(VisualNode):
+    """Visual representation of ExcelCloseNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Excel Close"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Excel Close node."""
+        super().__init__()
+        self.create_property("save_changes", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("workbook")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualWordOpenNode(VisualNode):
+    """Visual representation of WordOpenNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Open"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Word Open node."""
+        super().__init__()
+        self.add_text_input("file_path", "File Path", text="", tab="inputs")
+        self.create_property("show_window", True, widget_type=1, tab="config")
+        self.create_property("read_only", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("file_path")
+        self.add_output("exec_out")
+        self.add_output("document")
+        self.add_output("success")
+
+
+class VisualWordGetTextNode(VisualNode):
+    """Visual representation of WordGetTextNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Get Text"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_output("exec_out")
+        self.add_output("text")
+        self.add_output("success")
+
+
+class VisualWordReplaceTextNode(VisualNode):
+    """Visual representation of WordReplaceTextNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Replace Text"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Word Replace Text node."""
+        super().__init__()
+        self.add_text_input("find_text", "Find Text", text="", tab="inputs")
+        self.add_text_input("replace_text", "Replace Text", text="", tab="inputs")
+        self.create_property("match_case", False, widget_type=1, tab="config")
+        self.create_property("whole_word", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_input("find_text")
+        self.add_input("replace_text")
+        self.add_output("exec_out")
+        self.add_output("replacements")
+        self.add_output("success")
+
+
+class VisualWordCloseNode(VisualNode):
+    """Visual representation of WordCloseNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Word Close"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Word Close node."""
+        super().__init__()
+        self.create_property("save_changes", True, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("document")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualOutlookSendEmailNode(VisualNode):
+    """Visual representation of OutlookSendEmailNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Send Email"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Outlook Send Email node."""
+        super().__init__()
+        self.add_text_input("to", "To", text="", tab="inputs")
+        self.add_text_input("subject", "Subject", text="", tab="inputs")
+        self.add_text_input("body", "Body", text="", tab="inputs")
+        self.add_text_input("cc", "CC", text="", tab="inputs")
+        self.add_text_input("bcc", "BCC", text="", tab="inputs")
+        self.create_property("is_html", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("to")
+        self.add_input("subject")
+        self.add_input("body")
+        self.add_input("attachments")
+        self.add_output("exec_out")
+        self.add_output("success")
+
+
+class VisualOutlookReadEmailsNode(VisualNode):
+    """Visual representation of OutlookReadEmailsNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Read Emails"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Outlook Read Emails node."""
+        super().__init__()
+        self.add_text_input("folder", "Folder", text="Inbox", tab="inputs")
+        self.create_property("count", 10, widget_type=2, tab="config")
+        self.create_property("unread_only", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("folder")
+        self.add_output("exec_out")
+        self.add_output("emails")
+        self.add_output("count")
+        self.add_output("success")
+
+
+class VisualOutlookGetInboxCountNode(VisualNode):
+    """Visual representation of OutlookGetInboxCountNode."""
+
+    __identifier__ = "casare_rpa.office"
+    NODE_NAME = "Outlook Get Inbox Count"
+    NODE_CATEGORY = "office_automation"
+    CASARE_NODE_MODULE = "office"
+
+    def __init__(self) -> None:
+        """Initialize Outlook Get Inbox Count node."""
+        super().__init__()
+        self.create_property("unread_only", False, widget_type=1, tab="config")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_output("exec_out")
+        self.add_output("total_count")
+        self.add_output("unread_count")
+        self.add_output("success")
 
 
 # Dynamic node discovery

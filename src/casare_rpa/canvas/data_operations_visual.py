@@ -17,25 +17,17 @@ from ..nodes.data_operation_nodes import (
 
 class VisualConcatenateNode(VisualNode):
     """Visual representation of ConcatenateNode."""
-
+    
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Concatenate Strings'
-<<<<<<<<< Temporary merge branch 1
-    NODE_CATEGORY = 'data_operations'
-    
-=========
     NODE_CATEGORY = 'Data Operations'
-
->>>>>>>>> Temporary merge branch 2
+    
     def __init__(self):
         super().__init__()
-        self.add_text_input('separator', 'Separator', tab='properties')
-
-    def setup_ports(self):
-        """Setup ports for concatenate node."""
         self.add_input('string_1')
         self.add_input('string_2')
         self.add_output('result')
+        self.create_property('separator', '', widget_type='text_input')
 
     def get_node_class(self):
         return ConcatenateNode
@@ -45,7 +37,7 @@ class VisualFormatStringNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Format String'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -61,7 +53,7 @@ class VisualRegexMatchNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Match'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -80,7 +72,7 @@ class VisualRegexReplaceNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Regex Replace'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -98,25 +90,20 @@ class VisualMathOperationNode(VisualNode):
 
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Math Operation'
-<<<<<<<<< Temporary merge branch 1
-    NODE_CATEGORY = 'data_operations'
-    
-=========
     NODE_CATEGORY = 'Data Operations'
 
->>>>>>>>> Temporary merge branch 2
     def __init__(self):
         super().__init__()
-        self.add_combo_menu(
-            'operation', 'Operation',
-            items=['add', 'subtract', 'multiply', 'divide', 'power', 'modulo'],
-            tab='properties'
-        )
+        self.add_combo_menu('operation', 'Operation', items=[
+            'add', 'subtract', 'multiply', 'divide', 'power', 'modulo'
+        ], tab='inputs')
 
     def setup_ports(self):
-        """Setup ports for math operation node."""
+        """Setup ports."""
+        self.add_input('exec_in')
         self.add_input('a')
         self.add_input('b')
+        self.add_output('exec_out')
         self.add_output('result')
 
     def get_node_class(self):
@@ -127,28 +114,25 @@ class VisualComparisonNode(VisualNode):
 
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Compare Values'
-<<<<<<<<< Temporary merge branch 1
-    NODE_CATEGORY = 'data_operations'
-    
-=========
     NODE_CATEGORY = 'Data Operations'
 
->>>>>>>>> Temporary merge branch 2
     def __init__(self):
         super().__init__()
-        # Dropdown with common operators
-        self.add_combo_menu(
-            'operator', 'Operator',
-            items=['==', '!=', '>', '<', '>=', '<=', 'and', 'or', 'in', 'not in', 'is', 'is not'],
-            tab='properties'
-        )
-        # Text input for custom operator (overrides dropdown if not empty)
-        self.add_text_input('custom_operator', 'Custom Operator', tab='properties')
+        self.add_combo_menu('operator', 'Operator', items=[
+            'equals (==)',
+            'not equals (!=)',
+            'greater than (>)',
+            'less than (<)',
+            'greater or equal (>=)',
+            'less or equal (<=)'
+        ], tab='inputs')
 
     def setup_ports(self):
-        """Setup ports for comparison node."""
+        """Setup ports."""
+        self.add_input('exec_in')
         self.add_input('a')
         self.add_input('b')
+        self.add_output('exec_out')
         self.add_output('result')
 
     def get_node_class(self):
@@ -159,7 +143,7 @@ class VisualCreateListNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Create List'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -176,7 +160,7 @@ class VisualListGetItemNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get List Item'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -192,7 +176,7 @@ class VisualJsonParseNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Parse JSON'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()
@@ -207,7 +191,7 @@ class VisualGetPropertyNode(VisualNode):
     
     __identifier__ = 'casare_rpa.data'
     NODE_NAME = 'Get Property'
-    NODE_CATEGORY = 'data_operations'
+    NODE_CATEGORY = 'Data Operations'
     
     def __init__(self):
         super().__init__()

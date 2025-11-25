@@ -9,12 +9,22 @@ from typing import Optional
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor, QKeyEvent
-from PySide6.QtCore import Qt, QObject, QEvent
+from PySide6.QtCore import Qt, QObject, QEvent, Signal
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.qgraphics.node_base import NodeItem
 
+from loguru import logger
+
 from ..utils.config import GUI_THEME
 from .auto_connect import AutoConnectManager
+
+# Import connection validator for strict type checking
+try:
+    from .connection_validator import ConnectionValidator, get_connection_validator
+    HAS_CONNECTION_VALIDATOR = True
+except ImportError:
+    HAS_CONNECTION_VALIDATOR = False
+    logger.warning("ConnectionValidator not available - connection validation disabled")
 
 
 class TooltipBlocker(QObject):
@@ -84,11 +94,16 @@ NodeItem.paint = _patched_paint
 class NodeGraphWidget(QWidget):
     """
     Widget wrapper for NodeGraphQt's NodeGraph.
-    
+
     Provides a Qt widget container for the node graph editor
     with custom styling and configuration.
+
+    Now includes connection validation with strict type checking.
     """
-    
+
+    # Signal emitted when an invalid connection is blocked
+    connection_blocked = Signal(str)  # Error message
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the node graph widget.
@@ -100,12 +115,17 @@ class NodeGraphWidget(QWidget):
         
         # Create node graph
         self._graph = NodeGraph()
-        
+
         # Configure graph
         self._setup_graph()
-        
+
         # Create auto-connect manager
         self._auto_connect = AutoConnectManager(self._graph, self)
+
+        # Setup connection validator for strict type checking
+        self._validator = get_connection_validator() if HAS_CONNECTION_VALIDATOR else None
+        if self._validator:
+            self._setup_connection_validation()
         
         # Create layout
         layout = QVBoxLayout(self)
@@ -319,8 +339,7 @@ class NodeGraphWidget(QWidget):
                 context_menu = self._graph.get_context_menu('graph')
                 if context_menu and context_menu.qmenu:
                     context_menu.qmenu._initial_scene_pos = scene_pos
-                    from loguru import logger
-                    logger.info(f"🖱️ Right-click captured at scene position: ({scene_pos.x()}, {scene_pos.y()})")
+                    logger.info(f"Right-click captured at scene position: ({scene_pos.x()}, {scene_pos.y()})")
 
                 # Let the event propagate to show the menu
                 return False
@@ -344,3 +363,65 @@ class NodeGraphWidget(QWidget):
                 return True  # Event handled
 
         return super().eventFilter(obj, event)
+
+    # =========================================================================
+    # CONNECTION VALIDATION
+    # =========================================================================
+
+    def _setup_connection_validation(self) -> None:
+        """
+        Setup connection validation hooks.
+
+        Connects to the port_connected signal to validate connections
+        and block invalid ones.
+        """
+        try:
+            # Connect to the port_connected signal if available
+            if hasattr(self._graph, 'port_connected'):
+                self._graph.port_connected.connect(self._on_port_connected)
+                logger.debug("Connection validation enabled")
+        except Exception as e:
+            logger.warning(f"Could not setup connection validation: {e}")
+
+    def _on_port_connected(self, input_port, output_port) -> None:
+        """
+        Handle port connection event.
+
+        Validates the connection and disconnects if types are incompatible.
+
+        Args:
+            input_port: The input (target) port
+            output_port: The output (source) port
+        """
+        if not self._validator:
+            return
+
+        try:
+            # Get the node objects
+            source_node = output_port.node()
+            target_node = input_port.node()
+
+            # Check if nodes support typed ports
+            if not hasattr(source_node, 'get_port_type') or not hasattr(target_node, 'get_port_type'):
+                return  # Can't validate, allow connection
+
+            # Validate the connection
+            validation = self._validator.validate_connection(
+                source_node, output_port.name(),
+                target_node, input_port.name()
+            )
+
+            if not validation.is_valid:
+                # Block the connection - disconnect immediately
+                logger.warning(f"Connection blocked: {validation.message}")
+
+                try:
+                    output_port.disconnect_from(input_port)
+                except Exception as e:
+                    logger.error(f"Failed to disconnect invalid connection: {e}")
+
+                # Emit signal for UI feedback
+                self.connection_blocked.emit(validation.message)
+
+        except Exception as e:
+            logger.debug(f"Connection validation error: {e}")

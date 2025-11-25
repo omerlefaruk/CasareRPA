@@ -13,6 +13,7 @@ from .types import (
     Connection,
     NodeId,
     PortId,
+    SerializedFrame,
     SerializedNode,
     SerializedWorkflow,
     SCHEMA_VERSION,
@@ -152,6 +153,7 @@ class WorkflowSchema:
         self.metadata = metadata or WorkflowMetadata(name="Untitled Workflow")
         self.nodes: Dict[NodeId, SerializedNode] = {}
         self.connections: List[NodeConnection] = []
+        self.frames: List[SerializedFrame] = []  # Node frames/groups
         self.variables: Dict[str, Any] = {}  # Global workflow variables
         self.settings: Dict[str, Any] = {
             "stop_on_error": True,
@@ -283,6 +285,7 @@ class WorkflowSchema:
             "metadata": self.metadata.to_dict(),
             "nodes": self.nodes,
             "connections": [conn.to_dict() for conn in self.connections],
+            "frames": self.frames,
             "variables": self.variables,
             "settings": self.settings,
         }
@@ -307,6 +310,9 @@ class WorkflowSchema:
         # Load connections
         for conn_data in data.get("connections", []):
             workflow.connections.append(NodeConnection.from_dict(conn_data))
+
+        # Load frames
+        workflow.frames = data.get("frames", [])
 
         # Load variables and settings
         workflow.variables = data.get("variables", {})
