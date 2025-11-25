@@ -324,17 +324,44 @@ class CasareNodeItem(NodeItem):
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
 
     def _draw_text(self, painter, rect):
-        """Draw node name text."""
-        text_rect = QRectF(rect.left() + 45, rect.top() + 10, rect.width() - 55, 30)
-        
-        painter.setPen(QColor(220, 220, 220))  # Light gray text
-        font = QFont("Segoe UI", 10)
+        """Draw node name with header background."""
+        # Header dimensions
+        header_height = 26
+        radius = 8.0
+
+        # Draw header background (reddish/maroon color)
+        header_rect = QRectF(rect.left(), rect.top(), rect.width(), header_height)
+        header_path = QPainterPath()
+        # Only round top corners
+        header_path.moveTo(header_rect.left() + radius, header_rect.top())
+        header_path.lineTo(header_rect.right() - radius, header_rect.top())
+        header_path.arcTo(header_rect.right() - radius * 2, header_rect.top(), radius * 2, radius * 2, 90, -90)
+        header_path.lineTo(header_rect.right(), header_rect.bottom())
+        header_path.lineTo(header_rect.left(), header_rect.bottom())
+        header_path.lineTo(header_rect.left(), header_rect.top() + radius)
+        header_path.arcTo(header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90)
+        header_path.closeSubpath()
+
+        # Header color (dark reddish/maroon)
+        header_color = QColor(85, 45, 50)
+        painter.fillPath(header_path, QBrush(header_color))
+
+        # Draw separator line (reddish tint)
+        painter.setPen(QPen(QColor(100, 55, 60), 1))
+        painter.drawLine(
+            QPointF(header_rect.left(), header_rect.bottom()),
+            QPointF(header_rect.right(), header_rect.bottom())
+        )
+
+        # Draw node name (centered)
+        painter.setPen(QColor(240, 235, 235))  # Slightly warm white text
+        font = QFont("Segoe UI", 9)
         font.setWeight(QFont.Weight.Medium)
         painter.setFont(font)
-        
+
         # Get node name
         node_name = self.name if hasattr(self, 'name') else "Node"
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, node_name)
+        painter.drawText(header_rect, Qt.AlignmentFlag.AlignCenter, node_name)
     
     def set_running(self, running: bool):
         """
