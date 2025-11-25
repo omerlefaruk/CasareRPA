@@ -317,7 +317,51 @@ class NodeGraphWidget(QWidget):
 
         # Fix MMB panning over items
         self._fix_mmb_panning()
-    
+
+    def _patch_viewer_for_connection_search(self):
+        """
+        Monkey-patch the viewer's mouseReleaseEvent to detect connection drops.
+        """
+        viewer = self._graph.viewer()
+        original_mouse_release = viewer.mouseReleaseEvent
+
+        def patched_mouse_release(event):
+            # Check if LMB release with live pipe (MUST check BEFORE calling original)
+            if event.button() == Qt.MouseButton.LeftButton:
+                # Check for _LIVE_PIPE (uppercase!) visibility
+                if hasattr(viewer, '_LIVE_PIPE') and viewer._LIVE_PIPE.isVisible():
+                    logger.debug("Live pipe detected during mouse release")
+
+                    # Get scene position where mouse was released
+                    scene_pos = viewer.mapToScene(event.pos())
+                    logger.debug(f"Release position: ({scene_pos.x()}, {scene_pos.y()})")
+
+                    # Check if released on empty space (no port underneath)
+                    items = viewer.scene().items(scene_pos)
+                    has_port = any(hasattr(item, 'port') and item.port for item in items)
+
+                    logger.debug(f"Has port at release: {has_port}")
+
+                    if not has_port:
+                        # Save source port BEFORE calling original (which will clear it)
+                        source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
+
+                        logger.debug(f"Source port: {source_port}")
+
+                        if source_port:
+                            logger.info(f"Connection dropped in empty space, showing search")
+                            # Call original first to clean up the pipe
+                            original_mouse_release(event)
+                            # Then show search
+                            self._show_connection_search(source_port, scene_pos)
+                            return
+
+            # Call original handler
+            original_mouse_release(event)
+
+        viewer.mouseReleaseEvent = patched_mouse_release
+        logger.debug("Patched viewer mouseReleaseEvent for connection search")
+
     def _fix_mmb_panning(self):
         """
         Monkey-patch the viewer's mousePressEvent to allow panning with MMB
@@ -595,55 +639,6 @@ class NodeGraphWidget(QWidget):
 
                 # Let the event propagate to show the menu
                 return False
-
-        # Detect connection drag release in empty space
-        if event.type() == event.Type.MouseButtonRelease:
-            if event.button() == Qt.MouseButton.LeftButton:
-                viewer = self._graph.viewer()
-
-                # Debug: Check viewer attributes
-                logger.debug(f"Mouse release detected. Has _live_pipe: {hasattr(viewer, '_live_pipe')}")
-                if hasattr(viewer, '_live_pipe'):
-                    logger.debug(f"_live_pipe value: {viewer._live_pipe}")
-
-                # Check if there's a live pipe being dragged
-                if hasattr(viewer, '_live_pipe') and viewer._live_pipe:
-                    logger.debug("Live pipe detected during mouse release")
-
-                    # Get the scene position where mouse was released
-                    if hasattr(event, 'pos'):
-                        view_pos = event.pos()
-                    else:
-                        view_pos = event.position().toPoint()
-                    scene_pos = viewer.mapToScene(view_pos)
-
-                    logger.debug(f"Release position: {scene_pos.x()}, {scene_pos.y()}")
-
-                    # Check if released on empty space (not on a port)
-                    items_at_pos = viewer.scene().items(scene_pos)
-                    logger.debug(f"Items at position: {len(items_at_pos)}")
-
-                    port_at_pos = None
-                    for item in items_at_pos:
-                        logger.debug(f"Item type: {type(item).__name__}, has port: {hasattr(item, 'port')}")
-                        if hasattr(item, 'port') and item.port:
-                            port_at_pos = item.port
-                            break
-
-                    # If no port at release position, show search
-                    if not port_at_pos:
-                        logger.debug("No port at release position - showing search")
-                        # Get the source port from the live pipe
-                        source_port = getattr(viewer._live_pipe, 'output_port', None) or getattr(viewer._live_pipe, 'input_port', None)
-
-                        logger.debug(f"Source port: {source_port}")
-                        if source_port:
-                            logger.info(f"Connection dropped in empty space, showing search at ({scene_pos.x()}, {scene_pos.y()})")
-                            self._show_connection_search(source_port, scene_pos)
-                            # Let the pipe release complete normally
-                            return False
-                    else:
-                        logger.debug(f"Port found at release position: {port_at_pos}")
 
         if event.type() == event.Type.KeyPress:
             key_event = event
