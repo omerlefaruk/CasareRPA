@@ -367,9 +367,17 @@ class NodeGraphWidget(QWidget):
                 return True  # Event handled
 
             # Handle X key or Delete key to delete selected frames
-            if key_event.key() in (Qt.Key.Key_X, Qt.Key.Key_Delete):
+            # Note: X key (88) and Delete key
+            if key_event.key() == Qt.Key.Key_X or key_event.key() == Qt.Key.Key_Delete:
+                logger.debug(f"Frame delete key pressed: {key_event.key()}")
                 if self._delete_selected_frames():
                     return True  # Event handled if frames were deleted
+
+            # Also handle lowercase 'x' (key code 88)
+            if key_event.text().lower() == 'x':
+                logger.debug(f"X key text detected")
+                if self._delete_selected_frames():
+                    return True
 
         return super().eventFilter(obj, event)
 

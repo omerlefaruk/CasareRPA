@@ -545,32 +545,24 @@ class NodeFrame(QGraphicsRectItem):
                     logger.debug(f"Error checking node bounds: {e}")
 
     def _hide_internal_connections(self, node) -> None:
-        """Hide connections between internal nodes (keep external visible)."""
+        """Hide ALL connections from a node when it's being hidden."""
         if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
             return
 
         try:
-            # Hide connections from input ports
+            # Hide ALL connections from input ports (node is hidden, so all its pipes should be hidden)
             for port in node.input_ports():
-                for connected_port in port.connected_ports():
-                    connected_node = connected_port.node()
-                    # Only hide if connected node is also in this frame
-                    if connected_node in self.contained_nodes:
-                        # Hide the pipe
-                        if hasattr(port, 'view') and port.view:
-                            for pipe in port.view.connected_pipes():
-                                pipe.setVisible(False)
+                if hasattr(port, 'view') and port.view:
+                    for pipe in port.view.connected_pipes():
+                        pipe.setVisible(False)
 
-            # Hide connections from output ports
+            # Hide ALL connections from output ports
             for port in node.output_ports():
-                for connected_port in port.connected_ports():
-                    connected_node = connected_port.node()
-                    if connected_node in self.contained_nodes:
-                        if hasattr(port, 'view') and port.view:
-                            for pipe in port.view.connected_pipes():
-                                pipe.setVisible(False)
+                if hasattr(port, 'view') and port.view:
+                    for pipe in port.view.connected_pipes():
+                        pipe.setVisible(False)
         except Exception as e:
-            logger.debug(f"Error hiding internal connections: {e}")
+            logger.debug(f"Error hiding connections: {e}")
 
     def _show_internal_connections(self, node) -> None:
         """Show all connections for a node."""
@@ -713,7 +705,7 @@ class NodeFrame(QGraphicsRectItem):
         if node not in self.contained_nodes:
             self.contained_nodes.append(node)
             node_name = node.name() if hasattr(node, 'name') else str(node)
-            logger.info(f"Added node '{node_name}' to frame '{self.frame_title}' (total: {len(self.contained_nodes)})")
+            logger.debug(f"Added node '{node_name}' to frame '{self.frame_title}' (total: {len(self.contained_nodes)})")
             # Store the node's relative position to the frame
             if hasattr(node, 'pos'):
                 node_pos = node.pos()
@@ -863,14 +855,14 @@ class NodeFrame(QGraphicsRectItem):
 
     def _check_node_bounds(self):
         """Check node bounds for ungrouping/grouping and highlight during drag."""
-        logger.info(f"⏰ Timer tick - checking bounds for frame '{self.frame_title}'")
+        # Skip bounds checking when collapsed - nodes are hidden and shouldn't be ungrouped
+        if self._is_collapsed:
+            return
 
         if not self.scene():
-            logger.info("❌ No scene, skipping check")
             return
 
         frame_rect = self.sceneBoundingRect()
-        logger.info(f"📐 Frame rect: {frame_rect.width()}x{frame_rect.height()}")
 
         # Get all nodes in the scene
         all_nodes = []
@@ -923,7 +915,6 @@ class NodeFrame(QGraphicsRectItem):
                             # If more than 40% of the node is inside the frame, highlight
                             if overlap_ratio > 0.4:
                                 has_hovering_node = True
-                                logger.info(f"🔍 Node hovering over frame: overlap={overlap_ratio:.1%}")
 
                                 # Check if node position changed (being dragged)
                                 if node_id in self._last_overlap_check:
@@ -935,15 +926,9 @@ class NodeFrame(QGraphicsRectItem):
                                     if pos_changed and overlap_ratio > 0.5:
                                         if not self._is_moving:
                                             self.add_node(node)
-                                            logger.info(f"✅ Node added to frame by dragging (overlap: {overlap_ratio:.1%})")
                                             # Remove from tracking after adding
                                             if node_id in self._last_overlap_check:
                                                 del self._last_overlap_check[node_id]
-                                    else:
-                                        logger.info(f"📍 Node tracked but not moving enough: pos_changed={pos_changed}, overlap={overlap_ratio:.1%}")
-                                else:
-                                    # First time seeing this node overlap - just track it
-                                    logger.info(f"🆕 Started tracking node at position {current_pos}")
 
                                 # Update position tracking
                                 self._last_overlap_check[node_id] = (current_pos, overlap_ratio)
@@ -955,7 +940,6 @@ class NodeFrame(QGraphicsRectItem):
         # Update highlight state
         if self._is_drop_target != has_hovering_node:
             self._is_drop_target = has_hovering_node
-            logger.info(f"💡 Frame highlight state changed: {has_hovering_node}")
             self.update()  # Trigger repaint
 
     def _edit_title(self):
@@ -1009,19 +993,14 @@ class NodeFrame(QGraphicsRectItem):
 
     def keyPressEvent(self, event):
         """Handle key press events."""
-        logger.info(f"🔑 Frame keyPressEvent: key={event.key()}, Qt.Key_X={Qt.Key.Key_X}")
-
         if event.key() == Qt.Key.Key_X:
-            logger.info(f"❌ X key pressed - deleting frame '{self.frame_title}'")
             self._delete_frame()
             event.accept()
         elif event.key() == Qt.Key.Key_C:
             # Toggle collapse with 'C' key
-            logger.info(f"🔄 C key pressed - toggling collapse for frame '{self.frame_title}'")
             self.toggle_collapse()
             event.accept()
         else:
-            logger.info(f"⏩ Other key pressed, passing to parent")
             super().keyPressEvent(event)
 
     def _delete_frame(self):
