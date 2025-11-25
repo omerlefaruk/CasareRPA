@@ -267,6 +267,7 @@ class MessageBoxNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("message", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("accepted", PortType.OUTPUT, DataType.BOOLEAN)
@@ -277,13 +278,17 @@ class MessageBoxNode(BaseNode):
         try:
             # Get values from config (set by visual node widgets)
             title = str(self.config.get("title", "Message"))
-            message = str(self.config.get("message", ""))
             icon_type = self.config.get("icon_type", "information")
             buttons = self.config.get("buttons", "ok")
 
+            # Get message from input port first, fallback to config
+            message = self.get_input_value("message")
+            if message is None:
+                message = str(self.config.get("message", ""))
+
             # Resolve {{variable}} patterns in title and message
             title = context.resolve_value(title)
-            message = context.resolve_value(message)
+            message = context.resolve_value(str(message))
 
             result = "ok"
             accepted = True

@@ -592,10 +592,11 @@ class VisualMessageBoxNode(VisualNode):
         self.add_combo_menu("buttons", "Buttons", items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"], tab="properties")
 
     def setup_ports(self) -> None:
-        self.add_exec_input("exec_in")
-        self.add_exec_output("exec_out")
-        self.add_typed_output("result", DataType.STRING)
-        self.add_typed_output("accepted", DataType.BOOLEAN)
+        self.add_input("exec_in")
+        self.add_input("message")
+        self.add_output("exec_out")
+        self.add_output("result")
+        self.add_output("accepted")
 
 
 class VisualInputDialogNode(VisualNode):

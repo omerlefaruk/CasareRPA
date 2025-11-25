@@ -519,6 +519,7 @@ class VisualWaitForElementNode(VisualNode):
         self.add_input("selector")
         self.add_output("exec_out")
         self.add_output("page")
+        self.add_output("found")
 
 
 class VisualWaitForNavigationNode(VisualNode):
