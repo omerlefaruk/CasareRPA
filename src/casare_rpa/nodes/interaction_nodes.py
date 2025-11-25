@@ -105,7 +105,15 @@ class ClickElementNode(BaseNode):
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
 
             logger.info(f"Clicking element: {normalized_selector}")
 
@@ -119,13 +127,23 @@ class ClickElementNode(BaseNode):
 
             # Click count (for double-click)
             click_count = self.config.get("click_count", 1)
-            if click_count and int(click_count) > 1:
-                click_options["click_count"] = int(click_count)
+            if click_count and str(click_count).strip():
+                try:
+                    click_count_int = int(click_count)
+                    if click_count_int > 1:
+                        click_options["click_count"] = click_count_int
+                except (ValueError, TypeError):
+                    pass
 
             # Delay between mousedown and mouseup
             delay = self.config.get("delay", 0)
-            if delay and int(delay) > 0:
-                click_options["delay"] = int(delay)
+            if delay and str(delay).strip():
+                try:
+                    delay_int = int(delay)
+                    if delay_int > 0:
+                        click_options["delay"] = delay_int
+                except (ValueError, TypeError):
+                    pass
 
             # Force click (bypass actionability checks)
             if self.config.get("force", False):
@@ -286,8 +304,25 @@ class TypeTextNode(BaseNode):
             if text is None:
                 text = ""
             
-            delay = self.config.get("delay", 0)
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Safely parse delay with default
+            delay_val = self.config.get("delay")
+            if delay_val is None or delay_val == "":
+                delay = 0
+            else:
+                try:
+                    delay = int(delay_val)
+                except (ValueError, TypeError):
+                    delay = 0
+
+            # Safely parse timeout with default
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
             clear_first = self.config.get("clear_first", True)
             press_sequentially = self.config.get("press_sequentially", False)
             force = self.config.get("force", False)
@@ -451,8 +486,15 @@ class SelectDropdownNode(BaseNode):
             if not value:
                 raise ValueError("Value is required")
 
-            # Get Playwright options from config
-            timeout = self.config.get("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get Playwright options from config - safely parse timeout
+            timeout_val = self.config.get("timeout")
+            if timeout_val is None or timeout_val == "":
+                timeout = DEFAULT_NODE_TIMEOUT * 1000
+            else:
+                try:
+                    timeout = int(timeout_val)
+                except (ValueError, TypeError):
+                    timeout = DEFAULT_NODE_TIMEOUT * 1000
             select_by = self.config.get("select_by", "value")
 
             logger.info(f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})")
