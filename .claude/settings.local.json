@@ -1,12 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(\"C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe\" /DAppVersion=1.0.0 /DSourceDir=....dist /DOutputDir=..output \"C:\\Users\\Rau\\Desktop\\CasareRPA\\installer\\inno\\casarerpa-dev.iss\")",
-      "Bash(\"C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe\" casarerpa-dev.iss)",
-      "Bash(xargs:*)",
-      "Bash(python:*)",
-      "Bash(pyinstaller:*)",
-      "Bash(timeout:*)"
+      "Bash(dir \"C:\\Users\\Rau\\.claude\\plans\")"
     ],
     "deny": [],
     "ask": []

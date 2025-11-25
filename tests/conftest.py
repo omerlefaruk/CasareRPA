@@ -408,3 +408,518 @@ def get_menu_action(window, menu_name: str, action_text: str):
                 if action.text() == action_text:
                     return action
     return None
+
+
+# =============================================================================
+# Chaos Testing Fixtures
+# =============================================================================
+
+class NetworkFailureSimulator:
+    """Simulate various network failure scenarios."""
+
+    def __init__(self):
+        self.failure_mode = None
+        self.failure_count = 0
+        self.max_failures = float('inf')
+
+    def set_failure_mode(self, mode: str, max_failures: int = float('inf')):
+        """Set the failure mode for network operations."""
+        self.failure_mode = mode
+        self.max_failures = max_failures
+        self.failure_count = 0
+
+    def reset(self):
+        """Reset the simulator."""
+        self.failure_mode = None
+        self.failure_count = 0
+        self.max_failures = float('inf')
+
+    async def maybe_fail(self):
+        """Potentially raise an exception based on failure mode."""
+        if self.failure_mode and self.failure_count < self.max_failures:
+            self.failure_count += 1
+            if self.failure_mode == "timeout":
+                raise asyncio.TimeoutError("Simulated network timeout")
+            elif self.failure_mode == "connection_refused":
+                raise ConnectionRefusedError("Simulated connection refused")
+            elif self.failure_mode == "connection_reset":
+                raise ConnectionResetError("Simulated connection reset")
+            elif self.failure_mode == "dns_failure":
+                raise OSError("Simulated DNS lookup failed")
+            elif self.failure_mode == "ssl_error":
+                import ssl
+                raise ssl.SSLError("Simulated SSL certificate error")
+
+
+@pytest.fixture
+def network_failure():
+    """Fixture for simulating network failures."""
+    simulator = NetworkFailureSimulator()
+    yield simulator
+    simulator.reset()
+
+
+class BrowserCrashSimulator:
+    """Simulate browser crash scenarios."""
+
+    def __init__(self):
+        self.crash_on_next = False
+        self.crash_after_calls = None
+        self.call_count = 0
+        self.crash_reason = "Browser disconnected"
+
+    def set_crash_on_next(self, reason: str = "Browser disconnected"):
+        """Crash on next browser operation."""
+        self.crash_on_next = True
+        self.crash_reason = reason
+
+    def set_crash_after_calls(self, count: int, reason: str = "Browser disconnected"):
+        """Crash after N successful calls."""
+        self.crash_after_calls = count
+        self.call_count = 0
+        self.crash_reason = reason
+
+    def reset(self):
+        """Reset the simulator."""
+        self.crash_on_next = False
+        self.crash_after_calls = None
+        self.call_count = 0
+
+    def check_and_maybe_crash(self):
+        """Check if we should crash and raise if so."""
+        from playwright.async_api import Error as PlaywrightError
+
+        if self.crash_on_next:
+            self.crash_on_next = False
+            raise PlaywrightError(self.crash_reason)
+
+        if self.crash_after_calls is not None:
+            self.call_count += 1
+            if self.call_count >= self.crash_after_calls:
+                self.crash_after_calls = None
+                raise PlaywrightError(self.crash_reason)
+
+
+@pytest.fixture
+def browser_crash():
+    """Fixture for simulating browser crashes."""
+    simulator = BrowserCrashSimulator()
+    yield simulator
+    simulator.reset()
+
+
+@pytest.fixture
+def crashing_mock_page(browser_crash):
+    """Create a mock page that can simulate crashes."""
+    page = MagicMock()
+
+    async def maybe_crash_then(*args, **kwargs):
+        browser_crash.check_and_maybe_crash()
+        return MagicMock()
+
+    async def maybe_crash_return_text(*args, **kwargs):
+        browser_crash.check_and_maybe_crash()
+        return "Test content"
+
+    page.goto = AsyncMock(side_effect=maybe_crash_then)
+    page.click = AsyncMock(side_effect=maybe_crash_then)
+    page.fill = AsyncMock(side_effect=maybe_crash_then)
+    page.wait_for_selector = AsyncMock(side_effect=maybe_crash_then)
+    page.query_selector = AsyncMock(side_effect=maybe_crash_then)
+    page.content = AsyncMock(side_effect=maybe_crash_return_text)
+    page.title = AsyncMock(side_effect=maybe_crash_return_text)
+    page.close = AsyncMock()
+    page.url = "https://example.com"
+
+    return page
+
+
+class SelectorFailureSimulator:
+    """Simulate selector/element failures."""
+
+    def __init__(self):
+        self.failure_mode = None
+        self.target_selector = None
+
+    def set_selector_not_found(self, selector: str = None):
+        """Simulate element not found for specific or all selectors."""
+        self.failure_mode = "not_found"
+        self.target_selector = selector
+
+    def set_element_stale(self, selector: str = None):
+        """Simulate stale element reference."""
+        self.failure_mode = "stale"
+        self.target_selector = selector
+
+    def set_element_detached(self, selector: str = None):
+        """Simulate detached element."""
+        self.failure_mode = "detached"
+        self.target_selector = selector
+
+    def reset(self):
+        """Reset the simulator."""
+        self.failure_mode = None
+        self.target_selector = None
+
+    def should_fail(self, selector: str) -> bool:
+        """Check if the given selector should fail."""
+        if self.failure_mode is None:
+            return False
+        if self.target_selector is None:
+            return True
+        return selector == self.target_selector
+
+    def get_error(self, selector: str):
+        """Get the error to raise for a failed selector."""
+        from playwright.async_api import TimeoutError as PWTimeoutError
+
+        if self.failure_mode == "not_found":
+            return PWTimeoutError(f"Element not found: {selector}")
+        elif self.failure_mode == "stale":
+            from playwright.async_api import Error as PlaywrightError
+            return PlaywrightError(f"Element is stale: {selector}")
+        elif self.failure_mode == "detached":
+            from playwright.async_api import Error as PlaywrightError
+            return PlaywrightError(f"Element is detached from DOM: {selector}")
+        return None
+
+
+@pytest.fixture
+def selector_failure():
+    """Fixture for simulating selector failures."""
+    simulator = SelectorFailureSimulator()
+    yield simulator
+    simulator.reset()
+
+
+@pytest.fixture
+def failing_mock_page(selector_failure):
+    """Create a mock page with controllable selector failures."""
+    page = MagicMock()
+
+    async def wait_with_failure(selector, **kwargs):
+        if selector_failure.should_fail(selector):
+            raise selector_failure.get_error(selector)
+        element = MagicMock()
+        element.click = AsyncMock()
+        element.fill = AsyncMock()
+        element.text_content = AsyncMock(return_value="Text")
+        return element
+
+    async def query_with_failure(selector):
+        if selector_failure.should_fail(selector):
+            return None  # query_selector returns None when not found
+        element = MagicMock()
+        element.click = AsyncMock()
+        element.fill = AsyncMock()
+        element.text_content = AsyncMock(return_value="Text")
+        return element
+
+    page.goto = AsyncMock()
+    page.click = AsyncMock()
+    page.fill = AsyncMock()
+    page.wait_for_selector = AsyncMock(side_effect=wait_with_failure)
+    page.query_selector = AsyncMock(side_effect=query_with_failure)
+    page.query_selector_all = AsyncMock(return_value=[])
+    page.content = AsyncMock(return_value="<html></html>")
+    page.title = AsyncMock(return_value="Test")
+    page.close = AsyncMock()
+    page.url = "https://example.com"
+
+    return page
+
+
+# Desktop automation mocks
+class DesktopAutomationMock:
+    """Mock for Windows desktop automation (uiautomation)."""
+
+    def __init__(self):
+        self.windows = {}
+        self.fail_on_find = False
+        self.fail_on_click = False
+        self.delay_ms = 0
+
+    def add_mock_window(self, name: str, class_name: str = "MockWindow"):
+        """Add a mock window."""
+        window = MagicMock()
+        window.Name = name
+        window.ClassName = class_name
+        window.SetFocus = MagicMock()
+        window.Close = MagicMock()
+        window.Exists = MagicMock(return_value=True)
+        self.windows[name] = window
+        return window
+
+    def find_window(self, name: str = None, class_name: str = None):
+        """Find a mock window."""
+        if self.fail_on_find:
+            return None
+        for wname, window in self.windows.items():
+            if name and name in wname:
+                return window
+            if class_name and window.ClassName == class_name:
+                return window
+        return None
+
+    def set_fail_on_find(self, fail: bool = True):
+        """Configure window finding to fail."""
+        self.fail_on_find = fail
+
+    def set_fail_on_click(self, fail: bool = True):
+        """Configure click operations to fail."""
+        self.fail_on_click = fail
+
+    def reset(self):
+        """Reset the mock."""
+        self.windows.clear()
+        self.fail_on_find = False
+        self.fail_on_click = False
+
+
+@pytest.fixture
+def desktop_mock():
+    """Fixture for desktop automation mocking."""
+    mock = DesktopAutomationMock()
+    yield mock
+    mock.reset()
+
+
+# Chaos workflow fixtures
+@pytest.fixture
+def chaos_workflow_simple():
+    """A simple workflow for chaos testing."""
+    return {
+        "nodes": [
+            {"id": "start_1", "type": "StartNode", "position": [0, 0], "config": {}},
+            {"id": "log_1", "type": "LogNode", "position": [200, 0], "config": {"message": "Test"}},
+            {"id": "end_1", "type": "EndNode", "position": [400, 0], "config": {}}
+        ],
+        "connections": [
+            {"from_node": "start_1", "from_port": "exec_out", "to_node": "log_1", "to_port": "exec_in"},
+            {"from_node": "log_1", "from_port": "exec_out", "to_node": "end_1", "to_port": "exec_in"}
+        ],
+        "variables": {}
+    }
+
+
+@pytest.fixture
+def chaos_workflow_with_loop():
+    """A workflow with loop for stress testing."""
+    return {
+        "nodes": [
+            {"id": "start_1", "type": "StartNode", "position": [0, 0], "config": {}},
+            {"id": "for_1", "type": "ForLoopNode", "position": [200, 0], "config": {"iterations": 10}},
+            {"id": "log_1", "type": "LogNode", "position": [400, 0], "config": {"message": "Iteration"}},
+            {"id": "end_1", "type": "EndNode", "position": [600, 0], "config": {}}
+        ],
+        "connections": [
+            {"from_node": "start_1", "from_port": "exec_out", "to_node": "for_1", "to_port": "exec_in"},
+            {"from_node": "for_1", "from_port": "loop_body", "to_node": "log_1", "to_port": "exec_in"},
+            {"from_node": "log_1", "from_port": "exec_out", "to_node": "for_1", "to_port": "loop_back"},
+            {"from_node": "for_1", "from_port": "exec_out", "to_node": "end_1", "to_port": "exec_in"}
+        ],
+        "variables": {}
+    }
+
+
+@pytest.fixture
+def chaos_workflow_with_error_handling():
+    """A workflow with try-catch for error handling tests."""
+    return {
+        "nodes": [
+            {"id": "start_1", "type": "StartNode", "position": [0, 0], "config": {}},
+            {"id": "try_1", "type": "TryCatchNode", "position": [200, 0], "config": {}},
+            {"id": "risky_1", "type": "LogNode", "position": [400, 0], "config": {"message": "Risky operation"}},
+            {"id": "catch_1", "type": "LogNode", "position": [400, 100], "config": {"message": "Error caught"}},
+            {"id": "end_1", "type": "EndNode", "position": [600, 0], "config": {}}
+        ],
+        "connections": [
+            {"from_node": "start_1", "from_port": "exec_out", "to_node": "try_1", "to_port": "exec_in"},
+            {"from_node": "try_1", "from_port": "try_body", "to_node": "risky_1", "to_port": "exec_in"},
+            {"from_node": "try_1", "from_port": "catch_body", "to_node": "catch_1", "to_port": "exec_in"},
+            {"from_node": "risky_1", "from_port": "exec_out", "to_node": "end_1", "to_port": "exec_in"},
+            {"from_node": "catch_1", "from_port": "exec_out", "to_node": "end_1", "to_port": "exec_in"}
+        ],
+        "variables": {}
+    }
+
+
+@pytest.fixture
+def chaos_workflow_deep_nesting():
+    """A deeply nested workflow for stack depth testing."""
+    nodes = [{"id": "start_1", "type": "StartNode", "position": [0, 0], "config": {}}]
+    connections = []
+
+    # Create 20 nested if statements
+    prev_node = "start_1"
+    for i in range(20):
+        node_id = f"if_{i}"
+        nodes.append({
+            "id": node_id,
+            "type": "IfNode",
+            "position": [(i + 1) * 200, 0],
+            "config": {"condition": "True"}
+        })
+        connections.append({
+            "from_node": prev_node,
+            "from_port": "exec_out" if i == 0 else "true_branch",
+            "to_node": node_id,
+            "to_port": "exec_in"
+        })
+        prev_node = node_id
+
+    nodes.append({"id": "end_1", "type": "EndNode", "position": [4400, 0], "config": {}})
+    connections.append({
+        "from_node": prev_node,
+        "from_port": "true_branch",
+        "to_node": "end_1",
+        "to_port": "exec_in"
+    })
+
+    return {"nodes": nodes, "connections": connections, "variables": {}}
+
+
+# Timeout configuration for chaos tests
+@pytest.fixture
+def short_timeout():
+    """Short timeout for testing timeout handling."""
+    return 0.1  # 100ms
+
+
+@pytest.fixture
+def medium_timeout():
+    """Medium timeout for normal chaos tests."""
+    return 1.0  # 1 second
+
+
+@pytest.fixture
+def long_timeout():
+    """Long timeout for stress tests."""
+    return 10.0  # 10 seconds
+
+
+# Resource exhaustion fixtures
+class ResourceExhaustionSimulator:
+    """Simulate resource exhaustion scenarios."""
+
+    def __init__(self):
+        self.memory_limit_mb = None
+        self.cpu_throttle = False
+        self.disk_full = False
+        self.file_handle_limit = None
+        self._allocated = []
+
+    def simulate_low_memory(self, limit_mb: int = 10):
+        """Simulate low memory conditions."""
+        self.memory_limit_mb = limit_mb
+
+    def simulate_disk_full(self):
+        """Simulate disk full condition."""
+        self.disk_full = True
+
+    def check_memory(self, requested_mb: int):
+        """Check if memory allocation should fail."""
+        if self.memory_limit_mb and requested_mb > self.memory_limit_mb:
+            raise MemoryError(f"Simulated OOM: requested {requested_mb}MB, limit {self.memory_limit_mb}MB")
+
+    def check_disk(self, requested_bytes: int):
+        """Check if disk write should fail."""
+        if self.disk_full:
+            raise OSError("Simulated: No space left on device")
+
+    def reset(self):
+        """Reset the simulator."""
+        self.memory_limit_mb = None
+        self.cpu_throttle = False
+        self.disk_full = False
+        self.file_handle_limit = None
+        self._allocated.clear()
+
+
+@pytest.fixture
+def resource_exhaustion():
+    """Fixture for simulating resource exhaustion."""
+    simulator = ResourceExhaustionSimulator()
+    yield simulator
+    simulator.reset()
+
+
+# Flaky operation simulator
+class FlakyOperationSimulator:
+    """Simulate operations that fail intermittently."""
+
+    def __init__(self):
+        self.failure_rate = 0.0  # 0.0 to 1.0
+        self.failures_before_success = 0
+        self._attempt_count = 0
+        import random
+        self._random = random
+
+    def set_failure_rate(self, rate: float):
+        """Set random failure rate (0.0 - 1.0)."""
+        self.failure_rate = min(max(rate, 0.0), 1.0)
+
+    def set_failures_before_success(self, count: int):
+        """Fail N times before succeeding."""
+        self.failures_before_success = count
+        self._attempt_count = 0
+
+    def should_fail(self) -> bool:
+        """Determine if current operation should fail."""
+        if self.failures_before_success > 0:
+            self._attempt_count += 1
+            if self._attempt_count <= self.failures_before_success:
+                return True
+            return False
+
+        if self.failure_rate > 0:
+            return self._random.random() < self.failure_rate
+
+        return False
+
+    def maybe_fail(self, error_class=Exception, message="Simulated flaky failure"):
+        """Potentially raise an error based on configured behavior."""
+        if self.should_fail():
+            raise error_class(message)
+
+    def reset(self):
+        """Reset the simulator."""
+        self.failure_rate = 0.0
+        self.failures_before_success = 0
+        self._attempt_count = 0
+
+
+@pytest.fixture
+def flaky_operation():
+    """Fixture for simulating flaky operations."""
+    simulator = FlakyOperationSimulator()
+    yield simulator
+    simulator.reset()
+
+
+# Async timing helpers
+@pytest.fixture
+def slow_async():
+    """Factory for creating slow async operations."""
+    async def _slow_operation(delay_seconds: float = 1.0, result=None):
+        await asyncio.sleep(delay_seconds)
+        return result
+    return _slow_operation
+
+
+@pytest.fixture
+def racing_async():
+    """Factory for creating racing async operations."""
+    async def _race(*coros, timeout: float = 5.0):
+        """Run coroutines and return the first to complete."""
+        done, pending = await asyncio.wait(
+            [asyncio.create_task(c) for c in coros],
+            timeout=timeout,
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in pending:
+            task.cancel()
+        if done:
+            return done.pop().result()
+        raise asyncio.TimeoutError("Race timed out")
+    return _race
