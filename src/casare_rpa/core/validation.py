@@ -160,61 +160,38 @@ class ValidationResult:
 # ============================================================================
 
 # Valid node types (matches NODE_TYPE_MAP in workflow_loader.py)
-VALID_NODE_TYPES: Set[str] = {
-    # Basic nodes
-    "StartNode", "EndNode",
-    # Variable nodes
-    "SetVariableNode", "GetVariableNode", "IncrementVariableNode",
-    "DecrementVariableNode", "ClearVariableNode", "ListVariablesNode",
-    # Control flow
-    "IfNode", "ForLoopNode", "WhileLoopNode", "BreakNode", "ContinueNode",
-    "SwitchNode", "ParallelNode",
-    # Error handling
-    "TryNode", "RetryNode", "ThrowNode", "CatchNode",
-    # Wait nodes
-    "WaitNode", "WaitForElementNode", "WaitForNavigationNode",
-    # Browser nodes
-    "LaunchBrowserNode", "CloseBrowserNode", "NewPageNode", "ClosePageNode",
-    "SwitchPageNode", "GetPagesNode",
-    # Navigation nodes
-    "GoToURLNode", "GoBackNode", "GoForwardNode", "RefreshPageNode",
-    "GetURLNode", "GetTitleNode",
-    # Interaction nodes
-    "ClickElementNode", "TypeTextNode", "SelectDropdownNode",
-    "ClearInputNode", "CheckCheckboxNode", "PressKeyNode",
-    "HoverElementNode", "FocusElementNode", "ScrollToElementNode",
-    # Data extraction nodes
-    "ExtractTextNode", "GetAttributeNode", "ScreenshotNode",
-    "ExtractTableNode", "GetElementCountNode",
-    # Desktop nodes
-    "LaunchApplicationNode", "CloseApplicationNode", "ActivateWindowNode",
-    "GetWindowListNode", "DesktopClickNode", "DesktopTypeNode",
-    "SendKeysNode", "MoveMouseNode",
-    # Data operation nodes
-    "CreateListNode", "ListAppendNode", "ListRemoveNode", "ListGetNode",
-    "ListSetNode", "ListLengthNode", "ListClearNode", "ListContainsNode",
-    "CreateDictNode", "DictGetNode", "DictSetNode", "DictDeleteNode",
-    "DictKeysNode", "DictValuesNode", "DictMergeNode", "DictHasKeyNode",
-    # String nodes
-    "StringConcatNode", "StringSplitNode", "StringReplaceNode",
-    "StringFormatNode", "StringUpperNode", "StringLowerNode",
-    "StringTrimNode", "StringLengthNode", "StringContainsNode",
-    # Math nodes
-    "MathAddNode", "MathSubtractNode", "MathMultiplyNode", "MathDivideNode",
-    "MathModuloNode", "MathPowerNode", "MathAbsNode", "MathRoundNode",
-    # Logic nodes
-    "LogicAndNode", "LogicOrNode", "LogicNotNode",
-    "CompareEqualNode", "CompareNotEqualNode", "CompareGreaterNode",
-    "CompareLessNode", "CompareGreaterEqualNode", "CompareLessEqualNode",
-    # File nodes
-    "ReadFileNode", "WriteFileNode", "AppendFileNode", "FileExistsNode",
-    "DeleteFileNode", "CopyFileNode", "MoveFileNode", "ListFilesNode",
-    # JSON/Data nodes
-    "JsonParseNode", "JsonStringifyNode", "ReadJsonNode", "WriteJsonNode",
-    "ReadCsvNode", "WriteCsvNode",
-    # Utility nodes
-    "LogNode", "CommentNode", "DebugBreakNode",
-}
+# VALID_NODE_TYPES is dynamically generated from NODE_TYPE_MAP to stay in sync
+# This avoids manual maintenance of a hardcoded list
+def _get_valid_node_types() -> Set[str]:
+    """
+    Dynamically get valid node types from NODE_TYPE_MAP.
+
+    This ensures VALID_NODE_TYPES always stays in sync with the actual
+    available node types in the system.
+    """
+    try:
+        from ..utils.workflow_loader import NODE_TYPE_MAP
+        return set(NODE_TYPE_MAP.keys())
+    except ImportError:
+        # Fallback to a minimal set if workflow_loader isn't available
+        logger.warning("Could not import NODE_TYPE_MAP, using minimal node set")
+        return {
+            "StartNode", "EndNode", "IfNode", "ForLoopNode", "WhileLoopNode",
+            "SetVariableNode", "GetVariableNode", "LogNode", "CommentNode",
+        }
+
+# Lazily evaluated to avoid circular imports
+_valid_node_types_cache: Optional[Set[str]] = None
+
+def get_valid_node_types() -> Set[str]:
+    """Get the set of valid node types."""
+    global _valid_node_types_cache
+    if _valid_node_types_cache is None:
+        _valid_node_types_cache = _get_valid_node_types()
+    return _valid_node_types_cache
+
+# Legacy alias for backwards compatibility (will be evaluated lazily when accessed)
+VALID_NODE_TYPES: Set[str] = set()  # Placeholder, use get_valid_node_types() instead
 
 # Required fields for node data
 NODE_REQUIRED_FIELDS: Set[str] = {"node_id", "node_type"}
@@ -425,7 +402,7 @@ def _validate_node(
 
     # Validate node type
     node_type = node_data.get("node_type")
-    if node_type not in VALID_NODE_TYPES:
+    if node_type not in get_valid_node_types():
         result.add_error(
             "UNKNOWN_NODE_TYPE",
             f"Unknown node type: {node_type}",

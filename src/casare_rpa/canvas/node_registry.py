@@ -31,11 +31,24 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
     """
     from .visual_nodes import VISUAL_NODE_CLASSES, VisualNode
 
+    # Visual-only nodes that don't need CasareRPA logic counterparts
+    # These are annotation/documentation nodes for organizing workflows
+    VISUAL_ONLY_NODES = {
+        "VisualRichCommentNode",
+        "VisualStickyNoteNode",
+        "VisualHeaderCommentNode",
+    }
+
     mapping = {}
 
     for visual_class in VISUAL_NODE_CLASSES:
         # Skip the base class
         if visual_class is VisualNode:
+            continue
+
+        # Skip visual-only nodes (annotation/documentation nodes)
+        if visual_class.__name__ in VISUAL_ONLY_NODES:
+            logger.debug(f"Skipping visual-only node: {visual_class.__name__}")
             continue
 
         # Get the CasareRPA node class name from attribute or derive from class name
