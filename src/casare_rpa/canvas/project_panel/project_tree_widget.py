@@ -66,6 +66,10 @@ class ProjectTreeWidget(QTreeWidget):
     new_scenario_requested = Signal()
     delete_scenario_requested = Signal(object)  # Scenario
     duplicate_scenario_requested = Signal(object)  # Scenario
+    delete_project_requested = Signal(object)  # Project
+    close_project_requested = Signal()  # Close current project
+    import_workflow_requested = Signal()  # Import workflow file as scenario
+    export_scenario_requested = Signal(object)  # Export scenario (Scenario)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -361,7 +365,7 @@ class ProjectTreeWidget(QTreeWidget):
         if item_type == TreeItemType.PROJECT:
             if isinstance(data, Project):
                 # Current project context menu
-                menu.addAction("Close Project", self._close_current_project)
+                menu.addAction("Close Project", self.close_project_requested.emit)
                 menu.addSeparator()
                 menu.addAction("New Scenario...", self.new_scenario_requested.emit)
                 menu.addSeparator()
@@ -369,13 +373,21 @@ class ProjectTreeWidget(QTreeWidget):
                                lambda: self.variables_requested.emit("project"))
                 menu.addAction("Manage Credentials...",
                                lambda: self.credentials_requested.emit("project"))
+                menu.addSeparator()
+                menu.addAction("Delete Project...",
+                               lambda: self.delete_project_requested.emit(data))
             elif isinstance(data, dict):
                 # Recent project context menu
                 menu.addAction("Open Project",
                                lambda: self.item_double_clicked.emit("recent_project", data))
+                menu.addSeparator()
+                menu.addAction("Remove from Recent",
+                               lambda: self._remove_from_recent(data))
 
         elif item_type == TreeItemType.SCENARIOS_FOLDER:
             menu.addAction("New Scenario...", self.new_scenario_requested.emit)
+            menu.addSeparator()
+            menu.addAction("Import Workflow...", self.import_workflow_requested.emit)
 
         elif item_type == TreeItemType.SCENARIO:
             scenario = data
@@ -383,6 +395,7 @@ class ProjectTreeWidget(QTreeWidget):
             menu.addSeparator()
             menu.addAction("Duplicate", lambda: self.duplicate_scenario_requested.emit(scenario))
             menu.addAction("Rename...", lambda: self._rename_scenario(scenario))
+            menu.addAction("Export...", lambda: self.export_scenario_requested.emit(scenario))
             menu.addSeparator()
             menu.addAction("Delete", lambda: self.delete_scenario_requested.emit(scenario))
 
@@ -405,10 +418,17 @@ class ProjectTreeWidget(QTreeWidget):
         if menu.actions():
             menu.exec(self.mapToGlobal(position))
 
-    def _close_current_project(self) -> None:
-        """Close current project (placeholder - handled by parent)."""
-        # This will be handled by the dock widget
-        pass
+    def _remove_from_recent(self, project_info: dict) -> None:
+        """Remove a project from the recent list."""
+        try:
+            manager = get_project_manager()
+            if hasattr(manager, 'remove_from_recent'):
+                manager.remove_from_recent(project_info.get("id"))
+            # Refresh tree to reflect the change
+            self.refresh(manager.current_project, manager.current_scenario)
+            logger.info(f"Removed from recent: {project_info.get('name')}")
+        except Exception as e:
+            logger.error(f"Failed to remove from recent: {e}")
 
     def _rename_scenario(self, scenario: Scenario) -> None:
         """Rename a scenario (placeholder - would show dialog)."""

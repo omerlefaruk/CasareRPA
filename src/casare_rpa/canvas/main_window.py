@@ -196,7 +196,12 @@ class MainWindow(QMainWindow):
         self.action_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.action_save_as.setStatusTip("Save the workflow with a new name")
         self.action_save_as.triggered.connect(self._on_save_as_workflow)
-        
+
+        self.action_save_to_scenario = QAction("Save to &Scenario", self)
+        self.action_save_to_scenario.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        self.action_save_to_scenario.setStatusTip("Save current workflow to the open scenario")
+        # Connection set in app.py since it needs CasareRPAApp instance
+
         self.action_exit = QAction("E&xit", self)
         self.action_exit.setShortcut(QKeySequence.StandardKey.Quit)
         self.action_exit.setStatusTip("Exit the application")
@@ -480,6 +485,7 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
         file_menu.addAction(self.action_save)
         file_menu.addAction(self.action_save_as)
+        file_menu.addAction(self.action_save_to_scenario)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
         
@@ -2519,10 +2525,16 @@ class MainWindow(QMainWindow):
     def _save_ui_state(self) -> None:
         """Save current UI state (window geometry, dock positions, etc.)."""
         try:
+            # Save version to detect incompatible state changes
+            self._settings.setValue("uiStateVersion", 2)
+
             self._settings.setValue("geometry", self.saveGeometry())
             self._settings.setValue("windowState", self.saveState())
 
             # Save dock visibility states
+            if self._project_panel:
+                self._settings.setValue("projectPanelVisible", self._project_panel.isVisible())
+
             if self._bottom_panel:
                 self._settings.setValue("bottomPanelVisible", self._bottom_panel.isVisible())
                 self._settings.setValue("bottomPanelTab", self._bottom_panel._tab_widget.currentIndex())
@@ -2564,21 +2576,37 @@ class MainWindow(QMainWindow):
                 logger.debug("No saved UI state found, using defaults")
                 return
 
+            # Check version - reset if incompatible
+            saved_version = self._settings.value("uiStateVersion", 0, type=int)
+            current_version = 2
+            if saved_version != current_version:
+                logger.info(f"UI state version mismatch ({saved_version} vs {current_version}), using defaults")
+                self.reset_ui_state()
+                return
+
             # Restore window geometry
             geometry = self._settings.value("geometry")
             if geometry:
                 try:
                     self.restoreGeometry(geometry)
-                except Exception:
-                    pass  # Ignore invalid geometry
+                except Exception as e:
+                    logger.warning(f"Failed to restore geometry: {e}")
 
             # Restore window state (dock positions)
             state = self._settings.value("windowState")
             if state:
                 try:
                     self.restoreState(state)
-                except Exception:
-                    pass  # Ignore invalid state
+                except Exception as e:
+                    logger.warning(f"Failed to restore window state: {e}")
+                    # Reset state on failure to prevent broken UI
+                    self.reset_ui_state()
+                    return
+
+            # Restore project panel visibility
+            if self._project_panel:
+                visible = self._settings.value("projectPanelVisible", True, type=bool)
+                self._project_panel.setVisible(visible)
 
             # Restore dock visibility states
             if self._bottom_panel:
@@ -2587,7 +2615,8 @@ class MainWindow(QMainWindow):
                 self.action_toggle_bottom_panel.setChecked(visible)
 
                 tab_index = self._settings.value("bottomPanelTab", 0, type=int)
-                self._bottom_panel._tab_widget.setCurrentIndex(tab_index)
+                if 0 <= tab_index < self._bottom_panel._tab_widget.count():
+                    self._bottom_panel._tab_widget.setCurrentIndex(tab_index)
 
             if self._variable_inspector_dock:
                 visible = self._settings.value("variableInspectorVisible", False, type=bool)
@@ -2619,6 +2648,11 @@ class MainWindow(QMainWindow):
             logger.debug("UI state restored from previous session")
         except Exception as e:
             logger.warning(f"Failed to restore UI state: {e}")
+            # Reset on any failure to prevent broken UI
+            try:
+                self.reset_ui_state()
+            except Exception:
+                pass
 
     def _schedule_ui_state_save(self) -> None:
         """Schedule UI state save (debounced to avoid too frequent saves)."""

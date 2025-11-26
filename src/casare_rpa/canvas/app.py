@@ -214,6 +214,11 @@ class CasareRPAApp:
         self._main_window.action_pick_selector.triggered.connect(self._on_start_selector_picking)
         self._main_window.action_record_workflow.triggered.connect(self._on_toggle_recording)
 
+        # File/Scenario operations
+        self._main_window.action_save_to_scenario.triggered.connect(self.save_current_scenario)
+        # Disable until a scenario is opened
+        self._main_window.action_save_to_scenario.setEnabled(False)
+
         # Set workflow data provider for validation
         self._main_window.set_workflow_data_provider(self._get_serialized_workflow_data)
 
@@ -1318,10 +1323,10 @@ class CasareRPAApp:
         logger.info(f"Scenario opened: {scenario.name} ({scenario.id}) in project {project.name}")
 
         # Load the scenario's workflow into the canvas
-        if scenario.workflow_data:
+        if scenario.workflow:
             try:
                 # Load workflow from dict and then into graph
-                workflow = WorkflowSchema.from_dict(scenario.workflow_data)
+                workflow = WorkflowSchema.from_dict(scenario.workflow)
                 self._load_workflow_to_graph(workflow)
 
                 self._main_window.set_modified(False)
@@ -1347,11 +1352,14 @@ class CasareRPAApp:
         if project_panel:
             project_panel.refresh()
 
+        # Enable Save to Scenario action
+        self._main_window.action_save_to_scenario.setEnabled(True)
+
     def _on_scenario_closed(self) -> None:
         """Handle scenario closed event."""
         logger.info("Scenario closed")
         manager = get_project_manager()
-        manager.set_current_scenario(None)
+        manager.close_scenario()
 
         self._main_window.statusBar().showMessage("Scenario closed", 3000)
 
@@ -1360,6 +1368,9 @@ class CasareRPAApp:
         if project_panel:
             project_panel.refresh()
 
+        # Disable Save to Scenario action
+        self._main_window.action_save_to_scenario.setEnabled(False)
+
     def save_current_scenario(self) -> bool:
         """
         Save the current canvas to the current scenario.
@@ -1367,10 +1378,17 @@ class CasareRPAApp:
         Returns:
             True if save was successful, False otherwise
         """
+        from PySide6.QtWidgets import QMessageBox
+
         manager = get_project_manager()
 
         if not manager.current_project or not manager.current_scenario:
             logger.warning("No project/scenario open to save to")
+            QMessageBox.warning(
+                self._main_window,
+                "No Scenario Open",
+                "Please open a project and scenario before saving."
+            )
             return False
 
         try:
@@ -1382,10 +1400,10 @@ class CasareRPAApp:
 
             # Update scenario with workflow data
             scenario = manager.current_scenario
-            scenario.workflow_data = workflow_data
+            scenario.workflow = workflow_data
 
             # Save the scenario
-            ScenarioStorage.save_scenario(manager.current_project, scenario)
+            ScenarioStorage.save_scenario(scenario, manager.current_project)
 
             self._main_window.set_modified(False)
             self._main_window.statusBar().showMessage(

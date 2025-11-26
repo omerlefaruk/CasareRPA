@@ -157,6 +157,10 @@ class ProjectPanelDock(QDockWidget):
         self._tree.new_scenario_requested.connect(self._on_new_scenario)
         self._tree.delete_scenario_requested.connect(self._on_delete_scenario)
         self._tree.duplicate_scenario_requested.connect(self._on_duplicate_scenario)
+        self._tree.delete_project_requested.connect(self._on_delete_project)
+        self._tree.close_project_requested.connect(self.close_project)
+        self._tree.import_workflow_requested.connect(self._on_import_workflow)
+        self._tree.export_scenario_requested.connect(self._on_export_scenario)
 
     def _apply_styles(self) -> None:
         """Apply theme styles."""
@@ -410,6 +414,180 @@ class ProjectPanelDock(QDockWidget):
                 "Error",
                 f"Failed to duplicate scenario: {e}"
             )
+
+    def _on_delete_project(self, project: Project) -> None:
+        """Handle delete project request."""
+        import shutil
+
+        reply = QMessageBox.warning(
+            self,
+            "Delete Project",
+            f"Are you sure you want to delete the project '{project.name}'?\n\n"
+            f"This will permanently delete:\n"
+            f"  • All scenarios in this project\n"
+            f"  • All project variables\n"
+            f"  • All project credentials\n\n"
+            f"This action cannot be undone!",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            # Double-confirm for safety
+            confirm = QMessageBox.question(
+                self,
+                "Confirm Delete",
+                f"Are you ABSOLUTELY sure you want to delete '{project.name}'?\n\n"
+                f"All project data will be permanently removed.",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+
+            if confirm == QMessageBox.Yes:
+                try:
+                    manager = get_project_manager()
+
+                    # Close project first if it's the current one
+                    is_current = manager.current_project and manager.current_project.id == project.id
+                    if is_current:
+                        manager.close_project()
+                        self.project_closed.emit()
+
+                    # Delete project files
+                    project_path = Path(project.path)
+                    if project_path.exists():
+                        shutil.rmtree(project_path)
+                        logger.info(f"Deleted project folder: {project_path}")
+
+                    # Remove from recent projects
+                    if hasattr(manager, 'remove_from_recent'):
+                        manager.remove_from_recent(project.id)
+
+                    self._refresh_tree()
+
+                    logger.info(f"Deleted project: {project.name}")
+                    QMessageBox.information(
+                        self,
+                        "Project Deleted",
+                        f"Project '{project.name}' has been deleted."
+                    )
+
+                except Exception as e:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Failed to delete project: {e}"
+                    )
+                    logger.error(f"Failed to delete project: {e}")
+
+    def _on_import_workflow(self) -> None:
+        """Handle import workflow request."""
+        from ...project.scenario_storage import ScenarioStorage
+
+        manager = get_project_manager()
+        if manager.current_project is None:
+            QMessageBox.warning(
+                self,
+                "No Project Open",
+                "Please open a project before importing a workflow."
+            )
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Workflow",
+            "",
+            "JSON Files (*.json);;All Files (*)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            scenario = ScenarioStorage.import_workflow_file(
+                Path(file_path),
+                manager.current_project
+            )
+
+            self._refresh_tree()
+            self.scenario_opened.emit(manager.current_project, scenario)
+            logger.info(f"Imported workflow as scenario: {scenario.name}")
+
+            QMessageBox.information(
+                self,
+                "Import Successful",
+                f"Workflow imported as scenario '{scenario.name}'."
+            )
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Import Failed",
+                f"Failed to import workflow: {e}"
+            )
+            logger.error(f"Failed to import workflow: {e}")
+
+    def _on_export_scenario(self, scenario: Scenario) -> None:
+        """Handle export scenario request."""
+        from ...project.scenario_storage import ScenarioStorage
+
+        # Ask user for export format
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Export Format")
+        msg_box.setText("How would you like to export this scenario?")
+        msg_box.setInformativeText(
+            "Scenario format includes metadata and variable values.\n"
+            "Workflow format exports just the workflow for use in other projects."
+        )
+
+        scenario_btn = msg_box.addButton("Scenario Format", QMessageBox.AcceptRole)
+        workflow_btn = msg_box.addButton("Workflow Format", QMessageBox.AcceptRole)
+        msg_box.addButton(QMessageBox.Cancel)
+
+        msg_box.exec()
+
+        clicked = msg_box.clickedButton()
+        if clicked == scenario_btn:
+            export_format = "scenario"
+            default_name = f"{scenario.name}.scenario.json"
+        elif clicked == workflow_btn:
+            export_format = "workflow"
+            default_name = f"{scenario.name}.workflow.json"
+        else:
+            return  # Cancelled
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Scenario",
+            default_name,
+            "JSON Files (*.json);;All Files (*)"
+        )
+
+        if not file_path:
+            return
+
+        try:
+            ScenarioStorage.export_scenario(
+                scenario,
+                Path(file_path),
+                export_format
+            )
+
+            logger.info(f"Exported scenario '{scenario.name}' to {file_path}")
+
+            QMessageBox.information(
+                self,
+                "Export Successful",
+                f"Scenario exported to:\n{file_path}"
+            )
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Export Failed",
+                f"Failed to export scenario: {e}"
+            )
+            logger.error(f"Failed to export scenario: {e}")
 
     # =========================================================================
     # Public Methods
