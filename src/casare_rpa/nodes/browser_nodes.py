@@ -632,10 +632,10 @@ class GetAllImagesNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_exec_input()
-        self.add_exec_output()
-        self.add_output_port("images", DataType.LIST, "List of image URLs")
-        self.add_output_port("count", DataType.INTEGER, "Number of images found")
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("images", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Extract all image URLs from the page."""
@@ -644,10 +644,11 @@ class GetAllImagesNode(BaseNode):
             if not page:
                 raise ValueError("No active page. Launch browser and navigate first.")
 
-            min_width = int(self.config.get("min_width", 0))
-            min_height = int(self.config.get("min_height", 0))
+            # Handle empty strings from UI text inputs gracefully
+            min_width = int(self.config.get("min_width") or 0)
+            min_height = int(self.config.get("min_height") or 0)
             include_backgrounds = self.config.get("include_backgrounds", True)
-            file_types_str = self.config.get("file_types", "")
+            file_types_str = self.config.get("file_types") or ""
 
             # Parse allowed file types
             allowed_types = []
@@ -656,7 +657,7 @@ class GetAllImagesNode(BaseNode):
 
             # JavaScript to extract all images
             js_code = """
-            () => {
+            (includeBackgrounds) => {
                 const images = [];
                 const seen = new Set();
 
@@ -697,7 +698,7 @@ class GetAllImagesNode(BaseNode):
                 });
 
                 // Get CSS background images if requested
-                if (arguments[0]) {
+                if (includeBackgrounds) {
                     const elements = document.querySelectorAll('*');
                     elements.forEach(el => {
                         const style = window.getComputedStyle(el);
@@ -818,13 +819,13 @@ class DownloadFileNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_exec_input()
-        self.add_exec_output()
-        self.add_input_port("url", DataType.STRING, "URL to download")
-        self.add_input_port("filename", DataType.STRING, "Optional filename override")
-        self.add_output_port("path", DataType.STRING, "Saved file path")
-        self.add_output_port("size", DataType.INTEGER, "File size in bytes")
-        self.add_output_port("success", DataType.BOOLEAN, "Download success")
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_input_port("url", PortType.INPUT, DataType.STRING)
+        self.add_input_port("filename", PortType.INPUT, DataType.STRING)
+        self.add_output_port("path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """Download file from URL."""

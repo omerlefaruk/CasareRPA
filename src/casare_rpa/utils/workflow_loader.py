@@ -182,7 +182,10 @@ from casare_rpa.nodes.error_handling_nodes import (
 from casare_rpa.nodes.wait_nodes import WaitNode, WaitForElementNode, WaitForNavigationNode
 
 # Browser nodes
-from casare_rpa.nodes.browser_nodes import LaunchBrowserNode, CloseBrowserNode, NewTabNode
+from casare_rpa.nodes.browser_nodes import (
+    LaunchBrowserNode, CloseBrowserNode, NewTabNode,
+    GetAllImagesNode, DownloadFileNode
+)
 
 # Navigation nodes
 from casare_rpa.nodes.navigation_nodes import GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode
@@ -361,6 +364,8 @@ NODE_TYPE_MAP = {
     "LaunchBrowserNode": LaunchBrowserNode,
     "CloseBrowserNode": CloseBrowserNode,
     "NewTabNode": NewTabNode,
+    "GetAllImagesNode": GetAllImagesNode,
+    "DownloadFileNode": DownloadFileNode,
 
     # Navigation nodes
     "GoToURLNode": GoToURLNode,
