@@ -379,21 +379,49 @@ class ExecutionContext:
             logger.error(f"Error during async context cleanup: {e}")
         return False  # Don't suppress exceptions
 
-    # Sync context manager (for backwards compatibility)
+    # Sync context manager - DEPRECATED
+    # This is kept for backwards compatibility but should not be used
     def __enter__(self) -> "ExecutionContext":
-        """Sync context manager entry (prefer async with instead)."""
+        """
+        DEPRECATED: Sync context manager entry.
+
+        WARNING: Using sync context manager with ExecutionContext is strongly
+        discouraged. Resources (browser, pages, desktop context) may not be
+        properly cleaned up.
+
+        Use 'async with' instead:
+            async with ExecutionContext(...) as ctx:
+                # Your code here
+
+        Or call cleanup() manually:
+            ctx = ExecutionContext(...)
+            try:
+                # Your code here
+            finally:
+                await ctx.cleanup()
+        """
+        import warnings
+        warnings.warn(
+            "ExecutionContext sync context manager is deprecated and may leak resources. "
+            "Use 'async with ExecutionContext(...)' instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         logger.warning(
-            "Using sync context manager with ExecutionContext. "
-            "Consider using 'async with' for proper cleanup."
+            "DEPRECATED: Using sync context manager with ExecutionContext. "
+            "This may leak browser/page/desktop resources. Use 'async with' instead."
         )
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         """
-        Sync context manager exit.
+        DEPRECATED: Sync context manager exit.
 
-        Note: This attempts to run async cleanup synchronously. For proper
-        resource cleanup, use 'async with' instead.
+        WARNING: This method cannot reliably clean up async resources.
+        If an event loop is running, cleanup is scheduled but NOT awaited,
+        which means resources may leak.
+
+        Always prefer 'async with' for proper resource management.
         """
         import asyncio
 
@@ -401,15 +429,29 @@ class ExecutionContext:
             # Try to get the running event loop
             try:
                 loop = asyncio.get_running_loop()
-                # Loop is running - schedule cleanup as a task
-                # This is not ideal as it won't wait for cleanup to complete
-                logger.warning(
-                    "Sync __exit__ called while event loop is running. "
-                    "Cleanup will be scheduled but may not complete before exit."
+                # Loop is running - we CANNOT reliably clean up
+                # Schedule cleanup but warn loudly that it may not complete
+                logger.error(
+                    "CRITICAL: Sync __exit__ called while event loop is running. "
+                    "Cleanup is scheduled but WILL NOT be awaited. "
+                    "Resources (browser, pages) may leak! "
+                    "Use 'async with ExecutionContext(...)' to prevent this."
                 )
-                loop.create_task(self.cleanup())
+                # Create task but also try to give it a chance to run
+                cleanup_task = loop.create_task(self.cleanup())
+                # We can't await here, but we can at least log when it completes
+                cleanup_task.add_done_callback(
+                    lambda t: logger.info("Scheduled cleanup task completed")
+                    if not t.exception() else
+                    logger.error(f"Scheduled cleanup task failed: {t.exception()}")
+                )
             except RuntimeError:
                 # No running loop - we can run cleanup synchronously
+                # This is the "safe" path but still not recommended
+                logger.warning(
+                    "Running cleanup synchronously (no event loop). "
+                    "Consider using 'async with' for better resource management."
+                )
                 loop = asyncio.new_event_loop()
                 try:
                     loop.run_until_complete(self.cleanup())
