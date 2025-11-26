@@ -111,7 +111,8 @@ def enable_property_dragging():
                 # Get node and property info
                 node_id = _get_node_id(self)
                 if not node_id:
-                    logger.warning("Cannot drag property - node ID not found")
+                    # This can happen for widgets on deleted nodes - not a real error
+                    logger.debug("Cannot drag property - node ID not found (likely deleted node)")
                     _original_line_move(self, event)
                     return
 

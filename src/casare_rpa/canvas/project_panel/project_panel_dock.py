@@ -1,0 +1,455 @@
+"""
+CasareRPA - Project Panel Dock Widget
+Left dock panel for managing projects and scenarios.
+"""
+
+from pathlib import Path
+from typing import Optional
+
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QLabel,
+    QMenu,
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
+from loguru import logger
+
+from ..theme import THEME
+from .project_tree_widget import ProjectTreeWidget
+from ...core.project_schema import Project, Scenario
+from ...project.project_manager import get_project_manager
+
+
+class ProjectPanelDock(QDockWidget):
+    """
+    Left dock panel for project and scenario management.
+
+    Provides:
+    - Project tree navigation
+    - Search/filter functionality
+    - Create/open project buttons
+    - Global resources section
+
+    Signals:
+        project_opened: Emitted when a project is opened (Project)
+        project_closed: Emitted when a project is closed
+        scenario_opened: Emitted when a scenario is opened (Project, Scenario)
+        scenario_closed: Emitted when a scenario is closed
+        variable_edit_requested: Emitted when user wants to edit variables (scope: str)
+        credential_edit_requested: Emitted when user wants to edit credentials (scope: str)
+    """
+
+    project_opened = Signal(object)  # Project
+    project_closed = Signal()
+    scenario_opened = Signal(object, object)  # Project, Scenario
+    scenario_closed = Signal()
+    variable_edit_requested = Signal(str)  # scope: "global" or "project"
+    credential_edit_requested = Signal(str)  # scope: "global" or "project"
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__("Project", parent)
+
+        self.setObjectName("ProjectPanelDock")
+        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.setFeatures(
+            QDockWidget.DockWidgetMovable |
+            QDockWidget.DockWidgetFloatable |
+            QDockWidget.DockWidgetClosable
+        )
+
+        self._setup_ui()
+        self._connect_signals()
+        self._apply_styles()
+
+        # Initial state
+        self._refresh_tree()
+
+    def _setup_ui(self) -> None:
+        """Setup the dock widget UI."""
+        # Main container widget
+        container = QWidget()
+        self.setWidget(container)
+
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Search bar section
+        search_section = self._create_search_section()
+        layout.addWidget(search_section)
+
+        # Tree widget
+        self._tree = ProjectTreeWidget()
+        layout.addWidget(self._tree, 1)  # Stretch factor 1
+
+        # Button section
+        button_section = self._create_button_section()
+        layout.addWidget(button_section)
+
+    def _create_search_section(self) -> QWidget:
+        """Create the search/filter section."""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(4)
+
+        # Search input
+        self._search_input = QLineEdit()
+        self._search_input.setPlaceholderText("Search projects/scenarios...")
+        self._search_input.setClearButtonEnabled(True)
+        layout.addWidget(self._search_input, 1)
+
+        # Add button (dropdown menu)
+        self._add_button = QPushButton("+")
+        self._add_button.setFixedSize(28, 28)
+        self._add_button.setToolTip("Add new project or scenario")
+        layout.addWidget(self._add_button)
+
+        # Setup add menu
+        add_menu = QMenu(self._add_button)
+        add_menu.addAction("New Project...", self._on_new_project)
+        add_menu.addAction("New Scenario...", self._on_new_scenario)
+        add_menu.addSeparator()
+        add_menu.addAction("Import Project...", self._on_import_project)
+        self._add_button.setMenu(add_menu)
+
+        return widget
+
+    def _create_button_section(self) -> QWidget:
+        """Create the bottom button section."""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+
+        # New Project button
+        self._new_project_btn = QPushButton("New Project")
+        self._new_project_btn.clicked.connect(self._on_new_project)
+        layout.addWidget(self._new_project_btn)
+
+        # Open Project button
+        self._open_project_btn = QPushButton("Open Project")
+        self._open_project_btn.clicked.connect(self._on_open_project)
+        layout.addWidget(self._open_project_btn)
+
+        return widget
+
+    def _connect_signals(self) -> None:
+        """Connect internal signals."""
+        # Search filtering
+        self._search_input.textChanged.connect(self._on_search_changed)
+
+        # Tree item interactions
+        self._tree.item_double_clicked.connect(self._on_tree_item_double_clicked)
+        self._tree.scenario_selected.connect(self._on_scenario_selected)
+        self._tree.project_selected.connect(self._on_project_selected)
+        self._tree.variables_requested.connect(self._on_variables_requested)
+        self._tree.credentials_requested.connect(self._on_credentials_requested)
+        self._tree.new_scenario_requested.connect(self._on_new_scenario)
+        self._tree.delete_scenario_requested.connect(self._on_delete_scenario)
+        self._tree.duplicate_scenario_requested.connect(self._on_duplicate_scenario)
+
+    def _apply_styles(self) -> None:
+        """Apply theme styles."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                font-size: 12px;
+            }}
+
+            QDockWidget::title {{
+                background: {THEME.dock_title_bg};
+                color: {THEME.dock_title_text};
+                padding: 6px 8px;
+                font-weight: bold;
+            }}
+
+            QLineEdit {{
+                background: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 4px 8px;
+            }}
+
+            QLineEdit:focus {{
+                border-color: {THEME.border_focus};
+            }}
+
+            QPushButton {{
+                background: {THEME.bg_medium};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 6px 12px;
+            }}
+
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
+
+            QPushButton:pressed {{
+                background: {THEME.accent_primary};
+            }}
+
+            QPushButton::menu-indicator {{
+                image: none;
+            }}
+
+            QMenu {{
+                background: {THEME.bg_medium};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+            }}
+
+            QMenu::item {{
+                padding: 6px 24px;
+            }}
+
+            QMenu::item:selected {{
+                background: {THEME.bg_hover};
+            }}
+
+            QMenu::separator {{
+                height: 1px;
+                background: {THEME.border};
+                margin: 4px 8px;
+            }}
+        """)
+
+    def _refresh_tree(self) -> None:
+        """Refresh the project tree."""
+        manager = get_project_manager()
+        self._tree.refresh(
+            current_project=manager.current_project,
+            current_scenario=manager.current_scenario,
+        )
+
+    # =========================================================================
+    # Event Handlers
+    # =========================================================================
+
+    def _on_search_changed(self, text: str) -> None:
+        """Handle search text change."""
+        self._tree.filter_items(text)
+
+    def _on_tree_item_double_clicked(self, item_type: str, item_data: object) -> None:
+        """Handle double-click on tree item."""
+        if item_type == "scenario":
+            self._open_scenario(item_data)
+        elif item_type == "project":
+            # Expand/collapse project in tree (handled by tree widget)
+            pass
+
+    def _on_scenario_selected(self, scenario: Scenario) -> None:
+        """Handle scenario selection in tree."""
+        pass  # Single-click selection, double-click opens
+
+    def _on_project_selected(self, project: Project) -> None:
+        """Handle project selection in tree."""
+        pass  # Single-click selection
+
+    def _on_variables_requested(self, scope: str) -> None:
+        """Handle request to edit variables."""
+        self.variable_edit_requested.emit(scope)
+
+    def _on_credentials_requested(self, scope: str) -> None:
+        """Handle request to edit credentials."""
+        self.credential_edit_requested.emit(scope)
+
+    def _on_new_project(self) -> None:
+        """Handle new project request."""
+        from ..dialogs.new_project_dialog import NewProjectDialog
+
+        dialog = NewProjectDialog(self)
+        if dialog.exec():
+            name = dialog.get_name()
+            path = dialog.get_path()
+            description = dialog.get_description()
+
+            try:
+                manager = get_project_manager()
+                project = manager.create_project(
+                    name=name,
+                    path=Path(path),
+                    description=description,
+                )
+
+                self._refresh_tree()
+                self.project_opened.emit(project)
+                logger.info(f"Created and opened project: {name}")
+
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to create project: {e}"
+                )
+                logger.error(f"Failed to create project: {e}")
+
+    def _on_open_project(self) -> None:
+        """Handle open project request."""
+        path = QFileDialog.getExistingDirectory(
+            self,
+            "Open Project",
+            "",
+            QFileDialog.ShowDirsOnly
+        )
+
+        if path:
+            self._open_project(Path(path))
+
+    def _on_import_project(self) -> None:
+        """Handle import project request."""
+        # For now, same as open project
+        self._on_open_project()
+
+    def _on_new_scenario(self) -> None:
+        """Handle new scenario request."""
+        manager = get_project_manager()
+        if manager.current_project is None:
+            QMessageBox.warning(
+                self,
+                "No Project Open",
+                "Please open a project before creating a scenario."
+            )
+            return
+
+        from ..dialogs.new_scenario_dialog import NewScenarioDialog
+
+        dialog = NewScenarioDialog(self)
+        if dialog.exec():
+            name = dialog.get_name()
+            description = dialog.get_description()
+
+            try:
+                scenario = manager.create_scenario(
+                    name=name,
+                    description=description,
+                )
+
+                self._refresh_tree()
+                self.scenario_opened.emit(manager.current_project, scenario)
+                logger.info(f"Created and opened scenario: {name}")
+
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to create scenario: {e}"
+                )
+                logger.error(f"Failed to create scenario: {e}")
+
+    def _on_delete_scenario(self, scenario: Scenario) -> None:
+        """Handle delete scenario request."""
+        reply = QMessageBox.question(
+            self,
+            "Delete Scenario",
+            f"Are you sure you want to delete '{scenario.name}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            try:
+                manager = get_project_manager()
+                manager.delete_scenario(scenario)
+                self._refresh_tree()
+
+                if manager.current_scenario == scenario:
+                    self.scenario_closed.emit()
+
+                logger.info(f"Deleted scenario: {scenario.name}")
+
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to delete scenario: {e}"
+                )
+
+    def _on_duplicate_scenario(self, scenario: Scenario) -> None:
+        """Handle duplicate scenario request."""
+        manager = get_project_manager()
+
+        # Generate unique name
+        base_name = f"{scenario.name} - Copy"
+        new_name = base_name
+        counter = 1
+        existing_names = {s.name for s in manager.get_scenarios()}
+
+        while new_name in existing_names:
+            counter += 1
+            new_name = f"{base_name} ({counter})"
+
+        try:
+            # Temporarily set current scenario for duplication
+            old_scenario = manager.current_scenario
+            manager._current_scenario = scenario
+
+            new_scenario = manager.duplicate_scenario(new_name)
+
+            manager._current_scenario = old_scenario
+            self._refresh_tree()
+
+            logger.info(f"Duplicated scenario: {scenario.name} -> {new_name}")
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to duplicate scenario: {e}"
+            )
+
+    # =========================================================================
+    # Public Methods
+    # =========================================================================
+
+    def _open_project(self, path: Path) -> None:
+        """Open a project from path."""
+        try:
+            manager = get_project_manager()
+            project = manager.open_project(path)
+
+            self._refresh_tree()
+            self.project_opened.emit(project)
+            logger.info(f"Opened project: {project.name}")
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to open project: {e}"
+            )
+            logger.error(f"Failed to open project: {e}")
+
+    def _open_scenario(self, scenario: Scenario) -> None:
+        """Open a scenario."""
+        manager = get_project_manager()
+        if manager.current_project is None:
+            return
+
+        manager.open_scenario(scenario)
+        self._refresh_tree()
+        self.scenario_opened.emit(manager.current_project, scenario)
+
+    def close_project(self) -> None:
+        """Close the current project."""
+        manager = get_project_manager()
+        manager.close_project()
+        self._refresh_tree()
+        self.project_closed.emit()
+
+    def refresh(self) -> None:
+        """Refresh the panel content."""
+        self._refresh_tree()

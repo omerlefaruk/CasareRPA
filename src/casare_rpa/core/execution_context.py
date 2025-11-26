@@ -3,12 +3,15 @@ CasareRPA - Execution Context
 Manages runtime state, variables, and shared resources during workflow execution.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 from loguru import logger
 from playwright.async_api import Browser, BrowserContext, Page
 
 from .types import ExecutionMode, NodeId
+
+if TYPE_CHECKING:
+    from ..project.project_context import ProjectContext
 
 
 class ExecutionContext:
@@ -22,6 +25,7 @@ class ExecutionContext:
         workflow_name: str = "Untitled",
         mode: ExecutionMode = ExecutionMode.NORMAL,
         initial_variables: Optional[Dict[str, Any]] = None,
+        project_context: Optional["ProjectContext"] = None,
     ) -> None:
         """
         Initialize execution context.
@@ -30,16 +34,20 @@ class ExecutionContext:
             workflow_name: Name of the workflow being executed
             mode: Execution mode (NORMAL, DEBUG, VALIDATE)
             initial_variables: Optional dict of variables to initialize (from Variables Tab)
+            project_context: Optional project context for project-scoped resources
         """
         self.workflow_name = workflow_name
         self.mode = mode
         self.started_at = datetime.now()
         self.completed_at: Optional[datetime] = None
 
-        # Variable storage - initialize with provided variables if any
-        self.variables: Dict[str, Any] = initial_variables.copy() if initial_variables else {}
-        if initial_variables:
-            logger.info(f"Initialized with {len(initial_variables)} variables: {list(initial_variables.keys())}")
+        # Store project context for credential resolution
+        self._project_context = project_context
+
+        # Variable storage - build hierarchy from project context + initial variables
+        self.variables: Dict[str, Any] = self._build_variable_hierarchy(initial_variables)
+        if self.variables:
+            logger.info(f"Initialized with {len(self.variables)} variables: {list(self.variables.keys())}")
 
         # Shared resources (Playwright instances)
         self.browser: Optional[Browser] = None
@@ -96,6 +104,69 @@ class ExecutionContext:
         """Clear all variables."""
         self.variables.clear()
         logger.debug("All variables cleared")
+
+    def _build_variable_hierarchy(
+        self,
+        runtime_vars: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """
+        Build variables dict with proper scoping hierarchy.
+
+        Priority (highest to lowest):
+        - Runtime variables (from Variables Tab)
+        - Scenario variable values
+        - Project variable defaults
+        - Global variable defaults
+
+        Args:
+            runtime_vars: Variables from the Variables Tab
+
+        Returns:
+            Merged dictionary of variable name -> value
+        """
+        merged: Dict[str, Any] = {}
+
+        if self._project_context:
+            # Add global variables (lowest priority)
+            merged.update(self._project_context.get_global_variables())
+
+            # Add project variables (overrides global)
+            merged.update(self._project_context.get_project_variables())
+
+            # Add scenario variables (overrides project)
+            merged.update(self._project_context.get_scenario_variables())
+
+        # Add runtime variables (highest priority)
+        if runtime_vars:
+            merged.update(runtime_vars)
+
+        return merged
+
+    @property
+    def project_context(self) -> Optional["ProjectContext"]:
+        """Get the project context (if any)."""
+        return self._project_context
+
+    @property
+    def has_project_context(self) -> bool:
+        """Check if a project context is available."""
+        return self._project_context is not None
+
+    def resolve_credential_path(self, alias: str) -> Optional[str]:
+        """
+        Resolve a credential alias to its Vault path.
+
+        Uses the project context's credential binding resolution.
+
+        Args:
+            alias: Credential alias to resolve
+
+        Returns:
+            Vault path if found, None otherwise
+        """
+        if self._project_context:
+            return self._project_context.resolve_credential_path(alias)
+        return None
 
     def resolve_value(self, value: Any) -> Any:
         """

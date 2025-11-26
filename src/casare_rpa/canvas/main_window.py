@@ -109,6 +109,9 @@ class MainWindow(QMainWindow):
         # Properties panel (right dock for selected node properties)
         self._properties_panel: Optional['PropertiesPanel'] = None
 
+        # Project panel (left dock for project/scenario management)
+        self._project_panel: Optional['ProjectPanelDock'] = None
+
         # Breadcrumb navigation bar
         self._breadcrumb_bar: Optional['BreadcrumbBar'] = None
 
@@ -122,6 +125,7 @@ class MainWindow(QMainWindow):
         self._create_toolbar()
         self._create_breadcrumb_bar()
         self._create_status_bar()
+        self._create_project_panel()
         self._create_bottom_panel()
         self._create_variable_inspector_dock()
         self._create_properties_panel()
@@ -311,6 +315,13 @@ class MainWindow(QMainWindow):
         self.action_toggle_navigation.setChecked(False)  # Hidden by default
         self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation breadcrumb and drop zone")
         self.action_toggle_navigation.triggered.connect(self._on_toggle_navigation)
+
+        self.action_toggle_project_panel = QAction("&Project Panel", self)
+        self.action_toggle_project_panel.setShortcut(QKeySequence("Ctrl+Shift+P"))
+        self.action_toggle_project_panel.setCheckable(True)
+        self.action_toggle_project_panel.setChecked(False)  # Hidden by default
+        self.action_toggle_project_panel.setStatusTip("Show/hide project panel (Projects, Scenarios, Variables)")
+        self.action_toggle_project_panel.triggered.connect(self._on_toggle_project_panel)
 
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
@@ -509,6 +520,7 @@ class MainWindow(QMainWindow):
 
         # Panels submenu
         panels_menu = view_menu.addMenu("&Panels")
+        panels_menu.addAction(self.action_toggle_project_panel)
         panels_menu.addAction(self.action_toggle_bottom_panel)
         panels_menu.addAction(self.action_toggle_variable_inspector)
         panels_menu.addAction(self.action_toggle_navigation)
@@ -851,6 +863,7 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_zoom_out, "View")
         self._command_palette.register_action(self.action_zoom_reset, "View")
         self._command_palette.register_action(self.action_fit_view, "View")
+        self._command_palette.register_action(self.action_toggle_project_panel, "View")
         self._command_palette.register_action(self.action_toggle_bottom_panel, "View")
         self._command_palette.register_action(self.action_toggle_minimap, "View")
 
@@ -876,6 +889,34 @@ class MainWindow(QMainWindow):
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(500)  # 500ms debounce
         self._validation_timer.timeout.connect(self._do_deferred_validation)
+
+    def _create_project_panel(self) -> None:
+        """Create the project panel dock (left side)."""
+        from .project_panel import ProjectPanelDock
+
+        self._project_panel = ProjectPanelDock(self)
+
+        # Add to main window (left dock area)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._project_panel)
+
+        # Connect dock state changes to auto-save
+        self._project_panel.dockLocationChanged.connect(self._schedule_ui_state_save)
+        self._project_panel.visibilityChanged.connect(self._schedule_ui_state_save)
+        self._project_panel.topLevelChanged.connect(self._schedule_ui_state_save)
+
+        # Initially hidden (user can show via View menu or Ctrl+Shift+P)
+        self._project_panel.hide()
+        self.action_toggle_project_panel.setChecked(False)
+
+        logger.info("Project panel dock created")
+
+    def _on_toggle_project_panel(self, checked: bool) -> None:
+        """Handle toggle project panel action."""
+        if self._project_panel:
+            if checked:
+                self._project_panel.show()
+            else:
+                self._project_panel.hide()
 
     def _create_bottom_panel(self) -> None:
         """Create the unified bottom panel with Variables, Output, Log, Validation tabs."""
@@ -1062,6 +1103,27 @@ class MainWindow(QMainWindow):
             BottomPanelDock instance or None
         """
         return self._bottom_panel
+
+    def get_project_panel(self) -> Optional['ProjectPanelDock']:
+        """
+        Get the project panel dock.
+
+        Returns:
+            ProjectPanelDock instance or None
+        """
+        return self._project_panel
+
+    def show_project_panel(self) -> None:
+        """Show the project panel."""
+        if self._project_panel:
+            self._project_panel.show()
+            self.action_toggle_project_panel.setChecked(True)
+
+    def hide_project_panel(self) -> None:
+        """Hide the project panel."""
+        if self._project_panel:
+            self._project_panel.hide()
+            self.action_toggle_project_panel.setChecked(False)
 
     def show_bottom_panel(self) -> None:
         """Show the bottom panel."""
