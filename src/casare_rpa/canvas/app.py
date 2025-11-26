@@ -232,6 +232,8 @@ class CasareRPAApp:
             project_panel.project_closed.connect(self._on_project_closed)
             project_panel.scenario_opened.connect(self._on_scenario_opened)
             project_panel.scenario_closed.connect(self._on_scenario_closed)
+            project_panel.variable_edit_requested.connect(self._on_variable_edit_requested)
+            project_panel.credential_edit_requested.connect(self._on_credential_edit_requested)
 
     def _setup_autosave(self) -> None:
         """Setup autosave timer based on settings."""
@@ -403,6 +405,10 @@ class CasareRPAApp:
         if selected_nodes:
             graph.delete_nodes(selected_nodes)
             logger.info(f"Deleted {len(selected_nodes)} nodes")
+
+            # Reset auto-connect drag state to prevent stale references
+            if hasattr(self._node_graph, 'auto_connect'):
+                self._node_graph.auto_connect.reset_drag_state()
 
             # Disabled - was removing all pipes incorrectly
             # self._cleanup_orphaned_pipes()
@@ -1292,14 +1298,15 @@ class CasareRPAApp:
                 current_scenario=None
             )
 
-    def _on_scenario_opened(self, scenario: Scenario) -> None:
+    def _on_scenario_opened(self, project: Project, scenario: Scenario) -> None:
         """
         Handle scenario opened event.
 
         Args:
+            project: The project containing the scenario
             scenario: The opened scenario
         """
-        logger.info(f"Scenario opened: {scenario.name} ({scenario.id})")
+        logger.info(f"Scenario opened: {scenario.name} ({scenario.id}) in project {project.name}")
 
         # Load the scenario's workflow into the canvas
         if scenario.workflow_data:
@@ -1392,17 +1399,83 @@ class CasareRPAApp:
             )
             return False
 
+    def _on_variable_edit_requested(self, scope: str) -> None:
+        """
+        Handle variable edit request from project panel.
+
+        Args:
+            scope: "global" or "project"
+        """
+        from .dialogs import VariableEditorDialog
+
+        # Check if project scope is requested but no project is open
+        if scope == "project":
+            manager = get_project_manager()
+            if not manager.current_project:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self._main_window,
+                    "No Project Open",
+                    "Please open a project first to manage project variables."
+                )
+                return
+
+        dialog = VariableEditorDialog(scope=scope, parent=self._main_window)
+        dialog.exec()
+
+        # Refresh project panel after editing
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            manager = get_project_manager()
+            project_panel.refresh_tree(
+                current_project=manager.current_project,
+                current_scenario=manager.current_scenario
+            )
+
+    def _on_credential_edit_requested(self, scope: str) -> None:
+        """
+        Handle credential edit request from project panel.
+
+        Args:
+            scope: "global" or "project"
+        """
+        from .dialogs import CredentialEditorDialog
+
+        # Check if project scope is requested but no project is open
+        if scope == "project":
+            manager = get_project_manager()
+            if not manager.current_project:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(
+                    self._main_window,
+                    "No Project Open",
+                    "Please open a project first to manage project credentials."
+                )
+                return
+
+        dialog = CredentialEditorDialog(scope=scope, parent=self._main_window)
+        dialog.exec()
+
+        # Refresh project panel after editing
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            manager = get_project_manager()
+            project_panel.refresh_tree(
+                current_project=manager.current_project,
+                current_scenario=manager.current_scenario
+            )
+
     def _ensure_all_nodes_have_casare_nodes(self) -> bool:
         """
         Ensure all visual nodes in the graph have CasareRPA nodes.
         Creates missing CasareRPA nodes on demand.
-        
+
         Returns:
             True if all nodes have CasareRPA nodes, False if any failed
         """
         graph = self._node_graph.graph
         all_valid = True
-        
+
         for visual_node in graph.all_nodes():
             if hasattr(visual_node, 'ensure_casare_node'):
                 casare_node = visual_node.ensure_casare_node()

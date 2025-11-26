@@ -60,7 +60,36 @@ class AutoConnectManager(QObject):
         
         # Install event filter on the graph viewer
         self._setup_event_filters()
-    
+
+        # Connect to nodes_deleted signal to reset drag state
+        try:
+            if hasattr(self._graph, 'nodes_deleted'):
+                self._graph.nodes_deleted.connect(self._on_nodes_deleted)
+        except Exception:
+            pass
+
+    def _on_nodes_deleted(self, node_ids):
+        """Handle node deletion - reset drag state if deleted node was being dragged."""
+        if self._dragging_node:
+            # Check if the dragging node was deleted
+            try:
+                node_id = self._dragging_node.id()
+                if node_id in node_ids:
+                    self._clear_suggestions()
+                    self._dragging_node = None
+                    self._restore_context_menu()
+            except Exception:
+                # Node might already be invalid, just reset
+                self._clear_suggestions()
+                self._dragging_node = None
+                self._restore_context_menu()
+
+    def reset_drag_state(self):
+        """Public method to reset drag state - useful after operations that might corrupt state."""
+        self._clear_suggestions()
+        self._dragging_node = None
+        self._restore_context_menu()
+
     def _setup_event_filters(self):
         """Setup event filters to monitor node dragging."""
         try:
@@ -105,17 +134,34 @@ class AutoConnectManager(QObject):
             # Detect node movement first - this sets _dragging_node
             if event.type() == QEvent.Type.MouseMove:
                 if isinstance(event, QMouseEvent):
-                    # Check if we're dragging a node
+                    # Check if we're dragging a node (not a connection)
                     selected_nodes = self._graph.selected_nodes()
                     if selected_nodes and event.buttons() & Qt.MouseButton.LeftButton:
-                        # Start dragging if not already
-                        if not self._dragging_node:
-                            self._dragging_node = selected_nodes[0]
-                            # Disable context menu during drag
-                            self._disable_context_menu()
-                        
-                        # Update suggestions
-                        self._update_suggestions()
+                        # Only track node drag if NOT dragging from a port
+                        # Check if there's an active live pipe (connection being made)
+                        viewer = self._graph.viewer()
+                        is_making_connection = (
+                            viewer and
+                            hasattr(viewer, '_LIVE_PIPE') and
+                            viewer._LIVE_PIPE.isVisible()
+                        )
+
+                        if is_making_connection:
+                            # User is making a connection, not dragging a node
+                            # Clear any stale drag state
+                            if self._dragging_node:
+                                self._clear_suggestions()
+                                self._dragging_node = None
+                                self._restore_context_menu()
+                        else:
+                            # Start dragging if not already
+                            if not self._dragging_node:
+                                self._dragging_node = selected_nodes[0]
+                                # Disable context menu during drag
+                                self._disable_context_menu()
+
+                            # Update suggestions
+                            self._update_suggestions()
             
             # Track right mouse button state and handle context menu
             elif event.type() == QEvent.Type.MouseButtonPress:
