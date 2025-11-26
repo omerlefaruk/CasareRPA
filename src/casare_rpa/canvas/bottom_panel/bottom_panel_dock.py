@@ -60,6 +60,8 @@ class BottomPanelDock(QDockWidget):
     trigger_delete_requested = Signal(str)  # trigger_id
     trigger_toggle_requested = Signal(str, bool)  # trigger_id, enabled
     trigger_run_requested = Signal(str)  # trigger_id
+    triggers_start_requested = Signal()  # Start all triggers
+    triggers_stop_requested = Signal()  # Stop all triggers
 
     # Tab indices
     TAB_VARIABLES = 0
@@ -163,6 +165,8 @@ class BottomPanelDock(QDockWidget):
         self._triggers_tab.trigger_deleted.connect(self.trigger_delete_requested.emit)
         self._triggers_tab.trigger_toggled.connect(self.trigger_toggle_requested.emit)
         self._triggers_tab.trigger_run_requested.connect(self.trigger_run_requested.emit)
+        self._triggers_tab.triggers_start_requested.connect(self.triggers_start_requested.emit)
+        self._triggers_tab.triggers_stop_requested.connect(self.triggers_stop_requested.emit)
         self._tab_widget.addTab(self._triggers_tab, "Triggers")
 
     def _update_tab_badges(self) -> None:
@@ -515,6 +519,15 @@ class BottomPanelDock(QDockWidget):
         """Clear all triggers."""
         self._triggers_tab.clear()
         self._update_tab_badges()
+
+    def set_triggers_running(self, running: bool) -> None:
+        """
+        Update the UI to reflect trigger running status.
+
+        Args:
+            running: True if triggers are running, False otherwise
+        """
+        self._triggers_tab.set_triggers_running(running)
 
     # ==================== State Management ====================
 

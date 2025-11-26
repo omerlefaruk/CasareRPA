@@ -216,9 +216,27 @@ class VisualNode(NodeGraphQtBaseNode):
             port_name: Name of the port
 
         Returns:
-            DataType if it's a data port, None if it's an exec port or unknown
+            DataType if it's a data port, None if it's an exec port
         """
-        return self._port_types.get(port_name, DataType.ANY)
+        # Check if explicitly registered
+        if port_name in self._port_types:
+            return self._port_types[port_name]
+
+        # Check if it's an exec port by name pattern
+        port_lower = port_name.lower()
+        exec_port_names = {
+            "exec_in", "exec_out", "exec",
+            "loop_body", "completed",  # Loop node exec outputs
+            "true", "false",  # If/Branch node exec outputs
+            "then", "else",  # Alternative if/branch names
+            "on_success", "on_error", "on_finally",  # Error handling
+            "body", "done", "finish", "next",  # Other common exec names
+        }
+        if port_lower in exec_port_names or "exec" in port_lower:
+            return None  # Exec port
+
+        # Default to ANY for unknown data ports
+        return DataType.ANY
 
     def is_exec_port(self, port_name: str) -> bool:
         """

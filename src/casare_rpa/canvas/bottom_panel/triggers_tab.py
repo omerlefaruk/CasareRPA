@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QIcon
 from loguru import logger
 
@@ -68,6 +68,8 @@ class TriggersTab(QWidget):
     trigger_toggled = Signal(str, bool)  # trigger_id, enabled
     trigger_run_requested = Signal(str)  # trigger_id
     add_trigger_requested = Signal()
+    triggers_start_requested = Signal()  # User wants to start triggers
+    triggers_stop_requested = Signal()  # User wants to stop triggers
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the triggers tab."""
@@ -113,6 +115,13 @@ class TriggersTab(QWidget):
         toolbar.addWidget(self._filter_combo)
         toolbar.addWidget(self._status_combo)
         toolbar.addStretch()
+
+        # Start/Stop triggers button
+        self._start_btn = QPushButton("Start Triggers")
+        self._start_btn.setCheckable(True)
+        self._start_btn.clicked.connect(self._on_toggle_triggers)
+        self._start_btn.setToolTip("Start all enabled triggers to run the workflow automatically")
+        toolbar.addWidget(self._start_btn)
 
         # Add trigger button
         self._add_btn = QPushButton("+ Add Trigger")
@@ -161,7 +170,7 @@ class TriggersTab(QWidget):
         self._table.setColumnWidth(2, 100)
         self._table.setColumnWidth(3, 150)
         self._table.setColumnWidth(4, 60)
-        self._table.setColumnWidth(5, 120)
+        self._table.setColumnWidth(5, 180)
 
         layout.addWidget(self._table)
 
@@ -265,6 +274,25 @@ class TriggersTab(QWidget):
         """Get the number of triggers."""
         return len(self._triggers)
 
+    @Slot(str, int, str)
+    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
+        """
+        Update statistics for a specific trigger.
+
+        Args:
+            trigger_id: The ID of the trigger to update
+            count: The new trigger count
+            last_triggered: ISO timestamp of last trigger time
+        """
+        logger.debug(f"Updating trigger stats: id={trigger_id}, count={count}")
+        for trigger in self._triggers:
+            if trigger.get('id') == trigger_id:
+                trigger['trigger_count'] = count
+                trigger['last_triggered'] = last_triggered
+                logger.debug(f"Updated trigger {trigger_id}: count={count}")
+                break
+        self._refresh_table()
+
     def _refresh_table(self) -> None:
         """Refresh the table display."""
         # Apply filters
@@ -331,19 +359,57 @@ class TriggersTab(QWidget):
             actions_layout.setContentsMargins(4, 2, 4, 2)
             actions_layout.setSpacing(4)
 
+            # Button style for table cells
+            btn_style = """
+                QPushButton {
+                    background-color: #0E639C;
+                    color: white;
+                    border: none;
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #1177BB;
+                }
+            """
+
             # Run button
             run_btn = QPushButton("Run")
-            run_btn.setFixedSize(40, 24)
+            run_btn.setFixedSize(50, 22)
+            run_btn.setStyleSheet(btn_style)
             run_btn.setProperty("trigger_id", trigger.get('id'))
             run_btn.clicked.connect(self._on_run_trigger)
             actions_layout.addWidget(run_btn)
 
             # Edit button
             edit_btn = QPushButton("Edit")
-            edit_btn.setFixedSize(40, 24)
+            edit_btn.setFixedSize(50, 22)
+            edit_btn.setStyleSheet(btn_style)
             edit_btn.setProperty("trigger_id", trigger.get('id'))
             edit_btn.clicked.connect(self._on_edit_trigger)
             actions_layout.addWidget(edit_btn)
+
+            # Delete button
+            del_btn_style = """
+                QPushButton {
+                    background-color: #6E2C2C;
+                    color: white;
+                    border: none;
+                    padding: 2px 8px;
+                    border-radius: 3px;
+                    font-size: 11px;
+                }
+                QPushButton:hover {
+                    background-color: #8B3A3A;
+                }
+            """
+            del_btn = QPushButton("Del")
+            del_btn.setFixedSize(40, 22)
+            del_btn.setStyleSheet(del_btn_style)
+            del_btn.setProperty("trigger_id", trigger.get('id'))
+            del_btn.clicked.connect(self._on_delete_trigger)
+            actions_layout.addWidget(del_btn)
 
             self._table.setCellWidget(row, 5, actions_widget)
 
@@ -385,6 +451,27 @@ class TriggersTab(QWidget):
         """Handle Add Trigger button click."""
         self.add_trigger_requested.emit()
 
+    def _on_toggle_triggers(self, checked: bool) -> None:
+        """Handle Start/Stop Triggers button click."""
+        if checked:
+            self._start_btn.setText("Stop Triggers")
+            self._start_btn.setStyleSheet("background-color: #cc4444;")
+            self.triggers_start_requested.emit()
+        else:
+            self._start_btn.setText("Start Triggers")
+            self._start_btn.setStyleSheet("")
+            self.triggers_stop_requested.emit()
+
+    def set_triggers_running(self, running: bool) -> None:
+        """Update the button state to reflect trigger running status."""
+        self._start_btn.setChecked(running)
+        if running:
+            self._start_btn.setText("Stop Triggers")
+            self._start_btn.setStyleSheet("background-color: #cc4444;")
+        else:
+            self._start_btn.setText("Start Triggers")
+            self._start_btn.setStyleSheet("")
+
     def _on_run_trigger(self) -> None:
         """Handle Run button click."""
         btn = self.sender()
@@ -402,6 +489,15 @@ class TriggersTab(QWidget):
                 trigger = self._get_trigger_by_id(trigger_id)
                 if trigger:
                     self.trigger_updated.emit(trigger)
+
+    def _on_delete_trigger(self) -> None:
+        """Handle Delete button click."""
+        btn = self.sender()
+        if btn:
+            trigger_id = btn.property("trigger_id")
+            if trigger_id:
+                self.remove_trigger(trigger_id)
+                self.trigger_deleted.emit(trigger_id)
 
     def _on_row_double_clicked(self, index) -> None:
         """Handle row double-click (edit trigger)."""

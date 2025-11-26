@@ -180,17 +180,66 @@ class VisualCloseBrowserNode(VisualNode):
 
 class VisualNewTabNode(VisualNode):
     """Visual representation of NewTabNode."""
-    
+
     __identifier__ = "casare_rpa.browser"
     NODE_NAME = "New Tab"
     NODE_CATEGORY = "browser"
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("browser")
         self.add_output("exec_out")
         self.add_output("page")
+
+
+class VisualGetAllImagesNode(VisualNode):
+    """Visual representation of GetAllImagesNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Get All Images"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize get all images node."""
+        super().__init__()
+        self.add_text_input("min_width", "Min Width", placeholder_text="0", tab="properties")
+        self.add_text_input("min_height", "Min Height", placeholder_text="0", tab="properties")
+        self.add_checkbox("include_backgrounds", "Include Background Images", state=True, tab="properties")
+        self.add_text_input("file_types", "File Types", placeholder_text="jpg,png,webp (empty=all)", tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input()
+        self.add_exec_output()
+        self.add_output("images")
+        self.add_output("count")
+
+
+class VisualDownloadFileNode(VisualNode):
+    """Visual representation of DownloadFileNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Download File"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize download file node."""
+        super().__init__()
+        self.add_text_input("save_path", "Save Path", placeholder_text="C:/Downloads or full path", tab="properties")
+        self.add_checkbox("use_browser", "Use Browser Context", state=False, tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_checkbox("overwrite", "Overwrite Existing", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input()
+        self.add_input("url")
+        self.add_input("filename")
+        self.add_exec_output()
+        self.add_output("path")
+        self.add_output("size")
+        self.add_output("success")
 
 
 # Navigation Nodes
@@ -648,47 +697,47 @@ class VisualIfNode(VisualNode):
 
 class VisualForLoopNode(VisualNode):
     """Visual representation of ForLoopNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "For Loop"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize For Loop node."""
         super().__init__()
         self.add_text_input("start", "Start", text="0", tab="properties")
         self.add_text_input("end", "End", text="10", tab="properties")
         self.add_text_input("step", "Step", text="1", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
+        self.add_exec_input()
         self.add_input("items")
-        self.add_output("loop_body")
-        self.add_output("completed")
+        self.add_exec_output("loop_body")
+        self.add_exec_output("completed")
         self.add_output("item")
         self.add_output("index")
 
 
 class VisualWhileLoopNode(VisualNode):
     """Visual representation of WhileLoopNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "While Loop"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize While Loop node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
         self.add_text_input("max_iterations", "Max Iterations", text="1000", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
+        self.add_exec_input()
         self.add_input("condition")
-        self.add_output("loop_body")
-        self.add_output("completed")
+        self.add_exec_output("loop_body")
+        self.add_exec_output("completed")
         self.add_output("iteration")
 
 

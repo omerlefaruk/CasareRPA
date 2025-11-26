@@ -204,6 +204,34 @@ except Exception as e:
     logger.warning(f"Could not fix draw_index_pointer: {e}")
 
 
+# ============================================================================
+# FIX: PipeItem.draw_path crashes when viewer() returns None
+# ============================================================================
+# This happens during workflow loading or undo/redo when pipes are redrawn
+# before the scene is fully set up. We patch draw_path to handle None viewer.
+
+try:
+    from NodeGraphQt.qgraphics.pipe import PipeItem
+
+    _original_pipe_draw_path = PipeItem.draw_path
+
+    def _patched_pipe_draw_path(self, start_port, end_port=None, cursor_pos=None):
+        """Patched draw_path that handles viewer() returning None."""
+        # Check if viewer is available before proceeding
+        viewer = self.viewer()
+        if viewer is None:
+            # Viewer not ready - skip drawing, will be called again later
+            return
+        # Call original method
+        return _original_pipe_draw_path(self, start_port, end_port, cursor_pos)
+
+    PipeItem.draw_path = _patched_pipe_draw_path
+    logger.debug("Patched PipeItem.draw_path for viewer None safety")
+
+except Exception as e:
+    logger.warning(f"Could not patch PipeItem.draw_path: {e}")
+
+
 class TooltipBlocker(QObject):
     """Event filter to block tooltips."""
     def eventFilter(self, obj, event):
