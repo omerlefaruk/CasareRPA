@@ -537,6 +537,25 @@ class ProjectManager:
         ProjectStorage.save_projects_index(index)
         logger.info("Cleared recent projects list")
 
+    def remove_from_recent(self, project_id: str) -> None:
+        """
+        Remove a project from the recent projects list.
+
+        Args:
+            project_id: ID of the project to remove
+        """
+        index = ProjectStorage.load_projects_index()
+        original_count = len(index.projects)
+
+        # Filter out the project with matching ID
+        index.projects = [p for p in index.projects if p.id != project_id]
+
+        if len(index.projects) < original_count:
+            ProjectStorage.save_projects_index(index)
+            logger.info(f"Removed project {project_id} from recent projects")
+        else:
+            logger.debug(f"Project {project_id} not found in recent projects")
+
 
 # Singleton instance
 _project_manager: Optional[ProjectManager] = None

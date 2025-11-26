@@ -2,16 +2,43 @@
 Desktop Context - Main entry point for desktop automation
 
 Manages windows, applications, and provides high-level desktop automation API.
+
+Note: This module provides both sync and async methods. The async methods
+(prefixed with 'async_') should be used when running within an asyncio event loop
+to avoid blocking the UI and other concurrent operations.
 """
 
+import asyncio
 import time
 import subprocess
 import psutil
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 import uiautomation as auto
 
 from .element import DesktopElement
+
+# Shared thread pool for blocking desktop automation operations
+# Using a small pool since UI automation is inherently sequential per-window
+_desktop_executor: Optional[ThreadPoolExecutor] = None
+
+
+def _get_executor() -> ThreadPoolExecutor:
+    """Get or create the shared thread pool executor for desktop operations."""
+    global _desktop_executor
+    if _desktop_executor is None:
+        _desktop_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="desktop_auto")
+    return _desktop_executor
+
+
+def shutdown_executor() -> None:
+    """Shutdown the shared executor. Call during application cleanup."""
+    global _desktop_executor
+    if _desktop_executor is not None:
+        _desktop_executor.shutdown(wait=False)
+        _desktop_executor = None
 
 
 class DesktopContext:
@@ -70,7 +97,68 @@ class DesktopContext:
         error_msg = f"Window not found: '{title}' (exact={exact})"
         logger.error(error_msg)
         raise ValueError(error_msg)
-    
+
+    async def async_find_window(
+        self, title: str, exact: bool = False, timeout: float = 5.0
+    ) -> Optional[DesktopElement]:
+        """
+        Async version of find_window - Find a window by its title without blocking.
+
+        This method uses asyncio.sleep() instead of time.sleep() and runs
+        blocking uiautomation calls in a thread pool executor.
+
+        Args:
+            title: Window title to search for
+            exact: If True, match exact title; if False, match partial title
+            timeout: Maximum time to wait for window (seconds)
+
+        Returns:
+            DesktopElement wrapping the window, or None if not found
+
+        Raises:
+            ValueError: If window is not found within timeout
+        """
+        logger.debug(f"Async finding window: '{title}' (exact={exact}, timeout={timeout}s)")
+
+        loop = asyncio.get_event_loop()
+        executor = _get_executor()
+        start_time = time.time()
+        check_count = 0
+        max_quick_checks = 30
+
+        def _search_window() -> Optional[DesktopElement]:
+            """Blocking window search - runs in thread pool."""
+            try:
+                if exact:
+                    window = auto.WindowControl(searchDepth=1, Name=title)
+                else:
+                    window = auto.WindowControl(searchDepth=1, SubName=title)
+
+                if window.Exists(0, 0):
+                    return DesktopElement(window)
+            except Exception as e:
+                logger.debug(f"Window search attempt failed: {e}")
+            return None
+
+        while time.time() - start_time < timeout:
+            check_count += 1
+
+            # Run blocking search in executor
+            result = await loop.run_in_executor(executor, _search_window)
+            if result is not None:
+                logger.info(f"Found window: '{result.get_text()}'")
+                return result
+
+            # Use async sleep to avoid blocking
+            if check_count < max_quick_checks:
+                await asyncio.sleep(0.1)
+            else:
+                await asyncio.sleep(0.5)
+
+        error_msg = f"Window not found: '{title}' (exact={exact})"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
     def get_all_windows(self, include_invisible: bool = False) -> List[DesktopElement]:
         """
         Get all top-level windows.
@@ -206,7 +294,132 @@ class DesktopContext:
             error_msg = f"Failed to launch application '{path}': {e}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
-    
+
+    async def async_launch_application(
+        self,
+        path: str,
+        args: str = "",
+        working_dir: Optional[str] = None,
+        timeout: float = 10.0,
+        window_title: Optional[str] = None
+    ) -> DesktopElement:
+        """
+        Async version of launch_application - Launch an application without blocking.
+
+        This method uses asyncio.sleep() instead of time.sleep() and runs
+        blocking operations in a thread pool executor.
+
+        Args:
+            path: Path to executable or command name
+            args: Command line arguments
+            working_dir: Working directory for the process
+            timeout: Maximum time to wait for window to appear
+            window_title: Expected window title (if None, uses process name)
+
+        Returns:
+            DesktopElement wrapping the application's main window
+
+        Raises:
+            RuntimeError: If application fails to launch or window not found
+        """
+        logger.info(f"Async launching application: {path} {args}")
+        loop = asyncio.get_event_loop()
+        executor = _get_executor()
+
+        try:
+            import shlex
+            import os
+
+            # SECURITY: Build command as list to avoid shell injection
+            cmd_list = [path]
+            if args:
+                try:
+                    parsed_args = shlex.split(args)
+                    cmd_list.extend(parsed_args)
+                except ValueError as e:
+                    logger.warning(f"Could not parse args with shlex: {e}, using simple split")
+                    cmd_list.extend(args.split())
+
+            # Launch process (this is quick, doesn't need executor)
+            process = subprocess.Popen(
+                cmd_list,
+                cwd=working_dir,
+                shell=False
+            )
+
+            self._launched_processes.append(process.pid)
+            logger.debug(f"Process launched with PID: {process.pid}")
+
+            # Wait for window to initialize (async sleep)
+            await asyncio.sleep(0.5)
+
+            # Determine window title to search for
+            if window_title is None:
+                exe_name = os.path.splitext(os.path.basename(path))[0]
+                window_title = exe_name
+
+            # Use async window search
+            window_search_timeout = min(timeout, 3.0)
+
+            try:
+                window = await self.async_find_window(
+                    window_title, exact=False, timeout=window_search_timeout
+                )
+                logger.info(f"Application launched successfully: {window_title}")
+                return window
+            except ValueError:
+                # If we can't find by title, try to find by process ID
+                logger.warning(
+                    f"Could not find window by title '{window_title}' "
+                    f"after {window_search_timeout}s, searching by process..."
+                )
+
+                def _search_by_pid() -> Optional[DesktopElement]:
+                    """Search for window by PID - runs in thread pool."""
+                    search_start = time.time()
+                    max_search_time = 3.0
+                    windows_checked = 0
+
+                    try:
+                        for window in auto.GetRootControl().GetChildren():
+                            if time.time() - search_start > max_search_time:
+                                logger.warning(
+                                    f"Process-based window search timed out "
+                                    f"after checking {windows_checked} windows"
+                                )
+                                break
+
+                            windows_checked += 1
+
+                            if window.ControlTypeName == 'WindowControl' and window.IsEnabled:
+                                try:
+                                    if window.ProcessId == process.pid:
+                                        return DesktopElement(window)
+                                except Exception:
+                                    continue
+
+                        logger.error(
+                            f"No window found for PID {process.pid} "
+                            f"after checking {windows_checked} windows"
+                        )
+                    except Exception as e:
+                        logger.error(f"Error during process-based window search: {e}")
+                    return None
+
+                # Run blocking search in executor
+                result = await loop.run_in_executor(executor, _search_by_pid)
+                if result is not None:
+                    window_title_found = result.get_text()
+                    logger.info(f"Found window by process ID: {window_title_found}")
+                    return result
+
+                raise RuntimeError(f"Failed to find window for application: {path}")
+
+        except Exception as e:
+            error_msg = f"Failed to launch application '{path}': {e}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
+
     def close_application(
         self, 
         window_or_pid: Union[DesktopElement, int, str],
@@ -291,12 +504,117 @@ class DesktopContext:
                     pass
                 
                 return True
-                
+
         except Exception as e:
             error_msg = f"Failed to close application: {e}"
             logger.error(error_msg)
             raise ValueError(error_msg)
-    
+
+    async def async_close_application(
+        self,
+        window_or_pid: Union[DesktopElement, int, str],
+        force: bool = False,
+        timeout: float = 5.0
+    ) -> bool:
+        """
+        Async version of close_application - Close an application without blocking.
+
+        Args:
+            window_or_pid: DesktopElement (window), process ID, or window title
+            force: If True, force kill the process; if False, try graceful close
+            timeout: Maximum time to wait for graceful close
+
+        Returns:
+            True if application was closed successfully
+
+        Raises:
+            ValueError: If application not found or failed to close
+        """
+        logger.debug(f"Async closing application (force={force})")
+        loop = asyncio.get_event_loop()
+        executor = _get_executor()
+
+        try:
+            # Get window element
+            if isinstance(window_or_pid, DesktopElement):
+                window = window_or_pid
+            elif isinstance(window_or_pid, int):
+                # Find window by process ID (blocking - run in executor)
+                def _find_by_pid():
+                    for w in self.get_all_windows():
+                        try:
+                            if w._control.ProcessId == window_or_pid:
+                                return w
+                        except Exception:
+                            pass
+                    return None
+
+                window = await loop.run_in_executor(executor, _find_by_pid)
+                if window is None:
+                    raise ValueError(f"No window found for PID: {window_or_pid}")
+            else:
+                # Find window by title (use async version)
+                window = await self.async_find_window(window_or_pid)
+
+            # Get process ID
+            pid = window._control.ProcessId
+
+            if force:
+                # Force kill (run in executor)
+                def _force_kill():
+                    logger.info(f"Force killing process {pid}")
+                    try:
+                        process = psutil.Process(pid)
+                        process.kill()
+                        process.wait(timeout=timeout)
+                    except psutil.NoSuchProcess:
+                        pass
+                    return True
+
+                return await loop.run_in_executor(executor, _force_kill)
+            else:
+                # Try graceful close
+                logger.info(f"Attempting graceful close of window: {window.get_text()}")
+
+                def _try_close():
+                    try:
+                        window._control.GetWindowPattern().Close()
+                    except Exception as e:
+                        logger.debug(f"WindowPattern.Close() failed, trying Alt+F4: {e}")
+                        window._control.SetFocus()
+                        window._control.SendKeys('{Alt}F4')
+
+                await loop.run_in_executor(executor, _try_close)
+
+                # Wait for window to close (async)
+                start_time = time.time()
+                while time.time() - start_time < timeout:
+                    exists = await loop.run_in_executor(
+                        executor, lambda: window._control.Exists(0, 0)
+                    )
+                    if not exists:
+                        logger.info("Application closed successfully")
+                        return True
+                    await asyncio.sleep(0.1)
+
+                # Timeout - force kill
+                logger.warning(f"Graceful close timed out, force killing PID {pid}")
+
+                def _force_kill_fallback():
+                    try:
+                        process = psutil.Process(pid)
+                        process.kill()
+                    except psutil.NoSuchProcess:
+                        pass
+
+                await loop.run_in_executor(executor, _force_kill_fallback)
+                return True
+
+        except Exception as e:
+            error_msg = f"Failed to close application: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
     def cleanup(self):
         """
         Clean up resources and close applications launched by this context.
@@ -1408,6 +1726,84 @@ class DesktopContext:
                     return None
 
             time.sleep(poll_interval)
+
+        # Timeout reached
+        elapsed = time.time() - start_time
+        raise TimeoutError(
+            f"Element did not become '{state}' within {timeout} seconds (elapsed: {elapsed:.1f}s)"
+        )
+
+    async def async_wait_for_element(
+        self,
+        selector: dict,
+        timeout: float = 10.0,
+        state: str = "visible",
+        poll_interval: float = 0.5,
+        parent: auto.Control = None
+    ) -> Optional[DesktopElement]:
+        """
+        Async version of wait_for_element - Wait for an element without blocking.
+
+        Args:
+            selector: Element selector dictionary
+            timeout: Maximum wait time in seconds
+            state: State to wait for - "visible", "hidden", "enabled", "disabled"
+            poll_interval: Time between checks in seconds
+            parent: Parent control to search within (uses root if None)
+
+        Returns:
+            DesktopElement if found (for visible/enabled), None if hidden/disabled
+
+        Raises:
+            TimeoutError: If element doesn't reach state within timeout
+        """
+        valid_states = ["visible", "hidden", "enabled", "disabled"]
+        if state.lower() not in valid_states:
+            raise ValueError(f"Invalid state '{state}'. Must be one of: {valid_states}")
+
+        state = state.lower()
+        logger.debug(f"Async waiting for element to be '{state}' (timeout={timeout}s)")
+
+        loop = asyncio.get_event_loop()
+        executor = _get_executor()
+        start_time = time.time()
+
+        def _find_and_check():
+            """Find element and check state - runs in thread pool."""
+            try:
+                element = self.find_element(selector, timeout=0.1, parent=parent)
+
+                if state == "visible":
+                    if element and element.exists():
+                        return ("found", element)
+                elif state == "hidden":
+                    if not element or not element.exists():
+                        return ("hidden", None)
+                elif state == "enabled":
+                    if element and element._control.IsEnabled:
+                        return ("enabled", element)
+                elif state == "disabled":
+                    if element and not element._control.IsEnabled:
+                        return ("disabled", element)
+
+                return ("not_ready", element)
+            except Exception:
+                if state == "hidden":
+                    return ("hidden", None)
+                return ("error", None)
+
+        while time.time() - start_time < timeout:
+            result_type, element = await loop.run_in_executor(executor, _find_and_check)
+
+            if result_type in ("found", "enabled", "disabled"):
+                logger.info(f"Element is {state}")
+                return element
+            elif result_type == "hidden":
+                logger.info(f"Element is hidden/not found")
+                return None
+
+            # Use async sleep
+            await asyncio.sleep(poll_interval)
 
         # Timeout reached
         elapsed = time.time() - start_time

@@ -79,6 +79,10 @@ class ScenarioStorage:
         """
         Load a scenario from a JSON file.
 
+        Supports both:
+        - Proper scenario format (with id, name, workflow keys)
+        - Legacy/raw workflow format (nodes, connections at top level)
+
         Args:
             file_path: Path to scenario file
 
@@ -95,7 +99,33 @@ class ScenarioStorage:
         try:
             json_data = file_path.read_bytes()
             data = orjson.loads(json_data)
-            scenario = Scenario.from_dict(data)
+
+            # Detect if this is a raw workflow file (has nodes/connections at top level)
+            # vs a proper scenario file (has id, workflow keys)
+            is_raw_workflow = (
+                "nodes" in data and
+                "connections" in data and
+                "workflow" not in data and
+                "id" not in data
+            )
+
+            if is_raw_workflow:
+                # Convert raw workflow to scenario format
+                logger.debug(f"Detected raw workflow format, converting to scenario: {file_path}")
+                # Extract name from filename or metadata
+                name = file_path.stem
+                if "metadata" in data and data["metadata"].get("name"):
+                    name = data["metadata"]["name"]
+
+                scenario = Scenario.from_dict({
+                    "id": generate_scenario_id(),
+                    "name": name,
+                    "project_id": "",  # Will be set when loaded into project context
+                    "workflow": data,  # Embed the entire workflow data
+                })
+            else:
+                scenario = Scenario.from_dict(data)
+
             scenario.file_path = file_path
             logger.debug(f"Loaded scenario from {file_path}")
             return scenario
@@ -252,3 +282,110 @@ class ScenarioStorage:
             if scenario.name == name:
                 return scenario
         return None
+
+    @staticmethod
+    def import_workflow_file(
+        file_path: Path,
+        project: Project,
+        scenario_name: Optional[str] = None
+    ) -> Scenario:
+        """
+        Import a workflow JSON file as a new scenario.
+
+        Supports both:
+        - Raw workflow files (nodes, connections at top level)
+        - Scenario files (with id, name, workflow keys)
+
+        Args:
+            file_path: Path to workflow/scenario JSON file
+            project: Project to import into
+            scenario_name: Optional name for the scenario (uses filename if not provided)
+
+        Returns:
+            Created Scenario instance
+
+        Raises:
+            FileNotFoundError: If file doesn't exist
+            ValueError: If file is invalid
+        """
+        if not file_path.exists():
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        try:
+            json_data = file_path.read_bytes()
+            data = orjson.loads(json_data)
+
+            # Detect format
+            is_raw_workflow = (
+                "nodes" in data and
+                "connections" in data and
+                "workflow" not in data
+            )
+
+            if is_raw_workflow:
+                # Raw workflow file - wrap in scenario
+                workflow_data = data
+                name = scenario_name or file_path.stem
+                if "metadata" in data and data["metadata"].get("name"):
+                    name = scenario_name or data["metadata"]["name"]
+            else:
+                # Scenario file - extract workflow
+                workflow_data = data.get("workflow", {})
+                name = scenario_name or data.get("name", file_path.stem)
+
+            # Create new scenario with new ID
+            scenario = Scenario.create_new(
+                name=name,
+                project_id=project.id,
+                workflow=workflow_data,
+                description=f"Imported from {file_path.name}",
+            )
+
+            # Save to project
+            ScenarioStorage.save_scenario(scenario, project)
+
+            logger.info(f"Imported workflow as scenario '{name}' from {file_path}")
+            return scenario
+
+        except Exception as e:
+            logger.error(f"Failed to import workflow: {e}")
+            raise ValueError(f"Invalid workflow file: {e}") from e
+
+    @staticmethod
+    def export_scenario(
+        scenario: Scenario,
+        export_path: Path,
+        export_format: str = "scenario"
+    ) -> Path:
+        """
+        Export a scenario to a JSON file.
+
+        Args:
+            scenario: Scenario to export
+            export_path: Path to save the exported file
+            export_format: "scenario" for full scenario format, "workflow" for raw workflow
+
+        Returns:
+            Path to exported file
+
+        Raises:
+            ValueError: If export format is invalid
+        """
+        if export_format == "scenario":
+            # Export full scenario format
+            export_data = scenario.to_dict()
+        elif export_format == "workflow":
+            # Export just the workflow data
+            export_data = scenario.workflow
+        else:
+            raise ValueError(f"Invalid export format: {export_format}")
+
+        # Serialize and save
+        json_data = orjson.dumps(
+            export_data,
+            option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS,
+        )
+        export_path.write_bytes(json_data)
+
+        logger.info(f"Exported scenario '{scenario.name}' to {export_path}")
+        return export_path
