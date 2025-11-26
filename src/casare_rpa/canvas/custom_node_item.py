@@ -214,6 +214,9 @@ class CasareNodeItem(NodeItem):
         
         painter.strokePath(path, pen)
         
+        # Draw node text (name) FIRST - header bar goes behind icons
+        self._draw_text(painter, rect)
+
         # Draw custom icon if available
         if self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
             icon_size = 24
@@ -221,18 +224,15 @@ class CasareNodeItem(NodeItem):
             icon_y = rect.top() + 12
             icon_rect = QRectF(icon_x, icon_y, icon_size, icon_size)
             painter.drawPixmap(icon_rect.toRect(), self._custom_icon_pixmap)
-        
-        # Draw status indicator (mutually exclusive - error takes precedence)
-        if self._has_error:
-            self._draw_error_icon(painter, rect)
-        elif self._is_completed:
-            self._draw_checkmark(painter, rect)
 
         # Draw execution time badge at bottom
         self._draw_execution_time(painter, rect)
 
-        # Draw node text (name)
-        self._draw_text(painter, rect)
+        # Draw status indicator LAST so it's always on top (error takes precedence over completed)
+        if self._has_error:
+            self._draw_error_icon(painter, rect)
+        elif self._is_completed:
+            self._draw_checkmark(painter, rect)
 
         painter.restore()
     
@@ -241,8 +241,8 @@ class CasareNodeItem(NodeItem):
         size = 20
         margin = 8
         x = rect.right() - size - margin
-        y = rect.top() + margin
-        
+        y = rect.top() + margin - 5  # Raised 5px to stay above header
+
         # Background circle
         painter.setBrush(QBrush(QColor(76, 175, 80)))  # Green
         painter.setPen(Qt.PenStyle.NoPen)
@@ -264,7 +264,7 @@ class CasareNodeItem(NodeItem):
         size = 20
         margin = 8
         x = rect.right() - size - margin
-        y = rect.top() + margin
+        y = rect.top() + margin - 5  # Raised 5px to stay above header
 
         # Red circle background
         painter.setBrush(QBrush(QColor(244, 67, 54)))  # Material Red
