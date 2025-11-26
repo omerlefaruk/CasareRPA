@@ -194,7 +194,14 @@ class CasareRPAApp:
         variable_inspector = self._main_window.get_variable_inspector()
         if variable_inspector:
             variable_inspector.refresh_requested.connect(self._on_refresh_variables)
-        
+
+        # Variables tab refresh connection (bottom panel)
+        bottom_panel = self._main_window.get_bottom_panel()
+        if bottom_panel:
+            variables_tab = bottom_panel.get_variables_tab()
+            if variables_tab:
+                variables_tab.refresh_requested.connect(self._on_refresh_variables)
+
         # Execution history connections
         execution_history = self._main_window.get_execution_history_viewer()
         if execution_history:
@@ -1542,6 +1549,72 @@ class CasareRPAApp:
 
         return initial_variables
 
+    def _load_project_variables_to_panel(
+        self,
+        manager: 'ProjectManager',
+        project_context: Optional['ProjectContext']
+    ) -> None:
+        """
+        Load global and project variables into the Variables Tab.
+
+        This ensures users can see all available variables from:
+        - Global variables (~/.casare/global_variables.json)
+        - Project variables ({project}/variables.json)
+
+        Args:
+            manager: ProjectManager instance
+            project_context: ProjectContext if a project is loaded
+        """
+        try:
+            bottom_panel = self._main_window.get_bottom_panel()
+            if not bottom_panel:
+                return
+
+            variables_tab = bottom_panel.get_variables_tab()
+            if not variables_tab:
+                return
+
+            # Get existing variables from the tab
+            existing_vars = variables_tab.get_variables()
+            added_count = 0
+
+            # Load global variables
+            global_vars = manager.get_global_variables()
+            for name, var in global_vars.items():
+                if name not in existing_vars:
+                    var_def = {
+                        "name": name,
+                        "type": var.type if hasattr(var, 'type') else "String",
+                        "default_value": var.default_value if hasattr(var, 'default_value') else var,
+                        "description": var.description if hasattr(var, 'description') else "",
+                        "scope": "Global",
+                    }
+                    existing_vars[name] = var_def
+                    added_count += 1
+
+            # Load project variables if project is loaded
+            if manager.current_project:
+                project_vars = manager.get_project_variables()
+                for name, var in project_vars.items():
+                    if name not in existing_vars:
+                        var_def = {
+                            "name": name,
+                            "type": var.type if hasattr(var, 'type') else "String",
+                            "default_value": var.default_value if hasattr(var, 'default_value') else var,
+                            "description": var.description if hasattr(var, 'description') else "",
+                            "scope": "Project",
+                        }
+                        existing_vars[name] = var_def
+                        added_count += 1
+
+            # Update the Variables Tab with all variables
+            if added_count > 0:
+                variables_tab.set_variables(existing_vars)
+                logger.info(f"Loaded {added_count} global/project variables into Variables Tab")
+
+        except Exception as e:
+            logger.warning(f"Could not load project variables to panel: {e}")
+
     def _create_workflow_from_graph(self) -> WorkflowSchema:
         """
         Create a WorkflowSchema from the current node graph.
@@ -1695,6 +1768,9 @@ class CasareRPAApp:
             manager = get_project_manager()
             project_context = ProjectContext.from_project_manager(manager) if manager.current_project else None
 
+            # Load global/project variables into the Variables Tab so they're visible
+            self._load_project_variables_to_panel(manager, project_context)
+
             # Create workflow runner with initial variables and project context
             self._workflow_runner = WorkflowRunner(
                 workflow,
@@ -1792,6 +1868,9 @@ class CasareRPAApp:
             from ..project.project_context import ProjectContext
             manager = get_project_manager()
             project_context = ProjectContext.from_project_manager(manager) if manager.current_project else None
+
+            # Load global/project variables into the Variables Tab so they're visible
+            self._load_project_variables_to_panel(manager, project_context)
 
             # Create workflow runner with target node, initial variables and project context
             self._workflow_runner = WorkflowRunner(
@@ -2068,6 +2147,13 @@ class CasareRPAApp:
                         visual_node.update_execution_time(execution_time)
                     break
 
+        # Update variables panel after each node completes (catches SetVariable changes)
+        if self._workflow_runner:
+            variables = self._workflow_runner.get_variables()
+            bottom_panel = self._main_window.get_bottom_panel()
+            if bottom_panel:
+                bottom_panel.update_runtime_values(variables)
+
         # Check if target node was reached (Run-To-Node mode)
         if target_reached:
             # Re-enable run buttons so user can run again
@@ -2186,9 +2272,16 @@ class CasareRPAApp:
         """Handle variable refresh request."""
         if self._workflow_runner:
             variables = self._workflow_runner.get_variables()
+
+            # Update Variable Inspector dock
             var_inspector = self._main_window.get_variable_inspector()
             if var_inspector:
                 var_inspector.update_values(variables)
+
+            # Update Variables Tab in bottom panel (shows new runtime variables)
+            bottom_panel = self._main_window.get_bottom_panel()
+            if bottom_panel:
+                bottom_panel.update_runtime_values(variables)
     
     def _on_history_node_selected(self, node_id: str) -> None:
         """
@@ -2553,11 +2646,17 @@ class CasareRPAApp:
         if not self._workflow_runner or not self._workflow_runner.debug_mode:
             return
 
+        variables = self._workflow_runner.get_variables()
+
         # Update variable inspector dock
         var_inspector = self._main_window.get_variable_inspector()
         if var_inspector and var_inspector.isVisible():
-            variables = self._workflow_runner.get_variables()
             var_inspector.update_values(variables)
+
+        # Update Variables Tab in bottom panel (shows runtime-created variables)
+        bottom_panel = self._main_window.get_bottom_panel()
+        if bottom_panel:
+            bottom_panel.update_runtime_values(variables)
 
         # Update execution history
         exec_history = self._main_window.get_execution_history_viewer()

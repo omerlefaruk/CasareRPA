@@ -588,6 +588,72 @@ class VariablesTab(QWidget):
 
         self._table.blockSignals(False)
 
+    def _add_runtime_variable(self, name: str, value: Any) -> None:
+        """
+        Add a runtime-created variable to the table.
+
+        These variables are created by SetVariable nodes during execution
+        and weren't defined at design time.
+
+        Args:
+            name: Variable name
+            value: Current value
+        """
+        # Skip if already exists
+        if name in self._variables:
+            return
+
+        self._table.blockSignals(True)
+
+        row = self._table.rowCount()
+        self._table.insertRow(row)
+
+        # Name with {x} prefix (cyan color like other variables)
+        name_item = QTableWidgetItem(f"{{x}}{name}")
+        name_item.setForeground(QBrush(QColor("#4fc3f7")))
+        name_item.setData(Qt.ItemDataRole.UserRole, name)
+
+        # Infer type from value
+        var_type = self._infer_type(value)
+        type_item = QTableWidgetItem(var_type)
+
+        # Scope: mark as "Runtime" to distinguish from design-time variables
+        scope_item = QTableWidgetItem("Runtime")
+        scope_item.setForeground(QBrush(QColor("#FFA726")))  # Orange for runtime
+
+        # Default value (empty since it was created at runtime)
+        default_item = QTableWidgetItem("-")
+        default_item.setForeground(QBrush(QColor("#666666")))
+
+        # Current runtime value (the actual value)
+        current_item = QTableWidgetItem(self._format_default_value(value))
+        current_item.setForeground(QBrush(QColor("#4CAF50")))  # Green for active
+        current_item.setFlags(current_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+        # Make row read-only since it's a runtime variable
+        name_item.setFlags(name_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        scope_item.setFlags(scope_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        default_item.setFlags(default_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+
+        self._table.setItem(row, self.COL_NAME, name_item)
+        self._table.setItem(row, self.COL_TYPE, type_item)
+        self._table.setItem(row, self.COL_SCOPE, scope_item)
+        self._table.setItem(row, self.COL_DEFAULT, default_item)
+        self._table.setItem(row, self.COL_CURRENT, current_item)
+
+        # Add to variables dict
+        self._variables[name] = {
+            "name": name,
+            "type": var_type,
+            "default_value": None,
+            "description": "Runtime variable",
+            "scope": "Runtime",
+        }
+
+        self._table.blockSignals(False)
+        logger.debug(f"Added runtime variable: {name} = {value}")
+
     # ==================== Public API ====================
 
     def set_variables(self, variables: Dict[str, Any]) -> None:
@@ -640,19 +706,30 @@ class VariablesTab(QWidget):
         """
         Update current values during runtime.
 
+        Also adds new variables that were created at runtime (e.g., by SetVariable nodes)
+        but don't exist in the design-time table.
+
         Args:
             values: Dict of {name: current_value}
         """
+        # Track which variables exist in the table
+        existing_vars = set()
         for row in range(1, self._table.rowCount()):  # Skip "Create variable" row
             item = self._table.item(row, self.COL_NAME)
             if item:
                 var_name = item.data(Qt.ItemDataRole.UserRole)
+                existing_vars.add(var_name)
                 if var_name in values:
                     # Update the Current Value column (side-by-side with Default)
                     current_item = self._table.item(row, self.COL_CURRENT)
                     if current_item:
                         current_item.setText(self._format_default_value(values[var_name]))
                         current_item.setForeground(QBrush(QColor("#4CAF50")))  # Green for active
+
+        # Add new variables that don't exist in the table (runtime-created)
+        for var_name, var_value in values.items():
+            if var_name not in existing_vars:
+                self._add_runtime_variable(var_name, var_value)
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
