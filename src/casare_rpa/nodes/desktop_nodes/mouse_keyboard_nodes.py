@@ -15,6 +15,7 @@ from loguru import logger
 
 from ...core.base_node import BaseNode
 from ...core.types import PortType, DataType, NodeStatus
+from ...desktop import DesktopContext
 
 
 def safe_int(value, default: int) -> int:
@@ -80,9 +81,9 @@ class MoveMouseNode(BaseNode):
         if y is None:
             raise ValueError("Y coordinate is required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         # Pass ease and steps to desktop context if supported
         move_kwargs = {}
@@ -175,9 +176,9 @@ class MouseClickNode(BaseNode):
         elif click_type == "triple":
             click_count = 3
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         # Build modifiers list
         modifiers = []
@@ -286,9 +287,9 @@ class SendKeysNode(BaseNode):
         if not keys:
             raise ValueError("Keys to send are required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         # Clear field first if requested
         if clear_first:
@@ -399,9 +400,9 @@ class SendHotKeyNode(BaseNode):
         # Parse comma-separated keys
         keys = [k.strip() for k in str(keys_str).split(",")]
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         success = desktop_ctx.send_hotkey(*keys)
 
@@ -435,9 +436,9 @@ class GetMousePositionNode(BaseNode):
 
     async def execute(self, context) -> Dict[str, Any]:
         """Get current mouse position"""
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         x, y = desktop_ctx.get_mouse_position()
 
@@ -504,9 +505,9 @@ class DragMouseNode(BaseNode):
         if end_x is None or end_y is None:
             raise ValueError("End coordinates are required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
-        if desktop_ctx is None:
-            raise ValueError("Desktop context not available")
+        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+            context.desktop_context = DesktopContext()
+        desktop_ctx = context.desktop_context
 
         success = desktop_ctx.drag_mouse(
             int(start_x), int(start_y),

@@ -1,6 +1,8 @@
 """
 CasareRPA - Project Panel Dock Widget
 Left dock panel for managing projects and scenarios.
+
+Uses Qt Model/View architecture for better performance and maintainability.
 """
 
 from pathlib import Path
@@ -13,18 +15,17 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QPushButton,
-    QLabel,
     QMenu,
     QFileDialog,
     QMessageBox,
-    QSplitter,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
 from loguru import logger
 
 from ..theme import THEME
-from .project_tree_widget import ProjectTreeWidget
+from .project_model import ProjectModel, TreeItemType
+from .project_proxy_model import ProjectProxyModel
+from .project_tree_view import ProjectTreeView
 from ...core.project_schema import Project, Scenario
 from ...project.project_manager import get_project_manager
 
@@ -33,11 +34,10 @@ class ProjectPanelDock(QDockWidget):
     """
     Left dock panel for project and scenario management.
 
-    Provides:
-    - Project tree navigation
-    - Search/filter functionality
-    - Create/open project buttons
-    - Global resources section
+    Uses Model/View architecture:
+    - ProjectModel: Data model wrapping ProjectManager
+    - ProjectProxyModel: Filtering support
+    - ProjectTreeView: Visual presentation
 
     Signals:
         project_opened: Emitted when a project is opened (Project)
@@ -59,18 +59,23 @@ class ProjectPanelDock(QDockWidget):
         super().__init__("Project", parent)
 
         self.setObjectName("ProjectPanelDock")
-        self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea | Qt.DockWidgetArea.RightDockWidgetArea)
         self.setFeatures(
-            QDockWidget.DockWidgetMovable |
-            QDockWidget.DockWidgetFloatable |
-            QDockWidget.DockWidgetClosable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable |
+            QDockWidget.DockWidgetFeature.DockWidgetFloatable |
+            QDockWidget.DockWidgetFeature.DockWidgetClosable
         )
+
+        # Create model/view components
+        self._model = ProjectModel(self)
+        self._proxy_model = ProjectProxyModel(self)
+        self._proxy_model.setSourceModel(self._model)
 
         self._setup_ui()
         self._connect_signals()
         self._apply_styles()
 
-        # Initial state
+        # Initial refresh
         self._refresh_tree()
 
     def _setup_ui(self) -> None:
@@ -87,8 +92,9 @@ class ProjectPanelDock(QDockWidget):
         search_section = self._create_search_section()
         layout.addWidget(search_section)
 
-        # Tree widget
-        self._tree = ProjectTreeWidget()
+        # Tree view (using Model/View)
+        self._tree = ProjectTreeView()
+        self._tree.setModel(self._proxy_model)
         layout.addWidget(self._tree, 1)  # Stretch factor 1
 
         # Button section
@@ -148,7 +154,7 @@ class ProjectPanelDock(QDockWidget):
         # Search filtering
         self._search_input.textChanged.connect(self._on_search_changed)
 
-        # Tree item interactions
+        # Tree view interactions
         self._tree.item_double_clicked.connect(self._on_tree_item_double_clicked)
         self._tree.scenario_selected.connect(self._on_scenario_selected)
         self._tree.project_selected.connect(self._on_project_selected)
@@ -232,12 +238,14 @@ class ProjectPanelDock(QDockWidget):
         """)
 
     def _refresh_tree(self) -> None:
-        """Refresh the project tree."""
+        """Refresh the project tree model."""
         manager = get_project_manager()
-        self._tree.refresh(
+        self._model.refresh(
             current_project=manager.current_project,
             current_scenario=manager.current_scenario,
         )
+        # Expand default items after refresh
+        self._tree.expandDefaultItems()
 
     # =========================================================================
     # Event Handlers
@@ -245,14 +253,24 @@ class ProjectPanelDock(QDockWidget):
 
     def _on_search_changed(self, text: str) -> None:
         """Handle search text change."""
-        self._tree.filter_items(text)
+        self._proxy_model.setFilterText(text)
+
+        # If filtering, expand all visible items to show matches
+        if text.strip():
+            self._tree.expandAll()
 
     def _on_tree_item_double_clicked(self, item_type: str, item_data: object) -> None:
         """Handle double-click on tree item."""
         if item_type == "scenario":
             self._open_scenario(item_data)
+        elif item_type == "recent_project":
+            # Open recent project by path
+            if isinstance(item_data, dict):
+                path = item_data.get("path")
+                if path:
+                    self._open_project(Path(path))
         elif item_type == "project":
-            # Expand/collapse project in tree (handled by tree widget)
+            # Already open project - just expand/collapse in tree
             pass
 
     def _on_scenario_selected(self, scenario: Scenario) -> None:
@@ -307,7 +325,7 @@ class ProjectPanelDock(QDockWidget):
             self,
             "Open Project",
             "",
-            QFileDialog.ShowDirsOnly
+            QFileDialog.Option.ShowDirsOnly
         )
 
         if path:
@@ -360,17 +378,18 @@ class ProjectPanelDock(QDockWidget):
             self,
             "Delete Scenario",
             f"Are you sure you want to delete '{scenario.name}'?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             try:
                 manager = get_project_manager()
+                was_current = manager.current_scenario == scenario
                 manager.delete_scenario(scenario)
                 self._refresh_tree()
 
-                if manager.current_scenario == scenario:
+                if was_current:
                     self.scenario_closed.emit()
 
                 logger.info(f"Deleted scenario: {scenario.name}")
@@ -424,26 +443,26 @@ class ProjectPanelDock(QDockWidget):
             "Delete Project",
             f"Are you sure you want to delete the project '{project.name}'?\n\n"
             f"This will permanently delete:\n"
-            f"  • All scenarios in this project\n"
-            f"  • All project variables\n"
-            f"  • All project credentials\n\n"
+            f"  - All scenarios in this project\n"
+            f"  - All project variables\n"
+            f"  - All project credentials\n\n"
             f"This action cannot be undone!",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             # Double-confirm for safety
             confirm = QMessageBox.question(
                 self,
                 "Confirm Delete",
                 f"Are you ABSOLUTELY sure you want to delete '{project.name}'?\n\n"
                 f"All project data will be permanently removed.",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
             )
 
-            if confirm == QMessageBox.Yes:
+            if confirm == QMessageBox.StandardButton.Yes:
                 try:
                     manager = get_project_manager()
 
@@ -540,9 +559,9 @@ class ProjectPanelDock(QDockWidget):
             "Workflow format exports just the workflow for use in other projects."
         )
 
-        scenario_btn = msg_box.addButton("Scenario Format", QMessageBox.AcceptRole)
-        workflow_btn = msg_box.addButton("Workflow Format", QMessageBox.AcceptRole)
-        msg_box.addButton(QMessageBox.Cancel)
+        scenario_btn = msg_box.addButton("Scenario Format", QMessageBox.ButtonRole.AcceptRole)
+        workflow_btn = msg_box.addButton("Workflow Format", QMessageBox.ButtonRole.AcceptRole)
+        msg_box.addButton(QMessageBox.StandardButton.Cancel)
 
         msg_box.exec()
 

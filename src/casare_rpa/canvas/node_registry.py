@@ -103,8 +103,9 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
     return mapping
 
 
-# Lazily built mapping - populated on first access
+# Lazily built mappings - populated on first access
 _casare_node_mapping: Optional[Dict[Type, Type]] = None
+_node_type_mapping: Optional[Dict[str, tuple]] = None
 
 
 def get_casare_node_mapping() -> Dict[Type, Type]:
@@ -124,6 +125,204 @@ def get_casare_node_mapping() -> Dict[Type, Type]:
 
 # Legacy alias for backwards compatibility
 CASARE_NODE_MAPPING = property(lambda self: get_casare_node_mapping())
+
+
+# =============================================================================
+# UNIFIED NODE TYPE LOOKUP SYSTEM
+# =============================================================================
+# These functions provide a single source of truth for looking up nodes by type.
+# Use these instead of building your own mappings!
+
+def _build_node_type_mapping() -> Dict[str, tuple]:
+    """
+    Build unified mapping from node type name to all related classes/identifiers.
+
+    Returns:
+        Dict mapping node_type (e.g., "MessageBoxNode") to tuple of:
+        (visual_class, identifier_for_create_node, casare_class_or_None)
+    """
+    from .visual_nodes import VISUAL_NODE_CLASSES
+
+    mapping = {}
+    casare_mapping = get_casare_node_mapping()
+
+    for visual_class in VISUAL_NODE_CLASSES:
+        visual_name = visual_class.__name__
+
+        # Derive node type from visual class name: VisualXxxNode -> XxxNode
+        if visual_name.startswith('Visual') and visual_name.endswith('Node'):
+            node_type = visual_name[6:]  # Remove "Visual" prefix
+
+            # Build identifier for graph.create_node()
+            identifier = f"{visual_class.__identifier__}.{visual_name}"
+
+            # Get CasareRPA class from auto-discovery
+            casare_class = casare_mapping.get(visual_class)
+
+            mapping[node_type] = (visual_class, identifier, casare_class)
+
+    logger.debug(f"Built unified node type mapping with {len(mapping)} types")
+    return mapping
+
+
+def get_node_type_mapping() -> Dict[str, tuple]:
+    """
+    Get the unified mapping from node type names to classes.
+
+    This is the SINGLE SOURCE OF TRUTH for node lookups.
+    Use this instead of building your own mappings!
+
+    Returns:
+        Dict mapping node_type (e.g., "MessageBoxNode") to tuple of:
+        (visual_class, identifier_for_create_node, casare_class_or_None)
+
+    Example:
+        mapping = get_node_type_mapping()
+        visual_class, identifier, casare_class = mapping["MessageBoxNode"]
+        node = graph.create_node(identifier)
+    """
+    global _node_type_mapping
+    if _node_type_mapping is None:
+        _node_type_mapping = _build_node_type_mapping()
+    return _node_type_mapping
+
+
+def get_visual_class_for_type(node_type: str) -> Optional[Type]:
+    """
+    Get the visual node class for a node type name.
+
+    Args:
+        node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
+
+    Returns:
+        Visual node class or None if not found
+    """
+    mapping = get_node_type_mapping()
+    entry = mapping.get(node_type)
+    return entry[0] if entry else None
+
+
+def get_identifier_for_type(node_type: str) -> Optional[str]:
+    """
+    Get the graph.create_node() identifier for a node type.
+
+    Args:
+        node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
+
+    Returns:
+        Identifier string for graph.create_node() or None if not found
+
+    Example:
+        identifier = get_identifier_for_type("MessageBoxNode")
+        node = graph.create_node(identifier)
+    """
+    mapping = get_node_type_mapping()
+    entry = mapping.get(node_type)
+    return entry[1] if entry else None
+
+
+def get_casare_class_for_type(node_type: str) -> Optional[Type]:
+    """
+    Get the CasareRPA node class for a node type name.
+
+    Args:
+        node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
+
+    Returns:
+        CasareRPA node class or None if not found
+    """
+    mapping = get_node_type_mapping()
+    entry = mapping.get(node_type)
+    return entry[2] if entry else None
+
+
+def get_all_node_types() -> List[str]:
+    """
+    Get list of all registered node type names.
+
+    Returns:
+        List of node type names (e.g., ["StartNode", "EndNode", "MessageBoxNode", ...])
+    """
+    return list(get_node_type_mapping().keys())
+
+
+def is_valid_node_type(node_type: str) -> bool:
+    """
+    Check if a node type name is valid/registered.
+
+    Args:
+        node_type: Node type name to check
+
+    Returns:
+        True if node type exists, False otherwise
+    """
+    return node_type in get_node_type_mapping()
+
+
+def create_node_from_type(
+    graph,
+    node_type: str,
+    node_id: Optional[str] = None,
+    config: Optional[dict] = None,
+    position: Optional[tuple] = None,
+) -> Optional[Any]:
+    """
+    Create a visual node with linked CasareRPA node from node type name.
+
+    This is the recommended way to create nodes programmatically.
+
+    Args:
+        graph: NodeGraph instance
+        node_type: Node type name (e.g., "MessageBoxNode")
+        node_id: Optional specific node ID (auto-generated if not provided)
+        config: Optional config dict for the CasareRPA node
+        position: Optional (x, y) position tuple
+
+    Returns:
+        Created visual node with linked CasareRPA node, or None on failure
+
+    Example:
+        node = create_node_from_type(
+            graph, "MessageBoxNode",
+            config={"message": "Hello!"},
+            position=(100, 200)
+        )
+    """
+    mapping = get_node_type_mapping()
+    entry = mapping.get(node_type)
+
+    if not entry:
+        logger.error(f"Unknown node type: {node_type}")
+        return None
+
+    visual_class, identifier, casare_class = entry
+
+    try:
+        # Create visual node
+        pos = list(position) if position else None
+        visual_node = graph.create_node(identifier, pos=pos)
+
+        if not visual_node:
+            logger.error(f"Failed to create visual node for {node_type}")
+            return None
+
+        # Create CasareRPA node
+        if casare_class:
+            # Generate node ID if not provided
+            if not node_id:
+                from ..utils.id_generator import generate_node_id
+                node_id = generate_node_id(casare_class.__name__)
+
+            casare_node = casare_class(node_id, config or {})
+            visual_node.set_casare_node(casare_node)
+        else:
+            logger.warning(f"No CasareRPA class for {node_type} - visual-only node")
+
+        return visual_node
+
+    except Exception as e:
+        logger.error(f"Failed to create node {node_type}: {e}")
+        return None
 
 
 class NodeRegistry:

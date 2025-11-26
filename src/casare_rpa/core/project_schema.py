@@ -6,11 +6,14 @@ Defines the data models for projects, scenarios, variables, and credential bindi
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from pathlib import Path
 import uuid
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from .trigger_schema import TriggerConfiguration
 
 
 # ============================================================================
@@ -520,6 +523,9 @@ class Scenario:
         default_factory=ScenarioExecutionSettings
     )
 
+    # Triggers for this scenario
+    triggers: List[Dict[str, Any]] = field(default_factory=list)
+
     schema_version: str = PROJECT_SCHEMA_VERSION
 
     # Runtime properties
@@ -556,6 +562,7 @@ class Scenario:
             "variable_values": self.variable_values,
             "credential_bindings": self.credential_bindings,
             "execution_settings": self.execution_settings.to_dict(),
+            "triggers": self.triggers,
         }
 
     @classmethod
@@ -583,6 +590,7 @@ class Scenario:
             execution_settings=ScenarioExecutionSettings.from_dict(
                 data.get("execution_settings", {})
             ),
+            triggers=data.get("triggers", []),
             schema_version=data.get("$schema_version", PROJECT_SCHEMA_VERSION),
         )
 

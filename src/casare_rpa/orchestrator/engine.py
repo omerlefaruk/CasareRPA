@@ -1,5 +1,5 @@
 """
-Orchestrator Engine - Integrates job queue, scheduler, and dispatcher.
+Orchestrator Engine - Integrates job queue, scheduler, dispatcher, and triggers.
 The main orchestration logic for CasareRPA.
 """
 import asyncio
@@ -31,6 +31,14 @@ except ImportError:
     HAS_SERVER = False
     logger.warning("websockets not installed. Server features disabled.")
 
+try:
+    from ..triggers.manager import TriggerManager
+    from ..triggers.base import TriggerEvent
+    HAS_TRIGGERS = True
+except ImportError:
+    HAS_TRIGGERS = False
+    logger.warning("Trigger system not available.")
+
 
 class OrchestratorEngine:
     """
@@ -40,6 +48,7 @@ class OrchestratorEngine:
     - JobQueue: Priority queue with state machine
     - JobScheduler: Cron-based scheduling
     - JobDispatcher: Robot selection and load balancing
+    - TriggerManager: Event-based workflow triggers
     - OrchestratorService: Data persistence
 
     This is the primary interface for job management.
@@ -51,7 +60,8 @@ class OrchestratorEngine:
         load_balancing: str = "least_loaded",
         dispatch_interval: int = 5,
         timeout_check_interval: int = 30,
-        default_job_timeout: int = 3600
+        default_job_timeout: int = 3600,
+        trigger_webhook_port: int = 8766
     ):
         """
         Initialize orchestrator engine.
@@ -62,6 +72,7 @@ class OrchestratorEngine:
             dispatch_interval: Seconds between dispatch attempts
             timeout_check_interval: Seconds between timeout checks
             default_job_timeout: Default job timeout in seconds
+            trigger_webhook_port: Port for trigger webhook server
         """
         self._service = service or OrchestratorService()
 
@@ -74,6 +85,7 @@ class OrchestratorEngine:
 
         self._scheduler: Optional[JobScheduler] = None
         self._dispatcher: Optional[JobDispatcher] = None
+        self._trigger_manager: Optional["TriggerManager"] = None
 
         if HAS_DISPATCHER:
             strategy = LoadBalancingStrategy(load_balancing)
@@ -87,9 +99,16 @@ class OrchestratorEngine:
                 on_job_dispatched=self._on_job_dispatched
             )
 
+        # Initialize trigger manager
+        if HAS_TRIGGERS:
+            self._trigger_manager = TriggerManager(
+                webhook_port=trigger_webhook_port
+            )
+
         # Configuration
         self._dispatch_interval = dispatch_interval
         self._timeout_check_interval = timeout_check_interval
+        self._trigger_webhook_port = trigger_webhook_port
 
         # Event callbacks
         self._on_job_complete: Optional[Callable[[Job], None]] = None
@@ -133,6 +152,11 @@ class OrchestratorEngine:
         if self._dispatcher:
             await self._dispatcher.start(self._job_queue)
 
+        # Start trigger manager
+        if self._trigger_manager:
+            await self._trigger_manager.start()
+            logger.info(f"TriggerManager started on port {self._trigger_webhook_port}")
+
         # Start background tasks
         self._running = True
         self._background_tasks.append(
@@ -161,6 +185,10 @@ class OrchestratorEngine:
         if self._server:
             await self._server.stop()
             self._server = None
+
+        # Stop trigger manager
+        if self._trigger_manager:
+            await self._trigger_manager.stop()
 
         # Stop scheduler
         if self._scheduler:
@@ -819,3 +847,156 @@ class OrchestratorEngine:
         if self._scheduler:
             return self._scheduler.get_next_runs(limit)
         return []
+
+    # ==================== TRIGGER MANAGEMENT ====================
+
+    async def register_trigger(
+        self,
+        trigger_config: Dict[str, Any],
+        scenario_id: str,
+        workflow_id: str
+    ) -> bool:
+        """
+        Register a trigger with the trigger manager.
+
+        Args:
+            trigger_config: Trigger configuration dictionary
+            scenario_id: ID of the scenario this trigger belongs to
+            workflow_id: ID of the workflow to execute
+
+        Returns:
+            True if registered successfully
+        """
+        if not self._trigger_manager:
+            logger.warning("Trigger manager not available")
+            return False
+
+        from ..triggers.base import BaseTriggerConfig
+
+        config = BaseTriggerConfig(
+            id=trigger_config.get('id', str(uuid.uuid4())),
+            name=trigger_config.get('name', 'Unnamed Trigger'),
+            trigger_type=trigger_config.get('type', 'manual'),
+            scenario_id=scenario_id,
+            workflow_id=workflow_id,
+            enabled=trigger_config.get('enabled', True),
+            priority=trigger_config.get('priority', 1),
+            cooldown_seconds=trigger_config.get('cooldown_seconds', 0),
+            config=trigger_config.get('config', {})
+        )
+
+        # Set up event callback to create jobs
+        async def on_trigger_event(event: "TriggerEvent"):
+            await self._on_trigger_fired(event)
+
+        return await self._trigger_manager.register_trigger(config, on_trigger_event)
+
+    async def unregister_trigger(self, trigger_id: str) -> bool:
+        """
+        Unregister a trigger.
+
+        Args:
+            trigger_id: ID of the trigger to unregister
+
+        Returns:
+            True if unregistered successfully
+        """
+        if not self._trigger_manager:
+            return False
+        return await self._trigger_manager.unregister_trigger(trigger_id)
+
+    async def enable_trigger(self, trigger_id: str) -> bool:
+        """Enable a trigger."""
+        if not self._trigger_manager:
+            return False
+        trigger = self._trigger_manager.get_trigger(trigger_id)
+        if trigger:
+            await trigger.resume()
+            return True
+        return False
+
+    async def disable_trigger(self, trigger_id: str) -> bool:
+        """Disable a trigger."""
+        if not self._trigger_manager:
+            return False
+        trigger = self._trigger_manager.get_trigger(trigger_id)
+        if trigger:
+            await trigger.pause()
+            return True
+        return False
+
+    async def fire_trigger_manually(self, trigger_id: str, payload: Optional[Dict] = None) -> bool:
+        """
+        Manually fire a trigger.
+
+        Args:
+            trigger_id: ID of the trigger to fire
+            payload: Optional payload data
+
+        Returns:
+            True if fired successfully
+        """
+        if not self._trigger_manager:
+            return False
+        return await self._trigger_manager.fire_trigger(trigger_id, payload)
+
+    def get_trigger_manager(self) -> Optional["TriggerManager"]:
+        """Get the trigger manager instance."""
+        return self._trigger_manager
+
+    def get_trigger_stats(self) -> Dict[str, Any]:
+        """Get trigger statistics."""
+        if not self._trigger_manager:
+            return {"available": False}
+
+        triggers = self._trigger_manager.list_triggers()
+        active_count = sum(1 for t in triggers if t.get('status') == 'active')
+        total_count = len(triggers)
+
+        return {
+            "available": True,
+            "total_triggers": total_count,
+            "active_triggers": active_count,
+            "webhook_port": self._trigger_webhook_port,
+            "triggers": triggers
+        }
+
+    async def _on_trigger_fired(self, event: "TriggerEvent"):
+        """
+        Handle a trigger event by creating a job.
+
+        Args:
+            event: The trigger event
+        """
+        logger.info(f"Trigger fired: {event.trigger_id} ({event.trigger_type})")
+
+        # Get workflow for this trigger
+        # The workflow_id should be stored in the trigger config
+        trigger = self._trigger_manager.get_trigger(event.trigger_id) if self._trigger_manager else None
+        if not trigger:
+            logger.error(f"Trigger {event.trigger_id} not found")
+            return
+
+        workflow_id = trigger.config.workflow_id
+        scenario_id = trigger.config.scenario_id
+
+        # Load workflow
+        workflow = await self._service.get_workflow(workflow_id)
+        if not workflow:
+            logger.error(f"Workflow {workflow_id} not found for trigger {event.trigger_id}")
+            return
+
+        # Submit job with trigger payload as input
+        await self.submit_job(
+            workflow_id=workflow.id,
+            workflow_name=workflow.name,
+            workflow_json=workflow.json_definition,
+            priority=JobPriority(event.priority) if event.priority <= 3 else JobPriority.NORMAL,
+            input_data={
+                "trigger_id": event.trigger_id,
+                "trigger_type": event.trigger_type,
+                "trigger_payload": event.payload,
+                "trigger_metadata": event.metadata,
+                "scenario_id": scenario_id
+            }
+        )

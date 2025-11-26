@@ -230,67 +230,40 @@ class OutputPortMMBFilter(QObject):
         """
         Handle middle mouse button click to create SetVariable node.
         """
-        # Log ALL events to see what we're receiving
-        if event.type() == QEvent.Type.MouseButtonPress:
-            logger.info(f"[MMB Filter] MouseButtonPress detected - button: {event.button()}, obj: {obj.__class__.__name__}")
-
         # Only handle MouseButtonPress
         if event.type() != QEvent.Type.MouseButtonPress:
             return False
 
-        logger.info(f"[MMB Filter] Button value: {event.button()}, MiddleButton value: {Qt.MouseButton.MiddleButton}")
-        logger.info(f"[MMB Filter] Is MMB? {event.button() == Qt.MouseButton.MiddleButton}")
-
         if event.button() != Qt.MouseButton.MiddleButton:
-            logger.debug(f"[MMB Filter] Not MMB, ignoring")
             return False
-
-        logger.info("[MMB Filter] MMB press confirmed!")
 
         viewer = self._graph.viewer()
         if not viewer:
-            logger.warning("[MMB Filter] No viewer found")
             return False
 
         # Get scene position
         scene_pos = viewer.mapToScene(event.pos())
-        logger.info(f"[MMB Filter] Scene position: ({scene_pos.x():.1f}, {scene_pos.y():.1f})")
-
         port_item = self._find_port_at_position(viewer, scene_pos)
-        logger.info(f"[MMB Filter] Port item found: {port_item}")
 
         if not port_item:
-            logger.info("[MMB Filter] No port at position, allowing panning")
             return False  # Not on a port, let panning happen
-
-        logger.info(f"[MMB Filter] Port found: {port_item.name}, type: {port_item.port_type}")
 
         # Check if this is an output port (not input)
         from NodeGraphQt.constants import PortTypeEnum
-        logger.info(f"[MMB Filter] PortTypeEnum.OUT.value = {PortTypeEnum.OUT.value}")
 
         if port_item.port_type != PortTypeEnum.OUT.value:
-            logger.info(f"[MMB Filter] Not an output port (type={port_item.port_type}), ignoring")
             return False
 
         # Check if this is an exec port - skip those
-        port_name = port_item.name
         if self._is_exec_port(port_item):
-            logger.info(f"[MMB Filter] Skipping exec port: {port_name}")
             return False
-
-        logger.info(f"[MMB Filter] *** Creating SetVariable for output port: {port_name} ***")
 
         # Create SetVariable node
         try:
             self._widget._create_set_variable_for_port(port_item)
-            logger.info("[MMB Filter] SetVariable created successfully")
         except Exception as e:
-            logger.error(f"[MMB Filter] Failed to create SetVariable: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
+            logger.error(f"Failed to create SetVariable: {e}")
 
-        logger.info("[MMB Filter] Returning True to block event")
         return True  # Block the event to prevent panning
 
     def _find_port_at_position(self, viewer, scene_pos):
@@ -1336,26 +1309,31 @@ class NodeGraphWidget(QWidget):
         """
         try:
             from NodeGraphQt.constants import PortTypeEnum
+            from PySide6.QtCore import QPointF, QRectF
+
+            # --- Editable offsets ---
+            # To move the SetVariable node vertically, change the value of
+            # self._set_variable_y_offset (positive moves the node DOWN).
+            # You can set this attribute from outside this widget, e.g.:
+            # widget._set_variable_y_offset = 120
+            y_offset = getattr(self, '_set_variable_y_offset', 150)  # default: move down 50px
+            gap = getattr(self, '_set_variable_x_gap', 150)         # horizontal gap, editable too
 
             # Get the source node from the port item
-            # PortItem structure: PortItem -> NodeItem -> has .node attribute
             node_item = source_port_item.parentItem()
             logger.debug(f"Port parent item: {node_item}, type: {type(node_item)}")
 
             # Try different ways to get the node
             source_node = None
 
-            # Method 1: Direct .node attribute on parent
             if node_item and hasattr(node_item, 'node'):
                 source_node = node_item.node
                 logger.debug(f"Found node via parent.node: {source_node}")
 
-            # Method 2: PortItem has .node property that returns the Port's node
             if not source_node and hasattr(source_port_item, 'node'):
                 source_node = source_port_item.node
                 logger.debug(f"Found node via port_item.node: {source_node}")
 
-            # Method 3: Navigate up the parent chain
             if not source_node:
                 parent = node_item
                 while parent:
@@ -1372,33 +1350,41 @@ class NodeGraphWidget(QWidget):
 
             port_name = source_port_item.name
 
-            # Get node name - might be property or method depending on node type
-            node_name = source_node.name() if callable(source_node.name) else source_node.name
+            # Node name retrieval
+            node_name = source_node.name() if callable(getattr(source_node, 'name', None)) else getattr(source_node, 'name', str(source_node))
             logger.info(f"Creating SetVariable for port: {node_name}.{port_name}")
 
-            # Get source node position and size
-            # pos might be method or property
-            source_pos = source_node.pos() if callable(getattr(source_node, 'pos', None)) else getattr(source_node, 'pos', (0, 0))
-            if not isinstance(source_pos, (list, tuple)):
-                source_pos = (0, 0)
-            # Get node view for bounding rect
-            source_view = source_node.view if hasattr(source_node, 'view') else None
-            source_width = source_view.boundingRect().width() if source_view else 180
+            # Determine source node scene position and width reliably
+            source_view = getattr(source_node, 'view', None)
+            if source_view is not None:
+                source_scene_pos = source_view.scenePos()
+                try:
+                    source_width = source_view.boundingRect().width()
+                except Exception:
+                    source_width = 200
+            else:
+                # Fallback to node.pos property or (0,0)
+                raw_pos = source_node.pos() if callable(getattr(source_node, 'pos', None)) else getattr(source_node, 'pos', (0, 0))
+                if isinstance(raw_pos, (list, tuple)):
+                    source_scene_pos = QPointF(raw_pos[0], raw_pos[1])
+                else:
+                    # raw_pos might be QPointF already
+                    source_scene_pos = QPointF(raw_pos.x(), raw_pos.y()) if raw_pos is not None else QPointF(0, 0)
+                source_width = 200
 
-            # Get port's Y position in scene coordinates for vertical alignment
+            # Port scene Y for vertical alignment
             port_scene_pos = source_port_item.scenePos()
             port_y = port_scene_pos.y()
 
-            # Calculate position for new node (to the right of source node, aligned with port)
-            # Add node width + 50px gap
-            new_x = source_pos[0] + source_width + 250
-            # Offset Y to center the new node on the port (assuming ~40px for node header)
-            new_y = port_y - 40
+            # Initial target x: to the right of source node + editable gap
+            initial_x = source_scene_pos.x() + source_width + gap
+            # Move DOWN by y_offset (positive moves down)
+            initial_y = port_y + y_offset
 
-            # Create the SetVariable node
+            # Create the SetVariable node at provisional position
             set_var_node = self._graph.create_node(
                 "casare_rpa.variable.VisualSetVariableNode",
-                pos=[new_x, new_y]
+                pos=[initial_x, initial_y]
             )
 
             if not set_var_node:
@@ -1407,20 +1393,92 @@ class NodeGraphWidget(QWidget):
 
             # Set the variable name to the output port's name
             set_var_node.set_property("variable_name", port_name)
+            logger.debug(f"SetVariable node created at provisional ({initial_x}, {initial_y}) with name '{port_name}'")
 
-            logger.debug(f"SetVariable node created at ({new_x}, {new_y}) with name '{port_name}'")
+            # Now refine position so the new node is properly right-aligned and vertically centered on the port
+            try:
+                new_view = getattr(set_var_node, 'view', None)
+                if new_view is None:
+                    # If view is not available, try to get it via graph
+                    new_view = set_var_node.view if hasattr(set_var_node, 'view') else None
+
+                # Compute width/height of the new node (fallback to 150x120)
+                new_width = new_view.boundingRect().width() if new_view else 150
+                new_height = new_view.boundingRect().height() if new_view else 120
+
+                # Compute target position in scene coordinates
+                target_x = source_scene_pos.x() + source_width + gap
+                # Center vertically on the port, then move DOWN by y_offset
+                target_y = port_y - (new_height / 2) + y_offset
+
+                # Move the node's view to the exact scene position.
+                # Try node API first, fallback to moving the view directly.
+                moved = False
+                try:
+                    if hasattr(set_var_node, 'set_pos'):
+                        # API accepts either (x,y) or [x,y]
+                        try:
+                            set_var_node.set_pos(target_x, target_y)
+                        except TypeError:
+                            set_var_node.set_pos([target_x, target_y])
+                        moved = True
+                except Exception:
+                    moved = False
+
+                if not moved and new_view is not None:
+                    new_view.setPos(QPointF(target_x, target_y))
+                    moved = True
+
+                # Ensure we are not overlapping other nodes: if overlap detected, nudge further right iteratively
+                viewer = self._graph.viewer()
+                scene = viewer.scene()
+                attempts = 0
+                max_attempts = 6
+                while attempts < max_attempts:
+                    attempts += 1
+                    # Use the scene bounding rect of the new view for collision detection
+                    if new_view is None:
+                        break
+                    new_rect: QRectF = new_view.sceneBoundingRect()
+                    colliding_items = [it for it in scene.items(new_rect) if it is not new_view and it.__class__.__name__ == new_view.__class__.__name__]
+                    # Filter out invisible / non-node items by checking for .node attribute
+                    colliding_nodes = [it for it in colliding_items if hasattr(it, 'node')]
+                    if not colliding_nodes:
+                        break  # no overlap
+                    # Bump to the right by width + 50px and try again
+                    shift = new_width + 50
+                    target_x += shift
+                    try:
+                        if hasattr(set_var_node, 'set_pos'):
+                            try:
+                                set_var_node.set_pos(target_x, target_y)
+                            except TypeError:
+                                set_var_node.set_pos([target_x, target_y])
+                        elif new_view is not None:
+                            new_view.setPos(QPointF(target_x, target_y))
+                    except Exception:
+                        # Fallback to view movement
+                        if new_view is not None:
+                            new_view.setPos(QPointF(target_x, target_y))
+                    logger.debug(f"Adjusted SetVariable position to avoid overlap: attempt {attempts}, x={target_x}")
+                # Select the new node so user can see it
+                self._graph.clear_selection()
+                set_var_node.set_selected(True)
+
+            except Exception as e:
+                logger.debug(f"Could not refine SetVariable position: {e}")
 
             # Connect the source output port to the "value" input of SetVariable
-            # Find the "value" input port on the SetVariable node
             value_port = None
             for port in set_var_node.input_ports():
-                if port.name() == "value":
+                # port.name() might be a callable or property
+                pname = port.name() if callable(getattr(port, 'name', None)) else getattr(port, 'name', None)
+                if pname == "value":
                     value_port = port
                     break
 
             if value_port:
-                # Connect using the PortItem level
-                target_port_item = value_port.view
+                target_port_item = getattr(value_port, 'view', None)
                 try:
                     source_port_item.connect_to(target_port_item)
                     logger.info(f"Connected {port_name} -> value")
@@ -1428,10 +1486,6 @@ class NodeGraphWidget(QWidget):
                     logger.warning(f"Could not connect ports: {e}")
             else:
                 logger.warning("Could not find 'value' input port on SetVariable node")
-
-            # Select the new node so user can see it
-            self._graph.clear_selection()
-            set_var_node.set_selected(True)
 
         except Exception as e:
             logger.error(f"Failed to create SetVariable for port: {e}")
