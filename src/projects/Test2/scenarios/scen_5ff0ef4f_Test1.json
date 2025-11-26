@@ -1,0 +1,18 @@
+{
+  "$schema_version": "1.0.0",
+  "created_at": "2025-11-26T11:45:24.215901",
+  "credential_bindings": {},
+  "description": "",
+  "execution_settings": {
+    "environment_override": null,
+    "priority": "normal",
+    "timeout_override": null
+  },
+  "id": "scen_5ff0ef4f",
+  "modified_at": "2025-11-26T11:45:24.216164",
+  "name": "Test1",
+  "project_id": "proj_d48fb619",
+  "tags": [],
+  "variable_values": {},
+  "workflow": {}
+}
