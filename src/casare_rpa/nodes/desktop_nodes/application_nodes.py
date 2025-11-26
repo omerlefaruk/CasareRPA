@@ -135,9 +135,9 @@ class LaunchApplicationNode(Node):
         desktop_ctx = context.desktop_context
         
         try:
-            # Launch application
-            logger.info(f"[{self.name}] Calling desktop_ctx.launch_application...")
-            window = desktop_ctx.launch_application(
+            # Launch application using async method to avoid blocking event loop
+            logger.info(f"[{self.name}] Calling desktop_ctx.async_launch_application...")
+            window = await desktop_ctx.async_launch_application(
                 path=app_path,
                 args=arguments,
                 working_dir=working_dir,
@@ -273,9 +273,9 @@ class CloseApplicationNode(Node):
         try:
             # Determine what to close
             target = window if window else (process_id if process_id else window_title)
-            
-            # Close application
-            success = desktop_ctx.close_application(
+
+            # Close application using async method to avoid blocking event loop
+            success = await desktop_ctx.async_close_application(
                 window_or_pid=target,
                 force=force_close,
                 timeout=timeout
@@ -374,9 +374,9 @@ class ActivateWindowNode(Node):
         desktop_ctx = context.desktop_context
         
         try:
-            # Find window if title provided
+            # Find window if title provided (use async to avoid blocking)
             if not window:
-                window = desktop_ctx.find_window(
+                window = await desktop_ctx.async_find_window(
                     title=window_title,
                     exact=not match_partial,
                     timeout=timeout

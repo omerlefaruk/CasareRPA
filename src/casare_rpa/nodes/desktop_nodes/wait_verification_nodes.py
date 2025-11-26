@@ -73,7 +73,8 @@ class WaitForElementNode(BaseNode):
             raise ValueError("Desktop context not available")
 
         try:
-            element = desktop_ctx.wait_for_element(
+            # Use async method to avoid blocking event loop
+            element = await desktop_ctx.async_wait_for_element(
                 selector=selector,
                 timeout=float(timeout),
                 state=state,
@@ -169,7 +170,8 @@ class WaitForWindowNode(BaseNode):
             raise ValueError("Desktop context not available")
 
         try:
-            window = desktop_ctx.wait_for_window(
+            # Use async method to avoid blocking event loop
+            window = await desktop_ctx.async_wait_for_window(
                 title=title,
                 title_regex=title_regex,
                 class_name=class_name,
@@ -246,11 +248,11 @@ class VerifyElementExistsNode(BaseNode):
 
         exists = desktop_ctx.element_exists(selector=selector, timeout=float(timeout))
 
-        # Try to get the element if it exists
+        # Try to get the element if it exists (use async to avoid blocking)
         element = None
         if exists:
             try:
-                element = desktop_ctx.wait_for_element(selector=selector, timeout=0.1)
+                element = await desktop_ctx.async_wait_for_element(selector=selector, timeout=0.1)
             except Exception:
                 pass
 

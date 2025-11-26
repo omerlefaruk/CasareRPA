@@ -1891,6 +1891,88 @@ class DesktopContext:
             f"Window '{search_desc}' did not become '{state}' within {timeout} seconds"
         )
 
+    async def async_wait_for_window(
+        self,
+        title: str = None,
+        title_regex: str = None,
+        class_name: str = None,
+        timeout: float = 10.0,
+        state: str = "visible",
+        poll_interval: float = 0.5
+    ) -> Optional[auto.Control]:
+        """
+        Async version of wait_for_window - Wait for a window without blocking.
+
+        Args:
+            title: Window title (partial match)
+            title_regex: Window title regex pattern
+            class_name: Window class name
+            timeout: Maximum wait time in seconds
+            state: State to wait for - "visible", "hidden"
+            poll_interval: Time between checks in seconds
+
+        Returns:
+            Window control if found (for visible), None if hidden
+
+        Raises:
+            TimeoutError: If window doesn't reach state within timeout
+            ValueError: If no search criteria provided
+        """
+        if not title and not title_regex and not class_name:
+            raise ValueError("Must provide at least one of: title, title_regex, class_name")
+
+        valid_states = ["visible", "hidden"]
+        if state.lower() not in valid_states:
+            raise ValueError(f"Invalid state '{state}'. Must be one of: {valid_states}")
+
+        state = state.lower()
+        logger.debug(f"Async waiting for window to be '{state}' (timeout={timeout}s)")
+
+        import re
+        loop = asyncio.get_event_loop()
+        executor = _get_executor()
+        start_time = time.time()
+
+        def _search_windows():
+            """Search for window - runs in thread pool."""
+            windows = auto.GetRootControl().GetChildren()
+
+            for win in windows:
+                try:
+                    win_title = win.Name or ""
+
+                    if title and title.lower() in win_title.lower():
+                        return win
+                    elif title_regex and re.search(title_regex, win_title):
+                        return win
+                    elif class_name and win.ClassName == class_name:
+                        return win
+                except Exception:
+                    continue
+            return None
+
+        while time.time() - start_time < timeout:
+            window_found = await loop.run_in_executor(executor, _search_windows)
+
+            if state == "visible":
+                if window_found:
+                    logger.info(f"Window found: '{window_found.Name}'")
+                    return window_found
+            elif state == "hidden":
+                if not window_found:
+                    logger.info(f"Window is hidden/closed")
+                    return None
+
+            # Use async sleep
+            await asyncio.sleep(poll_interval)
+
+        # Timeout reached
+        elapsed = time.time() - start_time
+        search_desc = title or title_regex or class_name
+        raise TimeoutError(
+            f"Window '{search_desc}' did not become '{state}' within {timeout} seconds"
+        )
+
     def element_exists(
         self,
         selector: dict,
