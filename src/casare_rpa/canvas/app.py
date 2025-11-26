@@ -410,8 +410,8 @@ class CasareRPAApp:
             if hasattr(self._node_graph, 'auto_connect'):
                 self._node_graph.auto_connect.reset_drag_state()
 
-            # Disabled - was removing all pipes incorrectly
-            # self._cleanup_orphaned_pipes()
+            # Clean up any orphaned connection pipes
+            self._cleanup_orphaned_pipes()
 
         if frames_deleted > 0:
             logger.info(f"Deleted {frames_deleted} frames")
@@ -424,40 +424,44 @@ class CasareRPAApp:
         that may not have been properly removed.
         """
         try:
-            from NodeGraphQt.qgraphics.pipe import PipeItem
-
             viewer = self.node_graph.graph.viewer()
             scene = viewer.scene()
 
-            # Get all valid node IDs currently in the graph
-            valid_node_ids = set(self.node_graph.graph.all_nodes().keys()) if hasattr(self.node_graph.graph.all_nodes(), 'keys') else set(n.id for n in self.node_graph.graph.all_nodes())
+            # Get all valid node items currently in the scene
+            # NodeItem class name check is more reliable than importing
+            valid_node_items = set()
+            for item in scene.items():
+                if item.__class__.__name__ == 'NodeItem':
+                    valid_node_items.add(item)
 
             # Find all pipe items in the scene
             pipes_to_remove = []
             for item in scene.items():
-                if isinstance(item, PipeItem):
-                    # Check if both ports still exist and have valid parent nodes
+                class_name = item.__class__.__name__
+                # Check for various pipe class names
+                if 'Pipe' in class_name and class_name != 'LivePipeItem':
+                    should_remove = False
+
+                    # Get the port items connected by this pipe
                     input_port = getattr(item, 'input_port', None)
                     output_port = getattr(item, 'output_port', None)
 
-                    should_remove = False
-
                     # Check if pipe has both ports
-                    if not input_port or not output_port:
+                    if input_port is None or output_port is None:
                         should_remove = True
-                    # Check if ports have valid parent nodes
-                    elif not input_port.node or not output_port.node:
-                        should_remove = True
-                    # Check if parent nodes are still in the graph by ID
+                        logger.debug(f"Orphaned pipe: missing port(s)")
                     else:
-                        try:
-                            input_node_id = input_port.node.id if hasattr(input_port.node, 'id') else None
-                            output_node_id = output_port.node.id if hasattr(output_port.node, 'id') else None
-                            if input_node_id not in valid_node_ids or output_node_id not in valid_node_ids:
-                                should_remove = True
-                        except:
-                            # If we can't check, don't remove
-                            pass
+                        # Check if the ports' parent nodes are still in the scene
+                        # PortItem.node returns the parent NodeItem
+                        input_node_item = getattr(input_port, 'node', None)
+                        output_node_item = getattr(output_port, 'node', None)
+
+                        if input_node_item is None or output_node_item is None:
+                            should_remove = True
+                            logger.debug(f"Orphaned pipe: port has no parent node")
+                        elif input_node_item not in valid_node_items or output_node_item not in valid_node_items:
+                            should_remove = True
+                            logger.debug(f"Orphaned pipe: parent node not in scene")
 
                     if should_remove:
                         pipes_to_remove.append(item)
@@ -465,10 +469,15 @@ class CasareRPAApp:
             # Remove orphaned pipes
             if pipes_to_remove:
                 for pipe in pipes_to_remove:
-                    scene.removeItem(pipe)
-                logger.info(f"Cleaned up {len(pipes_to_remove)} orphaned connection pipes")
+                    try:
+                        scene.removeItem(pipe)
+                    except Exception as e:
+                        logger.debug(f"Could not remove pipe: {e}")
+                logger.info(f"Cleaned up {len(pipes_to_remove)} orphaned connection pipe(s)")
         except Exception as e:
             logger.error(f"Error cleaning up orphaned pipes: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
 
     def _get_serialized_workflow_data(self) -> Optional[dict]:
         """
