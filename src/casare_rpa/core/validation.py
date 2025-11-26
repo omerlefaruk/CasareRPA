@@ -500,6 +500,81 @@ def _validate_connections(
         seen_connections.add(conn_tuple)
 
 
+# ============================================================================
+# UNIFIED CONNECTION PARSING
+# ============================================================================
+
+
+def _parse_connection(conn: Dict[str, Any]) -> Optional[Dict[str, str]]:
+    """
+    Parse a connection from any format into a normalized structure.
+
+    Handles:
+    - Format 1: {"source_node": "...", "source_port": "...", "target_node": "...", "target_port": "..."}
+    - Format 2: {"out": ["node_id", "port"], "in": ["node_id", "port"]}
+
+    Returns:
+        Normalized dict with source_node, source_port, target_node, target_port
+        or None if parsing fails
+    """
+    if "source_node" in conn:
+        return {
+            "source_node": conn.get("source_node", ""),
+            "source_port": conn.get("source_port", ""),
+            "target_node": conn.get("target_node", ""),
+            "target_port": conn.get("target_port", ""),
+        }
+    elif "out" in conn and "in" in conn:
+        out_data = conn.get("out", [])
+        in_data = conn.get("in", [])
+        if len(out_data) >= 2 and len(in_data) >= 2:
+            return {
+                "source_node": out_data[0],
+                "source_port": out_data[1],
+                "target_node": in_data[0],
+                "target_port": in_data[1],
+            }
+    return None
+
+
+def _is_exec_port(port_name: str) -> bool:
+    """Check if a port name indicates an execution flow port."""
+    if not port_name:
+        return False
+    port_lower = port_name.lower()
+    exec_port_names = {
+        "exec_in", "exec_out", "exec",
+        "loop_body", "completed",
+        "true", "false",
+        "then", "else",
+        "on_success", "on_error", "on_finally",
+        "body", "done", "finish", "next",
+    }
+    return port_lower in exec_port_names or "exec" in port_lower
+
+
+def _is_exec_input_port(port_name: str) -> bool:
+    """Check if a port is an execution INPUT port (receives exec flow)."""
+    if not port_name:
+        return False
+    port_lower = port_name.lower()
+    # These ports receive execution flow (are targets of exec connections)
+    exec_input_names = {
+        "exec_in", "exec",
+        "loop_body",  # ForLoop body input
+        "true", "false",  # If/Branch inputs
+        "then", "else",
+        "on_success", "on_error", "on_finally",
+        "body",
+    }
+    return port_lower in exec_input_names or port_lower == "exec_in"
+
+
+# ============================================================================
+# SEMANTIC VALIDATION
+# ============================================================================
+
+
 def _validate_workflow_semantics(
     data: Dict[str, Any],
     result: ValidationResult,
@@ -514,30 +589,9 @@ def _validate_workflow_semantics(
         result.add_error(
             "EMPTY_WORKFLOW",
             "Workflow has no nodes",
-            suggestion="Add at least a Start and End node",
+            suggestion="Add at least one node to the workflow",
         )
         return
-
-    # Check for Start node
-    start_nodes = [
-        nid for nid, n in nodes.items()
-        if n.get("node_type") == "StartNode"
-    ]
-
-    if not start_nodes:
-        result.add_warning(
-            "NO_START_NODE",
-            "Workflow has no StartNode (one will be auto-created)",
-            suggestion="Add a StartNode for explicit workflow entry point",
-        )
-    elif len(start_nodes) > 1:
-        result.add_error(
-            "MULTIPLE_START_NODES",
-            f"Workflow has multiple StartNodes: {', '.join(start_nodes)}",
-            suggestion="Remove extra StartNodes, only one is allowed",
-        )
-
-    # End node is optional - workflows can end naturally without explicit EndNode
 
     # Check for circular dependencies
     if _has_circular_dependency(nodes, connections):
@@ -547,35 +601,52 @@ def _validate_workflow_semantics(
             suggestion="Review and break the circular connection chain",
         )
 
+    # Find entry points and check reachability
+    entry_points, reachable = _find_entry_points_and_reachable(nodes, connections)
+
+    # Warn if no explicit entry points (unusual but not an error)
+    if not entry_points:
+        result.add_warning(
+            "NO_ENTRY_POINT",
+            "Could not determine workflow entry point",
+            suggestion="Add a node without incoming exec connections as the start",
+        )
+
     # Check for unreachable nodes
-    reachable = _find_reachable_nodes(nodes, connections)
     all_nodes = set(nodes.keys())
     unreachable = all_nodes - reachable
 
-    if unreachable:
+    # Filter out hidden/auto nodes from unreachable warning
+    visible_unreachable = [n for n in unreachable if not n.startswith("__")]
+
+    if visible_unreachable:
         result.add_warning(
             "UNREACHABLE_NODES",
-            f"Some nodes are not reachable from Start: {', '.join(list(unreachable)[:5])}{'...' if len(unreachable) > 5 else ''}",
+            f"Some nodes are not reachable: {', '.join(list(visible_unreachable)[:5])}{'...' if len(visible_unreachable) > 5 else ''}",
             suggestion="Connect these nodes to the workflow or remove them",
         )
 
 
 def _has_circular_dependency(
     nodes: Dict[str, Any],
-    connections: List[Dict[str, str]],
+    connections: List[Dict[str, Any]],
 ) -> bool:
-    """Check for circular dependencies using DFS."""
+    """Check for circular dependencies using DFS on exec connections only."""
 
     # Build adjacency list (only exec connections for flow)
     graph: Dict[str, List[str]] = {node_id: [] for node_id in nodes}
 
     for conn in connections:
-        source = conn.get("source_node", "")
-        target = conn.get("target_node", "")
-        source_port = conn.get("source_port", "")
+        parsed = _parse_connection(conn)
+        if not parsed:
+            continue
+
+        source = parsed["source_node"]
+        source_port = parsed["source_port"]
+        target = parsed["target_node"]
 
         # Only consider execution flow connections
-        if source in graph and "exec" in source_port:
+        if source in graph and _is_exec_port(source_port):
             graph[source].append(target)
 
     visited: Set[str] = set()
@@ -603,39 +674,67 @@ def _has_circular_dependency(
     return False
 
 
-def _find_reachable_nodes(
+def _find_entry_points_and_reachable(
     nodes: Dict[str, Any],
-    connections: List[Dict[str, str]],
-) -> Set[str]:
-    """Find all nodes reachable from Start nodes."""
+    connections: List[Dict[str, Any]],
+) -> Tuple[List[str], Set[str]]:
+    """
+    Find workflow entry points and all reachable nodes.
 
-    # Build adjacency list
+    Entry points are nodes that:
+    1. Are named/typed as StartNode, OR
+    2. Have no incoming exec connections
+
+    Returns:
+        Tuple of (entry_point_ids, reachable_node_ids)
+    """
+
+    # Build adjacency list for BFS traversal (ALL connections, not just exec)
     graph: Dict[str, List[str]] = {node_id: [] for node_id in nodes}
 
+    # Track which nodes have incoming exec connections
+    nodes_with_exec_input: Set[str] = set()
+
     for conn in connections:
-        source = conn.get("source_node", "")
-        target = conn.get("target_node", "")
+        parsed = _parse_connection(conn)
+        if not parsed:
+            continue
+
+        source = parsed["source_node"]
+        target = parsed["target_node"]
+        target_port = parsed["target_port"]
+
+        # Add edge to graph (all connections for reachability)
         if source in graph:
             graph[source].append(target)
 
-    # Find start nodes
-    start_nodes = [
-        nid for nid, n in nodes.items()
-        if n.get("node_type") == "StartNode"
-    ]
+        # Track nodes receiving exec input
+        if _is_exec_input_port(target_port):
+            nodes_with_exec_input.add(target)
 
-    # If no start node, consider all nodes with no incoming exec connections as entry points
-    if not start_nodes:
-        nodes_with_incoming: Set[str] = set()
-        for conn in connections:
-            if conn.get("target_port") == "exec_in":
-                nodes_with_incoming.add(conn.get("target_node", ""))
+    # Find entry points: nodes without incoming exec connections
+    # This naturally handles workflows with or without explicit StartNode
+    entry_points: List[str] = []
 
-        start_nodes = [nid for nid in nodes if nid not in nodes_with_incoming]
+    for node_id, node_data in nodes.items():
+        # Skip hidden/auto nodes when determining entry points
+        if node_id.startswith("__"):
+            # But auto_start IS an entry point
+            if node_id == "__auto_start__":
+                entry_points.append(node_id)
+            continue
 
-    # BFS from start nodes
+        # Check if this node has no incoming exec connections
+        if node_id not in nodes_with_exec_input:
+            entry_points.append(node_id)
+
+    # If still no entry points, use all nodes (degenerate case)
+    if not entry_points:
+        entry_points = list(nodes.keys())
+
+    # BFS from entry points to find all reachable nodes
     reachable: Set[str] = set()
-    queue = list(start_nodes)
+    queue = list(entry_points)
 
     while queue:
         current = queue.pop(0)
@@ -647,6 +746,21 @@ def _find_reachable_nodes(
             if neighbor not in reachable:
                 queue.append(neighbor)
 
+    return entry_points, reachable
+
+
+# Legacy alias for backwards compatibility
+def _is_exec_port_name(port_name: str) -> bool:
+    """Legacy alias for _is_exec_port."""
+    return _is_exec_port(port_name)
+
+
+def _find_reachable_nodes(
+    nodes: Dict[str, Any],
+    connections: List[Dict[str, Any]],
+) -> Set[str]:
+    """Legacy wrapper - find all reachable nodes from entry points."""
+    _, reachable = _find_entry_points_and_reachable(nodes, connections)
     return reachable
 
 

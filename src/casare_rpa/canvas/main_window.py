@@ -8,7 +8,7 @@ GUI container for the RPA platform.
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt, QSize, Signal, QSettings, QByteArray, QTimer
+from PySide6.QtCore import Qt, QSize, Signal, Slot, QSettings, QByteArray, QTimer
 from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
     workflow_resume = Signal()
     workflow_stop = Signal()
     preferences_saved = Signal()  # Emitted when preferences are saved
+    trigger_workflow_requested = Signal()  # Emitted when a trigger wants to run the workflow
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -1116,6 +1117,17 @@ class MainWindow(QMainWindow):
             BottomPanelDock instance or None
         """
         return self._bottom_panel
+
+    @Slot()
+    def trigger_workflow_run(self) -> None:
+        """
+        Slot to trigger workflow run from a trigger.
+
+        This is called from the trigger runner when a trigger fires.
+        It emits the trigger_workflow_requested signal which the app handles.
+        """
+        logger.debug("Trigger requested workflow run")
+        self.trigger_workflow_requested.emit()
 
     def get_project_panel(self) -> Optional['ProjectPanelDock']:
         """

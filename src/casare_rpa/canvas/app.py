@@ -89,7 +89,11 @@ class CasareRPAApp:
         # Workflow runner
         self._workflow_runner: Optional[WorkflowRunner] = None
         self._workflow_task: Optional[asyncio.Task] = None
-        
+
+        # Trigger runner for scenario triggers
+        from .trigger_runner import CanvasTriggerRunner
+        self._trigger_runner = CanvasTriggerRunner(self)
+
         # Selector integration (browser element picker)
         self._selector_integration = SelectorIntegration(self._main_window)
         
@@ -142,6 +146,7 @@ class CasareRPAApp:
         self._main_window.workflow_pause.connect(self._on_pause_workflow)
         self._main_window.workflow_resume.connect(self._on_resume_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
+        self._main_window.trigger_workflow_requested.connect(self._on_trigger_run_workflow)
 
         # Preferences
         self._main_window.preferences_saved.connect(self.update_autosave_settings)
@@ -201,6 +206,9 @@ class CasareRPAApp:
             variables_tab = bottom_panel.get_variables_tab()
             if variables_tab:
                 variables_tab.refresh_requested.connect(self._on_refresh_variables)
+            # Trigger start/stop connections
+            bottom_panel.triggers_start_requested.connect(self.start_triggers)
+            bottom_panel.triggers_stop_requested.connect(self.stop_triggers)
 
         # Execution history connections
         execution_history = self._main_window.get_execution_history_viewer()
@@ -440,10 +448,11 @@ class CasareRPAApp:
             scene = viewer.scene()
 
             # Get all valid node items currently in the scene
-            # NodeItem class name check is more reliable than importing
+            # Check for NodeItem or CasareNodeItem (custom subclass used in this project)
             valid_node_items = set()
             for item in scene.items():
-                if item.__class__.__name__ == 'NodeItem':
+                class_name = item.__class__.__name__
+                if class_name == 'NodeItem' or class_name == 'CasareNodeItem':
                     valid_node_items.add(item)
 
             # Find all pipe items in the scene
@@ -697,8 +706,13 @@ class CasareRPAApp:
                 visual_node.set_pos(x, y)
 
             node_map[node_id] = visual_node
-        
-        # Create connections
+
+        # Process Qt events to ensure all nodes are fully in the scene
+        # This prevents NodeGraphQt's viewer() returning None during pipe redraw
+        from PySide6.QtWidgets import QApplication
+        QApplication.processEvents()
+
+        # Create connections with error handling
         for connection in workflow.connections:
             source_visual = node_map.get(connection.source_node)
             target_visual = node_map.get(connection.target_node)
@@ -719,7 +733,13 @@ class CasareRPAApp:
                         break
                 
                 if source_port and target_port:
-                    source_port.connect_to(target_port)
+                    try:
+                        source_port.connect_to(target_port)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to connect {connection.source_node}.{connection.source_port} -> "
+                            f"{connection.target_node}.{connection.target_port}: {e}"
+                        )
 
         # Deserialize frames
         self._deserialize_frames(workflow.frames, node_map)
@@ -1021,6 +1041,11 @@ class CasareRPAApp:
                     logger.debug(f"Created node {node_id} during import")
             except Exception as e:
                 logger.error(f"Failed to create node {node_id}: {e}")
+
+        # Process Qt events to ensure all nodes are fully in the scene
+        # This prevents NodeGraphQt's viewer() returning None during pipe redraw
+        from PySide6.QtWidgets import QApplication
+        QApplication.processEvents()
 
         # Restore connections
         node_map = {}
@@ -1344,6 +1369,13 @@ class CasareRPAApp:
         if project_panel:
             project_panel.refresh()
 
+        # Load triggers into bottom panel
+        bottom_panel = self._main_window.get_bottom_panel()
+        if bottom_panel:
+            triggers = scenario.triggers or []
+            bottom_panel.set_triggers(triggers)
+            logger.debug(f"Loaded {len(triggers)} triggers from scenario")
+
         # Enable Save to Scenario action
         self._main_window.action_save_to_scenario.setEnabled(True)
 
@@ -1359,6 +1391,11 @@ class CasareRPAApp:
         project_panel = self._main_window.get_project_panel()
         if project_panel:
             project_panel.refresh()
+
+        # Clear triggers from bottom panel
+        bottom_panel = self._main_window.get_bottom_panel()
+        if bottom_panel:
+            bottom_panel.clear_triggers()
 
         # Disable Save to Scenario action
         self._main_window.action_save_to_scenario.setEnabled(False)
@@ -1393,6 +1430,12 @@ class CasareRPAApp:
             # Update scenario with workflow data
             scenario = manager.current_scenario
             scenario.workflow = workflow_data
+
+            # Save triggers from bottom panel
+            bottom_panel = self._main_window.get_bottom_panel()
+            if bottom_panel:
+                scenario.triggers = bottom_panel.get_triggers()
+                logger.debug(f"Saving {len(scenario.triggers)} triggers with scenario")
 
             # Save the scenario
             ScenarioStorage.save_scenario(scenario, manager.current_project)
@@ -1860,6 +1903,62 @@ class CasareRPAApp:
             self._main_window.action_run.setEnabled(True)
             self._main_window.action_run_to_node.setEnabled(True)
             self._main_window.action_run_single_node.setEnabled(True)
+
+    def _on_trigger_run_workflow(self) -> None:
+        """Handle workflow execution triggered by a trigger."""
+        logger.info("Workflow execution triggered by trigger")
+
+        # Get trigger event data to inject as variables
+        trigger_event = self._trigger_runner.get_last_trigger_event()
+        if trigger_event:
+            logger.debug(f"Trigger payload: {trigger_event.payload}")
+
+        # Run the workflow (same as manual run, but may inject trigger data)
+        self._on_run_workflow()
+
+        # Clear the event after processing
+        self._trigger_runner.clear_last_trigger_event()
+
+    def start_triggers(self) -> None:
+        """Start all triggers for the current scenario."""
+        bottom_panel = self._main_window.get_bottom_panel()
+        if not bottom_panel:
+            logger.warning("No bottom panel available")
+            return
+
+        triggers = bottom_panel.get_triggers()
+        if not triggers:
+            self._main_window.statusBar().showMessage("No triggers configured", 3000)
+            # Reset button state since we couldn't start
+            bottom_panel.set_triggers_running(False)
+            return
+
+        async def _start():
+            count = await self._trigger_runner.start_triggers(triggers)
+            self._main_window.statusBar().showMessage(
+                f"Started {count} triggers", 3000
+            )
+            # Update UI to reflect actual running state
+            bottom_panel.set_triggers_running(count > 0)
+
+        asyncio.ensure_future(_start())
+
+    def stop_triggers(self) -> None:
+        """Stop all active triggers."""
+        bottom_panel = self._main_window.get_bottom_panel()
+
+        async def _stop():
+            await self._trigger_runner.stop_triggers()
+            self._main_window.statusBar().showMessage("Triggers stopped", 3000)
+            # Update UI to reflect stopped state
+            if bottom_panel:
+                bottom_panel.set_triggers_running(False)
+
+        asyncio.ensure_future(_stop())
+
+    def are_triggers_running(self) -> bool:
+        """Check if triggers are currently running."""
+        return self._trigger_runner.is_running
 
     def _on_run_to_node(self, target_node_id: str) -> None:
         """

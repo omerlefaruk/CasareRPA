@@ -323,14 +323,33 @@ class ConnectionValidator:
 
         Args:
             port_name: Name of the port
-            data_type: DataType if known (ignored for exec detection)
+            data_type: DataType if known (None indicates exec port)
 
         Returns:
             True if this is an execution port
         """
-        # Always check name pattern first - exec ports are identified by name
-        # regardless of any data_type that might be set
+        # Check if data_type is None - this is how exec ports are marked
+        # in the visual node's _port_types dictionary via add_exec_input/add_exec_output
+        if data_type is None:
+            return True
+
+        # Also check name patterns for exec ports
         port_lower = port_name.lower()
+
+        # Common exec port names
+        exec_port_names = {
+            "exec_in", "exec_out", "exec",
+            "loop_body", "completed",  # Loop node exec outputs
+            "true", "false",  # If/Branch node exec outputs
+            "then", "else",  # Alternative if/branch names
+            "on_success", "on_error", "on_finally",  # Error handling
+            "body", "done", "finish", "next",  # Other common exec names
+        }
+
+        if port_lower in exec_port_names:
+            return True
+
+        # Fallback: check if "exec" is in the name
         return "exec" in port_lower
 
 

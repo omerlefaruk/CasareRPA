@@ -14,7 +14,7 @@ __version__ = "0.1.0"
 # Type hints for IDE support - these don't actually import at runtime
 if TYPE_CHECKING:
     from .basic_nodes import StartNode, EndNode, CommentNode
-    from .browser_nodes import LaunchBrowserNode, CloseBrowserNode, NewTabNode
+    from .browser_nodes import LaunchBrowserNode, CloseBrowserNode, NewTabNode, GetAllImagesNode, DownloadFileNode
     from .navigation_nodes import (
         GoToURLNode,
         GoBackNode,
@@ -254,6 +254,8 @@ _NODE_REGISTRY: Dict[str, str] = {
     "LaunchBrowserNode": "browser_nodes",
     "CloseBrowserNode": "browser_nodes",
     "NewTabNode": "browser_nodes",
+    "GetAllImagesNode": "browser_nodes",
+    "DownloadFileNode": "browser_nodes",
     # Navigation nodes
     "GoToURLNode": "navigation_nodes",
     "GoBackNode": "navigation_nodes",
@@ -568,6 +570,8 @@ __all__ = [
     "LaunchBrowserNode",
     "CloseBrowserNode",
     "NewTabNode",
+    "GetAllImagesNode",
+    "DownloadFileNode",
     # Navigation
     "GoToURLNode",
     "GoBackNode",

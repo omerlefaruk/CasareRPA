@@ -111,6 +111,11 @@ class ScheduledTrigger(BaseTrigger):
                 cron_expr = config.get('cron_expression', '0 9 * * *')
                 trigger = CronTrigger.from_crontab(cron_expr, timezone=timezone)
 
+            elif frequency == 'interval':
+                # Interval-based scheduling (every N seconds)
+                interval_seconds = config.get('interval_seconds', 60)
+                trigger = IntervalTrigger(seconds=interval_seconds, timezone=timezone)
+
             else:
                 logger.error(f"Unknown frequency: {frequency}")
                 return False
@@ -161,10 +166,20 @@ class ScheduledTrigger(BaseTrigger):
 
     async def _on_schedule(self) -> None:
         """Called when schedule fires."""
+        # Check max_runs limit
+        max_runs = self.config.config.get('max_runs', 0)
+        if max_runs > 0 and self.config.trigger_count >= max_runs:
+            logger.info(
+                f"Trigger {self.config.name} reached max_runs ({max_runs}), stopping"
+            )
+            await self.stop()
+            return
+
         payload = {
             "scheduled_time": datetime.utcnow().isoformat(),
             "trigger_name": self.config.name,
             "frequency": self.config.config.get('frequency', 'daily'),
+            "run_number": self.config.trigger_count + 1,
         }
 
         metadata = {
@@ -173,18 +188,33 @@ class ScheduledTrigger(BaseTrigger):
                 self._job.next_run_time.isoformat()
                 if self._job and self._job.next_run_time else None
             ),
+            "max_runs": max_runs,
+            "runs_remaining": max_runs - self.config.trigger_count - 1 if max_runs > 0 else None,
         }
 
         await self.emit(payload, metadata)
+
+        # Check if we just reached max_runs (after emit incremented count)
+        if max_runs > 0 and self.config.trigger_count >= max_runs:
+            logger.info(
+                f"Trigger {self.config.name} completed {max_runs} runs, stopping"
+            )
+            await self.stop()
 
     def validate_config(self) -> tuple[bool, Optional[str]]:
         """Validate scheduled trigger configuration."""
         config = self.config.config
 
         frequency = config.get('frequency', 'daily')
-        valid_frequencies = ['once', 'hourly', 'daily', 'weekly', 'monthly', 'cron']
+        valid_frequencies = ['once', 'interval', 'hourly', 'daily', 'weekly', 'monthly', 'cron']
         if frequency not in valid_frequencies:
             return False, f"Invalid frequency. Must be one of: {valid_frequencies}"
+
+        # Validate interval_seconds for interval frequency
+        if frequency == 'interval':
+            interval_seconds = config.get('interval_seconds', 60)
+            if not isinstance(interval_seconds, (int, float)) or interval_seconds < 1:
+                return False, "interval_seconds must be at least 1"
 
         # Validate time values
         hour = config.get('time_hour', 0)
@@ -238,9 +268,16 @@ class ScheduledTrigger(BaseTrigger):
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "frequency": {
                     "type": "string",
-                    "enum": ["once", "hourly", "daily", "weekly", "monthly", "cron"],
+                    "enum": ["once", "interval", "hourly", "daily", "weekly", "monthly", "cron"],
                     "default": "daily",
                     "description": "Schedule frequency type",
+                },
+                "interval_seconds": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 86400,
+                    "default": 60,
+                    "description": "Interval in seconds (for frequency='interval')",
                 },
                 "cron_expression": {
                     "type": "string",
@@ -285,6 +322,12 @@ class ScheduledTrigger(BaseTrigger):
                     "type": "string",
                     "format": "date-time",
                     "description": "Specific run time for frequency='once'",
+                },
+                "max_runs": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "default": 0,
+                    "description": "Maximum number of runs (0 = unlimited)",
                 },
             },
             "required": ["name"],
