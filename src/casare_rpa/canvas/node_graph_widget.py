@@ -248,13 +248,25 @@ class ConnectionDropFilter(QObject):
         # Get scene position
         scene_pos = viewer.mapToScene(event.pos())
 
-        # Check if dropped on a port
+        # Check if dropped on a port using multiple detection methods
         items = viewer.scene().items(scene_pos)
-        has_port = any(isinstance(item, PortItem) for item in items)
+
+        # Method 1: Check by class name (more robust than isinstance after reload)
+        has_port = False
+        for item in items:
+            class_name = item.__class__.__name__
+            # Check various port class names used by NodeGraphQt
+            if 'Port' in class_name or class_name == 'PortItem':
+                has_port = True
+                logger.debug(f"ConnectionDropFilter: Found port ({class_name}) at drop location")
+                break
 
         if has_port:
             # Let NodeGraphQt handle normal connection
             return False
+
+        # No port found - this is a drop on empty space
+        logger.debug(f"ConnectionDropFilter: No port found at ({scene_pos.x():.0f}, {scene_pos.y():.0f}), showing search menu")
 
         # Dropped on empty space - save port and schedule search menu
         # We use QTimer to let the original event complete first
@@ -276,6 +288,23 @@ class ConnectionDropFilter(QObject):
         scene_pos = self._pending_scene_pos
         self._pending_source_port = None
         self._pending_scene_pos = None
+
+        # Double-check: if a connection was made by NodeGraphQt, don't show the menu
+        # source_port is a PortItem (graphics item), check its connected_pipes
+        try:
+            # If the port is no longer valid (e.g., its node was deleted), skip
+            if source_port is None or not hasattr(source_port, 'connected_pipes'):
+                logger.debug("ConnectionDropFilter: Source port no longer valid, skipping search")
+                return
+
+            # Check if port has any connections (pipes)
+            pipes = source_port.connected_pipes
+            if pipes:
+                # A connection exists, NodeGraphQt handled it - don't show menu
+                logger.debug(f"ConnectionDropFilter: Port already has {len(pipes)} connection(s), skipping search")
+                return
+        except Exception as e:
+            logger.debug(f"ConnectionDropFilter: Error checking connections: {e}")
 
         # Show the connection search
         self._widget._show_connection_search(source_port, scene_pos)
