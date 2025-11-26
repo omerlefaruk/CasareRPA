@@ -332,8 +332,10 @@ class WorkflowRunner:
         """
         # Control flow nodes must run sequentially
         non_parallel_types = {
-            "ForLoopNode",
-            "WhileLoopNode",
+            "ForLoopStartNode",
+            "ForLoopEndNode",
+            "WhileLoopStartNode",
+            "WhileLoopEndNode",
             "IfNode",
             "SwitchNode",
             "TryNode",
@@ -350,26 +352,25 @@ class WorkflowRunner:
     def _transfer_data(self, connection: NodeConnection) -> None:
         """
         Transfer data from source port to target port.
-        
+
         Args:
             connection: The connection defining source and target
         """
         source_node = self.workflow.nodes.get(connection.source_node)
         target_node = self.workflow.nodes.get(connection.target_node)
-        
+
         if not source_node or not target_node:
             return
-        
+
         # Get value from source output port
         value = source_node.get_output_value(connection.source_port)
-        
+
         # Set value to target input port
         if value is not None:
             target_node.set_input_value(connection.target_port, value)
-            logger.debug(
-                f"Data transferred: {connection.source_node}.{connection.source_port} "
-                f"-> {connection.target_node}.{connection.target_port} = {value}"
-            )
+            # Log data transfers (non-exec) for debugging
+            if "exec" not in connection.source_port.lower():
+                logger.info(f"Data: {connection.source_port} -> {connection.target_port} = {repr(value)[:80]}")
     
     async def _execute_node_once(self, node: BaseNode) -> Dict[str, Any]:
         """
@@ -687,9 +688,10 @@ class WorkflowRunner:
             body_nodes: Set[str] = set()
             to_explore: List[str] = []
 
-            # Find nodes connected to loop_body port
+            # Find nodes connected to loop body port
+            # ForLoopStartNode uses "body", WhileLoopStartNode uses "loop_body"
             for conn in self.workflow.connections:
-                if conn.source_node == loop_node_id and conn.source_port == "loop_body":
+                if conn.source_node == loop_node_id and conn.source_port in ("loop_body", "body"):
                     to_explore.append(conn.target_node)
 
             # BFS to find all reachable nodes (until we hit the loop node again or completed)
@@ -732,9 +734,13 @@ class WorkflowRunner:
 
             current_node = nodes_to_execute.pop(0)
 
-            # Skip if already executed (except for loops which need re-execution)
-            is_loop_node = current_node.__class__.__name__ in ["ForLoopNode", "WhileLoopNode"]
-            if current_node.node_id in self.executed_nodes and not is_loop_node:
+            # Skip if already executed (except for loops and nodes inside active loops)
+            is_loop_node = current_node.__class__.__name__ in ["ForLoopStartNode", "WhileLoopStartNode"]
+            is_in_active_loop = any(
+                current_node.node_id in loop_info["loop_body_nodes"]
+                for loop_info in active_loops
+            )
+            if current_node.node_id in self.executed_nodes and not is_loop_node and not is_in_active_loop:
                 continue
 
             # Skip nodes not in subgraph (Run-To-Node filtering)
@@ -838,12 +844,20 @@ class WorkflowRunner:
 
             # Get next nodes based on execution result
             if result and "next_nodes" in result:
+                # Handle ForLoopEnd loop_back_to instruction
+                if "loop_back_to" in result:
+                    loop_start_id = result["loop_back_to"]
+                    if loop_start_id in self.workflow.nodes:
+                        nodes_to_execute.insert(0, self.workflow.nodes[loop_start_id])
+                        logger.debug(f"ForLoopEnd: looping back to {loop_start_id}")
+                        continue
+
                 # Dynamic routing - use the next_nodes from result
                 next_port_names = result["next_nodes"]
                 next_nodes = []
 
-                # Check if this is a loop node entering loop_body
-                if is_loop_node and "loop_body" in next_port_names:
+                # Check if this is a loop node entering loop_body (or "body" for ForLoopStartNode)
+                if is_loop_node and ("loop_body" in next_port_names or "body" in next_port_names):
                     # Track this loop as active
                     loop_body_nodes = _find_loop_body_nodes(current_node.node_id)
                     active_loops.append({
@@ -954,7 +968,7 @@ class WorkflowRunner:
             ready_node_ids = [
                 nid for nid in ready_node_ids
                 if nid not in self.executed_nodes or
-                self.workflow.nodes[nid].__class__.__name__ in ["ForLoopNode", "WhileLoopNode"]
+                self.workflow.nodes[nid].__class__.__name__ in ["ForLoopStartNode", "WhileLoopStartNode"]
             ]
 
             if not ready_node_ids:

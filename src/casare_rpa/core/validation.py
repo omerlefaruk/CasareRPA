@@ -176,8 +176,8 @@ def _get_valid_node_types() -> Set[str]:
         # Fallback to a minimal set if workflow_loader isn't available
         logger.warning("Could not import NODE_TYPE_MAP, using minimal node set")
         return {
-            "StartNode", "EndNode", "IfNode", "ForLoopNode", "WhileLoopNode",
-            "SetVariableNode", "GetVariableNode", "LogNode", "CommentNode",
+            "StartNode", "EndNode", "IfNode", "ForLoopStartNode", "ForLoopEndNode",
+            "WhileLoopStartNode", "WhileLoopEndNode", "SetVariableNode", "GetVariableNode", "LogNode", "CommentNode",
         }
 
 # Lazily evaluated to avoid circular imports

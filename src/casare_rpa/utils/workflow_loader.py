@@ -169,7 +169,8 @@ from casare_rpa.nodes.variable_nodes import SetVariableNode, GetVariableNode, In
 
 # Control flow nodes
 from casare_rpa.nodes.control_flow_nodes import (
-    IfNode, ForLoopNode, WhileLoopNode, BreakNode, ContinueNode, SwitchNode
+    IfNode, ForLoopStartNode, ForLoopEndNode,
+    WhileLoopStartNode, WhileLoopEndNode, BreakNode, ContinueNode, SwitchNode
 )
 
 # Error handling nodes
@@ -337,8 +338,10 @@ NODE_TYPE_MAP = {
 
     # Control flow nodes
     "IfNode": IfNode,
-    "ForLoopNode": ForLoopNode,
-    "WhileLoopNode": WhileLoopNode,
+    "ForLoopStartNode": ForLoopStartNode,
+    "ForLoopEndNode": ForLoopEndNode,
+    "WhileLoopStartNode": WhileLoopStartNode,
+    "WhileLoopEndNode": WhileLoopEndNode,
     "BreakNode": BreakNode,
     "ContinueNode": ContinueNode,
     "SwitchNode": SwitchNode,

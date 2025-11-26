@@ -853,7 +853,7 @@ class DownloadFileNode(BaseNode):
                 save_path = context.resolve_value(save_path)
 
             use_browser = self.config.get("use_browser", False)
-            timeout = int(self.config.get("timeout", 30000))
+            timeout = int(self.config.get("timeout") or 30000)
             overwrite = self.config.get("overwrite", True)
 
             # Determine filename
