@@ -12,6 +12,7 @@ from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor, QKeyEvent
 from PySide6.QtCore import Qt, QObject, QEvent, Signal
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.qgraphics.node_base import NodeItem
+from NodeGraphQt.qgraphics.port import PortItem
 
 from loguru import logger
 
@@ -138,6 +139,92 @@ try:
 
 except Exception as e:
     logger.warning(f"Could not patch NodeCheckBox: {e}")
+
+
+# Monkey-patch PipeItem.viewer_layout_direction to return default when viewer is None
+# This fixes the issue where pipes don't draw because viewer() returns None
+try:
+    from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem, LayoutDirectionEnum, PortTypeEnum, PipeEnum
+    from PySide6.QtGui import QColor as _QColor, QTransform as _QTransform
+
+    _original_viewer_layout_direction = PipeItem.viewer_layout_direction
+
+    def _patched_viewer_layout_direction(self):
+        """Return layout direction with fallback to horizontal if viewer is None."""
+        viewer = self.viewer()
+        if viewer:
+            return viewer.get_layout_direction()
+        # Default to horizontal layout if viewer is not available
+        return LayoutDirectionEnum.HORIZONTAL.value
+
+    PipeItem.viewer_layout_direction = _patched_viewer_layout_direction
+    logger.debug("Patched PipeItem.viewer_layout_direction to return default when viewer is None")
+
+except Exception as e:
+    logger.warning(f"Could not patch PipeItem.viewer_layout_direction: {e}")
+
+# Monkey-patch LivePipeItem.draw_index_pointer to fix NodeGraphQt bug
+# where text_pos is undefined when viewer_layout_direction() returns None
+try:
+    _original_draw_index_pointer = LivePipeItem.draw_index_pointer
+
+    def _patched_draw_index_pointer(self, start_port, cursor_pos, color=None):
+        """Fixed version that handles None layout direction and errors."""
+        try:
+            # Guard against None start_port
+            if start_port is None:
+                return
+
+            text_rect = self._idx_text.boundingRect()
+            transform = _QTransform()
+            transform.translate(cursor_pos.x(), cursor_pos.y())
+
+            layout_dir = self.viewer_layout_direction()
+
+            # Default text_pos in case layout_direction is None or unexpected
+            text_pos = (
+                cursor_pos.x() - (text_rect.width() / 2),
+                cursor_pos.y() - (text_rect.height() * 1.25)
+            )
+
+            if layout_dir == LayoutDirectionEnum.VERTICAL.value:
+                text_pos = (
+                    cursor_pos.x() + (text_rect.width() / 2.5),
+                    cursor_pos.y() - (text_rect.height() / 2)
+                )
+                if start_port.port_type == PortTypeEnum.OUT.value:
+                    transform.rotate(180)
+            elif layout_dir == LayoutDirectionEnum.HORIZONTAL.value:
+                text_pos = (
+                    cursor_pos.x() - (text_rect.width() / 2),
+                    cursor_pos.y() - (text_rect.height() * 1.25)
+                )
+                if start_port.port_type == PortTypeEnum.IN.value:
+                    transform.rotate(-90)
+                else:
+                    transform.rotate(90)
+
+            self._idx_text.setPos(*text_pos)
+            self._idx_text.setPlainText('{}'.format(start_port.name))
+            self._idx_pointer.setPolygon(transform.map(self._poly))
+
+            pen_color = _QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
+            if isinstance(color, (list, tuple)):
+                pen_color = _QColor(*color)
+
+            pen = self._idx_pointer.pen()
+            pen.setColor(pen_color)
+            self._idx_pointer.setBrush(pen_color.darker(300))
+            self._idx_pointer.setPen(pen)
+        except Exception as e:
+            # Log error but don't crash - the pipe will still work without the pointer
+            logger.debug(f"draw_index_pointer error (non-fatal): {e}")
+
+    LivePipeItem.draw_index_pointer = _patched_draw_index_pointer
+    logger.debug("Patched LivePipeItem.draw_index_pointer to handle None layout direction")
+
+except Exception as e:
+    logger.warning(f"Could not patch LivePipeItem.draw_index_pointer: {e}")
 
 
 class TooltipBlocker(QObject):
@@ -271,6 +358,7 @@ class NodeGraphWidget(QWidget):
 
         # Create snippet navigation system
         self._snippet_breadcrumb = SnippetBreadcrumbBar(self)
+        self._snippet_breadcrumb.setVisible(False)  # Hidden by default
         self._navigation_manager = SnippetNavigationManager(self)
 
         # Set as global navigation manager
@@ -334,22 +422,22 @@ class NodeGraphWidget(QWidget):
 
                     # Check if released on empty space (no port underneath)
                     items = viewer.scene().items(scene_pos)
-                    has_port = any(hasattr(item, 'port') and item.port for item in items)
+                    has_port = any(isinstance(item, PortItem) for item in items)
 
                     logger.debug(f"Has port at release: {has_port}")
 
                     if not has_port:
-                        # Save source port (don't call original yet - keep pipe visible)
+                        # Save source port before original handler cleans it up
                         source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
 
                         logger.debug(f"Source port: {source_port}")
 
                         if source_port:
                             logger.info(f"Connection dropped in empty space, showing search")
-                            # Show search while keeping the pipe visible
+                            # Call original handler FIRST to properly clean up pipe state
+                            original_mouse_release(event)
+                            # Then show search (source_port reference is still valid)
                             self._show_connection_search(source_port, scene_pos)
-                            # After menu closes, clean up the pipe
-                            viewer.end_live_connection()
                             return
 
             # Call original handler
@@ -366,34 +454,42 @@ class NodeGraphWidget(QWidget):
         """
         viewer = self._graph.viewer()
         ViewerClass = viewer.__class__
-        
+
         # Only patch once
         if getattr(ViewerClass, '_patched_mmb', False):
             return
-            
+
         original_mouse_press = ViewerClass.mousePressEvent
         original_start_live = ViewerClass.start_live_connection
-        
+
+        # Track if we're in an MMB press to block connections during MMB only
+        ViewerClass._mmb_press_active = False
+
         def patched_mouse_press(viewer_self, event):
-            # Call the original method first
+            # Track MMB press state BEFORE calling original
+            if event.button() == Qt.MouseButton.MiddleButton:
+                viewer_self._mmb_press_active = True
+            else:
+                viewer_self._mmb_press_active = False
+
+            # Call the original method
             original_mouse_press(viewer_self, event)
-            
-            # If MMB was pressed, force MMB_state to True.
-            # The original method sets MMB_state = False if it detects nodes under the cursor,
-            # preventing panning. We override this behavior here to ensure MMB always pans.
+
+            # If MMB was pressed, force MMB_state to True for panning
+            # The original method sets MMB_state = False if it detects nodes under cursor
             if event.button() == Qt.MouseButton.MiddleButton:
                 viewer_self.MMB_state = True
-                
+
                 # Also cancel any live connection that may have been started by MMB
                 if viewer_self._LIVE_PIPE.isVisible():
                     viewer_self.end_live_connection()
-        
+
         def patched_start_live(viewer_self, selected_port):
-            # Only allow starting connections with LMB, not MMB
-            if viewer_self.MMB_state:
+            # Only block connections during active MMB press
+            if getattr(viewer_self, '_mmb_press_active', False):
                 return
             original_start_live(viewer_self, selected_port)
-        
+
         ViewerClass.mousePressEvent = patched_mouse_press
         ViewerClass.start_live_connection = patched_start_live
         ViewerClass._patched_mmb = True
