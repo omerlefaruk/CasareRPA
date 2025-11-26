@@ -2,6 +2,12 @@
   "$schema_version": "1.0.0",
   "projects": [
     {
+      "id": "proj_8eb6f448",
+      "last_opened": "2025-11-26T03:48:04.568361",
+      "name": "Test",
+      "path": "C:\\Users\\Rau\\Desktop\\CasareRPA\\src\\projects\\Test"
+    },
+    {
       "id": "proj_5c88414d",
       "last_opened": "2025-11-26T03:35:43.022968",
       "name": "ShipEntegra",

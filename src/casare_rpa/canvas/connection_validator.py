@@ -323,18 +323,15 @@ class ConnectionValidator:
 
         Args:
             port_name: Name of the port
-            data_type: DataType if known (None indicates exec)
+            data_type: DataType if known (ignored for exec detection)
 
         Returns:
             True if this is an execution port
         """
-        # If data_type is explicitly None, check name pattern
-        if data_type is None:
-            port_lower = port_name.lower()
-            return "exec" in port_lower
-
-        # If data_type is set, it's a data port
-        return False
+        # Always check name pattern first - exec ports are identified by name
+        # regardless of any data_type that might be set
+        port_lower = port_name.lower()
+        return "exec" in port_lower
 
 
 # ============================================================================

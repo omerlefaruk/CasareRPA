@@ -229,7 +229,7 @@ class VariableEditorDialog(QDialog):
         for name, var_data in variables.items():
             self._add_table_row(name, var_data)
 
-    def _add_table_row(self, name: str, var_data: Dict[str, Any]) -> None:
+    def _add_table_row(self, name: str, variable: ProjectVariable) -> None:
         """Add a row to the table."""
         row = self._table.rowCount()
         self._table.insertRow(row)
@@ -240,7 +240,7 @@ class VariableEditorDialog(QDialog):
         self._table.setItem(row, 0, name_item)
 
         # Value
-        value = var_data.get("default_value", "")
+        value = variable.default_value
         if isinstance(value, (list, dict)):
             import json
             value = json.dumps(value)
@@ -248,7 +248,7 @@ class VariableEditorDialog(QDialog):
         self._table.setItem(row, 1, value_item)
 
         # Type
-        var_type = var_data.get("type", "String")
+        var_type = variable.type
         type_item = QTableWidgetItem(var_type)
         type_item.setFlags(type_item.flags() & ~Qt.ItemIsEditable)
         self._table.setItem(row, 2, type_item)
@@ -296,12 +296,19 @@ class VariableEditorDialog(QDialog):
             self._value_input.setFocus()
             return
 
+        # Create variable object
+        variable = ProjectVariable(
+            name=name,
+            type=var_type,
+            default_value=converted_value,
+        )
+
         # Add to manager
         try:
             if self._scope == "global":
-                self._manager.set_global_variable(name, converted_value, var_type)
+                self._manager.set_global_variable(variable)
             else:
-                self._manager.set_project_variable(name, converted_value, var_type)
+                self._manager.set_project_variable(variable)
 
             # Clear inputs
             self._name_input.clear()

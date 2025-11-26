@@ -67,6 +67,7 @@ class WorkflowRunner:
         max_parallel_nodes: int = 4,
         target_node_id: Optional[NodeId] = None,
         initial_variables: Optional[Dict[str, Any]] = None,
+        project_context: Optional[Any] = None,
     ) -> None:
         """
         Initialize workflow runner.
@@ -84,9 +85,11 @@ class WorkflowRunner:
                             and execution will pause when the target is reached.
             initial_variables: Optional dict of variables to initialize in context
                                (from Variables Tab in bottom panel)
+            project_context: Optional project context for project-scoped variables
         """
         self.workflow = workflow
         self._initial_variables = initial_variables or {}
+        self._project_context = project_context
 
         # Import get_event_bus to get the global instance
         from ..core.events import get_event_bus
@@ -1063,7 +1066,8 @@ class WorkflowRunner:
         # Create execution context with initial variables from Variables Tab
         self.context = ExecutionContext(
             workflow_name=self.workflow.metadata.name,
-            initial_variables=self._initial_variables
+            initial_variables=self._initial_variables,
+            project_context=self._project_context,
         )
         
         self._emit_event(EventType.WORKFLOW_STARTED, {
