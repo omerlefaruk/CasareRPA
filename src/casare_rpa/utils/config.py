@@ -52,11 +52,18 @@ else:
 SETTINGS_FILE: Final[Path] = CONFIG_DIR / "settings.json"
 HOTKEYS_FILE: Final[Path] = CONFIG_DIR / "hotkeys.json"
 
+# Project management paths
+PROJECTS_DIR: Final[Path] = CONFIG_DIR / "projects"
+PROJECTS_INDEX_FILE: Final[Path] = PROJECTS_DIR / "projects_index.json"
+GLOBAL_VARIABLES_FILE: Final[Path] = CONFIG_DIR / "global_variables.json"
+GLOBAL_CREDENTIALS_FILE: Final[Path] = CONFIG_DIR / "global_credentials.json"
+
 # Ensure critical directories exist (these are now always writable)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
 SNIPPETS_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============================================================================
 # APPLICATION CONFIGURATION

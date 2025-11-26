@@ -24,6 +24,9 @@ from ..core.types import NodeStatus
 from ..utils.config import setup_logging, APP_NAME
 from ..utils.playwright_setup import ensure_playwright_ready
 from ..utils.settings_manager import get_settings_manager
+from ..project.project_manager import get_project_manager
+from ..project.scenario_storage import ScenarioStorage
+from ..core.project_schema import Project, Scenario
 from loguru import logger
 
 
@@ -222,6 +225,14 @@ class CasareRPAApp:
         quick_actions.duplicate_requested.connect(self._on_duplicate_nodes)
         quick_actions.delete_requested.connect(self._on_delete_selected)
 
+        # Project panel connections
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            project_panel.project_opened.connect(self._on_project_opened)
+            project_panel.project_closed.connect(self._on_project_closed)
+            project_panel.scenario_opened.connect(self._on_scenario_opened)
+            project_panel.scenario_closed.connect(self._on_scenario_closed)
+
     def _setup_autosave(self) -> None:
         """Setup autosave timer based on settings."""
         from PySide6.QtCore import QTimer
@@ -393,8 +404,8 @@ class CasareRPAApp:
             graph.delete_nodes(selected_nodes)
             logger.info(f"Deleted {len(selected_nodes)} nodes")
 
-            # Clean up any orphaned connection pipes
-            self._cleanup_orphaned_pipes()
+            # Disabled - was removing all pipes incorrectly
+            # self._cleanup_orphaned_pipes()
 
         if frames_deleted > 0:
             logger.info(f"Deleted {frames_deleted} frames")
@@ -412,6 +423,9 @@ class CasareRPAApp:
             viewer = self.node_graph.graph.viewer()
             scene = viewer.scene()
 
+            # Get all valid node IDs currently in the graph
+            valid_node_ids = set(self.node_graph.graph.all_nodes().keys()) if hasattr(self.node_graph.graph.all_nodes(), 'keys') else set(n.id for n in self.node_graph.graph.all_nodes())
+
             # Find all pipe items in the scene
             pipes_to_remove = []
             for item in scene.items():
@@ -428,9 +442,16 @@ class CasareRPAApp:
                     # Check if ports have valid parent nodes
                     elif not input_port.node or not output_port.node:
                         should_remove = True
-                    # Check if parent nodes are still in the scene
-                    elif input_port.node not in scene.items() or output_port.node not in scene.items():
-                        should_remove = True
+                    # Check if parent nodes are still in the graph by ID
+                    else:
+                        try:
+                            input_node_id = input_port.node.id if hasattr(input_port.node, 'id') else None
+                            output_node_id = output_port.node.id if hasattr(output_port.node, 'id') else None
+                            if input_node_id not in valid_node_ids or output_node_id not in valid_node_ids:
+                                should_remove = True
+                        except:
+                            # If we can't check, don't remove
+                            pass
 
                     if should_remove:
                         pipes_to_remove.append(item)
@@ -1233,6 +1254,143 @@ class CasareRPAApp:
         except Exception as e:
             logger.exception("Failed to save workflow")
             self._main_window.statusBar().showMessage(f"Error saving file: {str(e)}", 5000)
+
+    # =========================================================================
+    # Project Management Handlers
+    # =========================================================================
+
+    def _on_project_opened(self, project: Project) -> None:
+        """
+        Handle project opened event.
+
+        Args:
+            project: The opened project
+        """
+        logger.info(f"Project opened: {project.name} ({project.id})")
+        self._main_window.statusBar().showMessage(f"Project opened: {project.name}", 3000)
+
+        # Refresh the project panel tree
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            manager = get_project_manager()
+            project_panel.refresh_tree(
+                current_project=manager.current_project,
+                current_scenario=manager.current_scenario
+            )
+
+    def _on_project_closed(self) -> None:
+        """Handle project closed event."""
+        logger.info("Project closed")
+        self._main_window.statusBar().showMessage("Project closed", 3000)
+
+        # Clear canvas if user confirms
+        # For now, just refresh the tree
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            project_panel.refresh_tree(
+                current_project=None,
+                current_scenario=None
+            )
+
+    def _on_scenario_opened(self, scenario: Scenario) -> None:
+        """
+        Handle scenario opened event.
+
+        Args:
+            scenario: The opened scenario
+        """
+        logger.info(f"Scenario opened: {scenario.name} ({scenario.id})")
+
+        # Load the scenario's workflow into the canvas
+        if scenario.workflow_data:
+            try:
+                # Load workflow from dict and then into graph
+                workflow = WorkflowSchema.from_dict(scenario.workflow_data)
+                self._load_workflow_to_graph(workflow)
+
+                self._main_window.set_modified(False)
+                self._main_window.statusBar().showMessage(
+                    f"Loaded scenario: {scenario.name}", 3000
+                )
+
+            except Exception as e:
+                logger.error(f"Failed to load scenario workflow: {e}")
+                self._main_window.statusBar().showMessage(
+                    f"Error loading scenario: {str(e)}", 5000
+                )
+        else:
+            # Empty scenario - clear canvas
+            self._node_graph.graph.clear_session()
+            self._main_window.set_modified(False)
+            self._main_window.statusBar().showMessage(
+                f"Opened empty scenario: {scenario.name}", 3000
+            )
+
+        # Refresh tree to show current scenario
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            manager = get_project_manager()
+            project_panel.refresh_tree(
+                current_project=manager.current_project,
+                current_scenario=manager.current_scenario
+            )
+
+    def _on_scenario_closed(self) -> None:
+        """Handle scenario closed event."""
+        logger.info("Scenario closed")
+        manager = get_project_manager()
+        manager.set_current_scenario(None)
+
+        self._main_window.statusBar().showMessage("Scenario closed", 3000)
+
+        # Refresh tree
+        project_panel = self._main_window.get_project_panel()
+        if project_panel:
+            project_panel.refresh_tree(
+                current_project=manager.current_project,
+                current_scenario=None
+            )
+
+    def save_current_scenario(self) -> bool:
+        """
+        Save the current canvas to the current scenario.
+
+        Returns:
+            True if save was successful, False otherwise
+        """
+        manager = get_project_manager()
+
+        if not manager.current_project or not manager.current_scenario:
+            logger.warning("No project/scenario open to save to")
+            return False
+
+        try:
+            # Ensure all nodes are valid
+            self._ensure_all_nodes_have_casare_nodes()
+
+            # Get the serialized workflow data
+            workflow_data = self._get_serialized_workflow_data()
+
+            # Update scenario with workflow data
+            scenario = manager.current_scenario
+            scenario.workflow_data = workflow_data
+
+            # Save the scenario
+            ScenarioStorage.save_scenario(manager.current_project, scenario)
+
+            self._main_window.set_modified(False)
+            self._main_window.statusBar().showMessage(
+                f"Saved scenario: {scenario.name}", 3000
+            )
+            logger.info(f"Saved scenario: {scenario.name}")
+            return True
+
+        except Exception as e:
+            logger.exception("Failed to save scenario")
+            self._main_window.statusBar().showMessage(
+                f"Error saving scenario: {str(e)}", 5000
+            )
+            return False
 
     def _ensure_all_nodes_have_casare_nodes(self) -> bool:
         """

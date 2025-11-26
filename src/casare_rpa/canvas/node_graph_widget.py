@@ -141,92 +141,67 @@ except Exception as e:
     logger.warning(f"Could not patch NodeCheckBox: {e}")
 
 
-# Monkey-patch PipeItem.draw_path to handle None viewer gracefully
-# This fixes crashes when pipes try to draw during transient states
+# Import pipe classes and fix NodeGraphQt bug in draw_index_pointer
 try:
     from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem, LayoutDirectionEnum, PortTypeEnum, PipeEnum, PipeLayoutEnum
     from PySide6.QtGui import QColor as _QColor, QTransform as _QTransform
 
-    _original_pipe_draw_path = PipeItem.draw_path
-
-    def _safe_pipe_draw_path(self, start_port, end_port=None, cursor_pos=None):
-        """Wrapped draw_path that handles None viewer gracefully."""
-        try:
-            # Check if viewer is available before drawing
-            if self.scene() and self.scene().viewer():
-                _original_pipe_draw_path(self, start_port, end_port, cursor_pos)
-        except Exception as e:
-            # Silently ignore draw errors during transient states
-            pass
-
-    PipeItem.draw_path = _safe_pipe_draw_path
-    logger.debug("Patched PipeItem.draw_path for stability")
-
-except Exception as e:
-    logger.warning(f"Could not patch PipeItem.draw_path: {e}")
-
-# Monkey-patch LivePipeItem.draw_index_pointer to fix NodeGraphQt bug
-# where text_pos is undefined when viewer_layout_direction() returns None
-try:
+    # Fix NodeGraphQt bug: text_pos undefined when viewer_layout_direction() returns None
     _original_draw_index_pointer = LivePipeItem.draw_index_pointer
 
-    def _patched_draw_index_pointer(self, start_port, cursor_pos, color=None):
-        """Fixed version that handles None layout direction and errors."""
-        try:
-            # Guard against None start_port
-            if start_port is None:
-                return
+    def _fixed_draw_index_pointer(self, start_port, cursor_pos, color=None):
+        """Fixed version - always initializes text_pos before use."""
+        if start_port is None:
+            return
 
-            text_rect = self._idx_text.boundingRect()
-            transform = _QTransform()
-            transform.translate(cursor_pos.x(), cursor_pos.y())
+        text_rect = self._idx_text.boundingRect()
+        transform = _QTransform()
+        transform.translate(cursor_pos.x(), cursor_pos.y())
 
-            layout_dir = self.viewer_layout_direction()
+        layout_dir = self.viewer_layout_direction()
 
-            # Default text_pos in case layout_direction is None or unexpected
+        # FIX: Always initialize text_pos with default value
+        text_pos = (
+            cursor_pos.x() - (text_rect.width() / 2),
+            cursor_pos.y() - (text_rect.height() * 1.25)
+        )
+
+        # Use == instead of 'is' for reliable comparison
+        if layout_dir == LayoutDirectionEnum.VERTICAL.value:
+            text_pos = (
+                cursor_pos.x() + (text_rect.width() / 2.5),
+                cursor_pos.y() - (text_rect.height() / 2)
+            )
+            if start_port.port_type == PortTypeEnum.OUT.value:
+                transform.rotate(180)
+        elif layout_dir == LayoutDirectionEnum.HORIZONTAL.value:
             text_pos = (
                 cursor_pos.x() - (text_rect.width() / 2),
                 cursor_pos.y() - (text_rect.height() * 1.25)
             )
+            if start_port.port_type == PortTypeEnum.IN.value:
+                transform.rotate(-90)
+            else:
+                transform.rotate(90)
 
-            if layout_dir == LayoutDirectionEnum.VERTICAL.value:
-                text_pos = (
-                    cursor_pos.x() + (text_rect.width() / 2.5),
-                    cursor_pos.y() - (text_rect.height() / 2)
-                )
-                if start_port.port_type == PortTypeEnum.OUT.value:
-                    transform.rotate(180)
-            elif layout_dir == LayoutDirectionEnum.HORIZONTAL.value:
-                text_pos = (
-                    cursor_pos.x() - (text_rect.width() / 2),
-                    cursor_pos.y() - (text_rect.height() * 1.25)
-                )
-                if start_port.port_type == PortTypeEnum.IN.value:
-                    transform.rotate(-90)
-                else:
-                    transform.rotate(90)
+        self._idx_text.setPos(*text_pos)
+        self._idx_text.setPlainText('{}'.format(start_port.name))
+        self._idx_pointer.setPolygon(transform.map(self._poly))
 
-            self._idx_text.setPos(*text_pos)
-            self._idx_text.setPlainText('{}'.format(start_port.name))
-            self._idx_pointer.setPolygon(transform.map(self._poly))
+        pen_color = _QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
+        if isinstance(color, (list, tuple)):
+            pen_color = _QColor(*color)
 
-            pen_color = _QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
-            if isinstance(color, (list, tuple)):
-                pen_color = _QColor(*color)
+        pen = self._idx_pointer.pen()
+        pen.setColor(pen_color)
+        self._idx_pointer.setBrush(pen_color.darker(300))
+        self._idx_pointer.setPen(pen)
 
-            pen = self._idx_pointer.pen()
-            pen.setColor(pen_color)
-            self._idx_pointer.setBrush(pen_color.darker(300))
-            self._idx_pointer.setPen(pen)
-        except Exception as e:
-            # Log error but don't crash - the pipe will still work without the pointer
-            logger.debug(f"draw_index_pointer error (non-fatal): {e}")
-
-    LivePipeItem.draw_index_pointer = _patched_draw_index_pointer
-    logger.debug("Patched LivePipeItem.draw_index_pointer to handle None layout direction")
+    LivePipeItem.draw_index_pointer = _fixed_draw_index_pointer
+    logger.debug("Fixed LivePipeItem.draw_index_pointer text_pos bug")
 
 except Exception as e:
-    logger.warning(f"Could not patch LivePipeItem.draw_index_pointer: {e}")
+    logger.warning(f"Could not fix draw_index_pointer: {e}")
 
 
 class TooltipBlocker(QObject):
@@ -235,6 +210,75 @@ class TooltipBlocker(QObject):
         if event.type() == QEvent.Type.ToolTip:
             return True
         return False
+
+
+class ConnectionDropFilter(QObject):
+    """
+    Event filter to detect when a connection pipe is dropped on empty space.
+    Shows a node search menu to create and auto-connect a new node.
+    """
+
+    def __init__(self, graph, widget):
+        super().__init__()
+        self._graph = graph
+        self._widget = widget
+        self._pending_source_port = None
+
+    def eventFilter(self, obj, event):
+        # Only handle left mouse button release
+        if event.type() != QEvent.Type.MouseButtonRelease:
+            return False
+
+        if event.button() != Qt.MouseButton.LeftButton:
+            return False
+
+        viewer = self._graph.viewer()
+        if not viewer:
+            return False
+
+        # Check if there's an active live pipe
+        if not hasattr(viewer, '_LIVE_PIPE') or not viewer._LIVE_PIPE.isVisible():
+            return False
+
+        # Get the source port before it's cleared
+        source_port = getattr(viewer, '_start_port', None)
+        if not source_port:
+            return False
+
+        # Get scene position
+        scene_pos = viewer.mapToScene(event.pos())
+
+        # Check if dropped on a port
+        items = viewer.scene().items(scene_pos)
+        has_port = any(isinstance(item, PortItem) for item in items)
+
+        if has_port:
+            # Let NodeGraphQt handle normal connection
+            return False
+
+        # Dropped on empty space - save port and schedule search menu
+        # We use QTimer to let the original event complete first
+        self._pending_source_port = source_port
+        self._pending_scene_pos = scene_pos
+
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, self._show_search_after_release)
+
+        # Don't block the event - let NodeGraphQt clean up normally
+        return False
+
+    def _show_search_after_release(self):
+        """Show search menu after the mouse release event has completed."""
+        if not self._pending_source_port:
+            return
+
+        source_port = self._pending_source_port
+        scene_pos = self._pending_scene_pos
+        self._pending_source_port = None
+        self._pending_scene_pos = None
+
+        # Show the connection search
+        self._widget._show_connection_search(source_port, scene_pos)
 
 
 # Monkey-patch NodeItem to use thicker selection border and rounded corners
@@ -406,95 +450,18 @@ class NodeGraphWidget(QWidget):
 
     def _patch_viewer_for_connection_search(self):
         """
-        Monkey-patch the viewer's mouseReleaseEvent to detect connection drops.
+        Install an event filter to detect when a connection is dropped on empty space.
+        Uses Qt event filter pattern instead of monkey-patching for stability.
         """
-        viewer = self._graph.viewer()
-        original_mouse_release = viewer.mouseReleaseEvent
-
-        def patched_mouse_release(event):
-            # Check if LMB release with live pipe (MUST check BEFORE calling original)
-            if event.button() == Qt.MouseButton.LeftButton:
-                # Check for _LIVE_PIPE (uppercase!) visibility
-                if hasattr(viewer, '_LIVE_PIPE') and viewer._LIVE_PIPE.isVisible():
-                    logger.debug("Live pipe detected during mouse release")
-
-                    # Get scene position where mouse was released
-                    scene_pos = viewer.mapToScene(event.pos())
-                    logger.debug(f"Release position: ({scene_pos.x()}, {scene_pos.y()})")
-
-                    # Check if released on empty space (no port underneath)
-                    items = viewer.scene().items(scene_pos)
-                    has_port = any(isinstance(item, PortItem) for item in items)
-
-                    logger.debug(f"Has port at release: {has_port}")
-
-                    if not has_port:
-                        # Save source port before cleaning up
-                        source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
-
-                        logger.debug(f"Source port: {source_port}")
-
-                        if source_port:
-                            logger.info(f"Connection dropped in empty space, showing search")
-                            # End the live connection first for stability
-                            viewer.end_live_connection()
-                            # Then show the search menu
-                            self._show_connection_search(source_port, scene_pos)
-                            return
-
-            # Call original handler
-            original_mouse_release(event)
-
-        viewer.mouseReleaseEvent = patched_mouse_release
-        logger.debug("Patched viewer mouseReleaseEvent for connection search")
+        self._connection_drop_filter = ConnectionDropFilter(self._graph, self)
+        self._graph.viewer().viewport().installEventFilter(self._connection_drop_filter)
 
     def _fix_mmb_panning(self):
         """
-        Monkey-patch the viewer's mousePressEvent to allow panning with MMB
-        even when hovering over items (nodes, ports, etc).
-        Also prevents MMB from starting port connections.
+        No-op - removed MMB panning patch as it was causing stability issues.
+        NodeGraphQt's default MMB behavior is used instead.
         """
-        viewer = self._graph.viewer()
-        ViewerClass = viewer.__class__
-
-        # Only patch once
-        if getattr(ViewerClass, '_patched_mmb', False):
-            return
-
-        original_mouse_press = ViewerClass.mousePressEvent
-        original_start_live = ViewerClass.start_live_connection
-
-        # Track if we're in an MMB press to block connections during MMB only
-        ViewerClass._mmb_press_active = False
-
-        def patched_mouse_press(viewer_self, event):
-            # Track MMB press state BEFORE calling original
-            if event.button() == Qt.MouseButton.MiddleButton:
-                viewer_self._mmb_press_active = True
-            else:
-                viewer_self._mmb_press_active = False
-
-            # Call the original method
-            original_mouse_press(viewer_self, event)
-
-            # If MMB was pressed, force MMB_state to True for panning
-            # The original method sets MMB_state = False if it detects nodes under cursor
-            if event.button() == Qt.MouseButton.MiddleButton:
-                viewer_self.MMB_state = True
-
-                # Also cancel any live connection that may have been started by MMB
-                if viewer_self._LIVE_PIPE.isVisible():
-                    viewer_self.end_live_connection()
-
-        def patched_start_live(viewer_self, selected_port):
-            # Only block connections during active MMB press
-            if getattr(viewer_self, '_mmb_press_active', False):
-                return
-            original_start_live(viewer_self, selected_port)
-
-        ViewerClass.mousePressEvent = patched_mouse_press
-        ViewerClass.start_live_connection = patched_start_live
-        ViewerClass._patched_mmb = True
+        pass
 
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""
@@ -762,9 +729,15 @@ class NodeGraphWidget(QWidget):
                     context_menu.qmenu._initial_scene_pos = scene_pos
 
                     # If dragging a connection, setup auto-connect
+                    tab_handler_executed = [False]
+                    tab_on_node_created = None
+
                     if source_port:
-                        def on_node_created(node):
+                        def tab_on_node_created(node):
                             """Auto-connect newly created node to source port."""
+                            if tab_handler_executed[0]:
+                                return
+                            tab_handler_executed[0] = True
                             try:
                                 self._auto_connect_new_node(node, source_port)
                                 # End the live connection since we've completed it
@@ -772,21 +745,23 @@ class NodeGraphWidget(QWidget):
                                 logger.info(f"Auto-connected node from Tab search")
                             except Exception as e:
                                 logger.error(f"Failed to auto-connect node: {e}")
-                            finally:
-                                # Disconnect this one-time handler
-                                try:
-                                    self._graph.node_created.disconnect(on_node_created)
-                                except:
-                                    pass
 
                         # Connect temporary handler for this node creation
                         if hasattr(self._graph, 'node_created'):
-                            self._graph.node_created.connect(on_node_created)
+                            self._graph.node_created.connect(tab_on_node_created)
 
-                    context_menu.qmenu.exec(cursor_pos)
+                    try:
+                        context_menu.qmenu.exec(cursor_pos)
+                    finally:
+                        # ALWAYS disconnect handler after menu closes
+                        if tab_on_node_created and hasattr(self._graph, 'node_created'):
+                            try:
+                                self._graph.node_created.disconnect(tab_on_node_created)
+                            except:
+                                pass
 
                     # If menu was cancelled and we were dragging, end the connection
-                    if live_pipe_was_visible and hasattr(viewer, '_start_port') and viewer._start_port:
+                    if live_pipe_was_visible and not tab_handler_executed[0]:
                         viewer.end_live_connection()
                         logger.debug("Tab menu cancelled - ending live connection")
 
@@ -1105,19 +1080,18 @@ class NodeGraphWidget(QWidget):
         context_menu.qmenu._initial_scene_pos = scene_pos
 
         # Store source port for auto-connection after node is created
-        # We'll connect to node_created signal temporarily
+        # Use a flag to track if handler already executed
+        handler_executed = [False]  # Use list to allow mutation in nested function
+
         def on_node_created(node):
             """Auto-connect newly created node to source port."""
+            if handler_executed[0]:
+                return  # Already ran, skip
+            handler_executed[0] = True
             try:
                 self._auto_connect_new_node(node, source_port)
             except Exception as e:
                 logger.error(f"Failed to auto-connect node: {e}")
-            finally:
-                # Disconnect this one-time handler
-                try:
-                    self._graph.node_created.disconnect(on_node_created)
-                except:
-                    pass
 
         # Connect temporary handler for this node creation
         if hasattr(self._graph, 'node_created'):
@@ -1127,9 +1101,17 @@ class NodeGraphWidget(QWidget):
         viewer = self._graph.viewer()
         view_pos = viewer.mapFromScene(scene_pos)
         global_pos = viewer.mapToGlobal(view_pos)
-        context_menu.qmenu.exec(global_pos)
 
-        logger.debug(f"Context menu shown at scene position: ({scene_pos.x()}, {scene_pos.y()})")
+        try:
+            context_menu.qmenu.exec(global_pos)
+        finally:
+            # ALWAYS disconnect handler after menu closes (whether node created or cancelled)
+            try:
+                self._graph.node_created.disconnect(on_node_created)
+            except:
+                pass  # Already disconnected or never connected
+
+        logger.debug(f"Context menu closed at scene position: ({scene_pos.x()}, {scene_pos.y()})")
 
     def _auto_connect_new_node(self, new_node, source_port_item):
         """

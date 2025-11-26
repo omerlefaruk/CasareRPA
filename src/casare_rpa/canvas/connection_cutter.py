@@ -329,16 +329,37 @@ class ConnectionCutter(QObject):
             # Disconnect the pipes
             for output_port, input_port, pipe_item in pipes_to_cut:
                 try:
+                    # Handle case where ports might be strings (port names) or Port objects
+                    # Get port names for logging
+                    out_name = output_port.name() if hasattr(output_port, 'name') and callable(output_port.name) else str(output_port)
+                    in_name = input_port.name() if hasattr(input_port, 'name') and callable(input_port.name) else str(input_port)
+
+                    # If ports are strings, we can't disconnect directly - try deleting the pipe
+                    if isinstance(output_port, str) or isinstance(input_port, str):
+                        # Try to delete the pipe item directly from scene
+                        if pipe_item and hasattr(pipe_item, 'delete'):
+                            pipe_item.delete()
+                            cut_count += 1
+                            logger.info(f"Cut connection (pipe delete): {out_name} -> {in_name}")
+                        elif pipe_item and pipe_item.scene():
+                            pipe_item.scene().removeItem(pipe_item)
+                            cut_count += 1
+                            logger.info(f"Cut connection (scene remove): {out_name} -> {in_name}")
+                        continue
+
                     # Try to disconnect using port methods
                     output_port.disconnect_from(input_port)
                     cut_count += 1
-                    logger.info(f"Cut connection: {output_port.name()} -> {input_port.name()}")
+                    logger.info(f"Cut connection: {out_name} -> {in_name}")
                 except Exception as e:
                     # Try alternative disconnect method
                     try:
-                        input_port.disconnect_from(output_port)
-                        cut_count += 1
-                        logger.info(f"Cut connection (reverse): {output_port.name()} -> {input_port.name()}")
+                        if not isinstance(input_port, str) and not isinstance(output_port, str):
+                            input_port.disconnect_from(output_port)
+                            cut_count += 1
+                            out_name = output_port.name() if hasattr(output_port, 'name') and callable(output_port.name) else str(output_port)
+                            in_name = input_port.name() if hasattr(input_port, 'name') and callable(input_port.name) else str(input_port)
+                            logger.info(f"Cut connection (reverse): {out_name} -> {in_name}")
                     except Exception as e2:
                         logger.error(f"Failed to disconnect: {e}, {e2}")
 

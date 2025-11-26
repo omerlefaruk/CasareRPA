@@ -57,11 +57,13 @@ class CredentialScope(Enum):
 
     Attributes:
         GLOBAL: Organization-wide credentials accessible by all
-        WORKFLOW: Credentials scoped to a specific workflow
+        PROJECT: Credentials scoped to a specific project
+        WORKFLOW: Credentials scoped to a specific workflow/scenario
         ROBOT: Credentials scoped to a specific robot
         ASSET: RPA Asset credentials (e.g., queue credentials, file shares)
     """
     GLOBAL = "global"
+    PROJECT = "projects"
     WORKFLOW = "workflows"
     ROBOT = "robots"
     ASSET = "assets"
