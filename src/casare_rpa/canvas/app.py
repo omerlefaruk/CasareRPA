@@ -1287,11 +1287,7 @@ class CasareRPAApp:
         # Refresh the project panel tree
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            manager = get_project_manager()
-            project_panel.refresh_tree(
-                current_project=manager.current_project,
-                current_scenario=manager.current_scenario
-            )
+            project_panel.refresh()
 
     def _on_project_closed(self) -> None:
         """Handle project closed event."""
@@ -1302,10 +1298,7 @@ class CasareRPAApp:
         # For now, just refresh the tree
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            project_panel.refresh_tree(
-                current_project=None,
-                current_scenario=None
-            )
+            project_panel.refresh()
 
     def _on_scenario_opened(self, project: Project, scenario: Scenario) -> None:
         """
@@ -1345,11 +1338,7 @@ class CasareRPAApp:
         # Refresh tree to show current scenario
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            manager = get_project_manager()
-            project_panel.refresh_tree(
-                current_project=manager.current_project,
-                current_scenario=manager.current_scenario
-            )
+            project_panel.refresh()
 
     def _on_scenario_closed(self) -> None:
         """Handle scenario closed event."""
@@ -1362,10 +1351,7 @@ class CasareRPAApp:
         # Refresh tree
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            project_panel.refresh_tree(
-                current_project=manager.current_project,
-                current_scenario=None
-            )
+            project_panel.refresh()
 
     def save_current_scenario(self) -> bool:
         """
@@ -1435,11 +1421,7 @@ class CasareRPAApp:
         # Refresh project panel after editing
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            manager = get_project_manager()
-            project_panel.refresh_tree(
-                current_project=manager.current_project,
-                current_scenario=manager.current_scenario
-            )
+            project_panel.refresh()
 
     def _on_credential_edit_requested(self, scope: str) -> None:
         """
@@ -1468,11 +1450,7 @@ class CasareRPAApp:
         # Refresh project panel after editing
         project_panel = self._main_window.get_project_panel()
         if project_panel:
-            manager = get_project_manager()
-            project_panel.refresh_tree(
-                current_project=manager.current_project,
-                current_scenario=manager.current_scenario
-            )
+            project_panel.refresh()
 
     def _ensure_all_nodes_have_casare_nodes(self) -> bool:
         """
@@ -1712,11 +1690,17 @@ class CasareRPAApp:
             # Get initial variables from bottom panel Variables Tab
             initial_variables = self._get_initial_variables()
 
-            # Create workflow runner with initial variables
+            # Get project context for variable resolution
+            from ..project.project_context import ProjectContext
+            manager = get_project_manager()
+            project_context = ProjectContext.from_project_manager(manager) if manager.current_project else None
+
+            # Create workflow runner with initial variables and project context
             self._workflow_runner = WorkflowRunner(
                 workflow,
                 self._event_bus,
-                initial_variables=initial_variables
+                initial_variables=initial_variables,
+                project_context=project_context,
             )
             
             # Apply debug settings from toolbar
@@ -1804,12 +1788,18 @@ class CasareRPAApp:
             # Get initial variables from bottom panel Variables Tab
             initial_variables = self._get_initial_variables()
 
-            # Create workflow runner with target node and initial variables
+            # Get project context for variable resolution
+            from ..project.project_context import ProjectContext
+            manager = get_project_manager()
+            project_context = ProjectContext.from_project_manager(manager) if manager.current_project else None
+
+            # Create workflow runner with target node, initial variables and project context
             self._workflow_runner = WorkflowRunner(
                 workflow,
                 self._event_bus,
                 target_node_id=target_node_id,
-                initial_variables=initial_variables
+                initial_variables=initial_variables,
+                project_context=project_context,
             )
 
             # Check if subgraph was successfully calculated

@@ -1,0 +1,22 @@
+{
+  "$schema_version": "1.0.0",
+  "scope": "global",
+  "variables": {
+    "get": {
+      "default_value": "https://webhook.site/6898cad9-bcbc-40ef-8e09-315d9fc182b8",
+      "description": "",
+      "name": "get",
+      "readonly": false,
+      "sensitive": false,
+      "type": "String"
+    },
+    "url": {
+      "default_value": "www.google.com",
+      "description": "",
+      "name": "url",
+      "readonly": false,
+      "sensitive": false,
+      "type": "String"
+    }
+  }
+}
