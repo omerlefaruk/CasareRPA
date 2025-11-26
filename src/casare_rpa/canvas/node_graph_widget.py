@@ -141,27 +141,29 @@ except Exception as e:
     logger.warning(f"Could not patch NodeCheckBox: {e}")
 
 
-# Monkey-patch PipeItem.viewer_layout_direction to return default when viewer is None
-# This fixes the issue where pipes don't draw because viewer() returns None
+# Monkey-patch PipeItem.draw_path to handle None viewer gracefully
+# This fixes crashes when pipes try to draw during transient states
 try:
-    from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem, LayoutDirectionEnum, PortTypeEnum, PipeEnum
+    from NodeGraphQt.qgraphics.pipe import PipeItem, LivePipeItem, LayoutDirectionEnum, PortTypeEnum, PipeEnum, PipeLayoutEnum
     from PySide6.QtGui import QColor as _QColor, QTransform as _QTransform
 
-    _original_viewer_layout_direction = PipeItem.viewer_layout_direction
+    _original_pipe_draw_path = PipeItem.draw_path
 
-    def _patched_viewer_layout_direction(self):
-        """Return layout direction with fallback to horizontal if viewer is None."""
-        viewer = self.viewer()
-        if viewer:
-            return viewer.get_layout_direction()
-        # Default to horizontal layout if viewer is not available
-        return LayoutDirectionEnum.HORIZONTAL.value
+    def _safe_pipe_draw_path(self, start_port, end_port=None, cursor_pos=None):
+        """Wrapped draw_path that handles None viewer gracefully."""
+        try:
+            # Check if viewer is available before drawing
+            if self.scene() and self.scene().viewer():
+                _original_pipe_draw_path(self, start_port, end_port, cursor_pos)
+        except Exception as e:
+            # Silently ignore draw errors during transient states
+            pass
 
-    PipeItem.viewer_layout_direction = _patched_viewer_layout_direction
-    logger.debug("Patched PipeItem.viewer_layout_direction to return default when viewer is None")
+    PipeItem.draw_path = _safe_pipe_draw_path
+    logger.debug("Patched PipeItem.draw_path for stability")
 
 except Exception as e:
-    logger.warning(f"Could not patch PipeItem.viewer_layout_direction: {e}")
+    logger.warning(f"Could not patch PipeItem.draw_path: {e}")
 
 # Monkey-patch LivePipeItem.draw_index_pointer to fix NodeGraphQt bug
 # where text_pos is undefined when viewer_layout_direction() returns None
@@ -427,16 +429,16 @@ class NodeGraphWidget(QWidget):
                     logger.debug(f"Has port at release: {has_port}")
 
                     if not has_port:
-                        # Save source port before original handler cleans it up
+                        # Save source port before cleaning up
                         source_port = viewer._start_port if hasattr(viewer, '_start_port') else None
 
                         logger.debug(f"Source port: {source_port}")
 
                         if source_port:
                             logger.info(f"Connection dropped in empty space, showing search")
-                            # Call original handler FIRST to properly clean up pipe state
-                            original_mouse_release(event)
-                            # Then show search (source_port reference is still valid)
+                            # End the live connection first for stability
+                            viewer.end_live_connection()
+                            # Then show the search menu
                             self._show_connection_search(source_port, scene_pos)
                             return
 
