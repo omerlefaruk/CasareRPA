@@ -29,7 +29,7 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
     Returns:
         Dictionary mapping visual node classes to CasareRPA node classes
     """
-    from .visual_nodes import VISUAL_NODE_CLASSES, VisualNode
+    from .visual_nodes import ALL_VISUAL_NODE_CLASSES, VisualNode
 
     # Visual-only nodes that don't need CasareRPA logic counterparts
     # These are annotation/documentation nodes for organizing workflows
@@ -41,7 +41,7 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
 
     mapping = {}
 
-    for visual_class in VISUAL_NODE_CLASSES:
+    for visual_class in ALL_VISUAL_NODE_CLASSES:
         # Skip the base class
         if visual_class is VisualNode:
             continue
@@ -49,6 +49,11 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
         # Skip visual-only nodes (annotation/documentation nodes)
         if visual_class.__name__ in VISUAL_ONLY_NODES:
             logger.debug(f"Skipping visual-only node: {visual_class.__name__}")
+            continue
+
+        # Skip composite marker nodes (they create multiple real nodes)
+        if getattr(visual_class, 'COMPOSITE_NODE', False):
+            logger.debug(f"Skipping composite marker node: {visual_class.__name__}")
             continue
 
         # Get the CasareRPA node class name from attribute or derive from class name
@@ -141,12 +146,12 @@ def _build_node_type_mapping() -> Dict[str, tuple]:
         Dict mapping node_type (e.g., "MessageBoxNode") to tuple of:
         (visual_class, identifier_for_create_node, casare_class_or_None)
     """
-    from .visual_nodes import VISUAL_NODE_CLASSES
+    from .visual_nodes import ALL_VISUAL_NODE_CLASSES
 
     mapping = {}
     casare_mapping = get_casare_node_mapping()
 
-    for visual_class in VISUAL_NODE_CLASSES:
+    for visual_class in ALL_VISUAL_NODE_CLASSES:
         visual_name = visual_class.__name__
 
         # Derive node type from visual class name: VisualXxxNode -> XxxNode
@@ -374,10 +379,10 @@ class NodeRegistry:
         Args:
             graph: NodeGraph instance to register nodes with
         """
-        from .visual_nodes import VISUAL_NODE_CLASSES
+        from .visual_nodes import ALL_VISUAL_NODE_CLASSES
 
-        # Register all nodes with NodeGraphQt
-        for node_class in VISUAL_NODE_CLASSES:
+        # Register all nodes with NodeGraphQt (including internal nodes for programmatic creation)
+        for node_class in ALL_VISUAL_NODE_CLASSES:
             self.register_node(node_class, graph)
 
         # Get the graph's context menu (right-click on canvas to add nodes)
@@ -544,6 +549,10 @@ class NodeRegistry:
             qmenu._category_menus[category_label] = category_menu
 
             for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
+                # Skip internal nodes (created programmatically, not from menu)
+                if getattr(node_class, 'INTERNAL_NODE', False):
+                    continue
+
                 # Get description from node class
                 description = ""
                 if node_class.__doc__:
@@ -589,6 +598,9 @@ class NodeRegistry:
         for category, nodes in self._categories.items():
             category_label = category.replace('_', ' ').title()
             for node_class in nodes:
+                # Skip internal nodes from search/menu
+                if getattr(node_class, 'INTERNAL_NODE', False):
+                    continue
                 qmenu._category_data[node_class.NODE_NAME] = (category_label, node_class)
 
         # Pre-build SearchIndex for lightning-fast search (avoids rebuilding on every keystroke)
@@ -616,6 +628,10 @@ class NodeRegistry:
                     category_menu = qmenu.addMenu(category_label)
 
                     for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
+                        # Skip internal nodes (created programmatically, not from menu)
+                        if getattr(node_class, 'INTERNAL_NODE', False):
+                            continue
+
                         def make_creator(cls):
                             def create_node():
                                 # Use the initial mouse position captured when menu opened
@@ -714,7 +730,7 @@ class NodeRegistry:
         # when create_node() is called. The position will be overwritten on each
         # new right-click anyway.
 
-        logger.info(f"Registered {len(VISUAL_NODE_CLASSES)} node types in context menu")
+        logger.info(f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu")
 
     def get_node_class(self, node_name: str) -> Optional[Type]:
         """

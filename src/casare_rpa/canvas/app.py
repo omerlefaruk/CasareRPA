@@ -424,7 +424,6 @@ class CasareRPAApp:
         selected_nodes = graph.selected_nodes()
         if selected_nodes:
             graph.delete_nodes(selected_nodes)
-            logger.info(f"Deleted {len(selected_nodes)} nodes")
 
             # Reset auto-connect drag state to prevent stale references
             if hasattr(self._node_graph, 'auto_connect'):
@@ -1538,33 +1537,103 @@ class CasareRPAApp:
         """
         Sync widget values from visual node to CasareRPA node config.
         This updates the node's config with current values from the UI widgets.
-        
+
         Args:
             visual_node: Visual node from NodeGraphQt
             casare_node: CasareRPA node instance
         """
         # Get all embedded widgets (text inputs, dropdowns, etc.)
         widgets = visual_node.widgets()
-        logger.info(f"Visual node {casare_node.node_type} has widgets: {list(widgets.keys())}")
-        
+
         # Sync widget values to node config
-        synced_count = 0
         for widget_name, widget in widgets.items():
             try:
                 # Get widget value
                 widget_value = widget.get_value()
-                logger.info(f"  Widget '{widget_name}' = '{widget_value}' (type: {type(widget_value).__name__})")
-                
+
                 # Always sync widget values, including empty strings (to clear previous values)
                 if widget_value is not None:
                     casare_node.config[widget_name] = widget_value
-                    synced_count += 1
-                    logger.info(f"  ✓ Synced {casare_node.node_type}.{widget_name} = '{widget_value}'")
             except Exception as e:
                 logger.warning(f"Could not sync widget {widget_name}: {e}")
-        
-        if synced_count == 0:
-            logger.info(f"No widgets synced for {casare_node.node_type}")
+
+        # Sync paired_start_id for loop end nodes
+        if hasattr(visual_node, 'paired_start_id') and hasattr(casare_node, 'set_paired_start'):
+            paired_id = visual_node.get_property("paired_start_id") or getattr(visual_node, 'paired_start_id', '')
+            logger.info(f"Loop end node {casare_node.node_id}: stored paired_id = '{paired_id}'")
+
+            # If no saved paired_id, try to auto-detect from connections
+            if not paired_id:
+                logger.info(f"Attempting auto-detection for {casare_node.node_id}")
+                paired_id = self._detect_loop_start_pairing(visual_node)
+                if paired_id:
+                    # Save the detected pairing for future
+                    logger.info(f"Auto-detected paired_id = {paired_id}, saving...")
+                    visual_node.set_paired_start(paired_id)
+
+            if paired_id:
+                casare_node.set_paired_start(paired_id)
+                logger.info(f"Set paired_start on CasareRPA node: {paired_id}")
+
+    def _detect_loop_start_pairing(self, loop_end_node) -> Optional[str]:
+        """
+        Auto-detect the paired ForLoopStart/WhileLoopStart from graph connections.
+
+        Traces backwards through exec connections to find the loop start node.
+
+        Args:
+            loop_end_node: The ForLoopEnd or WhileLoopEnd visual node
+
+        Returns:
+            The paired start node ID, or None if not found
+        """
+        try:
+            # Determine which loop start type we're looking for
+            end_type = loop_end_node.NODE_NAME if hasattr(loop_end_node, 'NODE_NAME') else ""
+            if "For" in end_type:
+                start_type = "For Loop Start"
+            elif "While" in end_type:
+                start_type = "While Loop Start"
+            else:
+                return None
+
+            # BFS backwards through exec connections to find the loop start
+            visited = set()
+            queue = [loop_end_node]
+
+            while queue:
+                current = queue.pop(0)
+                if current in visited:
+                    continue
+                visited.add(current)
+
+                # Check all input ports
+                for input_port in current.input_ports():
+                    connected_ports = input_port.connected_ports()
+                    for port in connected_ports:
+                        source_node = port.node()
+                        if not source_node or source_node in visited:
+                            continue
+
+                        # Check if this is the matching loop start node
+                        node_name = source_node.NODE_NAME if hasattr(source_node, 'NODE_NAME') else ""
+                        if node_name == start_type and port.name() == "body":
+                            start_node_id = source_node.get_property("node_id")
+                            if start_node_id:
+                                logger.info(f"Auto-detected loop pairing: {start_node_id} -> {loop_end_node.get_property('node_id')}")
+                                return start_node_id
+
+                        # Continue tracing backwards through exec connections
+                        if "exec" in port.name().lower():
+                            queue.append(source_node)
+
+        except Exception as e:
+            logger.error(f"Could not auto-detect loop pairing: {e}")
+            import traceback
+            traceback.print_exc()
+
+        logger.warning(f"Loop pairing detection failed for {loop_end_node.NODE_NAME if hasattr(loop_end_node, 'NODE_NAME') else 'unknown'}")
+        return None
 
     def _get_initial_variables(self) -> Dict[str, Any]:
         """
@@ -1578,6 +1647,9 @@ class CasareRPAApp:
         """
         initial_variables = {}
 
+        # Internal variable patterns to exclude (loop states, etc.)
+        internal_patterns = ["_loop_state", "_iteration", "__auto_"]
+
         try:
             # Get bottom panel from main window
             bottom_panel = self._main_window.get_bottom_panel()
@@ -1586,6 +1658,10 @@ class CasareRPAApp:
                 if variables_tab:
                     # Get all variables from the Variables Tab
                     for name, var_def in variables_tab.get_variables().items():
+                        # Skip internal variables (loop state, etc.)
+                        if any(pattern in name for pattern in internal_patterns):
+                            continue
+
                         # Extract the default value from the variable definition
                         if isinstance(var_def, dict):
                             initial_variables[name] = var_def.get("default_value", "")
@@ -1714,7 +1790,6 @@ class CasareRPAApp:
                     )
                     visual_node.set_property("node_id", node_id)
 
-                logger.info(f"Processing visual node: {visual_node.name()} -> {casare_node.node_type} (id={node_id})")
                 # Sync visual node properties to CasareRPA node config
                 self._sync_visual_properties_to_node(visual_node, casare_node)
                 nodes_dict[node_id] = casare_node
@@ -1767,7 +1842,6 @@ class CasareRPAApp:
                 target_port="exec_in"
             )
             connections.append(connection)
-            logger.info(f"Auto-connected Start → {entry_node_id}")
         for node in graph.all_nodes():
             # Get the source node ID from our map
             source_node_id = node_id_map.get(node)
@@ -1789,9 +1863,9 @@ class CasareRPAApp:
                         target_port=connected_port.name()
                     )
                     connections.append(connection)
-        
+
         workflow.connections = connections
-        
+
         return workflow
     
     def _reset_all_node_visuals(self) -> None:

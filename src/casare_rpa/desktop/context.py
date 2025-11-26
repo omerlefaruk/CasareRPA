@@ -1508,7 +1508,8 @@ class DesktopContext:
 
         try:
             # Use uiautomation's SendKeys
-            auto.SendKeys(keys, interval=interval)
+            # waitTime=0: no delay after sending (default is ~0.5s)
+            auto.SendKeys(keys, interval=interval, waitTime=0)
 
             logger.info(f"Sent keys: '{keys[:50]}...'")
             return True
@@ -1568,7 +1569,9 @@ class DesktopContext:
                     hotkey_str += "{" + key.capitalize() + "}"
 
             # Send the hotkey
-            auto.SendKeys(hotkey_str, interval=0)
+            # interval=0: no delay between keys
+            # waitTime=0: no delay after sending (default is ~0.5s)
+            auto.SendKeys(hotkey_str, interval=0, waitTime=0)
 
             logger.info(f"Sent hotkey: {'+'.join(keys)}")
             return True

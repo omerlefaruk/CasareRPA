@@ -43,8 +43,10 @@ if TYPE_CHECKING:
     )
     from .control_flow_nodes import (
         IfNode,
-        ForLoopNode,
-        WhileLoopNode,
+        ForLoopStartNode,
+        ForLoopEndNode,
+        WhileLoopStartNode,
+        WhileLoopEndNode,
         BreakNode,
         ContinueNode,
         SwitchNode,
@@ -279,8 +281,10 @@ _NODE_REGISTRY: Dict[str, str] = {
     "IncrementVariableNode": "variable_nodes",
     # Control flow nodes
     "IfNode": "control_flow_nodes",
-    "ForLoopNode": "control_flow_nodes",
-    "WhileLoopNode": "control_flow_nodes",
+    "ForLoopStartNode": "control_flow_nodes",
+    "ForLoopEndNode": "control_flow_nodes",
+    "WhileLoopStartNode": "control_flow_nodes",
+    "WhileLoopEndNode": "control_flow_nodes",
     "BreakNode": "control_flow_nodes",
     "ContinueNode": "control_flow_nodes",
     "SwitchNode": "control_flow_nodes",
@@ -595,8 +599,10 @@ __all__ = [
     "IncrementVariableNode",
     # Control flow nodes
     "IfNode",
-    "ForLoopNode",
-    "WhileLoopNode",
+    "ForLoopStartNode",
+    "ForLoopEndNode",
+    "WhileLoopStartNode",
+    "WhileLoopEndNode",
     "BreakNode",
     "ContinueNode",
     "SwitchNode",

@@ -347,7 +347,8 @@ class SendHotKeyNode(BaseNode):
         default_config = {
             "modifier": "none",
             "key": "Enter",
-            "keys": ""
+            "keys": "",
+            "wait_time": 0.0  # Delay after sending hotkey (seconds)
         }
         if config:
             default_config.update(config)
@@ -358,6 +359,7 @@ class SendHotKeyNode(BaseNode):
     def _define_ports(self):
         """Define input and output ports"""
         self.add_input_port("keys", DataType.STRING, "Hotkey combination (e.g., 'Ctrl,C')")
+        self.add_input_port("wait_time", DataType.FLOAT, "Delay after sending (seconds)")
         self.add_output_port("success", DataType.BOOLEAN, "Operation success")
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -405,6 +407,14 @@ class SendHotKeyNode(BaseNode):
         desktop_ctx = context.desktop_context
 
         success = desktop_ctx.send_hotkey(*keys)
+
+        # Apply wait time after sending
+        wait_time = self.get_input_value("wait_time")
+        if wait_time is None:
+            wait_time = float(self.config.get("wait_time") or 0.0)
+        if wait_time > 0:
+            import asyncio
+            await asyncio.sleep(float(wait_time))
 
         self.set_output_value("success", success)
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED

@@ -860,7 +860,6 @@ class NodeGraphWidget(QWidget):
                 context_menu = self._graph.get_context_menu('graph')
                 if context_menu and context_menu.qmenu:
                     context_menu.qmenu._initial_scene_pos = scene_pos
-                    logger.info(f"Right-click captured at scene position: ({scene_pos.x()}, {scene_pos.y()})")
 
                 # Let the event propagate to show the menu
                 return False
@@ -1052,10 +1051,17 @@ class NodeGraphWidget(QWidget):
         """
         Handle node creation/paste events.
 
-        Detects pasted nodes with duplicate IDs and regenerates them.
+        - Handles composite nodes (e.g., For Loop creates Start + End)
+        - Detects pasted nodes with duplicate IDs and regenerates them.
         This prevents self-connection errors from copy/paste operations.
         """
         from ..utils.id_generator import generate_node_id
+
+        # Check if this is a composite node that creates multiple nodes
+        visual_class = node.__class__
+        if getattr(visual_class, 'COMPOSITE_NODE', False):
+            self._handle_composite_node_creation(node)
+            return
 
         # Get current node_id property
         current_id = node.get_property("node_id")
@@ -1087,6 +1093,145 @@ class NodeGraphWidget(QWidget):
                     else:
                         logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
                 break
+
+    def _handle_composite_node_creation(self, composite_node) -> None:
+        """
+        Handle creation of composite nodes (e.g., For Loop creates Start + End).
+
+        Replaces the marker composite node with the actual nodes it represents,
+        connects them together, and sets up pairing.
+
+        Args:
+            composite_node: The composite marker node that was created
+        """
+        from PySide6.QtCore import QTimer
+
+        # Get position of composite node
+        pos = composite_node.pos()
+        x, y = pos[0], pos[1]
+
+        # Get the node name for logging
+        node_name = composite_node.NODE_NAME if hasattr(composite_node, 'NODE_NAME') else "Composite"
+
+        # Schedule deletion and replacement (must be done after current event)
+        def replace_composite():
+            try:
+                # Delete the marker composite node
+                self._graph.delete_node(composite_node)
+
+                # Handle specific composite types
+                if node_name == "For Loop":
+                    self._create_for_loop_pair(x, y)
+                elif node_name == "While Loop":
+                    self._create_while_loop_pair(x, y)
+                else:
+                    logger.warning(f"Unknown composite node type: {node_name}")
+
+            except Exception as e:
+                logger.error(f"Failed to handle composite node creation: {e}")
+
+        # Use QTimer to defer the replacement
+        QTimer.singleShot(0, replace_composite)
+
+    def _create_for_loop_pair(self, x: float, y: float) -> None:
+        """
+        Create a For Loop Start + End pair at the given position.
+
+        Args:
+            x: X position for the start node
+            y: Y position for the start node
+        """
+        try:
+            # Create For Loop Start node
+            start_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualForLoopStartNode",
+                pos=[x, y]
+            )
+
+            # Create For Loop End node (positioned below and to the right)
+            end_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualForLoopEndNode",
+                pos=[x + 300, y + 150]
+            )
+
+            if start_node and end_node:
+                # Get node IDs
+                start_id = start_node.get_property("node_id")
+                end_id = end_node.get_property("node_id")
+
+                # Set up pairing on visual nodes
+                start_node.paired_end_id = end_id
+                end_node.paired_start_id = start_id
+
+                # Set up pairing on CasareRPA nodes
+                start_casare = start_node.get_casare_node() if hasattr(start_node, 'get_casare_node') else None
+                end_casare = end_node.get_casare_node() if hasattr(end_node, 'get_casare_node') else None
+
+                if end_casare and hasattr(end_casare, 'set_paired_start'):
+                    end_casare.set_paired_start(start_id)
+
+                # Connect Start.body -> End.exec_in
+                start_body_port = start_node.get_output("body")
+                end_exec_in_port = end_node.get_input("exec_in")
+
+                if start_body_port and end_exec_in_port:
+                    start_body_port.connect_to(end_exec_in_port)
+                    logger.debug("Connected For Loop Start.body -> For Loop End.exec_in")
+
+                logger.info(f"Created For Loop pair: Start={start_id}, End={end_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to create For Loop pair: {e}")
+
+    def _create_while_loop_pair(self, x: float, y: float) -> None:
+        """
+        Create a While Loop Start + End pair at the given position.
+
+        Args:
+            x: X position for the start node
+            y: Y position for the start node
+        """
+        try:
+            # Create While Loop Start node
+            start_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualWhileLoopStartNode",
+                pos=[x, y]
+            )
+
+            # Create While Loop End node (positioned below and to the right)
+            end_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualWhileLoopEndNode",
+                pos=[x + 300, y + 150]
+            )
+
+            if start_node and end_node:
+                # Get node IDs
+                start_id = start_node.get_property("node_id")
+                end_id = end_node.get_property("node_id")
+
+                # Set up pairing on visual nodes
+                start_node.paired_end_id = end_id
+                end_node.paired_start_id = start_id
+
+                # Set up pairing on CasareRPA nodes
+                start_casare = start_node.get_casare_node() if hasattr(start_node, 'get_casare_node') else None
+                end_casare = end_node.get_casare_node() if hasattr(end_node, 'get_casare_node') else None
+
+                if end_casare and hasattr(end_casare, 'set_paired_start'):
+                    end_casare.set_paired_start(start_id)
+
+                # Connect Start.body -> End.exec_in
+                start_body_port = start_node.get_output("body")
+                end_exec_in_port = end_node.get_input("exec_in")
+
+                if start_body_port and end_exec_in_port:
+                    start_body_port.connect_to(end_exec_in_port)
+                    logger.debug("Connected While Loop Start.body -> While Loop End.exec_in")
+
+                logger.info(f"Created While Loop pair: Start={start_id}, End={end_id}")
+
+        except Exception as e:
+            logger.error(f"Failed to create While Loop pair: {e}")
 
     # =========================================================================
     # IMPORT CALLBACKS
@@ -1274,8 +1419,6 @@ class NodeGraphWidget(QWidget):
                 self._graph.node_created.disconnect(on_node_created)
             except:
                 pass  # Already disconnected or never connected
-
-        logger.debug(f"Context menu closed at scene position: ({scene_pos.x()}, {scene_pos.y()})")
 
     def _auto_connect_new_node(self, new_node, source_port_item):
         """
