@@ -613,118 +613,90 @@ class CasareRPAApp:
     def _load_workflow_to_graph(self, workflow: WorkflowSchema) -> None:
         """
         Load a workflow into the node graph.
-        
+
+        Uses the unified node discovery system to support ALL registered node types.
+
         Args:
             workflow: WorkflowSchema to load
         """
-        from .node_registry import get_node_registry
-        
-        # Import all node classes
-        from ..nodes.basic_nodes import StartNode, EndNode
-        from ..nodes.variable_nodes import SetVariableNode, GetVariableNode, IncrementVariableNode
-        from ..nodes.control_flow_nodes import IfNode, ForLoopNode, WhileLoopNode
-        from ..nodes.error_handling_nodes import TryNode, RetryNode
-        from ..nodes.wait_nodes import WaitNode, WaitForElementNode, WaitForNavigationNode
-        from ..nodes.browser_nodes import LaunchBrowserNode, CloseBrowserNode
-        from ..nodes.navigation_nodes import GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode
-        from ..nodes.interaction_nodes import ClickElementNode, TypeTextNode, SelectDropdownNode
-        from ..nodes.data_nodes import ExtractTextNode, GetAttributeNode, ScreenshotNode
-        from ..nodes.desktop_nodes import LaunchApplicationNode, CloseApplicationNode, ActivateWindowNode, GetWindowListNode
-        
-        # Map node types to (class, identifier)
-        NODE_TYPE_MAP = {
-            "StartNode": (StartNode, "casare_rpa.basic"),
-            "EndNode": (EndNode, "casare_rpa.basic"),
-            "SetVariableNode": (SetVariableNode, "casare_rpa.variable"),
-            "GetVariableNode": (GetVariableNode, "casare_rpa.variable"),
-            "IncrementVariableNode": (IncrementVariableNode, "casare_rpa.variable"),
-            "IfNode": (IfNode, "casare_rpa.control_flow"),
-            "ForLoopNode": (ForLoopNode, "casare_rpa.control_flow"),
-            "WhileLoopNode": (WhileLoopNode, "casare_rpa.control_flow"),
-            "TryNode": (TryNode, "casare_rpa.error_handling"),
-            "RetryNode": (RetryNode, "casare_rpa.error_handling"),
-            "WaitNode": (WaitNode, "casare_rpa.wait"),
-            "WaitForElementNode": (WaitForElementNode, "casare_rpa.wait"),
-            "WaitForNavigationNode": (WaitForNavigationNode, "casare_rpa.wait"),
-            "LaunchBrowserNode": (LaunchBrowserNode, "casare_rpa.browser"),
-            "CloseBrowserNode": (CloseBrowserNode, "casare_rpa.browser"),
-            "GoToURLNode": (GoToURLNode, "casare_rpa.navigation"),
-            "GoBackNode": (GoBackNode, "casare_rpa.navigation"),
-            "GoForwardNode": (GoForwardNode, "casare_rpa.navigation"),
-            "RefreshPageNode": (RefreshPageNode, "casare_rpa.navigation"),
-            "ClickElementNode": (ClickElementNode, "casare_rpa.interaction"),
-            "TypeTextNode": (TypeTextNode, "casare_rpa.interaction"),
-            "SelectDropdownNode": (SelectDropdownNode, "casare_rpa.interaction"),
-            "ExtractTextNode": (ExtractTextNode, "casare_rpa.data"),
-            "GetAttributeNode": (GetAttributeNode, "casare_rpa.data"),
-            "ScreenshotNode": (ScreenshotNode, "casare_rpa.data"),
-            "LaunchApplicationNode": (LaunchApplicationNode, "casare_rpa.nodes.desktop"),
-            "CloseApplicationNode": (CloseApplicationNode, "casare_rpa.nodes.desktop"),
-            "ActivateWindowNode": (ActivateWindowNode, "casare_rpa.nodes.desktop"),
-            "GetWindowListNode": (GetWindowListNode, "casare_rpa.nodes.desktop"),
-        }
-        
+        from .node_registry import (
+            get_node_type_mapping,
+            get_identifier_for_type,
+            get_casare_class_for_type,
+        )
+
         graph = self._node_graph.graph
-        registry = get_node_registry()
-        
+
+        # Get unified node type mapping (single source of truth)
+        node_type_mapping = get_node_type_mapping()
+        logger.debug(f"Loaded unified node mapping with {len(node_type_mapping)} node types")
+
         # Clear existing graph
         graph.clear_session()
-        
+
         # Create visual nodes from workflow nodes
         node_map = {}  # Map node_id to visual node
-        
+
         for node_id, node_data in workflow.nodes.items():
-            logger.info(f"Loading node {node_id}: keys={list(node_data.keys())}")
             node_type = node_data.get("node_type")
-            
-            # Get the node class and identifier from mapping
-            if node_type in NODE_TYPE_MAP:
-                node_class, identifier = NODE_TYPE_MAP[node_type]
-                
-                # Get the visual node class name
-                visual_class_name = f"Visual{node_type}"
-                
-                # Create visual node in graph
-                visual_node = graph.create_node(
-                    f"{identifier}.{visual_class_name}"
-                )
-                
-                if visual_node:
-                    # Create the underlying CasareRPA node
-                    casare_node = node_class(node_id, node_data.get("config", {}))
+            logger.info(f"Loading node {node_id} (type={node_type})")
+
+            # Use unified lookup
+            identifier = get_identifier_for_type(node_type)
+            if not identifier:
+                logger.warning(f"Unknown node type '{node_type}' for node {node_id} - skipping")
+                continue
+
+            # Create visual node in graph
+            visual_node = graph.create_node(identifier)
+
+            if not visual_node:
+                logger.error(f"Failed to create visual node for {node_id} (type={node_type})")
+                continue
+
+            # Create the underlying CasareRPA node using unified lookup
+            casare_class = get_casare_class_for_type(node_type)
+
+            if casare_class:
+                try:
+                    casare_node = casare_class(node_id, node_data.get("config", {}))
                     visual_node.set_casare_node(casare_node)
-                    
-                    # Restore widget values from saved config
-                    config = node_data.get("config", {})
-                    widgets = visual_node.widgets()
-                    for widget_name, widget in widgets.items():
-                        if widget_name in config:
-                            try:
-                                widget.set_value(config[widget_name])
-                                logger.info(f"Restored widget {node_id}.{widget_name} = '{config[widget_name]}'")
-                            except Exception as e:
-                                logger.warning(f"Failed to restore widget {node_id}.{widget_name}: {e}")
-                    
-                    # Restore node name if available
-                    name = node_data.get("name")
-                    if name:
-                        visual_node.set_name(name)
-                        logger.info(f"Restored name for {node_id}: '{name}'")
-                    
-                    # Set node position if available
-                    pos = node_data.get("position")
-                    if pos and "x" in pos and "y" in pos:
-                        logger.info(f"Restoring position for {node_id}: ({pos['x']}, {pos['y']})")
-                        visual_node.set_pos(pos["x"], pos["y"])
-                    else:
-                        # Auto-arrange nodes that don't have positions
-                        index = len(node_map)
-                        x = 100 + (index % 4) * 250
-                        y = 100 + (index // 4) * 150
-                        logger.info(f"Auto-arranging {node_id} at ({x}, {y})")
-                        visual_node.set_pos(x, y)
-                    
-                    node_map[node_id] = visual_node
+                except Exception as e:
+                    logger.error(f"Failed to create CasareRPA node for {node_id}: {e}")
+            else:
+                logger.warning(f"No CasareRPA node class for type '{node_type}'")
+
+            # Restore widget values from saved config
+            config = node_data.get("config", {})
+            widgets = visual_node.widgets()
+            for widget_name, widget in widgets.items():
+                if widget_name in config:
+                    try:
+                        widget.set_value(config[widget_name])
+                        logger.debug(f"Restored widget {node_id}.{widget_name} = '{config[widget_name]}'")
+                    except Exception as e:
+                        logger.warning(f"Failed to restore widget {node_id}.{widget_name}: {e}")
+
+            # Restore node name if available
+            name = node_data.get("name")
+            if name:
+                visual_node.set_name(name)
+                logger.debug(f"Restored name for {node_id}: '{name}'")
+
+            # Set node position if available
+            pos = node_data.get("position")
+            if pos and "x" in pos and "y" in pos:
+                logger.debug(f"Restoring position for {node_id}: ({pos['x']}, {pos['y']})")
+                visual_node.set_pos(pos["x"], pos["y"])
+            else:
+                # Auto-arrange nodes that don't have positions
+                index = len(node_map)
+                x = 100 + (index % 4) * 250
+                y = 100 + (index // 4) * 150
+                logger.debug(f"Auto-arranging {node_id} at ({x}, {y})")
+                visual_node.set_pos(x, y)
+
+            node_map[node_id] = visual_node
         
         # Create connections
         for connection in workflow.connections:
@@ -1074,14 +1046,21 @@ class CasareRPAApp:
         logger.debug(f"Imported workflow with {len(workflow_data.get('nodes', {}))} nodes")
 
     def _create_visual_node_from_data(self, graph, node_data: dict, factory):
-        """Create a visual node from workflow data."""
+        """Create a visual node from workflow data using unified node discovery."""
+        from .node_registry import (
+            get_identifier_for_type,
+            get_casare_class_for_type,
+        )
+
         node_type = node_data.get("node_type")
         node_id = node_data.get("node_id")
         pos = node_data.get("position", {"x": 0, "y": 0})
 
-        # Map node type to identifier (this should match _load_workflow_to_graph)
-        # This is a simplified version - actual implementation uses NODE_TYPE_MAP
-        identifier = f"casare_rpa.nodes.Visual{node_type}"
+        # Use unified lookup
+        identifier = get_identifier_for_type(node_type)
+        if not identifier:
+            logger.warning(f"Unknown node type '{node_type}' - cannot create visual node")
+            return None
 
         try:
             visual_node = graph.create_node(
@@ -1090,13 +1069,26 @@ class CasareRPAApp:
             )
 
             if visual_node:
-                # Create CasareRPA node
-                casare_node = factory.create_casare_node(visual_node)
+                # Create CasareRPA node using unified lookup
+                casare_class = get_casare_class_for_type(node_type)
 
-                # Override ID if different (from remapping)
-                if casare_node and node_id:
-                    casare_node.node_id = node_id
-                    visual_node.set_property("node_id", node_id)
+                if casare_class:
+                    try:
+                        # Use the node_id from data and config
+                        casare_node = casare_class(node_id, node_data.get("config", {}))
+                        visual_node.set_casare_node(casare_node)
+                    except Exception as e:
+                        logger.error(f"Failed to create CasareRPA node for {node_id}: {e}")
+                        # Fallback to factory method
+                        casare_node = factory.create_casare_node(visual_node)
+                        if casare_node and node_id:
+                            casare_node.node_id = node_id
+                else:
+                    # Fallback to factory method
+                    casare_node = factory.create_casare_node(visual_node)
+                    if casare_node and node_id:
+                        casare_node.node_id = node_id
+                        visual_node.set_property("node_id", node_id)
 
                 # Restore config values
                 config = node_data.get("config", {})
@@ -1772,6 +1764,18 @@ class CasareRPAApp:
         try:
             logger.info("Starting workflow execution")
 
+            # Stop any existing workflow runner first
+            if self._workflow_runner is not None:
+                if self._workflow_runner.state in ("running", "paused"):
+                    logger.info("Stopping existing workflow runner before restart")
+                    self._workflow_runner.stop()
+                    # Cancel the task if it exists
+                    if self._workflow_task and not self._workflow_task.done():
+                        self._workflow_task.cancel()
+                        self._workflow_task = None
+                # Clear reference
+                self._workflow_runner = None
+
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
 
@@ -1832,19 +1836,30 @@ class CasareRPAApp:
                     await self._workflow_runner.run()
                 finally:
                     # Update debug panels one final time
-                    if self._workflow_runner.debug_mode:
+                    if self._workflow_runner and self._workflow_runner.debug_mode:
                         self._update_debug_panels()
                         self._stop_debug_updates()
-                    
+
                     # Update toolbar state
                     if debug_toolbar:
                         debug_toolbar.set_execution_state(False)
-            
+
+                    # Re-enable run buttons when done
+                    self._main_window.action_run.setEnabled(True)
+                    self._main_window.action_run_to_node.setEnabled(True)
+                    self._main_window.action_run_single_node.setEnabled(True)
+                    self._main_window.action_pause.setEnabled(False)
+                    self._main_window.action_stop.setEnabled(False)
+
             self._workflow_task = asyncio.ensure_future(run_and_cleanup())
 
         except Exception as e:
             logger.exception("Failed to start workflow execution")
             self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+            # Re-enable run buttons on error
+            self._main_window.action_run.setEnabled(True)
+            self._main_window.action_run_to_node.setEnabled(True)
+            self._main_window.action_run_single_node.setEnabled(True)
 
     def _on_run_to_node(self, target_node_id: str) -> None:
         """
@@ -1963,6 +1978,8 @@ class CasareRPAApp:
                     self._main_window.action_run.setEnabled(True)
                     self._main_window.action_run_to_node.setEnabled(True)
                     self._main_window.action_run_single_node.setEnabled(True)
+                    self._main_window.action_pause.setEnabled(False)
+                    self._main_window.action_stop.setEnabled(False)
 
                     # Show status message based on result
                     if runner.target_reached:
@@ -2052,7 +2069,9 @@ class CasareRPAApp:
                     execution_time = time.time() - start_time
 
                     # Update visual feedback
-                    if result.success:
+                    # ExecutionResult is Optional[Dict[str, Any]]
+                    success = result.get('success', True) if isinstance(result, dict) else True
+                    if success:
                         visual_node.update_status("success")
                         visual_node.update_execution_time(execution_time)
                         logger.info(f"Node {node_id} completed in {execution_time:.2f}s")
@@ -2062,7 +2081,7 @@ class CasareRPAApp:
                     else:
                         visual_node.update_status("error")
                         visual_node.update_execution_time(execution_time)
-                        error_msg = result.error or "Unknown error"
+                        error_msg = result.get('error', 'Unknown error') if isinstance(result, dict) else "Unknown error"
                         logger.error(f"Node {node_id} failed: {error_msg}")
                         self._main_window.statusBar().showMessage(
                             f"Node failed: {error_msg}", 5000

@@ -68,9 +68,14 @@ class CanvasThemeColors:
     node_skipped: str = "#C586C0"      # Purple (control flow)
     node_breakpoint: str = "#F48771"   # Error red
 
+    # Selection/Input (VSCode)
+    selection_bg: str = "#264F78"      # VSCode editor selection
+    input_bg: str = "#3C3C3C"          # VSCode input background
+
     # Accent colors (VSCode blue)
     accent_primary: str = "#007ACC"    # VSCode signature blue
     accent_secondary: str = "#0078D4"  # Selection blue
+    accent_hover: str = "#1177BB"      # Lighter blue for hover
     accent_success: str = "#89D185"
     accent_warning: str = "#D7BA7D"
     accent_error: str = "#F48771"

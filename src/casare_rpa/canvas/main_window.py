@@ -936,6 +936,13 @@ class MainWindow(QMainWindow):
         self._bottom_panel.navigate_to_node.connect(self._on_navigate_to_node)
         self._bottom_panel.variables_changed.connect(self._on_panel_variables_changed)
 
+        # Connect trigger signals
+        self._bottom_panel.trigger_add_requested.connect(self._on_trigger_add_requested)
+        self._bottom_panel.trigger_edit_requested.connect(self._on_trigger_edit_requested)
+        self._bottom_panel.trigger_delete_requested.connect(self._on_trigger_delete_requested)
+        self._bottom_panel.trigger_toggle_requested.connect(self._on_trigger_toggle_requested)
+        self._bottom_panel.trigger_run_requested.connect(self._on_trigger_run_requested)
+
         # Add to main window
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._bottom_panel)
 
@@ -1159,6 +1166,95 @@ class MainWindow(QMainWindow):
         # Mark workflow as modified
         self.set_modified(True)
         logger.debug(f"Variables updated: {len(variables)} variables")
+
+    # ==================== Trigger Handlers ====================
+
+    def _on_trigger_add_requested(self) -> None:
+        """Handle request to add a new trigger."""
+        from .dialogs import TriggerTypeSelectorDialog, TriggerConfigDialog
+        from ..triggers.base import TriggerType
+
+        # Show trigger type selector
+        type_dialog = TriggerTypeSelectorDialog(self)
+        if type_dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        trigger_type = type_dialog.get_selected_type()
+        if not trigger_type:
+            return
+
+        # Show trigger configuration dialog
+        config_dialog = TriggerConfigDialog(trigger_type, parent=self)
+        if config_dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        # Get the configuration and add to triggers list
+        trigger_config = config_dialog.get_config()
+        if self._bottom_panel:
+            self._bottom_panel.add_trigger(trigger_config)
+            self.set_modified(True)
+            logger.info(f"Added trigger: {trigger_config.get('name', 'Unnamed')}")
+
+    def _on_trigger_edit_requested(self, trigger_config: dict) -> None:
+        """Handle request to edit an existing trigger."""
+        from .dialogs import TriggerConfigDialog
+        from ..triggers.base import TriggerType
+
+        trigger_type_str = trigger_config.get('type', 'manual')
+        try:
+            trigger_type = TriggerType(trigger_type_str)
+        except ValueError:
+            logger.error(f"Unknown trigger type: {trigger_type_str}")
+            return
+
+        # Show trigger configuration dialog with existing config
+        config_dialog = TriggerConfigDialog(trigger_type, trigger_config, parent=self)
+        if config_dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        # Get updated configuration
+        updated_config = config_dialog.get_config()
+        if self._bottom_panel:
+            self._bottom_panel.update_trigger(updated_config)
+            self.set_modified(True)
+            logger.info(f"Updated trigger: {updated_config.get('name', 'Unnamed')}")
+
+    def _on_trigger_delete_requested(self, trigger_id: str) -> None:
+        """Handle request to delete a trigger."""
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self,
+            "Delete Trigger",
+            "Are you sure you want to delete this trigger?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            if self._bottom_panel:
+                self._bottom_panel.remove_trigger(trigger_id)
+                self.set_modified(True)
+                logger.info(f"Deleted trigger: {trigger_id}")
+
+    def _on_trigger_toggle_requested(self, trigger_id: str, enabled: bool) -> None:
+        """Handle request to toggle trigger enabled state."""
+        if self._bottom_panel:
+            triggers = self._bottom_panel.get_triggers()
+            for trigger in triggers:
+                if trigger.get('id') == trigger_id:
+                    trigger['enabled'] = enabled
+                    self._bottom_panel.update_trigger(trigger)
+                    self.set_modified(True)
+                    state = "enabled" if enabled else "disabled"
+                    logger.info(f"Trigger {trigger_id} {state}")
+                    break
+
+    def _on_trigger_run_requested(self, trigger_id: str) -> None:
+        """Handle request to manually run a trigger."""
+        # For now, emit the workflow_run signal
+        # In the future, this could trigger the specific trigger's workflow
+        logger.info(f"Manual trigger run requested: {trigger_id}")
+        self.workflow_run.emit()
 
     def get_validation_panel(self):
         """

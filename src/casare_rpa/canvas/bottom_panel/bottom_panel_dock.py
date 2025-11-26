@@ -1,7 +1,7 @@
 """
 Bottom Panel Dock for CasareRPA.
 
-Main dockable container with tabs for Variables, Output, Log, Validation, and History.
+Main dockable container with tabs for Variables, Output, Log, Validation, History, and Triggers.
 Provides Power Automate/UiPath-style bottom panel functionality.
 """
 
@@ -20,11 +20,12 @@ from loguru import logger
 if TYPE_CHECKING:
     from ...core.validation import ValidationResult
     from ...core.events import Event
+    from .triggers_tab import TriggersTab
 
 
 class BottomPanelDock(QDockWidget):
     """
-    Dockable bottom panel with tabs for Variables, Output, Log, Validation, and History.
+    Dockable bottom panel with tabs for Variables, Output, Log, Validation, History, and Triggers.
 
     This panel provides a Power Automate/UiPath-style interface for:
     - Variables: Global workflow variables with design/runtime modes
@@ -32,6 +33,7 @@ class BottomPanelDock(QDockWidget):
     - Log: Real-time execution logs
     - Validation: Workflow validation issues
     - History: Execution history with timing and status
+    - Triggers: Workflow trigger configuration
 
     Signals:
         variables_changed: Emitted when variables are modified
@@ -39,6 +41,11 @@ class BottomPanelDock(QDockWidget):
         issue_clicked: Emitted when a validation issue is clicked (location: str)
         navigate_to_node: Emitted when user wants to navigate to a node (node_id: str)
         history_clear_requested: Emitted when user requests to clear history
+        trigger_add_requested: Emitted when user wants to add a trigger
+        trigger_edit_requested: Emitted when user wants to edit a trigger (trigger_config: dict)
+        trigger_delete_requested: Emitted when user wants to delete a trigger (trigger_id: str)
+        trigger_toggle_requested: Emitted when user toggles trigger state (trigger_id: str, enabled: bool)
+        trigger_run_requested: Emitted when user wants to run a trigger (trigger_id: str)
     """
 
     variables_changed = Signal(dict)  # {name: VariableDefinition}
@@ -47,12 +54,20 @@ class BottomPanelDock(QDockWidget):
     navigate_to_node = Signal(str)  # node_id
     history_clear_requested = Signal()
 
+    # Trigger signals
+    trigger_add_requested = Signal()
+    trigger_edit_requested = Signal(dict)  # trigger config
+    trigger_delete_requested = Signal(str)  # trigger_id
+    trigger_toggle_requested = Signal(str, bool)  # trigger_id, enabled
+    trigger_run_requested = Signal(str)  # trigger_id
+
     # Tab indices
     TAB_VARIABLES = 0
     TAB_OUTPUT = 1
     TAB_LOG = 2
     TAB_VALIDATION = 3
     TAB_HISTORY = 4
+    TAB_TRIGGERS = 5
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -112,6 +127,7 @@ class BottomPanelDock(QDockWidget):
         from .log_tab import LogTab
         from .validation_tab import ValidationTab
         from .history_tab import HistoryTab
+        from .triggers_tab import TriggersTab
 
         # Variables tab
         self._variables_tab = VariablesTab()
@@ -139,6 +155,15 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.node_selected.connect(self.navigate_to_node.emit)
         self._history_tab.clear_requested.connect(self._on_history_clear_requested)
         self._tab_widget.addTab(self._history_tab, "History")
+
+        # Triggers tab
+        self._triggers_tab = TriggersTab()
+        self._triggers_tab.add_trigger_requested.connect(self.trigger_add_requested.emit)
+        self._triggers_tab.trigger_updated.connect(self.trigger_edit_requested.emit)
+        self._triggers_tab.trigger_deleted.connect(self.trigger_delete_requested.emit)
+        self._triggers_tab.trigger_toggled.connect(self.trigger_toggle_requested.emit)
+        self._triggers_tab.trigger_run_requested.connect(self.trigger_run_requested.emit)
+        self._tab_widget.addTab(self._triggers_tab, "Triggers")
 
     def _update_tab_badges(self) -> None:
         """Update tab titles with badge counts."""
@@ -174,6 +199,11 @@ class BottomPanelDock(QDockWidget):
         history_count = self._history_tab.get_entry_count() if hasattr(self._history_tab, 'get_entry_count') else 0
         history_title = f"History ({history_count})" if history_count > 0 else "History"
         self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
+
+        # Triggers tab - show count if > 0
+        trigger_count = self._triggers_tab.get_trigger_count() if hasattr(self._triggers_tab, 'get_trigger_count') else 0
+        trigger_title = f"Triggers ({trigger_count})" if trigger_count > 0 else "Triggers"
+        self._tab_widget.setTabText(self.TAB_TRIGGERS, trigger_title)
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
@@ -421,6 +451,71 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.clear()
         self._update_tab_badges()
 
+    # ==================== Triggers API ====================
+
+    def get_triggers_tab(self) -> 'TriggersTab':
+        """Get the Triggers tab widget."""
+        return self._triggers_tab
+
+    def show_triggers_tab(self) -> None:
+        """Show and focus the Triggers tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_TRIGGERS)
+
+    def set_triggers(self, triggers: List[Dict[str, Any]]) -> None:
+        """
+        Set the list of triggers to display.
+
+        Args:
+            triggers: List of trigger configurations as dictionaries
+        """
+        self._triggers_tab.set_triggers(triggers)
+        self._update_tab_badges()
+
+    def get_triggers(self) -> List[Dict[str, Any]]:
+        """
+        Get the current list of triggers.
+
+        Returns:
+            List of trigger configurations
+        """
+        return self._triggers_tab.get_triggers()
+
+    def add_trigger(self, trigger: Dict[str, Any]) -> None:
+        """
+        Add a trigger to the list.
+
+        Args:
+            trigger: Trigger configuration dictionary
+        """
+        self._triggers_tab.add_trigger(trigger)
+        self._update_tab_badges()
+
+    def update_trigger(self, trigger: Dict[str, Any]) -> None:
+        """
+        Update an existing trigger.
+
+        Args:
+            trigger: Updated trigger configuration
+        """
+        self._triggers_tab.update_trigger(trigger)
+        self._update_tab_badges()
+
+    def remove_trigger(self, trigger_id: str) -> None:
+        """
+        Remove a trigger from the list.
+
+        Args:
+            trigger_id: ID of the trigger to remove
+        """
+        self._triggers_tab.remove_trigger(trigger_id)
+        self._update_tab_badges()
+
+    def clear_triggers(self) -> None:
+        """Clear all triggers."""
+        self._triggers_tab.clear()
+        self._update_tab_badges()
+
     # ==================== State Management ====================
 
     def prepare_for_execution(self) -> None:
@@ -442,5 +537,6 @@ class BottomPanelDock(QDockWidget):
         self._log_tab.clear()
         self._validation_tab.clear()
         self._history_tab.clear()
+        self._triggers_tab.clear()
         self.set_runtime_mode(False)
         self._update_tab_badges()
