@@ -70,7 +70,8 @@ class MainWindow(QMainWindow):
     workflow_pause = Signal()
     workflow_resume = Signal()
     workflow_stop = Signal()
-    
+    preferences_saved = Signal()  # Emitted when preferences are saved
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the main window.
@@ -270,6 +271,10 @@ class MainWindow(QMainWindow):
         self.action_snippet_library.setStatusTip("Browse and insert snippets from library (Ctrl+Shift+L)")
         self.action_snippet_library.triggered.connect(self._on_open_snippet_library)
 
+        self.action_preferences = QAction("&Preferences...", self)
+        self.action_preferences.setShortcut(QKeySequence("Ctrl+,"))
+        self.action_preferences.setStatusTip("Configure application preferences")
+        self.action_preferences.triggered.connect(self._on_preferences)
 
         # View actions
         self.action_zoom_in = QAction("Zoom &In", self)
@@ -303,7 +308,7 @@ class MainWindow(QMainWindow):
         self.action_toggle_navigation = QAction("Snippet &Navigation", self)
         self.action_toggle_navigation.setShortcut(QKeySequence("Ctrl+Shift+N"))
         self.action_toggle_navigation.setCheckable(True)
-        self.action_toggle_navigation.setChecked(True)  # Shown by default
+        self.action_toggle_navigation.setChecked(False)  # Hidden by default
         self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation breadcrumb and drop zone")
         self.action_toggle_navigation.triggered.connect(self._on_toggle_navigation)
 
@@ -488,6 +493,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action_snippet_library)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_find_node)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action_preferences)
 
         # View menu
         view_menu = menubar.addMenu("&View")
@@ -499,10 +506,13 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.action_auto_connect)
         view_menu.addSeparator()
-        view_menu.addAction(self.action_toggle_bottom_panel)
-        view_menu.addAction(self.action_toggle_variable_inspector)
-        view_menu.addAction(self.action_toggle_navigation)
-        view_menu.addAction(self.action_toggle_minimap)
+
+        # Panels submenu
+        panels_menu = view_menu.addMenu("&Panels")
+        panels_menu.addAction(self.action_toggle_bottom_panel)
+        panels_menu.addAction(self.action_toggle_variable_inspector)
+        panels_menu.addAction(self.action_toggle_navigation)
+        panels_menu.addAction(self.action_toggle_minimap)
 
         # Workflow menu
         workflow_menu = menubar.addMenu("&Workflow")
@@ -932,6 +942,9 @@ class MainWindow(QMainWindow):
 
         # Note: Drop zone visibility is controlled by navigation depth
         # It will auto-show/hide based on whether we're inside a snippet
+
+        # Save UI state
+        self._schedule_ui_state_save()
 
         logger.info(f"Snippet navigation UI {'shown' if checked else 'hidden'}")
 
@@ -1594,6 +1607,17 @@ class MainWindow(QMainWindow):
             logger.info("Snippet insertion completed")
         else:
             logger.info("Snippet browser closed without insertion")
+
+    def _on_preferences(self) -> None:
+        """Handle preferences dialog request."""
+        from .preferences_dialog import PreferencesDialog
+
+        dialog = PreferencesDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            logger.info("Preferences saved")
+            # Settings are already saved in the dialog
+            # Emit signal so app can update autosave timer
+            self.preferences_saved.emit()
 
     def _on_snippet_insert_requested(self, snippet_definition, is_collapsed: bool):
         """
@@ -2447,13 +2471,14 @@ class MainWindow(QMainWindow):
             if self._properties_panel:
                 self._settings.setValue("propertiesPanelVisible", self._properties_panel.isVisible())
 
-            # Save execution timeline visibility
             if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
                 self._settings.setValue("executionTimelineVisible", self._execution_timeline_dock.isVisible())
 
-            # Save minimap visibility
             if hasattr(self, '_minimap') and self._minimap:
                 self._settings.setValue("minimapVisible", self._minimap.isVisible())
+
+            if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
+                self._settings.setValue("navigationVisible", self._central_widget._snippet_breadcrumb.isVisible())
 
             self._settings.sync()
             logger.debug("UI state saved")
@@ -2511,19 +2536,23 @@ class MainWindow(QMainWindow):
                 visible = self._settings.value("propertiesPanelVisible", True, type=bool)
                 self._properties_panel.setVisible(visible)
 
-            # Restore execution timeline visibility
             if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
                 visible = self._settings.value("executionTimelineVisible", False, type=bool)
                 self._execution_timeline_dock.setVisible(visible)
                 if hasattr(self, 'action_toggle_timeline'):
                     self.action_toggle_timeline.setChecked(visible)
 
-            # Restore minimap visibility
             if hasattr(self, '_minimap') and self._minimap:
                 visible = self._settings.value("minimapVisible", False, type=bool)
                 self._minimap.setVisible(visible)
                 if hasattr(self, 'action_toggle_minimap'):
                     self.action_toggle_minimap.setChecked(visible)
+
+            if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
+                visible = self._settings.value("navigationVisible", False, type=bool)
+                self._central_widget._snippet_breadcrumb.setVisible(visible)
+                if hasattr(self, 'action_toggle_navigation'):
+                    self.action_toggle_navigation.setChecked(visible)
 
             logger.debug("UI state restored from previous session")
         except Exception as e:

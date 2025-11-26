@@ -23,6 +23,7 @@ from ..core.events import EventType, get_event_bus
 from ..core.types import NodeStatus
 from ..utils.config import setup_logging, APP_NAME
 from ..utils.playwright_setup import ensure_playwright_ready
+from ..utils.settings_manager import get_settings_manager
 from loguru import logger
 
 
@@ -95,7 +96,10 @@ class CasareRPAApp:
         
         # Connect signals
         self._connect_signals()
-        
+
+        # Setup autosave
+        self._setup_autosave()
+
         logger.info("Application initialized successfully")
     
     def _subscribe_to_events(self) -> None:
@@ -135,7 +139,10 @@ class CasareRPAApp:
         self._main_window.workflow_pause.connect(self._on_pause_workflow)
         self._main_window.workflow_resume.connect(self._on_resume_workflow)
         self._main_window.workflow_stop.connect(self._on_stop_workflow)
-        
+
+        # Preferences
+        self._main_window.preferences_saved.connect(self.update_autosave_settings)
+
         # Edit operations - connect to NodeGraphQt undo stack
         graph = self._node_graph.graph
         undo_stack = graph.undo_stack()
@@ -214,6 +221,72 @@ class CasareRPAApp:
         quick_actions.copy_requested.connect(graph.copy_nodes)
         quick_actions.duplicate_requested.connect(self._on_duplicate_nodes)
         quick_actions.delete_requested.connect(self._on_delete_selected)
+
+    def _setup_autosave(self) -> None:
+        """Setup autosave timer based on settings."""
+        from PySide6.QtCore import QTimer
+
+        settings = get_settings_manager()
+
+        # Create autosave timer
+        self._autosave_timer = QTimer()
+        self._autosave_timer.timeout.connect(self._on_autosave)
+
+        # Configure timer based on settings
+        if settings.is_autosave_enabled():
+            interval_minutes = settings.get_autosave_interval()
+            interval_ms = interval_minutes * 60 * 1000
+            self._autosave_timer.start(interval_ms)
+            logger.info(f"Autosave enabled: every {interval_minutes} minute(s)")
+        else:
+            logger.info("Autosave disabled")
+
+    def update_autosave_settings(self) -> None:
+        """Update autosave timer based on current settings."""
+        settings = get_settings_manager()
+
+        # Stop existing timer
+        if hasattr(self, '_autosave_timer') and self._autosave_timer:
+            self._autosave_timer.stop()
+
+        # Reconfigure based on settings
+        if settings.is_autosave_enabled():
+            interval_minutes = settings.get_autosave_interval()
+            interval_ms = interval_minutes * 60 * 1000
+            self._autosave_timer.start(interval_ms)
+            logger.info(f"Autosave updated: every {interval_minutes} minute(s)")
+        else:
+            logger.info("Autosave disabled")
+
+    def _on_autosave(self) -> None:
+        """
+        Handle autosave timer trigger.
+
+        Only saves if:
+        - Autosave is enabled in settings
+        - A workflow file is currently open
+        """
+        try:
+            settings = get_settings_manager()
+
+            # Check if autosave is still enabled
+            if not settings.is_autosave_enabled():
+                self._autosave_timer.stop()
+                logger.debug("Autosave timer stopped (disabled in settings)")
+                return
+
+            # Check if there's a current file to save
+            current_file = self._main_window.get_current_file()
+            if not current_file:
+                logger.debug("Autosave skipped: no file currently open")
+                return
+
+            # Perform autosave (reuse the regular save logic)
+            logger.info(f"Auto-saving workflow: {current_file}")
+            self._on_save_workflow()
+
+        except Exception as e:
+            logger.error(f"Autosave failed: {e}")
 
     def _on_duplicate_nodes(self) -> None:
         """Duplicate the selected nodes at mouse cursor position."""

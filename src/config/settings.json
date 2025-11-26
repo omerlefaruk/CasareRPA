@@ -1,0 +1,10 @@
+{
+  "autosave": {
+    "enabled": true,
+    "interval_minutes": 1
+  },
+  "ui": {
+    "theme": "dark",
+    "show_minimap": true
+  }
+}
