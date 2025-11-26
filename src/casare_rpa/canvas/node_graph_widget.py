@@ -212,6 +212,136 @@ class TooltipBlocker(QObject):
         return False
 
 
+class OutputPortMMBFilter(QObject):
+    """
+    Event filter to detect middle mouse button clicks on output ports (except exec_out).
+    Creates a SetVariable node connected to the clicked output port.
+
+    LMB: Normal behavior (drag connection)
+    MMB: Create SetVariable node
+    """
+
+    def __init__(self, graph, widget):
+        super().__init__()
+        self._graph = graph
+        self._widget = widget
+
+    def eventFilter(self, obj, event):
+        """
+        Handle middle mouse button click to create SetVariable node.
+        """
+        # Log ALL events to see what we're receiving
+        if event.type() == QEvent.Type.MouseButtonPress:
+            logger.info(f"[MMB Filter] MouseButtonPress detected - button: {event.button()}, obj: {obj.__class__.__name__}")
+
+        # Only handle MouseButtonPress
+        if event.type() != QEvent.Type.MouseButtonPress:
+            return False
+
+        logger.info(f"[MMB Filter] Button value: {event.button()}, MiddleButton value: {Qt.MouseButton.MiddleButton}")
+        logger.info(f"[MMB Filter] Is MMB? {event.button() == Qt.MouseButton.MiddleButton}")
+
+        if event.button() != Qt.MouseButton.MiddleButton:
+            logger.debug(f"[MMB Filter] Not MMB, ignoring")
+            return False
+
+        logger.info("[MMB Filter] MMB press confirmed!")
+
+        viewer = self._graph.viewer()
+        if not viewer:
+            logger.warning("[MMB Filter] No viewer found")
+            return False
+
+        # Get scene position
+        scene_pos = viewer.mapToScene(event.pos())
+        logger.info(f"[MMB Filter] Scene position: ({scene_pos.x():.1f}, {scene_pos.y():.1f})")
+
+        port_item = self._find_port_at_position(viewer, scene_pos)
+        logger.info(f"[MMB Filter] Port item found: {port_item}")
+
+        if not port_item:
+            logger.info("[MMB Filter] No port at position, allowing panning")
+            return False  # Not on a port, let panning happen
+
+        logger.info(f"[MMB Filter] Port found: {port_item.name}, type: {port_item.port_type}")
+
+        # Check if this is an output port (not input)
+        from NodeGraphQt.constants import PortTypeEnum
+        logger.info(f"[MMB Filter] PortTypeEnum.OUT.value = {PortTypeEnum.OUT.value}")
+
+        if port_item.port_type != PortTypeEnum.OUT.value:
+            logger.info(f"[MMB Filter] Not an output port (type={port_item.port_type}), ignoring")
+            return False
+
+        # Check if this is an exec port - skip those
+        port_name = port_item.name
+        if self._is_exec_port(port_item):
+            logger.info(f"[MMB Filter] Skipping exec port: {port_name}")
+            return False
+
+        logger.info(f"[MMB Filter] *** Creating SetVariable for output port: {port_name} ***")
+
+        # Create SetVariable node
+        try:
+            self._widget._create_set_variable_for_port(port_item)
+            logger.info("[MMB Filter] SetVariable created successfully")
+        except Exception as e:
+            logger.error(f"[MMB Filter] Failed to create SetVariable: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+
+        logger.info("[MMB Filter] Returning True to block event")
+        return True  # Block the event to prevent panning
+
+    def _find_port_at_position(self, viewer, scene_pos):
+        """Find a port item at the given scene position."""
+        items = viewer.scene().items(scene_pos)
+
+        for item in items:
+            class_name = item.__class__.__name__
+            if 'Port' in class_name or class_name == 'PortItem':
+                return item
+        return None
+
+    def _is_exec_port(self, port_item):
+        """
+        Check if a port is an execution flow port.
+
+        Exec ports typically have names like 'exec_in', 'exec_out',
+        'true', 'false', 'loop_body', 'completed', etc.
+        """
+        port_name = port_item.name.lower()
+
+        # Common exec port names
+        exec_names = {
+            'exec_in', 'exec_out', 'exec',
+            'true', 'false',
+            'loop_body', 'completed',
+            'try', 'catch', 'finally',
+            'on_success', 'on_failure', 'on_error',
+            'then', 'else',
+        }
+
+        if port_name in exec_names:
+            return True
+
+        # Check if port has no data type (exec ports have None data type)
+        # This requires getting the parent node and checking port type info
+        try:
+            # Get the node object from the port item
+            node_item = port_item.parentItem()
+            if node_item and hasattr(node_item, 'node'):
+                node = node_item.node
+                if hasattr(node, 'get_port_type'):
+                    port_type = node.get_port_type(port_item.name)
+                    if port_type is None:
+                        return True
+        except Exception as e:
+            logger.debug(f"Could not check port type: {e}")
+
+        return False
+
+
 class ConnectionDropFilter(QObject):
     """
     Event filter to detect when a connection pipe is dropped on empty space.
@@ -484,6 +614,10 @@ class NodeGraphWidget(QWidget):
         """
         self._connection_drop_filter = ConnectionDropFilter(self._graph, self)
         self._graph.viewer().viewport().installEventFilter(self._connection_drop_filter)
+
+        # Install output port MMB filter (for quick SetVariable creation)
+        self._output_port_mmb_filter = OutputPortMMBFilter(self._graph, self)
+        self._graph.viewer().viewport().installEventFilter(self._output_port_mmb_filter)
 
     def _fix_mmb_panning(self):
         """
@@ -1190,6 +1324,117 @@ class NodeGraphWidget(QWidget):
 
         except Exception as e:
             logger.error(f"Failed to auto-connect new node: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+
+    def _create_set_variable_for_port(self, source_port_item):
+        """
+        Create a SetVariable node connected to the clicked output port.
+
+        Args:
+            source_port_item: The output port item that was clicked (PortItem from viewer)
+        """
+        try:
+            from NodeGraphQt.constants import PortTypeEnum
+
+            # Get the source node from the port item
+            # PortItem structure: PortItem -> NodeItem -> has .node attribute
+            node_item = source_port_item.parentItem()
+            logger.debug(f"Port parent item: {node_item}, type: {type(node_item)}")
+
+            # Try different ways to get the node
+            source_node = None
+
+            # Method 1: Direct .node attribute on parent
+            if node_item and hasattr(node_item, 'node'):
+                source_node = node_item.node
+                logger.debug(f"Found node via parent.node: {source_node}")
+
+            # Method 2: PortItem has .node property that returns the Port's node
+            if not source_node and hasattr(source_port_item, 'node'):
+                source_node = source_port_item.node
+                logger.debug(f"Found node via port_item.node: {source_node}")
+
+            # Method 3: Navigate up the parent chain
+            if not source_node:
+                parent = node_item
+                while parent:
+                    logger.debug(f"Checking parent: {parent}, type: {type(parent).__name__}")
+                    if hasattr(parent, 'node'):
+                        source_node = parent.node
+                        logger.debug(f"Found node via parent chain: {source_node}")
+                        break
+                    parent = parent.parentItem() if hasattr(parent, 'parentItem') else None
+
+            if not source_node:
+                logger.warning("Could not find source node from port item after all methods")
+                return
+
+            port_name = source_port_item.name
+
+            # Get node name - might be property or method depending on node type
+            node_name = source_node.name() if callable(source_node.name) else source_node.name
+            logger.info(f"Creating SetVariable for port: {node_name}.{port_name}")
+
+            # Get source node position and size
+            # pos might be method or property
+            source_pos = source_node.pos() if callable(getattr(source_node, 'pos', None)) else getattr(source_node, 'pos', (0, 0))
+            if not isinstance(source_pos, (list, tuple)):
+                source_pos = (0, 0)
+            # Get node view for bounding rect
+            source_view = source_node.view if hasattr(source_node, 'view') else None
+            source_width = source_view.boundingRect().width() if source_view else 180
+
+            # Get port's Y position in scene coordinates for vertical alignment
+            port_scene_pos = source_port_item.scenePos()
+            port_y = port_scene_pos.y()
+
+            # Calculate position for new node (to the right of source node, aligned with port)
+            # Add node width + 50px gap
+            new_x = source_pos[0] + source_width + 250
+            # Offset Y to center the new node on the port (assuming ~40px for node header)
+            new_y = port_y - 40
+
+            # Create the SetVariable node
+            set_var_node = self._graph.create_node(
+                "casare_rpa.variable.VisualSetVariableNode",
+                pos=[new_x, new_y]
+            )
+
+            if not set_var_node:
+                logger.error("Failed to create SetVariable node")
+                return
+
+            # Set the variable name to the output port's name
+            set_var_node.set_property("variable_name", port_name)
+
+            logger.debug(f"SetVariable node created at ({new_x}, {new_y}) with name '{port_name}'")
+
+            # Connect the source output port to the "value" input of SetVariable
+            # Find the "value" input port on the SetVariable node
+            value_port = None
+            for port in set_var_node.input_ports():
+                if port.name() == "value":
+                    value_port = port
+                    break
+
+            if value_port:
+                # Connect using the PortItem level
+                target_port_item = value_port.view
+                try:
+                    source_port_item.connect_to(target_port_item)
+                    logger.info(f"Connected {port_name} -> value")
+                except Exception as e:
+                    logger.warning(f"Could not connect ports: {e}")
+            else:
+                logger.warning("Could not find 'value' input port on SetVariable node")
+
+            # Select the new node so user can see it
+            self._graph.clear_selection()
+            set_var_node.set_selected(True)
+
+        except Exception as e:
+            logger.error(f"Failed to create SetVariable for port: {e}")
             import traceback
             logger.error(traceback.format_exc())
 
