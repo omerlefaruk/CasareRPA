@@ -1,6 +1,16 @@
 """
 NodeGraphQt integration for CasareRPA nodes.
 
+⚠️ DEPRECATED: This file has been reorganized into category-based modules.
+All visual nodes have been moved to:
+    src/casare_rpa/presentation/canvas/visual_nodes/
+
+Migration path:
+    OLD: from casare_rpa.canvas.visual_nodes.visual_nodes import VisualStartNode
+    NEW: from casare_rpa.presentation.canvas.visual_nodes import VisualStartNode
+
+This file will be removed in v3.0.
+
 This module provides visual node classes that bridge CasareRPA's BaseNode
 with NodeGraphQt's visual representation.
 """
