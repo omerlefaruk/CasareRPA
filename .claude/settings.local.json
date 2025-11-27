@@ -10,7 +10,8 @@
       "Bash(python:*)",
       "Bash(dir:*)",
       "WebSearch",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
