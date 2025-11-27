@@ -4,6 +4,20 @@ Thank you for your interest in contributing to CasareRPA! This document provides
 
 ## Getting Started
 
+### Prerequisites
+
+**Python 3.12 or higher is required.** CasareRPA uses modern Python features including:
+- Type hints with `|` union syntax
+- `match` statements for pattern matching
+- Performance improvements in asyncio
+
+Check your Python version:
+```bash
+python --version  # Should show Python 3.12.x or higher
+```
+
+### Setup Steps
+
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash

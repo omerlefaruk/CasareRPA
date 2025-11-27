@@ -18,9 +18,9 @@ The CasareRPA team takes security seriously. We appreciate your efforts to respo
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Instead, please report security vulnerabilities by emailing:
+Instead, please report security vulnerabilities using **GitHub Security Advisories**:
 
-**dev@casarerpa.com**
+https://github.com/omerlefaruk/CasareRPA/security/advisories/new
 
 Include the following information:
 - Type of issue (e.g., buffer overflow, SQL injection, cross-site scripting, etc.)
@@ -163,8 +163,7 @@ Security advisories are published at:
 ## Contact
 
 For security concerns:
-- **Email**: dev@casarerpa.com
-- **PGP Key**: (Coming soon)
+- **GitHub Security Advisories**: https://github.com/omerlefaruk/CasareRPA/security/advisories/new
 
 For general questions:
 - **GitHub Issues**: https://github.com/omerlefaruk/CasareRPA/issues
