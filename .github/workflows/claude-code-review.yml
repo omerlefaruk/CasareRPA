@@ -71,19 +71,12 @@ jobs:
               max_tokens=4096,
               messages=[{
                   "role": "user",
-                  "content": f"""Review this code diff and provide feedback on:
-          - Security vulnerabilities
-          - Code quality and best practices
-          - Performance issues
-          - Bug detection
-          - Type safety
+                  "content": f"""Please review this pull request and look for bugs and security issues. Only report on bugs and potential vulnerabilities you find. Be concise.
 
           Diff:
           ```
           {diff_content[:15000]}
-          ```
-
-          Provide a concise review with specific line references where applicable."""
+          ```"""
               }]
           )
 
