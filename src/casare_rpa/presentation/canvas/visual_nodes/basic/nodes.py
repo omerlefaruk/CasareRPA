@@ -1,44 +1,47 @@
 """Visual nodes for basic category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualStartNode(VisualNode):
     """Visual representation of StartNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "Start"
     NODE_CATEGORY = "basic"
-    
+
     def setup_ports(self) -> None:
         """Setup ports for start node."""
         self.add_output("exec_out")
 
+
 class VisualEndNode(VisualNode):
     """Visual representation of EndNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "End"
     NODE_CATEGORY = "basic"
-    
+
     def setup_ports(self) -> None:
         """Setup ports for end node."""
         self.add_input("exec_in")
 
+
 class VisualCommentNode(VisualNode):
     """Visual representation of CommentNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "Comment"
     NODE_CATEGORY = "basic"
-    
+
     def __init__(self) -> None:
         """Initialize comment node."""
         super().__init__()
         self.add_text_input("comment", "Comment", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports for comment node."""
         pass  # No ports for comment node
 
 
 # Browser Control Nodes
-

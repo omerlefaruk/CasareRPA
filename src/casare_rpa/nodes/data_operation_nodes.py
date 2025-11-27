@@ -1,13 +1,13 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 import re
 import json
 import math
-import random
 from loguru import logger
 
 from ..core.base_node import BaseNode
-from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
+from ..core.types import DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
+
 
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
@@ -38,12 +38,15 @@ class ConcatenateNode(BaseNode):
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
 
+
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
 
     def _define_ports(self) -> None:
         self.add_input_port("template", DataType.STRING)
-        self.add_input_port("variables", DataType.DICT) # Dict of variables to format with
+        self.add_input_port(
+            "variables", DataType.DICT
+        )  # Dict of variables to format with
         self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -62,6 +65,7 @@ class FormatStringNode(BaseNode):
             logger.error(f"Format string failed: {e}")
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
+
 
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
@@ -117,11 +121,22 @@ class RegexMatchNode(BaseNode):
             self.set_output_value("groups", groups)
             self.set_output_value("match_count", len(matches))
 
-            return {"success": True, "data": {"match_found": match_found, "first_match": first_match, "all_matches": all_matches, "groups": groups, "match_count": len(matches)}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {
+                    "match_found": match_found,
+                    "first_match": first_match,
+                    "all_matches": all_matches,
+                    "groups": groups,
+                    "match_count": len(matches),
+                },
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Regex match failed: {e}")
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
+
 
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
@@ -164,17 +179,24 @@ class RegexReplaceNode(BaseNode):
 
             max_count = int(self.config.get("max_count", 0))
             if max_count > 0:
-                result, count = re.subn(pattern, replacement, text, count=max_count, flags=flags)
+                result, count = re.subn(
+                    pattern, replacement, text, count=max_count, flags=flags
+                )
             else:
                 result, count = re.subn(pattern, replacement, text, flags=flags)
 
             self.set_output_value("result", result)
             self.set_output_value("count", count)
-            return {"success": True, "data": {"result": result, "count": count}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"result": result, "count": count},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Regex replace failed: {e}")
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
+
 
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
@@ -268,6 +290,7 @@ class MathOperationNode(BaseNode):
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
 
+
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
 
@@ -292,12 +315,18 @@ class ComparisonNode(BaseNode):
             # Handle both symbol and descriptive formats
             # e.g., "==" or "equals (==)"
             op_map = {
-                "==": "==", "equals (==)": "==",
-                "!=": "!=", "not equals (!=)": "!=",
-                ">": ">", "greater than (>)": ">",
-                "<": "<", "less than (<)": "<",
-                ">=": ">=", "greater or equal (>=)": ">=",
-                "<=": "<=", "less or equal (<=)": "<=",
+                "==": "==",
+                "equals (==)": "==",
+                "!=": "!=",
+                "not equals (!=)": "!=",
+                ">": ">",
+                "greater than (>)": ">",
+                "<": "<",
+                "less than (<)": "<",
+                ">=": ">=",
+                "greater or equal (>=)": ">=",
+                "<=": "<=",
+                "less or equal (<=)": "<=",
             }
             op = op_map.get(op, op)
 
@@ -322,6 +351,7 @@ class ComparisonNode(BaseNode):
             logger.error(f"Comparison failed: {e}")
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
+
 
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
@@ -360,6 +390,7 @@ class CreateListNode(BaseNode):
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
 
+
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
 
@@ -390,6 +421,7 @@ class ListGetItemNode(BaseNode):
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
 
+
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
 
@@ -411,12 +443,15 @@ class JsonParseNode(BaseNode):
             self.error_message = str(e)
             return {"success": False, "error": str(e), "next_nodes": []}
 
+
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
 
     def _define_ports(self) -> None:
         self.add_input_port("object", DataType.DICT)
-        self.add_input_port("property_path", DataType.STRING) # dot notation supported e.g. "user.address.city"
+        self.add_input_port(
+            "property_path", DataType.STRING
+        )  # dot notation supported e.g. "user.address.city"
         self.add_output_port("value", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -428,7 +463,7 @@ class GetPropertyNode(BaseNode):
                 raise ValueError("Input is not a dictionary")
 
             current = obj
-            for part in path.split('.'):
+            for part in path.split("."):
                 if not part:
                     continue
                 if isinstance(current, dict) and part in current:
@@ -448,6 +483,7 @@ class GetPropertyNode(BaseNode):
 
 
 # ==================== LIST OPERATIONS ====================
+
 
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
@@ -520,7 +556,11 @@ class ListContainsNode(BaseNode):
 
             self.set_output_value("contains", contains)
             self.set_output_value("index", index)
-            return {"success": True, "data": {"contains": contains, "index": index}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"contains": contains, "index": index},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"List contains failed: {e}")
             self.error_message = str(e)
@@ -617,12 +657,13 @@ class ListSortNode(BaseNode):
                 # Sort by nested key (e.g., "name" or "user.age")
                 def get_key(item):
                     current = item
-                    for part in key_path.split('.'):
+                    for part in key_path.split("."):
                         if isinstance(current, dict) and part in current:
                             current = current[part]
                         else:
                             return None
                     return current
+
                 result.sort(key=get_key, reverse=bool(reverse))
             else:
                 result.sort(reverse=bool(reverse))
@@ -729,7 +770,7 @@ class ListFilterNode(BaseNode):
                 if not key_path:
                     return item
                 current = item
-                for part in key_path.split('.'):
+                for part in key_path.split("."):
                     if isinstance(current, dict) and part in current:
                         current = current[part]
                     else:
@@ -768,7 +809,11 @@ class ListFilterNode(BaseNode):
 
             self.set_output_value("result", result)
             self.set_output_value("removed", removed)
-            return {"success": True, "data": {"result": result, "removed": removed}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"result": result, "removed": removed},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"List filter failed: {e}")
             self.error_message = str(e)
@@ -803,7 +848,7 @@ class ListMapNode(BaseNode):
                 # First, optionally extract property
                 val = item
                 if key_path:
-                    for part in key_path.split('.'):
+                    for part in key_path.split("."):
                         if isinstance(val, dict) and part in val:
                             val = val[part]
                         else:
@@ -871,7 +916,7 @@ class ListReduceNode(BaseNode):
                 values = []
                 for item in lst:
                     val = item
-                    for part in key_path.split('.'):
+                    for part in key_path.split("."):
                         if isinstance(val, dict) and part in val:
                             val = val[part]
                         else:
@@ -883,7 +928,13 @@ class ListReduceNode(BaseNode):
                 values = [v for v in lst if v is not None]
 
             if len(values) == 0:
-                result = initial if initial is not None else (0 if operation in ["sum", "product", "avg", "count"] else None)
+                result = (
+                    initial
+                    if initial is not None
+                    else (
+                        0 if operation in ["sum", "product", "avg", "count"] else None
+                    )
+                )
             elif operation == "sum":
                 result = sum(float(v) for v in values)
             elif operation == "product":
@@ -957,6 +1008,7 @@ class ListFlattenNode(BaseNode):
 
 # ==================== DICTIONARY OPERATIONS ====================
 
+
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
 
@@ -981,7 +1033,11 @@ class DictGetNode(BaseNode):
 
             self.set_output_value("value", value)
             self.set_output_value("found", found)
-            return {"success": True, "data": {"value": value, "found": found}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"value": value, "found": found},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict get failed: {e}")
             self.error_message = str(e)
@@ -1042,7 +1098,11 @@ class DictRemoveNode(BaseNode):
 
             self.set_output_value("result", result)
             self.set_output_value("removed_value", removed_value)
-            return {"success": True, "data": {"result": result, "removed_value": removed_value}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"result": result, "removed_value": removed_value},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict remove failed: {e}")
             self.error_message = str(e)
@@ -1097,7 +1157,11 @@ class DictKeysNode(BaseNode):
 
             self.set_output_value("keys", keys)
             self.set_output_value("count", count)
-            return {"success": True, "data": {"keys": keys, "count": count}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"keys": keys, "count": count},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict keys failed: {e}")
             self.error_message = str(e)
@@ -1124,7 +1188,11 @@ class DictValuesNode(BaseNode):
 
             self.set_output_value("values", values)
             self.set_output_value("count", count)
-            return {"success": True, "data": {"values": values, "count": count}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"values": values, "count": count},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict values failed: {e}")
             self.error_message = str(e)
@@ -1226,11 +1294,15 @@ class DictToJsonNode(BaseNode):
                 indent=indent,
                 sort_keys=sort_keys,
                 ensure_ascii=ensure_ascii,
-                default=str
+                default=str,
             )
 
             self.set_output_value("json_string", json_string)
-            return {"success": True, "data": {"json_string": json_string}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"json_string": json_string},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict to JSON failed: {e}")
             self.error_message = str(e)
@@ -1258,7 +1330,11 @@ class DictItemsNode(BaseNode):
 
             self.set_output_value("items", items)
             self.set_output_value("count", count)
-            return {"success": True, "data": {"items": items, "count": count}, "next_nodes": []}
+            return {
+                "success": True,
+                "data": {"items": items, "count": count},
+                "next_nodes": [],
+            }
         except Exception as e:
             logger.error(f"Dict items failed: {e}")
             self.error_message = str(e)

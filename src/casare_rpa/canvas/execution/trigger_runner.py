@@ -5,8 +5,7 @@ Manages trigger lifecycle in the Canvas application.
 Starts/stops triggers and handles trigger events by running workflows.
 """
 
-import asyncio
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from loguru import logger
 
@@ -64,12 +63,12 @@ class CanvasTriggerRunner:
         registry = get_trigger_registry()
 
         for trigger_config in triggers:
-            if not trigger_config.get('enabled', True):
+            if not trigger_config.get("enabled", True):
                 logger.debug(f"Skipping disabled trigger: {trigger_config.get('name')}")
                 continue
 
             try:
-                trigger_type_str = trigger_config.get('type', 'manual')
+                trigger_type_str = trigger_config.get("type", "manual")
                 trigger_type = TriggerType(trigger_type_str)
 
                 # Get the trigger class from registry
@@ -79,20 +78,20 @@ class CanvasTriggerRunner:
                     continue
 
                 # Create config - merge max_runs into nested config if present
-                nested_config = trigger_config.get('config', {}).copy()
-                if 'max_runs' in trigger_config:
-                    nested_config['max_runs'] = trigger_config['max_runs']
+                nested_config = trigger_config.get("config", {}).copy()
+                if "max_runs" in trigger_config:
+                    nested_config["max_runs"] = trigger_config["max_runs"]
 
                 config = BaseTriggerConfig(
-                    id=trigger_config.get('id', ''),
-                    name=trigger_config.get('name', 'Unnamed'),
+                    id=trigger_config.get("id", ""),
+                    name=trigger_config.get("name", "Unnamed"),
                     trigger_type=trigger_type_str,
-                    scenario_id=trigger_config.get('scenario_id', ''),
-                    workflow_id=trigger_config.get('workflow_id', ''),
+                    scenario_id=trigger_config.get("scenario_id", ""),
+                    workflow_id=trigger_config.get("workflow_id", ""),
                     enabled=True,
-                    priority=trigger_config.get('priority', 1),
-                    cooldown_seconds=trigger_config.get('cooldown_seconds', 0),
-                    config=nested_config
+                    priority=trigger_config.get("priority", 1),
+                    cooldown_seconds=trigger_config.get("cooldown_seconds", 0),
+                    config=nested_config,
                 )
 
                 # Create trigger instance with callback
@@ -140,7 +139,6 @@ class CanvasTriggerRunner:
         Args:
             event: The trigger event
         """
-        from datetime import datetime
         logger.info(f"Trigger fired: {event.trigger_id} ({event.trigger_type})")
         logger.debug(f"Trigger payload: {event.payload}")
 
@@ -150,7 +148,7 @@ class CanvasTriggerRunner:
 
             # Run the workflow
             # We need to do this on the main thread via Qt signal
-            from PySide6.QtCore import QMetaObject, Qt, Q_ARG
+            from PySide6.QtCore import QMetaObject, Qt
 
             # Store the trigger payload for the workflow
             self._last_trigger_event = event
@@ -163,7 +161,7 @@ class CanvasTriggerRunner:
                 QMetaObject.invokeMethod(
                     main_window,
                     "trigger_workflow_run",
-                    Qt.ConnectionType.QueuedConnection
+                    Qt.ConnectionType.QueuedConnection,
                 )
 
         except Exception as e:
@@ -199,14 +197,16 @@ class CanvasTriggerRunner:
             triggers = triggers_tab.get_triggers()
             current_count = 0
             for trigger in triggers:
-                if trigger.get('id') == trigger_id:
-                    current_count = trigger.get('trigger_count', 0)
+                if trigger.get("id") == trigger_id:
+                    current_count = trigger.get("trigger_count", 0)
                     break
 
             new_count = current_count + 1
             timestamp = datetime.now().isoformat()
 
-            logger.debug(f"Scheduling trigger stats update: {trigger_id} -> count={new_count}")
+            logger.debug(
+                f"Scheduling trigger stats update: {trigger_id} -> count={new_count}"
+            )
 
             # Store values to avoid closure issues
             _trigger_id = trigger_id
@@ -215,7 +215,9 @@ class CanvasTriggerRunner:
             _tab = triggers_tab
 
             def do_update():
-                logger.debug(f"Executing trigger stats update: {_trigger_id} -> {_new_count}")
+                logger.debug(
+                    f"Executing trigger stats update: {_trigger_id} -> {_new_count}"
+                )
                 _tab.update_trigger_stats(_trigger_id, _new_count, _timestamp)
 
             # Update the UI on the main thread using QTimer.singleShot
@@ -226,7 +228,7 @@ class CanvasTriggerRunner:
 
     def get_last_trigger_event(self) -> Optional[TriggerEvent]:
         """Get the last trigger event (for injecting into workflow variables)."""
-        return getattr(self, '_last_trigger_event', None)
+        return getattr(self, "_last_trigger_event", None)
 
     def clear_last_trigger_event(self) -> None:
         """Clear the last trigger event."""

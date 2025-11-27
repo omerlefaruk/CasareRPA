@@ -1,6 +1,10 @@
 """
 CasareRPA - Execution Context
-Manages runtime state, variables, and shared resources during workflow execution.
+Refactored to use domain ExecutionState + infrastructure BrowserResourceManager.
+
+Delegates to:
+- ExecutionState (domain) for variables and execution tracking
+- BrowserResourceManager (infrastructure) for Playwright resources
 """
 
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
@@ -9,6 +13,8 @@ from loguru import logger
 from playwright.async_api import Browser, BrowserContext, Page
 
 from .types import ExecutionMode, NodeId
+from ..domain.entities.execution_state import ExecutionState
+from ..infrastructure.resources.browser_resource_manager import BrowserResourceManager
 
 if TYPE_CHECKING:
     from ..project.project_context import ProjectContext
@@ -16,8 +22,15 @@ if TYPE_CHECKING:
 
 class ExecutionContext:
     """
-    Runtime context for workflow execution.
-    Stores variables, shared resources, and execution state.
+    Execution context composing domain state and infrastructure resources.
+
+    This class serves as a facade that delegates to:
+    - ExecutionState (domain) for variables, execution flow, and business logic
+    - BrowserResourceManager (infrastructure) for Playwright browser/page management
+    - Desktop context for Windows desktop automation (lazy-initialized)
+
+    Design Pattern: Composition over Inheritance
+    This allows clear separation of concerns while maintaining backward compatibility.
     """
 
     def __init__(
@@ -36,33 +49,23 @@ class ExecutionContext:
             initial_variables: Optional dict of variables to initialize (from Variables Tab)
             project_context: Optional project context for project-scoped resources
         """
-        self.workflow_name = workflow_name
-        self.mode = mode
-        self.started_at = datetime.now()
-        self.completed_at: Optional[datetime] = None
+        # Domain state (pure business logic)
+        self._state = ExecutionState(
+            workflow_name=workflow_name,
+            mode=mode,
+            initial_variables=initial_variables,
+            project_context=project_context,
+        )
 
-        # Store project context for credential resolution
-        self._project_context = project_context
+        # Infrastructure resources (Playwright)
+        self._resources = BrowserResourceManager()
 
-        # Variable storage - build hierarchy from project context + initial variables
-        self.variables: Dict[str, Any] = self._build_variable_hierarchy(initial_variables)
-        if self.variables:
-            logger.info(f"Initialized with {len(self.variables)} variables: {list(self.variables.keys())}")
-
-        # Shared resources (Playwright instances)
-        self.browser: Optional[Browser] = None
-        self.browser_contexts: List[BrowserContext] = []  # Track all browser contexts
-        self.pages: Dict[str, Page] = {}  # Named pages for multiple tabs
-        self.active_page: Optional[Page] = None
-
-        # Execution state
-        self.current_node_id: Optional[NodeId] = None
-        self.execution_path: list[NodeId] = []  # Track execution order
-        self.errors: list[tuple[NodeId, str]] = []  # Track errors
-        self.stopped: bool = False
-
-        # Desktop automation context (lazy-initialized)
+        # Desktop context (lazy-initialized, not managed by domain or infrastructure layers)
         self.desktop_context: Any = None
+
+    # ========================================================================
+    # VARIABLE MANAGEMENT - Delegate to ExecutionState (domain)
+    # ========================================================================
 
     def set_variable(self, name: str, value: Any) -> None:
         """
@@ -72,8 +75,7 @@ class ExecutionContext:
             name: Variable name
             value: Variable value
         """
-        self.variables[name] = value
-        logger.debug(f"Variable set: {name} = {value}")
+        self._state.set_variable(name, value)
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """
@@ -86,75 +88,35 @@ class ExecutionContext:
         Returns:
             Variable value or default
         """
-        return self.variables.get(name, default)
+        return self._state.get_variable(name, default)
 
     def has_variable(self, name: str) -> bool:
         """Check if a variable exists."""
-        return name in self.variables
+        return self._state.has_variable(name)
 
     def delete_variable(self, name: str) -> None:
         """Delete a variable from the context."""
-        if name in self.variables:
-            del self.variables[name]
-            logger.debug(f"Variable deleted: {name}")
+        self._state.delete_variable(name)
 
     def clear_variables(self) -> None:
         """Clear all variables."""
-        self.variables.clear()
-        logger.debug("All variables cleared")
+        self._state.clear_variables()
 
-    def _build_variable_hierarchy(
-        self,
-        runtime_vars: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def resolve_value(self, value: Any) -> Any:
         """
-        Build variables dict with proper scoping hierarchy.
-
-        Priority (highest to lowest):
-        - Runtime variables (from Variables Tab)
-        - Scenario variable values
-        - Project variable defaults
-        - Global variable defaults
+        Resolve {{variable_name}} patterns in a value.
 
         Args:
-            runtime_vars: Variables from the Variables Tab
+            value: The value to resolve (only strings are processed)
 
         Returns:
-            Merged dictionary of variable name -> value
+            The resolved value with all {{variable}} patterns replaced.
         """
-        merged: Dict[str, Any] = {}
-
-        if self._project_context:
-            # Add global variables (lowest priority)
-            merged.update(self._project_context.get_global_variables())
-
-            # Add project variables (overrides global)
-            merged.update(self._project_context.get_project_variables())
-
-            # Add scenario variables (overrides project)
-            merged.update(self._project_context.get_scenario_variables())
-
-        # Add runtime variables (highest priority)
-        if runtime_vars:
-            merged.update(runtime_vars)
-
-        return merged
-
-    @property
-    def project_context(self) -> Optional["ProjectContext"]:
-        """Get the project context (if any)."""
-        return self._project_context
-
-    @property
-    def has_project_context(self) -> bool:
-        """Check if a project context is available."""
-        return self._project_context is not None
+        return self._state.resolve_value(value)
 
     def resolve_credential_path(self, alias: str) -> Optional[str]:
         """
         Resolve a credential alias to its Vault path.
-
-        Uses the project context's credential binding resolution.
 
         Args:
             alias: Credential alias to resolve
@@ -162,41 +124,61 @@ class ExecutionContext:
         Returns:
             Vault path if found, None otherwise
         """
-        if self._project_context:
-            return self._project_context.resolve_credential_path(alias)
-        return None
+        return self._state.resolve_credential_path(alias)
 
-    def resolve_value(self, value: Any) -> Any:
+    # ========================================================================
+    # EXECUTION FLOW - Delegate to ExecutionState (domain)
+    # ========================================================================
+
+    def set_current_node(self, node_id: NodeId) -> None:
+        """Set the currently executing node."""
+        self._state.set_current_node(node_id)
+
+    def add_error(self, node_id: NodeId, error_message: str) -> None:
+        """Record an error during execution."""
+        self._state.add_error(node_id, error_message)
+
+    def stop_execution(self) -> None:
+        """Signal that execution should stop."""
+        self._state.stop()
+
+    def is_stopped(self) -> bool:
+        """Check if execution has been stopped."""
+        return self._state.is_stopped()
+
+    def mark_completed(self) -> None:
+        """Mark the execution as completed."""
+        self._state.mark_completed()
+
+    def get_execution_summary(self) -> Dict[str, Any]:
         """
-        Resolve {{variable_name}} patterns in a value.
-
-        This enables UiPath/Power Automate style variable substitution
-        where users can reference global variables in node properties
-        using the {{variable_name}} syntax.
-
-        Args:
-            value: The value to resolve (only strings are processed)
+        Get a summary of the execution.
 
         Returns:
-            The resolved value with all {{variable}} patterns replaced.
-            Non-string values are returned unchanged.
-
-        Examples:
-            >>> context.set_variable("website", "google.com")
-            >>> context.resolve_value("https://{{website}}")
-            "https://google.com"
+            Dictionary with execution statistics
         """
-        from .variable_resolver import resolve_variables
-        return resolve_variables(value, self.variables)
+        return self._state.get_execution_summary()
+
+    # ========================================================================
+    # BROWSER MANAGEMENT - Delegate to BrowserResourceManager (infrastructure)
+    # ========================================================================
 
     def set_browser(self, browser: Browser) -> None:
         """Set the active browser instance."""
-        self.browser = browser
-        logger.debug("Browser instance set in context")
+        self._resources.set_browser(browser)
 
     def get_browser(self) -> Optional[Browser]:
         """Get the active browser instance."""
-        return self.browser
+        return self._resources.get_browser()
+
+    def add_browser_context(self, context: BrowserContext) -> None:
+        """
+        Track a browser context for cleanup.
+
+        Args:
+            context: Playwright browser context object
+        """
+        self._resources.add_browser_context(context)
 
     def set_active_page(self, page: Page, name: str = "default") -> None:
         """
@@ -206,102 +188,129 @@ class ExecutionContext:
             page: Playwright page object
             name: Page identifier (for multiple tabs)
         """
-        self.active_page = page
-        self.pages[name] = page
-        logger.debug(f"Active page set: {name}")
+        self._resources.set_active_page(page, name)
 
     def get_active_page(self) -> Optional[Page]:
         """Get the currently active page."""
-        return self.active_page
+        return self._resources.get_active_page()
 
     def get_page(self, name: str = "default") -> Optional[Page]:
         """Get a page by name."""
-        return self.pages.get(name)
-    
+        return self._resources.get_page(name)
+
     def add_page(self, page: Page, name: str) -> None:
         """
         Add a page to the context.
-        
+
         Args:
             page: Playwright page object
             name: Page identifier
         """
-        self.pages[name] = page
-        logger.debug(f"Page added: {name}")
-    
-    def clear_pages(self) -> None:
-        """Clear all pages from the context."""
-        self.pages.clear()
-        self.active_page = None
-        logger.debug("All pages cleared")
-
-    def add_browser_context(self, context: BrowserContext) -> None:
-        """
-        Track a browser context for cleanup.
-
-        Args:
-            context: Playwright browser context object
-        """
-        self.browser_contexts.append(context)
-        logger.debug(f"Browser context added (total: {len(self.browser_contexts)})")
+        self._resources.add_page(page, name)
 
     def close_page(self, name: str) -> None:
         """Close and remove a named page."""
-        if name in self.pages:
-            del self.pages[name]
-            if self.active_page == self.pages.get(name):
-                self.active_page = None
-            logger.debug(f"Page closed: {name}")
+        self._resources.close_page(name)
 
-    def set_current_node(self, node_id: NodeId) -> None:
-        """Set the currently executing node."""
-        self.current_node_id = node_id
-        self.execution_path.append(node_id)
-        logger.debug(f"Executing node: {node_id}")
+    def clear_pages(self) -> None:
+        """Clear all pages from the context."""
+        self._resources.clear_pages()
 
-    def add_error(self, node_id: NodeId, error_message: str) -> None:
-        """Record an error during execution."""
-        self.errors.append((node_id, error_message))
-        logger.error(f"Node {node_id} error: {error_message}")
+    # ========================================================================
+    # PROPERTY DELEGATION - Expose internal state for backward compatibility
+    # ========================================================================
 
-    def stop_execution(self) -> None:
-        """Signal that execution should stop."""
-        self.stopped = True
-        logger.warning("Execution stop requested")
+    @property
+    def workflow_name(self) -> str:
+        """Get workflow name."""
+        return self._state.workflow_name
 
-    def is_stopped(self) -> bool:
-        """Check if execution has been stopped."""
-        return self.stopped
+    @property
+    def mode(self) -> ExecutionMode:
+        """Get execution mode."""
+        return self._state.mode
 
-    def mark_completed(self) -> None:
-        """Mark the execution as completed."""
-        self.completed_at = datetime.now()
-        duration = (self.completed_at - self.started_at).total_seconds()
-        logger.info(f"Workflow completed in {duration:.2f} seconds")
+    @property
+    def started_at(self) -> datetime:
+        """Get execution start time."""
+        return self._state.started_at
 
-    def get_execution_summary(self) -> Dict[str, Any]:
-        """
-        Get a summary of the execution.
+    @property
+    def completed_at(self) -> Optional[datetime]:
+        """Get execution completion time."""
+        return self._state.completed_at
 
-        Returns:
-            Dictionary with execution statistics
-        """
-        duration = None
-        if self.completed_at:
-            duration = (self.completed_at - self.started_at).total_seconds()
+    @property
+    def variables(self) -> Dict[str, Any]:
+        """Get variables dict (direct access for backward compatibility)."""
+        return self._state.variables
 
-        return {
-            "workflow_name": self.workflow_name,
-            "mode": self.mode.name,
-            "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "duration_seconds": duration,
-            "nodes_executed": len(self.execution_path),
-            "execution_path": self.execution_path,
-            "errors": self.errors,
-            "stopped": self.stopped,
-            "variables_count": len(self.variables),
-        }
+    @property
+    def current_node_id(self) -> Optional[NodeId]:
+        """Get current node ID."""
+        return self._state.current_node_id
+
+    @property
+    def execution_path(self) -> List[NodeId]:
+        """Get execution path."""
+        return self._state.execution_path
+
+    @property
+    def errors(self) -> List[tuple[NodeId, str]]:
+        """Get errors list."""
+        return self._state.errors
+
+    @property
+    def stopped(self) -> bool:
+        """Check if execution is stopped."""
+        return self._state.stopped
+
+    @property
+    def browser(self) -> Optional[Browser]:
+        """Get browser instance."""
+        return self._resources.browser
+
+    @browser.setter
+    def browser(self, value: Optional[Browser]) -> None:
+        """Set browser instance."""
+        if value is None:
+            self._resources.browser = None
+        else:
+            self._resources.set_browser(value)
+
+    @property
+    def browser_contexts(self) -> List[BrowserContext]:
+        """Get browser contexts list."""
+        return self._resources.browser_contexts
+
+    @property
+    def pages(self) -> Dict[str, Page]:
+        """Get pages dict."""
+        return self._resources.pages
+
+    @property
+    def active_page(self) -> Optional[Page]:
+        """Get active page."""
+        return self._resources.active_page
+
+    @active_page.setter
+    def active_page(self, value: Optional[Page]) -> None:
+        """Set active page."""
+        self._resources.active_page = value
+
+    @property
+    def project_context(self) -> Optional["ProjectContext"]:
+        """Get the project context (if any)."""
+        return self._state.project_context
+
+    @property
+    def has_project_context(self) -> bool:
+        """Check if a project context is available."""
+        return self._state.has_project_context
+
+    # ========================================================================
+    # CLEANUP - Coordinate domain and infrastructure cleanup
+    # ========================================================================
 
     async def cleanup(self) -> None:
         """
@@ -322,45 +331,21 @@ class ExecutionContext:
             finally:
                 self.desktop_context = None
 
-        # Close all pages
-        for name, page in list(self.pages.items()):
-            try:
-                await page.close()
-                logger.debug(f"Page '{name}' closed")
-            except Exception as e:
-                logger.warning(f"Error closing page '{name}': {e}")
-
-        self.pages.clear()
-        self.active_page = None
-
-        # Close all browser contexts
-        for i, context in enumerate(self.browser_contexts):
-            try:
-                await context.close()
-                logger.debug(f"Browser context {i} closed")
-            except Exception as e:
-                logger.warning(f"Error closing browser context {i}: {e}")
-
-        self.browser_contexts.clear()
-
-        # Close browser
-        if self.browser:
-            try:
-                await self.browser.close()
-                logger.debug("Browser closed")
-            except Exception as e:
-                logger.warning(f"Error closing browser: {e}")
-            self.browser = None
+        # Clean up Playwright resources (infrastructure)
+        await self._resources.cleanup()
 
     def __repr__(self) -> str:
         """String representation."""
         return (
-            f"ExecutionContext(workflow='{self.workflow_name}', "
-            f"mode={self.mode.name}, "
-            f"nodes_executed={len(self.execution_path)})"
+            f"ExecutionContext(workflow='{self._state.workflow_name}', "
+            f"mode={self._state.mode.name}, "
+            f"nodes_executed={len(self._state.execution_path)})"
         )
 
-    # Async context manager (preferred)
+    # ========================================================================
+    # ASYNC CONTEXT MANAGER (preferred)
+    # ========================================================================
+
     async def __aenter__(self) -> "ExecutionContext":
         """Async context manager entry."""
         return self
@@ -373,8 +358,10 @@ class ExecutionContext:
             logger.error(f"Error during async context cleanup: {e}")
         return False  # Don't suppress exceptions
 
-    # Sync context manager - DEPRECATED
-    # This is kept for backwards compatibility but should not be used
+    # ========================================================================
+    # SYNC CONTEXT MANAGER - DEPRECATED
+    # ========================================================================
+
     def __enter__(self) -> "ExecutionContext":
         """
         DEPRECATED: Sync context manager entry.

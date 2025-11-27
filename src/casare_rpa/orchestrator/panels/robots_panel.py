@@ -2,20 +2,30 @@
 Robots panel - Shows robot workers with status and utilization.
 Deadline-style worker status display.
 """
+
 from typing import Optional, List, Dict
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableView, QHeaderView,
-    QLabel, QComboBox, QPushButton, QFrame, QAbstractItemView,
-    QMenu, QProgressBar
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableView,
+    QLabel,
+    QComboBox,
+    QFrame,
+    QAbstractItemView,
+    QMenu,
+    QProgressBar,
 )
 from PySide6.QtCore import (
-    Qt, Signal, QAbstractTableModel, QModelIndex,
-    QSortFilterProxyModel
+    Qt,
+    Signal,
+    QAbstractTableModel,
+    QModelIndex,
+    QSortFilterProxyModel,
 )
-from PySide6.QtGui import QColor
 
 from ..theme import THEME, get_status_color
-from ..delegates import StatusDelegate, RobotStatusDelegate, IconTextDelegate
+from ..delegates import RobotStatusDelegate, IconTextDelegate
 
 
 class RobotsTableModel(QAbstractTableModel):
@@ -64,7 +74,7 @@ class RobotsTableModel(QAbstractTableModel):
                 return int((current / max_jobs * 100) if max_jobs > 0 else 0)
             elif col_key == "last_seen":
                 last_seen = robot.get("last_seen")
-                if last_seen and hasattr(last_seen, 'strftime'):
+                if last_seen and hasattr(last_seen, "strftime"):
                     return last_seen.strftime("%H:%M:%S")
                 return "-"
 
@@ -72,9 +82,15 @@ class RobotsTableModel(QAbstractTableModel):
             if col_key == "status":
                 return {
                     "status": robot.get("status", "offline"),
-                    "utilization": int((robot.get("current_jobs", 0) /
-                                       robot.get("max_concurrent_jobs", 1) * 100)
-                                      if robot.get("max_concurrent_jobs", 1) > 0 else 0)
+                    "utilization": int(
+                        (
+                            robot.get("current_jobs", 0)
+                            / robot.get("max_concurrent_jobs", 1)
+                            * 100
+                        )
+                        if robot.get("max_concurrent_jobs", 1) > 0
+                        else 0
+                    ),
                 }
             return robot
 
@@ -84,8 +100,16 @@ class RobotsTableModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole):
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ):
+        if (
+            orientation == Qt.Orientation.Horizontal
+            and role == Qt.ItemDataRole.DisplayRole
+        ):
             return self.COLUMNS[section][1]
         return None
 
@@ -149,7 +173,9 @@ class RobotCard(QFrame):
 
         # Name
         name = QLabel(self._robot.get("name", "Unknown"))
-        name.setStyleSheet(f"color: {THEME.text_primary}; font-weight: 600; font-size: 12px;")
+        name.setStyleSheet(
+            f"color: {THEME.text_primary}; font-weight: 600; font-size: 12px;"
+        )
         header.addWidget(name)
 
         header.addStretch()
@@ -205,7 +231,9 @@ class RobotCard(QFrame):
 
         # Status text
         status_text = QLabel(status.capitalize())
-        status_text.setStyleSheet(f"color: {status_color}; font-size: 11px; font-weight: 500;")
+        status_text.setStyleSheet(
+            f"color: {status_color}; font-size: 11px; font-weight: 500;"
+        )
         capacity_row.addWidget(status_text)
 
         layout.addLayout(capacity_row)
@@ -251,7 +279,9 @@ class RobotsPanel(QWidget):
         """)
 
         title = QLabel("Robots")
-        title.setStyleSheet(f"color: {THEME.text_primary}; font-weight: 600; font-size: 12px;")
+        title.setStyleSheet(
+            f"color: {THEME.text_primary}; font-weight: 600; font-size: 12px;"
+        )
         toolbar_layout.addWidget(title)
 
         toolbar_layout.addSpacing(20)
@@ -319,7 +349,9 @@ class RobotsPanel(QWidget):
         self._busy_label = self._create_stat_label("Busy", "0", THEME.status_busy)
         summary_layout.addWidget(self._busy_label)
 
-        self._offline_label = self._create_stat_label("Offline", "0", THEME.status_offline)
+        self._offline_label = self._create_stat_label(
+            "Offline", "0", THEME.status_offline
+        )
         summary_layout.addWidget(self._offline_label)
 
         self._error_label = self._create_stat_label("Error", "0", THEME.status_error)
@@ -394,7 +426,9 @@ class RobotsPanel(QWidget):
 
         val = QLabel(value)
         val.setObjectName("value")
-        val.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;")
+        val.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;"
+        )
         layout.addWidget(val)
 
         return widget
@@ -441,10 +475,14 @@ class RobotsPanel(QWidget):
 
         if status == "online":
             disable_action = menu.addAction("Disable Robot")
-            disable_action.triggered.connect(lambda: self.robot_action.emit(robot_id, "disable"))
+            disable_action.triggered.connect(
+                lambda: self.robot_action.emit(robot_id, "disable")
+            )
         elif status == "offline":
             enable_action = menu.addAction("Enable Robot")
-            enable_action.triggered.connect(lambda: self.robot_action.emit(robot_id, "enable"))
+            enable_action.triggered.connect(
+                lambda: self.robot_action.emit(robot_id, "enable")
+            )
 
         menu.exec_(self._table.viewport().mapToGlobal(pos))
 

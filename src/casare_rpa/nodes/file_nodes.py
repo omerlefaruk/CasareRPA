@@ -13,12 +13,10 @@ SECURITY: All file operations are subject to path sandboxing.
 
 import csv
 import json
-import os
 import shutil
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
 
 from loguru import logger
 
@@ -29,6 +27,7 @@ from ..core.execution_context import ExecutionContext
 
 class PathSecurityError(Exception):
     """Raised when a path fails security validation."""
+
     pass
 
 
@@ -92,7 +91,10 @@ def validate_path_security(
     for blocked in _BLOCKED_PATHS:
         try:
             blocked_resolved = blocked.resolve()
-            if resolved_path == blocked_resolved or blocked_resolved in resolved_path.parents:
+            if (
+                resolved_path == blocked_resolved
+                or blocked_resolved in resolved_path.parents
+            ):
                 raise PathSecurityError(
                     f"Access to '{resolved_path}' is blocked for security reasons. "
                     f"This path is in a protected system directory."
@@ -117,13 +119,32 @@ def validate_path_security(
 
     # SECURITY: Check for special Windows device names
     stem = resolved_path.stem.upper()
-    windows_devices = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
-                       "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2",
-                       "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"]
+    windows_devices = [
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    ]
     if stem in windows_devices:
-        raise PathSecurityError(
-            f"Access to Windows device '{stem}' is not allowed."
-        )
+        raise PathSecurityError(f"Access to Windows device '{stem}' is not allowed.")
 
     # Log the operation for audit
     logger.debug(f"File {operation}: {resolved_path}")
@@ -235,16 +256,22 @@ class ReadFileNode(BaseNode):
             # Check file size against max_size limit
             size = path.stat().st_size
             if max_size > 0 and size > max_size:
-                raise ValueError(f"File size ({size} bytes) exceeds max_size limit ({max_size} bytes)")
+                raise ValueError(
+                    f"File size ({size} bytes) exceeds max_size limit ({max_size} bytes)"
+                )
 
-            logger.info(f"Reading file: {path} (binary={binary_mode}, encoding={encoding})")
+            logger.info(
+                f"Reading file: {path} (binary={binary_mode}, encoding={encoding})"
+            )
 
             if binary_mode:
                 with open(path, "rb") as f:
                     content = f.read()
             else:
                 # Use newline and errors options for text mode
-                with open(path, "r", encoding=encoding, errors=errors, newline=newline) as f:
+                with open(
+                    path, "r", encoding=encoding, errors=errors, newline=newline
+                ) as f:
                     content = f.read()
 
             self.set_output_value("content", content)
@@ -254,8 +281,13 @@ class ReadFileNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"content": content[:100] + "..." if len(str(content)) > 100 else content, "size": size},
-                "next_nodes": ["exec_out"]
+                "data": {
+                    "content": content[:100] + "..."
+                    if len(str(content)) > 100
+                    else content,
+                    "size": size,
+                },
+                "next_nodes": ["exec_out"],
             }
 
         except PathSecurityError as e:
@@ -367,7 +399,9 @@ class WriteFileNode(BaseNode):
                 with open(path, mode) as f:
                     bytes_written = f.write(content)
             else:
-                with open(path, mode, encoding=encoding, errors=errors, newline=newline) as f:
+                with open(
+                    path, mode, encoding=encoding, errors=errors, newline=newline
+                ) as f:
                     bytes_written = f.write(str(content) if content else "")
 
             self.set_output_value("file_path", str(path))
@@ -378,7 +412,7 @@ class WriteFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"file_path": str(path), "bytes_written": bytes_written},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except PathSecurityError as e:
@@ -464,7 +498,7 @@ class AppendFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"file_path": str(path), "bytes_written": bytes_written},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -528,8 +562,11 @@ class DeleteFileNode(BaseNode):
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
-                        "data": {"deleted_path": str(path), "message": "File did not exist"},
-                        "next_nodes": ["exec_out"]
+                        "data": {
+                            "deleted_path": str(path),
+                            "message": "File did not exist",
+                        },
+                        "next_nodes": ["exec_out"],
                     }
                 else:
                     raise FileNotFoundError(f"File not found: {file_path}")
@@ -545,7 +582,7 @@ class DeleteFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"deleted_path": str(path)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except PathSecurityError as e:
@@ -635,7 +672,7 @@ class CopyFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"dest_path": str(dest), "bytes_copied": bytes_copied},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -718,7 +755,7 @@ class MoveFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"dest_path": str(dest)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -783,7 +820,7 @@ class CreateDirectoryNode(BaseNode):
             return {
                 "success": True,
                 "data": {"dir_path": str(path)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -861,7 +898,7 @@ class ListFilesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(files), "files": files[:10]},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -950,7 +987,7 @@ class ListDirectoryNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(items), "items": items[:10]},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1023,8 +1060,12 @@ class FileExistsNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"exists": exists, "is_file": is_file, "is_directory": is_directory},
-                "next_nodes": ["exec_out"]
+                "data": {
+                    "exists": exists,
+                    "is_file": is_file,
+                    "is_directory": is_directory,
+                },
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1085,11 +1126,7 @@ class GetFileSizeNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {"size": size},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {"size": size}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -1154,8 +1191,12 @@ class GetFileInfoNode(BaseNode):
             stat = path.stat()
 
             self.set_output_value("size", stat.st_size)
-            self.set_output_value("created", datetime.fromtimestamp(stat.st_ctime).isoformat())
-            self.set_output_value("modified", datetime.fromtimestamp(stat.st_mtime).isoformat())
+            self.set_output_value(
+                "created", datetime.fromtimestamp(stat.st_ctime).isoformat()
+            )
+            self.set_output_value(
+                "modified", datetime.fromtimestamp(stat.st_mtime).isoformat()
+            )
             self.set_output_value("extension", path.suffix)
             self.set_output_value("name", path.name)
             self.set_output_value("parent", str(path.parent))
@@ -1167,9 +1208,9 @@ class GetFileInfoNode(BaseNode):
                 "data": {
                     "name": path.name,
                     "size": stat.st_size,
-                    "extension": path.suffix
+                    "extension": path.suffix,
                 },
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1265,7 +1306,9 @@ class ReadCSVNode(BaseNode):
             data = []
             headers = []
 
-            logger.info(f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})")
+            logger.info(
+                f"Reading CSV: {path} (delimiter='{delimiter}', has_header={has_header})"
+            )
 
             with open(path, "r", encoding=encoding, newline="") as f:
                 # Build CSV reader options
@@ -1312,12 +1355,14 @@ class ReadCSVNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            logger.info(f"CSV read successfully: {len(data)} rows, {len(headers)} columns")
+            logger.info(
+                f"CSV read successfully: {len(data)} rows, {len(headers)} columns"
+            )
 
             return {
                 "success": True,
                 "data": {"row_count": len(data), "headers": headers},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1392,7 +1437,9 @@ class WriteCSVNode(BaseNode):
                 if data and isinstance(data[0], dict):
                     # Dict data
                     fieldnames = headers or (list(data[0].keys()) if data else [])
-                    writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=delimiter)
+                    writer = csv.DictWriter(
+                        f, fieldnames=fieldnames, delimiter=delimiter
+                    )
                     if write_header:
                         writer.writeheader()
                     writer.writerows(data)
@@ -1413,7 +1460,7 @@ class WriteCSVNode(BaseNode):
             return {
                 "success": True,
                 "data": {"file_path": str(path), "row_count": row_count},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1480,7 +1527,7 @@ class ReadJSONFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"type": type(data).__name__},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except json.JSONDecodeError as e:
@@ -1558,7 +1605,7 @@ class WriteJSONFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"file_path": str(path)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1625,7 +1672,8 @@ class ZipFilesNode(BaseNode):
                 raise ValueError("files list is required")
 
             zip_compression = (
-                zipfile.ZIP_DEFLATED if compression == "ZIP_DEFLATED"
+                zipfile.ZIP_DEFLATED
+                if compression == "ZIP_DEFLATED"
                 else zipfile.ZIP_STORED
             )
 
@@ -1658,7 +1706,7 @@ class ZipFilesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"zip_path": str(path), "file_count": file_count},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1743,13 +1791,16 @@ class UnzipFilesNode(BaseNode):
                     target_path = validate_zip_entry(str(dest), member)
 
                     # Extract the file safely
-                    if member.endswith('/'):
+                    if member.endswith("/"):
                         # Directory entry
                         target_path.mkdir(parents=True, exist_ok=True)
                     else:
                         # File entry - ensure parent directory exists
                         target_path.parent.mkdir(parents=True, exist_ok=True)
-                        with zf.open(member) as source, open(target_path, 'wb') as target:
+                        with (
+                            zf.open(member) as source,
+                            open(target_path, "wb") as target,
+                        ):
                             target.write(source.read())
 
                     extracted_files.append(str(target_path))
@@ -1765,7 +1816,7 @@ class UnzipFilesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"extract_to": str(dest), "file_count": len(extracted_files)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except PathSecurityError as e:

@@ -11,8 +11,8 @@ Handles concurrent job execution with:
 import asyncio
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, Dict, Any, List, Callable
-from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, Callable
+from dataclasses import dataclass
 from loguru import logger
 import orjson
 
@@ -28,6 +28,7 @@ from .offline_queue import OfflineQueue
 
 class JobStatus(Enum):
     """Status of a job in the executor."""
+
     QUEUED = "queued"
     STARTING = "starting"
     RUNNING = "running"
@@ -39,6 +40,7 @@ class JobStatus(Enum):
 @dataclass
 class JobInfo:
     """Information about a job being executed."""
+
     job_id: str
     workflow_json: str
     status: JobStatus = JobStatus.QUEUED
@@ -54,7 +56,9 @@ class JobInfo:
             "job_id": self.job_id,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
             "error": self.error,
         }
 
@@ -250,9 +254,7 @@ class JobExecutor:
                 # Wait for available slot
                 async with self._semaphore:
                     # Start job execution
-                    job_info.task = asyncio.create_task(
-                        self._execute_job(job_info)
-                    )
+                    job_info.task = asyncio.create_task(self._execute_job(job_info))
                     self._running_jobs[job_info.job_id] = job_info
 
                     # Wait for job to complete (but don't block queue processing)
@@ -295,10 +297,12 @@ class JobExecutor:
 
             # Start progress reporting
             if self.progress_reporter:
-                await self.progress_reporter.start_job(job_id, workflow_name, total_nodes)
+                await self.progress_reporter.start_job(
+                    job_id, workflow_name, total_nodes
+                )
 
             # Setup cancellation checker
-            if self.progress_reporter and hasattr(self.progress_reporter, 'connection'):
+            if self.progress_reporter and hasattr(self.progress_reporter, "connection"):
                 checker = CancellationChecker(self.progress_reporter.connection)
                 checker.start(job_id)
                 self._cancellation_checkers[job_id] = checker
@@ -331,7 +335,7 @@ class JobExecutor:
 
                 if not success:
                     # Get error from runner context
-                    if hasattr(runner, 'context') and runner.context.errors:
+                    if hasattr(runner, "context") and runner.context.errors:
                         error_message = str(runner.context.errors[-1])
                     else:
                         error_message = "Workflow execution failed"
@@ -352,7 +356,8 @@ class JobExecutor:
 
             duration_ms = (
                 (job_info.completed_at - job_info.started_at).total_seconds() * 1000
-                if job_info.started_at else 0
+                if job_info.started_at
+                else 0
             )
 
             # End metrics tracking
@@ -372,7 +377,9 @@ class JobExecutor:
                 elif job_info.status == JobStatus.CANCELLED:
                     pass  # Already logged in cancel_job
                 else:
-                    self.audit.job_failed(job_id, error_message or "Unknown error", duration_ms)
+                    self.audit.job_failed(
+                        job_id, error_message or "Unknown error", duration_ms
+                    )
 
             # Stop cancellation checker
             checker = self._cancellation_checkers.pop(job_id, None)
@@ -444,11 +451,11 @@ class JobExecutor:
             return
 
         # Subscribe to node completion events
-        if hasattr(runner, 'event_bus') and runner.event_bus:
+        if hasattr(runner, "event_bus") and runner.event_bus:
             from casare_rpa.core.events import EventType
 
             def on_node_complete(event):
-                if event.node_id and hasattr(runner, 'context'):
+                if event.node_id and hasattr(runner, "context"):
                     asyncio.create_task(
                         self.checkpoint_manager.save_checkpoint(
                             event.node_id,
@@ -465,9 +472,7 @@ class JobExecutor:
             "running_count": self.running_count,
             "pending_count": self._pending_queue.qsize(),
             "is_at_capacity": self.is_at_capacity,
-            "running_jobs": [
-                job.to_dict() for job in self._running_jobs.values()
-            ],
+            "running_jobs": [job.to_dict() for job in self._running_jobs.values()],
         }
 
     def set_max_concurrent(self, max_jobs: int):

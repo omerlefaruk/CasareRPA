@@ -37,14 +37,13 @@ class RecentFilesManager:
         """Load recent files from disk."""
         try:
             if self.RECENT_FILES_PATH.exists():
-                with open(self.RECENT_FILES_PATH, 'r', encoding='utf-8') as f:
+                with open(self.RECENT_FILES_PATH, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     self._recent_files = data.get("files", [])
 
                 # Remove non-existent files
                 self._recent_files = [
-                    f for f in self._recent_files
-                    if Path(f["path"]).exists()
+                    f for f in self._recent_files if Path(f["path"]).exists()
                 ]
 
                 logger.debug(f"Loaded {len(self._recent_files)} recent files")
@@ -56,7 +55,7 @@ class RecentFilesManager:
         """Save recent files to disk."""
         try:
             CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-            with open(self.RECENT_FILES_PATH, 'w', encoding='utf-8') as f:
+            with open(self.RECENT_FILES_PATH, "w", encoding="utf-8") as f:
                 json.dump({"files": self._recent_files}, f, indent=2)
         except Exception as e:
             logger.warning(f"Could not save recent files: {e}")
@@ -71,20 +70,20 @@ class RecentFilesManager:
         path_str = str(file_path.absolute())
 
         # Remove if already exists
-        self._recent_files = [
-            f for f in self._recent_files
-            if f["path"] != path_str
-        ]
+        self._recent_files = [f for f in self._recent_files if f["path"] != path_str]
 
         # Add to front
-        self._recent_files.insert(0, {
-            "path": path_str,
-            "name": file_path.name,
-            "last_opened": datetime.now().isoformat()
-        })
+        self._recent_files.insert(
+            0,
+            {
+                "path": path_str,
+                "name": file_path.name,
+                "last_opened": datetime.now().isoformat(),
+            },
+        )
 
         # Trim to max
-        self._recent_files = self._recent_files[:self.MAX_RECENT_FILES]
+        self._recent_files = self._recent_files[: self.MAX_RECENT_FILES]
 
         self._save()
         logger.debug(f"Added to recent files: {file_path.name}")
@@ -97,10 +96,7 @@ class RecentFilesManager:
             List of dicts with 'path', 'name', 'last_opened' keys
         """
         # Filter out non-existent files
-        valid_files = [
-            f for f in self._recent_files
-            if Path(f["path"]).exists()
-        ]
+        valid_files = [f for f in self._recent_files if Path(f["path"]).exists()]
 
         if len(valid_files) != len(self._recent_files):
             self._recent_files = valid_files
@@ -121,10 +117,7 @@ class RecentFilesManager:
             file_path: Path to remove
         """
         path_str = str(file_path.absolute())
-        self._recent_files = [
-            f for f in self._recent_files
-            if f["path"] != path_str
-        ]
+        self._recent_files = [f for f in self._recent_files if f["path"] != path_str]
         self._save()
 
 

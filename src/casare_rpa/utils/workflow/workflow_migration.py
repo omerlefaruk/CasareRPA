@@ -14,7 +14,9 @@ from loguru import logger
 from .id_generator import generate_node_id, is_uuid_based_id
 
 
-def migrate_workflow_ids(workflow_data: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, str]]:
+def migrate_workflow_ids(
+    workflow_data: Dict[str, Any],
+) -> Tuple[Dict[str, Any], Dict[str, str]]:
     """
     Migrate legacy numeric IDs to UUID-based IDs in a workflow.
 
@@ -107,8 +109,7 @@ def needs_migration(workflow_data: Dict[str, Any]) -> bool:
 
 
 def remap_ids_for_import(
-    workflow_data: Dict[str, Any],
-    existing_ids: set
+    workflow_data: Dict[str, Any], existing_ids: set
 ) -> Tuple[Dict[str, Any], Dict[str, str]]:
     """
     Remap node IDs in a workflow to avoid conflicts with existing nodes.

@@ -57,16 +57,16 @@ class EmailTrigger(BaseTrigger):
     async def start(self) -> bool:
         """Start the email trigger."""
         config = self.config.config
-        provider = config.get('provider', 'imap')
+        provider = config.get("provider", "imap")
 
-        if provider == 'imap':
+        if provider == "imap":
             # Validate IMAP settings
-            if not config.get('server'):
+            if not config.get("server"):
                 self._error_message = "IMAP server is required"
                 self._status = TriggerStatus.ERROR
                 return False
 
-            if not config.get('username'):
+            if not config.get("username"):
                 self._error_message = "Username is required"
                 self._status = TriggerStatus.ERROR
                 return False
@@ -102,16 +102,16 @@ class EmailTrigger(BaseTrigger):
     async def _poll_loop(self) -> None:
         """Main polling loop."""
         config = self.config.config
-        poll_interval = config.get('poll_interval', 60)
-        provider = config.get('provider', 'imap')
+        poll_interval = config.get("poll_interval", 60)
+        provider = config.get("provider", "imap")
 
         while self._running:
             try:
-                if provider == 'imap':
+                if provider == "imap":
                     new_emails = await self._check_imap()
-                elif provider == 'graph':
+                elif provider == "graph":
                     new_emails = await self._check_graph()
-                elif provider == 'gmail':
+                elif provider == "gmail":
                     new_emails = await self._check_gmail()
                 else:
                     logger.error(f"Unknown email provider: {provider}")
@@ -131,11 +131,11 @@ class EmailTrigger(BaseTrigger):
     async def _check_imap(self) -> List[Dict[str, Any]]:
         """Check IMAP mailbox for new emails."""
         config = self.config.config
-        server = config.get('server', '')
-        port = config.get('port', 993)
-        username = config.get('username', '')
-        password = config.get('password', '')  # In production, use credential manager
-        folder = config.get('folder', 'INBOX')
+        server = config.get("server", "")
+        port = config.get("port", 993)
+        username = config.get("username", "")
+        password = config.get("password", "")  # In production, use credential manager
+        folder = config.get("folder", "INBOX")
 
         new_emails = []
 
@@ -146,7 +146,7 @@ class EmailTrigger(BaseTrigger):
             mail.select(folder)
 
             # Search for unseen emails
-            _, message_numbers = mail.search(None, 'UNSEEN')
+            _, message_numbers = mail.search(None, "UNSEEN")
 
             for num in message_numbers[0].split():
                 email_id = num.decode() if isinstance(num, bytes) else str(num)
@@ -155,7 +155,7 @@ class EmailTrigger(BaseTrigger):
                     continue
 
                 # Fetch email
-                _, msg_data = mail.fetch(num, '(RFC822)')
+                _, msg_data = mail.fetch(num, "(RFC822)")
                 raw_email = msg_data[0][1]
 
                 if isinstance(raw_email, bytes):
@@ -165,12 +165,12 @@ class EmailTrigger(BaseTrigger):
 
                 # Extract email data
                 email_data = {
-                    'id': email_id,
-                    'from_address': msg.get('From', ''),
-                    'to_address': msg.get('To', ''),
-                    'subject': msg.get('Subject', ''),
-                    'date': msg.get('Date', ''),
-                    'body': self._get_email_body(msg),
+                    "id": email_id,
+                    "from_address": msg.get("From", ""),
+                    "to_address": msg.get("To", ""),
+                    "subject": msg.get("Subject", ""),
+                    "date": msg.get("Date", ""),
+                    "body": self._get_email_body(msg),
                 }
 
                 new_emails.append(email_data)
@@ -202,15 +202,17 @@ class EmailTrigger(BaseTrigger):
         if msg.is_multipart():
             for part in msg.walk():
                 content_type = part.get_content_type()
-                if content_type == 'text/plain':
+                if content_type == "text/plain":
                     try:
-                        body = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                        body = part.get_payload(decode=True).decode(
+                            "utf-8", errors="replace"
+                        )
                         break
                     except Exception:
                         pass
         else:
             try:
-                body = msg.get_payload(decode=True).decode('utf-8', errors='replace')
+                body = msg.get_payload(decode=True).decode("utf-8", errors="replace")
             except Exception:
                 body = str(msg.get_payload())
 
@@ -221,16 +223,16 @@ class EmailTrigger(BaseTrigger):
         config = self.config.config
 
         # Check from filter
-        from_filter = config.get('from_filter', '')
+        from_filter = config.get("from_filter", "")
         if from_filter:
-            from_addr = email_data.get('from_address', '')
+            from_addr = email_data.get("from_address", "")
             if not re.search(from_filter, from_addr, re.IGNORECASE):
                 return False
 
         # Check subject filter
-        subject_filter = config.get('subject_filter', '')
+        subject_filter = config.get("subject_filter", "")
         if subject_filter:
-            subject = email_data.get('subject', '')
+            subject = email_data.get("subject", "")
             if not re.search(subject_filter, subject, re.IGNORECASE):
                 return False
 
@@ -239,18 +241,18 @@ class EmailTrigger(BaseTrigger):
     async def _process_email(self, email_data: Dict[str, Any]) -> None:
         """Process a matching email and emit trigger."""
         payload = {
-            "email_id": email_data.get('id', ''),
-            "from_address": email_data.get('from_address', ''),
-            "to_address": email_data.get('to_address', ''),
-            "subject": email_data.get('subject', ''),
-            "body": email_data.get('body', ''),
-            "received_at": email_data.get('date', datetime.utcnow().isoformat()),
+            "email_id": email_data.get("id", ""),
+            "from_address": email_data.get("from_address", ""),
+            "to_address": email_data.get("to_address", ""),
+            "subject": email_data.get("subject", ""),
+            "body": email_data.get("body", ""),
+            "received_at": email_data.get("date", datetime.utcnow().isoformat()),
         }
 
         metadata = {
             "source": "email",
-            "provider": self.config.config.get('provider', 'imap'),
-            "folder": self.config.config.get('folder', 'INBOX'),
+            "provider": self.config.config.get("provider", "imap"),
+            "folder": self.config.config.get("folder", "INBOX"),
         }
 
         await self.emit(payload, metadata)
@@ -259,18 +261,18 @@ class EmailTrigger(BaseTrigger):
         """Validate email trigger configuration."""
         config = self.config.config
 
-        provider = config.get('provider', 'imap')
-        valid_providers = ['imap', 'graph', 'gmail']
+        provider = config.get("provider", "imap")
+        valid_providers = ["imap", "graph", "gmail"]
         if provider not in valid_providers:
             return False, f"Invalid provider. Must be one of: {valid_providers}"
 
-        if provider == 'imap':
-            if not config.get('server'):
+        if provider == "imap":
+            if not config.get("server"):
                 return False, "IMAP server is required"
-            if not config.get('username'):
+            if not config.get("username"):
                 return False, "Username is required"
 
-        poll_interval = config.get('poll_interval', 60)
+        poll_interval = config.get("poll_interval", 60)
         if poll_interval < 10:
             return False, "poll_interval must be at least 10 seconds"
 
@@ -284,7 +286,12 @@ class EmailTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "provider": {
                     "type": "string",

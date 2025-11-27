@@ -4,8 +4,7 @@ Variables Tab for the Bottom Panel.
 Provides global workflow variable management with UiPath-style inline editing.
 """
 
-from typing import Optional, Dict, Any, List
-from datetime import datetime
+from typing import Optional, Dict, Any
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -16,17 +15,13 @@ from PySide6.QtWidgets import (
     QPushButton,
     QHeaderView,
     QMenu,
-    QMessageBox,
     QLabel,
     QAbstractItemView,
     QComboBox,
-    QLineEdit,
-    QCheckBox,
     QStyledItemDelegate,
-    QStyleOptionViewItem,
 )
-from PySide6.QtCore import Qt, Signal, QModelIndex, QTimer
-from PySide6.QtGui import QColor, QBrush, QAction, QFont
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QColor, QBrush, QAction
 from loguru import logger
 
 
@@ -154,7 +149,9 @@ class VariablesTab(QWidget):
         self._btn_auto_refresh = QPushButton("Auto")
         self._btn_auto_refresh.setFixedSize(30, 14)
         self._btn_auto_refresh.setCheckable(True)
-        self._btn_auto_refresh.setToolTip("Automatically refresh variables during execution")
+        self._btn_auto_refresh.setToolTip(
+            "Automatically refresh variables during execution"
+        )
         self._btn_auto_refresh.toggled.connect(self._on_auto_refresh_toggled)
         runtime_layout.addWidget(self._btn_auto_refresh)
 
@@ -164,9 +161,9 @@ class VariablesTab(QWidget):
         # Variables table
         self._table = QTableWidget()
         self._table.setColumnCount(5)
-        self._table.setHorizontalHeaderLabels([
-            "Name", "Data Type", "Scope", "Default Value", "Current Value"
-        ])
+        self._table.setHorizontalHeaderLabels(
+            ["Name", "Data Type", "Scope", "Default Value", "Current Value"]
+        )
 
         # Configure table
         self._table.setAlternatingRowColors(False)
@@ -185,8 +182,12 @@ class VariablesTab(QWidget):
         # Configure column sizing
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(self.COL_DEFAULT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(self.COL_CURRENT, QHeaderView.ResizeMode.Stretch)
 
@@ -468,6 +469,7 @@ class VariablesTab(QWidget):
             return str(value)
         if isinstance(value, (list, dict)):
             import json
+
             try:
                 return json.dumps(value)
             except Exception:
@@ -489,6 +491,7 @@ class VariablesTab(QWidget):
                 return text.lower() in ("true", "1", "yes")
             elif var_type in ("List", "Dict"):
                 import json
+
                 return json.loads(text)
             else:
                 return text
@@ -723,8 +726,12 @@ class VariablesTab(QWidget):
                     # Update the Current Value column (side-by-side with Default)
                     current_item = self._table.item(row, self.COL_CURRENT)
                     if current_item:
-                        current_item.setText(self._format_default_value(values[var_name]))
-                        current_item.setForeground(QBrush(QColor("#4CAF50")))  # Green for active
+                        current_item.setText(
+                            self._format_default_value(values[var_name])
+                        )
+                        current_item.setForeground(
+                            QBrush(QColor("#4CAF50"))
+                        )  # Green for active
 
         # Add new variables that don't exist in the table (runtime-created)
         for var_name, var_value in values.items():

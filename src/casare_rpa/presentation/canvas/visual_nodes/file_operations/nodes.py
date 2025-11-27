@@ -1,6 +1,7 @@
 """Visual nodes for file_operations category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
-from casare_rpa.core.types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import logic layer nodes
 from casare_rpa.nodes.file_nodes import (
@@ -18,6 +19,7 @@ from casare_rpa.nodes.file_nodes import (
 # Basic File Operations
 # =============================================================================
 
+
 class VisualReadFileNode(VisualNode):
     """Visual representation of ReadFileNode."""
 
@@ -30,8 +32,18 @@ class VisualReadFileNode(VisualNode):
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("binary_mode", False, widget_type=1, tab="config")
-        self.add_combo_menu("errors", "Error Handling", items=["strict", "ignore", "replace", "backslashreplace"], tab="advanced")
-        self.add_text_input("max_size", "Max Size (bytes)", placeholder_text="0 = unlimited", tab="advanced")
+        self.add_combo_menu(
+            "errors",
+            "Error Handling",
+            items=["strict", "ignore", "replace", "backslashreplace"],
+            tab="advanced",
+        )
+        self.add_text_input(
+            "max_size",
+            "Max Size (bytes)",
+            placeholder_text="0 = unlimited",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
@@ -55,7 +67,12 @@ class VisualWriteFileNode(VisualNode):
         self.add_text_input("content", "Content", text="", tab="inputs")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("create_dirs", True, widget_type=1, tab="config")
-        self.add_combo_menu("errors", "Error Handling", items=["strict", "ignore", "replace", "backslashreplace"], tab="advanced")
+        self.add_combo_menu(
+            "errors",
+            "Error Handling",
+            items=["strict", "ignore", "replace", "backslashreplace"],
+            tab="advanced",
+        )
         self.create_property("append_mode", False, widget_type=1, tab="advanced")
 
     def setup_ports(self) -> None:
@@ -248,6 +265,7 @@ class VisualListFilesNode(VisualNode):
 # CSV Operations
 # =============================================================================
 
+
 class VisualReadCsvNode(VisualNode):
     """Visual representation of ReadCSVNode."""
 
@@ -262,9 +280,13 @@ class VisualReadCsvNode(VisualNode):
         self.create_property("has_header", True, widget_type=1, tab="config")
         self.add_text_input("delimiter", "Delimiter", text=",", tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
-        self.add_text_input("quotechar", "Quote Char", text="\"", tab="advanced")
-        self.add_text_input("skip_rows", "Skip Rows", placeholder_text="0", tab="advanced")
-        self.add_text_input("max_rows", "Max Rows", placeholder_text="0 = unlimited", tab="advanced")
+        self.add_text_input("quotechar", "Quote Char", text='"', tab="advanced")
+        self.add_text_input(
+            "skip_rows", "Skip Rows", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "max_rows", "Max Rows", placeholder_text="0 = unlimited", tab="advanced"
+        )
 
     def get_node_class(self) -> type:
         return ReadCSVNode
@@ -310,6 +332,7 @@ class VisualWriteCsvNode(VisualNode):
 # =============================================================================
 # JSON Operations
 # =============================================================================
+
 
 class VisualReadJsonNode(VisualNode):
     """Visual representation of ReadJSONFileNode."""
@@ -364,6 +387,7 @@ class VisualWriteJsonNode(VisualNode):
 # ZIP Operations
 # =============================================================================
 
+
 class VisualZipFilesNode(VisualNode):
     """Visual representation of ZipFilesNode."""
 
@@ -416,6 +440,7 @@ class VisualUnzipFileNode(VisualNode):
 # XML Operations
 # =============================================================================
 
+
 class VisualParseXMLNode(VisualNode):
     """Visual representation of ParseXMLNode."""
 
@@ -458,7 +483,9 @@ class VisualWriteXMLFileNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_checkbox("pretty_print", "Pretty Print", state=True, tab="properties")
-        self.add_checkbox("xml_declaration", "XML Declaration", state=True, tab="properties")
+        self.add_checkbox(
+            "xml_declaration", "XML Declaration", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -533,7 +560,9 @@ class VisualXMLToJsonNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("include_attributes", "Include Attributes", state=True, tab="properties")
+        self.add_checkbox(
+            "include_attributes", "Include Attributes", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -564,6 +593,7 @@ class VisualJsonToXMLNode(VisualNode):
 # =============================================================================
 # PDF Operations
 # =============================================================================
+
 
 class VisualReadPDFTextNode(VisualNode):
     """Visual representation of ReadPDFTextNode."""
@@ -633,7 +663,9 @@ class VisualSplitPDFNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("pages_per_file", "Pages Per File", text="1", tab="properties")
+        self.add_text_input(
+            "pages_per_file", "Pages Per File", text="1", tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -672,7 +704,9 @@ class VisualPDFToImagesNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("format", "Format", items=["png", "jpeg", "jpg"], tab="properties")
+        self.add_combo_menu(
+            "format", "Format", items=["png", "jpeg", "jpg"], tab="properties"
+        )
         self.add_text_input("dpi", "DPI", text="200", tab="properties")
 
     def setup_ports(self) -> None:
@@ -689,6 +723,7 @@ class VisualPDFToImagesNode(VisualNode):
 # FTP Operations
 # =============================================================================
 
+
 class VisualFTPConnectNode(VisualNode):
     """Visual representation of FTPConnectNode."""
 
@@ -701,8 +736,15 @@ class VisualFTPConnectNode(VisualNode):
         self.add_checkbox("passive", "Passive Mode", state=True, tab="properties")
         self.add_checkbox("use_tls", "Use TLS", state=False, tab="properties")
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="2.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -726,8 +768,15 @@ class VisualFTPUploadNode(VisualNode):
         super().__init__()
         self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
         self.add_checkbox("create_dirs", "Create Dirs", state=False, tab="properties")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="2.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -749,8 +798,15 @@ class VisualFTPDownloadNode(VisualNode):
         super().__init__()
         self.add_checkbox("binary_mode", "Binary Mode", state=True, tab="properties")
         self.add_checkbox("overwrite", "Overwrite", state=False, tab="properties")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="2.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

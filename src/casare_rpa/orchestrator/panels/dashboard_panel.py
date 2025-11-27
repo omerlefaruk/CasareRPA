@@ -2,13 +2,20 @@
 Dashboard panel - KPI cards and summary charts.
 Overview of system health and job statistics.
 """
-from typing import Optional, List, Dict
+
+from typing import List, Dict
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel,
-    QFrame, QProgressBar, QScrollArea, QSizePolicy
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QLabel,
+    QFrame,
+    QProgressBar,
+    QSizePolicy,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QPainter
 
 from ..theme import THEME
 from ..models import DashboardMetrics
@@ -19,8 +26,14 @@ class KPICard(QFrame):
 
     clicked = Signal(str)  # metric_name
 
-    def __init__(self, title: str, value: str = "0", subtitle: str = "",
-                 color: str = None, parent=None):
+    def __init__(
+        self,
+        title: str,
+        value: str = "0",
+        subtitle: str = "",
+        color: str = None,
+        parent=None,
+    ):
         super().__init__(parent)
         self._title = title
         self._value = value
@@ -81,7 +94,7 @@ class KPICard(QFrame):
 
     def set_value(self, value: str, subtitle: str = None):
         self._value_label.setText(value)
-        if subtitle and hasattr(self, '_subtitle_label'):
+        if subtitle and hasattr(self, "_subtitle_label"):
             self._subtitle_label.setText(subtitle)
 
     def mousePressEvent(self, event):
@@ -134,23 +147,29 @@ class MiniChart(QWidget):
             total = item.get("total", 0)
 
             # Calculate heights
-            completed_height = int((completed / max_val) * chart_height) if max_val > 0 else 0
+            completed_height = (
+                int((completed / max_val) * chart_height) if max_val > 0 else 0
+            )
             failed_height = int((failed / max_val) * chart_height) if max_val > 0 else 0
 
             # Draw completed bar (green)
             if completed_height > 0:
                 painter.fillRect(
-                    x, rect.height() - padding - completed_height,
-                    bar_width, completed_height,
-                    QColor(THEME.status_online)
+                    x,
+                    rect.height() - padding - completed_height,
+                    bar_width,
+                    completed_height,
+                    QColor(THEME.status_online),
                 )
 
             # Draw failed bar (red, stacked on top)
             if failed_height > 0:
                 painter.fillRect(
-                    x, rect.height() - padding - completed_height - failed_height,
-                    bar_width, failed_height,
-                    QColor(THEME.status_error)
+                    x,
+                    rect.height() - padding - completed_height - failed_height,
+                    bar_width,
+                    failed_height,
+                    QColor(THEME.status_error),
                 )
 
             # Date label
@@ -241,7 +260,9 @@ class StatusSummary(QFrame):
             row.addWidget(bar, 1)
 
             count_label = QLabel(str(count))
-            count_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;")
+            count_label.setStyleSheet(
+                f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;"
+            )
             count_label.setFixedWidth(40)
             count_label.setAlignment(Qt.AlignmentFlag.AlignRight)
             row.addWidget(count_label)
@@ -344,7 +365,9 @@ class RobotsSummary(QFrame):
         util_row.addWidget(self._util_bar)
 
         self._util_label = QLabel("0%")
-        self._util_label.setStyleSheet(f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;")
+        self._util_label.setStyleSheet(
+            f"color: {THEME.text_primary}; font-size: 11px; font-weight: 600;"
+        )
         self._util_label.setFixedWidth(40)
         util_row.addWidget(self._util_label)
 
@@ -369,7 +392,9 @@ class RobotsSummary(QFrame):
 
         return widget
 
-    def set_counts(self, online: int, busy: int, offline: int, error: int, utilization: float):
+    def set_counts(
+        self, online: int, busy: int, offline: int, error: int, utilization: float
+    ):
         self._online.findChild(QLabel, "value").setText(str(online))
         self._busy.findChild(QLabel, "value").setText(str(busy))
         self._offline.findChild(QLabel, "value").setText(str(offline))
@@ -406,11 +431,15 @@ class DashboardPanel(QWidget):
         self._jobs_today.clicked.connect(lambda: self.navigate_to.emit("jobs"))
         kpi_row.addWidget(self._jobs_today)
 
-        self._success_rate = KPICard("Success Rate", "0%", "last 24h", THEME.status_online)
+        self._success_rate = KPICard(
+            "Success Rate", "0%", "last 24h", THEME.status_online
+        )
         self._success_rate.clicked.connect(lambda: self.navigate_to.emit("jobs"))
         kpi_row.addWidget(self._success_rate)
 
-        self._active_robots = KPICard("Active Robots", "0", "online", THEME.accent_secondary)
+        self._active_robots = KPICard(
+            "Active Robots", "0", "online", THEME.accent_secondary
+        )
         self._active_robots.clicked.connect(lambda: self.navigate_to.emit("robots"))
         kpi_row.addWidget(self._active_robots)
 
@@ -497,18 +526,21 @@ class DashboardPanel(QWidget):
 
     def set_metrics(self, metrics: DashboardMetrics):
         """Update dashboard with metrics."""
-        self._jobs_today.set_value(str(metrics.jobs_completed_today + metrics.jobs_failed_today),
-                                   f"{metrics.jobs_completed_today} completed")
+        self._jobs_today.set_value(
+            str(metrics.jobs_completed_today + metrics.jobs_failed_today),
+            f"{metrics.jobs_completed_today} completed",
+        )
         self._success_rate.set_value(f"{metrics.success_rate_today:.0f}%")
-        self._active_robots.set_value(str(metrics.robots_online),
-                                      f"of {metrics.robots_total} total")
+        self._active_robots.set_value(
+            str(metrics.robots_online), f"of {metrics.robots_total} total"
+        )
         self._avg_duration.set_value(metrics.avg_execution_time_formatted)
 
         self._job_summary.set_counts(
             metrics.jobs_running,
             metrics.jobs_queued,
             metrics.jobs_completed_today,
-            metrics.jobs_failed_today
+            metrics.jobs_failed_today,
         )
 
         self._robot_summary.set_counts(
@@ -516,7 +548,7 @@ class DashboardPanel(QWidget):
             metrics.robots_busy,
             metrics.robots_total - metrics.robots_online - metrics.robots_busy,
             0,  # Error count not in metrics
-            metrics.robot_utilization
+            metrics.robot_utilization,
         )
 
     def set_history(self, history: List[Dict]):

@@ -10,13 +10,19 @@ Performance optimizations:
 - Lightweight UI updates
 """
 
-from typing import List, Tuple, Optional, Callable
+from typing import List, Tuple, Optional
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem,
-    QLabel, QWidget, QHBoxLayout, QAbstractItemView
+    QDialog,
+    QVBoxLayout,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QLabel,
+    QWidget,
+    QAbstractItemView,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QKeyEvent
+from PySide6.QtGui import QKeyEvent
 
 from ...utils.fuzzy_search import SearchIndex, highlight_matches
 
@@ -74,7 +80,9 @@ class NodeSearchDialog(QDialog):
 
         # Search input
         self._search_input = QLineEdit()
-        self._search_input.setPlaceholderText("Type to search... (lf = List Filter, dm = Dict Merge)")
+        self._search_input.setPlaceholderText(
+            "Type to search... (lf = List Filter, dm = Dict Merge)"
+        )
         self._search_input.textChanged.connect(self._on_search_changed)
         self._search_input.setStyleSheet("""
             QLineEdit {
@@ -94,7 +102,9 @@ class NodeSearchDialog(QDialog):
         # Results list - optimized for fast updates
         self._results_list = QListWidget()
         self._results_list.setUniformItemSizes(True)  # Faster rendering
-        self._results_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._results_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self._results_list.setStyleSheet("""
             QListWidget {
                 background-color: #2b2b2b;

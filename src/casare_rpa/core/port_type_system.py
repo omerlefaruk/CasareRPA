@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, Set, Optional, Tuple, Protocol
 
-from .types import DataType, PortType
+from .types import DataType
 
 
 # ============================================================================
@@ -33,6 +33,7 @@ class PortTypeInfo:
         shape: Shape identifier for accessibility
         description: Tooltip description
     """
+
     data_type: DataType
     display_name: str
     color: Tuple[int, int, int, int]  # RGBA
@@ -42,15 +43,16 @@ class PortTypeInfo:
 
 class PortShape(Enum):
     """Shape types for port rendering (accessibility feature)."""
-    CIRCLE = auto()           # Default for most types
-    DIAMOND = auto()          # Boolean
-    SQUARE = auto()           # List/Array
-    HEXAGON = auto()          # Dict/Object
-    TRIANGLE = auto()         # Execution flow
-    HOLLOW_CIRCLE = auto()    # ANY/wildcard
-    ROUNDED_SQUARE = auto()   # Page
-    CIRCLE_DOT = auto()       # Browser
-    PENTAGON = auto()         # Element
+
+    CIRCLE = auto()  # Default for most types
+    DIAMOND = auto()  # Boolean
+    SQUARE = auto()  # List/Array
+    HEXAGON = auto()  # Dict/Object
+    TRIANGLE = auto()  # Execution flow
+    HOLLOW_CIRCLE = auto()  # ANY/wildcard
+    ROUNDED_SQUARE = auto()  # Page
+    CIRCLE_DOT = auto()  # Browser
+    PENTAGON = auto()  # Element
 
 
 # ============================================================================
@@ -220,16 +222,16 @@ class PortTypeRegistry:
     # Type colors - carefully chosen for visibility on dark background
     # and distinctiveness between types
     TYPE_COLORS: Dict[DataType, Tuple[int, int, int, int]] = {
-        DataType.STRING: (255, 193, 7, 255),      # Amber - common type
-        DataType.INTEGER: (76, 175, 80, 255),     # Green - numeric
-        DataType.FLOAT: (139, 195, 74, 255),      # Light Green - numeric variant
-        DataType.BOOLEAN: (156, 39, 176, 255),    # Purple - binary decision
-        DataType.LIST: (255, 152, 0, 255),        # Orange - container
-        DataType.DICT: (255, 87, 34, 255),        # Deep Orange - complex container
-        DataType.ANY: (150, 150, 150, 255),       # Gray - wildcard
-        DataType.PAGE: (33, 150, 243, 255),       # Blue - browser page
-        DataType.BROWSER: (3, 169, 244, 255),     # Light Blue - browser instance
-        DataType.ELEMENT: (0, 188, 212, 255),     # Cyan - web element
+        DataType.STRING: (255, 193, 7, 255),  # Amber - common type
+        DataType.INTEGER: (76, 175, 80, 255),  # Green - numeric
+        DataType.FLOAT: (139, 195, 74, 255),  # Light Green - numeric variant
+        DataType.BOOLEAN: (156, 39, 176, 255),  # Purple - binary decision
+        DataType.LIST: (255, 152, 0, 255),  # Orange - container
+        DataType.DICT: (255, 87, 34, 255),  # Deep Orange - complex container
+        DataType.ANY: (150, 150, 150, 255),  # Gray - wildcard
+        DataType.PAGE: (33, 150, 243, 255),  # Blue - browser page
+        DataType.BROWSER: (3, 169, 244, 255),  # Light Blue - browser instance
+        DataType.ELEMENT: (0, 188, 212, 255),  # Cyan - web element
     }
 
     # Execution port color (special case)
@@ -298,7 +300,7 @@ class PortTypeRegistry:
         """
         return self._type_info.get(
             data_type,
-            PortTypeInfo(data_type, "Unknown", (150, 150, 150, 255), "circle")
+            PortTypeInfo(data_type, "Unknown", (150, 150, 150, 255), "circle"),
         )
 
     def get_type_color(self, data_type: DataType) -> Tuple[int, int, int, int]:

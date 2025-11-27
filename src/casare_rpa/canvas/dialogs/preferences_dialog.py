@@ -4,11 +4,18 @@ Application settings dialog.
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTabWidget,
-    QWidget, QLabel, QSpinBox, QCheckBox, QPushButton,
-    QGroupBox, QFormLayout, QDialogButtonBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QWidget,
+    QLabel,
+    QSpinBox,
+    QCheckBox,
+    QGroupBox,
+    QFormLayout,
+    QDialogButtonBox,
 )
-from PySide6.QtCore import Qt
 from loguru import logger
 
 from ...utils.settings_manager import get_settings_manager
@@ -59,13 +66,15 @@ class PreferencesDialog(QDialog):
 
         # Dialog buttons
         button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok |
-            QDialogButtonBox.StandardButton.Cancel |
-            QDialogButtonBox.StandardButton.Apply
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+            | QDialogButtonBox.StandardButton.Apply
         )
         button_box.accepted.connect(self._on_ok)
         button_box.rejected.connect(self.reject)
-        button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self._on_apply)
+        button_box.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
+            self._on_apply
+        )
 
         layout.addWidget(button_box)
 
@@ -112,7 +121,9 @@ class PreferencesDialog(QDialog):
         self.autosave_interval.setMinimum(1)
         self.autosave_interval.setMaximum(60)
         self.autosave_interval.setSuffix(" minute(s)")
-        self.autosave_interval.setToolTip("How often to automatically save (in minutes)")
+        self.autosave_interval.setToolTip(
+            "How often to automatically save (in minutes)"
+        )
 
         interval_layout.addWidget(self.autosave_interval)
         interval_layout.addStretch()
@@ -156,10 +167,11 @@ class PreferencesDialog(QDialog):
 
         # Notify user
         from PySide6.QtWidgets import QMessageBox
+
         QMessageBox.information(
             self,
             "Settings Applied",
-            "Settings have been saved. Some changes may require restarting the application."
+            "Settings have been saved. Some changes may require restarting the application.",
         )
 
     def _on_ok(self):

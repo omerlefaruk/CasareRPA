@@ -2,12 +2,22 @@
 Robots view for CasareRPA Orchestrator.
 Displays robot list, status, and management.
 """
+
 import asyncio
 from typing import Optional, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFrame, QLabel, QMessageBox, QMenu, QDialog,
-    QFormLayout, QLineEdit, QComboBox, QSpinBox, QDialogButtonBox
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QMenu,
+    QDialog,
+    QFormLayout,
+    QDialogButtonBox,
 )
 from PySide6.QtCore import Qt, Signal
 
@@ -39,9 +49,13 @@ class RobotDetailsDialog(QDialog):
         info_layout.addRow("Status:", status_badge)
 
         info_layout.addRow("Environment:", QLabel(robot.environment))
-        info_layout.addRow("Max Concurrent Jobs:", QLabel(str(robot.max_concurrent_jobs)))
+        info_layout.addRow(
+            "Max Concurrent Jobs:", QLabel(str(robot.max_concurrent_jobs))
+        )
         info_layout.addRow("Current Jobs:", QLabel(str(robot.current_jobs)))
-        info_layout.addRow("Last Seen:", QLabel(str(robot.last_seen) if robot.last_seen else "Never"))
+        info_layout.addRow(
+            "Last Seen:", QLabel(str(robot.last_seen) if robot.last_seen else "Never")
+        )
 
         if robot.tags:
             info_layout.addRow("Tags:", QLabel(", ".join(robot.tags)))
@@ -51,7 +65,9 @@ class RobotDetailsDialog(QDialog):
         # Metrics section
         if robot.metrics:
             metrics_label = QLabel("Metrics")
-            metrics_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-weight: 600;")
+            metrics_label.setStyleSheet(
+                f"color: {COLORS['text_secondary']}; font-weight: 600;"
+            )
             layout.addWidget(metrics_label)
 
             for key, value in robot.metrics.items():
@@ -86,7 +102,9 @@ class RobotsView(QWidget):
 
         # Header
         header = SectionHeader("Robots", "Refresh")
-        header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        header.action_clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         layout.addWidget(header)
 
         # Search and filters
@@ -94,8 +112,7 @@ class RobotsView(QWidget):
         toolbar.setSpacing(12)
 
         self._search = SearchBar(
-            "Search robots...",
-            filters=["All", "Online", "Offline", "Busy", "Error"]
+            "Search robots...", filters=["All", "Online", "Offline", "Busy", "Error"]
         )
         self._search.search_changed.connect(self._apply_filter)
         self._search.filter_changed.connect(self._apply_filter)
@@ -107,13 +124,19 @@ class RobotsView(QWidget):
         # Robots table
         self._table = QTableWidget()
         self._table.setColumnCount(7)
-        self._table.setHorizontalHeaderLabels([
-            "Status", "Name", "ID", "Environment", "Jobs", "Last Seen", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            ["Status", "Name", "ID", "Environment", "Jobs", "Last Seen", "Actions"]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 100)
-        self._table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            6, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(6, 150)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setAlternatingRowColors(True)
@@ -126,7 +149,7 @@ class RobotsView(QWidget):
         # Empty state (hidden by default)
         self._empty_state = EmptyState(
             title="No Robots Found",
-            description="No robots are currently registered. Start a Robot agent to see it here."
+            description="No robots are currently registered. Start a Robot agent to see it here.",
         )
         self._empty_state.hide()
         layout.addWidget(self._empty_state)
@@ -172,7 +195,9 @@ class RobotsView(QWidget):
         view_action.triggered.connect(lambda: self._show_details(robot))
 
         dispatch_action = menu.addAction("Dispatch Workflow")
-        dispatch_action.triggered.connect(lambda: self.dispatch_requested.emit(robot.id))
+        dispatch_action.triggered.connect(
+            lambda: self.dispatch_requested.emit(robot.id)
+        )
         dispatch_action.setEnabled(robot.is_available)
 
         menu.addSeparator()
@@ -236,7 +261,9 @@ class RobotsView(QWidget):
 
             dispatch_btn = ActionButton("Dispatch", primary=True)
             dispatch_btn.setEnabled(robot.is_available)
-            dispatch_btn.clicked.connect(lambda checked, r=robot: self.dispatch_requested.emit(r.id))
+            dispatch_btn.clicked.connect(
+                lambda checked, r=robot: self.dispatch_requested.emit(r.id)
+            )
             actions_layout.addWidget(dispatch_btn)
 
             self._table.setCellWidget(row, 6, actions_widget)
@@ -248,5 +275,6 @@ class RobotsView(QWidget):
             self._update_table()
         except Exception as e:
             from loguru import logger
+
             logger.error(f"Failed to refresh robots: {e}")
             QMessageBox.warning(self, "Error", f"Failed to load robots: {e}")

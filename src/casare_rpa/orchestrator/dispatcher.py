@@ -2,6 +2,7 @@
 Job Dispatcher for CasareRPA Orchestrator.
 Handles robot selection, load balancing, and job assignment.
 """
+
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Set, Callable, Any
@@ -11,15 +12,13 @@ import random
 
 from loguru import logger
 
-from .models import (
-    Job, JobStatus, JobPriority, Robot, RobotStatus,
-    Workflow, Schedule
-)
-from .job_queue import JobQueue, JobStateMachine
+from .models import Job, Robot, RobotStatus
+from .job_queue import JobQueue
 
 
 class LoadBalancingStrategy(Enum):
     """Load balancing strategies for robot selection."""
+
     ROUND_ROBIN = "round_robin"
     LEAST_LOADED = "least_loaded"
     RANDOM = "random"
@@ -41,7 +40,7 @@ class RobotPool:
         name: str,
         tags: Optional[List[str]] = None,
         max_concurrent_jobs: Optional[int] = None,
-        allowed_workflows: Optional[Set[str]] = None
+        allowed_workflows: Optional[Set[str]] = None,
     ):
         """
         Initialize robot pool.
@@ -130,7 +129,7 @@ class JobDispatcher:
         strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_LOADED,
         dispatch_interval_seconds: int = 5,
         health_check_interval_seconds: int = 30,
-        stale_robot_timeout_seconds: int = 60
+        stale_robot_timeout_seconds: int = 60,
     ):
         """
         Initialize dispatcher.
@@ -154,10 +153,14 @@ class JobDispatcher:
         self._rr_index = 0
 
         # Affinity tracking: workflow_id -> {robot_id -> success_count}
-        self._affinity: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self._affinity: Dict[str, Dict[str, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
 
         # Callbacks
-        self._on_robot_status_change: Optional[Callable[[Robot, RobotStatus, RobotStatus], None]] = None
+        self._on_robot_status_change: Optional[
+            Callable[[Robot, RobotStatus, RobotStatus], None]
+        ] = None
         self._on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None
 
         # Running state
@@ -169,8 +172,10 @@ class JobDispatcher:
 
     def set_callbacks(
         self,
-        on_robot_status_change: Optional[Callable[[Robot, RobotStatus, RobotStatus], None]] = None,
-        on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None
+        on_robot_status_change: Optional[
+            Callable[[Robot, RobotStatus, RobotStatus], None]
+        ] = None,
+        on_job_dispatched: Optional[Callable[[Job, Robot], None]] = None,
     ):
         """Set event callbacks."""
         self._on_robot_status_change = on_robot_status_change
@@ -249,7 +254,7 @@ class JobDispatcher:
         name: str,
         tags: Optional[List[str]] = None,
         max_concurrent_jobs: Optional[int] = None,
-        allowed_workflows: Optional[Set[str]] = None
+        allowed_workflows: Optional[Set[str]] = None,
     ) -> RobotPool:
         """Create a robot pool."""
         pool = RobotPool(name, tags, max_concurrent_jobs, allowed_workflows)
@@ -281,9 +286,7 @@ class JobDispatcher:
     # ==================== JOB DISPATCH ====================
 
     def select_robot(
-        self,
-        job: Job,
-        pool_name: Optional[str] = None
+        self, job: Job, pool_name: Optional[str] = None
     ) -> Optional[Robot]:
         """
         Select the best robot for a job.
@@ -393,12 +396,8 @@ class JobDispatcher:
             return
 
         self._running = True
-        self._dispatch_task = asyncio.create_task(
-            self._dispatch_loop(job_queue)
-        )
-        self._health_task = asyncio.create_task(
-            self._health_check_loop()
-        )
+        self._dispatch_task = asyncio.create_task(self._dispatch_loop(job_queue))
+        self._health_task = asyncio.create_task(self._health_check_loop())
 
         logger.info("JobDispatcher started")
 
@@ -478,7 +477,7 @@ class JobDispatcher:
             # Check heartbeat
             last_heartbeat = robot.last_heartbeat
             if isinstance(last_heartbeat, str):
-                last_heartbeat = datetime.fromisoformat(last_heartbeat.replace('Z', ''))
+                last_heartbeat = datetime.fromisoformat(last_heartbeat.replace("Z", ""))
 
             if last_heartbeat and now - last_heartbeat > self._stale_timeout:
                 # Robot is stale, mark offline
@@ -499,7 +498,9 @@ class JobDispatcher:
         total_robots = len(self._robots)
         online = sum(1 for r in self._robots.values() if r.status == RobotStatus.ONLINE)
         busy = sum(1 for r in self._robots.values() if r.status == RobotStatus.BUSY)
-        offline = sum(1 for r in self._robots.values() if r.status == RobotStatus.OFFLINE)
+        offline = sum(
+            1 for r in self._robots.values() if r.status == RobotStatus.OFFLINE
+        )
         error = sum(1 for r in self._robots.values() if r.status == RobotStatus.ERROR)
 
         total_capacity = sum(r.max_concurrent_jobs for r in self._robots.values())
@@ -513,7 +514,9 @@ class JobDispatcher:
             "error": error,
             "total_capacity": total_capacity,
             "current_load": current_load,
-            "utilization": (current_load / total_capacity * 100) if total_capacity > 0 else 0,
+            "utilization": (current_load / total_capacity * 100)
+            if total_capacity > 0
+            else 0,
             "strategy": self._strategy.value,
             "pools": {
                 name: {
@@ -522,5 +525,5 @@ class JobDispatcher:
                     "utilization": pool.utilization,
                 }
                 for name, pool in self.get_all_pools().items()
-            }
+            },
         }

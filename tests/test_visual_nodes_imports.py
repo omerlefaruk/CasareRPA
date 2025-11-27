@@ -158,7 +158,9 @@ class TestVisualNodesImports:
 
         # Check that VisualHttpRequestNode appears only once
         http_request_count = __all__.count("VisualHttpRequestNode")
-        assert http_request_count == 1, f"VisualHttpRequestNode appears {http_request_count} times, expected 1"
+        assert (
+            http_request_count == 1
+        ), f"VisualHttpRequestNode appears {http_request_count} times, expected 1"
 
     def test_compatibility_layer_has_all_exports(self):
         """Test that compatibility layer re-exports __all__ correctly."""

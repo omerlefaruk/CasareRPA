@@ -8,8 +8,7 @@ and explicit logging within workflows.
 import json
 import re
 import asyncio
-from typing import Any, Dict, List, Optional, Union
-from datetime import datetime
+from typing import Any, Dict, Optional
 from enum import Enum
 
 import aiohttp
@@ -22,6 +21,7 @@ from ..core.execution_context import ExecutionContext
 
 class HttpMethod(str, Enum):
     """HTTP request methods."""
+
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
@@ -48,7 +48,7 @@ class HttpRequestNode(BaseNode):
         headers: Optional[Dict[str, str]] = None,
         body: str = "",
         timeout: float = 30.0,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize HTTP request node.
@@ -135,7 +135,7 @@ class HttpRequestNode(BaseNode):
                 request_kwargs = {
                     "headers": headers,
                     "ssl": ssl_context,
-                    "allow_redirects": self.config.get("follow_redirects", True)
+                    "allow_redirects": self.config.get("follow_redirects", True),
                 }
 
                 # Add body for methods that support it
@@ -169,16 +169,21 @@ class HttpRequestNode(BaseNode):
                     self.set_output_value("status_code", status_code)
                     self.set_output_value("headers", response_headers)
                     self.set_output_value("success", success)
-                    self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                    self.set_output_value(
+                        "error", "" if success else f"HTTP {status_code}"
+                    )
 
                     # Store in context variable
                     variable_name = self.config.get("variable_name", "http_response")
-                    context.set_variable(variable_name, {
-                        "body": response_body,
-                        "status_code": status_code,
-                        "headers": response_headers,
-                        "success": success
-                    })
+                    context.set_variable(
+                        variable_name,
+                        {
+                            "body": response_body,
+                            "status_code": status_code,
+                            "headers": response_headers,
+                            "success": success,
+                        },
+                    )
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -186,7 +191,7 @@ class HttpRequestNode(BaseNode):
                         "response_body": response_body,
                         "status_code": status_code,
                         "headers": response_headers,
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
         except asyncio.TimeoutError:
@@ -216,6 +221,7 @@ class HttpRequestNode(BaseNode):
 
 class ValidationType(str, Enum):
     """Data validation types."""
+
     NOT_EMPTY = "not_empty"
     IS_STRING = "is_string"
     IS_NUMBER = "is_number"
@@ -247,7 +253,7 @@ class ValidateNode(BaseNode):
         name: str = "Validate",
         validation_type: str = "not_empty",
         validation_param: Any = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize validate node.
@@ -293,19 +299,23 @@ class ValidateNode(BaseNode):
             validation_type = self.config.get("validation_type", "not_empty")
             validation_param = self.config.get("validation_param")
 
-            is_valid, error_msg = self._validate(value, validation_type, validation_param)
+            is_valid, error_msg = self._validate(
+                value, validation_type, validation_param
+            )
 
             self.set_output_value("is_valid", is_valid)
             self.set_output_value("error_message", error_msg if not is_valid else "")
 
-            logger.info(f"Validation '{validation_type}': {'passed' if is_valid else 'failed'}")
+            logger.info(
+                f"Validation '{validation_type}': {'passed' if is_valid else 'failed'}"
+            )
 
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "is_valid": is_valid,
                 "error_message": error_msg,
-                "next_nodes": ["valid" if is_valid else "invalid"]
+                "next_nodes": ["valid" if is_valid else "invalid"],
             }
 
         except Exception as e:
@@ -316,7 +326,9 @@ class ValidateNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": error_msg, "next_nodes": ["invalid"]}
 
-    def _validate(self, value: Any, validation_type: str, param: Any) -> tuple[bool, str]:
+    def _validate(
+        self, value: Any, validation_type: str, param: Any
+    ) -> tuple[bool, str]:
         """Perform validation and return (is_valid, error_message)."""
         try:
             vtype = ValidationType(validation_type)
@@ -413,7 +425,7 @@ class ValidateNode(BaseNode):
         elif vtype == ValidationType.IS_EMAIL:
             if not isinstance(value, str):
                 return False, "Value must be string"
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
             if not re.match(email_pattern, value):
                 return False, "Invalid email format"
             return True, ""
@@ -421,7 +433,7 @@ class ValidateNode(BaseNode):
         elif vtype == ValidationType.IS_URL:
             if not isinstance(value, str):
                 return False, "Value must be string"
-            url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+            url_pattern = r"^https?://[^\s/$.?#].[^\s]*$"
             if not re.match(url_pattern, value):
                 return False, "Invalid URL format"
             return True, ""
@@ -431,6 +443,7 @@ class ValidateNode(BaseNode):
 
 class TransformType(str, Enum):
     """Data transformation types."""
+
     TO_STRING = "to_string"
     TO_INTEGER = "to_integer"
     TO_FLOAT = "to_float"
@@ -464,7 +477,7 @@ class TransformNode(BaseNode):
         name: str = "Transform",
         transform_type: str = "to_string",
         transform_param: Any = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize transform node.
@@ -508,7 +521,9 @@ class TransformNode(BaseNode):
         try:
             value = self.get_input_value("value")
             transform_type = self.config.get("transform_type", "to_string")
-            transform_param = self.get_input_value("param") or self.config.get("transform_param")
+            transform_param = self.get_input_value("param") or self.config.get(
+                "transform_param"
+            )
 
             result = self._transform(value, transform_type, transform_param)
 
@@ -523,11 +538,7 @@ class TransformNode(BaseNode):
             logger.info(f"Transform '{transform_type}' completed")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "result": result,
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "result": result, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Transform error: {e}"
@@ -598,7 +609,9 @@ class TransformNode(BaseNode):
 
         elif ttype == TransformType.REPLACE:
             if not param or not isinstance(param, dict):
-                raise ValueError("Replace requires param dict with 'old' and 'new' keys")
+                raise ValueError(
+                    "Replace requires param dict with 'old' and 'new' keys"
+                )
             return str(value).replace(param.get("old", ""), param.get("new", ""))
 
         elif ttype == TransformType.REGEX_EXTRACT:
@@ -624,7 +637,9 @@ class TransformNode(BaseNode):
             if not param:
                 return value
             # param should be a key to extract from each dict in list
-            return [item.get(param) if isinstance(item, dict) else item for item in value]
+            return [
+                item.get(param) if isinstance(item, dict) else item for item in value
+            ]
 
         elif ttype == TransformType.FILTER_VALUES:
             if not isinstance(value, list):
@@ -637,6 +652,7 @@ class TransformNode(BaseNode):
 
 class LogLevel(str, Enum):
     """Log levels for LogNode."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -658,7 +674,7 @@ class LogNode(BaseNode):
         name: str = "Log",
         message: str = "",
         level: str = "critical",
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize log node.
@@ -700,7 +716,9 @@ class LogNode(BaseNode):
 
         try:
             # Get message from input or config
-            message_input = self.get_input_value("message") or self.config.get("message", "")
+            message_input = self.get_input_value("message") or self.config.get(
+                "message", ""
+            )
             # Ensure message is a string (could be Page object or other type from connected node)
             message = str(message_input) if message_input else ""
 
@@ -736,7 +754,7 @@ class LogNode(BaseNode):
             return {
                 "success": True,
                 "message": formatted_message,
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

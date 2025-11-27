@@ -2,24 +2,36 @@
 Jobs panel - Central table showing job list with Deadline-style rendering.
 Dense information display with progress bars and status indicators.
 """
-from typing import Optional, List, Dict, Any
+
+from typing import Optional, List, Dict
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableView, QHeaderView,
-    QLabel, QComboBox, QPushButton, QFrame, QAbstractItemView,
-    QMenu, QStyledItemDelegate
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableView,
+    QHeaderView,
+    QLabel,
+    QComboBox,
+    QAbstractItemView,
+    QMenu,
 )
 from PySide6.QtCore import (
-    Qt, Signal, QSize, QAbstractTableModel, QModelIndex,
-    QSortFilterProxyModel
+    Qt,
+    Signal,
+    QAbstractTableModel,
+    QModelIndex,
+    QSortFilterProxyModel,
 )
-from PySide6.QtGui import QColor, QAction
 
-from ..theme import THEME, get_status_color, get_priority_color
+from ..theme import THEME
 from ..delegates import (
-    ProgressBarDelegate, StatusDelegate, PriorityDelegate,
-    DurationDelegate, IconTextDelegate, TimeDelegate
+    ProgressBarDelegate,
+    StatusDelegate,
+    PriorityDelegate,
+    DurationDelegate,
+    IconTextDelegate,
+    TimeDelegate,
 )
-from ..models import Job, JobStatus, JobPriority
 
 
 class JobsTableModel(QAbstractTableModel):
@@ -88,8 +100,16 @@ class JobsTableModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole):
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ):
+        if (
+            orientation == Qt.Orientation.Horizontal
+            and role == Qt.ItemDataRole.DisplayRole
+        ):
             return self.COLUMNS[section][1]
         return None
 
@@ -221,9 +241,9 @@ class JobsPanel(QWidget):
     Shows progress bars, status indicators, and priority badges inline.
     """
 
-    job_selected = Signal(str)              # job_id
-    job_double_clicked = Signal(str)        # job_id
-    job_action = Signal(str, str)           # job_id, action
+    job_selected = Signal(str)  # job_id
+    job_double_clicked = Signal(str)  # job_id
+    job_action = Signal(str, str)  # job_id, action
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -266,10 +286,16 @@ class JobsPanel(QWidget):
 
         # Set delegates
         self._table.setItemDelegateForColumn(0, IconTextDelegate(parent=self))  # Name
-        self._table.setItemDelegateForColumn(1, ProgressBarDelegate(parent=self))  # Progress
+        self._table.setItemDelegateForColumn(
+            1, ProgressBarDelegate(parent=self)
+        )  # Progress
         self._table.setItemDelegateForColumn(2, StatusDelegate(parent=self))  # Status
-        self._table.setItemDelegateForColumn(3, PriorityDelegate(parent=self))  # Priority
-        self._table.setItemDelegateForColumn(5, DurationDelegate(parent=self))  # Duration
+        self._table.setItemDelegateForColumn(
+            3, PriorityDelegate(parent=self)
+        )  # Priority
+        self._table.setItemDelegateForColumn(
+            5, DurationDelegate(parent=self)
+        )  # Duration
         self._table.setItemDelegateForColumn(6, TimeDelegate(parent=self))  # Started
 
         # Header
@@ -351,17 +377,27 @@ class JobsPanel(QWidget):
         # Actions based on status
         if status in ("running",):
             pause_action = menu.addAction("Pause Job")
-            pause_action.triggered.connect(lambda: self.job_action.emit(job_id, "pause"))
+            pause_action.triggered.connect(
+                lambda: self.job_action.emit(job_id, "pause")
+            )
             cancel_action = menu.addAction("Cancel Job")
-            cancel_action.triggered.connect(lambda: self.job_action.emit(job_id, "cancel"))
+            cancel_action.triggered.connect(
+                lambda: self.job_action.emit(job_id, "cancel")
+            )
         elif status in ("pending", "queued"):
             start_action = menu.addAction("Start Now")
-            start_action.triggered.connect(lambda: self.job_action.emit(job_id, "start"))
+            start_action.triggered.connect(
+                lambda: self.job_action.emit(job_id, "start")
+            )
             cancel_action = menu.addAction("Cancel Job")
-            cancel_action.triggered.connect(lambda: self.job_action.emit(job_id, "cancel"))
+            cancel_action.triggered.connect(
+                lambda: self.job_action.emit(job_id, "cancel")
+            )
         elif status in ("failed", "cancelled", "timeout"):
             retry_action = menu.addAction("Retry Job")
-            retry_action.triggered.connect(lambda: self.job_action.emit(job_id, "retry"))
+            retry_action.triggered.connect(
+                lambda: self.job_action.emit(job_id, "retry")
+            )
 
         menu.addSeparator()
 
@@ -394,7 +430,9 @@ class JobsPanel(QWidget):
         self._filter_toolbar.set_job_count(len(jobs))
 
         # Collect robot names for filter dropdown
-        robot_names = list(set(j.get("robot_name", "") for j in jobs if j.get("robot_name")))
+        robot_names = list(
+            set(j.get("robot_name", "") for j in jobs if j.get("robot_name"))
+        )
         self._filter_toolbar.set_robots(sorted(robot_names))
 
     def get_selected_job_ids(self) -> List[str]:

@@ -98,26 +98,26 @@ class MinimapChangeTracker:
 
 class MinimapView(QGraphicsView):
     """Custom QGraphicsView for minimap display."""
-    
+
     viewport_clicked = Signal(QPointF)  # Emitted when user clicks on minimap
-    
+
     def __init__(self, parent: Optional[QWidget] = None):
         """Initialize minimap view."""
         super().__init__(parent)
-        
+
         # Create scene
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
-        
+
         # Configure view
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
+
         # Disable interactive features - we handle mouse events manually
         self.setInteractive(False)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        
+
         self.setStyleSheet("""
             MinimapView {
                 background-color: rgba(26, 26, 26, 200);
@@ -125,13 +125,13 @@ class MinimapView(QGraphicsView):
                 border-radius: 6px;
             }
         """)
-        
+
         # Minimap state
         self._node_rects = []  # List of (QRectF, color) tuples
         self._viewport_rect = QRectF()
         self._graph_bounds = QRectF()
         self._dragging = False
-        
+
     def mousePressEvent(self, event):
         """Handle mouse press to navigate main view."""
         if event.button() == Qt.MouseButton.LeftButton:
@@ -142,7 +142,7 @@ class MinimapView(QGraphicsView):
             event.accept()
         else:
             super().mousePressEvent(event)
-    
+
     def mouseMoveEvent(self, event):
         """Handle mouse drag to navigate main view."""
         if self._dragging and event.buttons() & Qt.MouseButton.LeftButton:
@@ -151,17 +151,17 @@ class MinimapView(QGraphicsView):
             event.accept()
         else:
             super().mouseMoveEvent(event)
-    
+
     def mouseReleaseEvent(self, event):
         """Handle mouse release."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._dragging = False
         super().mouseReleaseEvent(event)
-    
+
     def update_minimap(self, node_rects, viewport_rect, graph_bounds):
         """
         Update minimap display.
-        
+
         Args:
             node_rects: List of (QRectF, QColor) for each node
             viewport_rect: QRectF of visible viewport in scene coords
@@ -170,28 +170,28 @@ class MinimapView(QGraphicsView):
         self._node_rects = node_rects
         self._viewport_rect = viewport_rect
         self._graph_bounds = graph_bounds
-        
+
         # Update scene rect
         if not graph_bounds.isEmpty():
             # Add padding
             padded_bounds = graph_bounds.adjusted(-50, -50, 50, 50)
             self._scene.setSceneRect(padded_bounds)
             self.fitInView(padded_bounds, Qt.AspectRatioMode.KeepAspectRatio)
-        
+
         # Trigger repaint
         self._scene.update()
         self.viewport().update()
-    
+
     def drawForeground(self, painter, rect):
         """Draw minimap content."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        
+
         # Draw nodes
         for node_rect, color in self._node_rects:
             painter.setBrush(QBrush(color))
             painter.setPen(QPen(QColor(80, 80, 80), 0.5))
             painter.drawRect(node_rect)
-        
+
         # Draw viewport rectangle
         if not self._viewport_rect.isEmpty():
             painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -313,24 +313,24 @@ class Minimap(QWidget):
                 self._skip_count / max(1, self._update_count + self._skip_count) * 100
             ),
         }
-    
+
     def _update_minimap(self):
         """Update minimap content."""
         # Get viewer's scene rect (what's actually visible considering zoom)
         viewer_scene = self._viewer.scene()
         if not viewer_scene:
             return
-            
+
         # Get all nodes and their positions
         node_rects = []
         for node in self._node_graph.all_nodes():
             # Get node position and size
             pos = node.pos()
-            
+
             # Get actual node size from view
             try:
                 view_node = node.view
-                if hasattr(view_node, 'boundingRect'):
+                if hasattr(view_node, "boundingRect"):
                     bounds = view_node.boundingRect()
                     width = bounds.width()
                     height = bounds.height()
@@ -340,21 +340,23 @@ class Minimap(QWidget):
             except Exception:
                 width = 200
                 height = 80
-            
+
             rect = QRectF(pos[0], pos[1], width, height)
-            
+
             # Get node color
             color = QColor(80, 120, 180)  # Default blue-gray
-            if hasattr(node, 'model') and hasattr(node.model, 'color'):
+            if hasattr(node, "model") and hasattr(node.model, "color"):
                 r, g, b, a = node.model.color
                 color = QColor(r, g, b, a)
-            
+
             node_rects.append((rect, color))
-        
+
         # Get the actual visible viewport area in scene coordinates
         # This accounts for zoom level - when zoomed out, this rect is LARGER
-        viewport_rect = self._viewer.mapToScene(self._viewer.viewport().rect()).boundingRect()
-        
+        viewport_rect = self._viewer.mapToScene(
+            self._viewer.viewport().rect()
+        ).boundingRect()
+
         # Calculate graph bounds (union of all nodes)
         if node_rects:
             graph_bounds = node_rects[0][0]
@@ -363,34 +365,38 @@ class Minimap(QWidget):
             # Expand bounds to include viewport for better visualization
             graph_bounds = graph_bounds.united(viewport_rect)
         else:
-            graph_bounds = viewport_rect if not viewport_rect.isEmpty() else QRectF(0, 0, 1000, 1000)
-        
+            graph_bounds = (
+                viewport_rect
+                if not viewport_rect.isEmpty()
+                else QRectF(0, 0, 1000, 1000)
+            )
+
         # Update minimap view
         self._minimap_view.update_minimap(node_rects, viewport_rect, graph_bounds)
-    
+
     def _on_minimap_clicked(self, scene_pos: QPointF):
         """
         Handle minimap click to navigate main view.
-        
+
         Args:
             scene_pos: Position clicked in scene coordinates
         """
         # Center the main view on this position
         self._viewer.centerOn(scene_pos.x(), scene_pos.y())
-    
+
     def set_update_interval(self, interval_ms: int):
         """
         Set minimap update interval.
-        
+
         Args:
             interval_ms: Update interval in milliseconds
         """
         self._update_timer.setInterval(interval_ms)
-    
+
     def set_visible(self, visible: bool):
         """
         Show or hide minimap.
-        
+
         Args:
             visible: True to show, False to hide
         """

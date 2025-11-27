@@ -20,12 +20,10 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QScrollArea,
     QFrame,
-    QGroupBox,
     QPushButton,
     QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -122,13 +120,12 @@ class PropertiesPanel(QDockWidget):
     def _setup_dock(self):
         """Configure dock widget properties."""
         self.setAllowedAreas(
-            Qt.DockWidgetArea.RightDockWidgetArea |
-            Qt.DockWidgetArea.LeftDockWidgetArea
+            Qt.DockWidgetArea.RightDockWidgetArea | Qt.DockWidgetArea.LeftDockWidgetArea
         )
         self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable |
-            QDockWidget.DockWidgetFeature.DockWidgetClosable |
-            QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
         self.setMinimumWidth(250)
 
@@ -227,7 +224,7 @@ class PropertiesPanel(QDockWidget):
             }
         """)
 
-    def set_node(self, node: Optional['BaseNode']) -> None:
+    def set_node(self, node: Optional["BaseNode"]) -> None:
         """
         Set the node to display properties for.
 
@@ -247,11 +244,13 @@ class PropertiesPanel(QDockWidget):
         self._no_selection.hide()
 
         # Update header
-        self._node_name_label.setText(node.name() if hasattr(node, 'name') else "Node")
+        self._node_name_label.setText(node.name() if hasattr(node, "name") else "Node")
         node_type = node.__class__.__name__
         self._node_type_label.setText(f"Type: {node_type}")
-        node_id = node.get_property("node_id") if hasattr(node, 'get_property') else ""
-        self._node_id_label.setText(f"ID: {node_id[:20]}..." if len(str(node_id)) > 20 else f"ID: {node_id}")
+        node_id = node.get_property("node_id") if hasattr(node, "get_property") else ""
+        self._node_id_label.setText(
+            f"ID: {node_id[:20]}..." if len(str(node_id)) > 20 else f"ID: {node_id}"
+        )
 
         # Build property sections
         self._build_properties(node)
@@ -266,10 +265,10 @@ class PropertiesPanel(QDockWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-    def _build_properties(self, node: 'BaseNode'):
+    def _build_properties(self, node: "BaseNode"):
         """Build property widgets for the node."""
         # Get node properties
-        if not hasattr(node, 'model') or not hasattr(node.model, 'properties'):
+        if not hasattr(node, "model") or not hasattr(node.model, "properties"):
             return
 
         properties = node.model.properties
@@ -280,7 +279,7 @@ class PropertiesPanel(QDockWidget):
 
             for prop_name, prop_value in properties.items():
                 # Skip internal properties
-                if prop_name.startswith('_'):
+                if prop_name.startswith("_"):
                     continue
 
                 widget = self._create_property_widget(prop_name, prop_value, node)
@@ -291,12 +290,14 @@ class PropertiesPanel(QDockWidget):
             self._properties_layout.addWidget(basic_section)
 
         # Node-specific inputs section
-        casare_node = node.get_casare_node() if hasattr(node, 'get_casare_node') else None
-        if casare_node and hasattr(casare_node, 'input_ports'):
+        casare_node = (
+            node.get_casare_node() if hasattr(node, "get_casare_node") else None
+        )
+        if casare_node and hasattr(casare_node, "input_ports"):
             inputs_section = CollapsibleSection("Inputs")
 
             for port_name, port in casare_node.input_ports.items():
-                if hasattr(port, 'default_value'):
+                if hasattr(port, "default_value"):
                     widget = self._create_property_widget(
                         port_name, port.default_value, node
                     )
@@ -306,15 +307,13 @@ class PropertiesPanel(QDockWidget):
             self._properties_layout.addWidget(inputs_section)
 
     def _create_property_widget(
-        self, name: str, value: Any, node: 'BaseNode'
+        self, name: str, value: Any, node: "BaseNode"
     ) -> Optional[QWidget]:
         """Create an appropriate widget for the property type."""
         if isinstance(value, bool):
             widget = QCheckBox()
             widget.setChecked(value)
-            widget.toggled.connect(
-                lambda v, n=name: self._on_property_changed(n, v)
-            )
+            widget.toggled.connect(lambda v, n=name: self._on_property_changed(n, v))
             return widget
 
         elif isinstance(value, int):
@@ -337,7 +336,7 @@ class PropertiesPanel(QDockWidget):
             return widget
 
         elif isinstance(value, str):
-            if len(value) > 100 or '\n' in value:
+            if len(value) > 100 or "\n" in value:
                 widget = QTextEdit()
                 widget.setPlainText(value)
                 widget.setMaximumHeight(80)
@@ -373,9 +372,11 @@ class PropertiesPanel(QDockWidget):
     def _on_property_changed(self, name: str, value: Any):
         """Handle property value change."""
         if self._current_node:
-            node_id = self._current_node.get_property("node_id") if hasattr(
-                self._current_node, 'get_property'
-            ) else ""
+            node_id = (
+                self._current_node.get_property("node_id")
+                if hasattr(self._current_node, "get_property")
+                else ""
+            )
             self.property_changed.emit(node_id, name, value)
             logger.debug(f"Property changed: {name} = {value}")
 

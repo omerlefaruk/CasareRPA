@@ -72,7 +72,7 @@ from typing import Literal
 class NodeSchema(BaseModel):
     node_type: Literal['browser', 'control_flow', 'data', 'desktop']  # Allowlist
     node_id: constr(regex=r'^[a-zA-Z0-9_-]{1,64}$')  # Constrained format
-    
+
     @validator('*', pre=True)
     def sanitize_strings(cls, v):
         if isinstance(v, str):

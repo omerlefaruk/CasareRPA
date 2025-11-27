@@ -4,13 +4,11 @@ Manages injector lifecycle and bidirectional communication
 """
 
 import asyncio
-import json
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
 from loguru import logger
 
 from .selector_generator import SmartSelectorGenerator, ElementFingerprint
-from .selector_normalizer import normalize_selector, detect_selector_type
 from .selector_cache import SelectorCache, get_selector_cache
 
 
@@ -35,7 +33,7 @@ class SelectorManager:
             return self._injector_script
 
         script_path = Path(__file__).parent / "selector_injector.js"
-        with open(script_path, 'r', encoding='utf-8') as f:
+        with open(script_path, "r", encoding="utf-8") as f:
             self._injector_script = f.read()
 
         return self._injector_script
@@ -62,8 +60,7 @@ class SelectorManager:
         # Expose Python functions to JavaScript (only if not already registered)
         try:
             await page.expose_function(
-                '__casareRPA_onElementSelected',
-                self._handle_element_selected
+                "__casareRPA_onElementSelected", self._handle_element_selected
             )
         except Exception as e:
             if "already registered" not in str(e).lower():
@@ -71,8 +68,7 @@ class SelectorManager:
 
         try:
             await page.expose_function(
-                '__casareRPA_onRecordingComplete',
-                self._handle_recording_complete
+                "__casareRPA_onRecordingComplete", self._handle_recording_complete
             )
         except Exception as e:
             if "already registered" not in str(e).lower():
@@ -80,8 +76,7 @@ class SelectorManager:
 
         try:
             await page.expose_function(
-                '__casareRPA_onActionRecorded',
-                self._handle_action_recorded
+                "__casareRPA_onActionRecorded", self._handle_action_recorded
             )
         except Exception as e:
             if "already registered" not in str(e).lower():
@@ -89,9 +84,12 @@ class SelectorManager:
 
         logger.info("Selector injector loaded into page")
 
-    async def activate_selector_mode(self, recording: bool = False,
-                                    on_element_selected: Optional[Callable] = None,
-                                    on_recording_complete: Optional[Callable] = None):
+    async def activate_selector_mode(
+        self,
+        recording: bool = False,
+        on_element_selected: Optional[Callable] = None,
+        on_recording_complete: Optional[Callable] = None,
+    ):
         """
         Activate selector mode on the current page
 
@@ -120,8 +118,7 @@ class SelectorManager:
 
         # Activate selector mode in browser - use parameterized call
         await self._active_page.evaluate(
-            "recording => window.__casareRPA.selector.activate(recording)",
-            recording
+            "recording => window.__casareRPA.selector.activate(recording)", recording
         )
 
         logger.info(f"Selector mode activated (recording={recording})")
@@ -132,9 +129,7 @@ class SelectorManager:
             return
 
         try:
-            await self._active_page.evaluate(
-                "window.__casareRPA.selector.deactivate()"
-            )
+            await self._active_page.evaluate("window.__casareRPA.selector.deactivate()")
         except Exception as e:
             logger.warning(f"Failed to deactivate selector mode: {e}")
 
@@ -172,7 +167,9 @@ class SelectorManager:
         Args:
             action: Single action data from browser
         """
-        logger.debug(f"Action recorded: {action.get('action')} at {action.get('timestamp')}")
+        logger.debug(
+            f"Action recorded: {action.get('action')} at {action.get('timestamp')}"
+        )
         # Could emit events here for real-time UI updates if needed
 
     async def _handle_recording_complete(self, actions: List[Dict[str, Any]]):
@@ -185,15 +182,17 @@ class SelectorManager:
         # Process each action and generate selectors
         processed_actions = []
         for action_data in actions:
-            element_data = action_data.get('element', {})
+            element_data = action_data.get("element", {})
             fingerprint = SmartSelectorGenerator.generate_selectors(element_data)
 
-            processed_actions.append({
-                'action': action_data.get('action'),
-                'timestamp': action_data.get('timestamp'),
-                'value': action_data.get('value'),
-                'element': fingerprint
-            })
+            processed_actions.append(
+                {
+                    "action": action_data.get("action"),
+                    "timestamp": action_data.get("timestamp"),
+                    "value": action_data.get("value"),
+                    "element": fingerprint,
+                }
+            )
 
         # Invoke callback
         if self._callback_recording_complete:
@@ -243,8 +242,9 @@ class SelectorManager:
                     continue
 
                 # Not in cache - validate against page
-                if selector_type in ['xpath', 'aria', 'data_attr', 'text']:
-                    result = await self._active_page.evaluate("""
+                if selector_type in ["xpath", "aria", "data_attr", "text"]:
+                    result = await self._active_page.evaluate(
+                        """
                         (selector) => {
                             const start = performance.now();
                             const nodes = document.evaluate(
@@ -257,29 +257,34 @@ class SelectorManager:
                             const time = performance.now() - start;
                             return { count: nodes.snapshotLength, time };
                         }
-                    """, selector_value)
+                    """,
+                        selector_value,
+                    )
                 else:
-                    result = await self._active_page.evaluate("""
+                    result = await self._active_page.evaluate(
+                        """
                         (selector) => {
                             const start = performance.now();
                             const elements = document.querySelectorAll(selector);
                             const time = performance.now() - start;
                             return { count: elements.length, time };
                         }
-                    """, selector_value)
+                    """,
+                        selector_value,
+                    )
 
                 # Cache the result
                 self._cache.put(
                     selector_value,
                     selector_type,
                     page_url,
-                    result['count'],
-                    result['time']
+                    result["count"],
+                    result["time"],
                 )
 
                 # Update selector metadata
-                selector_strategy.is_unique = (result['count'] == 1)
-                selector_strategy.execution_time_ms = result['time']
+                selector_strategy.is_unique = result["count"] == 1
+                selector_strategy.execution_time_ms = result["time"]
 
                 if selector_strategy.is_unique:
                     selector_strategy.score = min(100, selector_strategy.score + 5)
@@ -297,9 +302,9 @@ class SelectorManager:
                 selector_strategy.failure_count += 1
                 selector_strategy.score = max(0, selector_strategy.score - 15)
 
-    async def test_selector(self, selector_value: str,
-                           selector_type: str = 'xpath',
-                           use_cache: bool = True) -> Dict[str, Any]:
+    async def test_selector(
+        self, selector_value: str, selector_type: str = "xpath", use_cache: bool = True
+    ) -> Dict[str, Any]:
         """
         Test a selector against the current page.
         Returns match count and execution time.
@@ -324,8 +329,9 @@ class SelectorManager:
                 return cached.to_dict()
 
         try:
-            if selector_type in ['xpath', 'aria', 'data_attr', 'text']:
-                result = await self._active_page.evaluate("""
+            if selector_type in ["xpath", "aria", "data_attr", "text"]:
+                result = await self._active_page.evaluate(
+                    """
                     (selector) => {
                         const start = performance.now();
                         const nodes = document.evaluate(
@@ -342,9 +348,12 @@ class SelectorManager:
                             success: true
                         };
                     }
-                """, selector_value)
+                """,
+                    selector_value,
+                )
             else:
-                result = await self._active_page.evaluate("""
+                result = await self._active_page.evaluate(
+                    """
                     (selector) => {
                         const start = performance.now();
                         const elements = document.querySelectorAll(selector);
@@ -355,28 +364,23 @@ class SelectorManager:
                             success: true
                         };
                     }
-                """, selector_value)
+                """,
+                    selector_value,
+                )
 
             # Cache the result
             self._cache.put(
-                selector_value,
-                selector_type,
-                page_url,
-                result['count'],
-                result['time']
+                selector_value, selector_type, page_url, result["count"], result["time"]
             )
 
             return result
         except Exception as e:
             logger.error(f"Selector test failed: {e}")
-            return {
-                'success': False,
-                'error': str(e),
-                'count': 0,
-                'time': 0
-            }
+            return {"success": False, "error": str(e), "count": 0, "time": 0}
 
-    async def highlight_elements(self, selector_value: str, selector_type: str = 'xpath'):
+    async def highlight_elements(
+        self, selector_value: str, selector_type: str = "xpath"
+    ):
         """
         Highlight all elements matching a selector (for visual validation)
         """
@@ -384,9 +388,10 @@ class SelectorManager:
             return
 
         try:
-            if selector_type in ['xpath', 'aria', 'data_attr', 'text']:
+            if selector_type in ["xpath", "aria", "data_attr", "text"]:
                 # XPath-based selectors - pass selector as parameter to prevent injection
-                await self._active_page.evaluate("""
+                await self._active_page.evaluate(
+                    """
                     (selector) => {
                         // Remove previous highlights
                         document.querySelectorAll('.casare-test-highlight').forEach(el => el.remove());
@@ -424,10 +429,13 @@ class SelectorManager:
                             document.querySelectorAll('.casare-test-highlight').forEach(el => el.remove());
                         }, 3000);
                     }
-                """, selector_value)
+                """,
+                    selector_value,
+                )
             else:
                 # CSS selectors - pass selector as parameter to prevent injection
-                await self._active_page.evaluate("""
+                await self._active_page.evaluate(
+                    """
                     (selector) => {
                         // Remove previous highlights
                         document.querySelectorAll('.casare-test-highlight').forEach(el => el.remove());
@@ -458,7 +466,9 @@ class SelectorManager:
                             document.querySelectorAll('.casare-test-highlight').forEach(el => el.remove());
                         }, 3000);
                     }
-                """, selector_value)
+                """,
+                    selector_value,
+                )
         except Exception as e:
             logger.error(f"Failed to highlight elements: {e}")
 

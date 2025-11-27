@@ -18,10 +18,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
-from loguru import logger
 
 if TYPE_CHECKING:
-    from ...core.validation import ValidationResult, ValidationIssue, ValidationSeverity
+    from ...core.validation import ValidationResult
 
 
 class ValidationTab(QWidget):
@@ -51,7 +50,7 @@ class ValidationTab(QWidget):
         """
         super().__init__(parent)
 
-        self._last_result: Optional['ValidationResult'] = None
+        self._last_result: Optional["ValidationResult"] = None
 
         self._setup_ui()
         self._apply_styles()
@@ -68,8 +67,11 @@ class ValidationTab(QWidget):
 
         # Status label
         from ..theme import THEME
+
         self._status_label = QLabel("No validation run")
-        self._status_label.setStyleSheet(f"color: {THEME.text_muted}; font-weight: bold;")
+        self._status_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-weight: bold;"
+        )
 
         # Validate button
         validate_btn = QPushButton("Validate")
@@ -185,6 +187,7 @@ class ValidationTab(QWidget):
     def _get_severity_color(self, severity: str) -> QColor:
         """Get color for severity level using VSCode Dark+ theme."""
         from ..theme import THEME
+
         colors = {
             "ERROR": QColor(THEME.status_error),
             "WARNING": QColor(THEME.status_warning),
@@ -203,7 +206,7 @@ class ValidationTab(QWidget):
 
     # ==================== Public API ====================
 
-    def set_result(self, result: 'ValidationResult') -> None:
+    def set_result(self, result: "ValidationResult") -> None:
         """
         Update with validation results.
 
@@ -219,7 +222,11 @@ class ValidationTab(QWidget):
         infos = []
 
         for issue in result.issues:
-            severity = issue.severity.name if hasattr(issue.severity, 'name') else str(issue.severity)
+            severity = (
+                issue.severity.name
+                if hasattr(issue.severity, "name")
+                else str(issue.severity)
+            )
             if severity.upper() == "ERROR":
                 errors.append(issue)
             elif severity.upper() == "WARNING":
@@ -256,7 +263,11 @@ class ValidationTab(QWidget):
             item = QTreeWidgetItem()
 
             # Format message
-            sev_name = issue.severity.name if hasattr(issue.severity, 'name') else str(issue.severity)
+            sev_name = (
+                issue.severity.name
+                if hasattr(issue.severity, "name")
+                else str(issue.severity)
+            )
             prefix = self._get_severity_prefix(sev_name)
             message = f"{prefix} {issue.code}: {issue.message}"
             if issue.suggestion:
@@ -267,30 +278,42 @@ class ValidationTab(QWidget):
             item.setForeground(0, QBrush(color))
 
             # Store issue data
-            item.setData(0, Qt.ItemDataRole.UserRole, {
-                "location": issue.location,
-                "code": issue.code,
-                "severity": sev_name,
-            })
+            item.setData(
+                0,
+                Qt.ItemDataRole.UserRole,
+                {
+                    "location": issue.location,
+                    "code": issue.code,
+                    "severity": sev_name,
+                },
+            )
 
             group.addChild(item)
 
         self._tree.addTopLevelItem(group)
 
-    def _update_status(self, result: 'ValidationResult') -> None:
+    def _update_status(self, result: "ValidationResult") -> None:
         """Update status label and summary."""
         from ..theme import THEME
 
         if result.is_valid:
             if result.warning_count > 0:
-                self._status_label.setText(f"Valid with {result.warning_count} warning(s)")
-                self._status_label.setStyleSheet(f"color: {THEME.status_warning}; font-weight: bold;")
+                self._status_label.setText(
+                    f"Valid with {result.warning_count} warning(s)"
+                )
+                self._status_label.setStyleSheet(
+                    f"color: {THEME.status_warning}; font-weight: bold;"
+                )
             else:
                 self._status_label.setText("Valid")
-                self._status_label.setStyleSheet(f"color: {THEME.status_success}; font-weight: bold;")
+                self._status_label.setStyleSheet(
+                    f"color: {THEME.status_success}; font-weight: bold;"
+                )
         else:
             self._status_label.setText(f"Invalid: {result.error_count} error(s)")
-            self._status_label.setStyleSheet(f"color: {THEME.status_error}; font-weight: bold;")
+            self._status_label.setStyleSheet(
+                f"color: {THEME.status_error}; font-weight: bold;"
+            )
 
         # Summary
         parts = []
@@ -312,7 +335,7 @@ class ValidationTab(QWidget):
         self._status_label.setStyleSheet("color: #888888; font-weight: bold;")
         self._summary_label.setText("")
 
-    def get_result(self) -> Optional['ValidationResult']:
+    def get_result(self) -> Optional["ValidationResult"]:
         """Get the last validation result."""
         return self._last_result
 

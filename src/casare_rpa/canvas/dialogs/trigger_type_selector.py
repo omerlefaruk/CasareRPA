@@ -10,13 +10,11 @@ from typing import Optional
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QHBoxLayout,
     QGridLayout,
     QLabel,
     QFrame,
     QScrollArea,
     QWidget,
-    QPushButton,
     QDialogButtonBox,
 )
 from PySide6.QtCore import Qt, Signal
@@ -99,9 +97,7 @@ class TriggerTypeCard(QFrame):
     clicked = Signal(TriggerType)
 
     def __init__(
-        self,
-        trigger_type: TriggerType,
-        parent: Optional[QWidget] = None
+        self, trigger_type: TriggerType, parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent)
 
@@ -275,7 +271,9 @@ class TriggerTypeSelectorDialog(QDialog):
             # Category header
             cat_label = QLabel(category)
             cat_label.setFont(QFont(cat_label.font().family(), 10, QFont.Weight.Bold))
-            cat_label.setStyleSheet(f"color: {THEME.text_secondary}; padding: 8px 0 4px 0;")
+            cat_label.setStyleSheet(
+                f"color: {THEME.text_secondary}; padding: 8px 0 4px 0;"
+            )
             grid_layout.addWidget(cat_label, row, 0, 1, 3)
             row += 1
 

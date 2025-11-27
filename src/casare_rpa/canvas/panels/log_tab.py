@@ -25,7 +25,7 @@ from PySide6.QtGui import QColor, QBrush
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ...core.events import Event, EventType
+    from ...core.events import Event
 
 
 class LogTab(QWidget):
@@ -123,9 +123,15 @@ class LogTab(QWidget):
 
         # Configure column sizing
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self._table)
@@ -133,6 +139,7 @@ class LogTab(QWidget):
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
         from ..theme import THEME
+
         self.setStyleSheet(f"""
             QTableWidget {{
                 background-color: {THEME.bg_panel};
@@ -196,10 +203,7 @@ class LogTab(QWidget):
                 if self._current_filter == "All":
                     self._table.setRowHidden(row, False)
                 else:
-                    self._table.setRowHidden(
-                        row,
-                        level != self._current_filter.upper()
-                    )
+                    self._table.setRowHidden(row, level != self._current_filter.upper())
 
     def _on_auto_scroll_toggled(self, checked: bool) -> None:
         """Handle auto-scroll toggle."""
@@ -221,12 +225,12 @@ class LogTab(QWidget):
             self,
             "Export Log",
             f"execution_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
-            "Text Files (*.txt);;CSV Files (*.csv);;All Files (*.*)"
+            "Text Files (*.txt);;CSV Files (*.csv);;All Files (*.*)",
         )
 
         if file_path:
             try:
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     # Write header
                     f.write("Time\tLevel\tNode\tMessage\n")
                     f.write("-" * 80 + "\n")
@@ -253,6 +257,7 @@ class LogTab(QWidget):
     def _get_level_color(self, level: str) -> QColor:
         """Get color for log level using VSCode Dark+ theme."""
         from ..theme import THEME
+
         colors = {
             "info": QColor(THEME.status_info),
             "warning": QColor(THEME.status_warning),
@@ -268,7 +273,7 @@ class LogTab(QWidget):
 
     # ==================== Public API ====================
 
-    def log_event(self, event: 'Event') -> None:
+    def log_event(self, event: "Event") -> None:
         """
         Log an execution event.
 
@@ -300,10 +305,7 @@ class LogTab(QWidget):
         self.log_message(message, level, event.node_id)
 
     def log_message(
-        self,
-        message: str,
-        level: str = "info",
-        node_id: Optional[str] = None
+        self, message: str, level: str = "info", node_id: Optional[str] = None
     ) -> None:
         """
         Log a custom message.
@@ -318,6 +320,7 @@ class LogTab(QWidget):
 
         # Time
         from ..theme import THEME
+
         timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         time_item = QTableWidgetItem(timestamp)
         time_item.setForeground(QBrush(QColor(THEME.text_muted)))
@@ -328,7 +331,9 @@ class LogTab(QWidget):
         level_item.setForeground(QBrush(level_color))
 
         # Node
-        node_item = QTableWidgetItem(node_id[:12] + "..." if node_id and len(node_id) > 15 else node_id or "")
+        node_item = QTableWidgetItem(
+            node_id[:12] + "..." if node_id and len(node_id) > 15 else node_id or ""
+        )
         node_item.setData(Qt.ItemDataRole.UserRole, node_id)
         if node_id:
             node_item.setForeground(QBrush(QColor(THEME.accent_primary)))
@@ -343,7 +348,10 @@ class LogTab(QWidget):
         self._table.setItem(row, self.COL_MESSAGE, msg_item)
 
         # Apply filter to new row
-        if self._current_filter != "All" and level.upper() != self._current_filter.upper():
+        if (
+            self._current_filter != "All"
+            and level.upper() != self._current_filter.upper()
+        ):
             self._table.setRowHidden(row, True)
 
         # Auto-scroll

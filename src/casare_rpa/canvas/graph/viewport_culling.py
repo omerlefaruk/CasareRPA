@@ -11,9 +11,8 @@ References:
 
 from collections import defaultdict
 from typing import Dict, Set, Tuple, Optional, List
-from dataclasses import dataclass
 
-from PySide6.QtCore import QRectF, QPointF, QObject, Signal
+from PySide6.QtCore import QRectF, QObject, Signal
 
 from loguru import logger
 
@@ -167,10 +166,7 @@ class ViewportCullingManager(QObject):
     visibility_changed = Signal(set, set)  # (visible_ids, hidden_ids)
 
     def __init__(
-        self,
-        cell_size: int = 500,
-        margin: int = 200,
-        parent: Optional[QObject] = None
+        self, cell_size: int = 500, margin: int = 200, parent: Optional[QObject] = None
     ):
         """
         Initialize the viewport culling manager.
@@ -274,12 +270,12 @@ class ViewportCullingManager(QObject):
             return set(), set()
 
         import time
+
         start = time.perf_counter()
 
         # Expand viewport by margin
         expanded_rect = viewport_rect.adjusted(
-            -self._margin, -self._margin,
-            self._margin, self._margin
+            -self._margin, -self._margin, self._margin, self._margin
         )
 
         # Query for potentially visible nodes
@@ -306,9 +302,7 @@ class ViewportCullingManager(QObject):
 
         return newly_visible, newly_hidden
 
-    def _apply_visibility_changes(
-        self, show_ids: Set[str], hide_ids: Set[str]
-    ) -> None:
+    def _apply_visibility_changes(self, show_ids: Set[str], hide_ids: Set[str]) -> None:
         """
         Apply visibility changes to node items.
 
@@ -318,7 +312,7 @@ class ViewportCullingManager(QObject):
         """
         for node_id in show_ids:
             item = self._node_items.get(node_id)
-            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+            if item and hasattr(item, "setVisible") and hasattr(item, "scene"):
                 # Only modify visibility if item still belongs to a scene
                 # This prevents Qt sendEvent warnings for orphaned items
                 if item.scene() is not None:
@@ -326,7 +320,7 @@ class ViewportCullingManager(QObject):
 
         for node_id in hide_ids:
             item = self._node_items.get(node_id)
-            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+            if item and hasattr(item, "setVisible") and hasattr(item, "scene"):
                 # Only modify visibility if item still belongs to a scene
                 # This prevents Qt sendEvent warnings for orphaned items
                 if item.scene() is not None:
@@ -335,7 +329,7 @@ class ViewportCullingManager(QObject):
     def _show_all_nodes(self) -> None:
         """Show all nodes (used when culling is disabled)."""
         for node_id, item in self._node_items.items():
-            if item and hasattr(item, 'setVisible') and hasattr(item, 'scene'):
+            if item and hasattr(item, "setVisible") and hasattr(item, "scene"):
                 # Only modify visibility if item still belongs to a scene
                 if item.scene() is not None:
                     item.setVisible(True)
@@ -365,9 +359,7 @@ class ViewportCullingManager(QObject):
 
 
 def create_viewport_culler_for_graph(
-    graph_widget,
-    cell_size: int = 500,
-    margin: int = 200
+    graph_widget, cell_size: int = 500, margin: int = 200
 ) -> ViewportCullingManager:
     """
     Create and integrate a ViewportCullingManager with a NodeGraphWidget.
@@ -386,7 +378,7 @@ def create_viewport_culler_for_graph(
     try:
         graph = graph_widget.graph
         for node in graph.all_nodes():
-            if hasattr(node, 'view') and node.view:
+            if hasattr(node, "view") and node.view:
                 rect = node.view.sceneBoundingRect()
                 culler.register_node(node.id, node.view, rect)
     except Exception as e:
@@ -395,12 +387,8 @@ def create_viewport_culler_for_graph(
     # Connect signals for node changes
     try:
         graph = graph_widget.graph
-        graph.node_created.connect(
-            lambda n: _on_node_created(culler, n)
-        )
-        graph.nodes_deleted.connect(
-            lambda ids: _on_nodes_deleted(culler, ids)
-        )
+        graph.node_created.connect(lambda n: _on_node_created(culler, n))
+        graph.nodes_deleted.connect(lambda ids: _on_nodes_deleted(culler, ids))
     except Exception as e:
         logger.warning(f"Could not connect node signals for culling: {e}")
 
@@ -410,7 +398,7 @@ def create_viewport_culler_for_graph(
 def _on_node_created(culler: ViewportCullingManager, node) -> None:
     """Handle node creation event."""
     try:
-        if hasattr(node, 'view') and node.view:
+        if hasattr(node, "view") and node.view:
             rect = node.view.sceneBoundingRect()
             culler.register_node(node.id, node.view, rect)
     except Exception as e:

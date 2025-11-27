@@ -53,16 +53,16 @@ class AppEventTrigger(BaseTrigger):
     async def start(self) -> bool:
         """Start the app event trigger."""
         config = self.config.config
-        event_source = config.get('event_source', 'rpa')
+        event_source = config.get("event_source", "rpa")
 
         self._running = True
         self._status = TriggerStatus.ACTIVE
 
-        if event_source == 'windows':
+        if event_source == "windows":
             success = await self._start_windows_monitor()
-        elif event_source == 'browser':
+        elif event_source == "browser":
             success = await self._start_browser_monitor()
-        elif event_source == 'rpa':
+        elif event_source == "rpa":
             success = await self._start_rpa_monitor()
         else:
             self._error_message = f"Unknown event source: {event_source}"
@@ -74,7 +74,9 @@ class AppEventTrigger(BaseTrigger):
             self._status = TriggerStatus.ERROR
             return False
 
-        logger.info(f"App event trigger started: {self.config.name} (source: {event_source})")
+        logger.info(
+            f"App event trigger started: {self.config.name} (source: {event_source})"
+        )
         return True
 
     async def stop(self) -> bool:
@@ -104,7 +106,7 @@ class AppEventTrigger(BaseTrigger):
     async def _start_windows_monitor(self) -> bool:
         """Start monitoring Windows events."""
         config = self.config.config
-        event_types = config.get('event_types', ['window_focus'])
+        event_types = config.get("event_types", ["window_focus"])
 
         try:
             # Try to use win32api for Windows events
@@ -127,9 +129,9 @@ class AppEventTrigger(BaseTrigger):
     async def _poll_windows_events(self) -> None:
         """Poll for Windows events."""
         config = self.config.config
-        window_title_pattern = config.get('window_title_pattern', '')
-        process_name = config.get('process_name', '')
-        poll_interval = config.get('poll_interval', 1)
+        window_title_pattern = config.get("window_title_pattern", "")
+        process_name = config.get("process_name", "")
+        poll_interval = config.get("poll_interval", 1)
 
         last_window_title = ""
 
@@ -137,6 +139,7 @@ class AppEventTrigger(BaseTrigger):
             try:
                 # Get foreground window title
                 import ctypes
+
                 user32 = ctypes.windll.user32
 
                 hwnd = user32.GetForegroundWindow()
@@ -151,7 +154,9 @@ class AppEventTrigger(BaseTrigger):
 
                     # Check if matches filter
                     if window_title_pattern:
-                        if not re.search(window_title_pattern, current_title, re.IGNORECASE):
+                        if not re.search(
+                            window_title_pattern, current_title, re.IGNORECASE
+                        ):
                             continue
 
                     # Emit event
@@ -176,7 +181,9 @@ class AppEventTrigger(BaseTrigger):
         """Start monitoring browser events."""
         # Browser events would typically require a browser extension
         # or integration with Playwright/Selenium
-        logger.warning("Browser event monitoring requires browser extension integration")
+        logger.warning(
+            "Browser event monitoring requires browser extension integration"
+        )
 
         # Start a placeholder polling task
         self._poll_task = asyncio.create_task(self._poll_browser_events())
@@ -192,7 +199,7 @@ class AppEventTrigger(BaseTrigger):
     async def _start_rpa_monitor(self) -> bool:
         """Start monitoring internal RPA events."""
         config = self.config.config
-        event_types = config.get('event_types', ['workflow_completed'])
+        event_types = config.get("event_types", ["workflow_completed"])
 
         try:
             from ...core.events import get_event_bus, EventType
@@ -201,13 +208,13 @@ class AppEventTrigger(BaseTrigger):
 
             # Map event type strings to EventType enum
             event_map = {
-                'workflow_started': EventType.WORKFLOW_STARTED,
-                'workflow_completed': EventType.WORKFLOW_COMPLETED,
-                'workflow_error': EventType.WORKFLOW_ERROR,
-                'workflow_stopped': EventType.WORKFLOW_STOPPED,
-                'node_started': EventType.NODE_STARTED,
-                'node_completed': EventType.NODE_COMPLETED,
-                'node_error': EventType.NODE_ERROR,
+                "workflow_started": EventType.WORKFLOW_STARTED,
+                "workflow_completed": EventType.WORKFLOW_COMPLETED,
+                "workflow_error": EventType.WORKFLOW_ERROR,
+                "workflow_stopped": EventType.WORKFLOW_STOPPED,
+                "node_started": EventType.NODE_STARTED,
+                "node_completed": EventType.NODE_COMPLETED,
+                "node_error": EventType.NODE_ERROR,
             }
 
             for event_type_str in event_types:
@@ -234,7 +241,9 @@ class AppEventTrigger(BaseTrigger):
             "event_type": event_type,
             "node_id": event.node_id,
             "data": event.data,
-            "timestamp": event.timestamp.isoformat() if event.timestamp else datetime.utcnow().isoformat(),
+            "timestamp": event.timestamp.isoformat()
+            if event.timestamp
+            else datetime.utcnow().isoformat(),
         }
 
         metadata = {
@@ -247,8 +256,8 @@ class AppEventTrigger(BaseTrigger):
         """Validate app event trigger configuration."""
         config = self.config.config
 
-        event_source = config.get('event_source', 'rpa')
-        valid_sources = ['windows', 'browser', 'rpa']
+        event_source = config.get("event_source", "rpa")
+        valid_sources = ["windows", "browser", "rpa"]
         if event_source not in valid_sources:
             return False, f"Invalid event_source. Must be one of: {valid_sources}"
 
@@ -262,7 +271,12 @@ class AppEventTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "event_source": {
                     "type": "string",

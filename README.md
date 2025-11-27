@@ -1,6 +1,12 @@
 # 🤖 CasareRPA - Windows Desktop RPA Platform
 
+[![CI Pipeline](https://github.com/omerlefaruk/CasareRPA/workflows/CI%20Pipeline/badge.svg)](https://github.com/omerlefaruk/CasareRPA/actions)
+[![Tests](https://img.shields.io/badge/tests-1255%2B%20passing-success)](https://github.com/omerlefaruk/CasareRPA/actions)
+[![codecov](https://codecov.io/gh/omerlefaruk/CasareRPA/branch/main/graph/badge.svg)](https://codecov.io/gh/omerlefaruk/CasareRPA)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Linting: Ruff](https://img.shields.io/badge/linting-informational-yellow.svg)](https://github.com/astral-sh/ruff)
+[![Type checking: mypy](https://img.shields.io/badge/type%20checking-informational-yellow.svg)](https://mypy-lang.org/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6-green.svg)](https://doc.qt.io/qtforpython/)
 [![Playwright](https://img.shields.io/badge/automation-Playwright-orange.svg)](https://playwright.dev/python/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)

@@ -4,33 +4,32 @@ Base Visual Node for CasareRPA.
 This module provides the base VisualNode class to avoid circular imports.
 """
 
-from typing import Type, Optional, Any, Dict
+from typing import Optional, Dict
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
-from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QColor
 
 from casare_rpa.core.base_node import BaseNode as CasareBaseNode
-from casare_rpa.core.types import PortType, DataType
+from casare_rpa.domain.value_objects.types import PortType, DataType
 from casare_rpa.core.port_type_system import PortTypeRegistry, get_port_type_registry
 from casare_rpa.canvas.graph.custom_node_item import CasareNodeItem
-from loguru import logger
 
 # VSCode Dark+ color scheme for nodes
 # Node body should be slightly lighter than canvas (#1E1E1E) to be visible
 UNIFIED_NODE_COLOR = QColor(37, 37, 38)  # VSCode sidebar background - #252526
 
+
 class VisualNode(NodeGraphQtBaseNode):
     """
     Base class for visual nodes in NodeGraphQt.
-    
+
     Bridges CasareRPA BaseNode with NodeGraphQt visual representation.
     """
-    
+
     # Class attributes for node metadata
     __identifier__ = "casare_rpa"
     NODE_NAME = "Visual Node"
     NODE_CATEGORY = "basic"
-    
+
     def __init__(self) -> None:
         """Initialize visual node."""
         # Pass CasareNodeItem as the graphics item class for custom rendering
@@ -45,38 +44,48 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Set node colors with category-based accents
         self._apply_category_colors()
-        
+
         # Configure selection colors - VSCode selection style
-        self.model.selected_color = (38, 79, 120, 128)  # VSCode editor selection (#264F78) with transparency
-        self.model.selected_border_color = (0, 122, 204, 255)  # VSCode focus border (#007ACC)
-        
+        self.model.selected_color = (
+            38,
+            79,
+            120,
+            128,
+        )  # VSCode editor selection (#264F78) with transparency
+        self.model.selected_border_color = (
+            0,
+            122,
+            204,
+            255,
+        )  # VSCode focus border (#007ACC)
+
         # Set temporary icon (will be updated with actual icons later)
         # Use file path for model.icon (required for JSON serialization in copy/paste)
         icon_path = self._create_temp_icon()
         self.model.icon = icon_path
-        
+
         # Create and initialize node properties
         self.create_property("node_id", "")
         self.create_property("status", "idle")
         self.create_property("_is_running", False)
         self.create_property("_is_completed", False)
-        
+
         # Auto-create linked CasareRPA node
         # This ensures every visual node has a CasareRPA node regardless of how it was created
         self._auto_create_casare_node()
-        
+
         # Setup ports for this node type
         self.setup_ports()
-        
+
         # Configure port colors after ports are created
         self._configure_port_colors()
-        
+
         # Style text input widgets after they're created
         self._style_text_inputs()
 
     def _apply_category_colors(self) -> None:
         """Apply VSCode Dark+ category-based colors to the node."""
-        from ..graph.node_icons import get_node_color, CATEGORY_COLORS
+        from ..graph.node_icons import CATEGORY_COLORS
 
         # Get category color
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
@@ -105,15 +114,15 @@ class VisualNode(NodeGraphQtBaseNode):
         # Use the node name to get the appropriate icon path
         node_name = self.NODE_NAME
         return get_cached_node_icon_path(node_name, size=24)
-    
+
     def setup_ports(self) -> None:
         """
         Setup node ports.
-        
+
         Override this method in subclasses to define ports.
         """
         pass
-    
+
     def _configure_port_colors(self) -> None:
         """Configure port colors based on data type."""
         # Apply type-based colors to input ports
@@ -225,12 +234,22 @@ class VisualNode(NodeGraphQtBaseNode):
         # Check if it's an exec port by name pattern
         port_lower = port_name.lower()
         exec_port_names = {
-            "exec_in", "exec_out", "exec",
-            "loop_body", "completed",  # Loop node exec outputs
-            "true", "false",  # If/Branch node exec outputs
-            "then", "else",  # Alternative if/branch names
-            "on_success", "on_error", "on_finally",  # Error handling
-            "body", "done", "finish", "next",  # Other common exec names
+            "exec_in",
+            "exec_out",
+            "exec",
+            "loop_body",
+            "completed",  # Loop node exec outputs
+            "true",
+            "false",  # If/Branch node exec outputs
+            "then",
+            "else",  # Alternative if/branch names
+            "on_success",
+            "on_error",
+            "on_finally",  # Error handling
+            "body",
+            "done",
+            "finish",
+            "next",  # Other common exec names
         }
         if port_lower in exec_port_names or "exec" in port_lower:
             return None  # Exec port
@@ -289,15 +308,15 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Re-apply port colors now that we have type info
         self._configure_port_colors()
-    
+
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
         # Get all widgets in this node
         for prop_name, widget in self.widgets().items():
             # Check if it's a LineEdit widget
-            if hasattr(widget, 'get_custom_widget'):
+            if hasattr(widget, "get_custom_widget"):
                 custom_widget = widget.get_custom_widget()
-                if hasattr(custom_widget, 'setStyleSheet'):
+                if hasattr(custom_widget, "setStyleSheet"):
                     # Apply a more visible background color for text inputs
                     custom_widget.setStyleSheet("""
                         QLineEdit {
@@ -313,26 +332,26 @@ class VisualNode(NodeGraphQtBaseNode):
                             border: 1px solid rgb(100, 150, 200);
                         }
                     """)
-    
+
     def get_casare_node(self) -> Optional[CasareBaseNode]:
         """
         Get the underlying CasareRPA node instance.
-        
+
         Returns:
             CasareRPA node instance or None
         """
         return self._casare_node
-    
+
     def set_casare_node(self, node: CasareBaseNode) -> None:
         """
         Set the underlying CasareRPA node instance.
-        
+
         Args:
             node: CasareRPA node instance
         """
         self._casare_node = node
         self.set_property("node_id", node.node_id)
-    
+
     def _auto_create_casare_node(self) -> None:
         """
         Automatically create and link CasareRPA node.
@@ -341,12 +360,13 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         if self._casare_node is not None:
             return  # Already has a node
-        
+
         try:
             # Import here to avoid circular dependency
             from ..graph.node_registry import get_node_factory
+
             factory = get_node_factory()
-            
+
             # Create the CasareRPA node
             casare_node = factory.create_casare_node(self)
             if casare_node:
@@ -356,28 +376,28 @@ class VisualNode(NodeGraphQtBaseNode):
             # Silently fail during initialization - node will be created later if needed
             # This handles cases where factory isn't ready yet (e.g., during testing)
             pass
-    
+
     def ensure_casare_node(self) -> Optional[CasareBaseNode]:
         """
         Ensure this visual node has a CasareRPA node, creating one if necessary.
         Use this before any operation that requires the CasareRPA node.
-        
+
         Returns:
             The CasareRPA node instance, or None if creation failed
         """
         if self._casare_node is None:
             self._auto_create_casare_node()
         return self._casare_node
-    
+
     def update_status(self, status: str) -> None:
         """
         Update node visual status.
-        
+
         Args:
             status: Node status (idle, running, success, error)
         """
         self.set_property("status", status)
-        
+
         # Update visual indicators based on status
         if status == "running":
             # Show animated yellow dotted border
@@ -385,18 +405,18 @@ class VisualNode(NodeGraphQtBaseNode):
             self.set_property("_is_completed", False)
             self.model.border_color = (255, 215, 0, 255)  # Bright yellow
             # Trigger custom paint for animation
-            if hasattr(self.view, 'set_running'):
+            if hasattr(self.view, "set_running"):
                 self.view.set_running(True)
         elif status == "success":
             # Show checkmark, restore normal border
             self.set_property("_is_running", False)
             self.set_property("_is_completed", True)
             self.model.border_color = (68, 68, 68, 255)  # Normal border
-            if hasattr(self.view, 'set_running'):
+            if hasattr(self.view, "set_running"):
                 self.view.set_running(False)
-            if hasattr(self.view, 'set_completed'):
+            if hasattr(self.view, "set_completed"):
                 self.view.set_completed(True)
-            if hasattr(self.view, 'set_error'):
+            if hasattr(self.view, "set_error"):
                 self.view.set_error(False)
         elif status == "error":
             # Show error state with icon (keep dark background, red border + error icon)
@@ -404,11 +424,11 @@ class VisualNode(NodeGraphQtBaseNode):
             self.set_property("_is_completed", False)
             self.set_color(45, 45, 45)  # Keep dark background - icon shows error
             self.model.border_color = (244, 67, 54, 255)  # Red border
-            if hasattr(self.view, 'set_running'):
+            if hasattr(self.view, "set_running"):
                 self.view.set_running(False)
-            if hasattr(self.view, 'set_completed'):
+            if hasattr(self.view, "set_completed"):
                 self.view.set_completed(False)
-            if hasattr(self.view, 'set_error'):
+            if hasattr(self.view, "set_error"):
                 self.view.set_error(True)
         else:  # idle
             # Restore default appearance
@@ -416,11 +436,11 @@ class VisualNode(NodeGraphQtBaseNode):
             self.set_property("_is_completed", False)
             self.set_color(45, 45, 45)  # Dark background
             self.model.border_color = (68, 68, 68, 255)  # Normal border
-            if hasattr(self.view, 'set_running'):
+            if hasattr(self.view, "set_running"):
                 self.view.set_running(False)
-            if hasattr(self.view, 'set_completed'):
+            if hasattr(self.view, "set_completed"):
                 self.view.set_completed(False)
-            if hasattr(self.view, 'set_error'):
+            if hasattr(self.view, "set_error"):
                 self.view.set_error(False)
 
     def update_execution_time(self, time_seconds: Optional[float]) -> None:
@@ -430,5 +450,5 @@ class VisualNode(NodeGraphQtBaseNode):
         Args:
             time_seconds: Execution time in seconds, or None to clear
         """
-        if hasattr(self.view, 'set_execution_time'):
+        if hasattr(self.view, "set_execution_time"):
             self.view.set_execution_time(time_seconds)

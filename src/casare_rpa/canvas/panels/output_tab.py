@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QBrush
-from loguru import logger
 
 from ..theme import THEME
 
@@ -99,9 +98,15 @@ class OutputTab(QWidget):
 
         # Configure column sizing
         header = self._table.horizontalHeader()
-        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_NAME, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(self.COL_VALUE, QHeaderView.ResizeMode.Stretch)
 
         splitter.addWidget(self._table)
@@ -199,7 +204,9 @@ class OutputTab(QWidget):
                 # Get full value from user data
                 full_value = value_item.data(Qt.ItemDataRole.UserRole)
                 if full_value is not None:
-                    self._preview_text.setText(self._format_value_for_preview(full_value))
+                    self._preview_text.setText(
+                        self._format_value_for_preview(full_value)
+                    )
                 else:
                     self._preview_text.setText(value_item.text())
         else:
@@ -266,10 +273,7 @@ class OutputTab(QWidget):
     # ==================== Public API ====================
 
     def add_output(
-        self,
-        name: str,
-        value: Any,
-        timestamp: Optional[str] = None
+        self, name: str, value: Any, timestamp: Optional[str] = None
     ) -> None:
         """
         Add an output to the table.
@@ -294,7 +298,9 @@ class OutputTab(QWidget):
         # Type
         type_name = self._get_type_name(value)
         type_item = QTableWidgetItem(type_name)
-        type_item.setForeground(QBrush(QColor(THEME.wire_dict)))  # VSCode teal for types
+        type_item.setForeground(
+            QBrush(QColor(THEME.wire_dict))
+        )  # VSCode teal for types
 
         # Value (truncated for display, full stored in user data)
         value_item = QTableWidgetItem(self._format_value(value))

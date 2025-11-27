@@ -425,7 +425,6 @@ __all__ = [
     "VisualCaptureElementImageNode",
     "VisualOCRExtractTextNode",
     "VisualCompareImagesNode",
-
     # email
     "VisualSendEmailNode",
     "VisualReadEmailsNode",
@@ -435,7 +434,6 @@ __all__ = [
     "VisualMarkEmailNode",
     "VisualDeleteEmailNode",
     "VisualMoveEmailNode",
-
     # error_handling
     "VisualTryNode",
     "VisualRetryNode",
@@ -447,7 +445,6 @@ __all__ = [
     "VisualErrorRecoveryNode",
     "VisualLogErrorNode",
     "VisualAssertNode",
-
     # file_operations
     "VisualReadFileNode",
     "VisualWriteFileNode",
@@ -489,7 +486,6 @@ __all__ = [
     "VisualFTPRenameNode",
     "VisualFTPDisconnectNode",
     "VisualFTPGetSizeNode",
-
     # scripts
     "VisualRunPythonScriptNode",
     "VisualRunPythonFileNode",
@@ -537,7 +533,6 @@ __all__ = [
     "VisualTextCountNode",
     "VisualTextJoinNode",
     "VisualTextExtractNode",
-
     # office_automation
     "VisualExcelOpenNode",
     "VisualExcelReadCellNode",
@@ -551,7 +546,6 @@ __all__ = [
     "VisualOutlookSendEmailNode",
     "VisualOutlookReadEmailsNode",
     "VisualOutlookGetInboxCountNode",
-
     # rest_api
     "VisualHttpRequestNode",
     "VisualHttpGetNode",
@@ -576,13 +570,14 @@ __all__ = [
 # =============================================================================
 
 # Collect all classes from this module's __all__ list
-_THIS_MODULE_CLASSES = [
-    globals()[name] for name in __all__
-]
+_THIS_MODULE_CLASSES = [globals()[name] for name in __all__]
 
 # Import extended nodes from old location (until migration is complete)
 try:
-    from casare_rpa.canvas.visual_nodes.extended_visual_nodes import EXTENDED_VISUAL_NODE_CLASSES
+    from casare_rpa.canvas.visual_nodes.extended_visual_nodes import (
+        EXTENDED_VISUAL_NODE_CLASSES,
+    )
+
     _EXTENDED_CLASSES = EXTENDED_VISUAL_NODE_CLASSES
 except ImportError:
     _EXTENDED_CLASSES = []

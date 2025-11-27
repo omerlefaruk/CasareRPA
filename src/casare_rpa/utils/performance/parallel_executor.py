@@ -72,7 +72,9 @@ class DependencyGraph:
                 ready.append(node_id)
         return ready
 
-    def get_independent_groups(self, starting_nodes: List[NodeId]) -> List[List[NodeId]]:
+    def get_independent_groups(
+        self, starting_nodes: List[NodeId]
+    ) -> List[List[NodeId]]:
         """
         Find groups of independent nodes that can execute in parallel.
 
@@ -109,7 +111,9 @@ class DependencyGraph:
 
         # Kahn's algorithm with level tracking
         groups: List[List[NodeId]] = []
-        current_level = [n for n in starting_nodes if n in reachable and in_degree.get(n, 0) == 0]
+        current_level = [
+            n for n in starting_nodes if n in reachable and in_degree.get(n, 0) == 0
+        ]
 
         while current_level:
             groups.append(current_level)
@@ -244,7 +248,9 @@ class ParallelExecutor:
             if self._stop_on_error:
                 for task_id, (success, _) in batch_results.items():
                     if not success:
-                        logger.warning(f"Stopping batch execution due to error in {task_id}")
+                        logger.warning(
+                            f"Stopping batch execution due to error in {task_id}"
+                        )
                         return all_results
 
         return all_results

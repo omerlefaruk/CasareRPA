@@ -9,7 +9,7 @@ import hashlib
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 from loguru import logger
 
 
@@ -129,7 +129,9 @@ class SelectorCache:
         entry.hit_count += 1
         self._hits += 1
 
-        logger.debug(f"Cache hit for selector: {selector_type}:{selector_value[:30]}...")
+        logger.debug(
+            f"Cache hit for selector: {selector_type}:{selector_value[:30]}..."
+        )
         return entry
 
     def put(
@@ -191,9 +193,7 @@ class SelectorCache:
 
         # Invalidate entries for specific URL
         url_hash = hashlib.md5(page_url.encode()).hexdigest()[:8]
-        keys_to_remove = [
-            k for k in self._cache.keys() if k.endswith(f":{url_hash}")
-        ]
+        keys_to_remove = [k for k in self._cache.keys() if k.endswith(f":{url_hash}")]
 
         for key in keys_to_remove:
             del self._cache[key]

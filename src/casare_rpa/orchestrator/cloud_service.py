@@ -2,6 +2,7 @@
 Cloud Service Interface
 Handles communication with Supabase.
 """
+
 import os
 import asyncio
 from typing import List, Dict, Any
@@ -11,13 +12,14 @@ from supabase import create_client, Client
 
 load_dotenv()
 
+
 class CloudService:
     def __init__(self):
         self.connected = False
         self.client: Client = None
         self.url = os.getenv("SUPABASE_URL")
         self.key = os.getenv("SUPABASE_KEY")
-        
+
     async def connect(self):
         """Connect to Supabase."""
         if not self.url or not self.key:
@@ -37,14 +39,17 @@ class CloudService:
         """Fetch list of connected robots."""
         if not self.connected:
             await self.connect()
-            
+
         if not self.client:
             return []
 
         try:
             # Run in executor to avoid blocking async loop
             response = await asyncio.to_thread(
-                lambda: self.client.table("robots").select("*").order("last_seen", desc=True).execute()
+                lambda: self.client.table("robots")
+                .select("*")
+                .order("last_seen", desc=True)
+                .execute()
             )
             return response.data
         except Exception as e:
@@ -55,13 +60,17 @@ class CloudService:
         """Fetch job history."""
         if not self.connected:
             await self.connect()
-            
+
         if not self.client:
             return []
 
         try:
             response = await asyncio.to_thread(
-                lambda: self.client.table("jobs").select("*").order("created_at", desc=True).limit(50).execute()
+                lambda: self.client.table("jobs")
+                .select("*")
+                .order("created_at", desc=True)
+                .limit(50)
+                .execute()
             )
             return response.data
         except Exception as e:
@@ -72,13 +81,13 @@ class CloudService:
         """Send a job to a robot."""
         if not self.client:
             return False
-            
+
         logger.info(f"Dispatching workflow to robot {robot_id}")
         try:
             data = {
                 "robot_id": robot_id,
                 "workflow": workflow_json,
-                "status": "pending"
+                "status": "pending",
             }
             await asyncio.to_thread(
                 lambda: self.client.table("jobs").insert(data).execute()

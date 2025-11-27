@@ -6,7 +6,6 @@ Converts recorded actions into workflow nodes.
 """
 
 import time
-import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -15,6 +14,7 @@ from loguru import logger
 
 try:
     import uiautomation as auto
+
     HAS_UIAUTOMATION = True
 except ImportError:
     HAS_UIAUTOMATION = False
@@ -22,6 +22,7 @@ except ImportError:
 
 try:
     from pynput import mouse, keyboard
+
     HAS_PYNPUT = True
 except ImportError:
     HAS_PYNPUT = False
@@ -30,6 +31,7 @@ except ImportError:
 
 class DesktopActionType(Enum):
     """Types of desktop actions that can be recorded."""
+
     MOUSE_CLICK = "mouse_click"
     MOUSE_DOUBLE_CLICK = "mouse_double_click"
     MOUSE_RIGHT_CLICK = "mouse_right_click"
@@ -69,20 +71,20 @@ class DesktopRecordedAction:
     def to_dict(self) -> Dict[str, Any]:
         """Convert action to dictionary."""
         return {
-            'action_type': self.action_type.value,
-            'timestamp': self.timestamp.isoformat(),
-            'x': self.x,
-            'y': self.y,
-            'end_x': self.end_x,
-            'end_y': self.end_y,
-            'text': self.text,
-            'keys': self.keys,
-            'element_name': self.element_name,
-            'element_type': self.element_type,
-            'element_automation_id': self.element_automation_id,
-            'element_class_name': self.element_class_name,
-            'window_title': self.window_title,
-            'selector': self.selector,
+            "action_type": self.action_type.value,
+            "timestamp": self.timestamp.isoformat(),
+            "x": self.x,
+            "y": self.y,
+            "end_x": self.end_x,
+            "end_y": self.end_y,
+            "text": self.text,
+            "keys": self.keys,
+            "element_name": self.element_name,
+            "element_type": self.element_type,
+            "element_automation_id": self.element_automation_id,
+            "element_class_name": self.element_class_name,
+            "window_title": self.window_title,
+            "selector": self.selector,
         }
 
     def get_description(self) -> str:
@@ -97,7 +99,11 @@ class DesktopRecordedAction:
             target = self.element_name or f"({self.x}, {self.y})"
             return f"Right-click on {target}"
         elif self.action_type == DesktopActionType.KEYBOARD_TYPE:
-            return f"Type: {self.text[:30]}..." if len(self.text) > 30 else f"Type: {self.text}"
+            return (
+                f"Type: {self.text[:30]}..."
+                if len(self.text) > 30
+                else f"Type: {self.text}"
+            )
         elif self.action_type == DesktopActionType.KEYBOARD_HOTKEY:
             return f"Hotkey: {'+'.join(self.keys)}"
         elif self.action_type == DesktopActionType.MOUSE_DRAG:
@@ -129,7 +135,9 @@ class DesktopRecorder:
         self._keyboard_listener: Optional[keyboard.Listener] = None
 
         # Callbacks
-        self._on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = None
+        self._on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = (
+            None
+        )
         self._on_recording_started: Optional[Callable[[], None]] = None
         self._on_recording_stopped: Optional[Callable[[], None]] = None
         self._on_recording_paused: Optional[Callable[[bool], None]] = None
@@ -155,7 +163,7 @@ class DesktopRecorder:
         on_action_recorded: Optional[Callable[[DesktopRecordedAction], None]] = None,
         on_recording_started: Optional[Callable[[], None]] = None,
         on_recording_stopped: Optional[Callable[[], None]] = None,
-        on_recording_paused: Optional[Callable[[bool], None]] = None
+        on_recording_paused: Optional[Callable[[bool], None]] = None,
     ):
         """Set callback functions for recording events."""
         self._on_action_recorded = on_action_recorded
@@ -202,8 +210,12 @@ class DesktopRecorder:
         self.is_recording = False
         self.is_paused = False
 
-        duration = (datetime.now() - self.start_time).total_seconds() if self.start_time else 0
-        logger.info(f"Desktop recording stopped. Duration: {duration:.2f}s, Actions: {len(self.actions)}")
+        duration = (
+            (datetime.now() - self.start_time).total_seconds() if self.start_time else 0
+        )
+        logger.info(
+            f"Desktop recording stopped. Duration: {duration:.2f}s, Actions: {len(self.actions)}"
+        )
 
         if self._on_recording_stopped:
             self._on_recording_stopped()
@@ -245,14 +257,12 @@ class DesktopRecorder:
     def _start_listeners(self):
         """Start mouse and keyboard listeners."""
         self._mouse_listener = mouse.Listener(
-            on_click=self._on_mouse_click,
-            on_scroll=self._on_mouse_scroll
+            on_click=self._on_mouse_click, on_scroll=self._on_mouse_scroll
         )
         self._mouse_listener.start()
 
         self._keyboard_listener = keyboard.Listener(
-            on_press=self._on_key_press,
-            on_release=self._on_key_release
+            on_press=self._on_key_press, on_release=self._on_key_release
         )
         self._keyboard_listener.start()
 
@@ -293,10 +303,7 @@ class DesktopRecorder:
         element_info = self._get_element_at_position(x, y)
 
         action = DesktopRecordedAction(
-            action_type=action_type,
-            x=x,
-            y=y,
-            **element_info
+            action_type=action_type, x=x, y=y, **element_info
         )
 
         self._add_action(action)
@@ -312,7 +319,7 @@ class DesktopRecorder:
 
         # Check for global hotkeys (these should work even when recording)
         try:
-            key_name = key.char if hasattr(key, 'char') and key.char else str(key)
+            key_name = key.char if hasattr(key, "char") and key.char else str(key)
         except AttributeError:
             key_name = str(key)
 
@@ -321,10 +328,18 @@ class DesktopRecorder:
         # Handle Escape (cancel) - handled externally
 
         # Track pressed modifier keys
-        if key in (keyboard.Key.ctrl, keyboard.Key.ctrl_l, keyboard.Key.ctrl_r,
-                   keyboard.Key.alt, keyboard.Key.alt_l, keyboard.Key.alt_r,
-                   keyboard.Key.shift, keyboard.Key.shift_l, keyboard.Key.shift_r,
-                   keyboard.Key.cmd):
+        if key in (
+            keyboard.Key.ctrl,
+            keyboard.Key.ctrl_l,
+            keyboard.Key.ctrl_r,
+            keyboard.Key.alt,
+            keyboard.Key.alt_l,
+            keyboard.Key.alt_r,
+            keyboard.Key.shift,
+            keyboard.Key.shift_l,
+            keyboard.Key.shift_r,
+            keyboard.Key.cmd,
+        ):
             self._pressed_keys.add(key)
             return
 
@@ -335,32 +350,29 @@ class DesktopRecorder:
             keys.append(self._key_to_string(key))
 
             action = DesktopRecordedAction(
-                action_type=DesktopActionType.KEYBOARD_HOTKEY,
-                keys=keys
+                action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=keys
             )
             self._add_action(action)
             return
 
         # Regular key - add to text buffer
-        if hasattr(key, 'char') and key.char:
+        if hasattr(key, "char") and key.char:
             self._text_buffer += key.char
             self._last_key_time = time.time()
         elif key == keyboard.Key.space:
-            self._text_buffer += ' '
+            self._text_buffer += " "
             self._last_key_time = time.time()
         elif key == keyboard.Key.enter:
             self._flush_text_buffer()
             # Record Enter as a separate action
             action = DesktopRecordedAction(
-                action_type=DesktopActionType.KEYBOARD_HOTKEY,
-                keys=['Enter']
+                action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=["Enter"]
             )
             self._add_action(action)
         elif key == keyboard.Key.tab:
             self._flush_text_buffer()
             action = DesktopRecordedAction(
-                action_type=DesktopActionType.KEYBOARD_HOTKEY,
-                keys=['Tab']
+                action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=["Tab"]
             )
             self._add_action(action)
         elif key == keyboard.Key.backspace:
@@ -368,8 +380,7 @@ class DesktopRecorder:
                 self._text_buffer = self._text_buffer[:-1]
             else:
                 action = DesktopRecordedAction(
-                    action_type=DesktopActionType.KEYBOARD_HOTKEY,
-                    keys=['Backspace']
+                    action_type=DesktopActionType.KEYBOARD_HOTKEY, keys=["Backspace"]
                 )
                 self._add_action(action)
 
@@ -379,48 +390,47 @@ class DesktopRecorder:
 
     def _key_to_string(self, key) -> str:
         """Convert a key to its string representation."""
-        if hasattr(key, 'char') and key.char:
+        if hasattr(key, "char") and key.char:
             return key.char.upper()
 
         key_map = {
-            keyboard.Key.ctrl: 'Ctrl',
-            keyboard.Key.ctrl_l: 'Ctrl',
-            keyboard.Key.ctrl_r: 'Ctrl',
-            keyboard.Key.alt: 'Alt',
-            keyboard.Key.alt_l: 'Alt',
-            keyboard.Key.alt_r: 'Alt',
-            keyboard.Key.shift: 'Shift',
-            keyboard.Key.shift_l: 'Shift',
-            keyboard.Key.shift_r: 'Shift',
-            keyboard.Key.cmd: 'Win',
-            keyboard.Key.enter: 'Enter',
-            keyboard.Key.tab: 'Tab',
-            keyboard.Key.backspace: 'Backspace',
-            keyboard.Key.delete: 'Delete',
-            keyboard.Key.escape: 'Escape',
-            keyboard.Key.space: 'Space',
-            keyboard.Key.f1: 'F1',
-            keyboard.Key.f2: 'F2',
-            keyboard.Key.f3: 'F3',
-            keyboard.Key.f4: 'F4',
-            keyboard.Key.f5: 'F5',
-            keyboard.Key.f6: 'F6',
-            keyboard.Key.f7: 'F7',
-            keyboard.Key.f8: 'F8',
-            keyboard.Key.f9: 'F9',
-            keyboard.Key.f10: 'F10',
-            keyboard.Key.f11: 'F11',
-            keyboard.Key.f12: 'F12',
+            keyboard.Key.ctrl: "Ctrl",
+            keyboard.Key.ctrl_l: "Ctrl",
+            keyboard.Key.ctrl_r: "Ctrl",
+            keyboard.Key.alt: "Alt",
+            keyboard.Key.alt_l: "Alt",
+            keyboard.Key.alt_r: "Alt",
+            keyboard.Key.shift: "Shift",
+            keyboard.Key.shift_l: "Shift",
+            keyboard.Key.shift_r: "Shift",
+            keyboard.Key.cmd: "Win",
+            keyboard.Key.enter: "Enter",
+            keyboard.Key.tab: "Tab",
+            keyboard.Key.backspace: "Backspace",
+            keyboard.Key.delete: "Delete",
+            keyboard.Key.escape: "Escape",
+            keyboard.Key.space: "Space",
+            keyboard.Key.f1: "F1",
+            keyboard.Key.f2: "F2",
+            keyboard.Key.f3: "F3",
+            keyboard.Key.f4: "F4",
+            keyboard.Key.f5: "F5",
+            keyboard.Key.f6: "F6",
+            keyboard.Key.f7: "F7",
+            keyboard.Key.f8: "F8",
+            keyboard.Key.f9: "F9",
+            keyboard.Key.f10: "F10",
+            keyboard.Key.f11: "F11",
+            keyboard.Key.f12: "F12",
         }
 
-        return key_map.get(key, str(key).replace('Key.', ''))
+        return key_map.get(key, str(key).replace("Key.", ""))
 
     def _flush_text_buffer(self):
         """Flush accumulated text as a single type action."""
         if self._text_buffer:
             action = DesktopRecordedAction(
-                action_type=DesktopActionType.KEYBOARD_TYPE,
-                text=self._text_buffer
+                action_type=DesktopActionType.KEYBOARD_TYPE, text=self._text_buffer
             )
             self._add_action(action)
             self._text_buffer = ""
@@ -428,12 +438,12 @@ class DesktopRecorder:
     def _get_element_at_position(self, x: int, y: int) -> Dict[str, Any]:
         """Get UI element information at the given position."""
         result = {
-            'element_name': '',
-            'element_type': '',
-            'element_automation_id': '',
-            'element_class_name': '',
-            'window_title': '',
-            'selector': {}
+            "element_name": "",
+            "element_type": "",
+            "element_automation_id": "",
+            "element_class_name": "",
+            "window_title": "",
+            "selector": {},
         }
 
         if not HAS_UIAUTOMATION:
@@ -442,24 +452,24 @@ class DesktopRecorder:
         try:
             element = auto.ControlFromPoint(x, y)
             if element:
-                result['element_name'] = element.Name or ''
-                result['element_type'] = element.ControlTypeName or ''
-                result['element_automation_id'] = element.AutomationId or ''
-                result['element_class_name'] = element.ClassName or ''
+                result["element_name"] = element.Name or ""
+                result["element_type"] = element.ControlTypeName or ""
+                result["element_automation_id"] = element.AutomationId or ""
+                result["element_class_name"] = element.ClassName or ""
 
                 # Get window title
                 window = element
-                while window and window.ControlTypeName != 'WindowControl':
+                while window and window.ControlTypeName != "WindowControl":
                     window = window.GetParentControl()
                 if window:
-                    result['window_title'] = window.Name or ''
+                    result["window_title"] = window.Name or ""
 
                 # Build selector
-                result['selector'] = {
-                    'name': result['element_name'],
-                    'automation_id': result['element_automation_id'],
-                    'control_type': result['element_type'],
-                    'class_name': result['element_class_name'],
+                result["selector"] = {
+                    "name": result["element_name"],
+                    "automation_id": result["element_automation_id"],
+                    "control_type": result["element_type"],
+                    "class_name": result["element_class_name"],
                 }
         except Exception as e:
             logger.debug(f"Could not get element at ({x}, {y}): {e}")
@@ -504,13 +514,15 @@ class WorkflowGenerator:
 
         # Start node
         start_node_id = "start_1"
-        nodes.append({
-            "id": start_node_id,
-            "type": "StartNode",
-            "name": "Start",
-            "position": [100, 100],
-            "config": {}
-        })
+        nodes.append(
+            {
+                "id": start_node_id,
+                "type": "StartNode",
+                "name": "Start",
+                "position": [100, 100],
+                "config": {},
+            }
+        )
 
         prev_node_id = start_node_id
         y_offset = 200
@@ -523,61 +535,72 @@ class WorkflowGenerator:
                 nodes.append(node_data)
 
                 # Connect to previous node
-                connections.append({
-                    "from_node": prev_node_id,
-                    "from_port": "exec_out",
-                    "to_node": node_id,
-                    "to_port": "exec_in"
-                })
+                connections.append(
+                    {
+                        "from_node": prev_node_id,
+                        "from_port": "exec_out",
+                        "to_node": node_id,
+                        "to_port": "exec_in",
+                    }
+                )
 
                 prev_node_id = node_id
                 y_offset += 100
 
         # End node
         end_node_id = "end_1"
-        nodes.append({
-            "id": end_node_id,
-            "type": "EndNode",
-            "name": "End",
-            "position": [100, y_offset],
-            "config": {}
-        })
+        nodes.append(
+            {
+                "id": end_node_id,
+                "type": "EndNode",
+                "name": "End",
+                "position": [100, y_offset],
+                "config": {},
+            }
+        )
 
-        connections.append({
-            "from_node": prev_node_id,
-            "from_port": "exec_out",
-            "to_node": end_node_id,
-            "to_port": "exec_in"
-        })
+        connections.append(
+            {
+                "from_node": prev_node_id,
+                "from_port": "exec_out",
+                "to_node": end_node_id,
+                "to_port": "exec_in",
+            }
+        )
 
         return {
             "name": f"Recorded Workflow {datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "description": f"Auto-generated from {len(actions)} recorded actions",
             "nodes": nodes,
-            "connections": connections
+            "connections": connections,
         }
 
     @staticmethod
-    def _action_to_node(action: DesktopRecordedAction, node_id: str, y_pos: int) -> Optional[Dict[str, Any]]:
+    def _action_to_node(
+        action: DesktopRecordedAction, node_id: str, y_pos: int
+    ) -> Optional[Dict[str, Any]]:
         """Convert a recorded action to a workflow node."""
 
-        if action.action_type in (DesktopActionType.MOUSE_CLICK,
-                                   DesktopActionType.MOUSE_DOUBLE_CLICK,
-                                   DesktopActionType.MOUSE_RIGHT_CLICK):
+        if action.action_type in (
+            DesktopActionType.MOUSE_CLICK,
+            DesktopActionType.MOUSE_DOUBLE_CLICK,
+            DesktopActionType.MOUSE_RIGHT_CLICK,
+        ):
             # Use element selector if available, otherwise use coordinates
-            if action.selector and action.selector.get('automation_id'):
+            if action.selector and action.selector.get("automation_id"):
                 return {
                     "id": node_id,
                     "type": "DesktopClickElementNode",
                     "name": f"Click {action.element_name or 'Element'}",
                     "position": [100, y_pos],
                     "config": {
-                        "click_type": "double" if action.action_type == DesktopActionType.MOUSE_DOUBLE_CLICK else
-                                     "right" if action.action_type == DesktopActionType.MOUSE_RIGHT_CLICK else "left"
+                        "click_type": "double"
+                        if action.action_type == DesktopActionType.MOUSE_DOUBLE_CLICK
+                        else "right"
+                        if action.action_type == DesktopActionType.MOUSE_RIGHT_CLICK
+                        else "left"
                     },
-                    "inputs": {
-                        "selector": action.selector
-                    }
+                    "inputs": {"selector": action.selector},
                 }
             else:
                 return {
@@ -588,21 +611,25 @@ class WorkflowGenerator:
                     "config": {
                         "x": action.x,
                         "y": action.y,
-                        "button": "right" if action.action_type == DesktopActionType.MOUSE_RIGHT_CLICK else "left",
-                        "clicks": 2 if action.action_type == DesktopActionType.MOUSE_DOUBLE_CLICK else 1
-                    }
+                        "button": "right"
+                        if action.action_type == DesktopActionType.MOUSE_RIGHT_CLICK
+                        else "left",
+                        "clicks": 2
+                        if action.action_type == DesktopActionType.MOUSE_DOUBLE_CLICK
+                        else 1,
+                    },
                 }
 
         elif action.action_type == DesktopActionType.KEYBOARD_TYPE:
             return {
                 "id": node_id,
                 "type": "DesktopTypeTextNode",
-                "name": f"Type: {action.text[:20]}..." if len(action.text) > 20 else f"Type: {action.text}",
+                "name": f"Type: {action.text[:20]}..."
+                if len(action.text) > 20
+                else f"Type: {action.text}",
                 "position": [100, y_pos],
                 "config": {},
-                "inputs": {
-                    "text": action.text
-                }
+                "inputs": {"text": action.text},
             }
 
         elif action.action_type == DesktopActionType.KEYBOARD_HOTKEY:
@@ -611,9 +638,7 @@ class WorkflowGenerator:
                 "type": "SendHotKeyNode",
                 "name": f"Hotkey: {'+'.join(action.keys)}",
                 "position": [100, y_pos],
-                "config": {
-                    "keys": action.keys
-                }
+                "config": {"keys": action.keys},
             }
 
         elif action.action_type == DesktopActionType.MOUSE_DRAG:
@@ -626,8 +651,8 @@ class WorkflowGenerator:
                     "start_x": action.x,
                     "start_y": action.y,
                     "end_x": action.end_x,
-                    "end_y": action.end_y
-                }
+                    "end_y": action.end_y,
+                },
             }
 
         elif action.action_type == DesktopActionType.WINDOW_ACTIVATE:
@@ -637,9 +662,7 @@ class WorkflowGenerator:
                 "name": f"Activate: {action.window_title[:20]}",
                 "position": [100, y_pos],
                 "config": {},
-                "inputs": {
-                    "window_title": action.window_title
-                }
+                "inputs": {"window_title": action.window_title},
             }
 
         return None

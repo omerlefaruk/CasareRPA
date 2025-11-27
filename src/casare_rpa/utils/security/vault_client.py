@@ -19,7 +19,7 @@ Usage:
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Optional
 from pathlib import Path
 
@@ -29,6 +29,7 @@ from loguru import logger
 try:
     import hvac
     from hvac.exceptions import InvalidPath, Forbidden, VaultError
+
     HVAC_AVAILABLE = True
 except ImportError:
     HVAC_AVAILABLE = False
@@ -37,21 +38,25 @@ except ImportError:
 
 class VaultConnectionError(Exception):
     """Raised when unable to connect to Vault server."""
+
     pass
 
 
 class VaultAuthenticationError(Exception):
     """Raised when authentication to Vault fails."""
+
     pass
 
 
 class VaultSecretNotFoundError(Exception):
     """Raised when a secret is not found."""
+
     pass
 
 
 class VaultPermissionError(Exception):
     """Raised when access to a secret is denied."""
+
     pass
 
 
@@ -74,6 +79,7 @@ class VaultConfig:
         timeout: Connection timeout in seconds
         mount_point: KV secrets engine mount point
     """
+
     url: str
     namespace: Optional[str] = None
     auth_method: str = "approle"
@@ -179,7 +185,9 @@ class VaultClient:
     def _connect(self) -> None:
         """Establish connection to Vault and authenticate."""
         try:
-            verify = self.config.ca_cert if self.config.ca_cert else self.config.verify_ssl
+            verify = (
+                self.config.ca_cert if self.config.ca_cert else self.config.verify_ssl
+            )
 
             self._client = hvac.Client(
                 url=self.config.url,
@@ -250,9 +258,7 @@ class VaultClient:
                 logger.debug("Authenticated via Kubernetes")
 
             else:
-                raise VaultAuthenticationError(
-                    f"Unsupported auth method: {method}"
-                )
+                raise VaultAuthenticationError(f"Unsupported auth method: {method}")
 
         except FileNotFoundError as e:
             raise VaultAuthenticationError(f"Kubernetes JWT not found: {e}")

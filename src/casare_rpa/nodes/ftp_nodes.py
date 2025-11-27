@@ -14,9 +14,7 @@ This module provides nodes for FTP/SFTP operations:
 
 import asyncio
 import ftplib
-import os
 from pathlib import Path
-from typing import Any, Optional, List
 
 from loguru import logger
 
@@ -121,7 +119,9 @@ class FTPConnectNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP connect")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for FTP connect"
+                        )
 
                     # Create FTP connection
                     if use_tls:
@@ -144,12 +144,14 @@ class FTPConnectNode(BaseNode):
                     self.set_output_value("server_message", welcome)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(f"FTP connected successfully to {host} (attempt {attempts})")
+                    logger.info(
+                        f"FTP connected successfully to {host} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
                         "data": {"connected": True, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -269,7 +271,9 @@ class FTPUploadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP upload")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for FTP upload"
+                        )
 
                     # Upload file
                     with open(local, "rb") as f:
@@ -282,12 +286,14 @@ class FTPUploadNode(BaseNode):
                     self.set_output_value("bytes_sent", file_size)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(f"FTP upload completed: {remote_path} (attempt {attempts})")
+                    logger.info(
+                        f"FTP upload completed: {remote_path} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
                         "data": {"bytes_sent": file_size, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -400,12 +406,15 @@ class FTPDownloadNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for FTP download")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for FTP download"
+                        )
 
                     # Download file
                     bytes_received = 0
 
                     with open(local, "wb") as f:
+
                         def callback(data):
                             nonlocal bytes_received
                             f.write(data)
@@ -414,18 +423,26 @@ class FTPDownloadNode(BaseNode):
                         if binary_mode:
                             ftp.retrbinary(f"RETR {remote_path}", callback)
                         else:
-                            ftp.retrlines(f"RETR {remote_path}", lambda line: callback((line + "\n").encode()))
+                            ftp.retrlines(
+                                f"RETR {remote_path}",
+                                lambda line: callback((line + "\n").encode()),
+                            )
 
                     self.set_output_value("downloaded", True)
                     self.set_output_value("bytes_received", bytes_received)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(f"FTP download completed: {local_path} ({bytes_received} bytes, attempt {attempts})")
+                    logger.info(
+                        f"FTP download completed: {local_path} ({bytes_received} bytes, attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
-                        "data": {"bytes_received": bytes_received, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "data": {
+                            "bytes_received": bytes_received,
+                            "attempts": attempts,
+                        },
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -507,7 +524,7 @@ class FTPListNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(items)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -567,7 +584,7 @@ class FTPDeleteNode(BaseNode):
             return {
                 "success": True,
                 "data": {"deleted": True},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -642,7 +659,7 @@ class FTPMakeDirNode(BaseNode):
             return {
                 "success": True,
                 "data": {"created": True},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -701,7 +718,7 @@ class FTPRemoveDirNode(BaseNode):
             return {
                 "success": True,
                 "data": {"removed": True},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -764,7 +781,7 @@ class FTPRenameNode(BaseNode):
             return {
                 "success": True,
                 "data": {"renamed": True},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -813,7 +830,7 @@ class FTPDisconnectNode(BaseNode):
             return {
                 "success": True,
                 "data": {"disconnected": True},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -872,11 +889,7 @@ class FTPGetSizeNode(BaseNode):
             self.set_output_value("found", size is not None)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {"size": size},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {"size": size}, "next_nodes": ["exec_out"]}
 
         except ftplib.error_perm:
             self.set_output_value("size", 0)
@@ -885,7 +898,7 @@ class FTPGetSizeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"found": False},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

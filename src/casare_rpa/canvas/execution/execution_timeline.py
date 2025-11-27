@@ -4,7 +4,7 @@ Execution Timeline for CasareRPA.
 Visual timeline showing node execution order and timing.
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -15,17 +15,15 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QLabel,
     QPushButton,
-    QFrame,
-    QSizePolicy,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont
-from loguru import logger
 
 
 @dataclass
 class TimelineEvent:
     """Represents an event on the timeline."""
+
     node_id: str
     node_name: str
     event_type: str  # 'started', 'completed', 'error'
@@ -44,7 +42,7 @@ class TimelineBar(QWidget):
         event: TimelineEvent,
         start_time: datetime,
         total_duration: float,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self._event = event
@@ -60,7 +58,9 @@ class TimelineBar(QWidget):
         # Calculate position and width
         event_offset = (event.timestamp - start_time).total_seconds() * 1000
         self._x_offset = event_offset / total_duration if total_duration > 0 else 0
-        self._width_ratio = (event.duration_ms or 100) / total_duration if total_duration > 0 else 0.1
+        self._width_ratio = (
+            (event.duration_ms or 100) / total_duration if total_duration > 0 else 0.1
+        )
 
     def paintEvent(self, event) -> None:
         """Paint the timeline bar."""
@@ -77,9 +77,9 @@ class TimelineBar(QWidget):
         bar_height = rect.height() - 2 * margin
 
         # Determine color based on status
-        if self._event.event_type == 'error':
+        if self._event.event_type == "error":
             color = QColor("#f44336")  # Red
-        elif self._event.event_type == 'completed':
+        elif self._event.event_type == "completed":
             color = QColor("#4CAF50")  # Green
         else:
             color = QColor("#FFA500")  # Orange (running)
@@ -228,14 +228,15 @@ class ExecutionTimeline(QWidget):
             return
 
         # Calculate total duration
-        end_time = max(
-            e.timestamp for e in self._events
-        )
+        end_time = max(e.timestamp for e in self._events)
         if self._events:
             last_event = max(self._events, key=lambda e: e.timestamp)
             if last_event.duration_ms:
                 from datetime import timedelta
-                end_time = last_event.timestamp + timedelta(milliseconds=last_event.duration_ms)
+
+                end_time = last_event.timestamp + timedelta(
+                    milliseconds=last_event.duration_ms
+                )
 
         total_duration = (end_time - self._start_time).total_seconds() * 1000
 
@@ -244,10 +245,12 @@ class ExecutionTimeline(QWidget):
 
         # Create bars for each event
         for event in self._events:
-            if event.event_type in ('completed', 'error'):
+            if event.event_type in ("completed", "error"):
                 bar = TimelineBar(event, self._start_time, total_duration)
                 bar.clicked.connect(self.node_clicked.emit)
-                self._timeline_layout.insertWidget(self._timeline_layout.count() - 1, bar)
+                self._timeline_layout.insertWidget(
+                    self._timeline_layout.count() - 1, bar
+                )
 
     # ==================== Public API ====================
 
@@ -264,7 +267,7 @@ class ExecutionTimeline(QWidget):
         node_name: str,
         event_type: str,
         duration_ms: Optional[float] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """
         Add an execution event.
@@ -282,7 +285,7 @@ class ExecutionTimeline(QWidget):
             event_type=event_type,
             timestamp=datetime.now(),
             duration_ms=duration_ms,
-            error_message=error_message
+            error_message=error_message,
         )
         self._events.append(event)
         self._rebuild_timeline()

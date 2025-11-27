@@ -9,8 +9,8 @@ from .recording_session import RecordingSession, RecordedAction, ActionType
 from .workflow_generator import WorkflowGenerator
 
 __all__ = [
-    'RecordingSession',
-    'RecordedAction',
-    'ActionType',
-    'WorkflowGenerator',
+    "RecordingSession",
+    "RecordedAction",
+    "ActionType",
+    "WorkflowGenerator",
 ]

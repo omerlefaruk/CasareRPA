@@ -1,26 +1,38 @@
 """Visual nodes for desktop_automation category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualLaunchApplicationNode(VisualNode):
     """Visual representation of LaunchApplicationNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Launch Application"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Launch Application node."""
         super().__init__()
-        self.add_text_input("application_path", "Application Path", text="calc.exe", tab="inputs")
+        self.add_text_input(
+            "application_path", "Application Path", text="calc.exe", tab="inputs"
+        )
         self.add_text_input("arguments", "Arguments", text="", tab="inputs")
-        self.add_text_input("working_directory", "Working Directory", text="", tab="inputs")
-        self.add_text_input("window_title_hint", "Window Title Hint", text="", tab="config")
+        self.add_text_input(
+            "working_directory", "Working Directory", text="", tab="inputs"
+        )
+        self.add_text_input(
+            "window_title_hint", "Window Title Hint", text="", tab="config"
+        )
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("window_state", "normal", 
-                           items=["normal", "maximized", "minimized"],
-                           widget_type=3, tab="config")
-    
+        self.create_property(
+            "window_state",
+            "normal",
+            items=["normal", "maximized", "minimized"],
+            widget_type=3,
+            tab="config",
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -32,21 +44,22 @@ class VisualLaunchApplicationNode(VisualNode):
         self.add_output("process_id")
         self.add_output("window_title")
 
+
 class VisualCloseApplicationNode(VisualNode):
     """Visual representation of CloseApplicationNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Close Application"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Close Application node."""
         super().__init__()
         self.add_text_input("window_title", "Window Title", text="", tab="inputs")
         self.create_property("force_close", False, widget_type=1, tab="config")
         self.create_property("timeout", 5.0, widget_type=2, tab="config")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -56,21 +69,22 @@ class VisualCloseApplicationNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualActivateWindowNode(VisualNode):
     """Visual representation of ActivateWindowNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Activate Window"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Activate Window node."""
         super().__init__()
         self.add_text_input("window_title", "Window Title", text="", tab="inputs")
         self.create_property("match_partial", True, widget_type=1, tab="config")
         self.create_property("timeout", 5.0, widget_type=2, tab="config")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -79,6 +93,7 @@ class VisualActivateWindowNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
         self.add_output("window")
+
 
 class VisualGetWindowListNode(VisualNode):
     """Visual representation of GetWindowListNode."""
@@ -100,6 +115,7 @@ class VisualGetWindowListNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("window_list")
         self.add_output("window_count")
+
 
 class VisualFindElementNode(VisualNode):
     """Visual representation of FindElementNode (Desktop)."""
@@ -124,8 +140,10 @@ class VisualFindElementNode(VisualNode):
         self.add_output("element")
         self.add_output("found")
 
+
 class VisualClickElementDesktopNode(VisualNode):
     """Visual representation of ClickElementNode (Desktop)."""
+
     CASARE_NODE_CLASS = "ClickElementNode"
 
     __identifier__ = "casare_rpa.desktop"
@@ -150,8 +168,10 @@ class VisualClickElementDesktopNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualTypeTextDesktopNode(VisualNode):
     """Visual representation of TypeTextNode (Desktop)."""
+
     CASARE_NODE_CLASS = "TypeTextNode"
 
     __identifier__ = "casare_rpa.desktop"
@@ -176,6 +196,7 @@ class VisualTypeTextDesktopNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualGetElementTextNode(VisualNode):
     """Visual representation of GetElementTextNode (Desktop)."""
 
@@ -199,6 +220,7 @@ class VisualGetElementTextNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("text")
         self.add_output("element")
+
 
 class VisualGetElementPropertyNode(VisualNode):
     """Visual representation of GetElementPropertyNode (Desktop)."""
@@ -227,6 +249,7 @@ class VisualGetElementPropertyNode(VisualNode):
 
 # Window Management Nodes
 
+
 class VisualResizeWindowNode(VisualNode):
     """Visual representation of ResizeWindowNode."""
 
@@ -250,6 +273,7 @@ class VisualResizeWindowNode(VisualNode):
         self.add_input("window_height")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualMoveWindowNode(VisualNode):
     """Visual representation of MoveWindowNode."""
@@ -275,6 +299,7 @@ class VisualMoveWindowNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualMaximizeWindowNode(VisualNode):
     """Visual representation of MaximizeWindowNode."""
 
@@ -289,6 +314,7 @@ class VisualMaximizeWindowNode(VisualNode):
         self.add_input("window")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualMinimizeWindowNode(VisualNode):
     """Visual representation of MinimizeWindowNode."""
@@ -305,6 +331,7 @@ class VisualMinimizeWindowNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualRestoreWindowNode(VisualNode):
     """Visual representation of RestoreWindowNode."""
 
@@ -319,6 +346,7 @@ class VisualRestoreWindowNode(VisualNode):
         self.add_input("window")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualGetWindowPropertiesNode(VisualNode):
     """Visual representation of GetWindowPropertiesNode."""
@@ -343,6 +371,7 @@ class VisualGetWindowPropertiesNode(VisualNode):
         self.add_output("is_maximized")
         self.add_output("is_minimized")
 
+
 class VisualSetWindowStateNode(VisualNode):
     """Visual representation of SetWindowStateNode."""
 
@@ -354,9 +383,13 @@ class VisualSetWindowStateNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Set Window State node."""
         super().__init__()
-        self.create_property("state", "normal",
-                           items=["normal", "maximized", "minimized"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state",
+            "normal",
+            items=["normal", "maximized", "minimized"],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -368,6 +401,7 @@ class VisualSetWindowStateNode(VisualNode):
 
 
 # Advanced Interaction Nodes
+
 
 class VisualSelectFromDropdownNode(VisualNode):
     """Visual representation of SelectFromDropdownNode."""
@@ -391,6 +425,7 @@ class VisualSelectFromDropdownNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualCheckCheckboxNode(VisualNode):
     """Visual representation of CheckCheckboxNode."""
 
@@ -411,6 +446,7 @@ class VisualCheckCheckboxNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualSelectRadioButtonNode(VisualNode):
     """Visual representation of SelectRadioButtonNode."""
 
@@ -425,6 +461,7 @@ class VisualSelectRadioButtonNode(VisualNode):
         self.add_input("element")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualSelectTabNode(VisualNode):
     """Visual representation of SelectTabNode."""
@@ -449,6 +486,7 @@ class VisualSelectTabNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualExpandTreeItemNode(VisualNode):
     """Visual representation of ExpandTreeItemNode."""
 
@@ -469,6 +507,7 @@ class VisualExpandTreeItemNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualScrollElementNode(VisualNode):
     """Visual representation of ScrollElementNode."""
 
@@ -480,9 +519,13 @@ class VisualScrollElementNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Scroll Element node."""
         super().__init__()
-        self.create_property("direction", "down",
-                           items=["up", "down", "left", "right"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "direction",
+            "down",
+            items=["up", "down", "left", "right"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("amount", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -494,6 +537,7 @@ class VisualScrollElementNode(VisualNode):
 
 
 # Mouse & Keyboard Control Nodes
+
 
 class VisualMoveMouseNode(VisualNode):
     """Visual representation of MoveMouseNode."""
@@ -519,6 +563,7 @@ class VisualMoveMouseNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualMouseClickNode(VisualNode):
     """Visual representation of MouseClickNode."""
 
@@ -532,12 +577,20 @@ class VisualMouseClickNode(VisualNode):
         super().__init__()
         self.create_property("click_x", 0, widget_type=2, tab="config")
         self.create_property("click_y", 0, widget_type=2, tab="config")
-        self.create_property("button", "left",
-                           items=["left", "right", "middle"],
-                           widget_type=3, tab="config")
-        self.create_property("click_type", "single",
-                           items=["single", "double", "triple"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "button",
+            "left",
+            items=["left", "right", "middle"],
+            widget_type=3,
+            tab="config",
+        )
+        self.create_property(
+            "click_type",
+            "single",
+            items=["single", "double", "triple"],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -546,6 +599,7 @@ class VisualMouseClickNode(VisualNode):
         self.add_input("y")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualSendKeysNode(VisualNode):
     """Visual representation of SendKeysNode."""
@@ -569,6 +623,7 @@ class VisualSendKeysNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualSendHotKeyNode(VisualNode):
     """Visual representation of SendHotKeyNode."""
 
@@ -581,13 +636,23 @@ class VisualSendHotKeyNode(VisualNode):
         """Initialize Send Hotkey node."""
         super().__init__()
         # Modifier dropdown
-        self.add_combo_menu("modifier", "Modifier", items=["none", "Ctrl", "Alt", "Shift", "Win"], tab="properties")
+        self.add_combo_menu(
+            "modifier",
+            "Modifier",
+            items=["none", "Ctrl", "Alt", "Shift", "Win"],
+            tab="properties",
+        )
         # Key to send
         self.add_text_input("key", "Key", text="Enter", tab="properties")
         # Wait time after sending
         self.add_text_input("wait_time", "Wait Time (s)", text="0", tab="properties")
         # Override text (comma-separated keys) - overrides modifier + key if provided
-        self.add_text_input("keys", "Custom Keys (overrides above)", placeholder_text="e.g., Ctrl,Alt,Delete", tab="advanced")
+        self.add_text_input(
+            "keys",
+            "Custom Keys (overrides above)",
+            placeholder_text="e.g., Ctrl,Alt,Delete",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -596,6 +661,7 @@ class VisualSendHotKeyNode(VisualNode):
         self.add_typed_input("wait_time", DataType.FLOAT)
         self.add_exec_output()
         self.add_typed_output("success", DataType.BOOLEAN)
+
 
 class VisualGetMousePositionNode(VisualNode):
     """Visual representation of GetMousePositionNode."""
@@ -612,6 +678,7 @@ class VisualGetMousePositionNode(VisualNode):
         self.add_output("x")
         self.add_output("y")
 
+
 class VisualDragMouseNode(VisualNode):
     """Visual representation of DragMouseNode."""
 
@@ -627,9 +694,13 @@ class VisualDragMouseNode(VisualNode):
         self.create_property("start_y", 0, widget_type=2, tab="config")
         self.create_property("end_x", 100, widget_type=2, tab="config")
         self.create_property("end_y", 100, widget_type=2, tab="config")
-        self.create_property("button", "left",
-                           items=["left", "right", "middle"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "button",
+            "left",
+            items=["left", "right", "middle"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("duration", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -646,6 +717,7 @@ class VisualDragMouseNode(VisualNode):
 
 # Wait & Verification Nodes
 
+
 class VisualDesktopWaitForElementNode(VisualNode):
     """Visual representation of desktop WaitForElementNode."""
 
@@ -659,9 +731,13 @@ class VisualDesktopWaitForElementNode(VisualNode):
         """Initialize Wait For Desktop Element node."""
         super().__init__()
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("state", "visible",
-                           items=["visible", "hidden", "enabled", "disabled"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state",
+            "visible",
+            items=["visible", "hidden", "enabled", "disabled"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -672,6 +748,7 @@ class VisualDesktopWaitForElementNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("element")
         self.add_output("success")
+
 
 class VisualWaitForWindowNode(VisualNode):
     """Visual representation of WaitForWindowNode."""
@@ -688,9 +765,9 @@ class VisualWaitForWindowNode(VisualNode):
         self.add_text_input("title_regex", "Title Regex", text="", tab="inputs")
         self.add_text_input("class_name", "Class Name", text="", tab="inputs")
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("state", "visible",
-                           items=["visible", "hidden"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state", "visible", items=["visible", "hidden"], widget_type=3, tab="config"
+        )
         self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -703,6 +780,7 @@ class VisualWaitForWindowNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("window")
         self.add_output("success")
+
 
 class VisualVerifyElementExistsNode(VisualNode):
     """Visual representation of VerifyElementExistsNode."""
@@ -726,6 +804,7 @@ class VisualVerifyElementExistsNode(VisualNode):
         self.add_output("exists")
         self.add_output("element")
 
+
 class VisualVerifyElementPropertyNode(VisualNode):
     """Visual representation of VerifyElementPropertyNode."""
 
@@ -739,10 +818,22 @@ class VisualVerifyElementPropertyNode(VisualNode):
         super().__init__()
         self.add_text_input("property_name", "Property Name", text="Name", tab="inputs")
         self.add_text_input("expected_value", "Expected Value", text="", tab="inputs")
-        self.create_property("comparison", "equals",
-                           items=["equals", "contains", "startswith", "endswith",
-                                  "regex", "greater", "less", "not_equals"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "comparison",
+            "equals",
+            items=[
+                "equals",
+                "contains",
+                "startswith",
+                "endswith",
+                "regex",
+                "greater",
+                "less",
+                "not_equals",
+            ],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -759,6 +850,7 @@ class VisualVerifyElementPropertyNode(VisualNode):
 # Screenshot & OCR Visual Nodes (Bite 9)
 # ============================================================
 
+
 class VisualCaptureScreenshotNode(VisualNode):
     """Visual representation of CaptureScreenshotNode."""
 
@@ -771,9 +863,9 @@ class VisualCaptureScreenshotNode(VisualNode):
         """Initialize Capture Screenshot node."""
         super().__init__()
         self.add_text_input("file_path", "Save Path", text="", tab="inputs")
-        self.create_property("format", "PNG",
-                           items=["PNG", "JPEG", "BMP"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -783,6 +875,7 @@ class VisualCaptureScreenshotNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("image")
         self.add_output("success")
+
 
 class VisualCaptureElementImageNode(VisualNode):
     """Visual representation of CaptureElementImageNode."""
@@ -797,9 +890,9 @@ class VisualCaptureElementImageNode(VisualNode):
         super().__init__()
         self.add_text_input("file_path", "Save Path", text="", tab="inputs")
         self.create_property("padding", 0, widget_type=2, tab="config")
-        self.create_property("format", "PNG",
-                           items=["PNG", "JPEG", "BMP"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -810,6 +903,7 @@ class VisualCaptureElementImageNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("image")
         self.add_output("success")
+
 
 class VisualOCRExtractTextNode(VisualNode):
     """Visual representation of OCRExtractTextNode."""
@@ -823,7 +917,12 @@ class VisualOCRExtractTextNode(VisualNode):
         """Initialize OCR Extract Text node."""
         super().__init__()
         self.add_text_input("image_path", "Image Path", text="", tab="inputs")
-        self.add_combo_menu("engine", "OCR Engine", items=["auto", "rapidocr", "tesseract", "winocr"], tab="config")
+        self.add_combo_menu(
+            "engine",
+            "OCR Engine",
+            items=["auto", "rapidocr", "tesseract", "winocr"],
+            tab="config",
+        )
         self.add_text_input("language", "Language", text="eng", tab="config")
         self.add_text_input("config", "Tesseract Config", text="", tab="config")
 
@@ -838,6 +937,7 @@ class VisualOCRExtractTextNode(VisualNode):
         self.add_output("engine_used")
         self.add_output("success")
 
+
 class VisualCompareImagesNode(VisualNode):
     """Visual representation of CompareImagesNode."""
 
@@ -851,9 +951,13 @@ class VisualCompareImagesNode(VisualNode):
         super().__init__()
         self.add_text_input("image1_path", "Image 1 Path", text="", tab="inputs")
         self.add_text_input("image2_path", "Image 2 Path", text="", tab="inputs")
-        self.create_property("method", "histogram",
-                           items=["histogram", "ssim", "pixel"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "method",
+            "histogram",
+            items=["histogram", "ssim", "pixel"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("threshold", 0.9, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -872,4 +976,3 @@ class VisualCompareImagesNode(VisualNode):
 # =============================================================================
 # File System Nodes
 # =============================================================================
-

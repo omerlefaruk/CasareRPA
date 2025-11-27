@@ -2,18 +2,32 @@
 Schedule Dialog for CasareRPA Canvas.
 Allows scheduling workflows directly from the Canvas editor.
 """
+
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-    QLineEdit, QComboBox, QCheckBox, QSpinBox,
-    QTimeEdit, QDateTimeEdit, QDialogButtonBox,
-    QLabel, QGroupBox, QMessageBox, QTableWidget,
-    QTableWidgetItem, QHeaderView, QPushButton,
-    QWidget, QTabWidget
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QSpinBox,
+    QTimeEdit,
+    QDateTimeEdit,
+    QDialogButtonBox,
+    QLabel,
+    QGroupBox,
+    QMessageBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QPushButton,
+    QWidget,
 )
 from PySide6.QtCore import Qt, QTime, QDateTime, Signal
 
@@ -22,6 +36,7 @@ from loguru import logger
 
 class ScheduleFrequency:
     """Schedule frequency types."""
+
     ONCE = "once"
     HOURLY = "hourly"
     DAILY = "daily"
@@ -53,7 +68,7 @@ class WorkflowSchedule:
         success_count: int = 0,
         failure_count: int = 0,
         created_at: Optional[datetime] = None,
-        last_error: str = ""
+        last_error: str = "",
     ):
         self.id = id or str(uuid.uuid4())
         self.name = name
@@ -96,12 +111,13 @@ class WorkflowSchedule:
             "success_count": self.success_count,
             "failure_count": self.failure_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_error": self.last_error
+            "last_error": self.last_error,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "WorkflowSchedule":
         """Create from dictionary."""
+
         def parse_datetime(val):
             if val is None:
                 return None
@@ -131,10 +147,12 @@ class WorkflowSchedule:
             success_count=data.get("success_count", 0),
             failure_count=data.get("failure_count", 0),
             created_at=parse_datetime(data.get("created_at")),
-            last_error=data.get("last_error", "")
+            last_error=data.get("last_error", ""),
         )
 
-    def calculate_next_run(self, from_time: Optional[datetime] = None) -> Optional[datetime]:
+    def calculate_next_run(
+        self, from_time: Optional[datetime] = None
+    ) -> Optional[datetime]:
         """Calculate the next run time based on frequency."""
         now = from_time or datetime.now()
 
@@ -152,10 +170,7 @@ class WorkflowSchedule:
         elif self.frequency == ScheduleFrequency.DAILY:
             # Today or tomorrow at the specified time
             next_run = now.replace(
-                hour=self.time_hour,
-                minute=self.time_minute,
-                second=0,
-                microsecond=0
+                hour=self.time_hour, minute=self.time_minute, second=0, microsecond=0
             )
             if next_run <= now:
                 next_run += timedelta(days=1)
@@ -168,10 +183,7 @@ class WorkflowSchedule:
                 days_ahead += 7
 
             next_run = now.replace(
-                hour=self.time_hour,
-                minute=self.time_minute,
-                second=0,
-                microsecond=0
+                hour=self.time_hour, minute=self.time_minute, second=0, microsecond=0
             ) + timedelta(days=days_ahead)
 
             if next_run <= now:
@@ -185,7 +197,7 @@ class WorkflowSchedule:
                 hour=self.time_hour,
                 minute=self.time_minute,
                 second=0,
-                microsecond=0
+                microsecond=0,
             )
             if next_run <= now:
                 # Move to next month
@@ -238,7 +250,7 @@ class ScheduleDialog(QDialog):
         workflow_path: Optional[Path] = None,
         workflow_name: str = "Untitled",
         schedule: Optional[WorkflowSchedule] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self._workflow_path = workflow_path
@@ -253,7 +265,9 @@ class ScheduleDialog(QDialog):
 
     def _setup_ui(self):
         """Setup the dialog UI."""
-        self.setWindowTitle("Schedule Workflow" if not self._schedule else "Edit Schedule")
+        self.setWindowTitle(
+            "Schedule Workflow" if not self._schedule else "Edit Schedule"
+        )
         self.setMinimumWidth(450)
         self.setMinimumHeight(400)
 
@@ -289,9 +303,9 @@ class ScheduleDialog(QDialog):
 
         # Frequency
         self._frequency_combo = QComboBox()
-        self._frequency_combo.addItems([
-            "Once", "Hourly", "Daily", "Weekly", "Monthly", "Cron"
-        ])
+        self._frequency_combo.addItems(
+            ["Once", "Hourly", "Daily", "Weekly", "Monthly", "Cron"]
+        )
         self._frequency_combo.currentTextChanged.connect(self._on_frequency_changed)
         form.addRow("Frequency:", self._frequency_combo)
 
@@ -304,10 +318,17 @@ class ScheduleDialog(QDialog):
 
         # Day of week (for weekly)
         self._day_combo = QComboBox()
-        self._day_combo.addItems([
-            "Monday", "Tuesday", "Wednesday", "Thursday",
-            "Friday", "Saturday", "Sunday"
-        ])
+        self._day_combo.addItems(
+            [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+            ]
+        )
         form.addRow("Day:", self._day_combo)
         self._day_label = form.labelForField(self._day_combo)
         self._day_combo.hide()
@@ -324,7 +345,9 @@ class ScheduleDialog(QDialog):
 
         # Cron expression (for cron)
         self._cron_input = QLineEdit()
-        self._cron_input.setPlaceholderText("0 9 * * MON-FRI (minute hour day month weekday)")
+        self._cron_input.setPlaceholderText(
+            "0 9 * * MON-FRI (minute hour day month weekday)"
+        )
         form.addRow("Cron:", self._cron_input)
         self._cron_label = form.labelForField(self._cron_input)
         self._cron_input.hide()
@@ -361,7 +384,8 @@ class ScheduleDialog(QDialog):
 
         # Buttons
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self._on_save)
         buttons.rejected.connect(self.reject)
@@ -436,12 +460,11 @@ class ScheduleDialog(QDialog):
             "Daily": ScheduleFrequency.DAILY,
             "Weekly": ScheduleFrequency.WEEKLY,
             "Monthly": ScheduleFrequency.MONTHLY,
-            "Cron": ScheduleFrequency.CRON
+            "Cron": ScheduleFrequency.CRON,
         }
 
         frequency = frequency_map.get(
-            self._frequency_combo.currentText(),
-            ScheduleFrequency.DAILY
+            self._frequency_combo.currentText(), ScheduleFrequency.DAILY
         )
 
         time = self._time_edit.time()
@@ -462,7 +485,7 @@ class ScheduleDialog(QDialog):
             created_at=self._schedule.created_at if self._schedule else datetime.now(),
             run_count=self._schedule.run_count if self._schedule else 0,
             success_count=self._schedule.success_count if self._schedule else 0,
-            failure_count=self._schedule.failure_count if self._schedule else 0
+            failure_count=self._schedule.failure_count if self._schedule else 0,
         )
 
         # Set next_run for one-time schedules
@@ -484,7 +507,7 @@ class ScheduleDialog(QDialog):
             ScheduleFrequency.DAILY: "Daily",
             ScheduleFrequency.WEEKLY: "Weekly",
             ScheduleFrequency.MONTHLY: "Monthly",
-            ScheduleFrequency.CRON: "Cron"
+            ScheduleFrequency.CRON: "Cron",
         }
         self._frequency_combo.setCurrentText(freq_map.get(schedule.frequency, "Daily"))
 
@@ -503,9 +526,13 @@ class ScheduleDialog(QDialog):
         # Set one-time datetime
         if schedule.next_run:
             self._datetime_edit.setDateTime(
-                QDateTime(schedule.next_run.year, schedule.next_run.month,
-                         schedule.next_run.day, schedule.next_run.hour,
-                         schedule.next_run.minute)
+                QDateTime(
+                    schedule.next_run.year,
+                    schedule.next_run.month,
+                    schedule.next_run.day,
+                    schedule.next_run.hour,
+                    schedule.next_run.minute,
+                )
             )
 
         self._enabled_check.setChecked(schedule.enabled)
@@ -514,7 +541,9 @@ class ScheduleDialog(QDialog):
         """Validate and save the schedule."""
         name = self._name_input.text().strip()
         if not name:
-            QMessageBox.warning(self, "Validation Error", "Please enter a schedule name")
+            QMessageBox.warning(
+                self, "Validation Error", "Please enter a schedule name"
+            )
             return
 
         frequency = self._frequency_combo.currentText()
@@ -523,15 +552,18 @@ class ScheduleDialog(QDialog):
         if frequency == "Cron":
             cron = self._cron_input.text().strip()
             if not cron:
-                QMessageBox.warning(self, "Validation Error", "Please enter a cron expression")
+                QMessageBox.warning(
+                    self, "Validation Error", "Please enter a cron expression"
+                )
                 return
             parts = cron.split()
             if len(parts) not in (5, 6):
                 QMessageBox.warning(
-                    self, "Validation Error",
+                    self,
+                    "Validation Error",
                     "Invalid cron expression. Use 5 or 6 space-separated fields:\n"
                     "minute hour day month weekday\n"
-                    "or: second minute hour day month weekday"
+                    "or: second minute hour day month weekday",
                 )
                 return
 
@@ -539,13 +571,14 @@ class ScheduleDialog(QDialog):
         if frequency == "Once":
             if self._datetime_edit.dateTime().toPython() <= datetime.now():
                 QMessageBox.warning(
-                    self, "Validation Error",
-                    "One-time schedule must be in the future"
+                    self, "Validation Error", "One-time schedule must be in the future"
                 )
                 return
 
         self.result_schedule = self._build_schedule()
-        logger.info(f"Schedule created: {self.result_schedule.name} ({self.result_schedule.frequency_display})")
+        logger.info(
+            f"Schedule created: {self.result_schedule.name} ({self.result_schedule.frequency_display})"
+        )
         self.accept()
 
 
@@ -556,9 +589,7 @@ class ScheduleManagerDialog(QDialog):
     run_schedule = Signal(object)  # Emitted to run a schedule immediately
 
     def __init__(
-        self,
-        schedules: List[WorkflowSchedule],
-        parent: Optional[QWidget] = None
+        self, schedules: List[WorkflowSchedule], parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self._schedules = list(schedules)
@@ -591,14 +622,28 @@ class ScheduleManagerDialog(QDialog):
         # Schedules table
         self._table = QTableWidget()
         self._table.setColumnCount(8)
-        self._table.setHorizontalHeaderLabels([
-            "Enabled", "Name", "Workflow", "Frequency",
-            "Next Run", "Last Run", "Success Rate", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Enabled",
+                "Name",
+                "Workflow",
+                "Frequency",
+                "Next Run",
+                "Last Run",
+                "Success Rate",
+                "Actions",
+            ]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 70)
-        self._table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            7, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(7, 180)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setAlternatingRowColors(True)
@@ -651,15 +696,25 @@ class ScheduleManagerDialog(QDialog):
             self._table.setItem(row, 3, QTableWidgetItem(schedule.frequency_display))
 
             # Next Run
-            next_run = schedule.next_run.strftime("%Y-%m-%d %H:%M") if schedule.next_run else "-"
+            next_run = (
+                schedule.next_run.strftime("%Y-%m-%d %H:%M")
+                if schedule.next_run
+                else "-"
+            )
             self._table.setItem(row, 4, QTableWidgetItem(next_run))
 
             # Last Run
-            last_run = schedule.last_run.strftime("%Y-%m-%d %H:%M") if schedule.last_run else "Never"
+            last_run = (
+                schedule.last_run.strftime("%Y-%m-%d %H:%M")
+                if schedule.last_run
+                else "Never"
+            )
             self._table.setItem(row, 5, QTableWidgetItem(last_run))
 
             # Success Rate
-            success_text = f"{schedule.success_rate:.0f}%" if schedule.run_count > 0 else "-"
+            success_text = (
+                f"{schedule.success_rate:.0f}%" if schedule.run_count > 0 else "-"
+            )
             self._table.setItem(row, 6, QTableWidgetItem(success_text))
 
             # Actions
@@ -732,10 +787,12 @@ class ScheduleManagerDialog(QDialog):
     def _on_edit(self, schedule: WorkflowSchedule):
         """Edit a schedule."""
         dialog = ScheduleDialog(
-            workflow_path=Path(schedule.workflow_path) if schedule.workflow_path else None,
+            workflow_path=Path(schedule.workflow_path)
+            if schedule.workflow_path
+            else None,
             workflow_name=schedule.workflow_name,
             schedule=schedule,
-            parent=self
+            parent=self,
         )
 
         if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_schedule:
@@ -752,9 +809,10 @@ class ScheduleManagerDialog(QDialog):
     def _on_delete(self, schedule: WorkflowSchedule):
         """Delete a schedule."""
         reply = QMessageBox.question(
-            self, "Delete Schedule",
+            self,
+            "Delete Schedule",
             f"Are you sure you want to delete '{schedule.name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:

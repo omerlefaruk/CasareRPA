@@ -1,6 +1,7 @@
 """Visual nodes for system category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
-from casare_rpa.core.types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import logic layer nodes
 from casare_rpa.nodes.system_nodes import (
@@ -23,6 +24,7 @@ from casare_rpa.nodes.system_nodes import (
 # =============================================================================
 # System Nodes - Clipboard
 # =============================================================================
+
 
 class VisualClipboardCopyNode(VisualNode):
     """Visual representation of ClipboardCopyNode."""
@@ -77,6 +79,7 @@ class VisualClipboardClearNode(VisualNode):
 # System Nodes - Dialogs
 # =============================================================================
 
+
 class VisualMessageBoxNode(VisualNode):
     """Visual representation of MessageBoxNode."""
 
@@ -89,14 +92,39 @@ class VisualMessageBoxNode(VisualNode):
         # Basic properties
         self.add_text_input("title", "Title", text="Message", tab="properties")
         self.add_text_input("message", "Message", text="Hello!", tab="properties")
-        self.add_combo_menu("icon_type", "Icon", items=["information", "warning", "error", "question"], tab="properties")
-        self.add_combo_menu("buttons", "Buttons", items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"], tab="properties")
+        self.add_combo_menu(
+            "icon_type",
+            "Icon",
+            items=["information", "warning", "error", "question"],
+            tab="properties",
+        )
+        self.add_combo_menu(
+            "buttons",
+            "Buttons",
+            items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"],
+            tab="properties",
+        )
         # Advanced options
-        self.add_text_input("detailed_text", "Detailed Text", placeholder_text="Expandable details...", tab="advanced")
-        self.add_combo_menu("default_button", "Default Button", items=["", "ok", "cancel", "yes", "no"], tab="advanced")
+        self.add_text_input(
+            "detailed_text",
+            "Detailed Text",
+            placeholder_text="Expandable details...",
+            tab="advanced",
+        )
+        self.add_combo_menu(
+            "default_button",
+            "Default Button",
+            items=["", "ok", "cancel", "yes", "no"],
+            tab="advanced",
+        )
         self.add_checkbox("always_on_top", "Always On Top", state=True, tab="advanced")
         self.add_checkbox("play_sound", "Play Sound", state=False, tab="advanced")
-        self.add_text_input("auto_close_timeout", "Auto-Close (sec)", placeholder_text="0 = disabled", tab="advanced")
+        self.add_text_input(
+            "auto_close_timeout",
+            "Auto-Close (sec)",
+            placeholder_text="0 = disabled",
+            tab="advanced",
+        )
 
     def get_node_class(self) -> type:
         return MessageBoxNode
@@ -120,7 +148,9 @@ class VisualInputDialogNode(VisualNode):
         super().__init__()
         self.add_text_input("title", "Title", text="Input", tab="properties")
         self.add_text_input("default_value", "Default", text="", tab="properties")
-        self.add_checkbox("password_mode", "Password Mode", state=False, tab="properties")
+        self.add_checkbox(
+            "password_mode", "Password Mode", state=False, tab="properties"
+        )
 
     def get_node_class(self) -> type:
         return InputDialogNode
@@ -158,6 +188,7 @@ class VisualTooltipNode(VisualNode):
 # =============================================================================
 # System Nodes - Terminal
 # =============================================================================
+
 
 class VisualRunCommandNode(VisualNode):
     """Visual representation of RunCommandNode."""
@@ -212,6 +243,7 @@ class VisualRunPowerShellNode(VisualNode):
 # =============================================================================
 # System Nodes - Windows Services
 # =============================================================================
+
 
 class VisualGetServiceStatusNode(VisualNode):
     """Visual representation of GetServiceStatusNode."""
@@ -307,7 +339,12 @@ class VisualListServicesNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("filter_status", "Filter", items=["all", "running", "stopped"], tab="properties")
+        self.add_combo_menu(
+            "filter_status",
+            "Filter",
+            items=["all", "running", "stopped"],
+            tab="properties",
+        )
 
     def get_node_class(self) -> type:
         return ListServicesNode

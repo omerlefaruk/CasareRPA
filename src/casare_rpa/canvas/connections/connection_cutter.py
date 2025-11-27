@@ -5,9 +5,9 @@ Provides Houdini-style connection cutting: hold Y and drag LMB
 to slice through connection lines and disconnect them.
 """
 
-from typing import Optional, List, Set, Tuple
+from typing import Optional, List, Tuple
 from PySide6.QtCore import QObject, QPointF, Qt, QLineF, QRectF
-from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsPathItem, QGraphicsItem
+from PySide6.QtWidgets import QGraphicsPathItem, QGraphicsItem
 from PySide6.QtGui import QPen, QColor, QPainterPath
 from NodeGraphQt import NodeGraph
 
@@ -52,7 +52,7 @@ class ConnectionCutter(QObject):
                 viewer.installEventFilter(self)
 
                 # Install on viewport for mouse events
-                if hasattr(viewer, 'viewport'):
+                if hasattr(viewer, "viewport"):
                     viewport = viewer.viewport()
                     if viewport:
                         viewport.installEventFilter(self)
@@ -275,14 +275,16 @@ class ConnectionCutter(QObject):
                 module_name = item.__class__.__module__
 
                 # Collect all unique class names for debugging
-                if 'pipe' in class_name.lower() or 'Pipe' in class_name:
+                if "pipe" in class_name.lower() or "Pipe" in class_name:
                     pipe_classes_found.add(f"{module_name}.{class_name}")
 
                 # Check if this is a pipe/connection item (various naming conventions)
-                is_pipe = ('Pipe' in class_name or
-                          'pipe' in class_name.lower() or
-                          'Connection' in class_name or
-                          'Edge' in class_name)
+                is_pipe = (
+                    "Pipe" in class_name
+                    or "pipe" in class_name.lower()
+                    or "Connection" in class_name
+                    or "Edge" in class_name
+                )
 
                 if is_pipe:
                     # Check if cut path intersects this pipe
@@ -296,19 +298,19 @@ class ConnectionCutter(QObject):
                         output_port = None
 
                         # Method 1: Direct attributes
-                        if hasattr(item, 'input_port'):
+                        if hasattr(item, "input_port"):
                             input_port = item.input_port
-                        if hasattr(item, 'output_port'):
+                        if hasattr(item, "output_port"):
                             output_port = item.output_port
 
                         # Method 2: Method calls
-                        if input_port is None and hasattr(item, 'get_input_port'):
+                        if input_port is None and hasattr(item, "get_input_port"):
                             input_port = item.get_input_port()
-                        if output_port is None and hasattr(item, 'get_output_port'):
+                        if output_port is None and hasattr(item, "get_output_port"):
                             output_port = item.get_output_port()
 
                         # Method 3: port property
-                        if hasattr(item, 'port'):
+                        if hasattr(item, "port"):
                             port = item.port
                             logger.debug(f"Item has port attr: {port}")
 
@@ -316,9 +318,15 @@ class ConnectionCutter(QObject):
                             pipes_to_cut.append((output_port, input_port, item))
                             logger.info(f"Found pipe to cut: {class_name}")
                         else:
-                            logger.warning(f"Pipe {class_name} has no ports: in={input_port}, out={output_port}")
+                            logger.warning(
+                                f"Pipe {class_name} has no ports: in={input_port}, out={output_port}"
+                            )
                             # Log available attributes
-                            attrs = [a for a in dir(item) if not a.startswith('_') and 'port' in a.lower()]
+                            attrs = [
+                                a
+                                for a in dir(item)
+                                if not a.startswith("_") and "port" in a.lower()
+                            ]
                             logger.debug(f"Port-related attrs: {attrs}")
 
             if pipe_classes_found:
@@ -331,20 +339,32 @@ class ConnectionCutter(QObject):
                 try:
                     # Handle case where ports might be strings (port names) or Port objects
                     # Get port names for logging
-                    out_name = output_port.name() if hasattr(output_port, 'name') and callable(output_port.name) else str(output_port)
-                    in_name = input_port.name() if hasattr(input_port, 'name') and callable(input_port.name) else str(input_port)
+                    out_name = (
+                        output_port.name()
+                        if hasattr(output_port, "name") and callable(output_port.name)
+                        else str(output_port)
+                    )
+                    in_name = (
+                        input_port.name()
+                        if hasattr(input_port, "name") and callable(input_port.name)
+                        else str(input_port)
+                    )
 
                     # If ports are strings, we can't disconnect directly - try deleting the pipe
                     if isinstance(output_port, str) or isinstance(input_port, str):
                         # Try to delete the pipe item directly from scene
-                        if pipe_item and hasattr(pipe_item, 'delete'):
+                        if pipe_item and hasattr(pipe_item, "delete"):
                             pipe_item.delete()
                             cut_count += 1
-                            logger.info(f"Cut connection (pipe delete): {out_name} -> {in_name}")
+                            logger.info(
+                                f"Cut connection (pipe delete): {out_name} -> {in_name}"
+                            )
                         elif pipe_item and pipe_item.scene():
                             pipe_item.scene().removeItem(pipe_item)
                             cut_count += 1
-                            logger.info(f"Cut connection (scene remove): {out_name} -> {in_name}")
+                            logger.info(
+                                f"Cut connection (scene remove): {out_name} -> {in_name}"
+                            )
                         continue
 
                     # Try to disconnect using port methods
@@ -354,12 +374,26 @@ class ConnectionCutter(QObject):
                 except Exception as e:
                     # Try alternative disconnect method
                     try:
-                        if not isinstance(input_port, str) and not isinstance(output_port, str):
+                        if not isinstance(input_port, str) and not isinstance(
+                            output_port, str
+                        ):
                             input_port.disconnect_from(output_port)
                             cut_count += 1
-                            out_name = output_port.name() if hasattr(output_port, 'name') and callable(output_port.name) else str(output_port)
-                            in_name = input_port.name() if hasattr(input_port, 'name') and callable(input_port.name) else str(input_port)
-                            logger.info(f"Cut connection (reverse): {out_name} -> {in_name}")
+                            out_name = (
+                                output_port.name()
+                                if hasattr(output_port, "name")
+                                and callable(output_port.name)
+                                else str(output_port)
+                            )
+                            in_name = (
+                                input_port.name()
+                                if hasattr(input_port, "name")
+                                and callable(input_port.name)
+                                else str(input_port)
+                            )
+                            logger.info(
+                                f"Cut connection (reverse): {out_name} -> {in_name}"
+                            )
                     except Exception as e2:
                         logger.error(f"Failed to disconnect: {e}, {e2}")
 
@@ -371,6 +405,7 @@ class ConnectionCutter(QObject):
         except Exception as e:
             logger.error(f"Error cutting connections: {e}")
             import traceback
+
             logger.error(traceback.format_exc())
 
         return cut_count
@@ -409,25 +444,35 @@ class ConnectionCutter(QObject):
                                 else:
                                     intersect_type = result
 
-                                if intersect_type == QLineF.IntersectionType.BoundedIntersection:
+                                if (
+                                    intersect_type
+                                    == QLineF.IntersectionType.BoundedIntersection
+                                ):
                                     connections_to_cut.append((out_port, in_port))
-                                    logger.info(f"Found connection to cut via iteration: {out_port.name()} -> {in_port.name()}")
+                                    logger.info(
+                                        f"Found connection to cut via iteration: {out_port.name()} -> {in_port.name()}"
+                                    )
                                     break
 
-            logger.info(f"Node iteration found {len(connections_to_cut)} connections to cut")
+            logger.info(
+                f"Node iteration found {len(connections_to_cut)} connections to cut"
+            )
 
             # Disconnect
             for out_port, in_port in connections_to_cut:
                 try:
                     out_port.disconnect_from(in_port)
                     cut_count += 1
-                    logger.info(f"Cut connection: {out_port.name()} -> {in_port.name()}")
+                    logger.info(
+                        f"Cut connection: {out_port.name()} -> {in_port.name()}"
+                    )
                 except Exception as e:
                     logger.error(f"Failed to disconnect: {e}")
 
         except Exception as e:
             logger.error(f"Error in node iteration cut: {e}")
             import traceback
+
             logger.error(traceback.format_exc())
 
         return cut_count
@@ -435,19 +480,19 @@ class ConnectionCutter(QObject):
     def _get_port_position(self, port) -> Optional[QPointF]:
         """Get the scene position of a port."""
         try:
-            if hasattr(port, 'view') and port.view:
+            if hasattr(port, "view") and port.view:
                 rect = port.view.boundingRect()
                 center = rect.center()
                 return port.view.mapToScene(center)
 
             # Alternative: get from node position
-            if hasattr(port, 'node') and callable(port.node):
+            if hasattr(port, "node") and callable(port.node):
                 node = port.node()
-                if node and hasattr(node, 'view') and node.view:
+                if node and hasattr(node, "view") and node.view:
                     # Estimate port position from node
                     node_rect = node.view.sceneBoundingRect()
                     # Output ports are on right, input on left
-                    if hasattr(port, 'port_type'):
+                    if hasattr(port, "port_type"):
                         port_type = port.port_type()
                         if port_type == 0:  # Input
                             return QPointF(node_rect.left(), node_rect.center().y())
@@ -459,7 +504,9 @@ class ConnectionCutter(QObject):
 
         return None
 
-    def _item_intersects_cut(self, item: QGraphicsItem, cut_segments: List[QLineF]) -> bool:
+    def _item_intersects_cut(
+        self, item: QGraphicsItem, cut_segments: List[QLineF]
+    ) -> bool:
         """
         Check if a graphics item intersects with the cut path.
 
@@ -481,7 +528,7 @@ class ConnectionCutter(QObject):
 
             # Method 2: Use path intersection for accuracy
             # Get the pipe's path if available
-            if hasattr(item, 'path') and callable(item.path):
+            if hasattr(item, "path") and callable(item.path):
                 pipe_path = item.path()
                 if not pipe_path.isEmpty():
                     # Create a stroked path from cut segments
@@ -515,6 +562,7 @@ class ConnectionCutter(QObject):
                     cut_path.lineTo(seg.p2())
 
                     from PySide6.QtGui import QPainterPathStroker
+
                     stroker = QPainterPathStroker()
                     stroker.setWidth(10)
                     stroked = stroker.createStroke(cut_path)

@@ -9,12 +9,13 @@ import asyncio
 import functools
 import random
 from enum import Enum
-from typing import Any, Callable, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Set, Type, TypeVar
 from loguru import logger
 
 
 class ErrorCategory(Enum):
     """Classification of errors for retry decisions."""
+
     TRANSIENT = "transient"  # Retry-able errors (network, timeout, etc.)
     PERMANENT = "permanent"  # Fatal errors (validation, config, etc.)
     UNKNOWN = "unknown"  # Unclassified errors

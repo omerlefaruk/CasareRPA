@@ -1,24 +1,27 @@
 """Visual nodes for control_flow category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualIfNode(VisualNode):
     """Visual representation of IfNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "If"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize If node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("condition")
         self.add_output("true")
         self.add_output("false")
+
 
 class VisualForLoopNode(VisualNode):
     """
@@ -43,6 +46,7 @@ class VisualForLoopNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports (not actually used - composite creates real nodes)."""
         pass
+
 
 class VisualForLoopStartNode(VisualNode):
     """
@@ -75,6 +79,7 @@ class VisualForLoopStartNode(VisualNode):
         self.add_exec_output("completed")
         self.add_typed_output("current_item", DataType.ANY)
         self.add_typed_output("current_index", DataType.INTEGER)
+
 
 class VisualForLoopEndNode(VisualNode):
     """
@@ -113,8 +118,9 @@ class VisualForLoopEndNode(VisualNode):
         self.set_property("paired_start_id", start_node_id)
         # Also update the underlying CasareRPA node if it exists
         casare_node = self.get_casare_node()
-        if casare_node and hasattr(casare_node, 'set_paired_start'):
+        if casare_node and hasattr(casare_node, "set_paired_start"):
             casare_node.set_paired_start(start_node_id)
+
 
 class VisualWhileLoopNode(VisualNode):
     """
@@ -138,6 +144,7 @@ class VisualWhileLoopNode(VisualNode):
         """Setup ports (not used - composite creates real nodes)."""
         pass
 
+
 class VisualWhileLoopStartNode(VisualNode):
     """
     Visual representation of WhileLoopStartNode.
@@ -153,7 +160,9 @@ class VisualWhileLoopStartNode(VisualNode):
         """Initialize While Loop Start node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input("max_iterations", "Max Iterations", text="1000", tab="properties")
+        self.add_text_input(
+            "max_iterations", "Max Iterations", text="1000", tab="properties"
+        )
         self.paired_end_id: str = ""
 
     def setup_ports(self) -> None:
@@ -163,6 +172,7 @@ class VisualWhileLoopStartNode(VisualNode):
         self.add_exec_output("body")
         self.add_exec_output("completed")
         self.add_typed_output("current_iteration", DataType.INTEGER)
+
 
 class VisualWhileLoopEndNode(VisualNode):
     """
@@ -197,60 +207,67 @@ class VisualWhileLoopEndNode(VisualNode):
         # Save to custom property for persistence
         self.set_property("paired_start_id", start_node_id)
         casare_node = self.get_casare_node()
-        if casare_node and hasattr(casare_node, 'set_paired_start'):
+        if casare_node and hasattr(casare_node, "set_paired_start"):
             casare_node.set_paired_start(start_node_id)
+
 
 class VisualBreakNode(VisualNode):
     """Visual representation of BreakNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Break"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Break node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_output("exec_out")
+
 
 class VisualContinueNode(VisualNode):
     """Visual representation of ContinueNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Continue"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Continue node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_output("exec_out")
 
+
 class VisualSwitchNode(VisualNode):
     """Visual representation of SwitchNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Switch"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Switch node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input("cases", "Cases (comma-separated)", text="success,error,pending", tab="properties")
-    
+        self.add_text_input(
+            "cases",
+            "Cases (comma-separated)",
+            text="success,error,pending",
+            tab="properties",
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("value")
-        
+
         # Cases will be created dynamically based on config
         # But we need at least the default output
         self.add_output("default")
-
