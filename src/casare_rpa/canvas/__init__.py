@@ -7,7 +7,6 @@ The canvas package is organized into subpackages:
 - connections/: Connection handling (AutoConnect, ConnectionCutter, Validator)
 - search/: Search functionality (NodeSearch, CommandPalette)
 - selectors/: Selector UI (SelectorDialog, ElementPicker)
-- snippets/: Snippet system (SnippetCreator, SnippetBrowser)
 - scheduling/: Scheduling UI (ScheduleDialog, ScheduleStorage)
 - desktop/: Desktop-specific UI (RecordingPanel)
 - execution/: Execution UI (TriggerRunner, PerformanceDashboard)

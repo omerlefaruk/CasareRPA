@@ -36,7 +36,6 @@ if IS_FROZEN:
     # User-writable directories in AppData
     LOGS_DIR: Final[Path] = USER_DATA_DIR / "logs"
     WORKFLOWS_DIR: Final[Path] = USER_DATA_DIR / "workflows"
-    SNIPPETS_DIR: Final[Path] = USER_DATA_DIR / "snippets"
     CONFIG_DIR: Final[Path] = USER_DATA_DIR / "config"
 else:
     # Development mode - use project directory
@@ -44,7 +43,6 @@ else:
     SRC_ROOT: Final[Path] = PROJECT_ROOT / "src"
     LOGS_DIR: Final[Path] = PROJECT_ROOT / "logs"
     WORKFLOWS_DIR: Final[Path] = PROJECT_ROOT / "workflows"
-    SNIPPETS_DIR: Final[Path] = PROJECT_ROOT / "snippets"
     DOCS_DIR: Final[Path] = PROJECT_ROOT / "docs"
     CONFIG_DIR: Final[Path] = PROJECT_ROOT / "config"
 
@@ -61,7 +59,6 @@ GLOBAL_CREDENTIALS_FILE: Final[Path] = CONFIG_DIR / "global_credentials.json"
 # Ensure critical directories exist (these are now always writable)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
-SNIPPETS_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 

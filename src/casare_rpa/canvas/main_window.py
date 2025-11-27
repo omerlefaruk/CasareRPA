@@ -33,7 +33,6 @@ from ..utils.config import (
 )
 from ..utils.hotkey_settings import get_hotkey_settings
 from .graph.minimap import Minimap
-from .visual_nodes.visual_nodes import VisualSnippetNode
 from loguru import logger
 
 
@@ -262,17 +261,6 @@ class MainWindow(QMainWindow):
         self.action_toggle_disable.setStatusTip("Disable/enable selected node - inputs bypass to outputs (4)")
         self.action_toggle_disable.triggered.connect(self._on_toggle_disable_node)
 
-        # Snippet actions
-        self.action_create_snippet = QAction("Create &Snippet from Selection...", self)
-        self.action_create_snippet.setShortcut(QKeySequence("Ctrl+Shift+G"))
-        self.action_create_snippet.setStatusTip("Create a reusable snippet from selected nodes (Ctrl+Shift+G)")
-        self.action_create_snippet.triggered.connect(self._on_create_snippet)
-
-        self.action_snippet_library = QAction("Snippet &Library...", self)
-        self.action_snippet_library.setShortcut(QKeySequence("Ctrl+Shift+L"))
-        self.action_snippet_library.setStatusTip("Browse and insert snippets from library (Ctrl+Shift+L)")
-        self.action_snippet_library.triggered.connect(self._on_open_snippet_library)
-
         self.action_preferences = QAction("&Preferences...", self)
         self.action_preferences.setShortcut(QKeySequence("Ctrl+,"))
         self.action_preferences.setStatusTip("Configure application preferences")
@@ -306,13 +294,6 @@ class MainWindow(QMainWindow):
         self.action_toggle_variable_inspector.setCheckable(True)
         self.action_toggle_variable_inspector.setStatusTip("Show/hide variable inspector (real-time variable values)")
         self.action_toggle_variable_inspector.triggered.connect(self._on_toggle_variable_inspector)
-
-        self.action_toggle_navigation = QAction("Snippet &Navigation", self)
-        self.action_toggle_navigation.setShortcut(QKeySequence("Ctrl+Shift+N"))
-        self.action_toggle_navigation.setCheckable(True)
-        self.action_toggle_navigation.setChecked(False)  # Hidden by default
-        self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation drop zone")
-        self.action_toggle_navigation.triggered.connect(self._on_toggle_navigation)
 
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
@@ -492,8 +473,6 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action_select_nearest)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_toggle_disable)
-        edit_menu.addAction(self.action_create_snippet)
-        edit_menu.addAction(self.action_snippet_library)
         edit_menu.addSeparator()
         edit_menu.addAction(self.action_find_node)
         edit_menu.addSeparator()
@@ -514,7 +493,6 @@ class MainWindow(QMainWindow):
         panels_menu = view_menu.addMenu("&Panels")
         panels_menu.addAction(self.action_toggle_bottom_panel)
         panels_menu.addAction(self.action_toggle_variable_inspector)
-        panels_menu.addAction(self.action_toggle_navigation)
         panels_menu.addAction(self.action_toggle_minimap)
 
         # Workflow menu
@@ -884,16 +862,6 @@ class MainWindow(QMainWindow):
                 self._variable_inspector_dock.show()
             else:
                 self._variable_inspector_dock.hide()
-
-    def _on_toggle_navigation(self, checked: bool) -> None:
-        """Handle toggle snippet navigation UI action."""
-        # Note: Drop zone visibility is controlled by navigation depth
-        # It will auto-show/hide based on whether we're inside a snippet
-
-        # Save UI state
-        self._schedule_ui_state_save()
-
-        logger.info(f"Snippet navigation UI {'shown' if checked else 'hidden'}")
 
     def _create_properties_panel(self) -> None:
         """Create the properties panel for selected node editing."""
@@ -1575,78 +1543,6 @@ class MainWindow(QMainWindow):
             )
             return
 
-    def _on_create_snippet(self) -> None:
-        """Handle create snippet from selection request."""
-        from .snippets.snippet_creator_dialog import SnippetCreatorDialog
-        from ..core.workflow_schema import NodeConnection
-
-        # Get selected nodes from the graph
-        graph = self._central_widget.graph
-        selected_nodes = graph.selected_nodes()
-
-        if not selected_nodes:
-            QMessageBox.information(
-                self,
-                "No Selection",
-                "Please select nodes to create a snippet.\n\n"
-                "Select multiple nodes by dragging a selection box or holding Shift while clicking nodes."
-            )
-            return
-
-        # Extract connections from the visual graph
-        all_connections = []
-        for visual_node in graph.all_nodes():
-            # Get the CasareRPA node to access node_id
-            casare_node = visual_node.get_casare_node()
-            if not casare_node:
-                continue
-
-            source_node_id = casare_node.node_id
-
-            # Get output connections
-            for output_port in visual_node.output_ports():
-                for connected_port in output_port.connected_ports():
-                    target_visual_node = connected_port.node()
-                    target_casare_node = target_visual_node.get_casare_node()
-                    if not target_casare_node:
-                        continue
-
-                    connection = NodeConnection(
-                        source_node=source_node_id,
-                        source_port=output_port.name(),
-                        target_node=target_casare_node.node_id,
-                        target_port=connected_port.name()
-                    )
-                    all_connections.append(connection)
-
-        # Open snippet creator dialog
-        dialog = SnippetCreatorDialog(
-            selected_visual_nodes=selected_nodes,
-            all_connections=all_connections,
-            parent=self
-        )
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            logger.info(f"Snippet created successfully from {len(selected_nodes)} nodes")
-            self.statusBar().showMessage("Snippet created and saved to library", 3000)
-        else:
-            logger.info("Snippet creation cancelled")
-
-    def _on_open_snippet_library(self) -> None:
-        """Handle open snippet library browser request."""
-        from .snippets.snippet_browser_dialog import SnippetBrowserDialog
-
-        # Open snippet browser dialog
-        dialog = SnippetBrowserDialog(parent=self)
-
-        # Connect signal to handle snippet insertion
-        dialog.snippet_insert_requested.connect(self._on_snippet_insert_requested)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            logger.info("Snippet insertion completed")
-        else:
-            logger.info("Snippet browser closed without insertion")
-
     def _on_preferences(self) -> None:
         """Handle preferences dialog request."""
         from .dialogs.preferences_dialog import PreferencesDialog
@@ -1657,101 +1553,6 @@ class MainWindow(QMainWindow):
             # Settings are already saved in the dialog
             # Emit signal so app can update autosave timer
             self.preferences_saved.emit()
-
-    def _on_snippet_insert_requested(self, snippet_definition, is_collapsed: bool):
-        """
-        Handle snippet insertion into the canvas.
-
-        Args:
-            snippet_definition: SnippetDefinition to insert
-            is_collapsed: Whether to insert as collapsed node or expanded
-        """
-        from .workflow.workflow_import import WorkflowImporter
-
-        logger.info(
-            f"Inserting snippet '{snippet_definition.name}' "
-            f"({'collapsed' if is_collapsed else 'expanded'})"
-        )
-
-        if is_collapsed:
-            # Insert as a single collapsed SnippetNode
-            from ..nodes.snippet_node import SnippetNode
-            from ..utils.id_generator import generate_node_id
-
-            # Create visual node at center of view
-            graph = self._central_widget.graph
-            view_center = graph.viewer().sceneRect().center()
-
-            # Create SnippetNode visual node
-            visual_node = graph.create_node(
-                f"{VisualSnippetNode.__identifier__}.{VisualSnippetNode.__name__}",
-                pos=[view_center.x(), view_center.y()]
-            )
-
-            if not visual_node:
-                QMessageBox.critical(
-                    self,
-                    "Insert Failed",
-                    "Failed to create snippet node.\n\n"
-                    "Make sure VisualSnippetNode is properly registered."
-                )
-                return
-
-            # Create casare SnippetNode instance
-            node_id = generate_node_id("SnippetNode")
-            config = {
-                "snippet_id": snippet_definition.snippet_id,
-                "snippet_name": snippet_definition.name,
-            }
-
-            casare_node = SnippetNode(node_id, config=config)
-
-            # Load snippet definition
-            casare_node.set_snippet_definition(snippet_definition)
-
-            # Link visual and casare nodes
-            visual_node._casare_node = casare_node
-            visual_node.set_property("node_id", node_id)
-
-            # Update visual node display name
-            visual_node.set_name(snippet_definition.name)
-
-            # Set snippet info in visual node widgets
-            if hasattr(visual_node, "view"):
-                snippet_name_widget = visual_node.view.get_widget("snippet_name")
-                if snippet_name_widget:
-                    snippet_name_widget.set_value(snippet_definition.name)
-
-                snippet_version_widget = visual_node.view.get_widget("snippet_version")
-                if snippet_version_widget:
-                    snippet_version_widget.set_value(snippet_definition.version)
-
-            self.statusBar().showMessage(
-                f"Inserted snippet '{snippet_definition.name}' as collapsed node",
-                3000
-            )
-            logger.info(f"Created collapsed snippet node: {snippet_definition.name}")
-        else:
-            # Insert as expanded nodes (inline)
-            # Convert snippet to workflow-like structure
-            workflow_data = {
-                "nodes": snippet_definition.nodes,
-                "connections": [conn.to_dict() for conn in snippet_definition.connections],
-            }
-
-            # Use WorkflowImporter to import nodes with ID remapping
-            graph = self._central_widget.graph
-            importer = WorkflowImporter(graph)
-            imported_nodes = importer.import_workflow_data(
-                workflow_data,
-                offset_x=100,  # Offset from current view
-                offset_y=100,
-            )
-
-            self.statusBar().showMessage(
-                f"Inserted {len(imported_nodes)} nodes from snippet '{snippet_definition.name}'",
-                3000
-            )
 
     def _on_save_workflow(self) -> None:
         """Handle save workflow request."""
