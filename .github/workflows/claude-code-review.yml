@@ -2,104 +2,56 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  pull-requests: write
+    types: [opened, synchronize]
+    # Optional: Only run on specific file changes
+    # paths:
+    #   - "src/**/*.ts"
+    #   - "src/**/*.tsx"
+    #   - "src/**/*.js"
+    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+
     runs-on: ubuntu-latest
-    name: Code Review with Claude
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 1
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
         with:
-          python-version: '3.12'
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
-      - name: Install dependencies
-        run: |
-          pip install anthropic requests
+            Please review this pull request and provide feedback on:
+            - Code quality and best practices
+            - Potential bugs or issues
+            - Performance considerations
+            - Security concerns
+            - Test coverage
 
-      - name: Get PR diff
-        id: pr-diff
-        run: |
-          git diff HEAD^ HEAD > pr_diff.txt
-          echo "Diff saved to pr_diff.txt"
+            Use the repository's CLAUDE.md for guidance on style and conventions. Be constructive and helpful in your feedback.
 
-      - name: Review with Claude
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-        run: |
-          python - <<'PYTHON_SCRIPT'
-          import os
-          import anthropic
-          import requests
+            Use `gh pr comment` with your Bash tool to leave your review as a comment on the PR.
 
-          # Read the diff
-          with open('pr_diff.txt', 'r') as f:
-              diff_content = f.read()
+          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
+          # or https://docs.claude.com/en/docs/claude-code/cli-reference for available options
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*)"'
 
-          if not diff_content.strip():
-              print("No changes detected")
-              exit(0)
-
-          # Get OAuth token
-          oauth_token = os.environ.get('CLAUDE_CODE_OAUTH_TOKEN')
-
-          if not oauth_token:
-              print("Error: CLAUDE_CODE_OAUTH_TOKEN not found in secrets")
-              exit(1)
-
-          # Call Claude API with OAuth token
-          client = anthropic.Anthropic(
-              api_key=oauth_token
-          )
-
-          message = client.messages.create(
-              model="claude-sonnet-4-5-20250929",
-              max_tokens=4096,
-              messages=[{
-                  "role": "user",
-                  "content": f"""Please review this pull request and look for bugs and security issues. Only report on bugs and potential vulnerabilities you find. Be concise.
-
-          Diff:
-          ```
-          {diff_content[:15000]}
-          ```"""
-              }]
-          )
-
-          review_comment = message.content[0].text
-
-          # Post comment to PR
-          pr_number = os.environ['PR_NUMBER']
-          repo = os.environ['REPO']
-          github_token = os.environ['GITHUB_TOKEN']
-
-          url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
-          headers = {
-              "Authorization": f"token {github_token}",
-              "Accept": "application/vnd.github.v3+json"
-          }
-          data = {
-              "body": f"## Claude Code Review\n\n{review_comment}\n\n---\n*Automated review by Claude Code*"
-          }
-
-          response = requests.post(url, json=data, headers=headers)
-          if response.status_code == 201:
-              print("Review posted successfully!")
-          else:
-              print(f"Failed to post review: {response.status_code}")
-              print(response.text)
-          PYTHON_SCRIPT
