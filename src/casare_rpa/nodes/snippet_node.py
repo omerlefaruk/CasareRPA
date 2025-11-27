@@ -222,7 +222,7 @@ class SnippetNode(BaseNode):
             Dictionary mapping node_id to BaseNode instance
         """
         # Import here to avoid circular dependency
-        from ..utils.workflow_loader import NODE_TYPE_MAP
+        from ..utils.workflow.workflow_loader import NODE_TYPE_MAP
 
         nodes = {}
 

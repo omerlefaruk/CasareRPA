@@ -10,7 +10,7 @@ from loguru import logger
 from ..core.base_node import BaseNode
 from ..core.execution_context import ExecutionContext
 from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
-from ..utils.safe_eval import safe_eval, is_safe_expression
+from ..utils.security.safe_eval import safe_eval, is_safe_expression
 
 
 class IfNode(BaseNode):

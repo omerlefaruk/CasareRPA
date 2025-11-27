@@ -14,19 +14,19 @@ from ..core.workflow_schema import WorkflowSchema, NodeConnection
 from ..core.execution_context import ExecutionContext
 from ..core.types import NodeId, NodeStatus, EventType
 from ..core.events import EventBus, Event
-from ..utils.retry import (
+from ..utils.resilience.retry import (
     RetryConfig,
     RetryStats,
     classify_error,
     ErrorCategory,
 )
-from ..utils.parallel_executor import (
+from ..utils.performance.parallel_executor import (
     DependencyGraph,
     ParallelExecutor,
     analyze_workflow_dependencies,
 )
-from ..utils.subgraph_calculator import SubgraphCalculator
-from ..utils.performance_metrics import get_metrics
+from ..utils.workflow.subgraph_calculator import SubgraphCalculator
+from ..utils.performance.performance_metrics import get_metrics
 
 # Default timeout for node execution (in seconds)
 DEFAULT_NODE_EXECUTION_TIMEOUT = 120  # 2 minutes

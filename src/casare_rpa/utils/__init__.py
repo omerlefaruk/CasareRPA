@@ -3,6 +3,7 @@ CasareRPA - Utilities Package
 Contains configuration, helpers, and shared utilities.
 """
 
+# Core configuration
 from .config import (
     APP_NAME,
     APP_VERSION,
@@ -15,23 +16,6 @@ from .config import (
     IS_FROZEN,
     setup_logging,
 )
-from .hotkey_settings import get_hotkey_settings, HotkeySettings
-from .template_loader import (
-    TemplateLoader,
-    TemplateInfo,
-    get_template_loader,
-    TemplateValidationError,
-    validate_template_code,
-)
-from .rate_limiter import (
-    RateLimiter,
-    RateLimitConfig,
-    RateLimitStats,
-    RateLimitExceeded,
-    SlidingWindowRateLimiter,
-    rate_limited,
-    get_rate_limiter,
-)
 from .config_loader import (
     ConfigLoader,
     ConfigSource,
@@ -40,37 +24,19 @@ from .config_loader import (
     load_config,
     load_config_with_env,
 )
-from .selector_healing import (
-    SelectorHealer,
-    ElementFingerprint,
-    HealingResult,
-    get_selector_healer,
-)
-from .database_pool import (
-    DatabaseType,
-    PoolStatistics,
-    PooledConnection,
-    DatabaseConnectionPool,
-    DatabasePoolManager,
-    get_pool_manager,
-)
-from .http_session_pool import (
-    SessionStatistics,
-    PooledSession,
-    HttpSessionPool,
-    HttpSessionManager,
-    get_session_manager,
-)
-from .performance_metrics import (
-    MetricType,
-    MetricValue,
-    TimerContext,
-    Histogram,
-    PerformanceMetrics,
-    get_metrics,
-    time_operation,
-)
-from .subgraph_calculator import SubgraphCalculator
+from .settings_manager import SettingsManager
+from .hotkey_settings import get_hotkey_settings, HotkeySettings
+from .id_generator import generate_node_id
+from .fuzzy_search import SearchIndex, fuzzy_search, fuzzy_match
+from .playwright_setup import ensure_playwright_ready
+
+# Subpackages - import them to make them accessible
+from . import pooling
+from . import selectors
+from . import resilience
+from . import security
+from . import workflow
+from . import performance
 
 __all__ = [
     # Config
@@ -84,56 +50,27 @@ __all__ = [
     "CONFIG_DIR",
     "IS_FROZEN",
     "setup_logging",
-    # Hotkeys
-    "get_hotkey_settings",
-    "HotkeySettings",
-    # Templates
-    "TemplateLoader",
-    "TemplateInfo",
-    "get_template_loader",
-    "TemplateValidationError",
-    "validate_template_code",
-    # Rate limiting
-    "RateLimiter",
-    "RateLimitConfig",
-    "RateLimitStats",
-    "RateLimitExceeded",
-    "SlidingWindowRateLimiter",
-    "rate_limited",
-    "get_rate_limiter",
-    # Config loader
     "ConfigLoader",
     "ConfigSource",
     "ConfigSchema",
     "ConfigurationError",
     "load_config",
     "load_config_with_env",
-    # Selector healing
-    "SelectorHealer",
-    "ElementFingerprint",
-    "HealingResult",
-    "get_selector_healer",
-    # Database pool
-    "DatabaseType",
-    "PoolStatistics",
-    "PooledConnection",
-    "DatabaseConnectionPool",
-    "DatabasePoolManager",
-    "get_pool_manager",
-    # HTTP session pool
-    "SessionStatistics",
-    "PooledSession",
-    "HttpSessionPool",
-    "HttpSessionManager",
-    "get_session_manager",
-    # Performance metrics
-    "MetricType",
-    "MetricValue",
-    "TimerContext",
-    "Histogram",
-    "PerformanceMetrics",
-    "get_metrics",
-    "time_operation",
-    # Subgraph calculator
-    "SubgraphCalculator",
+    "SettingsManager",
+    # Hotkeys
+    "get_hotkey_settings",
+    "HotkeySettings",
+    # Utilities
+    "generate_node_id",
+    "SearchIndex",
+    "fuzzy_search",
+    "fuzzy_match",
+    "ensure_playwright_ready",
+    # Subpackages
+    "pooling",
+    "selectors",
+    "resilience",
+    "security",
+    "workflow",
+    "performance",
 ]

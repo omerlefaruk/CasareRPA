@@ -14,7 +14,7 @@ from typing import Optional, Callable, Any
 from loguru import logger
 from supabase import create_client, Client
 
-from casare_rpa.utils.retry import RetryConfig
+from casare_rpa.utils.resilience.retry import RetryConfig
 
 
 class ConnectionState(Enum):

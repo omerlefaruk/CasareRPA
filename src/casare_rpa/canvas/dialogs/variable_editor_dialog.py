@@ -1,379 +1,389 @@
 """
-CasareRPA - Variable Editor Dialog
-Dialog for managing variables (global or project-scoped).
+Variable Editor Dialog for the Bottom Panel.
+
+Dialog for adding and editing workflow variables with type-specific editors.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any, List
+import json
 
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
-    QPushButton,
-    QLabel,
+    QFormLayout,
     QLineEdit,
     QComboBox,
-    QHeaderView,
+    QTextEdit,
+    QCheckBox,
+    QSpinBox,
+    QDoubleSpinBox,
+    QPushButton,
+    QLabel,
     QMessageBox,
-    QAbstractItemView,
     QWidget,
+    QStackedWidget,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from loguru import logger
 
-from ..theme import THEME
-from ...project.project_manager import get_project_manager
-from ...core.project_schema import ProjectVariable
+
+# Variable types
+VARIABLE_TYPES = [
+    "String",
+    "Integer",
+    "Float",
+    "Boolean",
+    "List",
+    "Dict",
+    "DataTable",
+]
 
 
 class VariableEditorDialog(QDialog):
     """
-    Dialog for editing variables.
+    Dialog for adding or editing a workflow variable.
 
-    Supports both global and project-scoped variables.
+    Provides type-specific editors for each variable type.
     """
 
-    VARIABLE_TYPES = ["String", "Integer", "Float", "Boolean", "List", "Dict"]
-
-    def __init__(self, scope: str = "global", parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        variable: Optional[Dict[str, Any]] = None,
+        existing_names: Optional[List[str]] = None,
+        parent: Optional[QWidget] = None
+    ) -> None:
         """
         Initialize the dialog.
 
         Args:
-            scope: "global" or "project"
+            variable: Existing variable to edit, or None for new
+            existing_names: List of existing variable names (for validation)
             parent: Parent widget
         """
         super().__init__(parent)
 
-        self._scope = scope
-        self._manager = get_project_manager()
-
-        title = "Global Variables" if scope == "global" else "Project Variables"
-        self.setWindowTitle(title)
-        self.setMinimumSize(600, 400)
-        self.setModal(True)
+        self._variable = variable
+        self._existing_names = existing_names or []
+        self._is_edit_mode = variable is not None
 
         self._setup_ui()
         self._apply_styles()
-        self._load_variables()
+
+        if variable:
+            self._load_variable(variable)
 
     def _setup_ui(self) -> None:
-        """Setup the dialog UI."""
+        """Set up the user interface."""
+        self.setWindowTitle("Edit Variable" if self._is_edit_mode else "Add Variable")
+        self.setMinimumWidth(450)
+        self.setModal(True)
+
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setSpacing(10)
 
-        # Header
-        header_text = (
-            "Global Variables" if self._scope == "global"
-            else f"Project Variables"
-        )
-        header = QLabel(header_text)
-        header.setFont(QFont(header.font().family(), 14, QFont.Bold))
-        layout.addWidget(header)
+        # Form layout for fields
+        form = QFormLayout()
+        form.setSpacing(8)
 
-        # Description
-        if self._scope == "global":
-            desc = "Global variables are available across all projects and scenarios."
-        else:
-            desc = "Project variables are available to all scenarios in this project."
-        desc_label = QLabel(desc)
-        desc_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
-        desc_label.setWordWrap(True)
+        # Name field
+        self._name_edit = QLineEdit()
+        self._name_edit.setPlaceholderText("Enter variable name")
+        form.addRow("Name:", self._name_edit)
+
+        # Type dropdown
+        self._type_combo = QComboBox()
+        self._type_combo.addItems(VARIABLE_TYPES)
+        self._type_combo.currentTextChanged.connect(self._on_type_changed)
+        form.addRow("Type:", self._type_combo)
+
+        layout.addLayout(form)
+
+        # Value editor section
+        value_label = QLabel("Default Value:")
+        layout.addWidget(value_label)
+
+        # Stacked widget for different value editors
+        self._value_stack = QStackedWidget()
+        self._setup_value_editors()
+        layout.addWidget(self._value_stack)
+
+        # Description field
+        desc_label = QLabel("Description:")
         layout.addWidget(desc_label)
 
-        # Add variable row
-        add_row = QHBoxLayout()
+        self._description_edit = QTextEdit()
+        self._description_edit.setMaximumHeight(60)
+        self._description_edit.setPlaceholderText("Optional description for this variable")
+        layout.addWidget(self._description_edit)
 
-        self._name_input = QLineEdit()
-        self._name_input.setPlaceholderText("Variable name")
-        self._name_input.setMinimumWidth(150)
-        add_row.addWidget(self._name_input)
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
 
-        self._value_input = QLineEdit()
-        self._value_input.setPlaceholderText("Value")
-        self._value_input.setMinimumWidth(200)
-        add_row.addWidget(self._value_input)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
 
-        self._type_combo = QComboBox()
-        self._type_combo.addItems(self.VARIABLE_TYPES)
-        self._type_combo.setMinimumWidth(100)
-        add_row.addWidget(self._type_combo)
+        ok_btn = QPushButton("OK")
+        ok_btn.setDefault(True)
+        ok_btn.clicked.connect(self._on_accept)
 
-        self._add_btn = QPushButton("Add")
-        self._add_btn.clicked.connect(self._on_add_variable)
-        add_row.addWidget(self._add_btn)
+        button_layout.addWidget(cancel_btn)
+        button_layout.addWidget(ok_btn)
 
-        layout.addLayout(add_row)
+        layout.addLayout(button_layout)
 
-        # Variables table
-        self._table = QTableWidget()
-        self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(["Name", "Value", "Type", "Actions"])
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self._table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self._table.setAlternatingRowColors(True)
-        self._table.verticalHeader().setVisible(False)
-        layout.addWidget(self._table)
+    def _setup_value_editors(self) -> None:
+        """Create value editors for each type."""
+        # String editor
+        self._string_edit = QLineEdit()
+        self._string_edit.setPlaceholderText("Enter text value")
+        self._value_stack.addWidget(self._string_edit)
 
-        # Bottom buttons
-        button_row = QHBoxLayout()
-        button_row.addStretch()
+        # Integer editor
+        self._int_edit = QSpinBox()
+        self._int_edit.setRange(-2147483648, 2147483647)
+        self._value_stack.addWidget(self._int_edit)
 
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        button_row.addWidget(close_btn)
+        # Float editor
+        self._float_edit = QDoubleSpinBox()
+        self._float_edit.setRange(-1e10, 1e10)
+        self._float_edit.setDecimals(6)
+        self._value_stack.addWidget(self._float_edit)
 
-        layout.addLayout(button_row)
+        # Boolean editor
+        bool_container = QWidget()
+        bool_layout = QHBoxLayout(bool_container)
+        bool_layout.setContentsMargins(0, 0, 0, 0)
+        self._bool_check = QCheckBox("True")
+        bool_layout.addWidget(self._bool_check)
+        bool_layout.addStretch()
+        self._value_stack.addWidget(bool_container)
 
-        # Connect enter key
-        self._name_input.returnPressed.connect(self._on_add_variable)
-        self._value_input.returnPressed.connect(self._on_add_variable)
+        # List editor (JSON)
+        self._list_edit = QTextEdit()
+        self._list_edit.setPlaceholderText('Enter JSON array, e.g.: ["item1", "item2", 3]')
+        self._list_edit.setMaximumHeight(80)
+        self._value_stack.addWidget(self._list_edit)
 
-    def _apply_styles(self) -> None:
-        """Apply theme styles."""
-        self.setStyleSheet(f"""
-            QDialog {{
-                background: {THEME.bg_panel};
-                color: {THEME.text_primary};
-            }}
+        # Dict editor (JSON)
+        self._dict_edit = QTextEdit()
+        self._dict_edit.setPlaceholderText('Enter JSON object, e.g.: {"key": "value"}')
+        self._dict_edit.setMaximumHeight(80)
+        self._value_stack.addWidget(self._dict_edit)
 
-            QLineEdit, QComboBox {{
-                background: {THEME.bg_darkest};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 6px 8px;
-            }}
+        # DataTable editor (placeholder)
+        datatable_container = QWidget()
+        dt_layout = QVBoxLayout(datatable_container)
+        dt_layout.setContentsMargins(0, 0, 0, 0)
+        dt_label = QLabel("DataTable variables are initialized as empty.\nLoad data at runtime using nodes.")
+        dt_label.setStyleSheet("color: #888888; font-style: italic;")
+        dt_layout.addWidget(dt_label)
+        self._value_stack.addWidget(datatable_container)
 
-            QLineEdit:focus, QComboBox:focus {{
-                border-color: {THEME.border_focus};
-            }}
+    def _on_type_changed(self, type_name: str) -> None:
+        """Handle type change."""
+        type_indices = {
+            "String": 0,
+            "Integer": 1,
+            "Float": 2,
+            "Boolean": 3,
+            "List": 4,
+            "Dict": 5,
+            "DataTable": 6,
+        }
+        self._value_stack.setCurrentIndex(type_indices.get(type_name, 0))
 
-            QComboBox::drop-down {{
-                border: none;
-                padding-right: 8px;
-            }}
+    def _load_variable(self, variable: Dict[str, Any]) -> None:
+        """Load variable data into the form."""
+        self._name_edit.setText(variable.get("name", ""))
+        self._description_edit.setText(variable.get("description", ""))
 
-            QComboBox::down-arrow {{
-                image: none;
-                border-left: 4px solid transparent;
-                border-right: 4px solid transparent;
-                border-top: 6px solid {THEME.text_muted};
-            }}
+        var_type = variable.get("type", "String")
+        index = self._type_combo.findText(var_type)
+        if index >= 0:
+            self._type_combo.setCurrentIndex(index)
 
-            QTableWidget {{
-                background: {THEME.bg_dark};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                gridline-color: {THEME.border};
-            }}
+        default_value = variable.get("default_value", "")
+        self._set_value(var_type, default_value)
 
-            QTableWidget::item {{
-                padding: 8px;
-            }}
-
-            QTableWidget::item:selected {{
-                background: {THEME.bg_selected};
-            }}
-
-            QTableWidget::item:alternate {{
-                background: {THEME.bg_darkest};
-            }}
-
-            QHeaderView::section {{
-                background: {THEME.bg_medium};
-                color: {THEME.text_header};
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid {THEME.border};
-                font-weight: bold;
-            }}
-
-            QPushButton {{
-                background: {THEME.bg_medium};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border};
-                border-radius: 4px;
-                padding: 6px 16px;
-                min-width: 60px;
-            }}
-
-            QPushButton:hover {{
-                background: {THEME.bg_hover};
-            }}
-
-            QPushButton:pressed {{
-                background: {THEME.accent_primary};
-            }}
-
-            QLabel {{
-                color: {THEME.text_primary};
-            }}
-        """)
-
-    def _load_variables(self) -> None:
-        """Load variables into the table."""
-        self._table.setRowCount(0)
-
-        if self._scope == "global":
-            variables = self._manager.get_global_variables()
-        else:
-            variables = self._manager.get_project_variables()
-
-        for name, var_data in variables.items():
-            self._add_table_row(name, var_data)
-
-    def _add_table_row(self, name: str, variable: ProjectVariable) -> None:
-        """Add a row to the table."""
-        row = self._table.rowCount()
-        self._table.insertRow(row)
-
-        # Name
-        name_item = QTableWidgetItem(name)
-        name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
-        self._table.setItem(row, 0, name_item)
-
-        # Value
-        value = variable.default_value
-        if isinstance(value, (list, dict)):
-            import json
-            value = json.dumps(value)
-        value_item = QTableWidgetItem(str(value))
-        self._table.setItem(row, 1, value_item)
-
-        # Type
-        var_type = variable.type
-        type_item = QTableWidgetItem(var_type)
-        type_item.setFlags(type_item.flags() & ~Qt.ItemIsEditable)
-        self._table.setItem(row, 2, type_item)
-
-        # Actions - Delete button
-        actions_widget = QWidget()
-        actions_layout = QHBoxLayout(actions_widget)
-        actions_layout.setContentsMargins(4, 2, 4, 2)
-        actions_layout.setSpacing(4)
-
-        delete_btn = QPushButton("Delete")
-        delete_btn.setFixedWidth(60)
-        delete_btn.clicked.connect(lambda checked, n=name: self._on_delete_variable(n))
-        actions_layout.addWidget(delete_btn)
-
-        self._table.setCellWidget(row, 3, actions_widget)
-
-    def _on_add_variable(self) -> None:
-        """Handle add variable button."""
-        name = self._name_input.text().strip()
-        value = self._value_input.text().strip()
-        var_type = self._type_combo.currentText()
-
-        if not name:
-            QMessageBox.warning(self, "Invalid Input", "Please enter a variable name.")
-            self._name_input.setFocus()
-            return
-
-        # Validate name (alphanumeric and underscore only)
-        import re
-        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name):
-            QMessageBox.warning(
-                self, "Invalid Name",
-                "Variable name must start with a letter or underscore, "
-                "and contain only letters, numbers, and underscores."
-            )
-            self._name_input.setFocus()
-            return
-
-        # Convert value based on type
-        try:
-            converted_value = self._convert_value(value, var_type)
-        except ValueError as e:
-            QMessageBox.warning(self, "Invalid Value", str(e))
-            self._value_input.setFocus()
-            return
-
-        # Create variable object
-        variable = ProjectVariable(
-            name=name,
-            type=var_type,
-            default_value=converted_value,
-        )
-
-        # Add to manager
-        try:
-            if self._scope == "global":
-                self._manager.set_global_variable(variable)
-            else:
-                self._manager.set_project_variable(variable)
-
-            # Clear inputs
-            self._name_input.clear()
-            self._value_input.clear()
-            self._type_combo.setCurrentIndex(0)
-            self._name_input.setFocus()
-
-            # Reload table
-            self._load_variables()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to add variable: {e}")
-
-    def _convert_value(self, value: str, var_type: str) -> Any:
-        """Convert string value to the specified type."""
+    def _set_value(self, var_type: str, value: Any) -> None:
+        """Set the value in the appropriate editor."""
         if var_type == "String":
-            return value
+            self._string_edit.setText(str(value) if value else "")
         elif var_type == "Integer":
             try:
-                return int(value) if value else 0
-            except ValueError:
-                raise ValueError(f"'{value}' is not a valid integer.")
+                self._int_edit.setValue(int(value) if value else 0)
+            except (ValueError, TypeError):
+                self._int_edit.setValue(0)
         elif var_type == "Float":
             try:
-                return float(value) if value else 0.0
-            except ValueError:
-                raise ValueError(f"'{value}' is not a valid float.")
+                self._float_edit.setValue(float(value) if value else 0.0)
+            except (ValueError, TypeError):
+                self._float_edit.setValue(0.0)
         elif var_type == "Boolean":
-            return value.lower() in ("true", "yes", "1", "on")
+            self._bool_check.setChecked(bool(value))
         elif var_type == "List":
-            import json
-            try:
-                result = json.loads(value) if value else []
-                if not isinstance(result, list):
-                    raise ValueError("Value must be a JSON array.")
-                return result
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON array. Example: [\"a\", \"b\", \"c\"]")
+            if isinstance(value, list):
+                self._list_edit.setText(json.dumps(value, indent=2))
+            elif value:
+                self._list_edit.setText(str(value))
+            else:
+                self._list_edit.setText("[]")
         elif var_type == "Dict":
-            import json
-            try:
-                result = json.loads(value) if value else {}
-                if not isinstance(result, dict):
-                    raise ValueError("Value must be a JSON object.")
-                return result
-            except json.JSONDecodeError:
-                raise ValueError("Invalid JSON object. Example: {\"key\": \"value\"}")
-        return value
+            if isinstance(value, dict):
+                self._dict_edit.setText(json.dumps(value, indent=2))
+            elif value:
+                self._dict_edit.setText(str(value))
+            else:
+                self._dict_edit.setText("{}")
 
-    def _on_delete_variable(self, name: str) -> None:
-        """Handle delete variable."""
-        reply = QMessageBox.question(
-            self,
-            "Confirm Delete",
-            f"Are you sure you want to delete variable '{name}'?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
+    def _get_value(self) -> Any:
+        """Get the value from the current editor."""
+        var_type = self._type_combo.currentText()
 
-        if reply == QMessageBox.Yes:
+        if var_type == "String":
+            return self._string_edit.text()
+        elif var_type == "Integer":
+            return self._int_edit.value()
+        elif var_type == "Float":
+            return self._float_edit.value()
+        elif var_type == "Boolean":
+            return self._bool_check.isChecked()
+        elif var_type == "List":
+            text = self._list_edit.toPlainText().strip()
+            if not text:
+                return []
             try:
-                if self._scope == "global":
-                    self._manager.remove_global_variable(name)
-                else:
-                    self._manager.remove_project_variable(name)
-                self._load_variables()
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete variable: {e}")
+                value = json.loads(text)
+                if not isinstance(value, list):
+                    raise ValueError("Value must be a list")
+                return value
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON: {e}")
+        elif var_type == "Dict":
+            text = self._dict_edit.toPlainText().strip()
+            if not text:
+                return {}
+            try:
+                value = json.loads(text)
+                if not isinstance(value, dict):
+                    raise ValueError("Value must be a dictionary")
+                return value
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON: {e}")
+        elif var_type == "DataTable":
+            return None
+
+        return ""
+
+    def _validate(self) -> bool:
+        """Validate the form input."""
+        name = self._name_edit.text().strip()
+
+        # Check name is provided
+        if not name:
+            QMessageBox.warning(self, "Validation Error", "Variable name is required.")
+            self._name_edit.setFocus()
+            return False
+
+        # Check name is valid identifier
+        if not name.isidentifier():
+            QMessageBox.warning(
+                self,
+                "Validation Error",
+                "Variable name must be a valid identifier "
+                "(letters, numbers, and underscores, not starting with a number)."
+            )
+            self._name_edit.setFocus()
+            return False
+
+        # Check name is unique
+        if name in self._existing_names:
+            QMessageBox.warning(
+                self,
+                "Validation Error",
+                f"A variable named '{name}' already exists."
+            )
+            self._name_edit.setFocus()
+            return False
+
+        # Validate value
+        try:
+            self._get_value()
+        except ValueError as e:
+            QMessageBox.warning(
+                self,
+                "Validation Error",
+                f"Invalid default value: {e}"
+            )
+            return False
+
+        return True
+
+    def _on_accept(self) -> None:
+        """Handle OK button click."""
+        if self._validate():
+            self.accept()
+
+    def get_variable(self) -> Dict[str, Any]:
+        """
+        Get the variable definition.
+
+        Returns:
+            Variable definition dict
+        """
+        return {
+            "name": self._name_edit.text().strip(),
+            "type": self._type_combo.currentText(),
+            "default_value": self._get_value(),
+            "description": self._description_edit.toPlainText().strip(),
+        }
+
+    def _apply_styles(self) -> None:
+        """Apply dark theme styling."""
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #2b2b2b;
+                color: #d4d4d4;
+            }
+            QLabel {
+                color: #cccccc;
+            }
+            QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+                background-color: #3c3f41;
+                color: #d4d4d4;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                padding: 4px;
+            }
+            QLineEdit:focus, QTextEdit:focus, QSpinBox:focus,
+            QDoubleSpinBox:focus, QComboBox:focus {
+                border-color: #4b6eaf;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: none;
+            }
+            QPushButton {
+                background-color: #4b6eaf;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                padding: 6px 16px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #5a7fc0;
+            }
+            QCheckBox {
+                color: #cccccc;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+            }
+        """)

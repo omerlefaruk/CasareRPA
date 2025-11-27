@@ -193,7 +193,7 @@ class WorkflowSchedulerService:
     async def _load_schedules(self) -> None:
         """Load schedules from storage and register them."""
         try:
-            from ..canvas.schedule_storage import get_schedule_storage
+            from ..canvas.scheduling.schedule_storage import get_schedule_storage
 
             self._schedule_storage = get_schedule_storage()
             schedules = self._schedule_storage.get_enabled_schedules()
@@ -251,7 +251,7 @@ class WorkflowSchedulerService:
 
     def _create_trigger(self, schedule):
         """Create APScheduler trigger from schedule."""
-        from ..canvas.schedule_dialog import ScheduleFrequency
+        from ..canvas.scheduling.schedule_dialog import ScheduleFrequency
 
         if schedule.frequency == ScheduleFrequency.ONCE:
             if not schedule.next_run:
@@ -345,7 +345,7 @@ class WorkflowSchedulerService:
         try:
             # Get schedule
             if not self._schedule_storage:
-                from ..canvas.schedule_storage import get_schedule_storage
+                from ..canvas.scheduling.schedule_storage import get_schedule_storage
                 self._schedule_storage = get_schedule_storage()
 
             schedule = self._schedule_storage.get_schedule(schedule_id)

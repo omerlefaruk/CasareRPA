@@ -14,9 +14,9 @@ from PySide6.QtCore import Qt
 from qasync import QEventLoop
 
 from .main_window import MainWindow
-from .node_graph_widget import NodeGraphWidget
-from .node_registry import get_node_registry
-from .selector_integration import SelectorIntegration
+from .graph.node_graph_widget import NodeGraphWidget
+from .graph.node_registry import get_node_registry
+from .selectors.selector_integration import SelectorIntegration
 from ..runner.workflow_runner import WorkflowRunner
 from ..core.workflow_schema import WorkflowSchema, WorkflowMetadata
 from ..core.events import EventType, get_event_bus
@@ -76,7 +76,7 @@ class CasareRPAApp:
         logger.info("Registered all node types with graph")
 
         # Pre-build node mapping to avoid 500ms delay on first node creation
-        from .node_registry import get_casare_node_mapping
+        from .graph.node_registry import get_casare_node_mapping
         get_casare_node_mapping()
         logger.info("Pre-built CasareRPA node mapping")
 
@@ -91,7 +91,7 @@ class CasareRPAApp:
         self._workflow_task: Optional[asyncio.Task] = None
 
         # Trigger runner for scenario triggers
-        from .trigger_runner import CanvasTriggerRunner
+        from .execution.trigger_runner import CanvasTriggerRunner
         self._trigger_runner = CanvasTriggerRunner(self)
 
         # Selector integration (browser element picker)
@@ -406,7 +406,7 @@ class CasareRPAApp:
 
         This handles both NodeGraphQt nodes and NodeFrame graphics items.
         """
-        from .node_frame import NodeFrame
+        from .graph.node_frame import NodeFrame
 
         graph = self._node_graph.graph
         viewer = graph.viewer()
@@ -567,7 +567,7 @@ class CasareRPAApp:
             template_info: TemplateInfo object
         """
         import asyncio
-        from casare_rpa.utils.template_loader import get_template_loader
+        from casare_rpa.utils.workflow.template_loader import get_template_loader
         from qasync import asyncSlot
         
         logger.info(f"Creating workflow from template: {template_info.name}")
@@ -627,7 +627,7 @@ class CasareRPAApp:
         Args:
             workflow: WorkflowSchema to load
         """
-        from .node_registry import (
+        from .graph.node_registry import (
             get_node_type_mapping,
             get_identifier_for_type,
             get_casare_class_for_type,
@@ -780,7 +780,7 @@ class CasareRPAApp:
         try:
             import orjson
             from pathlib import Path
-            from .workflow_import import import_workflow_data
+            from .workflow.workflow_import import import_workflow_data
 
             logger.info(f"Importing workflow: {file_path}")
 
@@ -817,7 +817,7 @@ class CasareRPAApp:
         """
         try:
             import orjson
-            from .workflow_import import import_workflow_data
+            from .workflow.workflow_import import import_workflow_data
 
             logger.info("Importing workflow from clipboard JSON")
 
@@ -953,7 +953,7 @@ class CasareRPAApp:
         Allows users to drag .json workflow files directly onto the canvas
         to import nodes at the drop position.
         """
-        from .workflow_import import import_workflow_data
+        from .workflow.workflow_import import import_workflow_data
 
         def on_import_file(file_path: str, position: tuple) -> None:
             """Handle file drop."""
@@ -1025,7 +1025,7 @@ class CasareRPAApp:
         Args:
             workflow_data: Prepared workflow data with remapped IDs
         """
-        from .node_registry import get_node_factory
+        from .graph.node_registry import get_node_factory
 
         graph = self._node_graph.graph
         factory = get_node_factory()
@@ -1071,7 +1071,7 @@ class CasareRPAApp:
 
     def _create_visual_node_from_data(self, graph, node_data: dict, factory):
         """Create a visual node from workflow data using unified node discovery."""
-        from .node_registry import (
+        from .graph.node_registry import (
             get_identifier_for_type,
             get_casare_class_for_type,
         )
@@ -1198,7 +1198,7 @@ class CasareRPAApp:
         Returns:
             List of serialized frame dictionaries
         """
-        from .node_frame import NodeFrame
+        from .graph.node_frame import NodeFrame
 
         frames = []
         scene = self._node_graph.graph.viewer().scene()
@@ -1219,7 +1219,7 @@ class CasareRPAApp:
             frames_data: List of serialized frame dictionaries
             node_map: Mapping of node_id to visual node objects
         """
-        from .node_frame import NodeFrame
+        from .graph.node_frame import NodeFrame
 
         if not frames_data:
             return
@@ -1752,7 +1752,7 @@ class CasareRPAApp:
         Returns:
             WorkflowSchema instance
         """
-        from .node_registry import get_node_registry
+        from .graph.node_registry import get_node_registry
         
         graph = self._node_graph.graph
         registry = get_node_registry()

@@ -14,7 +14,7 @@ from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
 from ..core.execution_context import ExecutionContext
 from ..utils.config import DEFAULT_NODE_TIMEOUT
-from ..utils.selector_normalizer import normalize_selector
+from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 

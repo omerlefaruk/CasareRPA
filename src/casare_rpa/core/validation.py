@@ -170,7 +170,7 @@ def _get_valid_node_types() -> Set[str]:
     available node types in the system.
     """
     try:
-        from ..utils.workflow_loader import NODE_TYPE_MAP
+        from ..utils.workflow.workflow_loader import NODE_TYPE_MAP
         return set(NODE_TYPE_MAP.keys())
     except ImportError:
         # Fallback to a minimal set if workflow_loader isn't available
