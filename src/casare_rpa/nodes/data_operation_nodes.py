@@ -6,7 +6,8 @@ import random
 from loguru import logger
 
 from ..core.base_node import BaseNode
-from ..core.types import PortType, DataType, NodeStatus
+from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
+from ..core.execution_context import ExecutionContext
 
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
