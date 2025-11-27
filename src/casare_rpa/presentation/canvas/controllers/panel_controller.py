@@ -195,3 +195,124 @@ class PanelController(BaseController):
         if errors:
             self.show_panel_tab("Validation")
             logger.info(f"Showing validation tab: {len(errors)} errors found")
+
+    def toggle_panel_tab(self, tab_name: str) -> None:
+        """
+        Toggle bottom panel to specific tab or hide if already on that tab.
+
+        Args:
+            tab_name: Tab name to toggle ('variables', 'output', 'log', 'validation', 'history')
+        """
+        panel = self.main_window.get_bottom_panel()
+        if not panel:
+            return
+
+        tab_map = {
+            "variables": 0,
+            "output": 1,
+            "log": 2,
+            "validation": 3,
+            "history": 4,
+        }
+
+        target_idx = tab_map.get(tab_name.lower(), 0)
+
+        if panel.isVisible():
+            # Switch to tab or hide if already on that tab
+            if hasattr(panel, "_tab_widget"):
+                current_idx = panel._tab_widget.currentIndex()
+                if current_idx == target_idx:
+                    panel.hide()
+                    self.bottom_panel_toggled.emit(False)
+                else:
+                    panel._tab_widget.setCurrentIndex(target_idx)
+                    self.panel_tab_changed.emit(tab_name)
+        else:
+            panel.show()
+            if hasattr(panel, "_tab_widget"):
+                panel._tab_widget.setCurrentIndex(target_idx)
+            self.bottom_panel_toggled.emit(True)
+            self.panel_tab_changed.emit(tab_name)
+
+    def show_bottom_panel(self) -> None:
+        """Show the bottom panel."""
+        panel = self.main_window.get_bottom_panel()
+        if panel:
+            panel.show()
+            self.bottom_panel_toggled.emit(True)
+            if hasattr(self.main_window, "action_toggle_bottom_panel"):
+                self.main_window.action_toggle_bottom_panel.setChecked(True)
+
+    def hide_bottom_panel(self) -> None:
+        """Hide the bottom panel."""
+        panel = self.main_window.get_bottom_panel()
+        if panel:
+            panel.hide()
+            self.bottom_panel_toggled.emit(False)
+            if hasattr(self.main_window, "action_toggle_bottom_panel"):
+                self.main_window.action_toggle_bottom_panel.setChecked(False)
+
+    def show_minimap(self) -> None:
+        """Show the minimap overlay."""
+        minimap = self.main_window.get_minimap()
+        if minimap:
+            minimap.setVisible(True)
+            self._position_minimap()
+            self.minimap_toggled.emit(True)
+
+    def hide_minimap(self) -> None:
+        """Hide the minimap overlay."""
+        minimap = self.main_window.get_minimap()
+        if minimap:
+            minimap.setVisible(False)
+            self.minimap_toggled.emit(False)
+
+    def _position_minimap(self) -> None:
+        """Position minimap at bottom-left of central widget."""
+        minimap = self.main_window.get_minimap()
+        central_widget = getattr(self.main_window, "_central_widget", None)
+        if minimap and central_widget:
+            margin = 10
+            x = margin
+            y = central_widget.height() - minimap.height() - margin
+            minimap.move(x, y)
+            minimap.raise_()
+
+    def show_variable_inspector(self) -> None:
+        """Show the Variable Inspector dock."""
+        dock = self.main_window.get_variable_inspector_dock()
+        if dock:
+            dock.show()
+            self.variable_inspector_toggled.emit(True)
+            if hasattr(self.main_window, "action_toggle_variable_inspector"):
+                self.main_window.action_toggle_variable_inspector.setChecked(True)
+
+    def hide_variable_inspector(self) -> None:
+        """Hide the Variable Inspector dock."""
+        dock = self.main_window.get_variable_inspector_dock()
+        if dock:
+            dock.hide()
+            self.variable_inspector_toggled.emit(False)
+            if hasattr(self.main_window, "action_toggle_variable_inspector"):
+                self.main_window.action_toggle_variable_inspector.setChecked(False)
+
+    def update_status_bar_buttons(self) -> None:
+        """Update status bar button states based on current panel visibility and tab."""
+        panel = self.main_window.get_bottom_panel()
+        if not panel:
+            return
+
+        visible = panel.isVisible()
+        current_idx = -1
+        if visible and hasattr(panel, "_tab_widget"):
+            current_idx = panel._tab_widget.currentIndex()
+
+        # Update button states if they exist
+        if hasattr(self.main_window, "_btn_variables"):
+            self.main_window._btn_variables.setChecked(visible and current_idx == 0)
+        if hasattr(self.main_window, "_btn_output"):
+            self.main_window._btn_output.setChecked(visible and current_idx == 1)
+        if hasattr(self.main_window, "_btn_log"):
+            self.main_window._btn_log.setChecked(visible and current_idx == 2)
+        if hasattr(self.main_window, "_btn_validation"):
+            self.main_window._btn_validation.setChecked(visible and current_idx == 3)

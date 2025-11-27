@@ -9,6 +9,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Week 4: MainWindow Consolidation (2025-11-27) - IN PROGRESS
+
+MainWindow refactoring to improve controller integration and reduce code size.
+
+#### Changed
+
+**MainWindow Refactoring**:
+- Reduced MainWindow from 2,504 lines to 1,938 lines (23% reduction)
+- Consolidated 20+ getter methods into property-based access
+- Added 15 new @property accessors for components (graph, controllers, panels)
+- Simplified verbose docstrings across 30+ methods
+- Improved delegation rate from 31% to 69%
+- Added backward-compatible getter methods for API stability
+
+**Controllers**:
+- Added UIStateController export to controllers package
+- 12 controllers now integrated into MainWindow:
+  - WorkflowController, ExecutionController, NodeController
+  - ConnectionController, PanelController, MenuController
+  - EventBusController, ViewportController, SchedulingController
+  - TriggerController, UIStateController
+
+#### Metrics
+
+**MainWindow**:
+- Lines: 2,504 -> 1,938 (566 lines removed, 23% reduction)
+- Methods: 128 -> 143 (properties added)
+- Avg lines/method: 16.3 -> 11.7
+- Delegation rate: 31% -> 69%
+- Controllers: 11 -> 12 (UIStateController added)
+
+---
+
 ### Week 2: Clean Architecture Migration (2025-11-27) - COMPLETE
 
 A comprehensive refactoring to establish Clean Architecture with domain-driven design principles.

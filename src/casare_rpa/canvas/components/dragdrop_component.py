@@ -43,7 +43,7 @@ class DragDropComponent(BaseComponent):
         to import nodes at the drop position.
         """
         from ..workflow.workflow_import import import_workflow_data
-        from ..graph.node_factory import get_node_factory
+        from ..graph.node_registry import get_node_factory
 
         def on_import_file(file_path: str, position: tuple) -> None:
             """Handle file drop."""
