@@ -63,7 +63,7 @@ jobs:
 
           # Call Claude API with OAuth token
           client = anthropic.Anthropic(
-              auth_token=oauth_token
+              api_key=oauth_token
           )
 
           message = client.messages.create(
