@@ -166,8 +166,9 @@ from .error_handling import (
     VisualErrorHandlerNode,
 )
 
-# File Operations (16 nodes)
+# File Operations (40 nodes)
 from .file_operations import (
+    # Basic file operations
     VisualReadFileNode,
     VisualWriteFileNode,
     VisualAppendFileNode,
@@ -178,12 +179,105 @@ from .file_operations import (
     VisualGetFileSizeNode,
     VisualGetFileInfoNode,
     VisualListFilesNode,
+    # CSV operations
     VisualReadCsvNode,
     VisualWriteCsvNode,
+    # JSON operations
     VisualReadJsonNode,
     VisualWriteJsonNode,
+    # ZIP operations
     VisualZipFilesNode,
     VisualUnzipFileNode,
+    # XML operations
+    VisualParseXMLNode,
+    VisualReadXMLFileNode,
+    VisualWriteXMLFileNode,
+    VisualXPathQueryNode,
+    VisualGetXMLElementNode,
+    VisualGetXMLAttributeNode,
+    VisualXMLToJsonNode,
+    VisualJsonToXMLNode,
+    # PDF operations
+    VisualReadPDFTextNode,
+    VisualGetPDFInfoNode,
+    VisualMergePDFsNode,
+    VisualSplitPDFNode,
+    VisualExtractPDFPagesNode,
+    VisualPDFToImagesNode,
+    # FTP operations
+    VisualFTPConnectNode,
+    VisualFTPUploadNode,
+    VisualFTPDownloadNode,
+    VisualFTPListNode,
+    VisualFTPDeleteNode,
+    VisualFTPMakeDirNode,
+    VisualFTPRemoveDirNode,
+    VisualFTPRenameNode,
+    VisualFTPDisconnectNode,
+    VisualFTPGetSizeNode,
+)
+
+# Scripts (5 nodes)
+from .scripts import (
+    VisualRunPythonScriptNode,
+    VisualRunPythonFileNode,
+    VisualEvalExpressionNode,
+    VisualRunBatchScriptNode,
+    VisualRunJavaScriptNode,
+)
+
+# System (13 nodes)
+from .system import (
+    # Clipboard operations
+    VisualClipboardCopyNode,
+    VisualClipboardPasteNode,
+    VisualClipboardClearNode,
+    # Dialogs
+    VisualMessageBoxNode,
+    VisualInputDialogNode,
+    VisualTooltipNode,
+    # Terminal
+    VisualRunCommandNode,
+    VisualRunPowerShellNode,
+    # Windows Services
+    VisualGetServiceStatusNode,
+    VisualStartServiceNode,
+    VisualStopServiceNode,
+    VisualRestartServiceNode,
+    VisualListServicesNode,
+)
+
+# Utility (26 nodes)
+from .utility import (
+    # Random operations
+    VisualRandomNumberNode,
+    VisualRandomChoiceNode,
+    VisualRandomStringNode,
+    VisualRandomUUIDNode,
+    VisualShuffleListNode,
+    # DateTime operations
+    VisualGetCurrentDateTimeNode,
+    VisualFormatDateTimeNode,
+    VisualParseDateTimeNode,
+    VisualDateTimeAddNode,
+    VisualDateTimeDiffNode,
+    VisualDateTimeCompareNode,
+    VisualGetTimestampNode,
+    # Text operations
+    VisualTextSplitNode,
+    VisualTextReplaceNode,
+    VisualTextTrimNode,
+    VisualTextCaseNode,
+    VisualTextPadNode,
+    VisualTextSubstringNode,
+    VisualTextContainsNode,
+    VisualTextStartsWithNode,
+    VisualTextEndsWithNode,
+    VisualTextLinesNode,
+    VisualTextReverseNode,
+    VisualTextCountNode,
+    VisualTextJoinNode,
+    VisualTextExtractNode,
 )
 
 # Office Automation (12 nodes)
@@ -378,6 +472,77 @@ __all__ = [
     "VisualWriteJsonNode",
     "VisualZipFilesNode",
     "VisualUnzipFileNode",
+    "VisualParseXMLNode",
+    "VisualReadXMLFileNode",
+    "VisualWriteXMLFileNode",
+    "VisualXPathQueryNode",
+    "VisualGetXMLElementNode",
+    "VisualGetXMLAttributeNode",
+    "VisualXMLToJsonNode",
+    "VisualJsonToXMLNode",
+    "VisualReadPDFTextNode",
+    "VisualGetPDFInfoNode",
+    "VisualMergePDFsNode",
+    "VisualSplitPDFNode",
+    "VisualExtractPDFPagesNode",
+    "VisualPDFToImagesNode",
+    "VisualFTPConnectNode",
+    "VisualFTPUploadNode",
+    "VisualFTPDownloadNode",
+    "VisualFTPListNode",
+    "VisualFTPDeleteNode",
+    "VisualFTPMakeDirNode",
+    "VisualFTPRemoveDirNode",
+    "VisualFTPRenameNode",
+    "VisualFTPDisconnectNode",
+    "VisualFTPGetSizeNode",
+    # scripts
+    "VisualRunPythonScriptNode",
+    "VisualRunPythonFileNode",
+    "VisualEvalExpressionNode",
+    "VisualRunBatchScriptNode",
+    "VisualRunJavaScriptNode",
+    # system
+    "VisualClipboardCopyNode",
+    "VisualClipboardPasteNode",
+    "VisualClipboardClearNode",
+    "VisualMessageBoxNode",
+    "VisualInputDialogNode",
+    "VisualTooltipNode",
+    "VisualRunCommandNode",
+    "VisualRunPowerShellNode",
+    "VisualGetServiceStatusNode",
+    "VisualStartServiceNode",
+    "VisualStopServiceNode",
+    "VisualRestartServiceNode",
+    "VisualListServicesNode",
+    # utility
+    "VisualRandomNumberNode",
+    "VisualRandomChoiceNode",
+    "VisualRandomStringNode",
+    "VisualRandomUUIDNode",
+    "VisualShuffleListNode",
+    "VisualGetCurrentDateTimeNode",
+    "VisualFormatDateTimeNode",
+    "VisualParseDateTimeNode",
+    "VisualDateTimeAddNode",
+    "VisualDateTimeDiffNode",
+    "VisualDateTimeCompareNode",
+    "VisualGetTimestampNode",
+    "VisualTextSplitNode",
+    "VisualTextReplaceNode",
+    "VisualTextTrimNode",
+    "VisualTextCaseNode",
+    "VisualTextPadNode",
+    "VisualTextSubstringNode",
+    "VisualTextContainsNode",
+    "VisualTextStartsWithNode",
+    "VisualTextEndsWithNode",
+    "VisualTextLinesNode",
+    "VisualTextReverseNode",
+    "VisualTextCountNode",
+    "VisualTextJoinNode",
+    "VisualTextExtractNode",
     # office_automation
     "VisualExcelOpenNode",
     "VisualExcelCloseNode",
