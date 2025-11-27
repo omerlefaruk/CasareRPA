@@ -15,12 +15,20 @@ Architecture:
     - PanelController: Panel visibility (properties, debug, minimap, variables)
     - MenuController: Menu/action management (shortcuts, recent files)
     - EventBusController: Centralized event routing and coordination
+    - ViewportController: Canvas viewport, minimap, zoom, and frame management
+    - SchedulingController: Workflow scheduling and schedule management
+    - TriggerController: Trigger creation, editing, deletion, and management
+    - UIStateController: UI state persistence (window geometry, panels, recent files)
 
 Usage:
     from casare_rpa.presentation.canvas.controllers import (
         WorkflowController,
         ExecutionController,
         NodeController,
+        ViewportController,
+        SchedulingController,
+        TriggerController,
+        UIStateController,
     )
 
     workflow_controller = WorkflowController(main_window)
@@ -35,6 +43,10 @@ from .connection_controller import ConnectionController
 from .panel_controller import PanelController
 from .menu_controller import MenuController
 from .event_bus_controller import EventBusController, EventTypes, Event
+from .viewport_controller import ViewportController
+from .scheduling_controller import SchedulingController
+from .trigger_controller import TriggerController
+from .ui_state_controller import UIStateController
 
 __all__ = [
     # Base
@@ -47,6 +59,10 @@ __all__ = [
     "PanelController",
     "MenuController",
     "EventBusController",
+    "ViewportController",
+    "SchedulingController",
+    "TriggerController",
+    "UIStateController",
     # Event utilities
     "EventTypes",
     "Event",

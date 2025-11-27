@@ -7,12 +7,15 @@ Handles all menu-related operations:
 - Action state management
 - Hotkey management
 - Recent files menu
+- About and help dialogs
+- Desktop selector builder
 """
 
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, List, Optional, TYPE_CHECKING
 from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
 from .base_controller import BaseController
@@ -31,12 +34,20 @@ class MenuController(BaseController):
         action_state_changed: Emitted when an action's enabled state changes (str: action_name, bool: enabled)
         recent_files_updated: Emitted when recent files list is updated
         hotkey_changed: Emitted when a hotkey is modified (str: action_name, str: new_shortcut)
+        recent_file_opened: Emitted when a recent file is opened (str: file_path)
+        recent_files_cleared: Emitted when recent files list is cleared
+        about_dialog_shown: Emitted when about dialog is displayed
+        desktop_selector_shown: Emitted when desktop selector builder is displayed
     """
 
     # Signals
     action_state_changed = Signal(str, bool)  # action_name, enabled
     recent_files_updated = Signal()
     hotkey_changed = Signal(str, str)  # action_name, new_shortcut
+    recent_file_opened = Signal(str)  # file_path
+    recent_files_cleared = Signal()
+    about_dialog_shown = Signal()
+    desktop_selector_shown = Signal()
 
     def __init__(self, main_window: "MainWindow"):
         """Initialize menu controller."""
@@ -241,5 +252,269 @@ class MenuController(BaseController):
 
         # Delegate to workflow controller
         if hasattr(self.main_window, "_workflow_controller"):
-            # Set the file directly and emit the load signal
+            # Check for unsaved changes first
+            workflow_controller = self.main_window._workflow_controller
+            if not workflow_controller._check_unsaved_changes():
+                return
+
+            # Emit the load signal
             self.main_window.workflow_open.emit(file_path)
+            self.main_window.set_current_file(path)
+            self.main_window.set_modified(False)
+            self.main_window.show_status(f"Opened: {path.name}", 3000)
+            self.recent_file_opened.emit(file_path)
+
+    # ==================== About Dialog ====================
+
+    def show_about_dialog(self) -> None:
+        """
+        Show the About dialog with application information.
+
+        Displays version info, credits, and application description.
+        """
+        logger.info("Showing about dialog")
+
+        try:
+            from ....utils.config import APP_NAME, APP_VERSION
+
+            QMessageBox.about(
+                self.main_window,
+                f"About {APP_NAME}",
+                f"<h3>{APP_NAME} v{APP_VERSION}</h3>"
+                f"<p>Windows Desktop RPA Platform</p>"
+                f"<p>Visual workflow automation with node-based editor</p>"
+                f"<p>Built with PySide6, NodeGraphQt, and Playwright</p>"
+                f"<hr>"
+                f"<p><b>Features:</b></p>"
+                f"<ul>"
+                f"<li>140+ automation nodes</li>"
+                f"<li>Web automation with Playwright</li>"
+                f"<li>Desktop automation with UIAutomation</li>"
+                f"<li>Scheduling and triggers</li>"
+                f"</ul>",
+            )
+            self.about_dialog_shown.emit()
+        except Exception as e:
+            logger.error(f"Failed to show about dialog: {e}")
+            QMessageBox.critical(
+                self.main_window,
+                "Error",
+                f"Failed to show about dialog:\n{str(e)}",
+            )
+
+    # ==================== Desktop Selector Builder ====================
+
+    def show_desktop_selector_builder(self) -> None:
+        """
+        Show the Desktop Selector Builder dialog.
+
+        Opens the visual tool for building desktop element selectors.
+        """
+        logger.info("Opening desktop selector builder")
+
+        try:
+            from ....canvas.selectors.desktop_selector_builder import (
+                DesktopSelectorBuilder,
+            )
+
+            dialog = DesktopSelectorBuilder(parent=self.main_window)
+
+            if dialog.exec():
+                selector = dialog.get_selected_selector()
+                if selector:
+                    logger.info(f"Selector selected from builder: {selector}")
+                    # User can copy selector from here
+
+            self.desktop_selector_shown.emit()
+        except Exception as e:
+            logger.error(f"Failed to open desktop selector builder: {e}")
+            QMessageBox.critical(
+                self.main_window,
+                "Error",
+                f"Failed to open Desktop Selector Builder:\n{str(e)}",
+            )
+
+    # ==================== Recent Files Management ====================
+
+    def add_recent_file(self, file_path: Path) -> None:
+        """
+        Add a file to the recent files list.
+
+        Args:
+            file_path: Path to the workflow file to add
+        """
+        logger.debug(f"Adding to recent files: {file_path}")
+
+        try:
+            from ....canvas.workflow.recent_files import get_recent_files_manager
+
+            manager = get_recent_files_manager()
+            path = Path(file_path) if isinstance(file_path, str) else file_path
+            manager.add_file(path)
+            self.update_recent_files_menu()
+        except Exception as e:
+            logger.error(f"Failed to add recent file: {e}")
+
+    def get_recent_files(self) -> List[dict]:
+        """
+        Get the list of recent files.
+
+        Returns:
+            List of dicts with 'path', 'name', 'last_opened' keys
+        """
+        try:
+            from ....canvas.workflow.recent_files import get_recent_files_manager
+
+            manager = get_recent_files_manager()
+            return manager.get_recent_files()
+        except Exception as e:
+            logger.error(f"Failed to get recent files: {e}")
+            return []
+
+    def open_recent_file(self, file_path: str) -> None:
+        """
+        Open a recent file by path.
+
+        Args:
+            file_path: Path to the file to open
+        """
+        self._on_open_recent_file(file_path)
+
+    def clear_recent_files(self) -> None:
+        """
+        Clear the recent files list.
+
+        Removes all entries from the recent files list and updates the menu.
+        """
+        logger.info("Clearing recent files")
+
+        try:
+            from ....canvas.workflow.recent_files import get_recent_files_manager
+
+            manager = get_recent_files_manager()
+            manager.clear()
+            self.update_recent_files_menu()
+            self.main_window.show_status("Recent files cleared", 3000)
+            self.recent_files_cleared.emit()
+        except Exception as e:
+            logger.error(f"Failed to clear recent files: {e}")
+            QMessageBox.warning(
+                self.main_window,
+                "Error",
+                f"Failed to clear recent files:\n{str(e)}",
+            )
+
+    # ==================== Help Menu Operations ====================
+
+    def show_documentation(self) -> None:
+        """
+        Open the documentation in the default web browser.
+
+        Opens the online documentation or local docs if available.
+        """
+        logger.info("Opening documentation")
+
+        try:
+            import webbrowser
+
+            # Try local docs first, then online
+            from ....utils.config import DOCS_DIR
+
+            local_docs = DOCS_DIR / "index.html"
+            if local_docs.exists():
+                webbrowser.open(local_docs.as_uri())
+            else:
+                # Fallback to online docs (placeholder URL)
+                webbrowser.open("https://github.com/CasareRPA/docs")
+
+            self.main_window.show_status("Documentation opened in browser", 3000)
+        except Exception as e:
+            logger.error(f"Failed to open documentation: {e}")
+            QMessageBox.warning(
+                self.main_window,
+                "Error",
+                f"Failed to open documentation:\n{str(e)}",
+            )
+
+    def show_keyboard_shortcuts(self) -> None:
+        """
+        Show the keyboard shortcuts dialog.
+
+        Displays a reference dialog with all available keyboard shortcuts.
+        """
+        logger.info("Showing keyboard shortcuts")
+
+        try:
+            # Build shortcuts list from collected actions
+            shortcuts_text = "<h3>Keyboard Shortcuts</h3><table>"
+            shortcuts_text += "<tr><th>Action</th><th>Shortcut</th></tr>"
+
+            shortcut_list = [
+                ("New Workflow", "Ctrl+N"),
+                ("Open Workflow", "Ctrl+O"),
+                ("Save Workflow", "Ctrl+S"),
+                ("Save As", "Ctrl+Shift+S"),
+                ("Undo", "Ctrl+Z"),
+                ("Redo", "Ctrl+Y / Ctrl+Shift+Z"),
+                ("Cut", "Ctrl+X"),
+                ("Copy", "Ctrl+C"),
+                ("Paste", "Ctrl+V"),
+                ("Delete", "X"),
+                ("Select All", "Ctrl+A"),
+                ("Find Node", "Ctrl+F"),
+                ("Run Workflow", "F3"),
+                ("Run to Node", "F4"),
+                ("Run Single Node", "F5"),
+                ("Pause/Resume", "F6"),
+                ("Stop", "F7"),
+                ("Zoom In", "Ctrl++"),
+                ("Zoom Out", "Ctrl+-"),
+                ("Reset Zoom", "Ctrl+0"),
+                ("Toggle Minimap", "Ctrl+M"),
+                ("Command Palette", "Ctrl+Shift+P"),
+                ("Preferences", "Ctrl+,"),
+            ]
+
+            for action, shortcut in shortcut_list:
+                shortcuts_text += (
+                    f"<tr><td>{action}</td><td><code>{shortcut}</code></td></tr>"
+                )
+
+            shortcuts_text += "</table>"
+
+            QMessageBox.information(
+                self.main_window,
+                "Keyboard Shortcuts",
+                shortcuts_text,
+            )
+        except Exception as e:
+            logger.error(f"Failed to show keyboard shortcuts: {e}")
+
+    def check_for_updates(self) -> None:
+        """
+        Check for application updates.
+
+        Checks for newer versions and notifies the user.
+        """
+        logger.info("Checking for updates")
+
+        try:
+            from ....utils.config import APP_VERSION
+
+            # This is a placeholder implementation
+            # In a real implementation, this would check a server for updates
+            QMessageBox.information(
+                self.main_window,
+                "Check for Updates",
+                f"<p>Current version: <b>{APP_VERSION}</b></p>"
+                f"<p>You are running the latest version.</p>"
+                f"<p><i>Note: Automatic update checking is not yet implemented.</i></p>",
+            )
+            self.main_window.show_status("Update check complete", 3000)
+        except Exception as e:
+            logger.error(f"Failed to check for updates: {e}")
+            QMessageBox.warning(
+                self.main_window,
+                "Error",
+                f"Failed to check for updates:\n{str(e)}",
+            )

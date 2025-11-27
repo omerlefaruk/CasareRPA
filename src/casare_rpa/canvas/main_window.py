@@ -41,6 +41,10 @@ from ..presentation.canvas.controllers import (
     PanelController,
     MenuController,
     EventBusController,
+    ViewportController,
+    SchedulingController,
+    TriggerController,
+    UIStateController,
 )
 
 
@@ -128,6 +132,10 @@ class MainWindow(QMainWindow):
         self._panel_controller: Optional[PanelController] = None
         self._menu_controller: Optional[MenuController] = None
         self._event_bus_controller: Optional[EventBusController] = None
+        self._viewport_controller: Optional[ViewportController] = None
+        self._scheduling_controller: Optional[SchedulingController] = None
+        self._trigger_controller: Optional[TriggerController] = None
+        self._ui_state_controller: Optional[UIStateController] = None
 
         # Setup window
         self._setup_window()
@@ -150,14 +158,9 @@ class MainWindow(QMainWindow):
         # Window title will be updated by WorkflowController via signal
         self._update_actions()
 
-        # Setup UI state persistence
-        self._settings = QSettings("CasareRPA", "Canvas")
-        self._state_save_timer = QTimer(self)
-        self._state_save_timer.setSingleShot(True)
-        self._state_save_timer.timeout.connect(self._save_ui_state)
-
-        # Restore UI state from previous session
-        self._restore_ui_state()
+        # Restore UI state from previous session (via UIStateController)
+        if self._ui_state_controller:
+            self._ui_state_controller.restore_state()
 
     def _setup_window(self) -> None:
         """Configure window properties."""
@@ -758,49 +761,27 @@ class MainWindow(QMainWindow):
         status_bar.showMessage("Ready", 3000)
 
     def _toggle_panel_tab(self, tab_name: str) -> None:
-        """Toggle bottom panel to specific tab."""
-        if self._bottom_panel:
-            if self._bottom_panel.isVisible():
-                # Switch to tab or hide if already on that tab
-                current_idx = self._bottom_panel._tab_widget.currentIndex()
-                tab_map = {
-                    "variables": 0,
-                    "output": 1,
-                    "log": 2,
-                    "validation": 3,
-                    "history": 4,
-                }
-                target_idx = tab_map.get(tab_name, 0)
-                if current_idx == target_idx:
-                    self._bottom_panel.hide()
-                else:
-                    self._bottom_panel._tab_widget.setCurrentIndex(target_idx)
-            else:
-                self._bottom_panel.show()
-                tab_map = {
-                    "variables": 0,
-                    "output": 1,
-                    "log": 2,
-                    "validation": 3,
-                    "history": 4,
-                }
-                self._bottom_panel._tab_widget.setCurrentIndex(tab_map.get(tab_name, 0))
+        """Toggle bottom panel to specific tab.
+
+        Delegates to PanelController.toggle_panel_tab().
+        """
+        if self._panel_controller:
+            self._panel_controller.toggle_panel_tab(tab_name)
             self._update_status_bar_buttons()
 
     def _update_status_bar_buttons(self) -> None:
-        """Update status bar button states."""
-        if not self._bottom_panel:
-            return
-        visible = self._bottom_panel.isVisible()
-        current_idx = self._bottom_panel._tab_widget.currentIndex() if visible else -1
-        self._btn_variables.setChecked(visible and current_idx == 0)
-        self._btn_output.setChecked(visible and current_idx == 1)
-        self._btn_log.setChecked(visible and current_idx == 2)
-        self._btn_validation.setChecked(visible and current_idx == 3)
+        """Update status bar button states.
+
+        Delegates to PanelController.update_status_bar_buttons().
+        """
+        if self._panel_controller:
+            self._panel_controller.update_status_bar_buttons()
 
     def update_zoom_display(self, zoom_percent: float) -> None:
-        """Update the zoom level display in status bar."""
-        if hasattr(self, "_zoom_label"):
+        """Update the zoom level display in status bar - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.update_zoom_display(zoom_percent)
+        elif hasattr(self, "_zoom_label"):
             self._zoom_label.setText(f"{int(zoom_percent)}%")
 
     def update_node_count(self, count: int) -> None:
@@ -988,12 +969,15 @@ class MainWindow(QMainWindow):
         logger.info("Variable Inspector dock created")
 
     def _on_toggle_variable_inspector(self, checked: bool) -> None:
-        """Handle toggle variable inspector action."""
-        if self._variable_inspector_dock:
+        """Handle toggle variable inspector action.
+
+        Delegates to PanelController.
+        """
+        if self._panel_controller:
             if checked:
-                self._variable_inspector_dock.show()
+                self._panel_controller.show_variable_inspector()
             else:
-                self._variable_inspector_dock.hide()
+                self._panel_controller.hide_variable_inspector()
 
     def _create_properties_panel(self) -> None:
         """Create the properties panel for selected node editing."""
@@ -1087,18 +1071,23 @@ class MainWindow(QMainWindow):
 
         logger.info("Execution Timeline dock created")
 
-    def get_execution_timeline(self) -> Optional["ExecutionTimeline"]:
-        """Get the execution timeline widget."""
+    @property
+    def execution_timeline(self) -> Optional["ExecutionTimeline"]:
+        """The execution timeline widget."""
         return getattr(self, "_execution_timeline", None)
 
-    def get_properties_panel(self) -> Optional["PropertiesPanel"]:
-        """
-        Get the properties panel.
+    # Backward-compatible getter
+    def get_execution_timeline(self) -> Optional["ExecutionTimeline"]:
+        return self.execution_timeline
 
-        Returns:
-            PropertiesPanel instance or None
-        """
+    @property
+    def properties_panel(self) -> Optional["PropertiesPanel"]:
+        """The properties panel."""
         return self._properties_panel
+
+    # Backward-compatible getter
+    def get_properties_panel(self) -> Optional["PropertiesPanel"]:
+        return self.properties_panel
 
     def update_properties_panel(self, node) -> None:
         """
@@ -1115,14 +1104,14 @@ class MainWindow(QMainWindow):
         self.set_modified(True)
         logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
-    def get_bottom_panel(self) -> Optional["BottomPanelDock"]:
-        """
-        Get the bottom panel dock.
-
-        Returns:
-            BottomPanelDock instance or None
-        """
+    @property
+    def bottom_panel(self) -> Optional["BottomPanelDock"]:
+        """The bottom panel dock."""
         return self._bottom_panel
+
+    # Backward-compatible getter
+    def get_bottom_panel(self) -> Optional["BottomPanelDock"]:
+        return self.bottom_panel
 
     @Slot()
     def trigger_workflow_run(self) -> None:
@@ -1136,23 +1125,31 @@ class MainWindow(QMainWindow):
         self.trigger_workflow_requested.emit()
 
     def show_bottom_panel(self) -> None:
-        """Show the bottom panel."""
-        if self._bottom_panel:
-            self._bottom_panel.show()
-            self.action_toggle_bottom_panel.setChecked(True)
+        """Show the bottom panel.
+
+        Delegates to PanelController.show_bottom_panel().
+        """
+        if self._panel_controller:
+            self._panel_controller.show_bottom_panel()
 
     def hide_bottom_panel(self) -> None:
-        """Hide the bottom panel."""
-        if self._bottom_panel:
-            self._bottom_panel.hide()
-            self.action_toggle_bottom_panel.setChecked(False)
+        """Hide the bottom panel.
+
+        Delegates to PanelController.hide_bottom_panel().
+        """
+        if self._panel_controller:
+            self._panel_controller.hide_bottom_panel()
 
     def _on_toggle_bottom_panel(self, checked: bool) -> None:
-        """Handle bottom panel toggle."""
-        if checked:
-            self.show_bottom_panel()
-        else:
-            self.hide_bottom_panel()
+        """Handle bottom panel toggle.
+
+        Delegates to PanelController.
+        """
+        if self._panel_controller:
+            if checked:
+                self._panel_controller.show_bottom_panel()
+            else:
+                self._panel_controller.hide_bottom_panel()
 
     def _on_navigate_to_node(self, node_id: str) -> None:
         """Handle navigation to a node from bottom panel."""
@@ -1165,103 +1162,52 @@ class MainWindow(QMainWindow):
         logger.debug(f"Variables updated: {len(variables)} variables")
 
     # ==================== Trigger Handlers ====================
+    # Note: These methods now delegate to TriggerController.
+    # The controller connects directly to bottom panel signals during initialization,
+    # so these methods are kept for backward compatibility and API consistency.
 
     def _on_trigger_add_requested(self) -> None:
-        """Handle request to add a new trigger."""
-        from .dialogs import TriggerTypeSelectorDialog, TriggerConfigDialog
-
-        # Show trigger type selector
-        type_dialog = TriggerTypeSelectorDialog(self)
-        if type_dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        trigger_type = type_dialog.get_selected_type()
-        if not trigger_type:
-            return
-
-        # Show trigger configuration dialog
-        config_dialog = TriggerConfigDialog(trigger_type, parent=self)
-        if config_dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        # Get the configuration and add to triggers list
-        trigger_config = config_dialog.get_config()
-        if self._bottom_panel:
-            self._bottom_panel.add_trigger(trigger_config)
-            self.set_modified(True)
-            logger.info(f"Added trigger: {trigger_config.get('name', 'Unnamed')}")
+        """Handle request to add a new trigger - delegate to TriggerController."""
+        if self._trigger_controller:
+            self._trigger_controller.add_trigger()
 
     def _on_trigger_edit_requested(self, trigger_config: dict) -> None:
-        """Handle request to edit an existing trigger."""
-        from .dialogs import TriggerConfigDialog
-        from ..triggers.base import TriggerType
-
-        trigger_type_str = trigger_config.get("type", "manual")
-        try:
-            trigger_type = TriggerType(trigger_type_str)
-        except ValueError:
-            logger.error(f"Unknown trigger type: {trigger_type_str}")
-            return
-
-        # Show trigger configuration dialog with existing config
-        config_dialog = TriggerConfigDialog(trigger_type, trigger_config, parent=self)
-        if config_dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-
-        # Get updated configuration
-        updated_config = config_dialog.get_config()
-        if self._bottom_panel:
-            self._bottom_panel.update_trigger(updated_config)
-            self.set_modified(True)
-            logger.info(f"Updated trigger: {updated_config.get('name', 'Unnamed')}")
+        """Handle request to edit an existing trigger - delegate to TriggerController."""
+        if self._trigger_controller:
+            self._trigger_controller.edit_trigger(trigger_config)
 
     def _on_trigger_delete_requested(self, trigger_id: str) -> None:
-        """Handle request to delete a trigger."""
-        # Confirm deletion
-        reply = QMessageBox.question(
-            self,
-            "Delete Trigger",
-            "Are you sure you want to delete this trigger?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            if self._bottom_panel:
-                self._bottom_panel.remove_trigger(trigger_id)
-                self.set_modified(True)
-                logger.info(f"Deleted trigger: {trigger_id}")
+        """Handle request to delete a trigger - delegate to TriggerController."""
+        if self._trigger_controller:
+            self._trigger_controller.delete_trigger(trigger_id)
 
     def _on_trigger_toggle_requested(self, trigger_id: str, enabled: bool) -> None:
-        """Handle request to toggle trigger enabled state."""
-        if self._bottom_panel:
-            triggers = self._bottom_panel.get_triggers()
-            for trigger in triggers:
-                if trigger.get("id") == trigger_id:
-                    trigger["enabled"] = enabled
-                    self._bottom_panel.update_trigger(trigger)
-                    self.set_modified(True)
-                    state = "enabled" if enabled else "disabled"
-                    logger.info(f"Trigger {trigger_id} {state}")
-                    break
+        """Handle request to toggle trigger enabled state - delegate to TriggerController."""
+        if self._trigger_controller:
+            self._trigger_controller.toggle_trigger(trigger_id, enabled)
 
     def _on_trigger_run_requested(self, trigger_id: str) -> None:
-        """Handle request to manually run a trigger."""
-        # For now, emit the workflow_run signal
-        # In the future, this could trigger the specific trigger's workflow
-        logger.info(f"Manual trigger run requested: {trigger_id}")
-        self.workflow_run.emit()
+        """Handle request to manually run a trigger - delegate to TriggerController."""
+        if self._trigger_controller:
+            self._trigger_controller.run_trigger(trigger_id)
 
-    def get_validation_panel(self):
+    def get_trigger_controller(self) -> Optional[TriggerController]:
         """
-        Get the validation tab from bottom panel.
+        Get the trigger controller.
 
         Returns:
-            ValidationTab instance or None
+            TriggerController instance or None
         """
-        if self._bottom_panel:
-            return self._bottom_panel.get_validation_tab()
-        return None
+        return self._trigger_controller
+
+    @property
+    def validation_panel(self):
+        """The validation tab from bottom panel."""
+        return self._bottom_panel.get_validation_tab() if self._bottom_panel else None
+
+    # Backward-compatible getter
+    def get_validation_panel(self):
+        return self.validation_panel
 
     def show_validation_panel(self) -> None:
         """Show the bottom panel and switch to validation tab."""
@@ -1275,115 +1221,114 @@ class MainWindow(QMainWindow):
             self._bottom_panel.hide()
             self.action_toggle_bottom_panel.setChecked(False)
 
-    def get_graph(self):
-        """
-        Get the node graph widget for controller access.
+    # ==================== Component Access (Properties + Getters) ====================
 
-        Returns:
-            NodeGraphWidget instance or None
-        """
-        if self._central_widget and hasattr(self._central_widget, "graph"):
-            return self._central_widget.graph
-        return None
+    @property
+    def graph(self):
+        """The node graph widget."""
+        return (
+            self._central_widget.graph
+            if self._central_widget and hasattr(self._central_widget, "graph")
+            else None
+        )
 
-    def get_workflow_runner(self):
-        """
-        Get the workflow runner for execution control.
-
-        Returns:
-            WorkflowRunner instance or None
-        """
+    @property
+    def workflow_runner(self):
+        """The workflow runner for execution control."""
         return getattr(self, "_workflow_runner", None)
 
-    def get_project_manager(self):
-        """
-        Get the project manager.
-
-        Returns:
-            ProjectManager instance or None
-        """
+    @property
+    def project_manager(self):
+        """The project manager."""
         return getattr(self, "_project_manager", None)
 
-    def get_node_registry(self):
-        """
-        Get the node registry.
-
-        Returns:
-            Node registry instance or None
-        """
+    @property
+    def node_registry(self):
+        """The node registry."""
         return getattr(self, "_node_registry", None)
 
-    def get_command_palette(self):
-        """
-        Get the command palette.
-
-        Returns:
-            CommandPalette instance or None
-        """
+    @property
+    def command_palette(self):
+        """The command palette."""
         return self._command_palette
 
-    def get_recent_files_menu(self):
-        """
-        Get the recent files menu.
-
-        Returns:
-            QMenu instance or None
-        """
+    @property
+    def recent_files_menu(self):
+        """The recent files menu."""
         return getattr(self, "_recent_files_menu", None)
 
-    def get_minimap(self):
-        """
-        Get the minimap widget.
-
-        Returns:
-            Minimap instance or None
-        """
+    @property
+    def minimap(self):
+        """The minimap widget."""
         return self._minimap
 
-    def get_variable_inspector_dock(self):
-        """
-        Get the variable inspector dock.
-
-        Returns:
-            VariableInspectorDock instance or None
-        """
+    @property
+    def variable_inspector_dock(self):
+        """The variable inspector dock."""
         return self._variable_inspector_dock
 
-    def show_status(self, message: str, duration: int = 3000) -> None:
-        """
-        Show status message (wrapper for statusBar).
+    @property
+    def node_controller(self):
+        """The node controller."""
+        return getattr(self, "_node_controller", None)
 
-        Args:
-            message: Message to display
-            duration: Duration in milliseconds (0 for permanent)
-        """
-        if self.statusBar():
-            self.statusBar().showMessage(message, duration)
+    @property
+    def viewport_controller(self):
+        """The viewport controller."""
+        return getattr(self, "_viewport_controller", None)
+
+    @property
+    def scheduling_controller(self):
+        """The scheduling controller."""
+        return getattr(self, "_scheduling_controller", None)
+
+    # Backward-compatible getters (deprecated - use properties instead)
+    def get_graph(self):
+        return self.graph
+
+    def get_workflow_runner(self):
+        return self.workflow_runner
+
+    def get_project_manager(self):
+        return self.project_manager
+
+    def get_node_registry(self):
+        return self.node_registry
+
+    def get_command_palette(self):
+        return self.command_palette
+
+    def get_recent_files_menu(self):
+        return self.recent_files_menu
+
+    def get_minimap(self):
+        return self.minimap
+
+    def get_variable_inspector_dock(self):
+        return self.variable_inspector_dock
 
     def get_node_controller(self):
-        """
-        Get the node controller.
+        return self.node_controller
 
-        Returns:
-            NodeController instance or None
-        """
-        return getattr(self, "_node_controller", None)
+    def get_viewport_controller(self):
+        return self.viewport_controller
+
+    def get_scheduling_controller(self):
+        return self.scheduling_controller
+
+    def show_status(self, message: str, duration: int = 3000) -> None:
+        """Show status message in the statusBar."""
+        if self.statusBar():
+            self.statusBar().showMessage(message, duration)
 
     def _on_validate_workflow(self) -> None:
         """Handle validation request from panel."""
         self.validate_current_workflow()
 
     def _on_validation_issue_clicked(self, location: str) -> None:
-        """
-        Handle clicking on a validation issue.
-
-        Args:
-            location: Issue location string (e.g., "node:abc123")
-        """
-        # Try to select the node in the graph
+        """Handle clicking on a validation issue to select the relevant node."""
         if location and location.startswith("node:"):
-            node_id = location.split(":", 1)[1]
-            self._select_node_by_id(node_id)
+            self._select_node_by_id(location.split(":", 1)[1])
 
     def _select_node_by_id(self, node_id: str) -> None:
         """Select a node by ID in the graph."""
@@ -1406,15 +1351,7 @@ class MainWindow(QMainWindow):
             logger.debug(f"Could not select node {node_id}: {e}")
 
     def validate_current_workflow(self, show_panel: bool = True) -> "ValidationResult":
-        """
-        Validate the current workflow and update the validation panel.
-
-        Args:
-            show_panel: Whether to show the validation panel
-
-        Returns:
-            ValidationResult from validation
-        """
+        """Validate the current workflow and update the validation panel."""
         from ..core.validation import validate_workflow, ValidationResult
 
         # Get workflow data from the canvas
@@ -1455,44 +1392,21 @@ class MainWindow(QMainWindow):
         return result
 
     def _get_workflow_data(self) -> Optional[dict]:
-        """
-        Get the current workflow data as a dictionary.
-
-        Returns:
-            Workflow data dictionary or None
-        """
-        # Use the workflow data provider callback if set (by app.py)
+        """Get the current workflow data as a dictionary."""
         if self._workflow_data_provider:
             try:
                 return self._workflow_data_provider()
             except Exception as e:
                 logger.debug(f"Workflow data provider failed: {e}")
-                return None
-
-        # Fallback - return None if no provider set
         return None
 
     def set_workflow_data_provider(self, provider: callable) -> None:
-        """
-        Set a callback to provide workflow data for validation.
-
-        Args:
-            provider: Callable that returns workflow data dict
-        """
+        """Set a callback to provide workflow data for validation."""
         self._workflow_data_provider = provider
 
     def on_workflow_changed(self) -> None:
-        """
-        Called when the workflow is modified.
-        Triggers debounced real-time validation if enabled.
-
-        This method should be called from app.py when:
-        - Nodes are added/deleted
-        - Connections are made/broken
-        - Node properties change
-        """
+        """Trigger debounced real-time validation when workflow is modified."""
         if self._auto_validate and self._validation_timer:
-            # Restart the debounce timer
             self._validation_timer.start()
 
     def _do_deferred_validation(self) -> None:
@@ -1510,12 +1424,7 @@ class MainWindow(QMainWindow):
                 )
 
     def set_auto_validate(self, enabled: bool) -> None:
-        """
-        Enable or disable real-time validation.
-
-        Args:
-            enabled: Whether to enable auto-validation
-        """
+        """Enable or disable real-time validation."""
         self._auto_validate = enabled
         if not enabled and self._validation_timer:
             self._validation_timer.stop()
@@ -1525,15 +1434,8 @@ class MainWindow(QMainWindow):
         return self._auto_validate
 
     def get_log_viewer(self):
-        """
-        Get the log tab from bottom panel.
-
-        Returns:
-            LogTab instance or None
-        """
-        if self._bottom_panel:
-            return self._bottom_panel.get_log_tab()
-        return None
+        """Get the log tab from bottom panel."""
+        return self._bottom_panel.get_log_tab() if self._bottom_panel else None
 
     def show_log_viewer(self) -> None:
         """Show the bottom panel and switch to log tab."""
@@ -1548,37 +1450,48 @@ class MainWindow(QMainWindow):
             self.action_toggle_bottom_panel.setChecked(False)
 
     def _create_minimap(self, node_graph) -> None:
-        """Create minimap overlay widget."""
-        # Create minimap as overlay on central widget
-        if self._central_widget:
-            self._minimap = Minimap(node_graph, self._central_widget)
-            self._minimap.setVisible(False)  # Initially hidden
-            self._position_minimap()
+        """Create minimap overlay widget - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.create_minimap(node_graph)
+        else:
+            # Fallback during initialization before controller is ready
+            if self._central_widget:
+                self._minimap = Minimap(node_graph, self._central_widget)
+                self._minimap.setVisible(False)
+                self._position_minimap()
 
     def _position_minimap(self) -> None:
         """Position minimap at bottom-left of central widget."""
-        if self._minimap and self._central_widget:
-            # Position at bottom-left with 10px margin
+        if self._viewport_controller:
+            self._viewport_controller.position_minimap()
+        elif self._minimap and self._central_widget:
+            # Fallback during initialization
             margin = 10
             x = margin
             y = self._central_widget.height() - self._minimap.height() - margin
             self._minimap.move(x, y)
-            self._minimap.raise_()  # Ensure it's on top
+            self._minimap.raise_()
 
     def show_minimap(self) -> None:
-        """Show the minimap."""
-        if self._minimap:
+        """Show the minimap - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.show_minimap()
+        elif self._minimap:
             self._minimap.setVisible(True)
             self._position_minimap()
 
     def hide_minimap(self) -> None:
-        """Hide the minimap."""
-        if self._minimap:
+        """Hide the minimap - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.hide_minimap()
+        elif self._minimap:
             self._minimap.setVisible(False)
 
     def _on_toggle_minimap(self, checked: bool) -> None:
-        """Handle minimap toggle."""
-        if checked:
+        """Handle minimap toggle - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.toggle_minimap(checked)
+        elif checked:
             self.show_minimap()
         else:
             self.hide_minimap()
@@ -1589,70 +1502,39 @@ class MainWindow(QMainWindow):
         self._position_minimap()
 
     def set_central_widget(self, widget: QWidget) -> None:
-        """
-        Set the central widget (typically the node graph).
-
-        Args:
-            widget: Widget to display in the central area
-        """
+        """Set the central widget (typically the node graph)."""
         self._central_widget = widget
         self.setCentralWidget(widget)
-
-        # Initialize minimap if widget is a node graph
         if hasattr(widget, "graph"):
             self._create_minimap(widget.graph)
 
     def set_modified(self, modified: bool) -> None:
-        """
-        Set the modified state of the workflow.
-        Delegates to WorkflowController.
-
-        Args:
-            modified: Whether the workflow has unsaved changes
-        """
+        """Set the modified state - delegates to WorkflowController."""
         if self._workflow_controller:
             self._workflow_controller.set_modified(modified)
-        # Note: No fallback needed - controller should be initialized before this is called
-
-        # Trigger real-time validation when workflow is modified
         if modified:
             self.on_workflow_changed()
 
     def is_modified(self) -> bool:
-        """
-        Check if the workflow has unsaved changes.
-        Delegates to WorkflowController.
-
-        Returns:
-            True if workflow is modified
-        """
-        if self._workflow_controller:
-            return self._workflow_controller.is_modified
-        return False  # Fallback during initialization
+        """Check if the workflow has unsaved changes."""
+        return (
+            self._workflow_controller.is_modified
+            if self._workflow_controller
+            else False
+        )
 
     def set_current_file(self, file_path: Optional[Path]) -> None:
-        """
-        Set the current workflow file path.
-        Delegates to WorkflowController.
-
-        Args:
-            file_path: Path to the workflow file, or None for new workflow
-        """
+        """Set the current workflow file path - delegates to WorkflowController."""
         if self._workflow_controller:
             self._workflow_controller.set_current_file(file_path)
-        # Note: No fallback needed - controller should be initialized before this is called
 
     def get_current_file(self) -> Optional[Path]:
-        """
-        Get the current workflow file path.
-        Delegates to WorkflowController.
-
-        Returns:
-            Path to current file, or None if no file
-        """
-        if self._workflow_controller:
-            return self._workflow_controller.current_file
-        return None  # Fallback during initialization
+        """Get the current workflow file path."""
+        return (
+            self._workflow_controller.current_file
+            if self._workflow_controller
+            else None
+        )
 
     def _update_actions(self) -> None:
         """Update action states based on current state."""
@@ -1683,37 +1565,9 @@ class MainWindow(QMainWindow):
         self._workflow_controller.export_selected_nodes()
 
     def _on_paste_workflow(self) -> None:
-        """Handle paste workflow JSON from clipboard."""
-        from PySide6.QtWidgets import QApplication
-        import orjson
-
-        clipboard = QApplication.clipboard()
-        text = clipboard.text()
-
-        if not text:
-            self.statusBar().showMessage("Clipboard is empty", 3000)
-            return
-
-        # Try to parse as JSON
-        try:
-            data = orjson.loads(text)
-
-            # Basic validation - should have nodes key
-            if "nodes" not in data:
-                QMessageBox.warning(
-                    self,
-                    "Invalid Workflow JSON",
-                    "The clipboard content does not appear to be a valid workflow.\n"
-                    "Expected a JSON object with a 'nodes' key.",
-                )
-                return
-        except Exception as e:
-            QMessageBox.warning(
-                self,
-                "Invalid JSON",
-                f"The clipboard content is not valid JSON.\n\nError: {str(e)}",
-            )
-            return
+        """Handle paste workflow JSON from clipboard - delegate to WorkflowController."""
+        if self._workflow_controller:
+            self._workflow_controller.paste_workflow()
 
     def _on_preferences(self) -> None:
         """Handle preferences dialog request - delegate to MenuController."""
@@ -1748,116 +1602,14 @@ class MainWindow(QMainWindow):
         self._execution_controller.stop_workflow()
 
     def _on_select_nearest_node(self) -> None:
-        """Select the nearest node to the current mouse cursor position (hotkey 2)."""
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            return
-
-        graph = self._central_widget.graph
-        viewer = graph.viewer()
-        if not viewer:
-            return
-
-        # Get mouse position in scene coordinates
-        from PySide6.QtGui import QCursor
-
-        global_pos = QCursor.pos()
-        view_pos = viewer.mapFromGlobal(global_pos)
-        scene_pos = viewer.mapToScene(view_pos)
-
-        # Find nearest node
-        all_nodes = graph.all_nodes()
-        if not all_nodes:
-            self.statusBar().showMessage("No nodes in graph", 2000)
-            return
-
-        nearest_node = None
-        min_distance = float("inf")
-
-        for node in all_nodes:
-            node_pos = node.pos()
-            # Calculate distance from mouse to node center
-            dx = scene_pos.x() - node_pos[0]
-            dy = scene_pos.y() - node_pos[1]
-            distance = (dx * dx + dy * dy) ** 0.5
-
-            if distance < min_distance:
-                min_distance = distance
-                nearest_node = node
-
-        if nearest_node:
-            # Clear current selection and select the nearest node
-            graph.clear_selection()
-            nearest_node.set_selected(True)
-            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
-            self.statusBar().showMessage(f"Selected: {node_name}", 2000)
+        """Select the nearest node to mouse cursor (hotkey 2)."""
+        if self._node_controller:
+            self._node_controller.select_nearest_node()
 
     def _on_toggle_disable_node(self) -> None:
-        """Toggle disable state on nearest node to mouse (hotkey 4). Disabled nodes are bypassed during execution."""
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            return
-
-        graph = self._central_widget.graph
-        viewer = graph.viewer()
-        if not viewer:
-            return
-
-        # Get mouse position in scene coordinates
-        from PySide6.QtGui import QCursor
-
-        global_pos = QCursor.pos()
-        view_pos = viewer.mapFromGlobal(global_pos)
-        scene_pos = viewer.mapToScene(view_pos)
-
-        # Find nearest node to mouse
-        all_nodes = graph.all_nodes()
-        if not all_nodes:
-            self.statusBar().showMessage("No nodes in graph", 2000)
-            return
-
-        nearest_node = None
-        min_distance = float("inf")
-
-        for node in all_nodes:
-            node_pos = node.pos()
-            dx = scene_pos.x() - node_pos[0]
-            dy = scene_pos.y() - node_pos[1]
-            distance = (dx * dx + dy * dy) ** 0.5
-
-            if distance < min_distance:
-                min_distance = distance
-                nearest_node = node
-
-        if not nearest_node:
-            return
-
-        # Select and toggle disable on the nearest node
-        graph.clear_selection()
-        nearest_node.set_selected(True)
-
-        # Toggle disable state on the nearest node
-        casare_node = (
-            nearest_node.get_casare_node()
-            if hasattr(nearest_node, "get_casare_node")
-            else None
-        )
-
-        if casare_node:
-            # Toggle the disabled state
-            current_disabled = casare_node.config.get("_disabled", False)
-            new_disabled = not current_disabled
-            casare_node.config["_disabled"] = new_disabled
-
-            # Update visual appearance
-            if hasattr(nearest_node, "view") and nearest_node.view:
-                if new_disabled:
-                    # Make node semi-transparent when disabled
-                    nearest_node.view.setOpacity(0.4)
-                else:
-                    nearest_node.view.setOpacity(1.0)
-
-            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
-            state = "disabled" if new_disabled else "enabled"
-            self.statusBar().showMessage(f"{node_name} {state}", 2000)
+        """Toggle disable state on nearest node (hotkey 4)."""
+        if self._node_controller:
+            self._node_controller.toggle_disable_node()
 
     def _on_open_hotkey_manager(self) -> None:
         """Open the hotkey manager dialog - delegate to MenuController."""
@@ -1878,65 +1630,28 @@ class MainWindow(QMainWindow):
 
     def _on_find_node(self) -> None:
         """Open the node search dialog (Ctrl+F)."""
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            self.statusBar().showMessage("No graph available", 3000)
-            return
-
-        from .search.node_search import NodeSearchDialog
-
-        dialog = NodeSearchDialog(self._central_widget.graph, self)
-        dialog.show_search()
+        if self._node_controller:
+            self._node_controller.find_node()
 
     def _on_open_recent_file(self, path: str) -> None:
-        """Open a recent file."""
-        from pathlib import Path
-
-        if not self._workflow_controller._check_unsaved_changes():
-            return
-
-        file_path = Path(path)
-        if file_path.exists():
-            self.workflow_open.emit(str(file_path))
-            self.set_current_file(file_path)
-            self.set_modified(False)
-            self.statusBar().showMessage(f"Opened: {file_path.name}", 3000)
-        else:
-            QMessageBox.warning(self, "File Not Found", f"File not found:\n{path}")
-            # Remove from recent files
-            from .workflow.recent_files import get_recent_files_manager
-
-            manager = get_recent_files_manager()
-            manager.remove_file(file_path)
-            self._menu_controller.update_recent_files_menu()
+        """Open a recent file - delegate to MenuController."""
+        if self._menu_controller:
+            self._menu_controller.open_recent_file(path)
 
     def _on_clear_recent_files(self) -> None:
-        """Clear the recent files list."""
-        from .workflow.recent_files import get_recent_files_manager
-
-        manager = get_recent_files_manager()
-        manager.clear()
-        self._menu_controller.update_recent_files_menu()
-        self.statusBar().showMessage("Recent files cleared", 3000)
+        """Clear the recent files list - delegate to MenuController."""
+        if self._menu_controller:
+            self._menu_controller.clear_recent_files()
 
     def add_to_recent_files(self, file_path) -> None:
-        """Add a file to the recent files list."""
-        from .workflow.recent_files import get_recent_files_manager
-        from pathlib import Path
-
-        manager = get_recent_files_manager()
-        manager.add_file(Path(file_path) if isinstance(file_path, str) else file_path)
-        self._menu_controller.update_recent_files_menu()
+        """Add a file to the recent files list - delegate to MenuController."""
+        if self._menu_controller:
+            self._menu_controller.add_recent_file(file_path)
 
     def _on_about(self) -> None:
-        """Show about dialog."""
-        QMessageBox.about(
-            self,
-            f"About {APP_NAME}",
-            f"<h3>{APP_NAME} v{APP_VERSION}</h3>"
-            f"<p>Windows Desktop RPA Platform</p>"
-            f"<p>Visual workflow automation with node-based editor</p>"
-            f"<p>Built with PySide6, NodeGraphQt, and Playwright</p>",
-        )
+        """Show about dialog - delegate to MenuController."""
+        if self._menu_controller:
+            self._menu_controller.show_about_dialog()
 
     def _create_debug_components(self) -> None:
         """Create debug toolbar."""
@@ -1958,39 +1673,21 @@ class MainWindow(QMainWindow):
             view_menu.addAction(self._debug_toolbar.toggleViewAction())
 
     def get_debug_toolbar(self) -> Optional["DebugToolbar"]:
-        """
-        Get the debug toolbar.
-
-        Returns:
-            DebugToolbar instance or None
-        """
+        """Get the debug toolbar."""
         return self._debug_toolbar if hasattr(self, "_debug_toolbar") else None
 
     def get_variable_inspector(self):
-        """
-        Get the Variable Inspector dock for real-time variable values.
-
-        Returns:
-            VariableInspectorDock instance or None
-        """
+        """Get the Variable Inspector dock."""
         return self._variable_inspector_dock
 
     def show_variable_inspector(self) -> None:
         """Show the Variable Inspector dock."""
-        if self._variable_inspector_dock:
-            self._variable_inspector_dock.show()
-            self.action_toggle_variable_inspector.setChecked(True)
+        if self._panel_controller:
+            self._panel_controller.show_variable_inspector()
 
     def get_execution_history_viewer(self):
-        """
-        Get the history tab from bottom panel.
-
-        Returns:
-            HistoryTab instance or None
-        """
-        if self._bottom_panel:
-            return self._bottom_panel.get_history_tab()
-        return None
+        """Get the history tab from bottom panel."""
+        return self._bottom_panel.get_history_tab() if self._bottom_panel else None
 
     def show_execution_history(self) -> None:
         """Show the bottom panel and switch to history tab."""
@@ -2009,183 +1706,45 @@ class MainWindow(QMainWindow):
         pass
 
     def _on_open_desktop_selector_builder(self) -> None:
-        """Open the Desktop Selector Builder dialog."""
-        try:
-            from .selectors.desktop_selector_builder import DesktopSelectorBuilder
-
-            dialog = DesktopSelectorBuilder(parent=self)
-
-            if dialog.exec():
-                selector = dialog.get_selected_selector()
-                if selector:
-                    logger.info(f"Selector selected from builder: {selector}")
-                    # User can copy selector from here
-
-        except Exception as e:
-            logger.error(f"Failed to open desktop selector builder: {e}")
-            from PySide6.QtWidgets import QMessageBox
-
-            QMessageBox.critical(
-                self, "Error", f"Failed to open Desktop Selector Builder:\n{str(e)}"
-            )
+        """Open the Desktop Selector Builder dialog - delegate to MenuController."""
+        if self._menu_controller:
+            self._menu_controller.show_desktop_selector_builder()
 
     def _on_create_frame(self) -> None:
-        """Create a frame around selected nodes."""
-        try:
-            from .graph.node_frame import group_selected_nodes, create_frame, NodeFrame
-
-            # Get the node graph from central widget
-            if not self._central_widget or not hasattr(self._central_widget, "graph"):
-                logger.warning("Node graph not available")
-                return
-
-            graph = self._central_widget.graph
-            viewer = graph.viewer()
-            selected_nodes = graph.selected_nodes()
-
-            # Set graph reference for all frames
-            NodeFrame.set_graph(graph)
-
-            if selected_nodes:
-                # Group selected nodes
-                frame = group_selected_nodes(viewer, "Group", selected_nodes)
-                if frame:
-                    logger.info(f"Created frame around {len(selected_nodes)} nodes")
-            else:
-                # Create empty frame at center
-                frame = create_frame(
-                    viewer,
-                    title="Frame",
-                    color_name="blue",
-                    position=(0, 0),
-                    size=(400, 300),
-                    graph=graph,
-                )
-                logger.info("Created empty frame")
-
-        except Exception as e:
-            logger.error(f"Failed to create frame: {e}")
-            QMessageBox.warning(
-                self, "Create Frame", f"Failed to create frame:\n{str(e)}"
-            )
+        """Create a frame around selected nodes - delegate to ViewportController."""
+        if self._viewport_controller:
+            self._viewport_controller.create_frame()
 
     def set_browser_running(self, running: bool) -> None:
-        """
-        Enable/disable browser-dependent actions.
-
-        Args:
-            running: True if browser is running
-        """
+        """Enable/disable browser-dependent actions."""
         self.action_pick_selector.setEnabled(running)
         self.action_record_workflow.setEnabled(running)
 
     def _on_schedule_workflow(self) -> None:
-        """Handle schedule workflow action."""
-        from .scheduling.schedule_dialog import ScheduleDialog
-        from .scheduling.schedule_storage import get_schedule_storage
-
-        # Check if workflow is saved
-        current_file = self.get_current_file()
-        if not current_file:
-            reply = QMessageBox.question(
-                self,
-                "Save Required",
-                "The workflow must be saved before scheduling. Save now?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.Yes:
-                self._on_save_as_workflow()
-                current_file = self.get_current_file()
-                if not current_file:
-                    return  # User cancelled save
-            else:
-                return
-
-        # Get workflow name
-        workflow_name = current_file.stem if current_file else "Untitled"
-
-        # Show schedule dialog
-        dialog = ScheduleDialog(
-            workflow_path=current_file, workflow_name=workflow_name, parent=self
-        )
-
-        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_schedule:
-            # Save the schedule
-            storage = get_schedule_storage()
-            if storage.save_schedule(dialog.result_schedule):
-                self.statusBar().showMessage(
-                    f"Schedule created: {dialog.result_schedule.name}", 5000
-                )
-                logger.info(f"Workflow scheduled: {dialog.result_schedule.name}")
-            else:
-                QMessageBox.warning(self, "Schedule Error", "Failed to save schedule")
+        """Handle schedule workflow action - delegate to SchedulingController."""
+        if self._scheduling_controller:
+            self._scheduling_controller.schedule_workflow()
 
     def _on_manage_schedules(self) -> None:
-        """Handle manage schedules action."""
-        from .scheduling.schedule_dialog import ScheduleManagerDialog
-        from .scheduling.schedule_storage import get_schedule_storage
-
-        storage = get_schedule_storage()
-        schedules = storage.get_all_schedules()
-
-        dialog = ScheduleManagerDialog(schedules, parent=self)
-        dialog.schedule_changed.connect(lambda: self._save_all_schedules(dialog))
-        dialog.run_schedule.connect(self._on_run_scheduled_workflow)
-
-        dialog.exec()
-
-    def _save_all_schedules(self, dialog) -> None:
-        """Save all schedules from manager dialog."""
-        from .scheduling.schedule_storage import get_schedule_storage
-
-        storage = get_schedule_storage()
-        storage.save_all_schedules(dialog.get_schedules())
-        self.statusBar().showMessage("Schedules updated", 3000)
+        """Handle manage schedules action - delegate to SchedulingController."""
+        if self._scheduling_controller:
+            self._scheduling_controller.manage_schedules()
 
     def _on_run_scheduled_workflow(self, schedule) -> None:
-        """Run a scheduled workflow immediately."""
-        from pathlib import Path
-
-        workflow_path = Path(schedule.workflow_path)
-        if not workflow_path.exists():
-            QMessageBox.warning(
-                self,
-                "Workflow Not Found",
-                f"The scheduled workflow could not be found:\n{workflow_path}",
-            )
-            return
-
-        # Ask user if they want to open and run the workflow
-        reply = QMessageBox.question(
-            self,
-            "Run Scheduled Workflow",
-            f"Open and run '{schedule.workflow_name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            # Check for unsaved changes
-            if self._workflow_controller._check_unsaved_changes():
-                # Open the workflow
-                self.workflow_open.emit(str(workflow_path))
-                self.set_current_file(workflow_path)
-                self.set_modified(False)
-                # Run it
-                self._on_run_workflow()
+        """Run a scheduled workflow immediately - delegate to SchedulingController."""
+        if self._scheduling_controller:
+            self._scheduling_controller.run_scheduled_workflow(schedule)
 
     def closeEvent(self, event) -> None:
-        """
-        Handle window close event.
-
-        Args:
-            event: Close event
-        """
+        """Handle window close event."""
         if self._workflow_controller._check_unsaved_changes():
+            # Save UI state before closing (via UIStateController)
+            if self._ui_state_controller:
+                self._ui_state_controller.save_state()
+
             # Clean up controllers before closing
             self._cleanup_controllers()
 
-            # Save UI state before closing
-            self._save_ui_state()
             event.accept()
         else:
             event.ignore()
@@ -2202,6 +1761,10 @@ class MainWindow(QMainWindow):
             self._panel_controller,
             self._menu_controller,
             self._event_bus_controller,
+            self._viewport_controller,
+            self._scheduling_controller,
+            self._trigger_controller,
+            self._ui_state_controller,
         ]
 
         for controller in controllers:
@@ -2216,147 +1779,21 @@ class MainWindow(QMainWindow):
         logger.info("Controllers cleaned up")
 
     # ==================== UI State Persistence ====================
-
-    def _save_ui_state(self) -> None:
-        """Save current UI state (window geometry, dock positions, etc.)."""
-        try:
-            # Save version to detect incompatible state changes
-            self._settings.setValue("uiStateVersion", 2)
-
-            self._settings.setValue("geometry", self.saveGeometry())
-            self._settings.setValue("windowState", self.saveState())
-
-            # Save dock visibility states
-            if self._bottom_panel:
-                self._settings.setValue(
-                    "bottomPanelVisible", self._bottom_panel.isVisible()
-                )
-                self._settings.setValue(
-                    "bottomPanelTab", self._bottom_panel._tab_widget.currentIndex()
-                )
-
-            if self._variable_inspector_dock:
-                self._settings.setValue(
-                    "variableInspectorVisible",
-                    self._variable_inspector_dock.isVisible(),
-                )
-
-            if self._properties_panel:
-                self._settings.setValue(
-                    "propertiesPanelVisible", self._properties_panel.isVisible()
-                )
-
-            if (
-                hasattr(self, "_execution_timeline_dock")
-                and self._execution_timeline_dock
-            ):
-                self._settings.setValue(
-                    "executionTimelineVisible",
-                    self._execution_timeline_dock.isVisible(),
-                )
-
-            if hasattr(self, "_minimap") and self._minimap:
-                self._settings.setValue("minimapVisible", self._minimap.isVisible())
-
-            self._settings.sync()
-            logger.debug("UI state saved")
-        except Exception as e:
-            logger.warning(f"Failed to save UI state: {e}")
+    # Delegated to UIStateController
 
     def reset_ui_state(self) -> None:
-        """Reset/clear all saved UI state settings."""
-        try:
-            self._settings.clear()
-            self._settings.sync()
-            logger.info("UI state settings cleared")
-        except Exception as e:
-            logger.warning(f"Failed to clear UI state: {e}")
+        """Reset/clear all saved UI state settings - delegate to UIStateController."""
+        if self._ui_state_controller:
+            self._ui_state_controller.reset_state()
 
-    def _restore_ui_state(self) -> None:
-        """Restore UI state from previous session."""
-        try:
-            # Skip restore on first run or if settings are empty
-            if not self._settings.contains("geometry"):
-                logger.debug("No saved UI state found, using defaults")
-                return
+    def get_ui_state_controller(self) -> Optional["UIStateController"]:
+        """
+        Get the UI state controller.
 
-            # Check version - reset if incompatible
-            saved_version = self._settings.value("uiStateVersion", 0, type=int)
-            current_version = 2
-            if saved_version != current_version:
-                logger.info(
-                    f"UI state version mismatch ({saved_version} vs {current_version}), using defaults"
-                )
-                self.reset_ui_state()
-                return
-
-            # Restore window geometry
-            geometry = self._settings.value("geometry")
-            if geometry:
-                try:
-                    self.restoreGeometry(geometry)
-                except Exception as e:
-                    logger.warning(f"Failed to restore geometry: {e}")
-
-            # Restore window state (dock positions)
-            state = self._settings.value("windowState")
-            if state:
-                try:
-                    self.restoreState(state)
-                except Exception as e:
-                    logger.warning(f"Failed to restore window state: {e}")
-                    # Reset state on failure to prevent broken UI
-                    self.reset_ui_state()
-                    return
-
-            # Restore dock visibility states
-            if self._bottom_panel:
-                visible = self._settings.value("bottomPanelVisible", True, type=bool)
-                self._bottom_panel.setVisible(visible)
-                self.action_toggle_bottom_panel.setChecked(visible)
-
-                tab_index = self._settings.value("bottomPanelTab", 0, type=int)
-                if 0 <= tab_index < self._bottom_panel._tab_widget.count():
-                    self._bottom_panel._tab_widget.setCurrentIndex(tab_index)
-
-            if self._variable_inspector_dock:
-                visible = self._settings.value(
-                    "variableInspectorVisible", False, type=bool
-                )
-                self._variable_inspector_dock.setVisible(visible)
-                self.action_toggle_variable_inspector.setChecked(visible)
-
-            if self._properties_panel:
-                visible = self._settings.value(
-                    "propertiesPanelVisible", True, type=bool
-                )
-                self._properties_panel.setVisible(visible)
-
-            if (
-                hasattr(self, "_execution_timeline_dock")
-                and self._execution_timeline_dock
-            ):
-                visible = self._settings.value(
-                    "executionTimelineVisible", False, type=bool
-                )
-                self._execution_timeline_dock.setVisible(visible)
-                if hasattr(self, "action_toggle_timeline"):
-                    self.action_toggle_timeline.setChecked(visible)
-
-            if hasattr(self, "_minimap") and self._minimap:
-                visible = self._settings.value("minimapVisible", False, type=bool)
-                self._minimap.setVisible(visible)
-                if hasattr(self, "action_toggle_minimap"):
-                    self.action_toggle_minimap.setChecked(visible)
-
-            logger.debug("UI state restored from previous session")
-        except Exception as e:
-            logger.warning(f"Failed to restore UI state: {e}")
-            # Reset on any failure to prevent broken UI
-            try:
-                self.reset_ui_state()
-            except Exception:
-                pass
+        Returns:
+            UIStateController instance or None
+        """
+        return self._ui_state_controller
 
     def _init_controllers(self) -> None:
         """Initialize all controllers for MVC architecture."""
@@ -2370,6 +1807,10 @@ class MainWindow(QMainWindow):
         self._panel_controller = PanelController(self)
         self._menu_controller = MenuController(self)
         self._event_bus_controller = EventBusController(self)
+        self._viewport_controller = ViewportController(self)
+        self._scheduling_controller = SchedulingController(self)
+        self._trigger_controller = TriggerController(self)
+        self._ui_state_controller = UIStateController(self)
 
         # Initialize each controller
         self._workflow_controller.initialize()
@@ -2379,6 +1820,10 @@ class MainWindow(QMainWindow):
         self._panel_controller.initialize()
         self._menu_controller.initialize()
         self._event_bus_controller.initialize()
+        self._viewport_controller.initialize()
+        self._scheduling_controller.initialize()
+        self._trigger_controller.initialize()
+        self._ui_state_controller.initialize()
 
         # Connect controller signals to MainWindow
         self._connect_controller_signals()
@@ -2401,6 +1846,9 @@ class MainWindow(QMainWindow):
         )
         self._workflow_controller.workflow_imported.connect(
             lambda path: self.workflow_import.emit(path)
+        )
+        self._workflow_controller.workflow_imported_json.connect(
+            lambda json_str: self.workflow_import_json.emit(json_str)
         )
         self._workflow_controller.workflow_exported.connect(
             lambda path: self.workflow_export_selected.emit(path)
@@ -2497,8 +1945,6 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Execution error: {error}", 5000)
 
     def _schedule_ui_state_save(self) -> None:
-        """Schedule UI state save (debounced to avoid too frequent saves)."""
-        # Check if timer exists (it's created after dock widgets)
-        if hasattr(self, "_state_save_timer") and self._state_save_timer:
-            # Restart the timer - this provides debouncing
-            self._state_save_timer.start(1000)  # Save after 1 second of inactivity
+        """Schedule UI state save - delegate to UIStateController."""
+        if self._ui_state_controller:
+            self._ui_state_controller.schedule_auto_save()
