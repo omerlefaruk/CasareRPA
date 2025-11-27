@@ -1,4 +1,5 @@
 """Visual nodes for rest_api category."""
+import inspect
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 class VisualHttpRequestNode(VisualNode):
@@ -388,8 +389,8 @@ def _get_all_visual_node_classes():
 
 
 # VISUAL_NODE_CLASSES - for menu display (excludes internal nodes)
-VISUAL_NODE_CLASSES = _get_visual_node_classes() + EXTENDED_VISUAL_NODE_CLASSES
+VISUAL_NODE_CLASSES = _get_visual_node_classes()
 
 # ALL_VISUAL_NODE_CLASSES - for registration (includes internal nodes)
-ALL_VISUAL_NODE_CLASSES = _get_all_visual_node_classes() + EXTENDED_VISUAL_NODE_CLASSES
+ALL_VISUAL_NODE_CLASSES = _get_all_visual_node_classes()
 

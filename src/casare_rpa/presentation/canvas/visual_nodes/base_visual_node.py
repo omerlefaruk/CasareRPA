@@ -9,10 +9,10 @@ from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
 from PySide6.QtCore import Qt, QSize
 
-from ...core.base_node import BaseNode as CasareBaseNode
-from ...core.types import PortType, DataType
-from ...core.port_type_system import PortTypeRegistry, get_port_type_registry
-from ..graph.custom_node_item import CasareNodeItem
+from casare_rpa.core.base_node import BaseNode as CasareBaseNode
+from casare_rpa.core.types import PortType, DataType
+from casare_rpa.core.port_type_system import PortTypeRegistry, get_port_type_registry
+from casare_rpa.canvas.graph.custom_node_item import CasareNodeItem
 from loguru import logger
 
 # VSCode Dark+ color scheme for nodes
