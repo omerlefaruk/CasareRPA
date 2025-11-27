@@ -5,7 +5,7 @@ Provides common patterns, stylesheet management, and signal/slot conventions
 for all reusable UI widgets in the CasareRPA Canvas application.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Optional, Dict, Any
 
 from PySide6.QtCore import Signal, QObject
@@ -14,7 +14,14 @@ from PySide6.QtWidgets import QWidget
 from loguru import logger
 
 
-class BaseWidget(QWidget, ABC):
+# Create combined metaclass for Qt + ABC to avoid metaclass conflict
+class QABCMeta(type(QWidget), ABCMeta):
+    """Metaclass combining Qt's metaclass with ABCMeta."""
+
+    pass
+
+
+class BaseWidget(QWidget, metaclass=QABCMeta):
     """
     Abstract base class for all reusable UI widgets.
 
