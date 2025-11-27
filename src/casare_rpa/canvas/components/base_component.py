@@ -31,9 +31,7 @@ class BaseComponent(QObject):
     """
 
     def __init__(
-        self,
-        main_window: "MainWindow",
-        parent: Optional[QObject] = None
+        self, main_window: "MainWindow", parent: Optional[QObject] = None
     ) -> None:
         """
         Initialize the component.
@@ -54,7 +52,7 @@ class BaseComponent(QObject):
     @property
     def node_graph(self) -> "NodeGraphWidget":
         """Get the node graph widget from main window."""
-        return self._main_window.get_node_graph()
+        return self._main_window._central_widget
 
     @property
     def initialized(self) -> bool:
