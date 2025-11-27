@@ -290,7 +290,7 @@ class SchedulingController(BaseController):
 
         if workflow_controller:
             # Check for unsaved changes
-            if workflow_controller._check_unsaved_changes():
+            if workflow_controller.check_unsaved_changes():
                 # Open the workflow
                 self.main_window.workflow_open.emit(str(workflow_path))
                 self.main_window.set_current_file(workflow_path)

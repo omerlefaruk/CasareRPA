@@ -254,7 +254,7 @@ class MenuController(BaseController):
         if hasattr(self.main_window, "_workflow_controller"):
             # Check for unsaved changes first
             workflow_controller = self.main_window._workflow_controller
-            if not workflow_controller._check_unsaved_changes():
+            if not workflow_controller.check_unsaved_changes():
                 return
 
             # Emit the load signal

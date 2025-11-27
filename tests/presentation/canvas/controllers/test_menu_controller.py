@@ -37,7 +37,7 @@ def mock_main_window(qtbot):
     window.set_current_file = Mock()
     window.set_modified = Mock()
     window._workflow_controller = Mock()
-    window._workflow_controller._check_unsaved_changes = Mock(return_value=True)
+    window._workflow_controller.check_unsaved_changes = Mock(return_value=True)
 
     return window
 

@@ -569,13 +569,13 @@ class TestPrivateMethods:
     """Tests for private helper methods."""
 
     def test_check_unsaved_changes_no_changes(self, workflow_controller):
-        """Test _check_unsaved_changes returns True when no changes."""
-        result = workflow_controller._check_unsaved_changes()
+        """Test check_unsaved_changes returns True when no changes."""
+        result = workflow_controller.check_unsaved_changes()
 
         assert result is True
 
     def test_check_unsaved_changes_user_saves(self, workflow_controller, tmp_path):
-        """Test _check_unsaved_changes saves when user chooses Save."""
+        """Test check_unsaved_changes saves when user chooses Save."""
         workflow_controller.set_modified(True)
         test_file = tmp_path / "test.json"
         workflow_controller.set_current_file(test_file)
@@ -583,30 +583,30 @@ class TestPrivateMethods:
         with patch.object(
             QMessageBox, "question", return_value=QMessageBox.StandardButton.Save
         ):
-            result = workflow_controller._check_unsaved_changes()
+            result = workflow_controller.check_unsaved_changes()
 
         # After successful save, should return True
         assert result is True
 
     def test_check_unsaved_changes_user_discards(self, workflow_controller):
-        """Test _check_unsaved_changes discards when user chooses Discard."""
+        """Test check_unsaved_changes discards when user chooses Discard."""
         workflow_controller.set_modified(True)
 
         with patch.object(
             QMessageBox, "question", return_value=QMessageBox.StandardButton.Discard
         ):
-            result = workflow_controller._check_unsaved_changes()
+            result = workflow_controller.check_unsaved_changes()
 
         assert result is True
 
     def test_check_unsaved_changes_user_cancels(self, workflow_controller):
-        """Test _check_unsaved_changes cancels when user chooses Cancel."""
+        """Test check_unsaved_changes cancels when user chooses Cancel."""
         workflow_controller.set_modified(True)
 
         with patch.object(
             QMessageBox, "question", return_value=QMessageBox.StandardButton.Cancel
         ):
-            result = workflow_controller._check_unsaved_changes()
+            result = workflow_controller.check_unsaved_changes()
 
         assert result is False
 

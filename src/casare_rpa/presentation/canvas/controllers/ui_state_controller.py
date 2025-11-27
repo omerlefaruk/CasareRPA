@@ -114,37 +114,39 @@ class UIStateController(BaseController):
         """Connect dock widget signals for auto-save on state changes."""
         mw = self.main_window
 
-        # Bottom panel
-        if hasattr(mw, "_bottom_panel") and mw._bottom_panel:
-            mw._bottom_panel.dockLocationChanged.connect(self.schedule_auto_save)
-            mw._bottom_panel.visibilityChanged.connect(self.schedule_auto_save)
-            mw._bottom_panel.topLevelChanged.connect(self.schedule_auto_save)
+        # Bottom panel - use property accessor
+        if mw.bottom_panel:
+            mw.bottom_panel.dockLocationChanged.connect(self.schedule_auto_save)
+            mw.bottom_panel.visibilityChanged.connect(self.schedule_auto_save)
+            mw.bottom_panel.topLevelChanged.connect(self.schedule_auto_save)
 
-        # Variable inspector
-        if hasattr(mw, "_variable_inspector_dock") and mw._variable_inspector_dock:
-            mw._variable_inspector_dock.dockLocationChanged.connect(
+        # Variable inspector - use property accessor
+        if mw.variable_inspector_dock:
+            mw.variable_inspector_dock.dockLocationChanged.connect(
                 self.schedule_auto_save
             )
-            mw._variable_inspector_dock.visibilityChanged.connect(
+            mw.variable_inspector_dock.visibilityChanged.connect(
                 self.schedule_auto_save
             )
-            mw._variable_inspector_dock.topLevelChanged.connect(self.schedule_auto_save)
+            mw.variable_inspector_dock.topLevelChanged.connect(self.schedule_auto_save)
 
-        # Properties panel
-        if hasattr(mw, "_properties_panel") and mw._properties_panel:
-            mw._properties_panel.dockLocationChanged.connect(self.schedule_auto_save)
-            mw._properties_panel.visibilityChanged.connect(self.schedule_auto_save)
-            mw._properties_panel.topLevelChanged.connect(self.schedule_auto_save)
+        # Properties panel - use property accessor
+        if mw.properties_panel:
+            mw.properties_panel.dockLocationChanged.connect(self.schedule_auto_save)
+            mw.properties_panel.visibilityChanged.connect(self.schedule_auto_save)
+            mw.properties_panel.topLevelChanged.connect(self.schedule_auto_save)
 
-        # Execution timeline
-        if hasattr(mw, "_execution_timeline_dock") and mw._execution_timeline_dock:
-            mw._execution_timeline_dock.dockLocationChanged.connect(
-                self.schedule_auto_save
-            )
-            mw._execution_timeline_dock.visibilityChanged.connect(
-                self.schedule_auto_save
-            )
-            mw._execution_timeline_dock.topLevelChanged.connect(self.schedule_auto_save)
+        # Execution timeline - use property accessor
+        if mw.execution_timeline:
+            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
+            if execution_timeline_dock:
+                execution_timeline_dock.dockLocationChanged.connect(
+                    self.schedule_auto_save
+                )
+                execution_timeline_dock.visibilityChanged.connect(
+                    self.schedule_auto_save
+                )
+                execution_timeline_dock.topLevelChanged.connect(self.schedule_auto_save)
 
     # ==================== Core State Methods ====================
 
@@ -306,42 +308,44 @@ class UIStateController(BaseController):
         mw = self.main_window
 
         try:
-            # Bottom panel
-            if hasattr(mw, "_bottom_panel") and mw._bottom_panel:
+            # Bottom panel - use property accessor
+            if mw.bottom_panel:
                 self._settings.setValue(
-                    self._KEY_BOTTOM_PANEL_VISIBLE, mw._bottom_panel.isVisible()
+                    self._KEY_BOTTOM_PANEL_VISIBLE, mw.bottom_panel.isVisible()
                 )
-                if hasattr(mw._bottom_panel, "_tab_widget"):
+                # Tab widget is internal to bottom panel, keep private access
+                if hasattr(mw.bottom_panel, "_tab_widget"):
                     self._settings.setValue(
                         self._KEY_BOTTOM_PANEL_TAB,
-                        mw._bottom_panel._tab_widget.currentIndex(),
+                        mw.bottom_panel._tab_widget.currentIndex(),
                     )
 
-            # Variable inspector
-            if hasattr(mw, "_variable_inspector_dock") and mw._variable_inspector_dock:
+            # Variable inspector - use property accessor
+            if mw.variable_inspector_dock:
                 self._settings.setValue(
                     self._KEY_VARIABLE_INSPECTOR_VISIBLE,
-                    mw._variable_inspector_dock.isVisible(),
+                    mw.variable_inspector_dock.isVisible(),
                 )
 
-            # Properties panel
-            if hasattr(mw, "_properties_panel") and mw._properties_panel:
+            # Properties panel - use property accessor
+            if mw.properties_panel:
                 self._settings.setValue(
                     self._KEY_PROPERTIES_PANEL_VISIBLE,
-                    mw._properties_panel.isVisible(),
+                    mw.properties_panel.isVisible(),
                 )
 
-            # Execution timeline
-            if hasattr(mw, "_execution_timeline_dock") and mw._execution_timeline_dock:
+            # Execution timeline - use property accessor
+            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
+            if execution_timeline_dock:
                 self._settings.setValue(
                     self._KEY_EXECUTION_TIMELINE_VISIBLE,
-                    mw._execution_timeline_dock.isVisible(),
+                    execution_timeline_dock.isVisible(),
                 )
 
-            # Minimap
-            if hasattr(mw, "_minimap") and mw._minimap:
+            # Minimap - use property accessor
+            if mw.minimap:
                 self._settings.setValue(
-                    self._KEY_MINIMAP_VISIBLE, mw._minimap.isVisible()
+                    self._KEY_MINIMAP_VISIBLE, mw.minimap.isVisible()
                 )
 
         except Exception as e:
@@ -355,55 +359,56 @@ class UIStateController(BaseController):
         mw = self.main_window
 
         try:
-            # Bottom panel
-            if hasattr(mw, "_bottom_panel") and mw._bottom_panel:
+            # Bottom panel - use property accessor
+            if mw.bottom_panel:
                 visible = self._settings.value(
                     self._KEY_BOTTOM_PANEL_VISIBLE, True, type=bool
                 )
-                mw._bottom_panel.setVisible(visible)
+                mw.bottom_panel.setVisible(visible)
                 if hasattr(mw, "action_toggle_bottom_panel"):
                     mw.action_toggle_bottom_panel.setChecked(visible)
 
-                # Restore selected tab
+                # Restore selected tab (internal to bottom panel)
                 tab_index = self._settings.value(
                     self._KEY_BOTTOM_PANEL_TAB, 0, type=int
                 )
-                if hasattr(mw._bottom_panel, "_tab_widget"):
-                    tab_count = mw._bottom_panel._tab_widget.count()
+                if hasattr(mw.bottom_panel, "_tab_widget"):
+                    tab_count = mw.bottom_panel._tab_widget.count()
                     if 0 <= tab_index < tab_count:
-                        mw._bottom_panel._tab_widget.setCurrentIndex(tab_index)
+                        mw.bottom_panel._tab_widget.setCurrentIndex(tab_index)
 
-            # Variable inspector
-            if hasattr(mw, "_variable_inspector_dock") and mw._variable_inspector_dock:
+            # Variable inspector - use property accessor
+            if mw.variable_inspector_dock:
                 visible = self._settings.value(
                     self._KEY_VARIABLE_INSPECTOR_VISIBLE, False, type=bool
                 )
-                mw._variable_inspector_dock.setVisible(visible)
+                mw.variable_inspector_dock.setVisible(visible)
                 if hasattr(mw, "action_toggle_variable_inspector"):
                     mw.action_toggle_variable_inspector.setChecked(visible)
 
-            # Properties panel
-            if hasattr(mw, "_properties_panel") and mw._properties_panel:
+            # Properties panel - use property accessor
+            if mw.properties_panel:
                 visible = self._settings.value(
                     self._KEY_PROPERTIES_PANEL_VISIBLE, True, type=bool
                 )
-                mw._properties_panel.setVisible(visible)
+                mw.properties_panel.setVisible(visible)
 
-            # Execution timeline
-            if hasattr(mw, "_execution_timeline_dock") and mw._execution_timeline_dock:
+            # Execution timeline - use property accessor
+            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
+            if execution_timeline_dock:
                 visible = self._settings.value(
                     self._KEY_EXECUTION_TIMELINE_VISIBLE, False, type=bool
                 )
-                mw._execution_timeline_dock.setVisible(visible)
+                execution_timeline_dock.setVisible(visible)
                 if hasattr(mw, "action_toggle_timeline"):
                     mw.action_toggle_timeline.setChecked(visible)
 
-            # Minimap
-            if hasattr(mw, "_minimap") and mw._minimap:
+            # Minimap - use property accessor
+            if mw.minimap:
                 visible = self._settings.value(
                     self._KEY_MINIMAP_VISIBLE, False, type=bool
                 )
-                mw._minimap.setVisible(visible)
+                mw.minimap.setVisible(visible)
                 if hasattr(mw, "action_toggle_minimap"):
                     mw.action_toggle_minimap.setChecked(visible)
 

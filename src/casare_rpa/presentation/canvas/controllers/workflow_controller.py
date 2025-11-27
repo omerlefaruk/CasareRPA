@@ -69,7 +69,7 @@ class WorkflowController(BaseController):
         """Create a new empty workflow."""
         logger.info("Creating new workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         self.workflow_created.emit()
@@ -82,7 +82,7 @@ class WorkflowController(BaseController):
         """Create a new workflow from a template."""
         logger.info("Creating workflow from template")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         from ....canvas.dialogs.template_browser import show_template_browser
@@ -98,7 +98,7 @@ class WorkflowController(BaseController):
         """Open an existing workflow file."""
         logger.info("Opening workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -214,7 +214,7 @@ class WorkflowController(BaseController):
         """
         logger.info("Closing workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return False
 
         self.workflow_closed.emit()
@@ -257,7 +257,7 @@ class WorkflowController(BaseController):
         """Check if workflow has unsaved changes."""
         return self._is_modified
 
-    def _check_unsaved_changes(self) -> bool:
+    def check_unsaved_changes(self) -> bool:
         """
         Check for unsaved changes and prompt user.
 
