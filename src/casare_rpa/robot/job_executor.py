@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from loguru import logger
 import orjson
 
-from casare_rpa.utils.workflow_loader import load_workflow_from_dict
+from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 from .checkpoint import CheckpointManager

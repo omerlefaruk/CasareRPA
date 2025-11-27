@@ -32,8 +32,8 @@ from ..utils.config import (
     GUI_WINDOW_HEIGHT,
 )
 from ..utils.hotkey_settings import get_hotkey_settings
-from .minimap import Minimap
-from .visual_nodes import VisualSnippetNode
+from .graph.minimap import Minimap
+from .visual_nodes.visual_nodes import VisualSnippetNode
 from loguru import logger
 
 
@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
 
     def _create_breadcrumb_bar(self) -> None:
         """Create the breadcrumb navigation bar below the toolbar."""
-        from .breadcrumb_bar import BreadcrumbBar
+        from .toolbar.breadcrumb_bar import BreadcrumbBar
 
         self._breadcrumb_bar = BreadcrumbBar(self)
 
@@ -842,7 +842,7 @@ class MainWindow(QMainWindow):
 
     def _create_command_palette(self) -> None:
         """Create and populate the command palette."""
-        from .command_palette import CommandPalette
+        from .search.command_palette import CommandPalette
 
         self._command_palette = CommandPalette(self)
 
@@ -927,7 +927,7 @@ class MainWindow(QMainWindow):
 
     def _create_bottom_panel(self) -> None:
         """Create the unified bottom panel with Variables, Output, Log, Validation tabs."""
-        from .bottom_panel import BottomPanelDock
+        from .panels import BottomPanelDock
 
         self._bottom_panel = BottomPanelDock(self)
 
@@ -960,7 +960,7 @@ class MainWindow(QMainWindow):
 
     def _create_variable_inspector_dock(self) -> None:
         """Create the Variable Inspector dock for real-time variable values."""
-        from .variable_inspector_dock import VariableInspectorDock
+        from .panels.variable_inspector_dock import VariableInspectorDock
 
         self._variable_inspector_dock = VariableInspectorDock(self)
 
@@ -1005,7 +1005,7 @@ class MainWindow(QMainWindow):
 
     def _create_properties_panel(self) -> None:
         """Create the properties panel for selected node editing."""
-        from .properties_panel import PropertiesPanel
+        from .panels.properties_panel import PropertiesPanel
 
         self._properties_panel = PropertiesPanel(self)
 
@@ -1037,7 +1037,7 @@ class MainWindow(QMainWindow):
 
     def _create_execution_timeline_dock(self) -> None:
         """Create the Execution Timeline dock for visualizing workflow execution."""
-        from .execution_timeline import ExecutionTimeline
+        from .execution.execution_timeline import ExecutionTimeline
 
         self._execution_timeline = ExecutionTimeline(self)
 
@@ -1603,7 +1603,7 @@ class MainWindow(QMainWindow):
     
     def _on_new_from_template(self) -> None:
         """Handle new from template request."""
-        from .template_browser import show_template_browser
+        from .dialogs.template_browser import show_template_browser
         
         if not self._check_unsaved_changes():
             return
@@ -1714,7 +1714,7 @@ class MainWindow(QMainWindow):
 
     def _on_create_snippet(self) -> None:
         """Handle create snippet from selection request."""
-        from .snippet_creator_dialog import SnippetCreatorDialog
+        from .snippets.snippet_creator_dialog import SnippetCreatorDialog
         from ..core.workflow_schema import NodeConnection
 
         # Get selected nodes from the graph
@@ -1771,7 +1771,7 @@ class MainWindow(QMainWindow):
 
     def _on_open_snippet_library(self) -> None:
         """Handle open snippet library browser request."""
-        from .snippet_browser_dialog import SnippetBrowserDialog
+        from .snippets.snippet_browser_dialog import SnippetBrowserDialog
 
         # Open snippet browser dialog
         dialog = SnippetBrowserDialog(parent=self)
@@ -1786,7 +1786,7 @@ class MainWindow(QMainWindow):
 
     def _on_preferences(self) -> None:
         """Handle preferences dialog request."""
-        from .preferences_dialog import PreferencesDialog
+        from .dialogs.preferences_dialog import PreferencesDialog
 
         dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -1803,7 +1803,7 @@ class MainWindow(QMainWindow):
             snippet_definition: SnippetDefinition to insert
             is_collapsed: Whether to insert as collapsed node or expanded
         """
-        from .workflow_import import WorkflowImporter
+        from .workflow.workflow_import import WorkflowImporter
 
         logger.info(
             f"Inserting snippet '{snippet_definition.name}' "
@@ -2134,7 +2134,7 @@ class MainWindow(QMainWindow):
 
     def _on_open_hotkey_manager(self) -> None:
         """Open the hotkey manager dialog."""
-        from .hotkey_manager import HotkeyManagerDialog
+        from .toolbar.hotkey_manager import HotkeyManagerDialog
         
         # Collect all actions
         actions = {
@@ -2172,7 +2172,7 @@ class MainWindow(QMainWindow):
 
     def _on_open_performance_dashboard(self) -> None:
         """Open the performance dashboard dialog."""
-        from .performance_dashboard import PerformanceDashboardDialog
+        from .execution.performance_dashboard import PerformanceDashboardDialog
 
         dialog = PerformanceDashboardDialog(self)
         dialog.exec()
@@ -2188,13 +2188,13 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("No graph available", 3000)
             return
 
-        from .node_search import NodeSearchDialog
+        from .search.node_search import NodeSearchDialog
         dialog = NodeSearchDialog(self._central_widget.graph, self)
         dialog.show_search()
 
     def _update_recent_files_menu(self) -> None:
         """Update the recent files submenu."""
-        from .recent_files import get_recent_files_manager
+        from .workflow.recent_files import get_recent_files_manager
 
         self._recent_files_menu.clear()
         manager = get_recent_files_manager()
@@ -2231,14 +2231,14 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "File Not Found", f"File not found:\n{path}")
             # Remove from recent files
-            from .recent_files import get_recent_files_manager
+            from .workflow.recent_files import get_recent_files_manager
             manager = get_recent_files_manager()
             manager.remove_file(file_path)
             self._update_recent_files_menu()
 
     def _on_clear_recent_files(self) -> None:
         """Clear the recent files list."""
-        from .recent_files import get_recent_files_manager
+        from .workflow.recent_files import get_recent_files_manager
         manager = get_recent_files_manager()
         manager.clear()
         self._update_recent_files_menu()
@@ -2246,7 +2246,7 @@ class MainWindow(QMainWindow):
 
     def add_to_recent_files(self, file_path) -> None:
         """Add a file to the recent files list."""
-        from .recent_files import get_recent_files_manager
+        from .workflow.recent_files import get_recent_files_manager
         from pathlib import Path
         manager = get_recent_files_manager()
         manager.add_file(Path(file_path) if isinstance(file_path, str) else file_path)
@@ -2373,7 +2373,7 @@ class MainWindow(QMainWindow):
 
     def _create_debug_components(self) -> None:
         """Create debug toolbar."""
-        from .debug_toolbar import DebugToolbar
+        from .panels.debug_toolbar import DebugToolbar
 
         # Create debug toolbar
         self._debug_toolbar = DebugToolbar(self)
@@ -2444,7 +2444,7 @@ class MainWindow(QMainWindow):
     def _on_open_desktop_selector_builder(self) -> None:
         """Open the Desktop Selector Builder dialog."""
         try:
-            from .desktop_selector_builder import DesktopSelectorBuilder
+            from .selectors.desktop_selector_builder import DesktopSelectorBuilder
 
             dialog = DesktopSelectorBuilder(parent=self)
 
@@ -2466,7 +2466,7 @@ class MainWindow(QMainWindow):
     def _on_create_frame(self) -> None:
         """Create a frame around selected nodes."""
         try:
-            from .node_frame import group_selected_nodes, create_frame, NodeFrame
+            from .graph.node_frame import group_selected_nodes, create_frame, NodeFrame
 
             # Get the node graph from central widget
             if not self._central_widget or not hasattr(self._central_widget, 'graph'):
@@ -2517,8 +2517,8 @@ class MainWindow(QMainWindow):
 
     def _on_schedule_workflow(self) -> None:
         """Handle schedule workflow action."""
-        from .schedule_dialog import ScheduleDialog, WorkflowSchedule
-        from .schedule_storage import get_schedule_storage
+        from .scheduling.schedule_dialog import ScheduleDialog, WorkflowSchedule
+        from .scheduling.schedule_storage import get_schedule_storage
 
         # Check if workflow is saved
         if not self._current_file:
@@ -2563,8 +2563,8 @@ class MainWindow(QMainWindow):
 
     def _on_manage_schedules(self) -> None:
         """Handle manage schedules action."""
-        from .schedule_dialog import ScheduleManagerDialog
-        from .schedule_storage import get_schedule_storage
+        from .scheduling.schedule_dialog import ScheduleManagerDialog
+        from .scheduling.schedule_storage import get_schedule_storage
 
         storage = get_schedule_storage()
         schedules = storage.get_all_schedules()
@@ -2577,7 +2577,7 @@ class MainWindow(QMainWindow):
 
     def _save_all_schedules(self, dialog) -> None:
         """Save all schedules from manager dialog."""
-        from .schedule_storage import get_schedule_storage
+        from .scheduling.schedule_storage import get_schedule_storage
 
         storage = get_schedule_storage()
         storage.save_all_schedules(dialog.get_schedules())

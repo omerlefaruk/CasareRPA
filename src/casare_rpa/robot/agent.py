@@ -18,7 +18,7 @@ from loguru import logger
 from dotenv import load_dotenv
 import orjson
 
-from casare_rpa.utils.workflow_loader import load_workflow_from_dict
+from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 from .config import (
