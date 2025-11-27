@@ -25,11 +25,12 @@ import orjson
 
 class CachedJobStatus(Enum):
     """Status of cached jobs."""
-    CACHED = "cached"           # Job cached from backend
-    IN_PROGRESS = "in_progress" # Currently executing
-    COMPLETED = "completed"     # Execution completed, pending sync
-    FAILED = "failed"           # Execution failed, pending sync
-    SYNCED = "synced"           # Successfully synced to backend
+
+    CACHED = "cached"  # Job cached from backend
+    IN_PROGRESS = "in_progress"  # Currently executing
+    COMPLETED = "completed"  # Execution completed, pending sync
+    FAILED = "failed"  # Execution failed, pending sync
+    SYNCED = "synced"  # Successfully synced to backend
 
 
 class OfflineQueue:
@@ -154,20 +155,24 @@ class OfflineQueue:
         Returns:
             True if cached successfully
         """
+
         def _insert():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO cached_jobs
                     (id, robot_id, workflow_json, original_status, cached_status, cached_at)
                     VALUES (?, ?, ?, ?, 'cached', ?)
-                """, (
-                    job_id,
-                    self.robot_id,
-                    workflow_json,
-                    original_status,
-                    datetime.now(timezone.utc).isoformat(),
-                ))
+                """,
+                    (
+                        job_id,
+                        self.robot_id,
+                        workflow_json,
+                        original_status,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
                 conn.commit()
 
         try:
@@ -180,14 +185,18 @@ class OfflineQueue:
 
     async def mark_in_progress(self, job_id: str) -> bool:
         """Mark a cached job as in progress."""
+
         def _update():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE cached_jobs
                     SET cached_status = 'in_progress', started_at = ?
                     WHERE id = ?
-                """, (datetime.now(timezone.utc).isoformat(), job_id))
+                """,
+                    (datetime.now(timezone.utc).isoformat(), job_id),
+                )
                 conn.commit()
                 return cursor.rowcount > 0
 
@@ -215,11 +224,13 @@ class OfflineQueue:
             logs: Execution logs
             error: Error message if failed
         """
+
         def _update():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 status = "completed" if success else "failed"
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE cached_jobs
                     SET cached_status = ?,
                         completed_at = ?,
@@ -227,14 +238,16 @@ class OfflineQueue:
                         logs = ?,
                         error = ?
                     WHERE id = ?
-                """, (
-                    status,
-                    datetime.now(timezone.utc).isoformat(),
-                    orjson.dumps(result).decode() if result else None,
-                    logs,
-                    error,
-                    job_id,
-                ))
+                """,
+                    (
+                        status,
+                        datetime.now(timezone.utc).isoformat(),
+                        orjson.dumps(result).decode() if result else None,
+                        logs,
+                        error,
+                        job_id,
+                    ),
+                )
                 conn.commit()
                 return cursor.rowcount > 0
 
@@ -246,15 +259,19 @@ class OfflineQueue:
 
     async def get_jobs_to_sync(self) -> List[Dict]:
         """Get all completed/failed jobs pending sync to backend."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM cached_jobs
                     WHERE cached_status IN ('completed', 'failed')
                     AND (robot_id = ? OR robot_id IS NULL)
                     ORDER BY completed_at ASC
-                """, (self.robot_id,))
+                """,
+                    (self.robot_id,),
+                )
                 return [dict(row) for row in cursor.fetchall()]
 
         try:
@@ -265,14 +282,18 @@ class OfflineQueue:
 
     async def mark_synced(self, job_id: str) -> bool:
         """Mark a job as synced to backend."""
+
         def _update():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE cached_jobs
                     SET cached_status = 'synced', last_sync_attempt = ?
                     WHERE id = ?
-                """, (datetime.now(timezone.utc).isoformat(), job_id))
+                """,
+                    (datetime.now(timezone.utc).isoformat(), job_id),
+                )
                 conn.commit()
                 return cursor.rowcount > 0
 
@@ -284,14 +305,18 @@ class OfflineQueue:
 
     async def increment_sync_attempts(self, job_id: str) -> bool:
         """Increment sync attempt counter for a job."""
+
         def _update():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE cached_jobs
                     SET sync_attempts = sync_attempts + 1, last_sync_attempt = ?
                     WHERE id = ?
-                """, (datetime.now(timezone.utc).isoformat(), job_id))
+                """,
+                    (datetime.now(timezone.utc).isoformat(), job_id),
+                )
                 conn.commit()
                 return cursor.rowcount > 0
 
@@ -303,14 +328,18 @@ class OfflineQueue:
 
     async def get_in_progress_jobs(self) -> List[Dict]:
         """Get jobs that were in progress (for crash recovery)."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM cached_jobs
                     WHERE cached_status = 'in_progress'
                     AND (robot_id = ? OR robot_id IS NULL)
-                """, (self.robot_id,))
+                """,
+                    (self.robot_id,),
+                )
                 return [dict(row) for row in cursor.fetchall()]
 
         try:
@@ -321,15 +350,19 @@ class OfflineQueue:
 
     async def get_cached_jobs(self) -> List[Dict]:
         """Get all cached jobs not yet started."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM cached_jobs
                     WHERE cached_status = 'cached'
                     AND (robot_id = ? OR robot_id IS NULL)
                     ORDER BY cached_at ASC
-                """, (self.robot_id,))
+                """,
+                    (self.robot_id,),
+                )
                 return [dict(row) for row in cursor.fetchall()]
 
         try:
@@ -356,20 +389,24 @@ class OfflineQueue:
             node_id: ID of the node that just completed
             state: Execution state to save
         """
+
         def _insert():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT OR REPLACE INTO job_checkpoints
                     (job_id, checkpoint_id, node_id, state_json, created_at)
                     VALUES (?, ?, ?, ?, ?)
-                """, (
-                    job_id,
-                    checkpoint_id,
-                    node_id,
-                    orjson.dumps(state).decode(),
-                    datetime.now(timezone.utc).isoformat(),
-                ))
+                """,
+                    (
+                        job_id,
+                        checkpoint_id,
+                        node_id,
+                        orjson.dumps(state).decode(),
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
                 conn.commit()
 
         try:
@@ -382,19 +419,23 @@ class OfflineQueue:
 
     async def get_latest_checkpoint(self, job_id: str) -> Optional[Dict]:
         """Get the latest checkpoint for a job."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM job_checkpoints
                     WHERE job_id = ?
                     ORDER BY created_at DESC
                     LIMIT 1
-                """, (job_id,))
+                """,
+                    (job_id,),
+                )
                 row = cursor.fetchone()
                 if row:
                     result = dict(row)
-                    result['state'] = orjson.loads(result['state_json'])
+                    result["state"] = orjson.loads(result["state_json"])
                     return result
                 return None
 
@@ -406,12 +447,16 @@ class OfflineQueue:
 
     async def clear_checkpoints(self, job_id: str) -> bool:
         """Clear all checkpoints for a job."""
+
         def _delete():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM job_checkpoints WHERE job_id = ?
-                """, (job_id,))
+                """,
+                    (job_id,),
+                )
                 conn.commit()
                 return True
 
@@ -430,19 +475,23 @@ class OfflineQueue:
         event_data: Optional[Dict] = None,
     ) -> bool:
         """Log an event for a job."""
+
         def _insert():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO execution_history
                     (job_id, event_type, event_data, created_at)
                     VALUES (?, ?, ?, ?)
-                """, (
-                    job_id,
-                    event_type,
-                    orjson.dumps(event_data).decode() if event_data else None,
-                    datetime.now(timezone.utc).isoformat(),
-                ))
+                """,
+                    (
+                        job_id,
+                        event_type,
+                        orjson.dumps(event_data).decode() if event_data else None,
+                        datetime.now(timezone.utc).isoformat(),
+                    ),
+                )
                 conn.commit()
 
         try:
@@ -454,19 +503,23 @@ class OfflineQueue:
 
     async def get_job_history(self, job_id: str) -> List[Dict]:
         """Get execution history for a job."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT * FROM execution_history
                     WHERE job_id = ?
                     ORDER BY created_at ASC
-                """, (job_id,))
+                """,
+                    (job_id,),
+                )
                 results = []
                 for row in cursor.fetchall():
                     item = dict(row)
-                    if item.get('event_data'):
-                        item['event_data'] = orjson.loads(item['event_data'])
+                    if item.get("event_data"):
+                        item["event_data"] = orjson.loads(item["event_data"])
                     results.append(item)
                 return results
 
@@ -480,16 +533,20 @@ class OfflineQueue:
 
     async def cleanup_old_synced_jobs(self, days: int = 7) -> int:
         """Remove synced jobs older than specified days."""
+
         def _delete():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cutoff = datetime.now(timezone.utc).isoformat()
                 # Simple approach: delete by number of days
-                cursor.execute("""
+                cursor.execute(
+                    """
                     DELETE FROM cached_jobs
                     WHERE cached_status = 'synced'
                     AND julianday(?) - julianday(completed_at) > ?
-                """, (cutoff, days))
+                """,
+                    (cutoff, days),
+                )
                 deleted = cursor.rowcount
                 conn.commit()
                 return deleted
@@ -505,16 +562,20 @@ class OfflineQueue:
 
     async def get_queue_stats(self) -> Dict[str, int]:
         """Get statistics about the queue."""
+
         def _query():
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT cached_status, COUNT(*) as count
                     FROM cached_jobs
                     WHERE robot_id = ? OR robot_id IS NULL
                     GROUP BY cached_status
-                """, (self.robot_id,))
-                return {row['cached_status']: row['count'] for row in cursor.fetchall()}
+                """,
+                    (self.robot_id,),
+                )
+                return {row["cached_status"]: row["count"] for row in cursor.fetchall()}
 
         try:
             return await asyncio.to_thread(_query)

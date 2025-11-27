@@ -4,7 +4,6 @@ Handles application settings persistence.
 """
 
 import orjson
-from pathlib import Path
 from typing import Any, Optional
 from loguru import logger
 
@@ -26,7 +25,7 @@ class SettingsManager:
         "ui": {
             "theme": "dark",
             "show_minimap": True,
-        }
+        },
     }
 
     def __init__(self):
@@ -43,7 +42,7 @@ class SettingsManager:
         """
         try:
             if self.settings_file.exists():
-                with open(self.settings_file, 'rb') as f:
+                with open(self.settings_file, "rb") as f:
                     settings = orjson.loads(f.read())
                     logger.debug(f"Loaded settings from {self.settings_file}")
 
@@ -71,7 +70,11 @@ class SettingsManager:
 
         # Deep merge
         for key, value in settings.items():
-            if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            if (
+                key in merged
+                and isinstance(merged[key], dict)
+                and isinstance(value, dict)
+            ):
                 merged[key].update(value)
             else:
                 merged[key] = value
@@ -85,11 +88,8 @@ class SettingsManager:
             self.settings_file.parent.mkdir(parents=True, exist_ok=True)
 
             # Write settings
-            with open(self.settings_file, 'wb') as f:
-                f.write(orjson.dumps(
-                    self.settings,
-                    option=orjson.OPT_INDENT_2
-                ))
+            with open(self.settings_file, "wb") as f:
+                f.write(orjson.dumps(self.settings, option=orjson.OPT_INDENT_2))
             logger.debug(f"Saved settings to {self.settings_file}")
         except Exception as e:
             logger.error(f"Failed to save settings: {e}")
@@ -105,7 +105,7 @@ class SettingsManager:
         Returns:
             Setting value
         """
-        keys = key.split('.')
+        keys = key.split(".")
         value = self.settings
 
         for k in keys:
@@ -124,7 +124,7 @@ class SettingsManager:
             key: Setting key (e.g., "autosave.enabled")
             value: Value to set
         """
-        keys = key.split('.')
+        keys = key.split(".")
         target = self.settings
 
         # Navigate to the parent dict

@@ -1,0 +1,59 @@
+# Pre-commit hooks for CasareRPA
+# Run manually: pre-commit run --all-files
+# Install: pre-commit install
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: debug-statements
+        name: Check for debug statements
+
+  # Ruff - Fast Python linter and formatter (optional for now)
+  # Note: 108 linting errors to fix during Week 2 refactoring
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.8.4
+  #   hooks:
+  #     - id: ruff
+  #       name: Ruff linter
+  #       args: [--fix]
+  #     - id: ruff-format
+  #       name: Ruff formatter
+
+  # MyPy - Static type checker (optional, has many errors in current codebase)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.14.1
+  #   hooks:
+  #     - id: mypy
+  #       name: MyPy type checker
+  #       files: ^src/
+  #       args: [--ignore-missing-imports, --python-version=3.12]
+  #       additional_dependencies:
+  #         - types-requests
+  #         - types-PyYAML
+  #         - pydantic
+
+  # Quick test suite (optional - run manually with pytest)
+  # - repo: local
+  #   hooks:
+  #     - id: pytest-quick
+  #       name: Quick pytest validation
+  #       entry: pytest
+  #       args: [tests/, -v, --maxfail=3, -x]
+  #       language: system
+  #       pass_filenames: false
+  #       stages: [pre-commit]

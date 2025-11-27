@@ -4,9 +4,10 @@ All automation nodes must inherit from this base class.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional
 from loguru import logger
 
+from ..domain.value_objects import Port
 from .types import (
     DataType,
     ExecutionResult,
@@ -19,57 +20,10 @@ from .types import (
 )
 
 
-class Port:
-    """Represents a single input or output port on a node."""
-
-    def __init__(
-        self,
-        name: str,
-        port_type: PortType,
-        data_type: DataType,
-        label: Optional[str] = None,
-        required: bool = True,
-    ) -> None:
-        """
-        Initialize a port.
-
-        Args:
-            name: Unique port identifier within the node
-            port_type: Type of port (INPUT, OUTPUT, etc.)
-            data_type: Data type this port accepts/provides
-            label: Display label (defaults to name)
-            required: Whether this port must be connected
-        """
-        self.name = name
-        self.port_type = port_type
-        self.data_type = data_type
-        self.label = label or name
-        self.required = required
-        self.value: Any = None
-
-    def set_value(self, value: Any) -> None:
-        """Set the port's value."""
-        self.value = value
-
-    def get_value(self) -> Any:
-        """Get the port's value."""
-        return self.value
-
-    def to_dict(self) -> PortDefinition:
-        """Serialize port to dictionary."""
-        return {
-            "name": self.name,
-            "port_type": self.port_type.name,
-            "data_type": self.data_type.name,
-            "label": self.label,
-            "required": self.required,
-        }
-
-
 class BaseNode(ABC):
     """
     Abstract base class for all automation nodes.
-    
+
     All nodes must implement:
     - execute(): Core execution logic
     - validate(): Input validation
@@ -97,7 +51,7 @@ class BaseNode(ABC):
         self.node_type = self.__class__.__name__
         self.category = "General"
         self.description = self.__class__.__doc__ or "No description"
-        
+
         # Debug support
         self.breakpoint_enabled: bool = False
         self.execution_count: int = 0
@@ -112,7 +66,7 @@ class BaseNode(ABC):
         """
         Define the input and output ports for this node.
         Must be implemented by subclasses.
-        
+
         Example:
             self.add_input_port("url", DataType.STRING, "URL to navigate")
             self.add_output_port("page", DataType.PAGE, "Loaded page")
@@ -189,7 +143,9 @@ class BaseNode(ABC):
     def set_input_value(self, port_name: str, value: Any) -> None:
         """Set the value of an input port."""
         if port_name not in self.input_ports:
-            raise ValueError(f"Input port '{port_name}' does not exist on {self.node_type}")
+            raise ValueError(
+                f"Input port '{port_name}' does not exist on {self.node_type}"
+            )
         self.input_ports[port_name].set_value(value)
 
     def get_input_value(self, port_name: str, default: Any = None) -> Any:
@@ -201,7 +157,9 @@ class BaseNode(ABC):
     def set_output_value(self, port_name: str, value: Any) -> None:
         """Set the value of an output port."""
         if port_name not in self.output_ports:
-            raise ValueError(f"Output port '{port_name}' does not exist on {self.node_type}")
+            raise ValueError(
+                f"Output port '{port_name}' does not exist on {self.node_type}"
+            )
         self.output_ports[port_name].set_value(value)
 
     def get_output_value(self, port_name: str, default: Any = None) -> Any:
@@ -222,8 +180,12 @@ class BaseNode(ABC):
             "node_type": self.node_type,
             "category": self.category,
             "config": self.config,
-            "input_ports": {name: port.to_dict() for name, port in self.input_ports.items()},
-            "output_ports": {name: port.to_dict() for name, port in self.output_ports.items()},
+            "input_ports": {
+                name: port.to_dict() for name, port in self.input_ports.items()
+            },
+            "output_ports": {
+                name: port.to_dict() for name, port in self.output_ports.items()
+            },
         }
 
     @classmethod
@@ -241,7 +203,9 @@ class BaseNode(ABC):
         config = data.get("config", {})
         return cls(node_id, config)
 
-    def set_status(self, status: NodeStatus, error_message: Optional[str] = None) -> None:
+    def set_status(
+        self, status: NodeStatus, error_message: Optional[str] = None
+    ) -> None:
         """Update node status."""
         self.status = status
         self.error_message = error_message
@@ -262,25 +226,27 @@ class BaseNode(ABC):
         self.execution_count = 0
         self.last_execution_time = None
         self.last_output = None
-    
+
     def set_breakpoint(self, enabled: bool = True) -> None:
         """
         Enable or disable breakpoint on this node.
-        
+
         Args:
             enabled: True to enable breakpoint, False to disable
         """
         self.breakpoint_enabled = enabled
-        logger.debug(f"Breakpoint {'enabled' if enabled else 'disabled'} on node {self.node_id}")
-    
+        logger.debug(
+            f"Breakpoint {'enabled' if enabled else 'disabled'} on node {self.node_id}"
+        )
+
     def has_breakpoint(self) -> bool:
         """Check if this node has a breakpoint set."""
         return self.breakpoint_enabled
-    
+
     def get_debug_info(self) -> Dict[str, Any]:
         """
         Get debug information about this node.
-        
+
         Returns:
             Dictionary containing debug information
         """
@@ -292,8 +258,12 @@ class BaseNode(ABC):
             "execution_count": self.execution_count,
             "last_execution_time": self.last_execution_time,
             "last_output": self.last_output,
-            "input_values": {name: port.get_value() for name, port in self.input_ports.items()},
-            "output_values": {name: port.get_value() for name, port in self.output_ports.items()},
+            "input_values": {
+                name: port.get_value() for name, port in self.input_ports.items()
+            },
+            "output_values": {
+                name: port.get_value() for name, port in self.output_ports.items()
+            },
         }
 
     def __repr__(self) -> str:

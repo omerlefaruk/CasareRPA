@@ -18,10 +18,8 @@ This module provides nodes for XML parsing and manipulation:
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import json
-from typing import Any, Optional, List, Dict
 from pathlib import Path
 
-from loguru import logger
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -92,13 +90,17 @@ class ParseXMLNode(BaseNode):
             return {
                 "success": True,
                 "data": {"root_tag": root.tag, "child_count": len(list(root))},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except ET.ParseError as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": f"XML parse error: {e}", "next_nodes": []}
+            return {
+                "success": False,
+                "error": f"XML parse error: {e}",
+                "next_nodes": [],
+            }
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -174,7 +176,7 @@ class ReadXMLFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"root_tag": root.tag},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -253,7 +255,9 @@ class WriteXMLFileNode(BaseNode):
 
             # Add XML declaration if requested
             if xml_declaration and not xml_string.startswith("<?xml"):
-                xml_string = f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
+                xml_string = (
+                    f'<?xml version="1.0" encoding="{encoding}"?>\n' + xml_string
+                )
 
             with open(path, "w", encoding=encoding) as f:
                 f.write(xml_string)
@@ -265,7 +269,7 @@ class WriteXMLFileNode(BaseNode):
             return {
                 "success": True,
                 "data": {"file_path": str(path)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -327,7 +331,9 @@ class XPathQueryNode(BaseNode):
             else:
                 root = context.get_variable("_xml_root")
                 if root is None:
-                    raise ValueError("No XML available. Parse XML first or provide xml_string.")
+                    raise ValueError(
+                        "No XML available. Parse XML first or provide xml_string."
+                    )
 
             # Execute XPath query
             elements = root.findall(xpath)
@@ -335,12 +341,14 @@ class XPathQueryNode(BaseNode):
             # Convert to list of dicts
             results = []
             for elem in elements:
-                results.append({
-                    "tag": elem.tag,
-                    "text": elem.text or "",
-                    "attrib": dict(elem.attrib),
-                    "tail": elem.tail or ""
-                })
+                results.append(
+                    {
+                        "tag": elem.tag,
+                        "text": elem.text or "",
+                        "attrib": dict(elem.attrib),
+                        "tail": elem.tail or "",
+                    }
+                )
 
             first_text = elements[0].text if elements and elements[0].text else ""
 
@@ -353,7 +361,7 @@ class XPathQueryNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(results)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -446,7 +454,7 @@ class GetXMLElementNode(BaseNode):
             return {
                 "success": True,
                 "data": {"found": self.get_output_value("found")},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -523,7 +531,7 @@ class GetXMLAttributeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"found": self.get_output_value("found")},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -612,11 +620,7 @@ class XMLToJsonNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("json_data", {})
@@ -705,8 +709,8 @@ class JsonToXMLNode(BaseNode):
                     parsed = minidom.parseString(xml_string)
                     xml_string = parsed.toprettyxml(indent="  ")
                     # Remove extra newlines
-                    lines = [line for line in xml_string.split('\n') if line.strip()]
-                    xml_string = '\n'.join(lines)
+                    lines = [line for line in xml_string.split("\n") if line.strip()]
+                    xml_string = "\n".join(lines)
                 except Exception:
                     pass
 
@@ -714,11 +718,7 @@ class JsonToXMLNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("xml_string", "")

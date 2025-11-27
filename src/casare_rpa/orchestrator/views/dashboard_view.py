@@ -2,17 +2,22 @@
 Dashboard view for CasareRPA Orchestrator.
 Displays KPIs, charts, and system overview.
 """
+
 import asyncio
 from typing import Optional, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QFrame, QLabel, QScrollArea, QSizePolicy
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QFrame,
+    QLabel,
+    QScrollArea,
 )
 from PySide6.QtCore import Qt, Signal
 
 from ..styles import COLORS
 from ..widgets import KPICard, SectionHeader, StatusBadge
-from ..models import DashboardMetrics, Job, JobStatus, Robot, RobotStatus
+from ..models import Job, Robot, RobotStatus
 from ..services import OrchestratorService
 
 
@@ -53,7 +58,10 @@ class JobActivityChart(QFrame):
         legend = QHBoxLayout()
         legend.setSpacing(16)
 
-        for label, color in [("Completed", COLORS['accent_success']), ("Failed", COLORS['accent_error'])]:
+        for label, color in [
+            ("Completed", COLORS["accent_success"]),
+            ("Failed", COLORS["accent_error"]),
+        ]:
             dot = QLabel("●")
             dot.setStyleSheet(f"color: {color}; font-size: 10px;")
             legend.addWidget(dot)
@@ -92,8 +100,12 @@ class JobActivityChart(QFrame):
 
             # Calculate heights (max height = 100px)
             max_height = 100
-            completed_height = int((entry.completed / max_total) * max_height) if max_total > 0 else 0
-            failed_height = int((entry.failed / max_total) * max_height) if max_total > 0 else 0
+            completed_height = (
+                int((entry.completed / max_total) * max_height) if max_total > 0 else 0
+            )
+            failed_height = (
+                int((entry.failed / max_total) * max_height) if max_total > 0 else 0
+            )
 
             # Spacer for empty space
             empty_height = max_height - completed_height - failed_height
@@ -126,7 +138,11 @@ class JobActivityChart(QFrame):
 
             # Date label
             date_parts = entry.date.split("-")
-            date_label = QLabel(f"{date_parts[1]}/{date_parts[2]}" if len(date_parts) >= 3 else entry.date)
+            date_label = QLabel(
+                f"{date_parts[1]}/{date_parts[2]}"
+                if len(date_parts) >= 3
+                else entry.date
+            )
             date_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 10px;")
             date_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             bar_layout.addWidget(date_label)
@@ -185,7 +201,11 @@ class RecentJobsWidget(QFrame):
             row_layout.setSpacing(12)
 
             # Workflow name
-            name = QLabel(job.workflow_name[:30] + "..." if len(job.workflow_name) > 30 else job.workflow_name)
+            name = QLabel(
+                job.workflow_name[:30] + "..."
+                if len(job.workflow_name) > 30
+                else job.workflow_name
+            )
             name.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 13px;")
             row_layout.addWidget(name, stretch=1)
 
@@ -252,11 +272,11 @@ class RobotStatusWidget(QFrame):
 
             # Status indicator
             status_color = {
-                RobotStatus.ONLINE: COLORS['status_online'],
-                RobotStatus.OFFLINE: COLORS['status_offline'],
-                RobotStatus.BUSY: COLORS['status_busy'],
-                RobotStatus.ERROR: COLORS['status_error'],
-            }.get(robot.status, COLORS['text_muted'])
+                RobotStatus.ONLINE: COLORS["status_online"],
+                RobotStatus.OFFLINE: COLORS["status_offline"],
+                RobotStatus.BUSY: COLORS["status_busy"],
+                RobotStatus.ERROR: COLORS["status_error"],
+            }.get(robot.status, COLORS["text_muted"])
 
             indicator = QLabel("●")
             indicator.setStyleSheet(f"color: {status_color}; font-size: 12px;")
@@ -269,7 +289,9 @@ class RobotStatusWidget(QFrame):
 
             # Status text
             status_text = QLabel(robot.status.value.title())
-            status_text.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 12px;")
+            status_text.setStyleSheet(
+                f"color: {COLORS['text_muted']}; font-size: 12px;"
+            )
             row_layout.addWidget(status_text)
 
             self._robots_container.addWidget(row)
@@ -305,7 +327,9 @@ class DashboardView(QWidget):
 
         # Header
         header = SectionHeader("Dashboard", "Refresh")
-        header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        header.action_clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         layout.addWidget(header)
 
         # KPI Cards Row
@@ -386,7 +410,9 @@ class DashboardView(QWidget):
             # Update KPIs
             self._kpi_jobs_today.set_value(str(metrics.total_jobs_today))
             self._kpi_success_rate.set_value(f"{metrics.success_rate_today:.0f}%")
-            self._kpi_robots_online.set_value(f"{metrics.robots_online}/{metrics.robots_total}")
+            self._kpi_robots_online.set_value(
+                f"{metrics.robots_online}/{metrics.robots_total}"
+            )
             self._kpi_queue_depth.set_value(str(metrics.jobs_queued))
             self._kpi_throughput.set_value(f"{metrics.throughput_per_hour:.1f}/hr")
             self._kpi_avg_time.set_value(metrics.avg_execution_time_formatted)
@@ -407,4 +433,5 @@ class DashboardView(QWidget):
 
         except Exception as e:
             from loguru import logger
+
             logger.error(f"Failed to refresh dashboard: {e}")

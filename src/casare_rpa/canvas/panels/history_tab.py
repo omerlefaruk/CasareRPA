@@ -97,14 +97,16 @@ class HistoryTab(QWidget):
 
         # Use stacked widget to prevent size changes when switching content
         self._content_stack = QStackedWidget()
-        self._content_stack.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._content_stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
         # Table for history (index 0)
         self._table = QTableWidget()
         self._table.setColumnCount(6)
-        self._table.setHorizontalHeaderLabels([
-            "#", "Timestamp", "Node ID", "Node Type", "Time (s)", "Status"
-        ])
+        self._table.setHorizontalHeaderLabels(
+            ["#", "Timestamp", "Node ID", "Node Type", "Time (s)", "Status"]
+        )
 
         # Set column resize modes
         header = self._table.horizontalHeader()
@@ -329,7 +331,9 @@ class HistoryTab(QWidget):
         # Execution Time
         exec_time = entry.get("execution_time", 0)
         time_item = QTableWidgetItem(f"{exec_time:.4f}")
-        time_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        time_item.setTextAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         self._table.setItem(row, 4, time_item)
 
         # Status
@@ -367,7 +371,9 @@ class HistoryTab(QWidget):
         # Calculate statistics from full history
         total_time = sum(e.get("execution_time", 0) for e in self._full_history)
         avg_time = total_time / len(self._full_history)
-        success_count = sum(1 for e in self._full_history if e.get("status") == "success")
+        success_count = sum(
+            1 for e in self._full_history if e.get("status") == "success"
+        )
         success_rate = (success_count / len(self._full_history)) * 100
 
         self._label_total_time.setText(f"Total: {total_time:.4f}s")

@@ -1,6 +1,7 @@
 """
 Orchestrator panels package.
 """
+
 from .tree_panel import TreeNavigationPanel
 from .jobs_panel import JobsPanel
 from .detail_panel import DetailPanel

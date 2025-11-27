@@ -10,7 +10,7 @@ States:
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Callable, Any, TypeVar
 from loguru import logger
@@ -18,8 +18,9 @@ from loguru import logger
 
 class CircuitState(Enum):
     """Circuit breaker states."""
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Blocking requests
+
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Blocking requests
     HALF_OPEN = "half_open"  # Testing recovery
 
 
@@ -281,15 +282,11 @@ class CircuitBreaker:
             "failure_count": self._failure_count,
             "success_count": self._success_count,
             "last_failure_time": (
-                self._last_failure_time.isoformat()
-                if self._last_failure_time else None
+                self._last_failure_time.isoformat() if self._last_failure_time else None
             ),
-            "opened_at": (
-                self._opened_at.isoformat()
-                if self._opened_at else None
-            ),
+            "opened_at": (self._opened_at.isoformat() if self._opened_at else None),
             "remaining_open_time": self._get_remaining_open_time(),
-            "stats": self.stats.to_dict()
+            "stats": self.stats.to_dict(),
         }
 
 
@@ -313,7 +310,8 @@ class CircuitBreakerStats:
             "times_opened": self.times_opened,
             "success_rate": (
                 (self.successful_calls / self.total_calls * 100)
-                if self.total_calls > 0 else 0
+                if self.total_calls > 0
+                else 0
             ),
         }
 
@@ -340,10 +338,7 @@ class CircuitBreakerRegistry:
 
     def get_all_status(self) -> dict[str, dict]:
         """Get status of all circuit breakers."""
-        return {
-            name: breaker.get_status()
-            for name, breaker in self._breakers.items()
-        }
+        return {name: breaker.get_status() for name, breaker in self._breakers.items()}
 
     async def reset_all(self):
         """Reset all circuit breakers."""

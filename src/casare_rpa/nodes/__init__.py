@@ -14,7 +14,13 @@ __version__ = "0.1.0"
 # Type hints for IDE support - these don't actually import at runtime
 if TYPE_CHECKING:
     from .basic_nodes import StartNode, EndNode, CommentNode
-    from .browser_nodes import LaunchBrowserNode, CloseBrowserNode, NewTabNode, GetAllImagesNode, DownloadFileNode
+    from .browser_nodes import (
+        LaunchBrowserNode,
+        CloseBrowserNode,
+        NewTabNode,
+        GetAllImagesNode,
+        DownloadFileNode,
+    )
     from .navigation_nodes import (
         GoToURLNode,
         GoBackNode,
@@ -532,7 +538,11 @@ def __getattr__(name: str) -> Any:
 
 def __dir__() -> List[str]:
     """Return the list of available attributes for tab completion."""
-    return list(_NODE_REGISTRY.keys()) + ["__version__", "get_all_node_classes", "preload_nodes"]
+    return list(_NODE_REGISTRY.keys()) + [
+        "__version__",
+        "get_all_node_classes",
+        "preload_nodes",
+    ]
 
 
 def get_all_node_classes() -> Dict[str, Type]:

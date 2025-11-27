@@ -1,5 +1,7 @@
 """Visual nodes for database category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualDatabaseConnectNode(VisualNode):
     """Visual representation of DatabaseConnectNode."""
@@ -12,7 +14,12 @@ class VisualDatabaseConnectNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Database Connect node."""
         super().__init__()
-        self.add_combo_menu("db_type", "Database Type", items=["sqlite", "postgresql", "mysql"], tab="config")
+        self.add_combo_menu(
+            "db_type",
+            "Database Type",
+            items=["sqlite", "postgresql", "mysql"],
+            tab="config",
+        )
         self.add_text_input("host", "Host", text="localhost", tab="inputs")
         self.create_property("port", 5432, widget_type=2, tab="inputs")
         self.add_text_input("database", "Database", text="", tab="inputs")
@@ -21,13 +28,24 @@ class VisualDatabaseConnectNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         # Advanced options
         self.create_property("ssl", False, widget_type=1, tab="advanced")
-        self.add_text_input("ssl_ca", "SSL CA Path", placeholder_text="Optional", tab="advanced")
-        self.add_text_input("pool_size", "Pool Size", placeholder_text="5", tab="advanced")
+        self.add_text_input(
+            "ssl_ca", "SSL CA Path", placeholder_text="Optional", tab="advanced"
+        )
+        self.add_text_input(
+            "pool_size", "Pool Size", placeholder_text="5", tab="advanced"
+        )
         self.create_property("auto_commit", True, widget_type=1, tab="advanced")
         self.add_text_input("charset", "Charset", text="utf8mb4", tab="advanced")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -42,6 +60,7 @@ class VisualDatabaseConnectNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualExecuteQueryNode(VisualNode):
     """Visual representation of ExecuteQueryNode."""
 
@@ -55,8 +74,15 @@ class VisualExecuteQueryNode(VisualNode):
         super().__init__()
         self.add_text_input("query", "SQL Query", text="", tab="inputs")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -71,6 +97,7 @@ class VisualExecuteQueryNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualExecuteNonQueryNode(VisualNode):
     """Visual representation of ExecuteNonQueryNode."""
 
@@ -84,8 +111,15 @@ class VisualExecuteNonQueryNode(VisualNode):
         super().__init__()
         self.add_text_input("query", "SQL Statement", text="", tab="inputs")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -98,6 +132,7 @@ class VisualExecuteNonQueryNode(VisualNode):
         self.add_output("last_insert_id")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualBeginTransactionNode(VisualNode):
     """Visual representation of BeginTransactionNode."""
@@ -120,6 +155,7 @@ class VisualBeginTransactionNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualCommitTransactionNode(VisualNode):
     """Visual representation of CommitTransactionNode."""
 
@@ -140,6 +176,7 @@ class VisualCommitTransactionNode(VisualNode):
         self.add_output("connection")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualRollbackTransactionNode(VisualNode):
     """Visual representation of RollbackTransactionNode."""
@@ -162,6 +199,7 @@ class VisualRollbackTransactionNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualCloseDatabaseNode(VisualNode):
     """Visual representation of CloseDatabaseNode."""
 
@@ -181,6 +219,7 @@ class VisualCloseDatabaseNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualTableExistsNode(VisualNode):
     """Visual representation of TableExistsNode."""
@@ -205,6 +244,7 @@ class VisualTableExistsNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualGetTableColumnsNode(VisualNode):
     """Visual representation of GetTableColumnsNode."""
 
@@ -228,6 +268,7 @@ class VisualGetTableColumnsNode(VisualNode):
         self.add_output("column_names")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualExecuteBatchNode(VisualNode):
     """Visual representation of ExecuteBatchNode."""
@@ -255,4 +296,3 @@ class VisualExecuteBatchNode(VisualNode):
 
 
 # HTTP/REST API Nodes
-

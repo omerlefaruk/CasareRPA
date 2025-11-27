@@ -9,9 +9,7 @@ This module provides nodes for system-level operations:
 """
 
 import subprocess
-import os
 import sys
-from typing import Any, Optional
 
 from loguru import logger
 
@@ -32,10 +30,12 @@ def safe_int(value, default: int) -> int:
 
 class SecurityError(Exception):
     """Raised when a security check fails."""
+
     pass
 
 
 # ==================== CLIPBOARD OPERATIONS ====================
+
 
 class ClipboardCopyNode(BaseNode):
     """
@@ -69,12 +69,12 @@ class ClipboardCopyNode(BaseNode):
             # Use pyperclip if available, otherwise fall back to platform-specific
             try:
                 import pyperclip
+
                 pyperclip.copy(text)
             except ImportError:
                 # Fallback for Windows
                 if sys.platform == "win32":
                     import ctypes
-                    from ctypes import wintypes
 
                     CF_UNICODETEXT = 13
                     GMEM_MOVEABLE = 0x0002
@@ -86,7 +86,7 @@ class ClipboardCopyNode(BaseNode):
                     user32.EmptyClipboard()
 
                     if text:
-                        data = text.encode('utf-16-le') + b'\x00\x00'
+                        data = text.encode("utf-16-le") + b"\x00\x00"
                         h_mem = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
                         mem_ptr = kernel32.GlobalLock(h_mem)
                         ctypes.memmove(mem_ptr, data, len(data))
@@ -95,7 +95,9 @@ class ClipboardCopyNode(BaseNode):
 
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support")
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    )
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -103,7 +105,7 @@ class ClipboardCopyNode(BaseNode):
             return {
                 "success": True,
                 "data": {"copied_length": len(text)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -145,6 +147,7 @@ class ClipboardPasteNode(BaseNode):
             # Use pyperclip if available
             try:
                 import pyperclip
+
                 text = pyperclip.paste()
             except ImportError:
                 # Fallback for Windows
@@ -166,7 +169,9 @@ class ClipboardPasteNode(BaseNode):
                     finally:
                         user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support")
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    )
 
             self.set_output_value("text", text)
             self.set_output_value("success", True)
@@ -175,7 +180,7 @@ class ClipboardPasteNode(BaseNode):
             return {
                 "success": True,
                 "data": {"text_length": len(text)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -213,25 +218,25 @@ class ClipboardClearNode(BaseNode):
         try:
             try:
                 import pyperclip
+
                 pyperclip.copy("")
             except ImportError:
                 if sys.platform == "win32":
                     import ctypes
+
                     user32 = ctypes.windll.user32
                     user32.OpenClipboard(0)
                     user32.EmptyClipboard()
                     user32.CloseClipboard()
                 else:
-                    raise RuntimeError("pyperclip not installed and no native clipboard support")
+                    raise RuntimeError(
+                        "pyperclip not installed and no native clipboard support"
+                    )
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -243,6 +248,7 @@ class ClipboardClearNode(BaseNode):
 
 
 # ==================== MESSAGE BOX / DIALOG OPERATIONS ====================
+
 
 class MessageBoxNode(BaseNode):
     """
@@ -315,12 +321,13 @@ class MessageBoxNode(BaseNode):
             if play_sound:
                 try:
                     import winsound
+
                     # Map icon type to system sound
                     sound_map = {
                         "information": winsound.MB_ICONASTERISK,
                         "warning": winsound.MB_ICONEXCLAMATION,
                         "error": winsound.MB_ICONHAND,
-                        "question": winsound.MB_ICONQUESTION
+                        "question": winsound.MB_ICONQUESTION,
                     }
                     winsound.MessageBeep(sound_map.get(icon_type, winsound.MB_OK))
                 except Exception:
@@ -341,7 +348,7 @@ class MessageBoxNode(BaseNode):
                     "information": QMessageBox.Information,
                     "warning": QMessageBox.Warning,
                     "error": QMessageBox.Critical,
-                    "question": QMessageBox.Question
+                    "question": QMessageBox.Question,
                 }
                 icon = icon_map.get(icon_type, QMessageBox.Information)
 
@@ -350,7 +357,9 @@ class MessageBoxNode(BaseNode):
                     "ok": QMessageBox.Ok,
                     "ok_cancel": QMessageBox.Ok | QMessageBox.Cancel,
                     "yes_no": QMessageBox.Yes | QMessageBox.No,
-                    "yes_no_cancel": QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
+                    "yes_no_cancel": QMessageBox.Yes
+                    | QMessageBox.No
+                    | QMessageBox.Cancel,
                 }
                 btns = button_map.get(buttons, QMessageBox.Ok)
 
@@ -370,7 +379,7 @@ class MessageBoxNode(BaseNode):
                         "ok": QMessageBox.Ok,
                         "cancel": QMessageBox.Cancel,
                         "yes": QMessageBox.Yes,
-                        "no": QMessageBox.No
+                        "no": QMessageBox.No,
                     }
                     default_btn = default_btn_map.get(default_button.lower())
                     if default_btn:
@@ -378,11 +387,14 @@ class MessageBoxNode(BaseNode):
 
                 # Set always on top if enabled
                 if always_on_top:
-                    msg_box.setWindowFlags(msg_box.windowFlags() | Qt.WindowStaysOnTopHint)
+                    msg_box.setWindowFlags(
+                        msg_box.windowFlags() | Qt.WindowStaysOnTopHint
+                    )
 
                 # Setup auto-close timer if enabled
                 timed_out = False
                 if auto_close_timeout > 0:
+
                     def on_timeout():
                         nonlocal timed_out
                         timed_out = True
@@ -403,7 +415,7 @@ class MessageBoxNode(BaseNode):
                         QMessageBox.Ok: "ok",
                         QMessageBox.Cancel: "cancel",
                         QMessageBox.Yes: "yes",
-                        QMessageBox.No: "no"
+                        QMessageBox.No: "no",
                     }
                     result = result_map.get(response, "ok")
                     accepted = result in ("ok", "yes")
@@ -432,7 +444,7 @@ class MessageBoxNode(BaseNode):
                         "information": MB_ICONINFORMATION,
                         "warning": MB_ICONWARNING,
                         "error": MB_ICONERROR,
-                        "question": MB_ICONQUESTION
+                        "question": MB_ICONQUESTION,
                     }
                     icon = icon_map.get(icon_type, MB_ICONINFORMATION)
 
@@ -440,7 +452,7 @@ class MessageBoxNode(BaseNode):
                         "ok": MB_OK,
                         "ok_cancel": MB_OKCANCEL,
                         "yes_no": MB_YESNO,
-                        "yes_no_cancel": MB_YESNOCANCEL
+                        "yes_no_cancel": MB_YESNOCANCEL,
                     }
                     btns = button_map.get(buttons, MB_OK)
 
@@ -448,7 +460,9 @@ class MessageBoxNode(BaseNode):
                     if always_on_top:
                         flags |= MB_TOPMOST
 
-                    response = ctypes.windll.user32.MessageBoxW(0, message, title, flags)
+                    response = ctypes.windll.user32.MessageBoxW(
+                        0, message, title, flags
+                    )
 
                     # Response codes
                     IDOK = 1
@@ -460,7 +474,7 @@ class MessageBoxNode(BaseNode):
                         IDOK: "ok",
                         IDCANCEL: "cancel",
                         IDYES: "yes",
-                        IDNO: "no"
+                        IDNO: "no",
                     }
                     result = result_map.get(response, "ok")
                     accepted = result in ("ok", "yes")
@@ -476,7 +490,7 @@ class MessageBoxNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result, "accepted": accepted},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -547,13 +561,11 @@ class InputDialogNode(BaseNode):
 
                 if password_mode:
                     text, ok = QInputDialog.getText(
-                        None, title, prompt,
-                        QLineEdit.Password, default_value
+                        None, title, prompt, QLineEdit.Password, default_value
                     )
                 else:
                     text, ok = QInputDialog.getText(
-                        None, title, prompt,
-                        QLineEdit.Normal, default_value
+                        None, title, prompt, QLineEdit.Normal, default_value
                     )
 
                 value = text if ok else ""
@@ -571,7 +583,7 @@ class InputDialogNode(BaseNode):
             return {
                 "success": True,
                 "data": {"confirmed": confirmed},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -629,8 +641,11 @@ class TooltipNode(BaseNode):
             if sys.platform == "win32":
                 try:
                     from win10toast import ToastNotifier
+
                     toaster = ToastNotifier()
-                    toaster.show_toast(title, message, duration=duration // 1000, threaded=True)
+                    toaster.show_toast(
+                        title, message, duration=duration // 1000, threaded=True
+                    )
                 except ImportError:
                     # Fallback to system tray balloon
                     try:
@@ -643,18 +658,16 @@ class TooltipNode(BaseNode):
 
                         tray = QSystemTrayIcon()
                         tray.show()
-                        tray.showMessage(title, message, QSystemTrayIcon.Information, duration)
+                        tray.showMessage(
+                            title, message, QSystemTrayIcon.Information, duration
+                        )
                     except ImportError:
                         pass
 
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -666,6 +679,7 @@ class TooltipNode(BaseNode):
 
 
 # ==================== TERMINAL / CMD OPERATIONS ====================
+
 
 class RunCommandNode(BaseNode):
     """
@@ -705,17 +719,44 @@ class RunCommandNode(BaseNode):
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     # SECURITY: Dangerous shell metacharacters that enable command injection
-    DANGEROUS_CHARS = ['|', '&', ';', '$', '`', '(', ')', '{', '}', '<', '>', '\n', '\r']
+    DANGEROUS_CHARS = [
+        "|",
+        "&",
+        ";",
+        "$",
+        "`",
+        "(",
+        ")",
+        "{",
+        "}",
+        "<",
+        ">",
+        "\n",
+        "\r",
+    ]
 
     # SECURITY: Commands that should never be executed via workflows
     BLOCKED_COMMANDS = [
-        'rm', 'del', 'format', 'fdisk', 'mkfs',  # Destructive
-        'wget', 'curl', 'invoke-webrequest',  # Network download
-        'nc', 'netcat', 'ncat',  # Network tools
-        'powershell', 'pwsh', 'cmd',  # Shell spawning (use dedicated nodes)
-        'reg', 'regedit',  # Registry modification
-        'net', 'sc',  # Service/network management
-        'shutdown', 'reboot',  # System control
+        "rm",
+        "del",
+        "format",
+        "fdisk",
+        "mkfs",  # Destructive
+        "wget",
+        "curl",
+        "invoke-webrequest",  # Network download
+        "nc",
+        "netcat",
+        "ncat",  # Network tools
+        "powershell",
+        "pwsh",
+        "cmd",  # Shell spawning (use dedicated nodes)
+        "reg",
+        "regedit",  # Registry modification
+        "net",
+        "sc",  # Service/network management
+        "shutdown",
+        "reboot",  # System control
     ]
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -743,7 +784,9 @@ class RunCommandNode(BaseNode):
 
             # SECURITY: Extract base command for validation
             base_cmd = command.split()[0].lower() if command else ""
-            base_cmd = base_cmd.replace('.exe', '').replace('.cmd', '').replace('.bat', '')
+            base_cmd = (
+                base_cmd.replace(".exe", "").replace(".cmd", "").replace(".bat", "")
+            )
 
             # SECURITY: Block dangerous commands unless explicitly allowed
             if not allow_dangerous:
@@ -768,10 +811,14 @@ class RunCommandNode(BaseNode):
                 # When shell=True, concatenate as string (less safe)
                 if args:
                     if isinstance(args, list):
-                        command = command + " " + " ".join(shlex.quote(str(a)) for a in args)
+                        command = (
+                            command + " " + " ".join(shlex.quote(str(a)) for a in args)
+                        )
                     elif isinstance(args, str):
                         command = command + " " + args
-                logger.warning(f"RunCommandNode executing with shell=True: {command[:100]}...")
+                logger.warning(
+                    f"RunCommandNode executing with shell=True: {command[:100]}..."
+                )
             else:
                 # When shell=False, build command list (safer)
                 if isinstance(command, str):
@@ -803,7 +850,7 @@ class RunCommandNode(BaseNode):
                 capture_output=capture_output,
                 text=True,
                 timeout=timeout,
-                cwd=working_dir
+                cwd=working_dir,
             )
 
             stdout = result.stdout if capture_output else ""
@@ -820,7 +867,7 @@ class RunCommandNode(BaseNode):
             return {
                 "success": True,
                 "data": {"return_code": return_code, "success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except subprocess.TimeoutExpired as e:
@@ -866,30 +913,46 @@ class RunPowerShellNode(BaseNode):
     # SECURITY: Dangerous PowerShell commands/patterns that could be malicious
     DANGEROUS_PATTERNS = [
         # Download and execute
-        'invoke-webrequest', 'iwr', 'wget', 'curl',
-        'invoke-restmethod', 'irm',
-        'downloadstring', 'downloadfile',
-        'start-bitstransfer',
+        "invoke-webrequest",
+        "iwr",
+        "wget",
+        "curl",
+        "invoke-restmethod",
+        "irm",
+        "downloadstring",
+        "downloadfile",
+        "start-bitstransfer",
         # Code execution
-        'invoke-expression', 'iex',
-        'invoke-command', 'icm',
-        'start-process', 'saps',
+        "invoke-expression",
+        "iex",
+        "invoke-command",
+        "icm",
+        "start-process",
+        "saps",
         # Credential theft
-        'get-credential', 'convertto-securestring',
-        'export-clixml',
+        "get-credential",
+        "convertto-securestring",
+        "export-clixml",
         # System modification
-        'set-executionpolicy',
-        'new-service', 'set-service',
-        'new-scheduledtask', 'register-scheduledjob',
+        "set-executionpolicy",
+        "new-service",
+        "set-service",
+        "new-scheduledtask",
+        "register-scheduledjob",
         # Registry
-        'set-itemproperty', 'new-itemproperty',
-        'remove-itemproperty',
+        "set-itemproperty",
+        "new-itemproperty",
+        "remove-itemproperty",
         # Encoding (often used for obfuscation)
-        '-encodedcommand', '-enc', '-e',
-        'fromb64string', 'tob64string',
+        "-encodedcommand",
+        "-enc",
+        "-e",
+        "fromb64string",
+        "tob64string",
         # Reflection/Assembly loading
-        'add-type', 'reflection.assembly',
-        '[system.reflection',
+        "add-type",
+        "reflection.assembly",
+        "[system.reflection",
     ]
 
     def __init__(self, node_id: str, name: str = "Run PowerShell", **kwargs) -> None:
@@ -943,7 +1006,8 @@ class RunPowerShellNode(BaseNode):
             # Build PowerShell command
             ps_cmd = [
                 "powershell.exe",
-                "-ExecutionPolicy", execution_policy,
+                "-ExecutionPolicy",
+                execution_policy,
                 "-NoProfile",
                 "-NonInteractive",  # SECURITY: Prevent interactive prompts
             ]
@@ -956,10 +1020,7 @@ class RunPowerShellNode(BaseNode):
             ps_cmd.extend(["-Command", script])
 
             result = subprocess.run(
-                ps_cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout
+                ps_cmd, capture_output=True, text=True, timeout=timeout
             )
 
             stdout = result.stdout
@@ -976,7 +1037,7 @@ class RunPowerShellNode(BaseNode):
             return {
                 "success": True,
                 "data": {"return_code": return_code, "success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -993,6 +1054,7 @@ class RunPowerShellNode(BaseNode):
 
 # ==================== WINDOWS SERVICES ====================
 
+
 class GetServiceStatusNode(BaseNode):
     """
     Get the status of a Windows service.
@@ -1006,7 +1068,9 @@ class GetServiceStatusNode(BaseNode):
         exists: Whether service exists
     """
 
-    def __init__(self, node_id: str, name: str = "Get Service Status", **kwargs) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Get Service Status", **kwargs
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1036,13 +1100,15 @@ class GetServiceStatusNode(BaseNode):
                 raise RuntimeError("Windows Services only available on Windows")
 
             import subprocess
+
             result = subprocess.run(
-                ["sc", "query", service_name],
-                capture_output=True,
-                text=True
+                ["sc", "query", service_name], capture_output=True, text=True
             )
 
-            if "FAILED 1060" in result.stderr or "does not exist" in result.stderr.lower():
+            if (
+                "FAILED 1060" in result.stderr
+                or "does not exist" in result.stderr.lower()
+            ):
                 self.set_output_value("status", "not_found")
                 self.set_output_value("display_name", "")
                 self.set_output_value("exists", False)
@@ -1066,7 +1132,7 @@ class GetServiceStatusNode(BaseNode):
                 display_result = subprocess.run(
                     ["sc", "GetDisplayName", service_name],
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
                 display_name = ""
                 if "=" in display_result.stdout:
@@ -1081,7 +1147,7 @@ class GetServiceStatusNode(BaseNode):
             return {
                 "success": True,
                 "data": {"status": self.outputs.get("status", {}).get("value")},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1135,12 +1201,12 @@ class StartServiceNode(BaseNode):
                 raise RuntimeError("Windows Services only available on Windows")
 
             result = subprocess.run(
-                ["sc", "start", service_name],
-                capture_output=True,
-                text=True
+                ["sc", "start", service_name], capture_output=True, text=True
             )
 
-            success = result.returncode == 0 or "already running" in result.stderr.lower()
+            success = (
+                result.returncode == 0 or "already running" in result.stderr.lower()
+            )
             message = result.stdout if success else result.stderr
 
             self.set_output_value("success", success)
@@ -1150,7 +1216,7 @@ class StartServiceNode(BaseNode):
             return {
                 "success": True,
                 "data": {"success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1204,9 +1270,7 @@ class StopServiceNode(BaseNode):
                 raise RuntimeError("Windows Services only available on Windows")
 
             result = subprocess.run(
-                ["sc", "stop", service_name],
-                capture_output=True,
-                text=True
+                ["sc", "stop", service_name], capture_output=True, text=True
             )
 
             success = result.returncode == 0 or "not started" in result.stderr.lower()
@@ -1219,7 +1283,7 @@ class StopServiceNode(BaseNode):
             return {
                 "success": True,
                 "data": {"success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1262,6 +1326,7 @@ class RestartServiceNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import asyncio
+
         self.status = NodeStatus.RUNNING
 
         try:
@@ -1285,9 +1350,7 @@ class RestartServiceNode(BaseNode):
 
             # Start service
             result = subprocess.run(
-                ["sc", "start", service_name],
-                capture_output=True,
-                text=True
+                ["sc", "start", service_name], capture_output=True, text=True
             )
 
             success = result.returncode == 0
@@ -1300,7 +1363,7 @@ class RestartServiceNode(BaseNode):
             return {
                 "success": True,
                 "data": {"success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1347,16 +1410,17 @@ class ListServicesNode(BaseNode):
                 raise RuntimeError("Windows Services only available on Windows")
 
             # Use PowerShell to get services as it provides better output
-            ps_cmd = "Get-Service | Select-Object Name, DisplayName, Status | ConvertTo-Json"
+            ps_cmd = (
+                "Get-Service | Select-Object Name, DisplayName, Status | ConvertTo-Json"
+            )
             result = subprocess.run(
-                ["powershell", "-Command", ps_cmd],
-                capture_output=True,
-                text=True
+                ["powershell", "-Command", ps_cmd], capture_output=True, text=True
             )
 
             services = []
             if result.returncode == 0:
                 import json
+
                 try:
                     data = json.loads(result.stdout)
                     if isinstance(data, dict):
@@ -1375,11 +1439,13 @@ class ListServicesNode(BaseNode):
                         if state_filter == "stopped" and status != "stopped":
                             continue
 
-                        services.append({
-                            "name": svc.get("Name", ""),
-                            "display_name": svc.get("DisplayName", ""),
-                            "status": status
-                        })
+                        services.append(
+                            {
+                                "name": svc.get("Name", ""),
+                                "display_name": svc.get("DisplayName", ""),
+                                "status": status,
+                            }
+                        )
                 except json.JSONDecodeError:
                     pass
 
@@ -1390,7 +1456,7 @@ class ListServicesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(services)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

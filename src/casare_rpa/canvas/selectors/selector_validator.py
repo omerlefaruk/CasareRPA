@@ -18,6 +18,7 @@ from ...desktop.selector import find_element, find_elements, parse_selector
 
 class ValidationStatus(Enum):
     """Validation result status"""
+
     VALID_UNIQUE = "valid_unique"  # Found exactly 1 element
     VALID_MULTIPLE = "valid_multiple"  # Found multiple elements
     NOT_FOUND = "not_found"  # Found 0 elements
@@ -29,6 +30,7 @@ class ValidationResult:
     """
     Result of selector validation
     """
+
     status: ValidationStatus
     element_count: int
     execution_time_ms: float
@@ -38,7 +40,10 @@ class ValidationResult:
     @property
     def is_valid(self) -> bool:
         """Check if selector is valid (finds at least one element)"""
-        return self.status in [ValidationStatus.VALID_UNIQUE, ValidationStatus.VALID_MULTIPLE]
+        return self.status in [
+            ValidationStatus.VALID_UNIQUE,
+            ValidationStatus.VALID_MULTIPLE,
+        ]
 
     @property
     def is_unique(self) -> bool:
@@ -52,7 +57,7 @@ class ValidationResult:
             ValidationStatus.VALID_UNIQUE: "✓",
             ValidationStatus.VALID_MULTIPLE: "⚠",
             ValidationStatus.NOT_FOUND: "✗",
-            ValidationStatus.ERROR: "❌"
+            ValidationStatus.ERROR: "❌",
         }.get(self.status, "?")
 
     @property
@@ -62,7 +67,7 @@ class ValidationResult:
             ValidationStatus.VALID_UNIQUE: "#10b981",  # Green
             ValidationStatus.VALID_MULTIPLE: "#fbbf24",  # Yellow
             ValidationStatus.NOT_FOUND: "#ef4444",  # Red
-            ValidationStatus.ERROR: "#dc2626"  # Dark red
+            ValidationStatus.ERROR: "#dc2626",  # Dark red
         }.get(self.status, "#888888")
 
     @property
@@ -94,7 +99,9 @@ class SelectorValidator:
         self.parent_control = parent_control or auto.GetRootControl()
         logger.debug("Selector validator initialized")
 
-    def validate(self, selector: Dict[str, Any], find_all: bool = False) -> ValidationResult:
+    def validate(
+        self, selector: Dict[str, Any], find_all: bool = False
+    ) -> ValidationResult:
         """
         Validate a selector.
 
@@ -131,7 +138,7 @@ class SelectorValidator:
                     status=status,
                     element_count=count,
                     execution_time_ms=execution_time,
-                    elements=elements
+                    elements=elements,
                 )
 
             else:
@@ -142,7 +149,9 @@ class SelectorValidator:
 
                     # Found one - but is it unique?
                     # Quick check by trying to find second element
-                    all_elements = find_elements(self.parent_control, selector, max_depth=10)
+                    all_elements = find_elements(
+                        self.parent_control, selector, max_depth=10
+                    )
                     count = len(all_elements)
 
                     if count == 1:
@@ -154,7 +163,7 @@ class SelectorValidator:
                         status=status,
                         element_count=count,
                         execution_time_ms=execution_time,
-                        elements=[element] if element else []
+                        elements=[element] if element else [],
                     )
 
                 except ValueError:
@@ -164,7 +173,7 @@ class SelectorValidator:
                         status=ValidationStatus.NOT_FOUND,
                         element_count=0,
                         execution_time_ms=execution_time,
-                        elements=[]
+                        elements=[],
                     )
 
         except Exception as e:
@@ -176,10 +185,12 @@ class SelectorValidator:
                 status=ValidationStatus.ERROR,
                 element_count=0,
                 execution_time_ms=execution_time,
-                error_message=error_msg
+                error_message=error_msg,
             )
 
-    def validate_multiple(self, selectors: List[Dict[str, Any]]) -> List[ValidationResult]:
+    def validate_multiple(
+        self, selectors: List[Dict[str, Any]]
+    ) -> List[ValidationResult]:
         """
         Validate multiple selectors.
 
@@ -199,7 +210,9 @@ class SelectorValidator:
         # Log summary
         unique_count = sum(1 for r in results if r.is_unique)
         valid_count = sum(1 for r in results if r.is_valid)
-        logger.info(f"Validation complete: {unique_count} unique, {valid_count} valid, {len(selectors)} total")
+        logger.info(
+            f"Validation complete: {unique_count} unique, {valid_count} valid, {len(selectors)} total"
+        )
 
         return results
 
@@ -267,8 +280,7 @@ class SelectorValidator:
 
 
 def validate_selector_sync(
-    selector: Dict[str, Any],
-    parent_control: Optional[auto.Control] = None
+    selector: Dict[str, Any], parent_control: Optional[auto.Control] = None
 ) -> ValidationResult:
     """
     Convenience function to validate a selector synchronously.

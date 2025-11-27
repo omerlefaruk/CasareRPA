@@ -7,45 +7,40 @@ Modern dark theme with refined color palette - no icons.
 # Inspired by professional IDEs and monitoring tools
 COLORS = {
     # Background colors - Neutral dark grays with subtle blue undertone
-    "bg_dark": "#121417",         # Darkest - main window background
-    "bg_medium": "#1a1d21",       # Panel backgrounds
-    "bg_light": "#22262b",        # Elevated surfaces, inputs
-    "bg_card": "#1e2126",         # Card backgrounds
-    "bg_hover": "#2a2f36",        # Hover states
-    "bg_selected": "#2d4a6f",     # Selected items (blue tint)
-    "bg_header": "#15171a",       # Table headers, toolbar
-
+    "bg_dark": "#121417",  # Darkest - main window background
+    "bg_medium": "#1a1d21",  # Panel backgrounds
+    "bg_light": "#22262b",  # Elevated surfaces, inputs
+    "bg_card": "#1e2126",  # Card backgrounds
+    "bg_hover": "#2a2f36",  # Hover states
+    "bg_selected": "#2d4a6f",  # Selected items (blue tint)
+    "bg_header": "#15171a",  # Table headers, toolbar
     # Text colors
-    "text_primary": "#e8eaed",    # Primary text - high contrast
+    "text_primary": "#e8eaed",  # Primary text - high contrast
     "text_secondary": "#9aa0a6",  # Secondary text
-    "text_muted": "#5f6368",      # Muted/disabled text
-
+    "text_muted": "#5f6368",  # Muted/disabled text
     # Accent colors - Refined, professional tones
     "accent_primary": "#4a9eff",  # Primary accent (selection, focus)
-    "accent_secondary": "#64b5f6", # Secondary accent
+    "accent_secondary": "#64b5f6",  # Secondary accent
     "accent_success": "#66bb6a",  # Success/online - softer green
     "accent_warning": "#ffb74d",  # Warning/busy - warm amber
-    "accent_error": "#ef5350",    # Error/critical - clear red
-    "accent_info": "#42a5f5",     # Information - light blue
-
+    "accent_error": "#ef5350",  # Error/critical - clear red
+    "accent_info": "#42a5f5",  # Information - light blue
     # Status colors
-    "status_online": "#66bb6a",   # Online/ready
+    "status_online": "#66bb6a",  # Online/ready
     "status_offline": "#5f6368",  # Offline/disabled
-    "status_busy": "#ffb74d",     # Busy/working
-    "status_error": "#ef5350",    # Error state
-
+    "status_busy": "#ffb74d",  # Busy/working
+    "status_error": "#ef5350",  # Error state
     # Job status colors
-    "job_pending": "#5f6368",     # Pending - gray
-    "job_queued": "#42a5f5",      # Queued - blue
-    "job_running": "#ffb74d",     # Running - amber
-    "job_completed": "#66bb6a",   # Completed - green
-    "job_failed": "#ef5350",      # Failed - red
-    "job_cancelled": "#ab47bc",   # Cancelled - purple
-
+    "job_pending": "#5f6368",  # Pending - gray
+    "job_queued": "#42a5f5",  # Queued - blue
+    "job_running": "#ffb74d",  # Running - amber
+    "job_completed": "#66bb6a",  # Completed - green
+    "job_failed": "#ef5350",  # Failed - red
+    "job_cancelled": "#ab47bc",  # Cancelled - purple
     # Border colors
-    "border": "#2a2f36",          # Standard border
-    "border_light": "#3a4046",    # Light border (hover)
-    "border_focus": "#4a9eff",    # Focus ring
+    "border": "#2a2f36",  # Standard border
+    "border_light": "#3a4046",  # Light border (hover)
+    "border_focus": "#4a9eff",  # Focus ring
 }
 
 # Main application stylesheet

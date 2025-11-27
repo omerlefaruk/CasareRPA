@@ -22,8 +22,11 @@ from .types import (
     SCHEMA_VERSION,
 )
 
-# Base node and port classes
-from .base_node import BaseNode, Port
+# Base node class
+from .base_node import BaseNode
+
+# Port is now in domain layer, but re-exported here for backward compatibility
+from ..domain.value_objects import Port
 
 # Workflow schema and related classes
 from .workflow_schema import (

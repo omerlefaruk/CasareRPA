@@ -1,6 +1,8 @@
 """Visual nodes for rest_api category."""
+
 import inspect
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualHttpRequestNode(VisualNode):
     """Visual representation of HttpRequestNode."""
@@ -14,17 +16,35 @@ class VisualHttpRequestNode(VisualNode):
         """Initialize HTTP Request node."""
         super().__init__()
         self.add_text_input("url", "URL", text="", tab="inputs")
-        self.add_combo_menu("method", "Method", items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], tab="config")
+        self.add_combo_menu(
+            "method",
+            "Method",
+            items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+            tab="config",
+        )
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         self.create_property("follow_redirects", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
-        self.add_text_input("max_redirects", "Max Redirects", placeholder_text="10", tab="advanced")
-        self.add_combo_menu("response_encoding", "Response Encoding", items=["utf-8", "latin-1", "ascii", "auto"], tab="advanced")
+        self.add_text_input(
+            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
+        self.add_text_input(
+            "max_redirects", "Max Redirects", placeholder_text="10", tab="advanced"
+        )
+        self.add_combo_menu(
+            "response_encoding",
+            "Response Encoding",
+            items=["utf-8", "latin-1", "ascii", "auto"],
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -41,6 +61,7 @@ class VisualHttpRequestNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualHttpGetNode(VisualNode):
     """Visual representation of HttpGetNode."""
 
@@ -56,8 +77,12 @@ class VisualHttpGetNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -72,6 +97,7 @@ class VisualHttpGetNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualHttpPostNode(VisualNode):
     """Visual representation of HttpPostNode."""
 
@@ -85,12 +111,25 @@ class VisualHttpPostNode(VisualNode):
         super().__init__()
         self.add_text_input("url", "URL", text="", tab="inputs")
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
-        self.add_combo_menu("content_type", "Content Type", items=["application/json", "application/x-www-form-urlencoded", "text/plain"], tab="config")
+        self.add_combo_menu(
+            "content_type",
+            "Content Type",
+            items=[
+                "application/json",
+                "application/x-www-form-urlencoded",
+                "text/plain",
+            ],
+            tab="config",
+        )
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -104,6 +143,7 @@ class VisualHttpPostNode(VisualNode):
         self.add_output("status_code")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualHttpPutNode(VisualNode):
     """Visual representation of HttpPutNode."""
@@ -121,8 +161,12 @@ class VisualHttpPutNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -136,6 +180,7 @@ class VisualHttpPutNode(VisualNode):
         self.add_output("status_code")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualHttpPatchNode(VisualNode):
     """Visual representation of HttpPatchNode."""
@@ -153,8 +198,12 @@ class VisualHttpPatchNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -168,6 +217,7 @@ class VisualHttpPatchNode(VisualNode):
         self.add_output("status_code")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualHttpDeleteNode(VisualNode):
     """Visual representation of HttpDeleteNode."""
@@ -184,8 +234,12 @@ class VisualHttpDeleteNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -197,6 +251,7 @@ class VisualHttpDeleteNode(VisualNode):
         self.add_output("status_code")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualSetHttpHeadersNode(VisualNode):
     """Visual representation of SetHttpHeadersNode."""
@@ -222,6 +277,7 @@ class VisualSetHttpHeadersNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("headers")
 
+
 class VisualHttpAuthNode(VisualNode):
     """Visual representation of HttpAuthNode."""
 
@@ -233,11 +289,15 @@ class VisualHttpAuthNode(VisualNode):
     def __init__(self) -> None:
         """Initialize HTTP Auth node."""
         super().__init__()
-        self.add_combo_menu("auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config")
+        self.add_combo_menu(
+            "auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config"
+        )
         self.add_text_input("token", "Token/API Key", text="", tab="inputs")
         self.add_text_input("username", "Username", text="", tab="inputs")
         self.add_text_input("password", "Password", text="", tab="inputs")
-        self.add_text_input("api_key_name", "API Key Header", text="X-API-Key", tab="inputs")
+        self.add_text_input(
+            "api_key_name", "API Key Header", text="X-API-Key", tab="inputs"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -248,6 +308,7 @@ class VisualHttpAuthNode(VisualNode):
         self.add_input("base_headers")
         self.add_output("exec_out")
         self.add_output("headers")
+
 
 class VisualParseJsonResponseNode(VisualNode):
     """Visual representation of ParseJsonResponseNode."""
@@ -274,6 +335,7 @@ class VisualParseJsonResponseNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualHttpDownloadFileNode(VisualNode):
     """Visual representation of HttpDownloadFileNode."""
 
@@ -291,10 +353,18 @@ class VisualHttpDownloadFileNode(VisualNode):
         self.create_property("overwrite", True, widget_type=1, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
-        self.add_text_input("chunk_size", "Chunk Size (bytes)", placeholder_text="8192", tab="advanced")
+        self.add_text_input(
+            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
+        self.add_text_input(
+            "chunk_size", "Chunk Size (bytes)", placeholder_text="8192", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -307,6 +377,7 @@ class VisualHttpDownloadFileNode(VisualNode):
         self.add_output("file_size")
         self.add_output("success")
         self.add_output("error")
+
 
 class VisualHttpUploadFileNode(VisualNode):
     """Visual representation of HttpUploadFileNode."""
@@ -339,6 +410,7 @@ class VisualHttpUploadFileNode(VisualNode):
         self.add_output("success")
         self.add_output("error")
 
+
 class VisualBuildUrlNode(VisualNode):
     """Visual representation of BuildUrlNode."""
 
@@ -368,11 +440,19 @@ def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""
     classes = []
     for name, obj in globals().items():
-        if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
+        if (
+            inspect.isclass(obj)
+            and issubclass(obj, VisualNode)
+            and obj is not VisualNode
+        ):
             # Ensure it has a valid NODE_NAME and is not a base class
-            if hasattr(obj, 'NODE_NAME') and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
+            if (
+                hasattr(obj, "NODE_NAME")
+                and obj.NODE_NAME
+                and obj.NODE_NAME != "Visual Node"
+            ):
                 # Skip internal nodes from menu (they're created programmatically)
-                if getattr(obj, 'INTERNAL_NODE', False):
+                if getattr(obj, "INTERNAL_NODE", False):
                     continue
                 classes.append(obj)
     return classes
@@ -382,8 +462,16 @@ def _get_all_visual_node_classes():
     """Get ALL visual node classes including internal ones (for registration)."""
     classes = []
     for name, obj in globals().items():
-        if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
-            if hasattr(obj, 'NODE_NAME') and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
+        if (
+            inspect.isclass(obj)
+            and issubclass(obj, VisualNode)
+            and obj is not VisualNode
+        ):
+            if (
+                hasattr(obj, "NODE_NAME")
+                and obj.NODE_NAME
+                and obj.NODE_NAME != "Visual Node"
+            ):
                 classes.append(obj)
     return classes
 
@@ -393,4 +481,3 @@ VISUAL_NODE_CLASSES = _get_visual_node_classes()
 
 # ALL_VISUAL_NODE_CLASSES - for registration (includes internal nodes)
 ALL_VISUAL_NODE_CLASSES = _get_all_visual_node_classes()
-

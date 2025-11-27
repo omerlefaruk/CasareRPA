@@ -2,6 +2,7 @@
 Orchestrator Engine - Integrates job queue, scheduler, dispatcher, and triggers.
 The main orchestration logic for CasareRPA.
 """
+
 import asyncio
 from datetime import datetime
 from typing import Optional, Dict, List, Any, Callable
@@ -10,22 +11,28 @@ import uuid
 from loguru import logger
 
 from .models import (
-    Job, JobStatus, JobPriority, Robot, RobotStatus,
-    Workflow, WorkflowStatus, Schedule, ScheduleFrequency,
-    DashboardMetrics
+    Job,
+    JobStatus,
+    JobPriority,
+    Robot,
+    RobotStatus,
+    Schedule,
+    ScheduleFrequency,
 )
 from .services import OrchestratorService
-from .job_queue import JobQueue, JobStateMachine
-from .scheduler import JobScheduler, ScheduleManager, calculate_next_run
+from .job_queue import JobQueue
+from .scheduler import JobScheduler, calculate_next_run
 
 try:
     from .dispatcher import JobDispatcher, LoadBalancingStrategy, RobotPool
+
     HAS_DISPATCHER = True
 except ImportError:
     HAS_DISPATCHER = False
 
 try:
     from .server import OrchestratorServer
+
     HAS_SERVER = True
 except ImportError:
     HAS_SERVER = False
@@ -34,6 +41,7 @@ except ImportError:
 try:
     from ..triggers.manager import TriggerManager
     from ..triggers.base import TriggerEvent
+
     HAS_TRIGGERS = True
 except ImportError:
     HAS_TRIGGERS = False
@@ -61,7 +69,7 @@ class OrchestratorEngine:
         dispatch_interval: int = 5,
         timeout_check_interval: int = 30,
         default_job_timeout: int = 3600,
-        trigger_webhook_port: int = 8766
+        trigger_webhook_port: int = 8766,
     ):
         """
         Initialize orchestrator engine.
@@ -80,7 +88,7 @@ class OrchestratorEngine:
         self._job_queue = JobQueue(
             dedup_window_seconds=300,
             default_timeout_seconds=default_job_timeout,
-            on_state_change=self._on_job_state_change
+            on_state_change=self._on_job_state_change,
         )
 
         self._scheduler: Optional[JobScheduler] = None
@@ -92,18 +100,16 @@ class OrchestratorEngine:
             self._dispatcher = JobDispatcher(
                 strategy=strategy,
                 dispatch_interval_seconds=dispatch_interval,
-                health_check_interval_seconds=30
+                health_check_interval_seconds=30,
             )
             self._dispatcher.set_callbacks(
                 on_robot_status_change=self._on_robot_status_change,
-                on_job_dispatched=self._on_job_dispatched
+                on_job_dispatched=self._on_job_dispatched,
             )
 
         # Initialize trigger manager
         if HAS_TRIGGERS:
-            self._trigger_manager = TriggerManager(
-                webhook_port=trigger_webhook_port
-            )
+            self._trigger_manager = TriggerManager(webhook_port=trigger_webhook_port)
 
         # Configuration
         self._dispatch_interval = dispatch_interval
@@ -159,12 +165,8 @@ class OrchestratorEngine:
 
         # Start background tasks
         self._running = True
-        self._background_tasks.append(
-            asyncio.create_task(self._timeout_check_loop())
-        )
-        self._background_tasks.append(
-            asyncio.create_task(self._persist_loop())
-        )
+        self._background_tasks.append(asyncio.create_task(self._timeout_check_loop()))
+        self._background_tasks.append(asyncio.create_task(self._persist_loop()))
 
         logger.info("OrchestratorEngine started")
 
@@ -252,7 +254,9 @@ class OrchestratorEngine:
 
         await self._service.update_robot_status(robot_id, RobotStatus.OFFLINE)
 
-    async def _on_server_job_progress(self, job_id: str, progress: int, current_node: str):
+    async def _on_server_job_progress(
+        self, job_id: str, progress: int, current_node: str
+    ):
         """Handle job progress from robot."""
         await self.update_job_progress(job_id, progress, current_node)
 
@@ -346,7 +350,7 @@ class OrchestratorEngine:
         priority: JobPriority = JobPriority.NORMAL,
         scheduled_time: Optional[datetime] = None,
         params: Optional[Dict] = None,
-        check_duplicate: bool = True
+        check_duplicate: bool = True,
     ) -> Optional[Job]:
         """
         Submit a new job to the queue.
@@ -375,7 +379,7 @@ class OrchestratorEngine:
             status=JobStatus.PENDING,
             priority=priority,
             scheduled_time=scheduled_time,
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.utcnow().isoformat(),
         )
 
         # If scheduled for future, create a one-time schedule
@@ -411,7 +415,7 @@ class OrchestratorEngine:
             frequency=ScheduleFrequency.ONCE,
             priority=job.priority,
             next_run=run_time,
-            enabled=True
+            enabled=True,
         )
 
         self._scheduler.add_schedule(schedule)
@@ -461,7 +465,11 @@ class OrchestratorEngine:
         if not original:
             return None
 
-        if original.status not in (JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.TIMEOUT):
+        if original.status not in (
+            JobStatus.FAILED,
+            JobStatus.CANCELLED,
+            JobStatus.TIMEOUT,
+        ):
             logger.warning(f"Cannot retry job in {original.status.value} state")
             return None
 
@@ -472,14 +480,11 @@ class OrchestratorEngine:
             workflow_json=original.workflow_json,
             robot_id=original.robot_id if original.robot_id else None,
             priority=original.priority,
-            check_duplicate=False  # Allow retry
+            check_duplicate=False,  # Allow retry
         )
 
     async def update_job_progress(
-        self,
-        job_id: str,
-        progress: int,
-        current_node: str = ""
+        self, job_id: str, progress: int, current_node: str = ""
     ) -> bool:
         """
         Update job progress (called by robot).
@@ -501,11 +506,7 @@ class OrchestratorEngine:
 
         return success
 
-    async def complete_job(
-        self,
-        job_id: str,
-        result: Optional[Dict] = None
-    ) -> bool:
+    async def complete_job(self, job_id: str, result: Optional[Dict] = None) -> bool:
         """
         Mark a job as completed (called by robot).
 
@@ -530,11 +531,7 @@ class OrchestratorEngine:
 
         return success
 
-    async def fail_job(
-        self,
-        job_id: str,
-        error_message: str
-    ) -> bool:
+    async def fail_job(self, job_id: str, error_message: str) -> bool:
         """
         Mark a job as failed (called by robot).
 
@@ -567,7 +564,7 @@ class OrchestratorEngine:
         name: str,
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ) -> Robot:
         """
         Register a robot with the orchestrator.
@@ -591,7 +588,7 @@ class OrchestratorEngine:
             current_jobs=0,
             last_seen=datetime.utcnow(),
             last_heartbeat=datetime.utcnow(),
-            tags=tags or []
+            tags=tags or [],
         )
 
         # Register with dispatcher
@@ -665,7 +662,7 @@ class OrchestratorEngine:
         robot_id: Optional[str] = None,
         priority: JobPriority = JobPriority.NORMAL,
         timezone: str = "UTC",
-        enabled: bool = True
+        enabled: bool = True,
     ) -> Optional[Schedule]:
         """
         Create a new schedule.
@@ -695,13 +692,11 @@ class OrchestratorEngine:
             timezone=timezone,
             enabled=enabled,
             priority=priority,
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.utcnow().isoformat(),
         )
 
         # Calculate next run
-        schedule.next_run = calculate_next_run(
-            frequency, cron_expression, timezone
-        )
+        schedule.next_run = calculate_next_run(frequency, cron_expression, timezone)
 
         # Add to scheduler
         if self._scheduler and enabled:
@@ -733,17 +728,19 @@ class OrchestratorEngine:
 
     # ==================== EVENT HANDLERS ====================
 
-    def _on_job_state_change(self, job: Job, old_status: JobStatus, new_status: JobStatus):
+    def _on_job_state_change(
+        self, job: Job, old_status: JobStatus, new_status: JobStatus
+    ):
         """Handle job state changes from queue."""
         logger.debug(f"Job {job.id[:8]}: {old_status.value} -> {new_status.value}")
 
-    def _on_robot_status_change(self, robot: Robot, old_status: RobotStatus, new_status: RobotStatus):
+    def _on_robot_status_change(
+        self, robot: Robot, old_status: RobotStatus, new_status: RobotStatus
+    ):
         """Handle robot status changes."""
         logger.info(f"Robot '{robot.name}': {old_status.value} -> {new_status.value}")
         # Persist status change
-        asyncio.create_task(
-            self._service.update_robot_status(robot.id, new_status)
-        )
+        asyncio.create_task(self._service.update_robot_status(robot.id, new_status))
 
     async def _on_job_dispatched(self, job: Job, robot: Robot):
         """Handle job dispatch."""
@@ -768,7 +765,7 @@ class OrchestratorEngine:
             workflow_json=workflow.json_definition,
             robot_id=schedule.robot_id,
             priority=schedule.priority,
-            check_duplicate=True
+            check_duplicate=True,
         )
 
     # ==================== BACKGROUND TASKS ====================
@@ -814,8 +811,12 @@ class OrchestratorEngine:
             "workflow_name": job.workflow_name,
             "robot_id": job.robot_id,
             "robot_name": job.robot_name,
-            "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
-            "priority": job.priority.value if isinstance(job.priority, JobPriority) else job.priority,
+            "status": job.status.value
+            if isinstance(job.status, JobStatus)
+            else job.status,
+            "priority": job.priority.value
+            if isinstance(job.priority, JobPriority)
+            else job.priority,
             "workflow": job.workflow_json,
             "scheduled_time": job.scheduled_time,
             "started_at": job.started_at,
@@ -851,10 +852,7 @@ class OrchestratorEngine:
     # ==================== TRIGGER MANAGEMENT ====================
 
     async def register_trigger(
-        self,
-        trigger_config: Dict[str, Any],
-        scenario_id: str,
-        workflow_id: str
+        self, trigger_config: Dict[str, Any], scenario_id: str, workflow_id: str
     ) -> bool:
         """
         Register a trigger with the trigger manager.
@@ -874,15 +872,15 @@ class OrchestratorEngine:
         from ..triggers.base import BaseTriggerConfig
 
         config = BaseTriggerConfig(
-            id=trigger_config.get('id', str(uuid.uuid4())),
-            name=trigger_config.get('name', 'Unnamed Trigger'),
-            trigger_type=trigger_config.get('type', 'manual'),
+            id=trigger_config.get("id", str(uuid.uuid4())),
+            name=trigger_config.get("name", "Unnamed Trigger"),
+            trigger_type=trigger_config.get("type", "manual"),
             scenario_id=scenario_id,
             workflow_id=workflow_id,
-            enabled=trigger_config.get('enabled', True),
-            priority=trigger_config.get('priority', 1),
-            cooldown_seconds=trigger_config.get('cooldown_seconds', 0),
-            config=trigger_config.get('config', {})
+            enabled=trigger_config.get("enabled", True),
+            priority=trigger_config.get("priority", 1),
+            cooldown_seconds=trigger_config.get("cooldown_seconds", 0),
+            config=trigger_config.get("config", {}),
         )
 
         # Set up event callback to create jobs
@@ -925,7 +923,9 @@ class OrchestratorEngine:
             return True
         return False
 
-    async def fire_trigger_manually(self, trigger_id: str, payload: Optional[Dict] = None) -> bool:
+    async def fire_trigger_manually(
+        self, trigger_id: str, payload: Optional[Dict] = None
+    ) -> bool:
         """
         Manually fire a trigger.
 
@@ -950,7 +950,7 @@ class OrchestratorEngine:
             return {"available": False}
 
         triggers = self._trigger_manager.list_triggers()
-        active_count = sum(1 for t in triggers if t.get('status') == 'active')
+        active_count = sum(1 for t in triggers if t.get("status") == "active")
         total_count = len(triggers)
 
         return {
@@ -958,7 +958,7 @@ class OrchestratorEngine:
             "total_triggers": total_count,
             "active_triggers": active_count,
             "webhook_port": self._trigger_webhook_port,
-            "triggers": triggers
+            "triggers": triggers,
         }
 
     async def _on_trigger_fired(self, event: "TriggerEvent"):
@@ -972,7 +972,11 @@ class OrchestratorEngine:
 
         # Get workflow for this trigger
         # The workflow_id should be stored in the trigger config
-        trigger = self._trigger_manager.get_trigger(event.trigger_id) if self._trigger_manager else None
+        trigger = (
+            self._trigger_manager.get_trigger(event.trigger_id)
+            if self._trigger_manager
+            else None
+        )
         if not trigger:
             logger.error(f"Trigger {event.trigger_id} not found")
             return
@@ -983,7 +987,9 @@ class OrchestratorEngine:
         # Load workflow
         workflow = await self._service.get_workflow(workflow_id)
         if not workflow:
-            logger.error(f"Workflow {workflow_id} not found for trigger {event.trigger_id}")
+            logger.error(
+                f"Workflow {workflow_id} not found for trigger {event.trigger_id}"
+            )
             return
 
         # Submit job with trigger payload as input
@@ -991,12 +997,14 @@ class OrchestratorEngine:
             workflow_id=workflow.id,
             workflow_name=workflow.name,
             workflow_json=workflow.json_definition,
-            priority=JobPriority(event.priority) if event.priority <= 3 else JobPriority.NORMAL,
+            priority=JobPriority(event.priority)
+            if event.priority <= 3
+            else JobPriority.NORMAL,
             input_data={
                 "trigger_id": event.trigger_id,
                 "trigger_type": event.trigger_type,
                 "trigger_payload": event.payload,
                 "trigger_metadata": event.metadata,
-                "scenario_id": scenario_id
-            }
+                "scenario_id": scenario_id,
+            },
         )

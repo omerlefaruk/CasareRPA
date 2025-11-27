@@ -10,11 +10,10 @@ Provides nodes for direct mouse and keyboard input:
 - DragMouseNode: Drag from one position to another
 """
 
-from typing import Any, Dict, Optional
-from loguru import logger
+from typing import Any, Dict
 
 from ...core.base_node import BaseNode
-from ...core.types import PortType, DataType, NodeStatus
+from ...core.types import DataType, NodeStatus
 from ...desktop import DesktopContext
 
 
@@ -47,7 +46,12 @@ class MoveMouseNode(BaseNode):
         - final_y: Final Y position
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Move Mouse"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Move Mouse",
+    ):
         default_config = {
             "duration": 0.0,
             "ease": "linear",  # linear, ease_in, ease_out, ease_in_out
@@ -81,19 +85,20 @@ class MoveMouseNode(BaseNode):
         if y is None:
             raise ValueError("Y coordinate is required")
 
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
         # Pass ease and steps to desktop context if supported
         move_kwargs = {}
-        if hasattr(desktop_ctx, 'move_mouse'):
+        if hasattr(desktop_ctx, "move_mouse"):
             import inspect
+
             sig = inspect.signature(desktop_ctx.move_mouse)
-            if 'ease' in sig.parameters:
-                move_kwargs['ease'] = ease
-            if 'steps' in sig.parameters:
-                move_kwargs['steps'] = steps
+            if "ease" in sig.parameters:
+                move_kwargs["ease"] = ease
+            if "steps" in sig.parameters:
+                move_kwargs["steps"] = steps
 
         success = desktop_ctx.move_mouse(int(x), int(y), float(duration), **move_kwargs)
 
@@ -102,13 +107,7 @@ class MoveMouseNode(BaseNode):
         self.set_output_value("final_y", int(y))
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
 
-        return {
-            "success": success,
-            "x": x,
-            "y": y,
-            "duration": duration,
-            "ease": ease
-        }
+        return {"success": success, "x": x, "y": y, "duration": duration, "ease": ease}
 
 
 class MouseClickNode(BaseNode):
@@ -134,7 +133,12 @@ class MouseClickNode(BaseNode):
         - click_y: Y coordinate where click occurred
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Mouse Click"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Mouse Click",
+    ):
         default_config = {
             "button": "left",
             "click_type": "single",
@@ -176,7 +180,7 @@ class MouseClickNode(BaseNode):
         elif click_type == "triple":
             click_count = 3
 
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
@@ -199,14 +203,15 @@ class MouseClickNode(BaseNode):
 
         # Add optional parameters if supported
         import inspect
-        if hasattr(desktop_ctx, 'click_mouse'):
+
+        if hasattr(desktop_ctx, "click_mouse"):
             sig = inspect.signature(desktop_ctx.click_mouse)
-            if 'modifiers' in sig.parameters and modifiers:
-                click_kwargs['modifiers'] = modifiers
-            if 'click_count' in sig.parameters:
-                click_kwargs['click_count'] = click_count
-            if 'delay' in sig.parameters and delay > 0:
-                click_kwargs['delay'] = delay
+            if "modifiers" in sig.parameters and modifiers:
+                click_kwargs["modifiers"] = modifiers
+            if "click_count" in sig.parameters:
+                click_kwargs["click_count"] = click_count
+            if "delay" in sig.parameters and delay > 0:
+                click_kwargs["delay"] = delay
 
         success = desktop_ctx.click_mouse(**click_kwargs)
 
@@ -221,7 +226,7 @@ class MouseClickNode(BaseNode):
             "y": y,
             "button": button,
             "click_type": click_type,
-            "modifiers": modifiers
+            "modifiers": modifiers,
         }
 
 
@@ -248,7 +253,12 @@ class SendKeysNode(BaseNode):
     Special keys can be enclosed in braces: {Enter}, {Tab}, {Ctrl}, etc.
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Send Keys"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Send Keys",
+    ):
         default_config = {
             "interval": 0.0,
             "with_shift": False,
@@ -281,13 +291,13 @@ class SendKeysNode(BaseNode):
         clear_first = self.config.get("clear_first", False)
 
         # Resolve {{variable}} patterns in keys
-        if hasattr(context, 'resolve_value') and keys:
+        if hasattr(context, "resolve_value") and keys:
             keys = context.resolve_value(keys)
 
         if not keys:
             raise ValueError("Keys to send are required")
 
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
@@ -306,8 +316,10 @@ class SendKeysNode(BaseNode):
             modifiers.append("alt")
 
         # Send keys with or without modifiers
-        if modifiers and hasattr(desktop_ctx, 'send_keys_with_modifiers'):
-            success = desktop_ctx.send_keys_with_modifiers(str(keys), modifiers, float(interval))
+        if modifiers and hasattr(desktop_ctx, "send_keys_with_modifiers"):
+            success = desktop_ctx.send_keys_with_modifiers(
+                str(keys), modifiers, float(interval)
+            )
         else:
             success = desktop_ctx.send_keys(str(keys), float(interval))
 
@@ -323,7 +335,7 @@ class SendKeysNode(BaseNode):
             "success": success,
             "keys": keys,
             "interval": interval,
-            "modifiers": modifiers
+            "modifiers": modifiers,
         }
 
 
@@ -343,12 +355,17 @@ class SendHotKeyNode(BaseNode):
         - success: Whether the operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Send Hotkey"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Send Hotkey",
+    ):
         default_config = {
             "modifier": "none",
             "key": "Enter",
             "keys": "",
-            "wait_time": 0.0  # Delay after sending hotkey (seconds)
+            "wait_time": 0.0,  # Delay after sending hotkey (seconds)
         }
         if config:
             default_config.update(config)
@@ -358,8 +375,12 @@ class SendHotKeyNode(BaseNode):
 
     def _define_ports(self):
         """Define input and output ports"""
-        self.add_input_port("keys", DataType.STRING, "Hotkey combination (e.g., 'Ctrl,C')")
-        self.add_input_port("wait_time", DataType.FLOAT, "Delay after sending (seconds)")
+        self.add_input_port(
+            "keys", DataType.STRING, "Hotkey combination (e.g., 'Ctrl,C')"
+        )
+        self.add_input_port(
+            "wait_time", DataType.FLOAT, "Delay after sending (seconds)"
+        )
         self.add_output_port("success", DataType.BOOLEAN, "Operation success")
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -368,7 +389,7 @@ class SendHotKeyNode(BaseNode):
         keys_input = self.get_input_value("keys")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value') and keys_input:
+        if hasattr(context, "resolve_value") and keys_input:
             keys_input = context.resolve_value(keys_input)
 
         # Determine which keys to send
@@ -378,7 +399,7 @@ class SendHotKeyNode(BaseNode):
         elif self.config.get("keys"):
             # Custom keys from config
             keys_str = self.config.get("keys")
-            if hasattr(context, 'resolve_value'):
+            if hasattr(context, "resolve_value"):
                 keys_str = context.resolve_value(keys_str)
         else:
             # Build from modifier + key
@@ -386,7 +407,7 @@ class SendHotKeyNode(BaseNode):
             key = self.config.get("key", "Enter")
 
             # Resolve variables
-            if hasattr(context, 'resolve_value'):
+            if hasattr(context, "resolve_value"):
                 modifier = context.resolve_value(str(modifier))
                 key = context.resolve_value(str(key))
 
@@ -402,7 +423,7 @@ class SendHotKeyNode(BaseNode):
         # Parse comma-separated keys
         keys = [k.strip() for k in str(keys_str).split(",")]
 
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
@@ -414,15 +435,13 @@ class SendHotKeyNode(BaseNode):
             wait_time = float(self.config.get("wait_time") or 0.0)
         if wait_time > 0:
             import asyncio
+
             await asyncio.sleep(float(wait_time))
 
         self.set_output_value("success", success)
         self.status = NodeStatus.SUCCESS if success else NodeStatus.FAILED
 
-        return {
-            "success": success,
-            "keys": keys
-        }
+        return {"success": success, "keys": keys}
 
 
 class GetMousePositionNode(BaseNode):
@@ -434,7 +453,12 @@ class GetMousePositionNode(BaseNode):
         - y: Current Y coordinate
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Get Mouse Position"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Get Mouse Position",
+    ):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetMousePositionNode"
@@ -446,7 +470,7 @@ class GetMousePositionNode(BaseNode):
 
     async def execute(self, context) -> Dict[str, Any]:
         """Get current mouse position"""
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
@@ -456,11 +480,7 @@ class GetMousePositionNode(BaseNode):
         self.set_output_value("y", y)
         self.status = NodeStatus.SUCCESS
 
-        return {
-            "success": True,
-            "x": x,
-            "y": y
-        }
+        return {"success": True, "x": x, "y": y}
 
 
 class DragMouseNode(BaseNode):
@@ -481,11 +501,13 @@ class DragMouseNode(BaseNode):
         - success: Whether the operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Drag Mouse"):
-        default_config = {
-            "button": "left",
-            "duration": 0.5
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Drag Mouse",
+    ):
+        default_config = {"button": "left", "duration": 0.5}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -515,15 +537,17 @@ class DragMouseNode(BaseNode):
         if end_x is None or end_y is None:
             raise ValueError("End coordinates are required")
 
-        if not hasattr(context, 'desktop_context') or context.desktop_context is None:
+        if not hasattr(context, "desktop_context") or context.desktop_context is None:
             context.desktop_context = DesktopContext()
         desktop_ctx = context.desktop_context
 
         success = desktop_ctx.drag_mouse(
-            int(start_x), int(start_y),
-            int(end_x), int(end_y),
+            int(start_x),
+            int(start_y),
+            int(end_x),
+            int(end_y),
             button=button,
-            duration=float(duration)
+            duration=float(duration),
         )
 
         self.set_output_value("success", success)
@@ -536,5 +560,5 @@ class DragMouseNode(BaseNode):
             "end_x": end_x,
             "end_y": end_y,
             "button": button,
-            "duration": duration
+            "duration": duration,
         }

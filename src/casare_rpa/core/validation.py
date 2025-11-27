@@ -13,15 +13,15 @@ from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, Tuple
 from loguru import logger
 
-from .types import DataType, ErrorCode, SCHEMA_VERSION
+from .types import SCHEMA_VERSION
 
 
 class ValidationSeverity(Enum):
     """Severity level of validation issues."""
 
-    ERROR = auto()    # Prevents workflow execution
+    ERROR = auto()  # Prevents workflow execution
     WARNING = auto()  # May cause issues, but execution can proceed
-    INFO = auto()     # Informational message
+    INFO = auto()  # Informational message
 
 
 @dataclass
@@ -80,13 +80,15 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add an error-level issue."""
-        self.issues.append(ValidationIssue(
-            severity=ValidationSeverity.ERROR,
-            code=code,
-            message=message,
-            location=location,
-            suggestion=suggestion,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                severity=ValidationSeverity.ERROR,
+                code=code,
+                message=message,
+                location=location,
+                suggestion=suggestion,
+            )
+        )
         self.is_valid = False
 
     def add_warning(
@@ -97,13 +99,15 @@ class ValidationResult:
         suggestion: Optional[str] = None,
     ) -> None:
         """Add a warning-level issue."""
-        self.issues.append(ValidationIssue(
-            severity=ValidationSeverity.WARNING,
-            code=code,
-            message=message,
-            location=location,
-            suggestion=suggestion,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                severity=ValidationSeverity.WARNING,
+                code=code,
+                message=message,
+                location=location,
+                suggestion=suggestion,
+            )
+        )
 
     def add_info(
         self,
@@ -112,12 +116,14 @@ class ValidationResult:
         location: Optional[str] = None,
     ) -> None:
         """Add an info-level issue."""
-        self.issues.append(ValidationIssue(
-            severity=ValidationSeverity.INFO,
-            code=code,
-            message=message,
-            location=location,
-        ))
+        self.issues.append(
+            ValidationIssue(
+                severity=ValidationSeverity.INFO,
+                code=code,
+                message=message,
+                location=location,
+            )
+        )
 
     def merge(self, other: "ValidationResult") -> None:
         """Merge another validation result into this one."""
@@ -141,7 +147,9 @@ class ValidationResult:
 
         lines = []
         if not self.is_valid:
-            lines.append(f"Validation FAILED: {self.error_count} error(s), {self.warning_count} warning(s)")
+            lines.append(
+                f"Validation FAILED: {self.error_count} error(s), {self.warning_count} warning(s)"
+            )
         else:
             lines.append(f"Validation passed with {self.warning_count} warning(s)")
 
@@ -159,6 +167,7 @@ class ValidationResult:
 # Schema Definitions
 # ============================================================================
 
+
 # Valid node types (matches NODE_TYPE_MAP in workflow_loader.py)
 # VALID_NODE_TYPES is dynamically generated from NODE_TYPE_MAP to stay in sync
 # This avoids manual maintenance of a hardcoded list
@@ -171,17 +180,29 @@ def _get_valid_node_types() -> Set[str]:
     """
     try:
         from ..utils.workflow.workflow_loader import NODE_TYPE_MAP
+
         return set(NODE_TYPE_MAP.keys())
     except ImportError:
         # Fallback to a minimal set if workflow_loader isn't available
         logger.warning("Could not import NODE_TYPE_MAP, using minimal node set")
         return {
-            "StartNode", "EndNode", "IfNode", "ForLoopStartNode", "ForLoopEndNode",
-            "WhileLoopStartNode", "WhileLoopEndNode", "SetVariableNode", "GetVariableNode", "LogNode", "CommentNode",
+            "StartNode",
+            "EndNode",
+            "IfNode",
+            "ForLoopStartNode",
+            "ForLoopEndNode",
+            "WhileLoopStartNode",
+            "WhileLoopEndNode",
+            "SetVariableNode",
+            "GetVariableNode",
+            "LogNode",
+            "CommentNode",
         }
+
 
 # Lazily evaluated to avoid circular imports
 _valid_node_types_cache: Optional[Set[str]] = None
+
 
 def get_valid_node_types() -> Set[str]:
     """Get the set of valid node types."""
@@ -189,6 +210,7 @@ def get_valid_node_types() -> Set[str]:
     if _valid_node_types_cache is None:
         _valid_node_types_cache = _get_valid_node_types()
     return _valid_node_types_cache
+
 
 # Legacy alias for backwards compatibility (will be evaluated lazily when accessed)
 VALID_NODE_TYPES: Set[str] = set()  # Placeholder, use get_valid_node_types() instead
@@ -198,13 +220,26 @@ NODE_REQUIRED_FIELDS: Set[str] = {"node_id", "node_type"}
 
 # Required fields for connection data
 CONNECTION_REQUIRED_FIELDS: Set[str] = {
-    "source_node", "source_port", "target_node", "target_port"
+    "source_node",
+    "source_port",
+    "target_node",
+    "target_port",
 }
 
 # Data type compatibility matrix (source -> compatible targets)
 DATA_TYPE_COMPATIBILITY: Dict[str, Set[str]] = {
-    "ANY": {"STRING", "INTEGER", "FLOAT", "BOOLEAN", "LIST", "DICT", "ANY",
-            "ELEMENT", "PAGE", "BROWSER"},
+    "ANY": {
+        "STRING",
+        "INTEGER",
+        "FLOAT",
+        "BOOLEAN",
+        "LIST",
+        "DICT",
+        "ANY",
+        "ELEMENT",
+        "PAGE",
+        "BROWSER",
+    },
     "STRING": {"STRING", "ANY"},
     "INTEGER": {"INTEGER", "FLOAT", "STRING", "ANY"},
     "FLOAT": {"FLOAT", "STRING", "ANY"},
@@ -220,6 +255,7 @@ DATA_TYPE_COMPATIBILITY: Dict[str, Set[str]] = {
 # ============================================================================
 # Validation Functions
 # ============================================================================
+
 
 def validate_workflow(data: Dict[str, Any]) -> ValidationResult:
     """
@@ -295,6 +331,7 @@ def validate_connections(
 # ============================================================================
 # Internal Validation Helpers
 # ============================================================================
+
 
 def _validate_structure(data: Dict[str, Any], result: ValidationResult) -> None:
     """Validate top-level workflow structure."""
@@ -543,12 +580,22 @@ def _is_exec_port(port_name: str) -> bool:
         return False
     port_lower = port_name.lower()
     exec_port_names = {
-        "exec_in", "exec_out", "exec",
-        "loop_body", "completed",
-        "true", "false",
-        "then", "else",
-        "on_success", "on_error", "on_finally",
-        "body", "done", "finish", "next",
+        "exec_in",
+        "exec_out",
+        "exec",
+        "loop_body",
+        "completed",
+        "true",
+        "false",
+        "then",
+        "else",
+        "on_success",
+        "on_error",
+        "on_finally",
+        "body",
+        "done",
+        "finish",
+        "next",
     }
     return port_lower in exec_port_names or "exec" in port_lower
 
@@ -560,11 +607,16 @@ def _is_exec_input_port(port_name: str) -> bool:
     port_lower = port_name.lower()
     # These ports receive execution flow (are targets of exec connections)
     exec_input_names = {
-        "exec_in", "exec",
+        "exec_in",
+        "exec",
         "loop_body",  # ForLoop body input
-        "true", "false",  # If/Branch inputs
-        "then", "else",
-        "on_success", "on_error", "on_finally",
+        "true",
+        "false",  # If/Branch inputs
+        "then",
+        "else",
+        "on_success",
+        "on_error",
+        "on_finally",
         "body",
     }
     return port_lower in exec_input_names or port_lower == "exec_in"
@@ -768,6 +820,7 @@ def _find_reachable_nodes(
 # Quick Validation Helper
 # ============================================================================
 
+
 def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Quick validation returning simple tuple for backward compatibility.
@@ -779,8 +832,5 @@ def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         Tuple of (is_valid, list of error messages)
     """
     result = validate_workflow(data)
-    error_messages = [
-        f"{issue.code}: {issue.message}"
-        for issue in result.errors
-    ]
+    error_messages = [f"{issue.code}: {issue.message}" for issue in result.errors]
     return result.is_valid, error_messages

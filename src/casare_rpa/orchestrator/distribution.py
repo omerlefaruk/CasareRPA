@@ -2,8 +2,8 @@
 Workflow Distribution System for CasareRPA Orchestrator.
 Handles intelligent job distribution to robots with load balancing and capability matching.
 """
+
 import asyncio
-from datetime import datetime
 from typing import Optional, Dict, Any, List, Set, Callable
 from dataclasses import dataclass, field
 from enum import Enum
@@ -11,11 +11,12 @@ import random
 
 from loguru import logger
 
-from .models import Robot, RobotStatus, Job, JobStatus, Workflow
+from .models import Robot, RobotStatus, Job
 
 
 class DistributionStrategy(Enum):
     """Strategies for distributing jobs to robots."""
+
     ROUND_ROBIN = "round_robin"
     LEAST_LOADED = "least_loaded"
     RANDOM = "random"
@@ -26,6 +27,7 @@ class DistributionStrategy(Enum):
 @dataclass
 class DistributionRule:
     """Rule for job distribution."""
+
     name: str
     workflow_pattern: str = "*"  # Glob pattern for workflow names
     required_tags: List[str] = field(default_factory=list)
@@ -39,6 +41,7 @@ class DistributionRule:
 @dataclass
 class DistributionResult:
     """Result of a job distribution attempt."""
+
     success: bool
     job_id: str
     robot_id: Optional[str] = None
@@ -86,15 +89,14 @@ class RobotSelector:
         candidates = [r for r in available_robots if r.status == RobotStatus.ONLINE]
 
         # Filter by environment
-        job_env = getattr(job, 'environment', None)
+        job_env = getattr(job, "environment", None)
         if job_env:
             candidates = [r for r in candidates if r.environment == job_env]
 
         # Filter by required tags
         if required_tags:
             candidates = [
-                r for r in candidates
-                if all(tag in r.tags for tag in required_tags)
+                r for r in candidates if all(tag in r.tags for tag in required_tags)
             ]
 
         # Filter out excluded robots
@@ -143,10 +145,13 @@ class RobotSelector:
 
     def _select_least_loaded(self, robots: List[Robot]) -> Robot:
         """Select robot with fewest current jobs."""
-        return min(robots, key=lambda r: (
-            r.current_jobs / max(r.max_concurrent_jobs, 1),
-            r.metrics.get("cpu_percent", 0.0) if r.metrics else 0.0
-        ))
+        return min(
+            robots,
+            key=lambda r: (
+                r.current_jobs / max(r.max_concurrent_jobs, 1),
+                r.metrics.get("cpu_percent", 0.0) if r.metrics else 0.0,
+            ),
+        )
 
     def _select_random(self, robots: List[Robot]) -> Robot:
         """Select random robot."""
@@ -155,7 +160,7 @@ class RobotSelector:
     def _select_by_capability(self, job: Job, robots: List[Robot]) -> Robot:
         """Select robot with best capability match."""
         # Score robots by tag match
-        job_tags = set(getattr(job, 'tags', []) or [])
+        job_tags = set(getattr(job, "tags", []) or [])
 
         def score(robot: Robot) -> tuple:
             robot_tags = set(robot.tags or [])
@@ -267,7 +272,7 @@ class WorkflowDistributor:
         """Find the first rule that matches a job."""
         import fnmatch
 
-        job_env = getattr(job, 'environment', None)
+        job_env = getattr(job, "environment", None)
 
         for rule in self._rules:
             # Check workflow pattern
@@ -325,7 +330,9 @@ class WorkflowDistributor:
             # Select robot
             robot = self._selector.select(
                 job=job,
-                available_robots=[r for r in available_robots if r.id not in attempted_robots],
+                available_robots=[
+                    r for r in available_robots if r.id not in attempted_robots
+                ],
                 strategy=use_strategy,
                 required_tags=required_tags,
                 preferred_robots=preferred_robots,
@@ -357,7 +364,9 @@ class WorkflowDistributor:
 
                     if self._on_distribution_success:
                         try:
-                            callback_result = self._on_distribution_success(job.id, robot.id)
+                            callback_result = self._on_distribution_success(
+                                job.id, robot.id
+                            )
                             if asyncio.iscoroutine(callback_result):
                                 await callback_result
                         except Exception as e:
@@ -374,7 +383,9 @@ class WorkflowDistributor:
 
             except asyncio.TimeoutError:
                 retry_count += 1
-                logger.warning(f"Timeout distributing job {job.id[:8]} to robot {robot.id}")
+                logger.warning(
+                    f"Timeout distributing job {job.id[:8]} to robot {robot.id}"
+                )
 
             except Exception as e:
                 retry_count += 1
@@ -395,7 +406,9 @@ class WorkflowDistributor:
 
         if self._on_distribution_failure:
             try:
-                callback_result = self._on_distribution_failure(job.id, dist_result.message)
+                callback_result = self._on_distribution_failure(
+                    job.id, dist_result.message
+                )
                 if asyncio.iscoroutine(callback_result):
                     await callback_result
             except Exception as e:
@@ -421,7 +434,9 @@ class WorkflowDistributor:
         results = []
 
         # Sort jobs by priority (higher first)
-        sorted_jobs = sorted(jobs, key=lambda j: getattr(j.priority, 'value', j.priority), reverse=True)
+        sorted_jobs = sorted(
+            jobs, key=lambda j: getattr(j.priority, "value", j.priority), reverse=True
+        )
 
         for job in sorted_jobs:
             result = await self.distribute(job, available_robots)
@@ -430,8 +445,10 @@ class WorkflowDistributor:
             # Update available robots list
             if result.success and result.robot_id:
                 available_robots = [
-                    r for r in available_robots
-                    if r.id != result.robot_id or r.current_jobs < r.max_concurrent_jobs - 1
+                    r
+                    for r in available_robots
+                    if r.id != result.robot_id
+                    or r.current_jobs < r.max_concurrent_jobs - 1
                 ]
 
         return results
@@ -442,7 +459,9 @@ class WorkflowDistributor:
 
         # Trim history
         if len(self._distribution_history) > self._max_history:
-            self._distribution_history = self._distribution_history[-self._max_history:]
+            self._distribution_history = self._distribution_history[
+                -self._max_history :
+            ]
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get distribution statistics."""
@@ -457,7 +476,8 @@ class WorkflowDistributor:
             "success_rate": successful / total if total > 0 else 0.0,
             "avg_retry_count": (
                 sum(r.retry_count for r in self._distribution_history) / total
-                if total > 0 else 0.0
+                if total > 0
+                else 0.0
             ),
             "rules_count": len(self._rules),
         }
@@ -514,12 +534,12 @@ class JobRouter:
         eligible_ids: Set[str] = set()
 
         # Check environment routes
-        job_env = getattr(job, 'environment', None)
+        job_env = getattr(job, "environment", None)
         if job_env and job_env in self._routes:
             eligible_ids.update(self._routes[job_env])
 
         # Check tag routes
-        job_tags = getattr(job, 'tags', []) or []
+        job_tags = getattr(job, "tags", []) or []
         for tag in job_tags:
             if tag in self._tag_routes:
                 eligible_ids.update(self._tag_routes[tag])

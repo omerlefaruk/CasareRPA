@@ -2,6 +2,7 @@
 Service layer for CasareRPA Orchestrator.
 Handles business logic for jobs, schedules, workflows, and robots.
 """
+
 import os
 import asyncio
 import json
@@ -14,9 +15,16 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from .models import (
-    Robot, RobotStatus, Workflow, WorkflowStatus,
-    Job, JobStatus, JobPriority, Schedule, ScheduleFrequency,
-    DashboardMetrics, JobHistoryEntry
+    Robot,
+    RobotStatus,
+    Workflow,
+    WorkflowStatus,
+    Job,
+    JobStatus,
+    JobPriority,
+    Schedule,
+    DashboardMetrics,
+    JobHistoryEntry,
 )
 
 load_dotenv()
@@ -38,7 +46,12 @@ class LocalStorageService:
         self._schedules_file = self.storage_dir / "schedules.json"
 
         # Initialize files if they don't exist
-        for file_path in [self._robots_file, self._jobs_file, self._workflows_file, self._schedules_file]:
+        for file_path in [
+            self._robots_file,
+            self._jobs_file,
+            self._workflows_file,
+            self._schedules_file,
+        ]:
             if not file_path.exists():
                 file_path.write_text("[]")
 
@@ -78,7 +91,9 @@ class LocalStorageService:
         return self._save_json(self._robots_file, robots)
 
     # Jobs
-    def get_jobs(self, limit: int = 100, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_jobs(
+        self, limit: int = 100, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         jobs = self._load_json(self._jobs_file)
         if status:
             jobs = [j for j in jobs if j.get("status") == status]
@@ -167,6 +182,7 @@ class OrchestratorService:
 
         try:
             from supabase import create_client
+
             logger.info("Connecting to Supabase...")
             self._client = create_client(self._supabase_url, self._supabase_key)
             self._connected = True
@@ -187,7 +203,10 @@ class OrchestratorService:
         else:
             try:
                 response = await asyncio.to_thread(
-                    lambda: self._client.table("robots").select("*").order("last_seen", desc=True).execute()
+                    lambda: self._client.table("robots")
+                    .select("*")
+                    .order("last_seen", desc=True)
+                    .execute()
                 )
                 data = response.data
             except Exception as e:
@@ -223,7 +242,10 @@ class OrchestratorService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("robots").update(data).eq("id", robot_id).execute()
+                    lambda: self._client.table("robots")
+                    .update(data)
+                    .eq("id", robot_id)
+                    .execute()
                 )
                 return True
             except Exception as e:
@@ -236,7 +258,7 @@ class OrchestratorService:
         self,
         limit: int = 100,
         status: Optional[JobStatus] = None,
-        robot_id: Optional[str] = None
+        robot_id: Optional[str] = None,
     ) -> List[Job]:
         """Get jobs with optional filtering."""
         if self._use_local:
@@ -271,7 +293,10 @@ class OrchestratorService:
         else:
             try:
                 response = await asyncio.to_thread(
-                    lambda: self._client.table("jobs").select("*").eq("id", job_id).execute()
+                    lambda: self._client.table("jobs")
+                    .select("*")
+                    .eq("id", job_id)
+                    .execute()
                 )
                 if response.data:
                     return Job.from_dict(response.data[0])
@@ -297,7 +322,7 @@ class OrchestratorService:
         robot_id: str,
         robot_name: str = "",
         priority: JobPriority = JobPriority.NORMAL,
-        scheduled_time: Optional[datetime] = None
+        scheduled_time: Optional[datetime] = None,
     ) -> Optional[Job]:
         """Create a new job."""
         job_id = str(uuid.uuid4())
@@ -316,7 +341,7 @@ class OrchestratorService:
             "created_at": now,
             "progress": 0,
             "logs": "",
-            "error_message": ""
+            "error_message": "",
         }
 
         if self._use_local:
@@ -342,7 +367,7 @@ class OrchestratorService:
         progress: int = 0,
         current_node: str = "",
         error_message: str = "",
-        logs: str = ""
+        logs: str = "",
     ) -> bool:
         """Update job status and progress."""
         now = datetime.utcnow().isoformat()
@@ -350,12 +375,17 @@ class OrchestratorService:
             "status": status.value,
             "progress": progress,
             "current_node": current_node,
-            "updated_at": now
+            "updated_at": now,
         }
 
         if status == JobStatus.RUNNING:
             data["started_at"] = now
-        elif status in (JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.TIMEOUT):
+        elif status in (
+            JobStatus.COMPLETED,
+            JobStatus.FAILED,
+            JobStatus.CANCELLED,
+            JobStatus.TIMEOUT,
+        ):
             data["completed_at"] = now
             if error_message:
                 data["error_message"] = error_message
@@ -372,7 +402,10 @@ class OrchestratorService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("jobs").update(data).eq("id", job_id).execute()
+                    lambda: self._client.table("jobs")
+                    .update(data)
+                    .eq("id", job_id)
+                    .execute()
                 )
                 return True
             except Exception as e:
@@ -398,7 +431,7 @@ class OrchestratorService:
             data = {
                 "cancel_requested": True,
                 "cancel_reason": reason,
-                "updated_at": now
+                "updated_at": now,
             }
 
             if self._use_local:
@@ -411,7 +444,10 @@ class OrchestratorService:
             else:
                 try:
                     await asyncio.to_thread(
-                        lambda: self._client.table("jobs").update(data).eq("id", job_id).execute()
+                        lambda: self._client.table("jobs")
+                        .update(data)
+                        .eq("id", job_id)
+                        .execute()
                     )
                     logger.info(f"Cancel requested for running job {job_id}")
                     return True
@@ -421,9 +457,7 @@ class OrchestratorService:
         else:
             # For pending/queued jobs, cancel immediately
             return await self.update_job_status(
-                job_id,
-                JobStatus.CANCELLED,
-                error_message=reason or "Cancelled by user"
+                job_id, JobStatus.CANCELLED, error_message=reason or "Cancelled by user"
             )
 
     async def retry_job(self, job_id: str) -> Optional[Job]:
@@ -438,12 +472,14 @@ class OrchestratorService:
             workflow_json=original_job.workflow_json,
             robot_id=original_job.robot_id,
             robot_name=original_job.robot_name,
-            priority=original_job.priority
+            priority=original_job.priority,
         )
 
     # ==================== WORKFLOWS ====================
 
-    async def get_workflows(self, status: Optional[WorkflowStatus] = None) -> List[Workflow]:
+    async def get_workflows(
+        self, status: Optional[WorkflowStatus] = None
+    ) -> List[Workflow]:
         """Get all workflows."""
         if self._use_local:
             data = self._local_storage.get_workflows()
@@ -484,7 +520,7 @@ class OrchestratorService:
             "created_by": workflow.created_by,
             "created_at": workflow.created_at or now,
             "updated_at": now,
-            "tags": workflow.tags
+            "tags": workflow.tags,
         }
 
         if self._use_local:
@@ -502,18 +538,20 @@ class OrchestratorService:
     async def import_workflow_from_file(self, file_path: Path) -> Optional[Workflow]:
         """Import a workflow from a JSON file."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 json_content = f.read()
                 workflow_data = json.loads(json_content)
 
             workflow = Workflow(
                 id=str(uuid.uuid4()),
                 name=workflow_data.get("name", file_path.stem),
-                description=workflow_data.get("description", f"Imported from {file_path.name}"),
+                description=workflow_data.get(
+                    "description", f"Imported from {file_path.name}"
+                ),
                 json_definition=json_content,
                 version=1,
                 status=WorkflowStatus.DRAFT,
-                created_at=datetime.utcnow().isoformat()
+                created_at=datetime.utcnow().isoformat(),
             )
 
             if await self.save_workflow(workflow):
@@ -529,7 +567,10 @@ class OrchestratorService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("workflows").delete().eq("id", workflow_id).execute()
+                    lambda: self._client.table("workflows")
+                    .delete()
+                    .eq("id", workflow_id)
+                    .execute()
                 )
                 return True
             except Exception as e:
@@ -586,7 +627,7 @@ class OrchestratorService:
             "run_count": schedule.run_count,
             "success_count": schedule.success_count,
             "created_at": schedule.created_at or now,
-            "created_by": schedule.created_by
+            "created_by": schedule.created_by,
         }
 
         if self._use_local:
@@ -616,7 +657,10 @@ class OrchestratorService:
         else:
             try:
                 await asyncio.to_thread(
-                    lambda: self._client.table("schedules").delete().eq("id", schedule_id).execute()
+                    lambda: self._client.table("schedules")
+                    .delete()
+                    .eq("id", schedule_id)
+                    .execute()
                 )
                 return True
             except Exception as e:
@@ -637,7 +681,9 @@ class OrchestratorService:
 
         # Robot metrics
         metrics.robots_total = len(robots)
-        metrics.robots_online = len([r for r in robots if r.status == RobotStatus.ONLINE])
+        metrics.robots_online = len(
+            [r for r in robots if r.status == RobotStatus.ONLINE]
+        )
         metrics.robots_busy = len([r for r in robots if r.status == RobotStatus.BUSY])
 
         if metrics.robots_total > 0:
@@ -654,7 +700,9 @@ class OrchestratorService:
             if not date_str:
                 return None
             try:
-                return datetime.fromisoformat(date_str.replace('Z', '+00:00').replace('+00:00', ''))
+                return datetime.fromisoformat(
+                    date_str.replace("Z", "+00:00").replace("+00:00", "")
+                )
             except (ValueError, TypeError):
                 return None
 
@@ -663,7 +711,11 @@ class OrchestratorService:
         jobs_month = []
 
         for job in jobs:
-            created = parse_date(job.created_at) if isinstance(job.created_at, str) else job.created_at
+            created = (
+                parse_date(job.created_at)
+                if isinstance(job.created_at, str)
+                else job.created_at
+            )
             if created:
                 if created >= today_start:
                     jobs_today.append(job)
@@ -677,7 +729,9 @@ class OrchestratorService:
         metrics.total_jobs_month = len(jobs_month)
 
         metrics.jobs_running = len([j for j in jobs if j.status == JobStatus.RUNNING])
-        metrics.jobs_queued = len([j for j in jobs if j.status in (JobStatus.PENDING, JobStatus.QUEUED)])
+        metrics.jobs_queued = len(
+            [j for j in jobs if j.status in (JobStatus.PENDING, JobStatus.QUEUED)]
+        )
 
         completed_today = [j for j in jobs_today if j.status == JobStatus.COMPLETED]
         failed_today = [j for j in jobs_today if j.status == JobStatus.FAILED]
@@ -686,18 +740,30 @@ class OrchestratorService:
 
         # Success rates
         if metrics.total_jobs_today > 0:
-            metrics.success_rate_today = (metrics.jobs_completed_today / metrics.total_jobs_today) * 100
+            metrics.success_rate_today = (
+                metrics.jobs_completed_today / metrics.total_jobs_today
+            ) * 100
         if metrics.total_jobs_week > 0:
-            completed_week = len([j for j in jobs_week if j.status == JobStatus.COMPLETED])
+            completed_week = len(
+                [j for j in jobs_week if j.status == JobStatus.COMPLETED]
+            )
             metrics.success_rate_week = (completed_week / metrics.total_jobs_week) * 100
         if metrics.total_jobs_month > 0:
-            completed_month = len([j for j in jobs_month if j.status == JobStatus.COMPLETED])
-            metrics.success_rate_month = (completed_month / metrics.total_jobs_month) * 100
+            completed_month = len(
+                [j for j in jobs_month if j.status == JobStatus.COMPLETED]
+            )
+            metrics.success_rate_month = (
+                completed_month / metrics.total_jobs_month
+            ) * 100
 
         # Performance metrics
-        completed_jobs = [j for j in jobs if j.status == JobStatus.COMPLETED and j.duration_ms > 0]
+        completed_jobs = [
+            j for j in jobs if j.status == JobStatus.COMPLETED and j.duration_ms > 0
+        ]
         if completed_jobs:
-            metrics.avg_execution_time_ms = sum(j.duration_ms for j in completed_jobs) // len(completed_jobs)
+            metrics.avg_execution_time_ms = sum(
+                j.duration_ms for j in completed_jobs
+            ) // len(completed_jobs)
 
         # Throughput (jobs per hour in last 24h)
         if jobs_today:
@@ -706,7 +772,9 @@ class OrchestratorService:
 
         # Workflow metrics
         metrics.workflows_total = len(workflows)
-        metrics.workflows_published = len([w for w in workflows if w.status == WorkflowStatus.PUBLISHED])
+        metrics.workflows_published = len(
+            [w for w in workflows if w.status == WorkflowStatus.PUBLISHED]
+        )
 
         # Schedule metrics
         metrics.schedules_active = len([s for s in schedules if s.enabled])
@@ -728,7 +796,9 @@ class OrchestratorService:
             created = job.created_at
             if isinstance(created, str):
                 try:
-                    created = datetime.fromisoformat(created.replace('Z', '+00:00').replace('+00:00', ''))
+                    created = datetime.fromisoformat(
+                        created.replace("Z", "+00:00").replace("+00:00", "")
+                    )
                 except (ValueError, TypeError):
                     continue
 
@@ -750,7 +820,7 @@ class OrchestratorService:
         self,
         workflow_id: str,
         robot_id: str,
-        priority: JobPriority = JobPriority.NORMAL
+        priority: JobPriority = JobPriority.NORMAL,
     ) -> Optional[Job]:
         """Dispatch a workflow to a robot for execution."""
         workflow = await self.get_workflow(workflow_id)
@@ -769,18 +839,15 @@ class OrchestratorService:
             workflow_json=workflow.json_definition,
             robot_id=robot.id,
             robot_name=robot.name,
-            priority=priority
+            priority=priority,
         )
 
     async def dispatch_workflow_file(
-        self,
-        file_path: Path,
-        robot_id: str,
-        priority: JobPriority = JobPriority.NORMAL
+        self, file_path: Path, robot_id: str, priority: JobPriority = JobPriority.NORMAL
     ) -> Optional[Job]:
         """Dispatch a workflow from a file to a robot."""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 workflow_json = f.read()
                 workflow_data = json.loads(workflow_json)
 
@@ -795,7 +862,7 @@ class OrchestratorService:
                 workflow_json=workflow_json,
                 robot_id=robot.id,
                 robot_name=robot.name,
-                priority=priority
+                priority=priority,
             )
         except Exception as e:
             logger.error(f"Failed to dispatch workflow from {file_path}: {e}")

@@ -2,6 +2,7 @@
 Data models for CasareRPA Orchestrator.
 Defines schemas for jobs, schedules, workflows, and robots.
 """
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -11,6 +12,7 @@ import uuid
 
 class JobStatus(Enum):
     """Job execution status."""
+
     PENDING = "pending"
     QUEUED = "queued"
     RUNNING = "running"
@@ -22,6 +24,7 @@ class JobStatus(Enum):
 
 class JobPriority(Enum):
     """Job priority levels."""
+
     LOW = 0
     NORMAL = 1
     HIGH = 2
@@ -30,6 +33,7 @@ class JobPriority(Enum):
 
 class RobotStatus(Enum):
     """Robot connection status."""
+
     OFFLINE = "offline"
     ONLINE = "online"
     BUSY = "busy"
@@ -39,6 +43,7 @@ class RobotStatus(Enum):
 
 class WorkflowStatus(Enum):
     """Workflow lifecycle status."""
+
     DRAFT = "draft"
     PUBLISHED = "published"
     ARCHIVED = "archived"
@@ -46,6 +51,7 @@ class WorkflowStatus(Enum):
 
 class ScheduleFrequency(Enum):
     """Schedule frequency types."""
+
     ONCE = "once"
     HOURLY = "hourly"
     DAILY = "daily"
@@ -57,6 +63,7 @@ class ScheduleFrequency(Enum):
 @dataclass
 class Robot:
     """Robot agent representation."""
+
     id: str
     name: str
     status: RobotStatus = RobotStatus.OFFLINE
@@ -83,15 +90,15 @@ class Robot:
             last_heartbeat=data.get("last_heartbeat"),
             created_at=data.get("created_at"),
             tags=data.get("tags", []),
-            metrics=data.get("metrics", {})
+            metrics=data.get("metrics", {}),
         )
 
     @property
     def is_available(self) -> bool:
         """Check if robot can accept new jobs."""
         return (
-            self.status == RobotStatus.ONLINE and
-            self.current_jobs < self.max_concurrent_jobs
+            self.status == RobotStatus.ONLINE
+            and self.current_jobs < self.max_concurrent_jobs
         )
 
     @property
@@ -105,6 +112,7 @@ class Robot:
 @dataclass
 class Workflow:
     """Workflow definition."""
+
     id: str
     name: str
     description: str = ""
@@ -135,7 +143,7 @@ class Workflow:
             tags=data.get("tags", []),
             execution_count=data.get("execution_count", 0),
             success_count=data.get("success_count", 0),
-            avg_duration_ms=data.get("avg_duration_ms", 0)
+            avg_duration_ms=data.get("avg_duration_ms", 0),
         )
 
     @property
@@ -149,6 +157,7 @@ class Workflow:
 @dataclass
 class Job:
     """Job execution record."""
+
     id: str
     workflow_id: str
     workflow_name: str
@@ -191,7 +200,7 @@ class Job:
             logs=data.get("logs", ""),
             error_message=data.get("error_message", ""),
             created_at=data.get("created_at"),
-            created_by=data.get("created_by", "")
+            created_by=data.get("created_by", ""),
         )
 
     @property
@@ -201,7 +210,7 @@ class Job:
             JobStatus.COMPLETED,
             JobStatus.FAILED,
             JobStatus.CANCELLED,
-            JobStatus.TIMEOUT
+            JobStatus.TIMEOUT,
         )
 
     @property
@@ -222,6 +231,7 @@ class Job:
 @dataclass
 class Schedule:
     """Workflow schedule definition."""
+
     id: str
     name: str
     workflow_id: str
@@ -260,7 +270,7 @@ class Schedule:
             run_count=data.get("run_count", 0),
             success_count=data.get("success_count", 0),
             created_at=data.get("created_at"),
-            created_by=data.get("created_by", "")
+            created_by=data.get("created_by", ""),
         )
 
     @property
@@ -274,6 +284,7 @@ class Schedule:
 @dataclass
 class DashboardMetrics:
     """Dashboard KPI metrics."""
+
     # Job metrics
     total_jobs_today: int = 0
     total_jobs_week: int = 0
@@ -319,6 +330,7 @@ class DashboardMetrics:
 @dataclass
 class JobHistoryEntry:
     """Entry for job execution history chart."""
+
     date: str
     total: int = 0
     completed: int = 0

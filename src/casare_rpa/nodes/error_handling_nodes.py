@@ -19,18 +19,18 @@ from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
 class TryNode(BaseNode):
     """
     Try block node for error handling.
-    
+
     Wraps a section of workflow to catch errors. If the try block succeeds,
     execution continues to 'success' output. If an error occurs, routes to
     'catch' output with error details.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Try node."""
         super().__init__(node_id, config)
         self.name = "Try"
         self.node_type = "TryNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -39,97 +39,86 @@ class TryNode(BaseNode):
         self.add_output_port("catch", PortType.EXEC_OUTPUT)
         self.add_output_port("error_message", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("error_type", PortType.OUTPUT, DataType.STRING)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute try block.
-        
+
         This node marks the beginning of a try block. The actual error catching
         happens in the WorkflowRunner which monitors execution of the try_body.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result routing to try_body for initial execution
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Store try block state
             try_state_key = f"{self.node_id}_state"
-            
+
             if try_state_key not in context.variables:
                 # First execution - enter try block
                 context.variables[try_state_key] = {
                     "in_try_block": True,
-                    "error_occurred": False
+                    "error_occurred": False,
                 }
                 logger.info(f"Entering try block: {self.node_id}")
-                
+
                 self.status = NodeStatus.SUCCESS
-                return {
-                    "success": True,
-                    "next_nodes": ["try_body"]
-                }
+                return {"success": True, "next_nodes": ["try_body"]}
             else:
                 # Returning from try block
                 try_state = context.variables[try_state_key]
                 del context.variables[try_state_key]
-                
+
                 if try_state.get("error_occurred"):
                     # Error occurred - route to catch
                     error_msg = try_state.get("error_message", "Unknown error")
                     error_type = try_state.get("error_type", "Exception")
-                    
+
                     self.set_output_value("error_message", error_msg)
                     self.set_output_value("error_type", error_type)
-                    
-                    logger.warning(f"Error caught in try block: {error_type}: {error_msg}")
-                    
+
+                    logger.warning(
+                        f"Error caught in try block: {error_type}: {error_msg}"
+                    )
+
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
-                        "data": {
-                            "error_message": error_msg,
-                            "error_type": error_type
-                        },
-                        "next_nodes": ["catch"]
+                        "data": {"error_message": error_msg, "error_type": error_type},
+                        "next_nodes": ["catch"],
                     }
                 else:
                     # No error - route to success
                     logger.info(f"Try block completed successfully: {self.node_id}")
-                    
+
                     self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "next_nodes": ["success"]
-                    }
-                    
+                    return {"success": True, "next_nodes": ["success"]}
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Try node execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class RetryNode(BaseNode):
     """
     Retry node for automatic retry with backoff.
-    
+
     Retries a failed operation multiple times with configurable delay and
     exponential backoff. Useful for handling transient failures.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Retry node."""
         super().__init__(node_id, config)
         self.name = "Retry"
         self.node_type = "RetryNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -138,26 +127,26 @@ class RetryNode(BaseNode):
         self.add_output_port("failed", PortType.EXEC_OUTPUT)
         self.add_output_port("attempt", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("last_error", PortType.OUTPUT, DataType.STRING)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute retry logic.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with retry routing
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             max_attempts = self.config.get("max_attempts", 3)
             initial_delay = self.config.get("initial_delay", 1.0)  # seconds
             backoff_multiplier = self.config.get("backoff_multiplier", 2.0)
-            
+
             retry_state_key = f"{self.node_id}_retry_state"
-            
+
             if retry_state_key not in context.variables:
                 # First attempt
                 context.variables[retry_state_key] = {
@@ -165,222 +154,213 @@ class RetryNode(BaseNode):
                     "max_attempts": max_attempts,
                     "initial_delay": initial_delay,
                     "backoff_multiplier": backoff_multiplier,
-                    "last_error": None
+                    "last_error": None,
                 }
-            
+
             retry_state = context.variables[retry_state_key]
             retry_state["attempt"] += 1
             current_attempt = retry_state["attempt"]
-            
+
             self.set_output_value("attempt", current_attempt)
-            
+
             if current_attempt <= max_attempts:
                 # Attempt execution
                 if current_attempt > 1:
                     # Apply delay with exponential backoff (except for first attempt)
-                    delay = initial_delay * (backoff_multiplier ** (current_attempt - 2))
-                    logger.info(f"Retry attempt {current_attempt}/{max_attempts} after {delay:.2f}s delay")
+                    delay = initial_delay * (
+                        backoff_multiplier ** (current_attempt - 2)
+                    )
+                    logger.info(
+                        f"Retry attempt {current_attempt}/{max_attempts} after {delay:.2f}s delay"
+                    )
                     await asyncio.sleep(delay)
                 else:
-                    logger.info(f"Retry attempt {current_attempt}/{max_attempts} (initial)")
-                
+                    logger.info(
+                        f"Retry attempt {current_attempt}/{max_attempts} (initial)"
+                    )
+
                 self.status = NodeStatus.RUNNING
                 return {
                     "success": True,
                     "data": {"attempt": current_attempt},
-                    "next_nodes": ["retry_body"]
+                    "next_nodes": ["retry_body"],
                 }
             else:
                 # Max attempts reached - fail
-                last_error = retry_state.get("last_error", "Max retry attempts exceeded")
+                last_error = retry_state.get(
+                    "last_error", "Max retry attempts exceeded"
+                )
                 self.set_output_value("last_error", last_error)
-                
-                logger.error(f"Retry failed after {max_attempts} attempts: {last_error}")
-                
+
+                logger.error(
+                    f"Retry failed after {max_attempts} attempts: {last_error}"
+                )
+
                 # Clean up state
                 del context.variables[retry_state_key]
-                
+
                 self.status = NodeStatus.ERROR
                 return {
                     "success": False,
-                    "data": {
-                        "attempts": max_attempts,
-                        "last_error": last_error
-                    },
-                    "next_nodes": ["failed"]
+                    "data": {"attempts": max_attempts, "last_error": last_error},
+                    "next_nodes": ["failed"],
                 }
-                
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Retry node execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class RetrySuccessNode(BaseNode):
     """
     Marks successful completion of retry body.
-    
+
     This node signals that the retry operation succeeded and should exit
     the retry loop.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize RetrySuccess node."""
         super().__init__(node_id, config)
         self.name = "Retry Success"
         self.node_type = "RetrySuccessNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Signal retry success.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with success signal
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             logger.info("Retry operation succeeded")
-            
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "control_flow": "retry_success",
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"RetrySuccess execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class RetryFailNode(BaseNode):
     """
     Marks failed attempt in retry body.
-    
+
     This node signals that the retry operation failed and should be retried.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize RetryFail node."""
         super().__init__(node_id, config)
         self.name = "Retry Fail"
         self.node_type = "RetryFailNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Signal retry failure.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with failure signal
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             error_message = self.get_input_value("error_message") or "Operation failed"
-            
+
             logger.warning(f"Retry attempt failed: {error_message}")
-            
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "control_flow": "retry_fail",
                 "data": {"error_message": error_message},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"RetryFail execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
-    
+
     Intentionally raises an error with a custom message to trigger
     try/catch blocks or other error handling mechanisms.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize ThrowError node."""
         super().__init__(node_id, config)
         self.name = "Throw Error"
         self.node_type = "ThrowErrorNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Throw error.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with error
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get error message
             error_message = self.get_input_value("error_message")
             if error_message is None:
                 error_message = self.config.get("error_message", "Custom error")
-            
+
             logger.error(f"Throwing error: {error_message}")
-            
+
             self.status = NodeStatus.ERROR
             return {
                 "success": False,
                 "error": error_message,
                 "error_type": "CustomError",
-                "next_nodes": []
+                "next_nodes": [],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"ThrowError node failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class WebhookNotifyNode(BaseNode):
@@ -442,7 +422,9 @@ class WebhookNotifyNode(BaseNode):
 
             message = self.get_input_value("message")
             if message is None:
-                message = self.config.get("message", "Error notification from CasareRPA")
+                message = self.config.get(
+                    "message", "Error notification from CasareRPA"
+                )
 
             error_details = self.get_input_value("error_details") or {}
 
@@ -453,7 +435,7 @@ class WebhookNotifyNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No webhook URL provided",
-                    "next_nodes": ["exec_out"]
+                    "next_nodes": ["exec_out"],
                 }
 
             # Build payload
@@ -474,10 +456,7 @@ class WebhookNotifyNode(BaseNode):
                         headers = {"Content-Type": "application/json"}
 
                         async with session.post(
-                            webhook_url,
-                            json=payload,
-                            headers=headers,
-                            timeout=timeout
+                            webhook_url, json=payload, headers=headers, timeout=timeout
                         ) as response:
                             response_text = await response.text()
                             success = response.status < 400
@@ -486,25 +465,39 @@ class WebhookNotifyNode(BaseNode):
                             self.set_output_value("response", response_text)
 
                             if success:
-                                logger.info(f"Webhook notification sent successfully to {webhook_url} (attempt {attempt + 1})")
+                                logger.info(
+                                    f"Webhook notification sent successfully to {webhook_url} (attempt {attempt + 1})"
+                                )
                                 self.status = NodeStatus.SUCCESS
                                 return {
                                     "success": True,
-                                    "data": {"response": response_text, "attempts": attempt + 1},
-                                    "next_nodes": ["exec_out"]
+                                    "data": {
+                                        "response": response_text,
+                                        "attempts": attempt + 1,
+                                    },
+                                    "next_nodes": ["exec_out"],
                                 }
                             else:
-                                logger.warning(f"Webhook notification failed: {response.status}")
-                                self.status = NodeStatus.SUCCESS  # Node succeeded, webhook failed
+                                logger.warning(
+                                    f"Webhook notification failed: {response.status}"
+                                )
+                                self.status = (
+                                    NodeStatus.SUCCESS
+                                )  # Node succeeded, webhook failed
                                 return {
                                     "success": True,
-                                    "data": {"webhook_failed": True, "status": response.status},
-                                    "next_nodes": ["exec_out"]
+                                    "data": {
+                                        "webhook_failed": True,
+                                        "status": response.status,
+                                    },
+                                    "next_nodes": ["exec_out"],
                                 }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"Webhook request failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"Webhook request failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -517,67 +510,77 @@ class WebhookNotifyNode(BaseNode):
             return {
                 "success": False,
                 "error": "aiohttp package required. Install with: pip install aiohttp",
-                "next_nodes": []
+                "next_nodes": [],
             }
         except Exception as e:
             self.set_output_value("success", False)
             self.set_output_value("response", str(e))
             self.status = NodeStatus.ERROR
             logger.error(f"Webhook notification failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _build_payload(self, message: str, error_details: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_payload(
+        self, message: str, error_details: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Build webhook payload based on configured format."""
         format_type = self.config.get("format", "generic")
 
         if format_type == "slack":
             return {
                 "text": message,
-                "attachments": [{
-                    "color": "danger",
-                    "title": "Error Details",
-                    "fields": [
-                        {"title": k, "value": str(v), "short": True}
-                        for k, v in error_details.items()
-                    ]
-                }] if error_details else []
+                "attachments": [
+                    {
+                        "color": "danger",
+                        "title": "Error Details",
+                        "fields": [
+                            {"title": k, "value": str(v), "short": True}
+                            for k, v in error_details.items()
+                        ],
+                    }
+                ]
+                if error_details
+                else [],
             }
         elif format_type == "discord":
             return {
                 "content": message,
-                "embeds": [{
-                    "title": "Error Details",
-                    "color": 15158332,  # Red
-                    "fields": [
-                        {"name": k, "value": str(v)[:1024], "inline": True}
-                        for k, v in error_details.items()
-                    ]
-                }] if error_details else []
+                "embeds": [
+                    {
+                        "title": "Error Details",
+                        "color": 15158332,  # Red
+                        "fields": [
+                            {"name": k, "value": str(v)[:1024], "inline": True}
+                            for k, v in error_details.items()
+                        ],
+                    }
+                ]
+                if error_details
+                else [],
             }
         elif format_type == "teams":
             return {
                 "@type": "MessageCard",
                 "themeColor": "FF0000",
                 "summary": message,
-                "sections": [{
-                    "activityTitle": message,
-                    "facts": [
-                        {"name": k, "value": str(v)}
-                        for k, v in error_details.items()
-                    ]
-                }]
+                "sections": [
+                    {
+                        "activityTitle": message,
+                        "facts": [
+                            {"name": k, "value": str(v)}
+                            for k, v in error_details.items()
+                        ],
+                    }
+                ],
             }
         else:
             # Generic format
             return {
                 "message": message,
-                "timestamp": context.variables.get("_timestamp", "") if hasattr(self, 'context') else "",
+                "timestamp": context.variables.get("_timestamp", "")
+                if hasattr(self, "context")
+                else "",
                 "details": error_details,
-                "source": "CasareRPA"
+                "source": "CasareRPA",
             }
 
 
@@ -627,20 +630,19 @@ class OnErrorNode(BaseNode):
                 context.variables[error_state_key] = {
                     "in_protected_block": True,
                     "error_occurred": False,
-                    "finally_executed": False
+                    "finally_executed": False,
                 }
                 logger.info(f"Entering protected block: {self.node_id}")
 
                 self.status = NodeStatus.SUCCESS
-                return {
-                    "success": True,
-                    "next_nodes": ["protected_body"]
-                }
+                return {"success": True, "next_nodes": ["protected_body"]}
             else:
                 # Returning from protected block
                 error_state = context.variables[error_state_key]
 
-                if error_state.get("error_occurred") and not error_state.get("error_handled"):
+                if error_state.get("error_occurred") and not error_state.get(
+                    "error_handled"
+                ):
                     # Error occurred - route to error handler
                     error_msg = error_state.get("error_message", "Unknown error")
                     error_type = error_state.get("error_type", "Exception")
@@ -654,7 +656,9 @@ class OnErrorNode(BaseNode):
 
                     error_state["error_handled"] = True
 
-                    logger.warning(f"Error caught by OnError handler: {error_type}: {error_msg}")
+                    logger.warning(
+                        f"Error caught by OnError handler: {error_type}: {error_msg}"
+                    )
 
                     self.status = NodeStatus.SUCCESS
                     return {
@@ -662,9 +666,9 @@ class OnErrorNode(BaseNode):
                         "data": {
                             "error_message": error_msg,
                             "error_type": error_type,
-                            "error_node": error_node
+                            "error_node": error_node,
                         },
-                        "next_nodes": ["on_error"]
+                        "next_nodes": ["on_error"],
                     }
                 elif not error_state.get("finally_executed"):
                     # Execute finally block
@@ -673,28 +677,18 @@ class OnErrorNode(BaseNode):
                     logger.info(f"Executing finally block: {self.node_id}")
 
                     self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "next_nodes": ["finally"]
-                    }
+                    return {"success": True, "next_nodes": ["finally"]}
                 else:
                     # Cleanup and exit
                     del context.variables[error_state_key]
 
                     self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "next_nodes": []
-                    }
+                    return {"success": True, "next_nodes": []}
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"OnError node execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ErrorRecoveryNode(BaseNode):
@@ -754,26 +748,21 @@ class ErrorRecoveryNode(BaseNode):
             context.variables["_error_recovery_strategy"] = strategy
             context.variables["_error_recovery_max_retries"] = max_retries
 
-            logger.info(f"Error recovery configured: strategy={strategy}, max_retries={max_retries}")
+            logger.info(
+                f"Error recovery configured: strategy={strategy}, max_retries={max_retries}"
+            )
 
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
-                "data": {
-                    "strategy": strategy,
-                    "max_retries": max_retries
-                },
-                "next_nodes": ["exec_out"]
+                "data": {"strategy": strategy, "max_retries": max_retries},
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"ErrorRecovery node failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class LogErrorNode(BaseNode):
@@ -822,17 +811,19 @@ class LogErrorNode(BaseNode):
 
             # Build log entry
             from datetime import datetime
+
             log_entry = {
                 "timestamp": datetime.now().isoformat(),
                 "level": level,
                 "error_type": error_type,
                 "error_message": error_message,
                 "workflow": context.workflow_name,
-                "context": error_context
+                "context": error_context,
             }
 
             if include_stack:
                 import traceback
+
                 log_entry["stack_trace"] = traceback.format_exc()
 
             # Log with appropriate level
@@ -857,17 +848,13 @@ class LogErrorNode(BaseNode):
             return {
                 "success": True,
                 "data": {"log_entry": log_entry},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"LogError node failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class AssertNode(BaseNode):
@@ -928,7 +915,7 @@ class AssertNode(BaseNode):
                 return {
                     "success": True,
                     "data": {"passed": True},
-                    "next_nodes": ["exec_out"]
+                    "next_nodes": ["exec_out"],
                 }
             else:
                 logger.error(f"Assertion failed: {message}")
@@ -937,14 +924,10 @@ class AssertNode(BaseNode):
                     "success": False,
                     "error": f"Assertion failed: {message}",
                     "error_type": "AssertionError",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Assert node failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}

@@ -10,9 +10,8 @@ Provides per-node checkpointing for crash recovery:
 import asyncio
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional, Dict, Any, List, Set
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from loguru import logger
 import orjson
 
@@ -22,6 +21,7 @@ from .offline_queue import OfflineQueue
 @dataclass
 class CheckpointState:
     """State captured at a checkpoint."""
+
     checkpoint_id: str
     job_id: str
     workflow_name: str
@@ -177,7 +177,7 @@ class CheckpointManager:
         """Extract only JSON-serializable variables from context."""
         result = {}
 
-        if not hasattr(context, 'variables'):
+        if not hasattr(context, "variables"):
             return result
 
         for key, value in context.variables.items():
@@ -200,13 +200,13 @@ class CheckpointManager:
             "page_count": 0,
         }
 
-        if hasattr(context, 'browser') and context.browser:
+        if hasattr(context, "browser") and context.browser:
             state["has_browser"] = True
 
-        if hasattr(context, 'active_page') and context.active_page:
-            state["active_page_name"] = getattr(context, '_active_page_name', None)
+        if hasattr(context, "active_page") and context.active_page:
+            state["active_page_name"] = getattr(context, "_active_page_name", None)
 
-        if hasattr(context, 'pages'):
+        if hasattr(context, "pages"):
             state["page_count"] = len(context.pages)
 
         return state
@@ -225,9 +225,9 @@ class CheckpointManager:
             CheckpointState if found
         """
         checkpoint_data = await self.offline_queue.get_latest_checkpoint(job_id)
-        if checkpoint_data and 'state' in checkpoint_data:
+        if checkpoint_data and "state" in checkpoint_data:
             try:
-                return CheckpointState.from_dict(checkpoint_data['state'])
+                return CheckpointState.from_dict(checkpoint_data["state"])
             except Exception as e:
                 logger.error(f"Failed to parse checkpoint: {e}")
         return None
@@ -274,11 +274,13 @@ class CheckpointManager:
 
     def record_error(self, node_id: str, error_message: str):
         """Record an error for the current job."""
-        self._errors.append({
-            "node_id": node_id,
-            "error": error_message,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        self._errors.append(
+            {
+                "node_id": node_id,
+                "error": error_message,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
     def get_executed_nodes(self) -> Set[str]:
         """Get set of executed node IDs."""
@@ -336,7 +338,11 @@ class ResumableRunner:
         Returns:
             True if workflow completed successfully
         """
-        workflow_name = self.runner.workflow.metadata.name if self.runner.workflow.metadata else "unknown"
+        workflow_name = (
+            self.runner.workflow.metadata.name
+            if self.runner.workflow.metadata
+            else "unknown"
+        )
 
         # Check for existing checkpoint
         checkpoint = None
@@ -357,12 +363,14 @@ class ResumableRunner:
                 # Restore state
                 await self.checkpoint_manager.restore_from_checkpoint(
                     checkpoint,
-                    self.runner.context if hasattr(self.runner, 'context') else None,
+                    self.runner.context if hasattr(self.runner, "context") else None,
                 )
 
                 # Skip already executed nodes
                 executed = self.checkpoint_manager.get_executed_nodes()
-                self.runner.set_skip_nodes(executed) if hasattr(self.runner, 'set_skip_nodes') else None
+                self.runner.set_skip_nodes(executed) if hasattr(
+                    self.runner, "set_skip_nodes"
+                ) else None
 
             # Setup checkpoint callback
             self._setup_checkpoint_hook()
@@ -385,11 +393,11 @@ class ResumableRunner:
             return
 
         # Subscribe to node completion events
-        if hasattr(self.runner, 'event_bus') and self.runner.event_bus:
+        if hasattr(self.runner, "event_bus") and self.runner.event_bus:
             from casare_rpa.core.events import EventType
 
             async def on_node_complete(event):
-                if event.node_id and hasattr(self.runner, 'context'):
+                if event.node_id and hasattr(self.runner, "context"):
                     await self.checkpoint_manager.save_checkpoint(
                         event.node_id,
                         self.runner.context,

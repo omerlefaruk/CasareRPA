@@ -12,7 +12,6 @@ This module provides nodes for random number generation and random selection:
 import random
 import string
 import uuid
-from typing import Any, Optional
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -78,7 +77,7 @@ class RandomNumberNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -153,7 +152,7 @@ class RandomChoiceNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -217,7 +216,7 @@ class RandomStringNode(BaseNode):
             if not chars:
                 chars = string.ascii_letters + string.digits
 
-            result = ''.join(random.choice(chars) for _ in range(length))
+            result = "".join(random.choice(chars) for _ in range(length))
 
             self.set_output_value("result", result)
             self.status = NodeStatus.SUCCESS
@@ -225,7 +224,7 @@ class RandomStringNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result, "length": length},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -284,7 +283,7 @@ class RandomUUIDNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -336,7 +335,7 @@ class ShuffleListNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(result)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

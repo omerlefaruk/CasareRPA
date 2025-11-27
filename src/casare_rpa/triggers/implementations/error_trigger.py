@@ -8,7 +8,7 @@ Useful for error handling, notifications, and retry logic.
 import asyncio
 import re
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional
 
 from loguru import logger
 
@@ -96,39 +96,41 @@ class ErrorTrigger(BaseTrigger):
 
         # Extract error details from event
         error_data = event.data or {}
-        error_message = error_data.get('error', str(error_data))
-        error_type = error_data.get('error_type', 'unknown')
-        scenario_id = error_data.get('scenario_id', '')
-        workflow_id = error_data.get('workflow_id', '')
-        node_id = event.node_id or error_data.get('node_id', '')
-        stack_trace = error_data.get('stack_trace', '')
+        error_message = error_data.get("error", str(error_data))
+        error_type = error_data.get("error_type", "unknown")
+        scenario_id = error_data.get("scenario_id", "")
+        workflow_id = error_data.get("workflow_id", "")
+        node_id = event.node_id or error_data.get("node_id", "")
+        stack_trace = error_data.get("stack_trace", "")
 
         # Check if we should exclude self
-        if config.get('exclude_self', True):
+        if config.get("exclude_self", True):
             if scenario_id == self.config.scenario_id:
                 return
 
         # Check source scenario filter
-        source_scenario_ids = config.get('source_scenario_ids', [])
+        source_scenario_ids = config.get("source_scenario_ids", [])
         if source_scenario_ids and scenario_id not in source_scenario_ids:
             return
 
         # Check error type filter
-        error_types = config.get('error_types', [])
+        error_types = config.get("error_types", [])
         if error_types and error_type not in error_types:
             return
 
         # Check error pattern filter
-        error_pattern = config.get('error_pattern', '')
+        error_pattern = config.get("error_pattern", "")
         if error_pattern:
             if not re.search(error_pattern, error_message, re.IGNORECASE):
                 return
 
         # Check severity filter
-        min_severity = config.get('min_severity', 'error')
-        severity_levels = {'info': 0, 'warning': 1, 'error': 2, 'critical': 3}
-        event_severity = error_data.get('severity', 'error')
-        if severity_levels.get(event_severity, 2) < severity_levels.get(min_severity, 2):
+        min_severity = config.get("min_severity", "error")
+        severity_levels = {"info": 0, "warning": 1, "error": 2, "critical": 3}
+        event_severity = error_data.get("severity", "error")
+        if severity_levels.get(event_severity, 2) < severity_levels.get(
+            min_severity, 2
+        ):
             return
 
         # Build payload
@@ -155,13 +157,13 @@ class ErrorTrigger(BaseTrigger):
         config = self.config.config
 
         # Validate min_severity
-        min_severity = config.get('min_severity', 'error')
-        valid_severities = ['info', 'warning', 'error', 'critical']
+        min_severity = config.get("min_severity", "error")
+        valid_severities = ["info", "warning", "error", "critical"]
         if min_severity not in valid_severities:
             return False, f"Invalid min_severity. Must be one of: {valid_severities}"
 
         # Validate error_pattern is valid regex
-        error_pattern = config.get('error_pattern', '')
+        error_pattern = config.get("error_pattern", "")
         if error_pattern:
             try:
                 re.compile(error_pattern)
@@ -178,7 +180,12 @@ class ErrorTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 2},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 2,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "source_scenario_ids": {
                     "type": "array",

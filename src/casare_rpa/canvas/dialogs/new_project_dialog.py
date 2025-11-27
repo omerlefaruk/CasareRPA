@@ -3,9 +3,7 @@ CasareRPA - New Project Dialog
 Dialog for creating a new project.
 """
 
-import re
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtWidgets import (
     QDialog,
@@ -20,7 +18,6 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QGroupBox,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from ..theme import THEME
@@ -33,7 +30,7 @@ def _sanitize_folder_name(name: str) -> str:
     invalid_chars = '<>:"/\\|?*'
     result = name
     for char in invalid_chars:
-        result = result.replace(char, '_')
+        result = result.replace(char, "_")
     return result.strip()
 
 
@@ -109,15 +106,15 @@ class NewProjectDialog(QDialog):
 
         # Preview label
         self._preview_label = QLabel("")
-        self._preview_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._preview_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: 11px;"
+        )
         location_layout.addWidget(self._preview_label)
 
         layout.addWidget(location_group)
 
         # Buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self._on_accept)
         button_box.rejected.connect(self.reject)
 
@@ -235,10 +232,14 @@ class NewProjectDialog(QDialog):
             self._preview_label.setText(
                 f"Warning: Folder already exists: {project_path}"
             )
-            self._preview_label.setStyleSheet(f"color: {THEME.status_warning}; font-size: 11px;")
+            self._preview_label.setStyleSheet(
+                f"color: {THEME.status_warning}; font-size: 11px;"
+            )
             return False
 
-        self._preview_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._preview_label.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: 11px;"
+        )
         return True
 
     def _on_browse(self) -> None:
@@ -247,7 +248,7 @@ class NewProjectDialog(QDialog):
             self,
             "Select Project Location",
             self._location_input.text() or str(WORKFLOWS_DIR.parent),
-            QFileDialog.ShowDirsOnly
+            QFileDialog.ShowDirsOnly,
         )
 
         if path:

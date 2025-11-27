@@ -2,6 +2,7 @@
 Schedule Storage for CasareRPA Canvas.
 Handles persistence of workflow schedules to JSON files.
 """
+
 import json
 from datetime import datetime
 from pathlib import Path
@@ -186,10 +187,7 @@ class ScheduleStorage:
         return due
 
     def mark_schedule_run(
-        self,
-        schedule_id: str,
-        success: bool,
-        error_message: str = ""
+        self, schedule_id: str, success: bool, error_message: str = ""
     ) -> bool:
         """
         Mark a schedule as having run.
@@ -233,10 +231,7 @@ class ScheduleStorage:
         Returns:
             List of schedules for this workflow
         """
-        return [
-            s for s in self.get_all_schedules()
-            if s.workflow_path == workflow_path
-        ]
+        return [s for s in self.get_all_schedules() if s.workflow_path == workflow_path]
 
 
 # Singleton instance

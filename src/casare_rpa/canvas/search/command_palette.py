@@ -4,7 +4,7 @@ Command Palette for CasareRPA.
 A VS Code-style command palette for quick access to all actions via keyboard.
 """
 
-from typing import Optional, List, Dict, Callable, Any
+from typing import Optional, List, Callable
 from dataclasses import dataclass
 
 from PySide6.QtWidgets import (
@@ -17,14 +17,15 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QKeySequence, QAction, QFont, QKeyEvent
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QKeyEvent
 from loguru import logger
 
 
 @dataclass
 class CommandItem:
     """Represents a command in the palette."""
+
     name: str
     description: str
     shortcut: str
@@ -68,9 +69,9 @@ class CommandPalette(QDialog):
         """Set up the user interface."""
         self.setWindowTitle("Command Palette")
         self.setWindowFlags(
-            Qt.WindowType.Dialog |
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.Popup
+            Qt.WindowType.Dialog
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Popup
         )
         self.setModal(True)
         self.setFixedWidth(600)
@@ -317,10 +318,7 @@ class CommandPalette(QDialog):
     # ==================== Public API ====================
 
     def register_action(
-        self,
-        action: QAction,
-        category: str = "General",
-        description: str = ""
+        self, action: QAction, category: str = "General", description: str = ""
     ) -> None:
         """
         Register a QAction with the command palette.
@@ -340,7 +338,7 @@ class CommandPalette(QDialog):
             shortcut=shortcut_text,
             action=action,
             callback=None,
-            category=category
+            category=category,
         )
         self._commands.append(cmd)
 
@@ -350,7 +348,7 @@ class CommandPalette(QDialog):
         callback: Callable,
         shortcut: str = "",
         description: str = "",
-        category: str = "General"
+        category: str = "General",
     ) -> None:
         """
         Register a custom callback with the command palette.
@@ -368,7 +366,7 @@ class CommandPalette(QDialog):
             shortcut=shortcut,
             action=None,
             callback=callback,
-            category=category
+            category=category,
         )
         self._commands.append(cmd)
 

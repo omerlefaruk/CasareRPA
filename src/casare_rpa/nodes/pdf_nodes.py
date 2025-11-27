@@ -13,7 +13,6 @@ Note: These nodes require PyPDF2 and optionally pdf2image for image conversion.
 """
 
 from pathlib import Path
-from typing import Any, Optional, List
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -102,7 +101,9 @@ class ReadPDFTextNode(BaseNode):
             try:
                 from PyPDF2 import PdfReader
             except ImportError:
-                raise ImportError("PyPDF2 is required for PDF operations. Install with: pip install PyPDF2")
+                raise ImportError(
+                    "PyPDF2 is required for PDF operations. Install with: pip install PyPDF2"
+                )
 
             reader = PdfReader(path)
 
@@ -142,7 +143,7 @@ class ReadPDFTextNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": page_count, "extracted_pages": len(pages)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -229,8 +230,12 @@ class GetPDFInfoNode(BaseNode):
             self.set_output_value("subject", str(metadata.get("/Subject", "") or ""))
             self.set_output_value("creator", str(metadata.get("/Creator", "") or ""))
             self.set_output_value("producer", str(metadata.get("/Producer", "") or ""))
-            self.set_output_value("creation_date", str(metadata.get("/CreationDate", "") or ""))
-            self.set_output_value("modification_date", str(metadata.get("/ModDate", "") or ""))
+            self.set_output_value(
+                "creation_date", str(metadata.get("/CreationDate", "") or "")
+            )
+            self.set_output_value(
+                "modification_date", str(metadata.get("/ModDate", "") or "")
+            )
             self.set_output_value("is_encrypted", reader.is_encrypted)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -238,7 +243,7 @@ class GetPDFInfoNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": len(reader.pages)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -327,7 +332,7 @@ class MergePDFsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": total_pages},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -423,7 +428,7 @@ class SplitPDFNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": len(output_files)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -521,7 +526,7 @@ class ExtractPDFPagesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": len(writer.pages)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -600,17 +605,16 @@ class PDFToImagesNode(BaseNode):
             try:
                 from pdf2image import convert_from_path
             except ImportError:
-                raise ImportError("pdf2image is required for PDF to image conversion. Install with: pip install pdf2image")
+                raise ImportError(
+                    "pdf2image is required for PDF to image conversion. Install with: pip install pdf2image"
+                )
 
             # Convert pages
             first_page = int(start_page) if start_page else None
             last_page = int(end_page) if end_page else None
 
             images = convert_from_path(
-                input_path,
-                dpi=dpi,
-                first_page=first_page,
-                last_page=last_page
+                input_path, dpi=dpi, first_page=first_page, last_page=last_page
             )
 
             output_files = []
@@ -628,7 +632,7 @@ class PDFToImagesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"page_count": len(output_files)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

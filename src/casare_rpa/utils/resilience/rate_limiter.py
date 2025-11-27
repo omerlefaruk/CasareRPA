@@ -8,7 +8,7 @@ such as API calls, browser actions, or any resource-intensive tasks.
 import asyncio
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from functools import wraps
 
@@ -65,8 +65,10 @@ class RateLimitStats:
             "requests_rejected": self.requests_rejected,
             "avg_delay": round(
                 self.total_delay_time / self.requests_delayed
-                if self.requests_delayed > 0 else 0, 3
-            )
+                if self.requests_delayed > 0
+                else 0,
+                3,
+            ),
         }
 
 
@@ -118,10 +120,7 @@ class RateLimiter:
 
         # Add tokens based on time elapsed
         tokens_to_add = elapsed * self.config.requests_per_second
-        self._tokens = min(
-            self._tokens + tokens_to_add,
-            float(self.config.burst_size)
-        )
+        self._tokens = min(self._tokens + tokens_to_add, float(self.config.burst_size))
 
     async def acquire(self, tokens: int = 1) -> bool:
         """
@@ -204,6 +203,7 @@ class RateLimiter:
 
 class RateLimitExceeded(Exception):
     """Raised when rate limit is exceeded and retry is disabled."""
+
     pass
 
 
@@ -226,7 +226,7 @@ class SlidingWindowRateLimiter:
         self,
         max_requests: int = 10,
         window_seconds: float = 1.0,
-        max_wait_time: float = 60.0
+        max_wait_time: float = 60.0,
     ):
         """
         Initialize sliding window rate limiter.
@@ -328,10 +328,7 @@ class SlidingWindowRateLimiter:
         self._stats = RateLimitStats()
 
 
-def rate_limited(
-    requests_per_second: float = 10.0,
-    burst_size: int = 1
-) -> Callable:
+def rate_limited(requests_per_second: float = 10.0, burst_size: int = 1) -> Callable:
     """
     Decorator to rate limit a function.
 
@@ -348,8 +345,7 @@ def rate_limited(
             ...
     """
     config = RateLimitConfig(
-        requests_per_second=requests_per_second,
-        burst_size=burst_size
+        requests_per_second=requests_per_second, burst_size=burst_size
     )
     limiter = RateLimiter(config)
 
@@ -358,7 +354,9 @@ def rate_limited(
         async def wrapper(*args: Any, **kwargs: Any) -> T:
             await limiter.acquire()
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -367,9 +365,7 @@ _global_limiters: Dict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = {}
 
 
 def get_rate_limiter(
-    name: str,
-    requests_per_second: float = 10.0,
-    burst_size: int = 1
+    name: str, requests_per_second: float = 10.0, burst_size: int = 1
 ) -> RateLimiter:
     """
     Get or create a named global rate limiter.
@@ -384,8 +380,7 @@ def get_rate_limiter(
     """
     if name not in _global_limiters:
         config = RateLimitConfig(
-            requests_per_second=requests_per_second,
-            burst_size=burst_size
+            requests_per_second=requests_per_second, burst_size=burst_size
         )
         _global_limiters[name] = RateLimiter(config)
     return _global_limiters[name]

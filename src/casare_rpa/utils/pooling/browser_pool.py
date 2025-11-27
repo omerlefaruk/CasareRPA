@@ -11,7 +11,7 @@ from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Set
 from loguru import logger
 
-from playwright.async_api import Browser, BrowserContext, Page, Playwright
+from playwright.async_api import Browser, BrowserContext, Playwright
 
 
 class PooledContext:
@@ -120,7 +120,9 @@ class BrowserContextPool:
             if self._initialized:
                 return
 
-            logger.info(f"Initializing browser context pool (min={self._min_size}, max={self._max_size})")
+            logger.info(
+                f"Initializing browser context pool (min={self._min_size}, max={self._max_size})"
+            )
 
             # Create minimum number of contexts
             for _ in range(self._min_size):
@@ -132,13 +134,17 @@ class BrowserContextPool:
                     break
 
             self._initialized = True
-            logger.info(f"Browser context pool initialized with {len(self._available)} contexts")
+            logger.info(
+                f"Browser context pool initialized with {len(self._available)} contexts"
+            )
 
     async def _create_context(self) -> PooledContext:
         """Create a new pooled context."""
         context = await self._browser.new_context(**self._context_options)
         self._stats["contexts_created"] += 1
-        logger.debug(f"Created new browser context (total created: {self._stats['contexts_created']})")
+        logger.debug(
+            f"Created new browser context (total created: {self._stats['contexts_created']})"
+        )
         return PooledContext(context=context)
 
     async def acquire(self, timeout: float = 30.0) -> BrowserContext:
@@ -180,7 +186,9 @@ class BrowserContextPool:
                     pooled.mark_used()
                     self._in_use.add(pooled)
                     self._stats["contexts_recycled"] += 1
-                    logger.debug(f"Acquired recycled context (use count: {pooled.use_count})")
+                    logger.debug(
+                        f"Acquired recycled context (use count: {pooled.use_count})"
+                    )
                     return pooled.context
 
                 # No available context - can we create a new one?
@@ -256,7 +264,9 @@ class BrowserContextPool:
             else:
                 # Return to available pool
                 self._available.append(pooled)
-                logger.debug(f"Released context back to pool (available: {len(self._available)})")
+                logger.debug(
+                    f"Released context back to pool (available: {len(self._available)})"
+                )
 
     async def _close_context(self, pooled: PooledContext) -> None:
         """Close a pooled context and update stats."""
@@ -284,7 +294,9 @@ class BrowserContextPool:
 
                 pooled = self._available[0]
 
-                if pooled.is_idle(self._idle_timeout) or pooled.is_stale(self._max_context_age):
+                if pooled.is_idle(self._idle_timeout) or pooled.is_stale(
+                    self._max_context_age
+                ):
                     self._available.popleft()
                     await self._close_context(pooled)
                     cleaned += 1
@@ -416,7 +428,9 @@ class BrowserPoolManager:
             self._initialized = True
             logger.info(f"BrowserPoolManager initialized with {browser_type} pool")
 
-    async def get_pool(self, browser_type: str = "chromium") -> Optional[BrowserContextPool]:
+    async def get_pool(
+        self, browser_type: str = "chromium"
+    ) -> Optional[BrowserContextPool]:
         """Get the context pool for a browser type."""
         return self._pools.get(browser_type)
 
@@ -485,8 +499,7 @@ class BrowserPoolManager:
     def get_stats(self) -> Dict[str, Any]:
         """Get statistics for all pools."""
         return {
-            browser_type: pool.get_stats()
-            for browser_type, pool in self._pools.items()
+            browser_type: pool.get_stats() for browser_type, pool in self._pools.items()
         }
 
     @property

@@ -2,11 +2,20 @@
 Reusable widgets for CasareRPA Orchestrator.
 Modern, clean design without icons.
 """
+
 from typing import Optional
 from PySide6.QtWidgets import (
-    QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QLineEdit, QComboBox, QProgressBar,
-    QSizePolicy, QGraphicsDropShadowEffect
+    QWidget,
+    QFrame,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QLineEdit,
+    QComboBox,
+    QProgressBar,
+    QSizePolicy,
+    QGraphicsDropShadowEffect,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
@@ -25,7 +34,7 @@ class KPICard(QFrame):
         value: str = "0",
         subtitle: str = "",
         trend: Optional[float] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self.setObjectName("card")
@@ -73,15 +82,21 @@ class KPICard(QFrame):
 
         if subtitle:
             subtitle_label = QLabel(subtitle)
-            subtitle_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 12px;")
+            subtitle_label.setStyleSheet(
+                f"color: {COLORS['text_muted']}; font-size: 12px;"
+            )
             footer.addWidget(subtitle_label)
 
         if trend is not None:
             # Use simple text arrows instead of emoji
             trend_text = f"+ {trend:.1f}%" if trend >= 0 else f"- {abs(trend):.1f}%"
-            trend_color = COLORS['accent_success'] if trend >= 0 else COLORS['accent_error']
+            trend_color = (
+                COLORS["accent_success"] if trend >= 0 else COLORS["accent_error"]
+            )
             trend_label = QLabel(trend_text)
-            trend_label.setStyleSheet(f"color: {trend_color}; font-size: 12px; font-weight: 600;")
+            trend_label.setStyleSheet(
+                f"color: {trend_color}; font-size: 12px; font-weight: 600;"
+            )
             footer.addWidget(trend_label)
 
         footer.addStretch()
@@ -132,7 +147,7 @@ class SearchBar(QWidget):
         self,
         placeholder: str = "Search...",
         filters: Optional[list] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
@@ -161,7 +176,7 @@ class SearchBar(QWidget):
         return self._search_input.text()
 
     def get_filter(self) -> str:
-        if hasattr(self, '_filter_combo'):
+        if hasattr(self, "_filter_combo"):
             return self._filter_combo.currentText()
         return ""
 
@@ -173,10 +188,7 @@ class ActionButton(QPushButton):
     """Styled action button - no icons."""
 
     def __init__(
-        self,
-        text: str,
-        primary: bool = True,
-        parent: Optional[QWidget] = None
+        self, text: str, primary: bool = True, parent: Optional[QWidget] = None
     ):
         super().__init__(text, parent)
 
@@ -228,10 +240,7 @@ class ProgressIndicator(QWidget):
     """Progress indicator with label."""
 
     def __init__(
-        self,
-        value: int = 0,
-        text: str = "",
-        parent: Optional[QWidget] = None
+        self, value: int = 0, text: str = "", parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
 
@@ -247,7 +256,9 @@ class ProgressIndicator(QWidget):
         layout.addWidget(self._progress, stretch=1)
 
         self._label = QLabel(text or f"{value}%")
-        self._label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 12px;")
+        self._label.setStyleSheet(
+            f"color: {COLORS['text_secondary']}; font-size: 12px;"
+        )
         self._label.setMinimumWidth(40)
         layout.addWidget(self._label)
 
@@ -262,10 +273,7 @@ class SectionHeader(QWidget):
     action_clicked = Signal()
 
     def __init__(
-        self,
-        title: str,
-        action_text: str = "",
-        parent: Optional[QWidget] = None
+        self, title: str, action_text: str = "", parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
 
@@ -299,7 +307,7 @@ class EmptyState(QWidget):
         title: str = "No data",
         description: str = "",
         action_text: str = "",
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
@@ -351,12 +359,7 @@ class LoadingSpinner(QWidget):
 class InfoRow(QWidget):
     """Information row with label and value."""
 
-    def __init__(
-        self,
-        label: str,
-        value: str,
-        parent: Optional[QWidget] = None
-    ):
+    def __init__(self, label: str, value: str, parent: Optional[QWidget] = None):
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
@@ -369,7 +372,9 @@ class InfoRow(QWidget):
         layout.addWidget(label_widget)
 
         self._value_widget = QLabel(value)
-        self._value_widget.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 13px;")
+        self._value_widget.setStyleSheet(
+            f"color: {COLORS['text_primary']}; font-size: 13px;"
+        )
         layout.addWidget(self._value_widget, stretch=1)
 
     def set_value(self, value: str):
@@ -379,11 +384,7 @@ class InfoRow(QWidget):
 class DataCard(QFrame):
     """Generic data card for displaying grouped information."""
 
-    def __init__(
-        self,
-        title: str,
-        parent: Optional[QWidget] = None
-    ):
+    def __init__(self, title: str, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setObjectName("dataCard")
 

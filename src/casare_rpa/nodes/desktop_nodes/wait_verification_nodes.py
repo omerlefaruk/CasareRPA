@@ -8,11 +8,10 @@ Provides nodes for waiting and verifying desktop element states:
 - VerifyElementPropertyNode: Verify element property value
 """
 
-from typing import Any, Dict, Optional
-from loguru import logger
+from typing import Any, Dict
 
 from ...core.base_node import BaseNode
-from ...core.types import PortType, DataType, NodeStatus
+from ...core.types import DataType, NodeStatus
 
 
 def safe_int(value, default: int) -> int:
@@ -39,12 +38,13 @@ class WaitForElementNode(BaseNode):
         - success: Whether wait succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Wait For Element"):
-        default_config = {
-            "timeout": 10.0,
-            "state": "visible",
-            "poll_interval": 0.5
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Wait For Element",
+    ):
+        default_config = {"timeout": 10.0, "state": "visible", "poll_interval": 0.5}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -68,7 +68,7 @@ class WaitForElementNode(BaseNode):
         if not selector:
             raise ValueError("Element selector is required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -78,7 +78,7 @@ class WaitForElementNode(BaseNode):
                 selector=selector,
                 timeout=float(timeout),
                 state=state,
-                poll_interval=float(poll_interval)
+                poll_interval=float(poll_interval),
             )
 
             self.set_output_value("element", element)
@@ -89,7 +89,7 @@ class WaitForElementNode(BaseNode):
                 "success": True,
                 "element": element,
                 "state": state,
-                "timeout": timeout
+                "timeout": timeout,
             }
 
         except TimeoutError as e:
@@ -101,7 +101,7 @@ class WaitForElementNode(BaseNode):
                 "success": False,
                 "error": str(e),
                 "state": state,
-                "timeout": timeout
+                "timeout": timeout,
             }
 
 
@@ -123,12 +123,13 @@ class WaitForWindowNode(BaseNode):
         - success: Whether wait succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Wait For Window"):
-        default_config = {
-            "timeout": 10.0,
-            "state": "visible",
-            "poll_interval": 0.5
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Wait For Window",
+    ):
+        default_config = {"timeout": 10.0, "state": "visible", "poll_interval": 0.5}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -154,7 +155,7 @@ class WaitForWindowNode(BaseNode):
         poll_interval = self.config.get("poll_interval", 0.5)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if title:
                 title = context.resolve_value(title)
             if title_regex:
@@ -163,9 +164,11 @@ class WaitForWindowNode(BaseNode):
                 class_name = context.resolve_value(class_name)
 
         if not title and not title_regex and not class_name:
-            raise ValueError("Must provide at least one of: title, title_regex, class_name")
+            raise ValueError(
+                "Must provide at least one of: title, title_regex, class_name"
+            )
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -177,7 +180,7 @@ class WaitForWindowNode(BaseNode):
                 class_name=class_name,
                 timeout=float(timeout),
                 state=state,
-                poll_interval=float(poll_interval)
+                poll_interval=float(poll_interval),
             )
 
             self.set_output_value("window", window)
@@ -188,7 +191,7 @@ class WaitForWindowNode(BaseNode):
                 "success": True,
                 "window": window,
                 "state": state,
-                "timeout": timeout
+                "timeout": timeout,
             }
 
         except TimeoutError as e:
@@ -200,7 +203,7 @@ class WaitForWindowNode(BaseNode):
                 "success": False,
                 "error": str(e),
                 "state": state,
-                "timeout": timeout
+                "timeout": timeout,
             }
 
 
@@ -217,10 +220,13 @@ class VerifyElementExistsNode(BaseNode):
         - element: The element if found (None if not)
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Verify Element Exists"):
-        default_config = {
-            "timeout": 0.0
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Verify Element Exists",
+    ):
+        default_config = {"timeout": 0.0}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -242,7 +248,7 @@ class VerifyElementExistsNode(BaseNode):
         if not selector:
             raise ValueError("Element selector is required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -252,7 +258,9 @@ class VerifyElementExistsNode(BaseNode):
         element = None
         if exists:
             try:
-                element = await desktop_ctx.async_wait_for_element(selector=selector, timeout=0.1)
+                element = await desktop_ctx.async_wait_for_element(
+                    selector=selector, timeout=0.1
+                )
             except Exception:
                 pass
 
@@ -260,11 +268,7 @@ class VerifyElementExistsNode(BaseNode):
         self.set_output_value("element", element)
         self.status = NodeStatus.SUCCESS
 
-        return {
-            "success": True,
-            "exists": exists,
-            "element": element
-        }
+        return {"success": True, "exists": exists, "element": element}
 
 
 class VerifyElementPropertyNode(BaseNode):
@@ -284,10 +288,13 @@ class VerifyElementPropertyNode(BaseNode):
         - actual_value: Actual property value
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Verify Element Property"):
-        default_config = {
-            "comparison": "equals"
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Verify Element Property",
+    ):
+        default_config = {"comparison": "equals"}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -314,7 +321,7 @@ class VerifyElementPropertyNode(BaseNode):
         if not property_name:
             raise ValueError("Property name is required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -322,7 +329,7 @@ class VerifyElementPropertyNode(BaseNode):
             element=element,
             property_name=property_name,
             expected_value=expected_value,
-            comparison=comparison
+            comparison=comparison,
         )
 
         # Get actual value for output
@@ -353,5 +360,5 @@ class VerifyElementPropertyNode(BaseNode):
             "actual_value": actual_value,
             "expected_value": expected_value,
             "property_name": property_name,
-            "comparison": comparison
+            "comparison": comparison,
         }

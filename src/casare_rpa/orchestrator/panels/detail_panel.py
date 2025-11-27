@@ -2,14 +2,24 @@
 Detail panel - Right sidebar showing job/robot details and logs.
 Tabbed interface for Properties, Logs, and Output.
 """
-from typing import Optional, Dict, Any, List
+
+from typing import Optional, Dict
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel,
-    QPlainTextEdit, QFrame, QScrollArea, QGridLayout,
-    QProgressBar, QPushButton, QSplitter, QTreeWidget, QTreeWidgetItem
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QLabel,
+    QPlainTextEdit,
+    QFrame,
+    QScrollArea,
+    QProgressBar,
+    QPushButton,
+    QTreeWidget,
+    QTreeWidgetItem,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QTextCharFormat, QFont, QSyntaxHighlighter
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QTextCharFormat, QSyntaxHighlighter
 
 from ..theme import THEME, get_status_color, get_priority_color
 
@@ -87,8 +97,11 @@ class PropertiesTab(QScrollArea):
 
         priority = job.get("priority", 1)
         priority_names = {0: "Low", 1: "Normal", 2: "High", 3: "Critical"}
-        self._add_property("Priority", priority_names.get(priority, "Normal"),
-                          get_priority_color(priority))
+        self._add_property(
+            "Priority",
+            priority_names.get(priority, "Normal"),
+            get_priority_color(priority),
+        )
 
         # Progress section
         self._add_section_header("Progress")
@@ -121,7 +134,7 @@ class PropertiesTab(QScrollArea):
 
         if job.get("started_at"):
             started = job["started_at"]
-            if hasattr(started, 'strftime'):
+            if hasattr(started, "strftime"):
                 started = started.strftime("%Y-%m-%d %H:%M:%S")
             self._add_property("Started", str(started))
         else:
@@ -129,7 +142,7 @@ class PropertiesTab(QScrollArea):
 
         if job.get("completed_at"):
             completed = job["completed_at"]
-            if hasattr(completed, 'strftime'):
+            if hasattr(completed, "strftime"):
                 completed = completed.strftime("%Y-%m-%d %H:%M:%S")
             self._add_property("Completed", str(completed))
 
@@ -143,7 +156,10 @@ class PropertiesTab(QScrollArea):
         # Assignment section
         self._add_section_header("Assignment")
         self._add_property("Robot", job.get("robot_name", "-"))
-        self._add_property("Robot ID", job.get("robot_id", "-")[:8] + "..." if job.get("robot_id") else "-")
+        self._add_property(
+            "Robot ID",
+            job.get("robot_id", "-")[:8] + "..." if job.get("robot_id") else "-",
+        )
 
         # Error info (if any)
         if job.get("error_message"):
@@ -215,7 +231,7 @@ class PropertiesTab(QScrollArea):
 
         if robot.get("last_seen"):
             last_seen = robot["last_seen"]
-            if hasattr(last_seen, 'strftime'):
+            if hasattr(last_seen, "strftime"):
                 last_seen = last_seen.strftime("%Y-%m-%d %H:%M:%S")
             self._add_property("Last Seen", str(last_seen))
         else:
@@ -318,8 +334,11 @@ class LogHighlighter(QSyntaxHighlighter):
 
         # Highlight timestamps (HH:MM:SS pattern)
         import re
-        for match in re.finditer(r'\d{2}:\d{2}:\d{2}', text):
-            self.setFormat(match.start(), match.end() - match.start(), self._formats["timestamp"])
+
+        for match in re.finditer(r"\d{2}:\d{2}:\d{2}", text):
+            self.setFormat(
+                match.start(), match.end() - match.start(), self._formats["timestamp"]
+            )
 
 
 class LogsTab(QWidget):

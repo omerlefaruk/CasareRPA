@@ -52,10 +52,7 @@ def get_robot_id() -> str:
 
 def get_robot_name() -> str:
     """Get robot display name."""
-    return os.getenv(
-        ENV_ROBOT_NAME,
-        f"Robot-{os.getenv('COMPUTERNAME', 'Unknown')}"
-    )
+    return os.getenv(ENV_ROBOT_NAME, f"Robot-{os.getenv('COMPUTERNAME', 'Unknown')}")
 
 
 # Legacy exports for compatibility
@@ -67,6 +64,7 @@ SUPABASE_KEY = os.getenv(ENV_SUPABASE_KEY, "")
 @dataclass
 class ConnectionConfig:
     """Configuration for backend connection."""
+
     url: str = ""
     key: str = ""
 
@@ -96,6 +94,7 @@ class ConnectionConfig:
 @dataclass
 class CircuitBreakerConfig:
     """Configuration for circuit breaker."""
+
     failure_threshold: int = 5
     success_threshold: int = 2
     timeout: float = 60.0
@@ -105,6 +104,7 @@ class CircuitBreakerConfig:
 @dataclass
 class JobExecutionConfig:
     """Configuration for job execution."""
+
     max_concurrent_jobs: int = 3
     job_poll_interval: float = 5.0
     lock_timeout: float = 300.0  # 5 minutes
@@ -136,6 +136,7 @@ class JobExecutionConfig:
 @dataclass
 class ObservabilityConfig:
     """Configuration for metrics and logging."""
+
     # Metrics
     metrics_enabled: bool = True
     resource_monitoring_enabled: bool = True
@@ -154,6 +155,7 @@ class ObservabilityConfig:
 @dataclass
 class RobotConfig:
     """Complete robot configuration."""
+
     robot_id: str = ""
     robot_name: str = ""
 
@@ -238,18 +240,20 @@ class RobotConfig:
         return cls(
             robot_id=data.get("robot_id", ""),
             robot_name=data.get("robot_name", ""),
-            connection=ConnectionConfig(
-                **data.get("connection", {})
-            ),
-            circuit_breaker=CircuitBreakerConfig(
-                **data.get("circuit_breaker", {})
-            ),
-            job_execution=JobExecutionConfig(
-                **data.get("job_execution", {})
-            ),
+            connection=ConnectionConfig(**data.get("connection", {})),
+            circuit_breaker=CircuitBreakerConfig(**data.get("circuit_breaker", {})),
+            job_execution=JobExecutionConfig(**data.get("job_execution", {})),
             observability=ObservabilityConfig(
-                audit_log_dir=Path(data.get("observability", {}).get("audit_log_dir", str(AUDIT_LOG_DIR))),
-                **{k: v for k, v in data.get("observability", {}).items() if k != "audit_log_dir"}
+                audit_log_dir=Path(
+                    data.get("observability", {}).get(
+                        "audit_log_dir", str(AUDIT_LOG_DIR)
+                    )
+                ),
+                **{
+                    k: v
+                    for k, v in data.get("observability", {}).items()
+                    if k != "audit_log_dir"
+                },
             ),
             offline_db_path=Path(data.get("offline_db_path", str(OFFLINE_DB_FILE))),
             offline_sync_interval=data.get("offline_sync_interval", 30.0),
@@ -365,8 +369,7 @@ async def validate_credentials_async(
     try:
         # Try to connect
         client = await asyncio.wait_for(
-            asyncio.to_thread(lambda: create_client(url, key)),
-            timeout=timeout
+            asyncio.to_thread(lambda: create_client(url, key)), timeout=timeout
         )
 
         # Try a simple query
@@ -374,7 +377,7 @@ async def validate_credentials_async(
             asyncio.to_thread(
                 lambda: client.table("robots").select("id").limit(1).execute()
             ),
-            timeout=timeout
+            timeout=timeout,
         )
 
         return True, None

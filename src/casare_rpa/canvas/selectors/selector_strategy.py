@@ -16,6 +16,7 @@ from ...desktop.element import DesktopElement
 
 class ConfidenceLevel(Enum):
     """Confidence level for selector reliability"""
+
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
@@ -26,6 +27,7 @@ class SelectorStrategy:
     """
     Represents a single selector strategy with metadata
     """
+
     strategy: str  # "automation_id", "name", "control_type", etc.
     value: str
     properties: Dict[str, Any]  # Additional properties for filtering
@@ -36,16 +38,15 @@ class SelectorStrategy:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to selector dictionary format"""
-        selector = {
-            "strategy": self.strategy,
-            "value": self.value
-        }
+        selector = {"strategy": self.strategy, "value": self.value}
         if self.properties:
             selector["properties"] = self.properties
         return selector
 
 
-def generate_selectors(element: DesktopElement, parent_control: Optional[auto.Control] = None) -> List[SelectorStrategy]:
+def generate_selectors(
+    element: DesktopElement, parent_control: Optional[auto.Control] = None
+) -> List[SelectorStrategy]:
     """
     Generate multiple selector strategies for a desktop element.
 
@@ -81,78 +82,102 @@ def generate_selectors(element: DesktopElement, parent_control: Optional[auto.Co
 
     # Strategy 1: AutomationId (highest priority)
     if automation_id:
-        strategies.append(SelectorStrategy(
-            strategy="automation_id",
-            value=automation_id,
-            properties={},
-            confidence=ConfidenceLevel.HIGH,
-            score=95.0,
-            description=f"By AutomationId: {automation_id}"
-        ))
+        strategies.append(
+            SelectorStrategy(
+                strategy="automation_id",
+                value=automation_id,
+                properties={},
+                confidence=ConfidenceLevel.HIGH,
+                score=95.0,
+                description=f"By AutomationId: {automation_id}",
+            )
+        )
         logger.debug(f"Generated AutomationId strategy: {automation_id}")
 
     # Strategy 2: Name (if available and meaningful)
     if name and len(name) > 0 and name.strip():
         # Check if name looks unique (not generic like "OK" or "Button")
-        is_generic = name.lower() in ["ok", "cancel", "yes", "no", "button", "text", "edit"]
+        is_generic = name.lower() in [
+            "ok",
+            "cancel",
+            "yes",
+            "no",
+            "button",
+            "text",
+            "edit",
+        ]
 
-        strategies.append(SelectorStrategy(
-            strategy="name",
-            value=name,
-            properties={},
-            confidence=ConfidenceLevel.MEDIUM if not is_generic else ConfidenceLevel.LOW,
-            score=80.0 if not is_generic else 60.0,
-            description=f"By Name: {name}"
-        ))
+        strategies.append(
+            SelectorStrategy(
+                strategy="name",
+                value=name,
+                properties={},
+                confidence=ConfidenceLevel.MEDIUM
+                if not is_generic
+                else ConfidenceLevel.LOW,
+                score=80.0 if not is_generic else 60.0,
+                description=f"By Name: {name}",
+            )
+        )
         logger.debug(f"Generated Name strategy: {name}")
 
     # Strategy 3: ControlType + Name (specific combination)
     if control_type and name and name.strip():
-        strategies.append(SelectorStrategy(
-            strategy="control_type",
-            value=control_type_clean,
-            properties={"Name": name},
-            confidence=ConfidenceLevel.MEDIUM,
-            score=75.0,
-            description=f"By {control_type_clean} with Name: {name}"
-        ))
-        logger.debug(f"Generated ControlType+Name strategy: {control_type_clean} / {name}")
+        strategies.append(
+            SelectorStrategy(
+                strategy="control_type",
+                value=control_type_clean,
+                properties={"Name": name},
+                confidence=ConfidenceLevel.MEDIUM,
+                score=75.0,
+                description=f"By {control_type_clean} with Name: {name}",
+            )
+        )
+        logger.debug(
+            f"Generated ControlType+Name strategy: {control_type_clean} / {name}"
+        )
 
     # Strategy 4: ClassName (if available)
     if class_name and class_name.strip():
-        strategies.append(SelectorStrategy(
-            strategy="class_name",
-            value=class_name,
-            properties={},
-            confidence=ConfidenceLevel.MEDIUM,
-            score=70.0,
-            description=f"By ClassName: {class_name}"
-        ))
+        strategies.append(
+            SelectorStrategy(
+                strategy="class_name",
+                value=class_name,
+                properties={},
+                confidence=ConfidenceLevel.MEDIUM,
+                score=70.0,
+                description=f"By ClassName: {class_name}",
+            )
+        )
         logger.debug(f"Generated ClassName strategy: {class_name}")
 
     # Strategy 5: ClassName + Name (specific combination)
     if class_name and name and name.strip():
-        strategies.append(SelectorStrategy(
-            strategy="class_name",
-            value=class_name,
-            properties={"Name": name},
-            confidence=ConfidenceLevel.MEDIUM,
-            score=72.0,
-            description=f"By {class_name} with Name: {name}"
-        ))
+        strategies.append(
+            SelectorStrategy(
+                strategy="class_name",
+                value=class_name,
+                properties={"Name": name},
+                confidence=ConfidenceLevel.MEDIUM,
+                score=72.0,
+                description=f"By {class_name} with Name: {name}",
+            )
+        )
         logger.debug(f"Generated ClassName+Name strategy: {class_name} / {name}")
 
     # Strategy 6: ControlType + AutomationId (very specific)
     if control_type and automation_id:
-        strategies.append(SelectorStrategy(
-            strategy="control_type",
-            value=control_type_clean,
-            properties={"AutomationId": automation_id},
-            confidence=ConfidenceLevel.HIGH,
-            score=98.0,
-            description=f"By {control_type_clean} with AutomationId: {automation_id}"
-        ))
-        logger.debug(f"Generated ControlType+AutomationId strategy")
+        strategies.append(
+            SelectorStrategy(
+                strategy="control_type",
+                value=control_type_clean,
+                properties={"AutomationId": automation_id},
+                confidence=ConfidenceLevel.HIGH,
+                score=98.0,
+                description=f"By {control_type_clean} with AutomationId: {automation_id}",
+            )
+        )
+        logger.debug("Generated ControlType+AutomationId strategy")
 
     # Strategy 7: ControlType + Index (fallback)
     if control_type:
@@ -160,33 +185,41 @@ def generate_selectors(element: DesktopElement, parent_control: Optional[auto.Co
         index = 0
         if parent_control:
             try:
-                index = _calculate_element_index(element, parent_control, control_type_clean)
+                index = _calculate_element_index(
+                    element, parent_control, control_type_clean
+                )
             except Exception:
                 pass
 
-        strategies.append(SelectorStrategy(
-            strategy="control_type",
-            value=control_type_clean,
-            properties={"index": index},
-            confidence=ConfidenceLevel.LOW,
-            score=40.0,
-            description=f"By {control_type_clean} at index {index} (may be fragile)"
-        ))
-        logger.debug(f"Generated ControlType+Index strategy: {control_type_clean}[{index}]")
+        strategies.append(
+            SelectorStrategy(
+                strategy="control_type",
+                value=control_type_clean,
+                properties={"index": index},
+                confidence=ConfidenceLevel.LOW,
+                score=40.0,
+                description=f"By {control_type_clean} at index {index} (may be fragile)",
+            )
+        )
+        logger.debug(
+            f"Generated ControlType+Index strategy: {control_type_clean}[{index}]"
+        )
 
     # Strategy 8: Path-based selector (hierarchical)
     if parent_control:
         try:
             path = _generate_path_selector(element)
             if path:
-                strategies.append(SelectorStrategy(
-                    strategy="xpath",
-                    value=path,
-                    properties={},
-                    confidence=ConfidenceLevel.LOW,
-                    score=50.0,
-                    description=f"Path-based: {path}"
-                ))
+                strategies.append(
+                    SelectorStrategy(
+                        strategy="xpath",
+                        value=path,
+                        properties={},
+                        confidence=ConfidenceLevel.LOW,
+                        score=50.0,
+                        description=f"Path-based: {path}",
+                    )
+                )
                 logger.debug(f"Generated path-based strategy: {path}")
         except Exception as e:
             logger.warning(f"Failed to generate path selector: {e}")
@@ -198,7 +231,9 @@ def generate_selectors(element: DesktopElement, parent_control: Optional[auto.Co
     return strategies
 
 
-def _calculate_element_index(element: DesktopElement, parent_control: auto.Control, control_type: str) -> int:
+def _calculate_element_index(
+    element: DesktopElement, parent_control: auto.Control, control_type: str
+) -> int:
     """
     Calculate the index of element among siblings of same control type.
 
@@ -285,9 +320,7 @@ def _generate_path_selector(element: DesktopElement) -> str:
 
 
 def validate_selector_uniqueness(
-    selector: SelectorStrategy,
-    parent_control: auto.Control,
-    timeout: float = 2.0
+    selector: SelectorStrategy, parent_control: auto.Control, timeout: float = 2.0
 ) -> bool:
     """
     Validate if a selector is unique (finds exactly one element).
@@ -310,7 +343,9 @@ def validate_selector_uniqueness(
         elements = find_elements(parent_control, selector_dict, max_depth=10)
 
         is_unique = len(elements) == 1
-        logger.debug(f"Selector '{selector.description}' found {len(elements)} elements (unique: {is_unique})")
+        logger.debug(
+            f"Selector '{selector.description}' found {len(elements)} elements (unique: {is_unique})"
+        )
 
         return is_unique
 
@@ -319,7 +354,9 @@ def validate_selector_uniqueness(
         return False
 
 
-def filter_best_selectors(strategies: List[SelectorStrategy], max_count: int = 5) -> List[SelectorStrategy]:
+def filter_best_selectors(
+    strategies: List[SelectorStrategy], max_count: int = 5
+) -> List[SelectorStrategy]:
     """
     Filter to keep only the best selector strategies.
 
@@ -338,7 +375,7 @@ def filter_best_selectors(strategies: List[SelectorStrategy], max_count: int = 5
     # Combine: all unique + top non-unique to reach max_count
     result = unique_strategies[:max_count]
     if len(result) < max_count:
-        result.extend(non_unique_strategies[:max_count - len(result)])
+        result.extend(non_unique_strategies[: max_count - len(result)])
 
     logger.debug(f"Filtered to {len(result)} best strategies")
     return result

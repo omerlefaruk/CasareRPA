@@ -15,6 +15,7 @@ import uuid
 
 class TriggerType(Enum):
     """Types of workflow triggers."""
+
     MANUAL = "manual"
     SCHEDULED = "scheduled"
     WEBHOOK = "webhook"
@@ -55,6 +56,7 @@ class TriggerConfiguration:
         success_count: Number of successful executions
         error_count: Number of failed executions
     """
+
     id: str
     type: str  # TriggerType value as string
     name: str
@@ -115,7 +117,7 @@ class TriggerConfiguration:
         trigger_type: str,
         name: str,
         config: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs,
     ) -> "TriggerConfiguration":
         """
         Factory method to create a new trigger configuration.
@@ -134,7 +136,7 @@ class TriggerConfiguration:
             type=trigger_type,
             name=name,
             config=config or {},
-            **kwargs
+            **kwargs,
         )
 
     def get_priority_value(self) -> int:
@@ -180,6 +182,7 @@ class TriggerConfiguration:
 # TYPE-SPECIFIC CONFIGURATION HELPERS
 # ============================================================================
 
+
 def create_webhook_config(
     name: str,
     endpoint: str,
@@ -187,7 +190,7 @@ def create_webhook_config(
     secret: Optional[str] = None,
     methods: Optional[List[str]] = None,
     payload_mapping: Optional[Dict[str, str]] = None,
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create a webhook trigger configuration.
@@ -221,7 +224,7 @@ def create_scheduled_config(
     time_hour: int = 9,
     time_minute: int = 0,
     timezone: str = "UTC",
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create a scheduled trigger configuration.
@@ -255,7 +258,7 @@ def create_file_watch_config(
     recursive: bool = False,
     events: Optional[List[str]] = None,
     debounce_ms: int = 1000,
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create a file watch trigger configuration.
@@ -293,7 +296,7 @@ def create_email_config(
     from_filter: Optional[str] = None,
     subject_filter: Optional[str] = None,
     poll_interval: int = 60,
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create an email trigger configuration.
@@ -333,7 +336,7 @@ def create_error_config(
     source_scenario_ids: Optional[List[str]] = None,
     error_types: Optional[List[str]] = None,
     error_pattern: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create an error trigger configuration.
@@ -362,7 +365,7 @@ def create_workflow_call_config(
     synchronous: bool = True,
     input_schema: Optional[Dict[str, Any]] = None,
     output_mapping: Optional[Dict[str, str]] = None,
-    **kwargs
+    **kwargs,
 ) -> TriggerConfiguration:
     """
     Create a workflow call trigger configuration.

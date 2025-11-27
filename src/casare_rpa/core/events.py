@@ -267,7 +267,9 @@ class EventRecorder:
     def stop_recording(self) -> None:
         """Stop recording events."""
         self.is_recording = False
-        logger.info(f"Event recording stopped. Recorded {len(self.recorded_events)} events")
+        logger.info(
+            f"Event recording stopped. Recorded {len(self.recorded_events)} events"
+        )
 
     def handle_event(self, event: Event) -> None:
         """

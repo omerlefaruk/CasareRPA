@@ -7,11 +7,11 @@ Provides a generic webhook interface for chat platforms (Slack, Teams, Discord, 
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from ..base import BaseTrigger, BaseTriggerConfig, TriggerStatus, TriggerType
+from ..base import BaseTrigger, TriggerStatus, TriggerType
 from ..registry import register_trigger
 
 
@@ -56,10 +56,8 @@ class ChatTrigger(BaseTrigger):
         The webhook endpoint is handled by TriggerManager's HTTP server.
         """
         self._status = TriggerStatus.ACTIVE
-        platform = self.config.config.get('platform', 'custom')
-        logger.info(
-            f"Chat trigger started: {self.config.name} (platform: {platform})"
-        )
+        platform = self.config.config.get("platform", "custom")
+        logger.info(f"Chat trigger started: {self.config.name} (platform: {platform})")
         return True
 
     async def stop(self) -> bool:
@@ -69,9 +67,7 @@ class ChatTrigger(BaseTrigger):
         return True
 
     async def process_message(
-        self,
-        raw_payload: Dict[str, Any],
-        platform: Optional[str] = None
+        self, raw_payload: Dict[str, Any], platform: Optional[str] = None
     ) -> bool:
         """
         Process a chat message.
@@ -86,7 +82,7 @@ class ChatTrigger(BaseTrigger):
             True if message was processed, False if filtered out
         """
         config = self.config.config
-        platform = platform or config.get('platform', 'custom')
+        platform = platform or config.get("platform", "custom")
 
         # Extract message data based on platform
         message_data = self._extract_message_data(raw_payload, platform)
@@ -101,14 +97,14 @@ class ChatTrigger(BaseTrigger):
 
         # Build payload
         payload = {
-            "message_text": message_data.get('text', ''),
-            "sender_id": message_data.get('sender_id', ''),
-            "sender_name": message_data.get('sender_name', ''),
-            "channel_id": message_data.get('channel_id', ''),
-            "channel_name": message_data.get('channel_name', ''),
-            "timestamp": message_data.get('timestamp', datetime.utcnow().isoformat()),
+            "message_text": message_data.get("text", ""),
+            "sender_id": message_data.get("sender_id", ""),
+            "sender_name": message_data.get("sender_name", ""),
+            "channel_id": message_data.get("channel_id", ""),
+            "channel_name": message_data.get("channel_name", ""),
+            "timestamp": message_data.get("timestamp", datetime.utcnow().isoformat()),
             "platform": platform,
-            "is_mention": message_data.get('is_mention', False),
+            "is_mention": message_data.get("is_mention", False),
             "raw_payload": raw_payload,
         }
 
@@ -120,63 +116,70 @@ class ChatTrigger(BaseTrigger):
         return await self.emit(payload, metadata)
 
     def _extract_message_data(
-        self,
-        payload: Dict[str, Any],
-        platform: str
+        self, payload: Dict[str, Any], platform: str
     ) -> Optional[Dict[str, Any]]:
         """Extract standardized message data from platform-specific payload."""
 
-        if platform == 'slack':
+        if platform == "slack":
             # Slack event payload structure
-            event = payload.get('event', payload)
+            event = payload.get("event", payload)
             return {
-                'text': event.get('text', ''),
-                'sender_id': event.get('user', ''),
-                'sender_name': event.get('username', event.get('user', '')),
-                'channel_id': event.get('channel', ''),
-                'channel_name': event.get('channel_name', ''),
-                'timestamp': event.get('ts', ''),
-                'is_bot': event.get('bot_id') is not None,
-                'is_mention': '<@' in event.get('text', ''),
+                "text": event.get("text", ""),
+                "sender_id": event.get("user", ""),
+                "sender_name": event.get("username", event.get("user", "")),
+                "channel_id": event.get("channel", ""),
+                "channel_name": event.get("channel_name", ""),
+                "timestamp": event.get("ts", ""),
+                "is_bot": event.get("bot_id") is not None,
+                "is_mention": "<@" in event.get("text", ""),
             }
 
-        elif platform == 'teams':
+        elif platform == "teams":
             # Microsoft Teams payload structure
             return {
-                'text': payload.get('text', ''),
-                'sender_id': payload.get('from', {}).get('id', ''),
-                'sender_name': payload.get('from', {}).get('name', ''),
-                'channel_id': payload.get('channelId', ''),
-                'channel_name': payload.get('channelData', {}).get('channel', {}).get('name', ''),
-                'timestamp': payload.get('timestamp', ''),
-                'is_bot': payload.get('from', {}).get('isBot', False),
-                'is_mention': payload.get('mentioned', []) != [],
+                "text": payload.get("text", ""),
+                "sender_id": payload.get("from", {}).get("id", ""),
+                "sender_name": payload.get("from", {}).get("name", ""),
+                "channel_id": payload.get("channelId", ""),
+                "channel_name": payload.get("channelData", {})
+                .get("channel", {})
+                .get("name", ""),
+                "timestamp": payload.get("timestamp", ""),
+                "is_bot": payload.get("from", {}).get("isBot", False),
+                "is_mention": payload.get("mentioned", []) != [],
             }
 
-        elif platform == 'discord':
+        elif platform == "discord":
             # Discord webhook payload structure
             return {
-                'text': payload.get('content', ''),
-                'sender_id': payload.get('author', {}).get('id', ''),
-                'sender_name': payload.get('author', {}).get('username', ''),
-                'channel_id': payload.get('channel_id', ''),
-                'channel_name': '',  # Discord doesn't include channel name in webhook
-                'timestamp': payload.get('timestamp', ''),
-                'is_bot': payload.get('author', {}).get('bot', False),
-                'is_mention': payload.get('mentions', []) != [] or payload.get('mention_everyone', False),
+                "text": payload.get("content", ""),
+                "sender_id": payload.get("author", {}).get("id", ""),
+                "sender_name": payload.get("author", {}).get("username", ""),
+                "channel_id": payload.get("channel_id", ""),
+                "channel_name": "",  # Discord doesn't include channel name in webhook
+                "timestamp": payload.get("timestamp", ""),
+                "is_bot": payload.get("author", {}).get("bot", False),
+                "is_mention": payload.get("mentions", []) != []
+                or payload.get("mention_everyone", False),
             }
 
         else:
             # Custom/generic format
             return {
-                'text': payload.get('message', payload.get('text', payload.get('content', ''))),
-                'sender_id': payload.get('sender_id', payload.get('user_id', payload.get('from', ''))),
-                'sender_name': payload.get('sender_name', payload.get('username', '')),
-                'channel_id': payload.get('channel_id', payload.get('room_id', '')),
-                'channel_name': payload.get('channel_name', payload.get('room_name', '')),
-                'timestamp': payload.get('timestamp', datetime.utcnow().isoformat()),
-                'is_bot': payload.get('is_bot', False),
-                'is_mention': payload.get('is_mention', False),
+                "text": payload.get(
+                    "message", payload.get("text", payload.get("content", ""))
+                ),
+                "sender_id": payload.get(
+                    "sender_id", payload.get("user_id", payload.get("from", ""))
+                ),
+                "sender_name": payload.get("sender_name", payload.get("username", "")),
+                "channel_id": payload.get("channel_id", payload.get("room_id", "")),
+                "channel_name": payload.get(
+                    "channel_name", payload.get("room_name", "")
+                ),
+                "timestamp": payload.get("timestamp", datetime.utcnow().isoformat()),
+                "is_bot": payload.get("is_bot", False),
+                "is_mention": payload.get("is_mention", False),
             }
 
     def _should_process_message(self, message_data: Dict[str, Any]) -> bool:
@@ -184,33 +187,35 @@ class ChatTrigger(BaseTrigger):
         config = self.config.config
 
         # Bot filter
-        if config.get('bot_filter', True) and message_data.get('is_bot', False):
+        if config.get("bot_filter", True) and message_data.get("is_bot", False):
             return False
 
         # Mention required
-        if config.get('mention_required', False) and not message_data.get('is_mention', False):
+        if config.get("mention_required", False) and not message_data.get(
+            "is_mention", False
+        ):
             return False
 
         # Channel filter
-        channel_filter = config.get('channel_filter', [])
+        channel_filter = config.get("channel_filter", [])
         if channel_filter:
-            channel_id = message_data.get('channel_id', '')
-            channel_name = message_data.get('channel_name', '')
+            channel_id = message_data.get("channel_id", "")
+            channel_name = message_data.get("channel_name", "")
             if channel_id not in channel_filter and channel_name not in channel_filter:
                 return False
 
         # User filter
-        user_filter = config.get('user_filter', [])
+        user_filter = config.get("user_filter", [])
         if user_filter:
-            sender_id = message_data.get('sender_id', '')
-            sender_name = message_data.get('sender_name', '')
+            sender_id = message_data.get("sender_id", "")
+            sender_name = message_data.get("sender_name", "")
             if sender_id not in user_filter and sender_name not in user_filter:
                 return False
 
         # Message pattern
-        message_pattern = config.get('message_pattern', '')
+        message_pattern = config.get("message_pattern", "")
         if message_pattern:
-            text = message_data.get('text', '')
+            text = message_data.get("text", "")
             if not re.search(message_pattern, text, re.IGNORECASE):
                 return False
 
@@ -220,13 +225,13 @@ class ChatTrigger(BaseTrigger):
         """Validate chat trigger configuration."""
         config = self.config.config
 
-        platform = config.get('platform', 'custom')
-        valid_platforms = ['slack', 'teams', 'discord', 'custom']
+        platform = config.get("platform", "custom")
+        valid_platforms = ["slack", "teams", "discord", "custom"]
         if platform not in valid_platforms:
             return False, f"Invalid platform. Must be one of: {valid_platforms}"
 
         # Validate message pattern if provided
-        message_pattern = config.get('message_pattern', '')
+        message_pattern = config.get("message_pattern", "")
         if message_pattern:
             try:
                 re.compile(message_pattern)
@@ -243,7 +248,12 @@ class ChatTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "platform": {
                     "type": "string",

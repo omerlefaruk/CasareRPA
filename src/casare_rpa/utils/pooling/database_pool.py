@@ -15,7 +15,7 @@ import time
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Deque, Dict, List, Optional, Set, Union
+from typing import Any, Deque, Dict, Optional, Set, Union
 
 from loguru import logger
 
@@ -23,18 +23,21 @@ from loguru import logger
 # Try to import optional database drivers
 try:
     import asyncpg
+
     ASYNCPG_AVAILABLE = True
 except ImportError:
     ASYNCPG_AVAILABLE = False
 
 try:
     import aiosqlite
+
     AIOSQLITE_AVAILABLE = True
 except ImportError:
     AIOSQLITE_AVAILABLE = False
 
 try:
     import aiomysql
+
     AIOMYSQL_AVAILABLE = True
 except ImportError:
     AIOMYSQL_AVAILABLE = False
@@ -42,6 +45,7 @@ except ImportError:
 
 class DatabaseType(Enum):
     """Supported database types."""
+
     SQLITE = "sqlite"
     POSTGRESQL = "postgresql"
     MYSQL = "mysql"
@@ -50,6 +54,7 @@ class DatabaseType(Enum):
 @dataclass
 class PoolStatistics:
     """Statistics for connection pool monitoring."""
+
     connections_created: int = 0
     connections_closed: int = 0
     connections_recycled: int = 0
@@ -70,6 +75,7 @@ class PoolStatistics:
 @dataclass
 class PooledConnection:
     """A database connection managed by the pool."""
+
     connection: Any
     db_type: DatabaseType
     created_at: float = field(default_factory=time.time)
@@ -449,7 +455,7 @@ class DatabaseConnectionPool:
     async def _close_raw_connection(self, connection: Any) -> None:
         """Close a raw database connection."""
         try:
-            if hasattr(connection, 'close'):
+            if hasattr(connection, "close"):
                 if asyncio.iscoroutinefunction(connection.close):
                     await connection.close()
                 else:
@@ -474,10 +480,7 @@ class DatabaseConnectionPool:
         cleaned = 0
         async with self._lock:
             # Keep at least min_size connections
-            while (
-                len(self._available) > self._min_size
-                and self._available
-            ):
+            while len(self._available) > self._min_size and self._available:
                 pooled = self._available[0]
                 if pooled.is_idle(self._idle_timeout):
                     self._available.popleft()
@@ -514,7 +517,7 @@ class DatabaseConnectionPool:
                 await self._close_connection(pooled)
             self._in_use.clear()
 
-        logger.info(f"Database connection pool closed")
+        logger.info("Database connection pool closed")
 
     def get_stats(self) -> Dict[str, Any]:
         """Get pool statistics."""

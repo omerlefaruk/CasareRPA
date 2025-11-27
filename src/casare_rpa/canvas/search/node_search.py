@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QLabel,
     QWidget,
-    QPushButton,
     QCheckBox,
 )
 from PySide6.QtCore import Qt, Signal
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
 @dataclass
 class NodeSearchResult:
     """Search result item."""
+
     node_id: str
     name: str
     node_type: str
@@ -52,7 +52,7 @@ class NodeSearchDialog(QDialog):
 
     node_selected = Signal(str)
 
-    def __init__(self, graph: 'NodeGraph', parent: Optional[QWidget] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: Optional[QWidget] = None) -> None:
         """
         Initialize the node search dialog.
 
@@ -73,9 +73,9 @@ class NodeSearchDialog(QDialog):
         """Set up the user interface."""
         self.setWindowTitle("Find Node")
         self.setWindowFlags(
-            Qt.WindowType.Dialog |
-            Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.Popup
+            Qt.WindowType.Dialog
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Popup
         )
         self.setModal(True)
         self.setFixedWidth(500)
@@ -176,7 +176,7 @@ class NodeSearchDialog(QDialog):
 
         for node in self._graph.all_nodes():
             node_id = node.get_property("node_id") or node.id()
-            name = node.name() if hasattr(node, 'name') else "Unknown"
+            name = node.name() if hasattr(node, "name") else "Unknown"
             node_type = node.__class__.__name__
 
             # Get category from node type
@@ -190,12 +190,11 @@ class NodeSearchDialog(QDialog):
             elif "Data" in node_type:
                 category = "Data"
 
-            self._all_nodes.append(NodeSearchResult(
-                node_id=node_id,
-                name=name,
-                node_type=node_type,
-                category=category
-            ))
+            self._all_nodes.append(
+                NodeSearchResult(
+                    node_id=node_id, name=name, node_type=node_type, category=category
+                )
+            )
 
         self._filter_nodes("")
         self._update_results()
