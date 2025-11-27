@@ -64,8 +64,6 @@ class ExecutionContext:
         # Desktop automation context (lazy-initialized)
         self.desktop_context: Any = None
 
-        logger.info(f"Execution context created for workflow: {workflow_name}")
-
     def set_variable(self, name: str, value: Any) -> None:
         """
         Set a variable in the context.
@@ -310,8 +308,6 @@ class ExecutionContext:
         Clean up resources (close browser, pages, browser contexts, desktop context, etc.).
         Should be called when execution completes or fails.
         """
-        logger.info("Cleaning up execution context...")
-
         # Clean up desktop context first (COM objects should be released early)
         if self.desktop_context is not None:
             try:
@@ -355,8 +351,6 @@ class ExecutionContext:
             except Exception as e:
                 logger.warning(f"Error closing browser: {e}")
             self.browser = None
-
-        logger.info("Context cleanup completed")
 
     def __repr__(self) -> str:
         """String representation."""

@@ -78,7 +78,6 @@ class CasareRPAApp:
         # Pre-build node mapping to avoid 500ms delay on first node creation
         from .graph.node_registry import get_casare_node_mapping
         get_casare_node_mapping()
-        logger.info("Pre-built CasareRPA node mapping")
 
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
@@ -260,9 +259,6 @@ class CasareRPAApp:
             interval_minutes = settings.get_autosave_interval()
             interval_ms = interval_minutes * 60 * 1000
             self._autosave_timer.start(interval_ms)
-            logger.info(f"Autosave enabled: every {interval_minutes} minute(s)")
-        else:
-            logger.info("Autosave disabled")
 
     def update_autosave_settings(self) -> None:
         """Update autosave timer based on current settings."""
@@ -994,8 +990,6 @@ class CasareRPAApp:
         self._node_graph.set_import_callback(on_import_data)
         self._node_graph.setup_drag_drop()
 
-        logger.info("Drag-drop import support configured")
-
     def _load_workflow_to_graph_merge(self, workflow_data: dict) -> None:
         """
         Load workflow data into graph without clearing existing nodes (merge mode).
@@ -1720,8 +1714,7 @@ class CasareRPAApp:
         # Build nodes dict with actual node instances (required by WorkflowRunner)
         nodes_dict = {}
         node_id_map = {}  # Map visual_node -> node_id for connections
-        
-        logger.info(f"Building workflow from {len(graph.all_nodes())} visual nodes")
+
         for visual_node in graph.all_nodes():
             # Get the underlying CasareRPA node
             casare_node = visual_node.get_casare_node()

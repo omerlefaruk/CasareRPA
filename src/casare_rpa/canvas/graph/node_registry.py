@@ -29,7 +29,7 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
     Returns:
         Dictionary mapping visual node classes to CasareRPA node classes
     """
-    from .visual_nodes import ALL_VISUAL_NODE_CLASSES, VisualNode
+    from ..visual_nodes import ALL_VISUAL_NODE_CLASSES, VisualNode
 
     # Visual-only nodes that don't need CasareRPA logic counterparts
     # These are annotation/documentation nodes for organizing workflows
@@ -73,15 +73,15 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
         try:
             if casare_module == "desktop":
                 # Import from desktop_nodes
-                from ..nodes import desktop_nodes
+                from ...nodes import desktop_nodes
                 casare_class = getattr(desktop_nodes, casare_class_name, None)
             elif casare_module == "file":
                 # Import from file_nodes
-                from ..nodes import file_nodes
+                from ...nodes import file_nodes
                 casare_class = getattr(file_nodes, casare_class_name, None)
             elif casare_module == "utility":
                 # Import from utility_nodes
-                from ..nodes import utility_nodes
+                from ...nodes import utility_nodes
                 casare_class = getattr(utility_nodes, casare_class_name, None)
             elif casare_module == "office":
                 # Import from desktop_nodes.office_nodes
@@ -89,7 +89,7 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
                 casare_class = getattr(office_nodes, casare_class_name, None)
             else:
                 # Import from main nodes module (uses lazy loading)
-                from ..nodes import _lazy_import, _NODE_REGISTRY
+                from ...nodes import _lazy_import, _NODE_REGISTRY
                 if casare_class_name in _NODE_REGISTRY:
                     casare_class = _lazy_import(casare_class_name)
                 else:
@@ -104,7 +104,6 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
         except Exception as e:
             logger.warning(f"Failed to load CasareRPA node class '{casare_class_name}': {e}")
 
-    logger.info(f"Auto-discovered {len(mapping)} node mappings")
     return mapping
 
 
@@ -146,7 +145,7 @@ def _build_node_type_mapping() -> Dict[str, tuple]:
         Dict mapping node_type (e.g., "MessageBoxNode") to tuple of:
         (visual_class, identifier_for_create_node, casare_class_or_None)
     """
-    from .visual_nodes import ALL_VISUAL_NODE_CLASSES
+    from ..visual_nodes import ALL_VISUAL_NODE_CLASSES
 
     mapping = {}
     casare_mapping = get_casare_node_mapping()
@@ -379,7 +378,7 @@ class NodeRegistry:
         Args:
             graph: NodeGraph instance to register nodes with
         """
-        from .visual_nodes import ALL_VISUAL_NODE_CLASSES
+        from ..visual_nodes import ALL_VISUAL_NODE_CLASSES
 
         # Register all nodes with NodeGraphQt (including internal nodes for programmatic creation)
         for node_class in ALL_VISUAL_NODE_CLASSES:
