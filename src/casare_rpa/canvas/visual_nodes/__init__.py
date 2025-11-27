@@ -16,8 +16,4 @@ This compatibility layer will be removed in v3.0.
 
 # Re-export all visual nodes from new location
 from casare_rpa.presentation.canvas.visual_nodes import *  # noqa: F401, F403
-
-__all__ = [
-    # All nodes are re-exported from presentation.canvas.visual_nodes
-    # See: src/casare_rpa/presentation/canvas/visual_nodes/__init__.py
-]
+from casare_rpa.presentation.canvas.visual_nodes import __all__  # noqa: F401

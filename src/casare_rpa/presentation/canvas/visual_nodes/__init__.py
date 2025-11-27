@@ -179,9 +179,8 @@ from .rest_api import (
     VisualBuildUrlNode,
 )
 
-# Utility (4 nodes)
+# Utility (3 nodes)
 from .utility import (
-    VisualHttpRequestNode,
     VisualValidateNode,
     VisualTransformNode,
     VisualLogNode,
@@ -341,7 +340,6 @@ __all__ = [
     "VisualHttpUploadFileNode",
     "VisualBuildUrlNode",
     # utility
-    "VisualHttpRequestNode",
     "VisualValidateNode",
     "VisualTransformNode",
     "VisualLogNode",
