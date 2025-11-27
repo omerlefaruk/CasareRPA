@@ -33,7 +33,7 @@ from casare_rpa.core.validation import (
 class TestInjectionAttacks:
     """Test for injection vulnerabilities in validation."""
 
-    def test_sql_injection_in_node_id(self):
+    def test_sql_injection_in_node_id(self) -> None:
         """Test SQL injection attempt in node_id field."""
         malicious_id = "'; DROP TABLE nodes; --"
         data = {
@@ -48,7 +48,7 @@ class TestInjectionAttacks:
         result = validate_workflow(data)
         # Validation should complete without crash
 
-    def test_javascript_injection_in_config(self):
+    def test_javascript_injection_in_config(self) -> None:
         """Test JavaScript injection in node config."""
         data = {
             "nodes": {
@@ -65,7 +65,7 @@ class TestInjectionAttacks:
         result = validate_workflow(data)
         # Should not execute any code
 
-    def test_command_injection_in_metadata(self):
+    def test_command_injection_in_metadata(self) -> None:
         """Test command injection in metadata fields."""
         data = {
             "metadata": {
@@ -77,7 +77,7 @@ class TestInjectionAttacks:
         result = validate_workflow(data)
         # Should treat as plain text
 
-    def test_python_code_injection_in_node_type(self):
+    def test_python_code_injection_in_node_type(self) -> None:
         """Test Python code injection in node_type."""
         data = {
             "nodes": {
@@ -91,7 +91,7 @@ class TestInjectionAttacks:
         # Should fail validation but not execute code
         assert result.is_valid is False
 
-    def test_format_string_injection(self):
+    def test_format_string_injection(self) -> None:
         """Test format string injection vulnerabilities."""
         data = {
             "metadata": {"name": "{.__class__.__bases__[0].__subclasses__()}"},
@@ -115,7 +115,7 @@ class TestInjectionAttacks:
 class TestResourceExhaustion:
     """Test for denial-of-service vulnerabilities."""
 
-    def test_extremely_large_node_count(self):
+    def test_extremely_large_node_count(self) -> None:
         """Test validation with massive number of nodes."""
         # Create 10,000 nodes to test memory limits
         nodes = {}
@@ -134,7 +134,7 @@ class TestResourceExhaustion:
         except MemoryError:
             pytest.fail("Validation caused memory error with large node count")
 
-    def test_extremely_large_connection_count(self):
+    def test_extremely_large_connection_count(self) -> None:
         """Test validation with massive number of connections."""
         nodes = {}
         connections = []
@@ -167,7 +167,7 @@ class TestResourceExhaustion:
         except RecursionError:
             pytest.fail("Validation caused recursion error with many connections")
 
-    def test_deeply_nested_dict_structure(self):
+    def test_deeply_nested_dict_structure(self) -> None:
         """Test deeply nested dictionary structures."""
         # Create deeply nested config
         config = {"level0": {}}
@@ -188,7 +188,7 @@ class TestResourceExhaustion:
         except RecursionError:
             pytest.fail("Validation caused recursion error with deep nesting")
 
-    def test_very_long_strings(self):
+    def test_very_long_strings(self) -> None:
         """Test validation with extremely long string values."""
         long_string = "A" * 1000000  # 1MB string
 
@@ -209,14 +209,12 @@ class TestResourceExhaustion:
         except MemoryError:
             pytest.fail("Validation caused memory error with long strings")
 
-    def test_circular_reference_in_config(self):
+    def test_circular_reference_in_config(self) -> None:
         """Test handling of circular references in config."""
         config = {"key": "value"}
         config["self"] = config  # Circular reference
 
-        data = {
-            "nodes": {"n1": {"node_id": "n1", "node_type": "StartNode"}}
-        }
+        data = {"nodes": {"n1": {"node_id": "n1", "node_type": "StartNode"}}}
         # Don't include circular config as it would fail JSON serialization
         # This tests that validation doesn't crash on complex structures
 
@@ -232,7 +230,7 @@ class TestResourceExhaustion:
 class TestInfiniteLoopsAndRecursion:
     """Test for infinite loop vulnerabilities."""
 
-    def test_circular_dependency_deep_chain(self):
+    def test_circular_dependency_deep_chain(self) -> None:
         """Test circular dependency detection with deep chains."""
         # Create a long circular chain: n0 -> n1 -> ... -> n99 -> n0
         nodes = {}
@@ -266,7 +264,7 @@ class TestInfiniteLoopsAndRecursion:
         except RecursionError:
             pytest.fail("Circular dependency detection caused infinite recursion")
 
-    def test_multiple_circular_dependencies(self):
+    def test_multiple_circular_dependencies(self) -> None:
         """Test multiple separate circular dependency chains."""
         nodes = {
             "a1": {"node_id": "a1", "node_type": "LogNode"},
@@ -315,7 +313,7 @@ class TestInfiniteLoopsAndRecursion:
         except RecursionError:
             pytest.fail("Multiple circular dependencies caused infinite recursion")
 
-    def test_self_referencing_connection(self):
+    def test_self_referencing_connection(self) -> None:
         """Test self-referencing connection handling."""
         data = {
             "nodes": {"n1": {"node_id": "n1", "node_type": "LogNode"}},
@@ -345,7 +343,7 @@ class TestInfiniteLoopsAndRecursion:
 class TestInputValidationBypass:
     """Test for input validation bypass vulnerabilities."""
 
-    def test_null_byte_injection(self):
+    def test_null_byte_injection(self) -> None:
         """Test null byte injection in strings."""
         data = {
             "metadata": {"name": "test\x00injection"},
@@ -359,7 +357,7 @@ class TestInputValidationBypass:
         result = validate_workflow(data)
         # Should handle null bytes safely
 
-    def test_unicode_normalization_attack(self):
+    def test_unicode_normalization_attack(self) -> None:
         """Test Unicode normalization vulnerabilities."""
         # Using Unicode characters that normalize to dangerous strings
         data = {
@@ -368,14 +366,14 @@ class TestInputValidationBypass:
                 "n1": {
                     "node_id": "n1",
                     "node_type": "StartNode",
-                    "config": {"value": "\uFEFF"},  # Zero-width no-break space
+                    "config": {"value": "\ufeff"},  # Zero-width no-break space
                 }
             },
         }
         result = validate_workflow(data)
         # Should handle Unicode normalization
 
-    def test_type_confusion_attack(self):
+    def test_type_confusion_attack(self) -> None:
         """Test type confusion vulnerabilities."""
         # Passing unexpected types to trigger type confusion
         data = {
@@ -389,7 +387,7 @@ class TestInputValidationBypass:
         # Should handle type mismatch gracefully
         result = validate_workflow(data)
 
-    def test_empty_string_node_id(self):
+    def test_empty_string_node_id(self) -> None:
         """Test empty string as node_id."""
         data = {
             "nodes": {
@@ -402,7 +400,7 @@ class TestInputValidationBypass:
         result = validate_workflow(data)
         # Empty string is technically valid but unusual
 
-    def test_special_characters_in_ids(self):
+    def test_special_characters_in_ids(self) -> None:
         """Test special characters in node IDs."""
         special_chars = "!@#$%^&*()[]{}|\\;:'\",.<>?/`~"
         data = {
@@ -425,7 +423,7 @@ class TestInputValidationBypass:
 class TestMemoryLeaks:
     """Test for potential memory leaks."""
 
-    def test_repeated_validation_no_leak(self):
+    def test_repeated_validation_no_leak(self) -> None:
         """Test that repeated validations don't leak memory."""
         data = {
             "metadata": {"name": "Test"},
@@ -450,7 +448,7 @@ class TestMemoryLeaks:
             # Clear reference to help GC
             del result
 
-    def test_large_validation_result_cleanup(self):
+    def test_large_validation_result_cleanup(self) -> None:
         """Test that large validation results are cleaned up properly."""
         nodes = {}
         for i in range(1000):
@@ -476,7 +474,7 @@ class TestMemoryLeaks:
 class TestPathTraversal:
     """Test for path traversal vulnerabilities."""
 
-    def test_path_traversal_in_metadata(self):
+    def test_path_traversal_in_metadata(self) -> None:
         """Test path traversal attempts in metadata."""
         data = {
             "metadata": {
@@ -488,7 +486,7 @@ class TestPathTraversal:
         result = validate_workflow(data)
         # Should treat as plain text, not file paths
 
-    def test_absolute_path_in_config(self):
+    def test_absolute_path_in_config(self) -> None:
         """Test absolute path in node config."""
         data = {
             "nodes": {
@@ -514,7 +512,7 @@ class TestPathTraversal:
 class TestRaceConditions:
     """Test for potential race conditions."""
 
-    def test_concurrent_validation_same_data(self):
+    def test_concurrent_validation_same_data(self) -> None:
         """Test concurrent validation of the same workflow."""
         import threading
 
@@ -546,7 +544,7 @@ class TestRaceConditions:
         assert len(errors) == 0
         assert len(results) == 10
 
-    def test_global_state_isolation(self):
+    def test_global_state_isolation(self) -> None:
         """Test that validation doesn't rely on mutable global state."""
         # First validation
         data1 = {
@@ -576,7 +574,7 @@ class TestRaceConditions:
 class TestMalformedData:
     """Test handling of malformed/corrupted data."""
 
-    def test_missing_keys_in_connection(self):
+    def test_missing_keys_in_connection(self) -> None:
         """Test connection with missing required keys."""
         data = {
             "nodes": {"n1": {"node_id": "n1", "node_type": "StartNode"}},
@@ -587,7 +585,7 @@ class TestMalformedData:
         result = validate_workflow(data)
         assert result.is_valid is False
 
-    def test_wrong_type_for_position(self):
+    def test_wrong_type_for_position(self) -> None:
         """Test wrong data type for position field."""
         data = {
             "nodes": {
@@ -601,7 +599,7 @@ class TestMalformedData:
         result = validate_workflow(data)
         # Should generate warning but not crash
 
-    def test_mixed_connection_formats(self):
+    def test_mixed_connection_formats(self) -> None:
         """Test mixing different connection formats."""
         data = {
             "nodes": {
@@ -621,7 +619,7 @@ class TestMalformedData:
         result = validate_workflow(data)
         # Should handle both formats
 
-    def test_none_as_workflow_data(self):
+    def test_none_as_workflow_data(self) -> None:
         """Test None as workflow data."""
         try:
             result = validate_workflow(None)
@@ -630,7 +628,7 @@ class TestMalformedData:
             # Expected if validation doesn't handle None
             pass
 
-    def test_list_as_workflow_data(self):
+    def test_list_as_workflow_data(self) -> None:
         """Test list instead of dict as workflow data."""
         result = validate_workflow([])
         assert result.is_valid is False

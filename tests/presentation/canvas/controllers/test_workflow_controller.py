@@ -22,7 +22,7 @@ from casare_rpa.presentation.canvas.controllers.workflow_controller import (
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow with all required attributes."""
     mock = Mock()
     mock._central_widget = Mock()
@@ -51,7 +51,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def workflow_controller(mock_main_window):
+def workflow_controller(mock_main_window) -> None:
     """Create a WorkflowController instance."""
     controller = WorkflowController(mock_main_window)
     controller.initialize()
@@ -61,7 +61,7 @@ def workflow_controller(mock_main_window):
 class TestWorkflowControllerInitialization:
     """Tests for WorkflowController initialization."""
 
-    def test_initialization_success(self, mock_main_window):
+    def test_initialization_success(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         controller = WorkflowController(mock_main_window)
 
@@ -70,14 +70,14 @@ class TestWorkflowControllerInitialization:
         assert controller._is_modified is False
         assert not controller.is_initialized()
 
-    def test_initialize_sets_state(self, mock_main_window):
+    def test_initialize_sets_state(self, mock_main_window) -> None:
         """Test initialize() sets initialized state."""
         controller = WorkflowController(mock_main_window)
         controller.initialize()
 
         assert controller.is_initialized()
 
-    def test_cleanup_resets_state(self, workflow_controller):
+    def test_cleanup_resets_state(self, workflow_controller) -> None:
         """Test cleanup() resets initialized state."""
         workflow_controller.cleanup()
 
@@ -87,7 +87,7 @@ class TestWorkflowControllerInitialization:
 class TestWorkflowControllerProperties:
     """Tests for WorkflowController properties."""
 
-    def test_current_file_property(self, workflow_controller):
+    def test_current_file_property(self, workflow_controller) -> None:
         """Test current_file property getter."""
         assert workflow_controller.current_file is None
 
@@ -95,7 +95,7 @@ class TestWorkflowControllerProperties:
         workflow_controller._current_file = test_path
         assert workflow_controller.current_file == test_path
 
-    def test_is_modified_property(self, workflow_controller):
+    def test_is_modified_property(self, workflow_controller) -> None:
         """Test is_modified property getter."""
         assert workflow_controller.is_modified is False
 
@@ -106,7 +106,7 @@ class TestWorkflowControllerProperties:
 class TestNewWorkflow:
     """Tests for new workflow creation."""
 
-    def test_new_workflow_success(self, workflow_controller, mock_main_window):
+    def test_new_workflow_success(self, workflow_controller, mock_main_window) -> None:
         """Test creating new workflow."""
         # Setup signal spy
         signal_emitted = []
@@ -123,7 +123,9 @@ class TestNewWorkflow:
             "New workflow created", 3000
         )
 
-    def test_new_workflow_cancelled_on_unsaved_changes(self, workflow_controller):
+    def test_new_workflow_cancelled_on_unsaved_changes(
+        self, workflow_controller
+    ) -> None:
         """Test new workflow cancelled when user cancels unsaved changes dialog."""
         workflow_controller.set_modified(True)
 
@@ -135,7 +137,7 @@ class TestNewWorkflow:
         # Should not emit signal or clear state
         assert workflow_controller.is_modified is True
 
-    def test_new_workflow_discards_unsaved_changes(self, workflow_controller):
+    def test_new_workflow_discards_unsaved_changes(self, workflow_controller) -> None:
         """Test new workflow discards unsaved changes when user confirms."""
         workflow_controller.set_modified(True)
         workflow_controller.set_current_file(Path("/test/old.json"))
@@ -154,7 +156,7 @@ class TestNewWorkflow:
         assert workflow_controller.current_file is None
         assert not workflow_controller.is_modified
 
-    def test_new_workflow_saves_before_continuing(self, workflow_controller):
+    def test_new_workflow_saves_before_continuing(self, workflow_controller) -> None:
         """Test new workflow saves current work when user chooses Save."""
         workflow_controller.set_modified(True)
         workflow_controller.set_current_file(Path("/test/current.json"))
@@ -185,7 +187,7 @@ class TestNewFromTemplate:
     )
     def test_new_from_template_cancelled(
         self, mock_browser, workflow_controller, mock_main_window
-    ):
+    ) -> None:
         """Test new from template cancelled when no template selected."""
         mock_browser.return_value = None
 
@@ -199,7 +201,7 @@ class TestNewFromTemplate:
     )
     def test_new_from_template_success(
         self, mock_browser, workflow_controller, mock_main_window
-    ):
+    ) -> None:
         """Test new from template with template selection."""
         mock_template = Mock()
         mock_template.name = "Test Template"
@@ -218,7 +220,7 @@ class TestOpenWorkflow:
     """Tests for opening workflow files."""
 
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
-    def test_open_workflow_cancelled(self, mock_dialog, workflow_controller):
+    def test_open_workflow_cancelled(self, mock_dialog, workflow_controller) -> None:
         """Test open workflow cancelled when no file selected."""
         mock_dialog.getOpenFileName.return_value = ("", "")
 
@@ -234,7 +236,7 @@ class TestOpenWorkflow:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
     def test_open_workflow_success(
         self, mock_dialog, workflow_controller, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test open workflow with valid file."""
         test_file = tmp_path / "test_workflow.json"
         test_file.write_text('{"nodes": {}, "connections": []}')
@@ -256,7 +258,7 @@ class TestOpenWorkflow:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
     def test_open_workflow_checks_unsaved_changes(
         self, mock_dialog, workflow_controller
-    ):
+    ) -> None:
         """Test open workflow checks for unsaved changes."""
         workflow_controller.set_modified(True)
 
@@ -272,7 +274,7 @@ class TestOpenWorkflow:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QTimer")
     def test_open_workflow_triggers_validation(
         self, mock_timer, mock_dialog, workflow_controller, tmp_path
-    ):
+    ) -> None:
         """Test open workflow schedules validation after loading."""
         test_file = tmp_path / "test_workflow.json"
         test_file.write_text('{"nodes": {}, "connections": []}')
@@ -288,7 +290,7 @@ class TestOpenWorkflow:
 class TestSaveWorkflow:
     """Tests for saving workflow files."""
 
-    def test_save_workflow_without_current_file(self, workflow_controller):
+    def test_save_workflow_without_current_file(self, workflow_controller) -> None:
         """Test save workflow without current file calls save_as."""
         with patch.object(workflow_controller, "save_workflow_as") as mock_save_as:
             workflow_controller.save_workflow()
@@ -297,7 +299,7 @@ class TestSaveWorkflow:
 
     def test_save_workflow_with_current_file(
         self, workflow_controller, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test save workflow with existing file."""
         test_file = tmp_path / "existing.json"
         workflow_controller.set_current_file(test_file)
@@ -316,7 +318,7 @@ class TestSaveWorkflow:
 
     def test_save_workflow_validation_blocks_save(
         self, workflow_controller, mock_main_window
-    ):
+    ) -> None:
         """Test save workflow blocked by validation errors."""
         test_file = Path("/test/workflow.json")
         workflow_controller.set_current_file(test_file)
@@ -336,7 +338,7 @@ class TestSaveWorkflow:
 
     def test_save_workflow_validation_user_proceeds(
         self, workflow_controller, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test save workflow proceeds despite validation errors when user confirms."""
         test_file = tmp_path / "workflow.json"
         workflow_controller.set_current_file(test_file)
@@ -363,7 +365,7 @@ class TestSaveWorkflowAs:
     """Tests for save workflow as functionality."""
 
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
-    def test_save_as_cancelled(self, mock_dialog, workflow_controller):
+    def test_save_as_cancelled(self, mock_dialog, workflow_controller) -> None:
         """Test save as cancelled when no file selected."""
         mock_dialog.getSaveFileName.return_value = ("", "")
 
@@ -379,7 +381,7 @@ class TestSaveWorkflowAs:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
     def test_save_as_success(
         self, mock_dialog, workflow_controller, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test save as with new file name."""
         test_file = tmp_path / "new_workflow.json"
         mock_dialog.getSaveFileName.return_value = (str(test_file), "*.json")
@@ -403,7 +405,7 @@ class TestImportWorkflow:
     """Tests for importing workflow files."""
 
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
-    def test_import_workflow_cancelled(self, mock_dialog, workflow_controller):
+    def test_import_workflow_cancelled(self, mock_dialog, workflow_controller) -> None:
         """Test import workflow cancelled."""
         mock_dialog.getOpenFileName.return_value = ("", "")
 
@@ -419,7 +421,7 @@ class TestImportWorkflow:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
     def test_import_workflow_success(
         self, mock_dialog, workflow_controller, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test import workflow success."""
         test_file = tmp_path / "import.json"
         test_file.write_text('{"nodes": {}, "connections": []}')
@@ -440,7 +442,9 @@ class TestImportWorkflow:
 class TestExportSelectedNodes:
     """Tests for exporting selected nodes."""
 
-    def test_export_no_graph_available(self, workflow_controller, mock_main_window):
+    def test_export_no_graph_available(
+        self, workflow_controller, mock_main_window
+    ) -> None:
         """Test export when no graph is available."""
         mock_main_window._central_widget = None
 
@@ -450,7 +454,9 @@ class TestExportSelectedNodes:
             "No graph available", 3000
         )
 
-    def test_export_no_nodes_selected(self, workflow_controller, mock_main_window):
+    def test_export_no_nodes_selected(
+        self, workflow_controller, mock_main_window
+    ) -> None:
         """Test export when no nodes are selected."""
         mock_main_window._central_widget.graph.selected_nodes.return_value = []
 
@@ -462,7 +468,7 @@ class TestExportSelectedNodes:
     @patch("casare_rpa.presentation.canvas.controllers.workflow_controller.QFileDialog")
     def test_export_selected_nodes_success(
         self, mock_dialog, workflow_controller, mock_main_window
-    ):
+    ) -> None:
         """Test export selected nodes success."""
         mock_node1 = Mock()
         mock_node2 = Mock()
@@ -487,7 +493,7 @@ class TestExportSelectedNodes:
 class TestCloseWorkflow:
     """Tests for closing workflow."""
 
-    def test_close_workflow_no_changes(self, workflow_controller):
+    def test_close_workflow_no_changes(self, workflow_controller) -> None:
         """Test close workflow with no unsaved changes."""
         signal_emitted = []
         workflow_controller.workflow_closed.connect(lambda: signal_emitted.append(True))
@@ -499,7 +505,7 @@ class TestCloseWorkflow:
         assert workflow_controller.current_file is None
         assert not workflow_controller.is_modified
 
-    def test_close_workflow_with_unsaved_cancelled(self, workflow_controller):
+    def test_close_workflow_with_unsaved_cancelled(self, workflow_controller) -> None:
         """Test close workflow cancelled on unsaved changes."""
         workflow_controller.set_modified(True)
 
@@ -515,7 +521,7 @@ class TestCloseWorkflow:
 class TestSetters:
     """Tests for setter methods."""
 
-    def test_set_current_file(self, workflow_controller):
+    def test_set_current_file(self, workflow_controller) -> None:
         """Test set_current_file updates state and emits signal."""
         signal_values = []
         workflow_controller.current_file_changed.connect(
@@ -529,7 +535,7 @@ class TestSetters:
         assert len(signal_values) == 1
         assert signal_values[0] == test_path
 
-    def test_set_current_file_no_change(self, workflow_controller):
+    def test_set_current_file_no_change(self, workflow_controller) -> None:
         """Test set_current_file doesn't emit signal when value unchanged."""
         signal_values = []
         workflow_controller.current_file_changed.connect(
@@ -540,7 +546,7 @@ class TestSetters:
 
         assert len(signal_values) == 0
 
-    def test_set_modified(self, workflow_controller):
+    def test_set_modified(self, workflow_controller) -> None:
         """Test set_modified updates state and emits signal."""
         signal_values = []
         workflow_controller.modified_changed.connect(
@@ -553,7 +559,7 @@ class TestSetters:
         assert len(signal_values) == 1
         assert signal_values[0] is True
 
-    def test_set_modified_no_change(self, workflow_controller):
+    def test_set_modified_no_change(self, workflow_controller) -> None:
         """Test set_modified doesn't emit signal when value unchanged."""
         signal_values = []
         workflow_controller.modified_changed.connect(
@@ -568,13 +574,15 @@ class TestSetters:
 class TestPrivateMethods:
     """Tests for private helper methods."""
 
-    def test_check_unsaved_changes_no_changes(self, workflow_controller):
+    def test_check_unsaved_changes_no_changes(self, workflow_controller) -> None:
         """Test check_unsaved_changes returns True when no changes."""
         result = workflow_controller.check_unsaved_changes()
 
         assert result is True
 
-    def test_check_unsaved_changes_user_saves(self, workflow_controller, tmp_path):
+    def test_check_unsaved_changes_user_saves(
+        self, workflow_controller, tmp_path
+    ) -> None:
         """Test check_unsaved_changes saves when user chooses Save."""
         workflow_controller.set_modified(True)
         test_file = tmp_path / "test.json"
@@ -588,7 +596,7 @@ class TestPrivateMethods:
         # After successful save, should return True
         assert result is True
 
-    def test_check_unsaved_changes_user_discards(self, workflow_controller):
+    def test_check_unsaved_changes_user_discards(self, workflow_controller) -> None:
         """Test check_unsaved_changes discards when user chooses Discard."""
         workflow_controller.set_modified(True)
 
@@ -599,7 +607,7 @@ class TestPrivateMethods:
 
         assert result is True
 
-    def test_check_unsaved_changes_user_cancels(self, workflow_controller):
+    def test_check_unsaved_changes_user_cancels(self, workflow_controller) -> None:
         """Test check_unsaved_changes cancels when user chooses Cancel."""
         workflow_controller.set_modified(True)
 
@@ -610,7 +618,9 @@ class TestPrivateMethods:
 
         assert result is False
 
-    def test_update_window_title_untitled(self, workflow_controller, mock_main_window):
+    def test_update_window_title_untitled(
+        self, workflow_controller, mock_main_window
+    ) -> None:
         """Test _update_window_title with no file."""
         with patch(
             "casare_rpa.presentation.canvas.controllers.workflow_controller.APP_NAME",
@@ -623,7 +633,9 @@ class TestPrivateMethods:
         assert "Untitled" in call_arg
         assert "CasareRPA" in call_arg
 
-    def test_update_window_title_with_file(self, workflow_controller, mock_main_window):
+    def test_update_window_title_with_file(
+        self, workflow_controller, mock_main_window
+    ) -> None:
         """Test _update_window_title with file."""
         test_file = Path("/test/myworkflow.json")
         workflow_controller.set_current_file(test_file)
@@ -638,7 +650,9 @@ class TestPrivateMethods:
         call_arg = mock_main_window.setWindowTitle.call_args[0][0]
         assert "myworkflow.json" in call_arg
 
-    def test_update_window_title_modified(self, workflow_controller, mock_main_window):
+    def test_update_window_title_modified(
+        self, workflow_controller, mock_main_window
+    ) -> None:
         """Test _update_window_title shows asterisk when modified."""
         workflow_controller.set_modified(True)
 
@@ -652,7 +666,7 @@ class TestPrivateMethods:
         call_arg = mock_main_window.setWindowTitle.call_args[0][0]
         assert "*" in call_arg
 
-    def test_update_save_action(self, workflow_controller, mock_main_window):
+    def test_update_save_action(self, workflow_controller, mock_main_window) -> None:
         """Test _update_save_action enables/disables save action."""
         workflow_controller.set_modified(True)
 

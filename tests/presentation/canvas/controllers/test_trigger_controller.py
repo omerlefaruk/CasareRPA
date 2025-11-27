@@ -22,7 +22,7 @@ from casare_rpa.presentation.canvas.controllers.trigger_controller import (
 
 
 @pytest.fixture
-def mock_main_window(qtbot):
+def mock_main_window(qtbot) -> None:
     """Create a mock MainWindow with trigger-related components."""
     main_window = QMainWindow()
     qtbot.addWidget(main_window)
@@ -50,7 +50,7 @@ def mock_main_window(qtbot):
 
 
 @pytest.fixture
-def mock_bottom_panel():
+def mock_bottom_panel() -> None:
     """Create a standalone mock bottom panel."""
     panel = Mock()
     panel.get_triggers.return_value = []
@@ -63,7 +63,7 @@ def mock_bottom_panel():
 
 
 @pytest.fixture
-def trigger_controller(mock_main_window):
+def trigger_controller(mock_main_window) -> None:
     """Create a TriggerController instance."""
     controller = TriggerController(mock_main_window)
     controller.initialize()
@@ -71,7 +71,7 @@ def trigger_controller(mock_main_window):
 
 
 @pytest.fixture
-def sample_trigger_config():
+def sample_trigger_config() -> None:
     """Create a sample trigger configuration."""
     return {
         "id": "trig_test123",
@@ -83,7 +83,7 @@ def sample_trigger_config():
 
 
 @pytest.fixture
-def sample_trigger_list():
+def sample_trigger_list() -> None:
     """Create a list of sample trigger configurations."""
     return [
         {
@@ -113,21 +113,21 @@ def sample_trigger_list():
 class TestTriggerControllerInitialization:
     """Tests for TriggerController initialization."""
 
-    def test_initialization(self, mock_main_window):
+    def test_initialization(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         controller = TriggerController(mock_main_window)
         assert controller.main_window == mock_main_window
         assert controller._triggers == []
         assert controller.is_initialized is False
 
-    def test_initialize(self, mock_main_window):
+    def test_initialize(self, mock_main_window) -> None:
         """Test initialize method sets up controller."""
         controller = TriggerController(mock_main_window)
         controller.initialize()
 
         assert controller.is_initialized is True
 
-    def test_cleanup(self, trigger_controller, sample_trigger_list):
+    def test_cleanup(self, trigger_controller, sample_trigger_list) -> None:
         """Test cleanup clears triggers."""
         trigger_controller._triggers = sample_trigger_list.copy()
         trigger_controller.cleanup()
@@ -139,7 +139,7 @@ class TestTriggerControllerInitialization:
 class TestTriggerStateManagement:
     """Tests for trigger state management."""
 
-    def test_get_triggers(self, trigger_controller, sample_trigger_list):
+    def test_get_triggers(self, trigger_controller, sample_trigger_list) -> None:
         """Test get_triggers returns triggers from bottom panel."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -149,7 +149,7 @@ class TestTriggerStateManagement:
 
         assert result == sample_trigger_list
 
-    def test_get_triggers_empty(self, trigger_controller):
+    def test_get_triggers_empty(self, trigger_controller) -> None:
         """Test get_triggers returns empty list when no triggers."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = []
 
@@ -157,7 +157,7 @@ class TestTriggerStateManagement:
 
         assert result == []
 
-    def test_get_triggers_no_bottom_panel(self, trigger_controller):
+    def test_get_triggers_no_bottom_panel(self, trigger_controller) -> None:
         """Test get_triggers returns empty list when bottom panel unavailable."""
         trigger_controller.main_window.get_bottom_panel.return_value = None
 
@@ -165,7 +165,7 @@ class TestTriggerStateManagement:
 
         assert result == []
 
-    def test_get_trigger_count(self, trigger_controller, sample_trigger_list):
+    def test_get_trigger_count(self, trigger_controller, sample_trigger_list) -> None:
         """Test get_trigger_count returns correct count."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -173,13 +173,15 @@ class TestTriggerStateManagement:
 
         assert trigger_controller.get_trigger_count() == 3
 
-    def test_get_trigger_count_empty(self, trigger_controller):
+    def test_get_trigger_count_empty(self, trigger_controller) -> None:
         """Test get_trigger_count returns 0 when empty."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = []
 
         assert trigger_controller.get_trigger_count() == 0
 
-    def test_get_trigger_by_id_found(self, trigger_controller, sample_trigger_list):
+    def test_get_trigger_by_id_found(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test get_trigger_by_id finds existing trigger."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -191,7 +193,9 @@ class TestTriggerStateManagement:
         assert result["name"] == "Trigger 2"
         assert result["type"] == "scheduled"
 
-    def test_get_trigger_by_id_not_found(self, trigger_controller, sample_trigger_list):
+    def test_get_trigger_by_id_not_found(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test get_trigger_by_id returns None when not found."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -201,7 +205,7 @@ class TestTriggerStateManagement:
 
         assert result is None
 
-    def test_set_triggers(self, trigger_controller, sample_trigger_list):
+    def test_set_triggers(self, trigger_controller, sample_trigger_list) -> None:
         """Test set_triggers updates triggers list."""
         signals_received = []
         trigger_controller.triggers_changed.connect(
@@ -218,14 +222,14 @@ class TestTriggerStateManagement:
 
     def test_set_triggers_no_bottom_panel(
         self, trigger_controller, sample_trigger_list
-    ):
+    ) -> None:
         """Test set_triggers handles missing bottom panel gracefully."""
         trigger_controller.main_window.get_bottom_panel.return_value = None
 
         # Should not raise an exception
         trigger_controller.set_triggers(sample_trigger_list)
 
-    def test_clear_triggers(self, trigger_controller, sample_trigger_list):
+    def test_clear_triggers(self, trigger_controller, sample_trigger_list) -> None:
         """Test clear_triggers removes all triggers."""
         trigger_controller._triggers = sample_trigger_list.copy()
         signals_received = []
@@ -243,7 +247,9 @@ class TestTriggerStateManagement:
 class TestAddTrigger:
     """Tests for add_trigger functionality."""
 
-    def test_add_trigger_success(self, trigger_controller, sample_trigger_config):
+    def test_add_trigger_success(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test add_trigger successfully adds a trigger."""
         mock_type_dialog = Mock()
         mock_type_dialog.exec.return_value = QDialog.DialogCode.Accepted
@@ -281,7 +287,7 @@ class TestAddTrigger:
             assert added_signals[0] == sample_trigger_config
             assert len(changed_signals) == 1
 
-    def test_add_trigger_cancelled_type_selection(self, trigger_controller):
+    def test_add_trigger_cancelled_type_selection(self, trigger_controller) -> None:
         """Test add_trigger handles cancelled type selection."""
         mock_type_dialog = Mock()
         mock_type_dialog.exec.return_value = QDialog.DialogCode.Rejected
@@ -298,7 +304,7 @@ class TestAddTrigger:
             trigger_controller.main_window.get_bottom_panel().add_trigger.assert_not_called()
             assert len(added_signals) == 0
 
-    def test_add_trigger_cancelled_config(self, trigger_controller):
+    def test_add_trigger_cancelled_config(self, trigger_controller) -> None:
         """Test add_trigger handles cancelled configuration."""
         mock_type_dialog = Mock()
         mock_type_dialog.exec.return_value = QDialog.DialogCode.Accepted
@@ -325,7 +331,7 @@ class TestAddTrigger:
             trigger_controller.main_window.get_bottom_panel().add_trigger.assert_not_called()
             assert len(added_signals) == 0
 
-    def test_add_trigger_no_type_selected(self, trigger_controller):
+    def test_add_trigger_no_type_selected(self, trigger_controller) -> None:
         """Test add_trigger handles no type selected."""
         mock_type_dialog = Mock()
         mock_type_dialog.exec.return_value = QDialog.DialogCode.Accepted
@@ -343,7 +349,9 @@ class TestAddTrigger:
 class TestEditTrigger:
     """Tests for edit_trigger functionality."""
 
-    def test_edit_trigger_success(self, trigger_controller, sample_trigger_config):
+    def test_edit_trigger_success(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test edit_trigger successfully updates a trigger."""
         updated_config = sample_trigger_config.copy()
         updated_config["name"] = "Updated Trigger"
@@ -375,7 +383,9 @@ class TestEditTrigger:
             assert updated_signals[0] == updated_config
             assert len(changed_signals) == 1
 
-    def test_edit_trigger_cancelled(self, trigger_controller, sample_trigger_config):
+    def test_edit_trigger_cancelled(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test edit_trigger handles cancelled dialog."""
         mock_config_dialog = Mock()
         mock_config_dialog.exec.return_value = QDialog.DialogCode.Rejected
@@ -394,7 +404,7 @@ class TestEditTrigger:
             trigger_controller.main_window.get_bottom_panel().update_trigger.assert_not_called()
             assert len(updated_signals) == 0
 
-    def test_edit_trigger_unknown_type(self, trigger_controller):
+    def test_edit_trigger_unknown_type(self, trigger_controller) -> None:
         """Test edit_trigger handles unknown trigger type."""
         invalid_config = {
             "id": "trig_invalid",
@@ -412,7 +422,7 @@ class TestDeleteTrigger:
 
     def test_delete_trigger_confirmed(
         self, trigger_controller, sample_trigger_config, sample_trigger_list
-    ):
+    ) -> None:
         """Test delete_trigger removes trigger when confirmed."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -444,7 +454,9 @@ class TestDeleteTrigger:
             assert deleted_signals[0] == "trig_001"
             assert len(changed_signals) == 1
 
-    def test_delete_trigger_cancelled(self, trigger_controller, sample_trigger_list):
+    def test_delete_trigger_cancelled(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test delete_trigger does not remove trigger when cancelled."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -470,7 +482,9 @@ class TestDeleteTrigger:
 class TestToggleTrigger:
     """Tests for toggle_trigger functionality."""
 
-    def test_toggle_trigger_enable(self, trigger_controller, sample_trigger_list):
+    def test_toggle_trigger_enable(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test toggle_trigger enables a trigger."""
         sample_trigger_list[1]["enabled"] = False  # Start disabled
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
@@ -489,7 +503,9 @@ class TestToggleTrigger:
         assert len(toggled_signals) == 1
         assert toggled_signals[0] == ("trig_002", True)
 
-    def test_toggle_trigger_disable(self, trigger_controller, sample_trigger_list):
+    def test_toggle_trigger_disable(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test toggle_trigger disables a trigger."""
         sample_trigger_list[0]["enabled"] = True  # Start enabled
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
@@ -507,7 +523,9 @@ class TestToggleTrigger:
         assert len(toggled_signals) == 1
         assert toggled_signals[0] == ("trig_001", False)
 
-    def test_toggle_trigger_not_found(self, trigger_controller, sample_trigger_list):
+    def test_toggle_trigger_not_found(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test toggle_trigger handles non-existent trigger."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -523,7 +541,7 @@ class TestToggleTrigger:
         trigger_controller.main_window.get_bottom_panel().update_trigger.assert_not_called()
         assert len(toggled_signals) == 0
 
-    def test_toggle_trigger_no_bottom_panel(self, trigger_controller):
+    def test_toggle_trigger_no_bottom_panel(self, trigger_controller) -> None:
         """Test toggle_trigger handles missing bottom panel."""
         trigger_controller.main_window.get_bottom_panel.return_value = None
 
@@ -534,7 +552,7 @@ class TestToggleTrigger:
 class TestRunTrigger:
     """Tests for run_trigger functionality."""
 
-    def test_run_trigger(self, trigger_controller, sample_trigger_list):
+    def test_run_trigger(self, trigger_controller, sample_trigger_list) -> None:
         """Test run_trigger emits signals and triggers workflow."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -552,7 +570,7 @@ class TestRunTrigger:
         trigger_controller.main_window.workflow_run.emit.assert_called_once()
         trigger_controller.main_window.show_status.assert_called()
 
-    def test_run_trigger_unknown(self, trigger_controller):
+    def test_run_trigger_unknown(self, trigger_controller) -> None:
         """Test run_trigger handles unknown trigger ID."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = []
 
@@ -571,7 +589,9 @@ class TestRunTrigger:
 class TestSignals:
     """Tests for controller signals."""
 
-    def test_trigger_added_signal(self, trigger_controller, sample_trigger_config):
+    def test_trigger_added_signal(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test trigger_added signal can be emitted."""
         received = []
         trigger_controller.trigger_added.connect(lambda t: received.append(t))
@@ -581,7 +601,9 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == sample_trigger_config
 
-    def test_trigger_updated_signal(self, trigger_controller, sample_trigger_config):
+    def test_trigger_updated_signal(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test trigger_updated signal can be emitted."""
         received = []
         trigger_controller.trigger_updated.connect(lambda t: received.append(t))
@@ -591,7 +613,7 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == sample_trigger_config
 
-    def test_trigger_deleted_signal(self, trigger_controller):
+    def test_trigger_deleted_signal(self, trigger_controller) -> None:
         """Test trigger_deleted signal can be emitted."""
         received = []
         trigger_controller.trigger_deleted.connect(lambda id: received.append(id))
@@ -601,7 +623,7 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == "test-id"
 
-    def test_trigger_toggled_signal(self, trigger_controller):
+    def test_trigger_toggled_signal(self, trigger_controller) -> None:
         """Test trigger_toggled signal can be emitted."""
         received = []
         trigger_controller.trigger_toggled.connect(
@@ -613,7 +635,7 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == ("test-id", True)
 
-    def test_trigger_run_requested_signal(self, trigger_controller):
+    def test_trigger_run_requested_signal(self, trigger_controller) -> None:
         """Test trigger_run_requested signal can be emitted."""
         received = []
         trigger_controller.trigger_run_requested.connect(lambda id: received.append(id))
@@ -623,7 +645,7 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == "test-id"
 
-    def test_triggers_changed_signal(self, trigger_controller):
+    def test_triggers_changed_signal(self, trigger_controller) -> None:
         """Test triggers_changed signal can be emitted."""
         received = []
         trigger_controller.triggers_changed.connect(lambda: received.append(True))
@@ -636,7 +658,7 @@ class TestSignals:
 class TestErrorHandling:
     """Tests for error handling."""
 
-    def test_add_trigger_import_error(self, trigger_controller):
+    def test_add_trigger_import_error(self, trigger_controller) -> None:
         """Test add_trigger handles import errors gracefully."""
         with (
             patch(
@@ -650,7 +672,7 @@ class TestErrorHandling:
             mock_warning.assert_called_once()
             trigger_controller.main_window.get_bottom_panel().add_trigger.assert_not_called()
 
-    def test_add_trigger_exception(self, trigger_controller):
+    def test_add_trigger_exception(self, trigger_controller) -> None:
         """Test add_trigger handles generic exceptions gracefully."""
         with (
             patch(
@@ -663,7 +685,9 @@ class TestErrorHandling:
 
             mock_warning.assert_called_once()
 
-    def test_edit_trigger_import_error(self, trigger_controller, sample_trigger_config):
+    def test_edit_trigger_import_error(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test edit_trigger handles import errors gracefully."""
         with (
             patch(
@@ -676,7 +700,9 @@ class TestErrorHandling:
 
             mock_warning.assert_called_once()
 
-    def test_edit_trigger_exception(self, trigger_controller, sample_trigger_config):
+    def test_edit_trigger_exception(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test edit_trigger handles generic exceptions gracefully."""
         with (
             patch(
@@ -693,7 +719,9 @@ class TestErrorHandling:
 class TestInternalHelpers:
     """Tests for internal helper methods."""
 
-    def test_get_trigger_name_found(self, trigger_controller, sample_trigger_list):
+    def test_get_trigger_name_found(
+        self, trigger_controller, sample_trigger_list
+    ) -> None:
         """Test _get_trigger_name returns name when found."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = (
             sample_trigger_list
@@ -703,7 +731,7 @@ class TestInternalHelpers:
 
         assert result == "Trigger 2"
 
-    def test_get_trigger_name_not_found(self, trigger_controller):
+    def test_get_trigger_name_not_found(self, trigger_controller) -> None:
         """Test _get_trigger_name returns 'Unknown' when not found."""
         trigger_controller.main_window.get_bottom_panel().get_triggers.return_value = []
 
@@ -711,7 +739,9 @@ class TestInternalHelpers:
 
         assert result == "Unknown"
 
-    def test_add_trigger_to_panel(self, trigger_controller, sample_trigger_config):
+    def test_add_trigger_to_panel(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test _add_trigger_to_panel adds trigger to panel and internal list."""
         trigger_controller._add_trigger_to_panel(sample_trigger_config)
 
@@ -722,14 +752,16 @@ class TestInternalHelpers:
 
     def test_add_trigger_to_panel_no_panel(
         self, trigger_controller, sample_trigger_config
-    ):
+    ) -> None:
         """Test _add_trigger_to_panel handles missing panel."""
         trigger_controller.main_window.get_bottom_panel.return_value = None
 
         # Should not raise exception
         trigger_controller._add_trigger_to_panel(sample_trigger_config)
 
-    def test_update_trigger_in_panel(self, trigger_controller, sample_trigger_config):
+    def test_update_trigger_in_panel(
+        self, trigger_controller, sample_trigger_config
+    ) -> None:
         """Test _update_trigger_in_panel updates trigger in panel and internal list."""
         trigger_controller._triggers = [sample_trigger_config]
         updated_config = sample_trigger_config.copy()
@@ -742,7 +774,7 @@ class TestInternalHelpers:
         )
         assert trigger_controller._triggers[0]["name"] == "Updated Name"
 
-    def test_remove_trigger_from_panel(self, trigger_controller):
+    def test_remove_trigger_from_panel(self, trigger_controller) -> None:
         """Test _remove_trigger_from_panel removes trigger from panel."""
         trigger_controller._remove_trigger_from_panel("trig_001")
 
@@ -750,7 +782,7 @@ class TestInternalHelpers:
             "trig_001"
         )
 
-    def test_remove_trigger_from_panel_no_panel(self, trigger_controller):
+    def test_remove_trigger_from_panel_no_panel(self, trigger_controller) -> None:
         """Test _remove_trigger_from_panel handles missing panel."""
         trigger_controller.main_window.get_bottom_panel.return_value = None
 

@@ -16,7 +16,7 @@ class TestFileSystemNodes:
     """Integration tests for file system category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -24,7 +24,7 @@ class TestFileSystemNodes:
         return context
 
     @pytest.fixture
-    def temp_file(self):
+    def temp_file(self) -> None:
         """Create a temporary file for testing."""
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
             f.write("Test content\nLine 2\nLine 3")
@@ -34,7 +34,7 @@ class TestFileSystemNodes:
         Path(temp_path).unlink(missing_ok=True)
 
     @pytest.fixture
-    def temp_dir(self):
+    def temp_dir(self) -> None:
         """Create a temporary directory for testing."""
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
@@ -48,7 +48,7 @@ class TestFileSystemNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_read_file_node(self, execution_context, temp_file):
+    async def test_read_file_node(self, execution_context, temp_file) -> None:
         """Test ReadFileNode reads file content."""
         from casare_rpa.nodes.file_system_nodes import ReadFileNode
 
@@ -61,7 +61,7 @@ class TestFileSystemNodes:
         assert "Test content" in result["data"]["content"]
 
     @pytest.mark.asyncio
-    async def test_write_file_node(self, execution_context, temp_dir):
+    async def test_write_file_node(self, execution_context, temp_dir) -> None:
         """Test WriteFileNode writes content to file."""
         from casare_rpa.nodes.file_system_nodes import WriteFileNode
 
@@ -78,7 +78,7 @@ class TestFileSystemNodes:
         assert output_file.read_text() == "Hello, File System!"
 
     @pytest.mark.asyncio
-    async def test_file_exists_node_true(self, execution_context, temp_file):
+    async def test_file_exists_node_true(self, execution_context, temp_file) -> None:
         """Test FileExistsNode returns true for existing file."""
         from casare_rpa.nodes.file_system_nodes import FileExistsNode
 
@@ -91,7 +91,7 @@ class TestFileSystemNodes:
         assert result["data"]["exists"] is True
 
     @pytest.mark.asyncio
-    async def test_file_exists_node_false(self, execution_context):
+    async def test_file_exists_node_false(self, execution_context) -> None:
         """Test FileExistsNode returns false for non-existent file."""
         from casare_rpa.nodes.file_system_nodes import FileExistsNode
 
@@ -104,7 +104,7 @@ class TestFileSystemNodes:
         assert result["data"]["exists"] is False
 
     @pytest.mark.asyncio
-    async def test_delete_file_node(self, execution_context, temp_dir):
+    async def test_delete_file_node(self, execution_context, temp_dir) -> None:
         """Test DeleteFileNode removes file."""
         from casare_rpa.nodes.file_system_nodes import DeleteFileNode
 
@@ -121,7 +121,7 @@ class TestFileSystemNodes:
         assert not test_file.exists()
 
     @pytest.mark.asyncio
-    async def test_get_file_size_node(self, execution_context, temp_file):
+    async def test_get_file_size_node(self, execution_context, temp_file) -> None:
         """Test GetFileSizeNode returns file size."""
         from casare_rpa.nodes.file_system_nodes import GetFileSizeNode
 
@@ -138,7 +138,7 @@ class TestFileSystemNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_create_directory_node(self, execution_context, temp_dir):
+    async def test_create_directory_node(self, execution_context, temp_dir) -> None:
         """Test CreateDirectoryNode creates directory."""
         from casare_rpa.nodes.file_system_nodes import CreateDirectoryNode
 
@@ -154,7 +154,7 @@ class TestFileSystemNodes:
         assert new_dir.is_dir()
 
     @pytest.mark.asyncio
-    async def test_delete_directory_node(self, execution_context, temp_dir):
+    async def test_delete_directory_node(self, execution_context, temp_dir) -> None:
         """Test DeleteDirectoryNode removes directory."""
         from casare_rpa.nodes.file_system_nodes import DeleteDirectoryNode
 
@@ -171,7 +171,7 @@ class TestFileSystemNodes:
         assert not test_dir.exists()
 
     @pytest.mark.asyncio
-    async def test_list_files_node(self, execution_context, temp_dir):
+    async def test_list_files_node(self, execution_context, temp_dir) -> None:
         """Test ListFilesNode lists files in directory."""
         from casare_rpa.nodes.file_system_nodes import ListFilesNode
 
@@ -193,7 +193,7 @@ class TestFileSystemNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_read_csv_node(self, execution_context, temp_dir):
+    async def test_read_csv_node(self, execution_context, temp_dir) -> None:
         """Test ReadCSVNode reads CSV file."""
         from casare_rpa.nodes.file_system_nodes import ReadCSVNode
 
@@ -215,7 +215,7 @@ class TestFileSystemNodes:
         assert result["data"]["rows"][0] == ["Name", "Age", "City"]
 
     @pytest.mark.asyncio
-    async def test_write_csv_node(self, execution_context, temp_dir):
+    async def test_write_csv_node(self, execution_context, temp_dir) -> None:
         """Test WriteCSVNode writes CSV file."""
         from casare_rpa.nodes.file_system_nodes import WriteCSVNode
 
@@ -248,7 +248,7 @@ class TestFileSystemNodes:
 class TestFileSystemNodesIntegration:
     """Integration tests for file system nodes visual layer."""
 
-    def test_read_file_visual_integration(self):
+    def test_read_file_visual_integration(self) -> None:
         """Test ReadFileNode logic-to-visual connection."""
         from casare_rpa.nodes.file_system_nodes import ReadFileNode
         from casare_rpa.presentation.canvas.visual_nodes.file_system import (
@@ -262,7 +262,7 @@ class TestFileSystemNodesIntegration:
         node = ReadFileNode(node_id="test_read")
         assert node.node_type == "ReadFileNode"
 
-    def test_write_file_visual_integration(self):
+    def test_write_file_visual_integration(self) -> None:
         """Test WriteFileNode logic-to-visual connection."""
         from casare_rpa.nodes.file_system_nodes import WriteFileNode
         from casare_rpa.presentation.canvas.visual_nodes.file_system import (
@@ -276,7 +276,7 @@ class TestFileSystemNodesIntegration:
         node = WriteFileNode(node_id="test_write")
         assert node.node_type == "WriteFileNode"
 
-    def test_list_files_visual_integration(self):
+    def test_list_files_visual_integration(self) -> None:
         """Test ListFilesNode logic-to-visual connection."""
         from casare_rpa.nodes.file_system_nodes import ListFilesNode
         from casare_rpa.presentation.canvas.visual_nodes.file_system import (
@@ -290,7 +290,7 @@ class TestFileSystemNodesIntegration:
         node = ListFilesNode(node_id="test_list")
         assert node.node_type == "ListFilesNode"
 
-    def test_read_csv_visual_integration(self):
+    def test_read_csv_visual_integration(self) -> None:
         """Test ReadCSVNode logic-to-visual connection."""
         from casare_rpa.nodes.file_system_nodes import ReadCSVNode
         from casare_rpa.presentation.canvas.visual_nodes.file_system import (

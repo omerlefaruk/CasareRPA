@@ -26,14 +26,14 @@ from casare_rpa.core.validation import (
 class TestBoundaryValues:
     """Test boundary values for numeric and string fields."""
 
-    def test_zero_nodes(self):
+    def test_zero_nodes(self) -> None:
         """Test workflow with zero nodes."""
         data = {"metadata": {"name": "Empty"}, "nodes": {}, "connections": []}
         result = validate_workflow(data)
         assert result.is_valid is False
         assert any(issue.code == "EMPTY_WORKFLOW" for issue in result.errors)
 
-    def test_single_node(self):
+    def test_single_node(self) -> None:
         """Test workflow with exactly one node."""
         data = {
             "metadata": {"name": "Single"},
@@ -43,7 +43,7 @@ class TestBoundaryValues:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_exactly_100_char_workflow_name(self):
+    def test_exactly_100_char_workflow_name(self) -> None:
         """Test workflow name at exactly 100 characters (boundary)."""
         name_100 = "A" * 100
         data = {
@@ -54,7 +54,7 @@ class TestBoundaryValues:
         # Should not generate warning (exactly at limit)
         assert not any(issue.code == "NAME_TOO_LONG" for issue in result.warnings)
 
-    def test_101_char_workflow_name(self):
+    def test_101_char_workflow_name(self) -> None:
         """Test workflow name at 101 characters (just over boundary)."""
         name_101 = "A" * 101
         data = {
@@ -65,7 +65,7 @@ class TestBoundaryValues:
         # Should generate warning (over limit)
         assert any(issue.code == "NAME_TOO_LONG" for issue in result.warnings)
 
-    def test_empty_string_workflow_name(self):
+    def test_empty_string_workflow_name(self) -> None:
         """Test workflow with empty string name."""
         data = {
             "metadata": {"name": ""},
@@ -74,7 +74,7 @@ class TestBoundaryValues:
         result = validate_workflow(data)
         assert any(issue.code == "MISSING_NAME" for issue in result.warnings)
 
-    def test_position_at_zero(self):
+    def test_position_at_zero(self) -> None:
         """Test node position at (0, 0)."""
         node_data = {
             "node_id": "n1",
@@ -84,7 +84,7 @@ class TestBoundaryValues:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_position_with_negative_values(self):
+    def test_position_with_negative_values(self) -> None:
         """Test node position with negative coordinates."""
         node_data = {
             "node_id": "n1",
@@ -94,7 +94,7 @@ class TestBoundaryValues:
         result = validate_node("n1", node_data)
         assert result.is_valid is True  # Negative positions are valid
 
-    def test_position_with_float_values(self):
+    def test_position_with_float_values(self) -> None:
         """Test node position with float values."""
         node_data = {
             "node_id": "n1",
@@ -104,7 +104,7 @@ class TestBoundaryValues:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_position_with_very_large_values(self):
+    def test_position_with_very_large_values(self) -> None:
         """Test node position with very large coordinates."""
         node_data = {
             "node_id": "n1",
@@ -123,7 +123,7 @@ class TestBoundaryValues:
 class TestEmptyAndMissingFields:
     """Test handling of empty and missing fields."""
 
-    def test_empty_connections_list(self):
+    def test_empty_connections_list(self) -> None:
         """Test workflow with empty connections list."""
         data = {
             "metadata": {"name": "No Connections"},
@@ -137,7 +137,7 @@ class TestEmptyAndMissingFields:
         # Valid workflow, just no connections
         assert result.is_valid is True
 
-    def test_missing_metadata(self):
+    def test_missing_metadata(self) -> None:
         """Test workflow with missing metadata section."""
         data = {
             "nodes": {"n1": {"node_id": "n1", "node_type": "StartNode"}},
@@ -146,7 +146,7 @@ class TestEmptyAndMissingFields:
         result = validate_workflow(data)
         # Should still validate (metadata is optional)
 
-    def test_missing_connections(self):
+    def test_missing_connections(self) -> None:
         """Test workflow with missing connections section."""
         data = {
             "metadata": {"name": "No Connections Key"},
@@ -155,7 +155,7 @@ class TestEmptyAndMissingFields:
         result = validate_workflow(data)
         # Should still validate (connections defaults to empty)
 
-    def test_node_with_empty_config(self):
+    def test_node_with_empty_config(self) -> None:
         """Test node with empty config dict."""
         node_data = {
             "node_id": "n1",
@@ -165,7 +165,7 @@ class TestEmptyAndMissingFields:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_node_with_missing_config(self):
+    def test_node_with_missing_config(self) -> None:
         """Test node with missing config field."""
         node_data = {
             "node_id": "n1",
@@ -174,7 +174,7 @@ class TestEmptyAndMissingFields:
         result = validate_node("n1", node_data)
         assert result.is_valid is True  # Config is optional
 
-    def test_node_with_missing_position(self):
+    def test_node_with_missing_position(self) -> None:
         """Test node with missing position field."""
         node_data = {
             "node_id": "n1",
@@ -183,7 +183,7 @@ class TestEmptyAndMissingFields:
         result = validate_node("n1", node_data)
         assert result.is_valid is True  # Position is optional
 
-    def test_empty_port_names(self):
+    def test_empty_port_names(self) -> None:
         """Test connection with empty port names."""
         data = {
             "nodes": {
@@ -211,7 +211,7 @@ class TestEmptyAndMissingFields:
 class TestSpecialCharacters:
     """Test handling of special characters in various fields."""
 
-    def test_unicode_emoji_in_workflow_name(self):
+    def test_unicode_emoji_in_workflow_name(self) -> None:
         """Test Unicode emoji in workflow name."""
         data = {
             "metadata": {"name": "My Workflow 🚀 🎉"},
@@ -220,7 +220,7 @@ class TestSpecialCharacters:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_unicode_characters_in_node_id(self):
+    def test_unicode_characters_in_node_id(self) -> None:
         """Test Unicode characters in node ID."""
         node_id = "节点_123_🔥"
         data = {
@@ -234,7 +234,7 @@ class TestSpecialCharacters:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_whitespace_in_node_id(self):
+    def test_whitespace_in_node_id(self) -> None:
         """Test whitespace characters in node ID."""
         node_id = "node with spaces"
         data = {
@@ -248,7 +248,7 @@ class TestSpecialCharacters:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_newlines_in_metadata(self):
+    def test_newlines_in_metadata(self) -> None:
         """Test newline characters in metadata."""
         data = {
             "metadata": {
@@ -260,7 +260,7 @@ class TestSpecialCharacters:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_tab_characters_in_config(self):
+    def test_tab_characters_in_config(self) -> None:
         """Test tab characters in config values."""
         data = {
             "nodes": {
@@ -283,7 +283,7 @@ class TestSpecialCharacters:
 class TestConnectionFormats:
     """Test various connection data formats."""
 
-    def test_parse_connection_standard_format(self):
+    def test_parse_connection_standard_format(self) -> None:
         """Test parsing standard connection format."""
         conn = {
             "source_node": "n1",
@@ -298,7 +298,7 @@ class TestConnectionFormats:
         assert parsed["target_node"] == "n2"
         assert parsed["target_port"] == "in"
 
-    def test_parse_connection_alternative_format(self):
+    def test_parse_connection_alternative_format(self) -> None:
         """Test parsing alternative connection format."""
         conn = {"out": ["n1", "output_port"], "in": ["n2", "input_port"]}
         parsed = _parse_connection(conn)
@@ -308,7 +308,7 @@ class TestConnectionFormats:
         assert parsed["target_node"] == "n2"
         assert parsed["target_port"] == "input_port"
 
-    def test_parse_connection_with_extra_fields(self):
+    def test_parse_connection_with_extra_fields(self) -> None:
         """Test parsing connection with extra fields."""
         conn = {
             "source_node": "n1",
@@ -322,19 +322,19 @@ class TestConnectionFormats:
         assert parsed is not None
         # Extra fields should not cause issues
 
-    def test_parse_connection_insufficient_array_length(self):
+    def test_parse_connection_insufficient_array_length(self) -> None:
         """Test parsing connection with insufficient array length."""
         conn = {"out": ["n1"], "in": ["n2"]}  # Missing port names
         parsed = _parse_connection(conn)
         assert parsed is None
 
-    def test_parse_connection_empty_arrays(self):
+    def test_parse_connection_empty_arrays(self) -> None:
         """Test parsing connection with empty arrays."""
         conn = {"out": [], "in": []}
         parsed = _parse_connection(conn)
         assert parsed is None
 
-    def test_parse_connection_mixed_types(self):
+    def test_parse_connection_mixed_types(self) -> None:
         """Test parsing connection with mixed types in arrays."""
         conn = {"out": [123, 456], "in": ["n2", "port"]}  # Numbers instead of strings
         parsed = _parse_connection(conn)
@@ -349,7 +349,7 @@ class TestConnectionFormats:
 class TestPortNames:
     """Test port name detection and classification."""
 
-    def test_is_exec_port_various_names(self):
+    def test_is_exec_port_various_names(self) -> None:
         """Test execution port detection with various names."""
         exec_ports = [
             "exec_in",
@@ -374,7 +374,7 @@ class TestPortNames:
         for port in exec_ports:
             assert _is_exec_port(port) is True, f"'{port}' should be exec port"
 
-    def test_is_exec_port_data_ports(self):
+    def test_is_exec_port_data_ports(self) -> None:
         """Test that data ports are not classified as exec ports."""
         data_ports = [
             "data_in",
@@ -390,7 +390,7 @@ class TestPortNames:
         for port in data_ports:
             assert _is_exec_port(port) is False, f"'{port}' should not be exec port"
 
-    def test_is_exec_port_edge_cases(self):
+    def test_is_exec_port_edge_cases(self) -> None:
         """Test exec port detection with edge cases."""
         assert _is_exec_port("") is False
         assert _is_exec_port(" exec_in ") is False  # Whitespace (exact match needed)
@@ -406,7 +406,7 @@ class TestPortNames:
 class TestGraphStructures:
     """Test various graph structures and topologies."""
 
-    def test_linear_chain(self):
+    def test_linear_chain(self) -> None:
         """Test simple linear chain of nodes."""
         nodes = {
             f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(5)
@@ -429,7 +429,7 @@ class TestGraphStructures:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_branching_structure(self):
+    def test_branching_structure(self) -> None:
         """Test workflow with branching (one source, multiple targets)."""
         data = {
             "metadata": {"name": "Branching"},
@@ -456,7 +456,7 @@ class TestGraphStructures:
         result = validate_workflow(data)
         assert result.is_valid is True
 
-    def test_merging_structure(self):
+    def test_merging_structure(self) -> None:
         """Test workflow with merging (multiple sources, one target)."""
         data = {
             "metadata": {"name": "Merging"},
@@ -487,7 +487,7 @@ class TestGraphStructures:
         )
         assert len(entry_points) == 2
 
-    def test_disconnected_components(self):
+    def test_disconnected_components(self) -> None:
         """Test workflow with multiple disconnected subgraphs."""
         data = {
             "metadata": {"name": "Disconnected"},
@@ -525,7 +525,7 @@ class TestGraphStructures:
 class TestHiddenNodes:
     """Test handling of hidden/system nodes (starting with __)."""
 
-    def test_auto_start_node(self):
+    def test_auto_start_node(self) -> None:
         """Test __auto_start__ system node."""
         data = {
             "metadata": {"name": "Auto Start"},
@@ -552,7 +552,7 @@ class TestHiddenNodes:
         )
         assert "__auto_start__" in entry_points
 
-    def test_hidden_nodes_not_in_unreachable_warning(self):
+    def test_hidden_nodes_not_in_unreachable_warning(self) -> None:
         """Test that hidden nodes don't appear in unreachable warnings."""
         data = {
             "metadata": {"name": "Hidden"},
@@ -585,7 +585,7 @@ class TestHiddenNodes:
 class TestConfigDataTypes:
     """Test various data types in node config."""
 
-    def test_config_with_nested_dicts(self):
+    def test_config_with_nested_dicts(self) -> None:
         """Test node config with deeply nested dictionaries."""
         config = {
             "level1": {
@@ -604,7 +604,7 @@ class TestConfigDataTypes:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_config_with_arrays(self):
+    def test_config_with_arrays(self) -> None:
         """Test node config with array values."""
         node_data = {
             "node_id": "n1",
@@ -618,7 +618,7 @@ class TestConfigDataTypes:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_config_with_boolean_values(self):
+    def test_config_with_boolean_values(self) -> None:
         """Test node config with boolean values."""
         node_data = {
             "node_id": "n1",
@@ -631,7 +631,7 @@ class TestConfigDataTypes:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_config_with_null_values(self):
+    def test_config_with_null_values(self) -> None:
         """Test node config with null/None values."""
         node_data = {
             "node_id": "n1",
@@ -644,7 +644,7 @@ class TestConfigDataTypes:
         result = validate_node("n1", node_data)
         assert result.is_valid is True
 
-    def test_config_with_numeric_values(self):
+    def test_config_with_numeric_values(self) -> None:
         """Test node config with various numeric types."""
         node_data = {
             "node_id": "n1",

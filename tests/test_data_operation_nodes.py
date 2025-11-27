@@ -13,7 +13,7 @@ class TestDataOperationNodes:
     """Integration tests for data operation category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -25,7 +25,7 @@ class TestDataOperationNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_concatenate_node(self, execution_context):
+    async def test_concatenate_node(self, execution_context) -> None:
         """Test ConcatenateNode joins strings."""
         from casare_rpa.nodes.data_operation_nodes import ConcatenateNode
 
@@ -39,7 +39,7 @@ class TestDataOperationNodes:
         assert result["data"]["result"] == "Hello World"
 
     @pytest.mark.asyncio
-    async def test_format_string_node(self, execution_context):
+    async def test_format_string_node(self, execution_context) -> None:
         """Test FormatStringNode formats strings."""
         from casare_rpa.nodes.data_operation_nodes import FormatStringNode
 
@@ -53,7 +53,7 @@ class TestDataOperationNodes:
         assert result["data"]["result"] == "Name: Alice, Age: 30"
 
     @pytest.mark.asyncio
-    async def test_regex_match_node(self, execution_context):
+    async def test_regex_match_node(self, execution_context) -> None:
         """Test RegexMatchNode finds pattern matches."""
         from casare_rpa.nodes.data_operation_nodes import RegexMatchNode
 
@@ -67,7 +67,7 @@ class TestDataOperationNodes:
         assert "test@example.com" in result["data"]["matches"][0]
 
     @pytest.mark.asyncio
-    async def test_regex_replace_node(self, execution_context):
+    async def test_regex_replace_node(self, execution_context) -> None:
         """Test RegexReplaceNode replaces pattern matches."""
         from casare_rpa.nodes.data_operation_nodes import RegexReplaceNode
 
@@ -86,7 +86,7 @@ class TestDataOperationNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_math_add(self, execution_context):
+    async def test_math_add(self, execution_context) -> None:
         """Test MathOperationNode addition."""
         from casare_rpa.nodes.data_operation_nodes import MathOperationNode
 
@@ -101,7 +101,7 @@ class TestDataOperationNodes:
         assert result["data"]["result"] == 15
 
     @pytest.mark.asyncio
-    async def test_math_subtract(self, execution_context):
+    async def test_math_subtract(self, execution_context) -> None:
         """Test MathOperationNode subtraction."""
         from casare_rpa.nodes.data_operation_nodes import MathOperationNode
 
@@ -116,7 +116,7 @@ class TestDataOperationNodes:
         assert result["data"]["result"] == 5
 
     @pytest.mark.asyncio
-    async def test_math_multiply(self, execution_context):
+    async def test_math_multiply(self, execution_context) -> None:
         """Test MathOperationNode multiplication."""
         from casare_rpa.nodes.data_operation_nodes import MathOperationNode
 
@@ -131,7 +131,7 @@ class TestDataOperationNodes:
         assert result["data"]["result"] == 50
 
     @pytest.mark.asyncio
-    async def test_math_divide(self, execution_context):
+    async def test_math_divide(self, execution_context) -> None:
         """Test MathOperationNode division."""
         from casare_rpa.nodes.data_operation_nodes import MathOperationNode
 
@@ -150,7 +150,7 @@ class TestDataOperationNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_create_list_node(self, execution_context):
+    async def test_create_list_node(self, execution_context) -> None:
         """Test CreateListNode creates a list."""
         from casare_rpa.nodes.data_operation_nodes import CreateListNode
 
@@ -163,7 +163,7 @@ class TestDataOperationNodes:
         assert result["data"]["list"] == [1, 2, 3, 4, 5]
 
     @pytest.mark.asyncio
-    async def test_get_item_node(self, execution_context):
+    async def test_get_item_node(self, execution_context) -> None:
         """Test GetItemNode retrieves item by index."""
         from casare_rpa.nodes.data_operation_nodes import GetItemNode
 
@@ -177,7 +177,7 @@ class TestDataOperationNodes:
         assert result["data"]["item"] == "banana"
 
     @pytest.mark.asyncio
-    async def test_length_node(self, execution_context):
+    async def test_length_node(self, execution_context) -> None:
         """Test LengthNode returns collection length."""
         from casare_rpa.nodes.data_operation_nodes import LengthNode
 
@@ -190,7 +190,7 @@ class TestDataOperationNodes:
         assert result["data"]["length"] == 5
 
     @pytest.mark.asyncio
-    async def test_append_node(self, execution_context):
+    async def test_append_node(self, execution_context) -> None:
         """Test AppendNode adds item to list."""
         from casare_rpa.nodes.data_operation_nodes import AppendNode
 
@@ -204,7 +204,7 @@ class TestDataOperationNodes:
         assert result["data"]["list"] == [1, 2, 3, 4]
 
     @pytest.mark.asyncio
-    async def test_contains_node(self, execution_context):
+    async def test_contains_node(self, execution_context) -> None:
         """Test ContainsNode checks if item exists in collection."""
         from casare_rpa.nodes.data_operation_nodes import ContainsNode
 
@@ -218,7 +218,7 @@ class TestDataOperationNodes:
         assert result["data"]["contains"] is True
 
     @pytest.mark.asyncio
-    async def test_slice_node(self, execution_context):
+    async def test_slice_node(self, execution_context) -> None:
         """Test SliceNode extracts subset of list."""
         from casare_rpa.nodes.data_operation_nodes import SliceNode
 
@@ -237,7 +237,7 @@ class TestDataOperationNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_dict_get_node(self, execution_context):
+    async def test_dict_get_node(self, execution_context) -> None:
         """Test DictGetNode retrieves value by key."""
         from casare_rpa.nodes.data_operation_nodes import DictGetNode
 
@@ -251,7 +251,7 @@ class TestDataOperationNodes:
         assert result["data"]["value"] == "Alice"
 
     @pytest.mark.asyncio
-    async def test_dict_set_node(self, execution_context):
+    async def test_dict_set_node(self, execution_context) -> None:
         """Test DictSetNode sets key-value pair."""
         from casare_rpa.nodes.data_operation_nodes import DictSetNode
 
@@ -266,7 +266,7 @@ class TestDataOperationNodes:
         assert result["data"]["dict"] == {"name": "Alice", "age": 30}
 
     @pytest.mark.asyncio
-    async def test_dict_remove_node(self, execution_context):
+    async def test_dict_remove_node(self, execution_context) -> None:
         """Test DictRemoveNode removes key from dict."""
         from casare_rpa.nodes.data_operation_nodes import DictRemoveNode
 
@@ -280,7 +280,7 @@ class TestDataOperationNodes:
         assert result["data"]["dict"] == {"name": "Alice", "city": "NYC"}
 
     @pytest.mark.asyncio
-    async def test_dict_merge_node(self, execution_context):
+    async def test_dict_merge_node(self, execution_context) -> None:
         """Test DictMergeNode merges two dictionaries."""
         from casare_rpa.nodes.data_operation_nodes import DictMergeNode
 
@@ -294,7 +294,7 @@ class TestDataOperationNodes:
         assert result["data"]["merged"] == {"a": 1, "b": 3, "c": 4}
 
     @pytest.mark.asyncio
-    async def test_dict_keys_node(self, execution_context):
+    async def test_dict_keys_node(self, execution_context) -> None:
         """Test DictKeysNode returns list of keys."""
         from casare_rpa.nodes.data_operation_nodes import DictKeysNode
 
@@ -307,7 +307,7 @@ class TestDataOperationNodes:
         assert set(result["data"]["keys"]) == {"name", "age", "city"}
 
     @pytest.mark.asyncio
-    async def test_dict_values_node(self, execution_context):
+    async def test_dict_values_node(self, execution_context) -> None:
         """Test DictValuesNode returns list of values."""
         from casare_rpa.nodes.data_operation_nodes import DictValuesNode
 
@@ -323,7 +323,7 @@ class TestDataOperationNodes:
 class TestDataOperationNodesIntegration:
     """Integration tests for data operation nodes visual layer."""
 
-    def test_concatenate_visual_integration(self):
+    def test_concatenate_visual_integration(self) -> None:
         """Test ConcatenateNode logic-to-visual connection."""
         from casare_rpa.nodes.data_operation_nodes import ConcatenateNode
         from casare_rpa.presentation.canvas.visual_nodes.data_operations import (
@@ -337,7 +337,7 @@ class TestDataOperationNodesIntegration:
         node = ConcatenateNode(node_id="test_concat")
         assert node.node_type == "ConcatenateNode"
 
-    def test_math_operation_visual_integration(self):
+    def test_math_operation_visual_integration(self) -> None:
         """Test MathOperationNode logic-to-visual connection."""
         from casare_rpa.nodes.data_operation_nodes import MathOperationNode
         from casare_rpa.presentation.canvas.visual_nodes.data_operations import (
@@ -351,7 +351,7 @@ class TestDataOperationNodesIntegration:
         node = MathOperationNode(node_id="test_math")
         assert node.node_type == "MathOperationNode"
 
-    def test_create_list_visual_integration(self):
+    def test_create_list_visual_integration(self) -> None:
         """Test CreateListNode logic-to-visual connection."""
         from casare_rpa.nodes.data_operation_nodes import CreateListNode
         from casare_rpa.presentation.canvas.visual_nodes.data_operations import (
@@ -365,7 +365,7 @@ class TestDataOperationNodesIntegration:
         node = CreateListNode(node_id="test_list")
         assert node.node_type == "CreateListNode"
 
-    def test_dict_get_visual_integration(self):
+    def test_dict_get_visual_integration(self) -> None:
         """Test DictGetNode logic-to-visual connection."""
         from casare_rpa.nodes.data_operation_nodes import DictGetNode
         from casare_rpa.presentation.canvas.visual_nodes.data_operations import (

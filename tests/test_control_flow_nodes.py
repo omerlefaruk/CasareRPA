@@ -13,7 +13,7 @@ class TestControlFlowNodes:
     """Integration tests for control flow category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context with real variable storage."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -31,7 +31,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_if_node_true_branch(self, execution_context):
+    async def test_if_node_true_branch(self, execution_context) -> None:
         """Test IfNode routes to true branch when condition is true."""
         from casare_rpa.nodes.control_flow_nodes import IfNode
 
@@ -46,7 +46,7 @@ class TestControlFlowNodes:
         assert "false" not in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_if_node_false_branch(self, execution_context):
+    async def test_if_node_false_branch(self, execution_context) -> None:
         """Test IfNode routes to false branch when condition is false."""
         from casare_rpa.nodes.control_flow_nodes import IfNode
 
@@ -61,7 +61,7 @@ class TestControlFlowNodes:
         assert "true" not in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_if_node_with_variables(self, execution_context):
+    async def test_if_node_with_variables(self, execution_context) -> None:
         """Test IfNode evaluates expressions with context variables."""
         from casare_rpa.nodes.control_flow_nodes import IfNode
 
@@ -82,7 +82,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_for_loop_start_range_iteration(self, execution_context):
+    async def test_for_loop_start_range_iteration(self, execution_context) -> None:
         """Test ForLoopStartNode with range iteration."""
         from casare_rpa.nodes.control_flow_nodes import ForLoopStartNode
 
@@ -100,7 +100,7 @@ class TestControlFlowNodes:
         assert result["data"]["current_item"] == 0
 
     @pytest.mark.asyncio
-    async def test_for_loop_start_list_iteration(self, execution_context):
+    async def test_for_loop_start_list_iteration(self, execution_context) -> None:
         """Test ForLoopStartNode with list iteration."""
         from casare_rpa.nodes.control_flow_nodes import ForLoopStartNode
 
@@ -119,7 +119,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_for_loop_end_continue(self, execution_context):
+    async def test_for_loop_end_continue(self, execution_context) -> None:
         """Test ForLoopEndNode continues iteration when items remain."""
         from casare_rpa.nodes.control_flow_nodes import (
             ForLoopStartNode,
@@ -148,7 +148,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_while_loop_start_true_condition(self, execution_context):
+    async def test_while_loop_start_true_condition(self, execution_context) -> None:
         """Test WhileLoopStartNode enters body when condition is true."""
         from casare_rpa.nodes.control_flow_nodes import WhileLoopStartNode
 
@@ -164,7 +164,7 @@ class TestControlFlowNodes:
         assert "completed" not in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_while_loop_start_false_condition(self, execution_context):
+    async def test_while_loop_start_false_condition(self, execution_context) -> None:
         """Test WhileLoopStartNode skips body when condition is false."""
         from casare_rpa.nodes.control_flow_nodes import WhileLoopStartNode
 
@@ -184,7 +184,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_switch_node_match(self, execution_context):
+    async def test_switch_node_match(self, execution_context) -> None:
         """Test SwitchNode routes to matching case."""
         from casare_rpa.nodes.control_flow_nodes import SwitchNode
 
@@ -198,7 +198,7 @@ class TestControlFlowNodes:
         assert "case_0" in result["next_nodes"]  # Matched first case
 
     @pytest.mark.asyncio
-    async def test_switch_node_default(self, execution_context):
+    async def test_switch_node_default(self, execution_context) -> None:
         """Test SwitchNode routes to default when no match."""
         from casare_rpa.nodes.control_flow_nodes import SwitchNode
 
@@ -216,7 +216,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_break_node(self, execution_context):
+    async def test_break_node(self, execution_context) -> None:
         """Test BreakNode signals break control flow."""
         from casare_rpa.nodes.control_flow_nodes import BreakNode
 
@@ -232,7 +232,7 @@ class TestControlFlowNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_continue_node(self, execution_context):
+    async def test_continue_node(self, execution_context) -> None:
         """Test ContinueNode signals continue control flow."""
         from casare_rpa.nodes.control_flow_nodes import ContinueNode
 
@@ -247,7 +247,7 @@ class TestControlFlowNodes:
 class TestControlFlowNodesIntegration:
     """Integration tests for control flow nodes visual layer."""
 
-    def test_if_node_visual_integration(self):
+    def test_if_node_visual_integration(self) -> None:
         """Test IfNode logic-to-visual connection."""
         from casare_rpa.nodes.control_flow_nodes import IfNode
         from casare_rpa.presentation.canvas.visual_nodes.control_flow import (
@@ -262,7 +262,7 @@ class TestControlFlowNodesIntegration:
         assert node.node_type == "IfNode"
         assert hasattr(node, "execute")
 
-    def test_for_loop_start_visual_integration(self):
+    def test_for_loop_start_visual_integration(self) -> None:
         """Test ForLoopStartNode logic-to-visual connection."""
         from casare_rpa.nodes.control_flow_nodes import ForLoopStartNode
         from casare_rpa.presentation.canvas.visual_nodes.control_flow import (
@@ -276,7 +276,7 @@ class TestControlFlowNodesIntegration:
         node = ForLoopStartNode(node_id="test_for_start")
         assert node.node_type == "ForLoopStartNode"
 
-    def test_while_loop_start_visual_integration(self):
+    def test_while_loop_start_visual_integration(self) -> None:
         """Test WhileLoopStartNode logic-to-visual connection."""
         from casare_rpa.nodes.control_flow_nodes import WhileLoopStartNode
         from casare_rpa.presentation.canvas.visual_nodes.control_flow import (
@@ -290,7 +290,7 @@ class TestControlFlowNodesIntegration:
         node = WhileLoopStartNode(node_id="test_while")
         assert node.node_type == "WhileLoopStartNode"
 
-    def test_switch_node_visual_integration(self):
+    def test_switch_node_visual_integration(self) -> None:
         """Test SwitchNode logic-to-visual connection."""
         from casare_rpa.nodes.control_flow_nodes import SwitchNode
         from casare_rpa.presentation.canvas.visual_nodes.control_flow import (
