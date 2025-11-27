@@ -2,6 +2,15 @@
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.core.types import DataType
 
+# Import logic layer nodes
+from casare_rpa.nodes.script_nodes import (
+    RunPythonScriptNode,
+    RunPythonFileNode,
+    EvalExpressionNode,
+    RunBatchScriptNode,
+    RunJavaScriptNode,
+)
+
 
 # =============================================================================
 # Script Nodes
@@ -13,6 +22,9 @@ class VisualRunPythonScriptNode(VisualNode):
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Run Python Script"
     NODE_CATEGORY = "scripts"
+
+    def get_node_class(self) -> type:
+        return RunPythonScriptNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -36,6 +48,9 @@ class VisualRunPythonFileNode(VisualNode):
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="300", tab="properties")
 
+    def get_node_class(self) -> type:
+        return RunPythonFileNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
@@ -53,6 +68,9 @@ class VisualEvalExpressionNode(VisualNode):
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Eval Expression"
     NODE_CATEGORY = "scripts"
+
+    def get_node_class(self) -> type:
+        return EvalExpressionNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -75,6 +93,9 @@ class VisualRunBatchScriptNode(VisualNode):
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="300", tab="properties")
 
+    def get_node_class(self) -> type:
+        return RunBatchScriptNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("script", DataType.STRING)
@@ -92,6 +113,9 @@ class VisualRunJavaScriptNode(VisualNode):
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Run JavaScript"
     NODE_CATEGORY = "scripts"
+
+    def get_node_class(self) -> type:
+        return RunJavaScriptNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

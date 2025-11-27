@@ -51,14 +51,17 @@ class VisualConcatenateNode(VisualNode):
     NODE_NAME = 'Concatenate Strings'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
+        self.add_text_input('separator', 'Separator', text='', tab='properties')
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('string_1')
         self.add_input('string_2')
         self.add_output('result')
-        self.create_property('separator', '', widget_type='text_input')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return ConcatenateNode
 
 
@@ -69,13 +72,13 @@ class VisualFormatStringNode(VisualNode):
     NODE_NAME = 'Format String'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('template')
         self.add_input('variables')
         self.add_output('result')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return FormatStringNode
 
 
@@ -86,8 +89,8 @@ class VisualRegexMatchNode(VisualNode):
     NODE_NAME = 'Regex Match'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('text')
         self.add_input('pattern')
         self.add_output('match_found')
@@ -95,7 +98,7 @@ class VisualRegexMatchNode(VisualNode):
         self.add_output('all_matches')
         self.add_output('groups')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return RegexMatchNode
 
 
@@ -360,7 +363,7 @@ class VisualListSortNode(VisualNode):
 
     def __init__(self):
         super().__init__()
-        self.create_property('reverse', False, widget_type=1, tab='config')
+        self.add_checkbox('reverse', 'Reverse', state=False, tab='config')
         self.add_text_input('key_path', 'Key Path', text='', tab='config')
 
     def setup_ports(self):
@@ -507,7 +510,7 @@ class VisualListFlattenNode(VisualNode):
 
     def __init__(self):
         super().__init__()
-        self.create_property('depth', 1, widget_type=2, tab='config')
+        self.add_text_input('depth', 'Depth', text='1', tab='config')
 
     def setup_ports(self):
         """Setup ports."""
@@ -709,7 +712,7 @@ class VisualDictToJsonNode(VisualNode):
 
     def __init__(self):
         super().__init__()
-        self.create_property('indent', 2, widget_type=2, tab='config')
+        self.add_text_input('indent', 'Indent', text='2', tab='config')
 
     def setup_ports(self):
         """Setup ports."""

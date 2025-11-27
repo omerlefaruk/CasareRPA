@@ -1355,84 +1355,15 @@ class VisualFTPGetSizeNode(VisualNode):
 # List of all visual node classes for auto-discovery
 # =============================================================================
 
-EXTENDED_VISUAL_NODE_CLASSES = [
-    # Random
-    VisualRandomNumberNode,
-    VisualRandomChoiceNode,
-    VisualRandomStringNode,
-    VisualRandomUUIDNode,
-    VisualShuffleListNode,
-    # DateTime
-    VisualGetCurrentDateTimeNode,
-    VisualFormatDateTimeNode,
-    VisualParseDateTimeNode,
-    VisualDateTimeAddNode,
-    VisualDateTimeDiffNode,
-    VisualDateTimeCompareNode,
-    VisualGetTimestampNode,
-    # Text
-    VisualTextSplitNode,
-    VisualTextReplaceNode,
-    VisualTextTrimNode,
-    VisualTextCaseNode,
-    VisualTextPadNode,
-    VisualTextSubstringNode,
-    VisualTextContainsNode,
-    VisualTextStartsWithNode,
-    VisualTextEndsWithNode,
-    VisualTextLinesNode,
-    VisualTextReverseNode,
-    VisualTextCountNode,
-    VisualTextJoinNode,
-    VisualTextExtractNode,
-    # Clipboard
-    VisualClipboardCopyNode,
-    VisualClipboardPasteNode,
-    VisualClipboardClearNode,
-    # Dialogs
-    VisualMessageBoxNode,
-    VisualInputDialogNode,
-    VisualTooltipNode,
-    # Terminal
-    VisualRunCommandNode,
-    VisualRunPowerShellNode,
-    # Windows Services
-    VisualGetServiceStatusNode,
-    VisualStartServiceNode,
-    VisualStopServiceNode,
-    VisualRestartServiceNode,
-    VisualListServicesNode,
-    # Script
-    VisualRunPythonScriptNode,
-    VisualRunPythonFileNode,
-    VisualEvalExpressionNode,
-    VisualRunBatchScriptNode,
-    VisualRunJavaScriptNode,
-    # XML
-    VisualParseXMLNode,
-    VisualReadXMLFileNode,
-    VisualWriteXMLFileNode,
-    VisualXPathQueryNode,
-    VisualGetXMLElementNode,
-    VisualGetXMLAttributeNode,
-    VisualXMLToJsonNode,
-    VisualJsonToXMLNode,
-    # PDF
-    VisualReadPDFTextNode,
-    VisualGetPDFInfoNode,
-    VisualMergePDFsNode,
-    VisualSplitPDFNode,
-    VisualExtractPDFPagesNode,
-    VisualPDFToImagesNode,
-    # FTP
-    VisualFTPConnectNode,
-    VisualFTPUploadNode,
-    VisualFTPDownloadNode,
-    VisualFTPListNode,
-    VisualFTPDeleteNode,
-    VisualFTPMakeDirNode,
-    VisualFTPRemoveDirNode,
-    VisualFTPRenameNode,
-    VisualFTPDisconnectNode,
-    VisualFTPGetSizeNode,
-]
+# NOTE: All 68 nodes previously in this list have been migrated to the new
+# category-based structure in src/casare_rpa/presentation/canvas/visual_nodes/
+# The nodes are now organized into:
+#   - utility/ (Random, DateTime, Text - 26 nodes)
+#   - system/ (Clipboard, Dialogs, Terminal, Services - 13 nodes)
+#   - scripts/ (Python, JavaScript, Batch - 5 nodes)
+#   - file_operations/ (XML, PDF, FTP - 24 additional nodes)
+#
+# This list is now empty to prevent duplicate registrations.
+# This file will be removed in v3.0.
+
+EXTENDED_VISUAL_NODE_CLASSES = []
