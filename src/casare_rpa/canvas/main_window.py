@@ -1737,7 +1737,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         """Handle window close event."""
-        if self._workflow_controller._check_unsaved_changes():
+        if self._workflow_controller.check_unsaved_changes():
             # Save UI state before closing (via UIStateController)
             if self._ui_state_controller:
                 self._ui_state_controller.save_state()

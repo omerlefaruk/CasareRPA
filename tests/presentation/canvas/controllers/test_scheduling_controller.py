@@ -29,7 +29,7 @@ def mock_main_window(qtbot):
 
     # Mock workflow controller
     main_window._workflow_controller = Mock()
-    main_window._workflow_controller._check_unsaved_changes = Mock(return_value=True)
+    main_window._workflow_controller.check_unsaved_changes = Mock(return_value=True)
     main_window._workflow_controller.save_workflow_as = Mock()
 
     # Mock execution controller
