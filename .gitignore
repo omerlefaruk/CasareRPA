@@ -45,6 +45,13 @@ env/
 *.swo
 *~
 
+# Backup files
+*_backup.py
+*_old.py
+*.backup
+*.bak
+*.orig
+
 # OS
 .DS_Store
 Thumbs.db
