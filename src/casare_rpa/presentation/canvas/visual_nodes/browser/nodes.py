@@ -1,0 +1,473 @@
+"""Visual nodes for browser category."""
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
+class VisualLaunchBrowserNode(VisualNode):
+    """Visual representation of LaunchBrowserNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Launch Browser"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize launch browser node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("url", "URL", placeholder_text="https://example.com", tab="properties")
+        self.add_combo_menu("browser_type", "Browser", items=["chromium", "firefox", "webkit"], tab="properties")
+        self.add_checkbox("headless", "Headless", state=False, tab="properties")
+
+        # Performance options
+        self.add_text_input("slow_mo", "Slow Mo (ms)", placeholder_text="0", tab="advanced")
+        self.add_combo_menu("channel", "Channel", items=["", "chrome", "msedge", "chrome-beta"], tab="advanced")
+
+        # Viewport options
+        self.add_text_input("viewport_width", "Viewport Width", placeholder_text="1280", tab="advanced")
+        self.add_text_input("viewport_height", "Viewport Height", placeholder_text="720", tab="advanced")
+
+        # Identity options
+        self.add_text_input("user_agent", "User Agent", placeholder_text="Custom user agent", tab="advanced")
+        self.add_text_input("locale", "Locale", placeholder_text="en-US", tab="advanced")
+        self.add_text_input("timezone_id", "Timezone", placeholder_text="America/New_York", tab="advanced")
+        self.add_combo_menu("color_scheme", "Color Scheme", items=["light", "dark", "no-preference"], tab="advanced")
+
+        # Security options
+        self.add_checkbox("ignore_https_errors", "Ignore HTTPS Errors", state=False, tab="advanced")
+        self.add_text_input("proxy_server", "Proxy Server", placeholder_text="http://proxy:8080", tab="advanced")
+
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="2000", tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("url")
+        self.add_output("exec_out")
+        self.add_output("browser")
+        self.add_output("page")
+
+class VisualCloseBrowserNode(VisualNode):
+    """Visual representation of CloseBrowserNode."""
+    
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Close Browser"
+    NODE_CATEGORY = "browser"
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("browser")
+        self.add_output("exec_out")
+
+class VisualNewTabNode(VisualNode):
+    """Visual representation of NewTabNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "New Tab"
+    NODE_CATEGORY = "browser"
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("browser")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualGetAllImagesNode(VisualNode):
+    """Visual representation of GetAllImagesNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Get All Images"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize get all images node."""
+        super().__init__()
+        self.add_text_input("min_width", "Min Width", placeholder_text="0", tab="properties")
+        self.add_text_input("min_height", "Min Height", placeholder_text="0", tab="properties")
+        self.add_checkbox("include_backgrounds", "Include Background Images", state=True, tab="properties")
+        self.add_text_input("file_types", "File Types", placeholder_text="jpg,png,webp (empty=all)", tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input()
+        self.add_exec_output()
+        self.add_output("images")
+        self.add_output("count")
+
+class VisualDownloadFileNode(VisualNode):
+    """Visual representation of DownloadFileNode."""
+
+    __identifier__ = "casare_rpa.browser"
+    NODE_NAME = "Download File"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize download file node."""
+        super().__init__()
+        self.add_text_input("save_path", "Save Path", placeholder_text="C:/Downloads or full path", tab="properties")
+        self.add_checkbox("use_browser", "Use Browser Context", state=False, tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_checkbox("overwrite", "Overwrite Existing", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_exec_input()
+        self.add_input("url")
+        self.add_input("filename")
+        self.add_exec_output()
+        self.add_output("path")
+        self.add_output("size")
+        self.add_output("success")
+
+
+# Navigation Nodes
+
+class VisualGoToURLNode(VisualNode):
+    """Visual representation of GoToURLNode."""
+
+    __identifier__ = "casare_rpa.navigation"
+    NODE_NAME = "Go To URL"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize go to URL node."""
+        super().__init__()
+        self.add_text_input("url", "URL", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+        self.add_text_input("referer", "Referer", placeholder_text="Optional referer URL", tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("url")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualGoBackNode(VisualNode):
+    """Visual representation of GoBackNode."""
+
+    __identifier__ = "casare_rpa.navigation"
+    NODE_NAME = "Go Back"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize go back node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualGoForwardNode(VisualNode):
+    """Visual representation of GoForwardNode."""
+
+    __identifier__ = "casare_rpa.navigation"
+    NODE_NAME = "Go Forward"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize go forward node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualRefreshPageNode(VisualNode):
+    """Visual representation of RefreshPageNode."""
+
+    __identifier__ = "casare_rpa.navigation"
+    NODE_NAME = "Refresh Page"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize refresh page node."""
+        super().__init__()
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+
+# Interaction Nodes
+
+class VisualClickElementNode(VisualNode):
+    """Visual representation of ClickElementNode."""
+
+    __identifier__ = "casare_rpa.interaction"
+    NODE_NAME = "Click Element"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize click element node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_combo_menu("button", "Button", items=["left", "right", "middle"], tab="properties")
+
+        # Click behavior
+        self.add_text_input("click_count", "Click Count", placeholder_text="1", tab="advanced")
+        self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
+        self.add_checkbox("force", "Force Click", state=False, tab="advanced")
+
+        # Position offset
+        self.add_text_input("position_x", "Position X", placeholder_text="center", tab="advanced")
+        self.add_text_input("position_y", "Position Y", placeholder_text="center", tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualTypeTextNode(VisualNode):
+    """Visual representation of TypeTextNode."""
+
+    __identifier__ = "casare_rpa.interaction"
+    NODE_NAME = "Type Text"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize type text node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_text_input("text", "Text", tab="properties")
+
+        # Advanced options
+        self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="advanced")
+        self.add_checkbox("clear_first", "Clear First", state=True, tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_input("text")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+class VisualSelectDropdownNode(VisualNode):
+    """Visual representation of SelectDropdownNode."""
+
+    __identifier__ = "casare_rpa.interaction"
+    NODE_NAME = "Select Dropdown"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize select dropdown node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_text_input("value", "Value", tab="properties")
+        self.add_combo_menu("select_by", "Select By", items=["value", "label", "index"], tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+
+        # Advanced options
+        self.add_checkbox("force", "Force", state=False, tab="advanced")
+        self.add_checkbox("no_wait_after", "No Wait After", state=False, tab="advanced")
+        self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_input("value")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+
+# Data Extraction Nodes
+
+class VisualExtractTextNode(VisualNode):
+    """Visual representation of ExtractTextNode."""
+
+    __identifier__ = "casare_rpa.data"
+    NODE_NAME = "Extract Text"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize extract text node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_text_input("variable_name", "Variable Name", tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+
+        # Advanced options
+        self.add_checkbox("use_inner_text", "Use Inner Text", state=False, tab="advanced")
+        self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
+        self.add_checkbox("trim_whitespace", "Trim Whitespace", state=True, tab="advanced")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_output("exec_out")
+        self.add_output("page")
+        self.add_output("text")
+
+class VisualGetAttributeNode(VisualNode):
+    """Visual representation of GetAttributeNode."""
+
+    __identifier__ = "casare_rpa.data"
+    NODE_NAME = "Get Attribute"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize get attribute node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_text_input("attribute", "Attribute", tab="properties")
+        self.add_text_input("variable_name", "Variable Name", tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+
+        # Advanced options
+        self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_input("attribute")
+        self.add_output("exec_out")
+        self.add_output("page")
+        self.add_output("value")
+
+class VisualScreenshotNode(VisualNode):
+    """Visual representation of ScreenshotNode."""
+
+    __identifier__ = "casare_rpa.data"
+    NODE_NAME = "Screenshot"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize screenshot node."""
+        super().__init__()
+        # Basic options
+        self.add_text_input("file_path", "File Path", tab="properties")
+        self.add_checkbox("full_page", "Full Page", state=False, tab="properties")
+        self.add_combo_menu("type", "Image Type", items=["png", "jpeg"], tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+
+        # Advanced options
+        self.add_text_input("quality", "JPEG Quality", placeholder_text="80", tab="advanced")
+        self.add_combo_menu("scale", "Scale", items=["device", "css"], tab="advanced")
+        self.add_combo_menu("animations", "Animations", items=["allow", "disabled"], tab="advanced")
+        self.add_checkbox("omit_background", "Omit Background", state=False, tab="advanced")
+        self.add_combo_menu("caret", "Caret", items=["hide", "initial"], tab="advanced")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("file_path")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+
+# Wait Nodes
+
+class VisualWaitNode(VisualNode):
+    """Visual representation of WaitNode."""
+    
+    __identifier__ = "casare_rpa.wait"
+    NODE_NAME = "Wait"
+    NODE_CATEGORY = "browser"
+    
+    def __init__(self) -> None:
+        """Initialize wait node."""
+        super().__init__()
+        self.add_text_input("duration", "Duration (s)", text="1.0", tab="properties")
+    
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("duration")
+        self.add_output("exec_out")
+
+class VisualWaitForElementNode(VisualNode):
+    """Visual representation of WaitForElementNode."""
+
+    __identifier__ = "casare_rpa.wait"
+    NODE_NAME = "Wait For Element"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize wait for element node."""
+        super().__init__()
+        self.add_text_input("selector", "Selector", tab="properties")
+        self.add_combo_menu("state", "State", items=["visible", "hidden", "attached", "detached"], tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        # Advanced options
+        self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
+        self.add_text_input("poll_interval", "Poll Interval (ms)", placeholder_text="100", tab="advanced")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
+        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
+        self.add_checkbox("highlight_on_find", "Highlight on Find", state=False, tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_input("selector")
+        self.add_output("exec_out")
+        self.add_output("page")
+        self.add_output("found")
+
+class VisualWaitForNavigationNode(VisualNode):
+    """Visual representation of WaitForNavigationNode."""
+
+    __identifier__ = "casare_rpa.wait"
+    NODE_NAME = "Wait For Navigation"
+    NODE_CATEGORY = "browser"
+
+    def __init__(self) -> None:
+        """Initialize wait for navigation node."""
+        super().__init__()
+        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle"], tab="properties")
+        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        # Advanced options
+        self.add_text_input("url_pattern", "URL Pattern", placeholder_text="Optional glob or regex", tab="advanced")
+        self.add_checkbox("url_use_regex", "Use Regex", state=False, tab="advanced")
+        # Retry options
+        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
+        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
+        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_input("exec_in")
+        self.add_input("page")
+        self.add_output("exec_out")
+        self.add_output("page")
+
+
+# Variable Nodes
+

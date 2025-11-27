@@ -10,6 +10,8 @@ from .nodes import (
     VisualDeleteFileNode,
     VisualCopyFileNode,
     VisualMoveFileNode,
+    VisualCreateDirectoryNode,
+    VisualListDirectoryNode,
     VisualFileExistsNode,
     VisualGetFileSizeNode,
     VisualGetFileInfoNode,
@@ -17,12 +19,17 @@ from .nodes import (
     # CSV operations
     VisualReadCsvNode,
     VisualWriteCsvNode,
+    VisualReadCSVNode,
+    VisualWriteCSVNode,
     # JSON operations
     VisualReadJsonNode,
     VisualWriteJsonNode,
+    VisualReadJSONFileNode,
+    VisualWriteJSONFileNode,
     # ZIP operations
     VisualZipFilesNode,
     VisualUnzipFileNode,
+    VisualUnzipFilesNode,
     # XML operations
     VisualParseXMLNode,
     VisualReadXMLFileNode,
@@ -60,6 +67,8 @@ __all__ = [
     "VisualDeleteFileNode",
     "VisualCopyFileNode",
     "VisualMoveFileNode",
+    "VisualCreateDirectoryNode",
+    "VisualListDirectoryNode",
     "VisualFileExistsNode",
     "VisualGetFileSizeNode",
     "VisualGetFileInfoNode",
@@ -67,12 +76,17 @@ __all__ = [
     # CSV operations
     "VisualReadCsvNode",
     "VisualWriteCsvNode",
+    "VisualReadCSVNode",
+    "VisualWriteCSVNode",
     # JSON operations
     "VisualReadJsonNode",
     "VisualWriteJsonNode",
+    "VisualReadJSONFileNode",
+    "VisualWriteJSONFileNode",
     # ZIP operations
     "VisualZipFilesNode",
     "VisualUnzipFileNode",
+    "VisualUnzipFilesNode",
     # XML operations
     "VisualParseXMLNode",
     "VisualReadXMLFileNode",

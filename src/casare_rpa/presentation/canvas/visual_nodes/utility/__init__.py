@@ -32,6 +32,10 @@ from .nodes import (
     VisualTextCountNode,
     VisualTextJoinNode,
     VisualTextExtractNode,
+    # Validation operations
+    VisualValidateNode,
+    VisualTransformNode,
+    VisualLogNode,
 )
 
 __all__ = [
@@ -64,4 +68,8 @@ __all__ = [
     "VisualTextCountNode",
     "VisualTextJoinNode",
     "VisualTextExtractNode",
+    # Validation operations
+    "VisualValidateNode",
+    "VisualTransformNode",
+    "VisualLogNode",
 ]
