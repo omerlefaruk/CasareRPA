@@ -1,0 +1,517 @@
+"""Visual nodes for utility category."""
+from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.core.types import DataType
+
+
+# =============================================================================
+# Random Nodes
+# =============================================================================
+
+class VisualRandomNumberNode(VisualNode):
+    """Visual representation of RandomNumberNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Random Number"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("min_value", "Min", text="0", tab="properties")
+        self.add_text_input("max_value", "Max", text="100", tab="properties")
+        self.add_checkbox("integer_only", "Integer Only", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("min_value", DataType.FLOAT)
+        self.add_typed_input("max_value", DataType.FLOAT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.FLOAT)
+
+
+class VisualRandomChoiceNode(VisualNode):
+    """Visual representation of RandomChoiceNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Random Choice"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("count", "Count", text="1", tab="properties")
+        self.add_checkbox("allow_duplicates", "Allow Duplicates", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("items", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.ANY)
+        self.add_typed_output("index", DataType.INTEGER)
+
+
+class VisualRandomStringNode(VisualNode):
+    """Visual representation of RandomStringNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Random String"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("length", "Length", text="10", tab="properties")
+        self.add_checkbox("include_uppercase", "Uppercase", state=True, tab="properties")
+        self.add_checkbox("include_lowercase", "Lowercase", state=True, tab="properties")
+        self.add_checkbox("include_digits", "Digits", state=True, tab="properties")
+        self.add_checkbox("include_special", "Special", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("length", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualRandomUUIDNode(VisualNode):
+    """Visual representation of RandomUUIDNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Random UUID"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("format", "Format", items=["standard", "hex", "urn"], tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualShuffleListNode(VisualNode):
+    """Visual representation of ShuffleListNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Shuffle List"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("items", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
+
+
+# =============================================================================
+# DateTime Nodes
+# =============================================================================
+
+class VisualGetCurrentDateTimeNode(VisualNode):
+    """Visual representation of GetCurrentDateTimeNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Get Current DateTime"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_typed_output("datetime", DataType.STRING)
+        self.add_typed_output("timestamp", DataType.FLOAT)
+        self.add_typed_output("year", DataType.INTEGER)
+        self.add_typed_output("month", DataType.INTEGER)
+        self.add_typed_output("day", DataType.INTEGER)
+        self.add_typed_output("hour", DataType.INTEGER)
+        self.add_typed_output("minute", DataType.INTEGER)
+        self.add_typed_output("second", DataType.INTEGER)
+        self.add_typed_output("day_of_week", DataType.STRING)
+
+
+class VisualFormatDateTimeNode(VisualNode):
+    """Visual representation of FormatDateTimeNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Format DateTime"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("format", "Format", text="%Y-%m-%d", tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("datetime", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualParseDateTimeNode(VisualNode):
+    """Visual representation of ParseDateTimeNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Parse DateTime"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("datetime_string", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("year", DataType.INTEGER)
+        self.add_typed_output("month", DataType.INTEGER)
+        self.add_typed_output("day", DataType.INTEGER)
+        self.add_typed_output("hour", DataType.INTEGER)
+        self.add_typed_output("minute", DataType.INTEGER)
+        self.add_typed_output("second", DataType.INTEGER)
+        self.add_typed_output("timestamp", DataType.FLOAT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+
+
+class VisualDateTimeAddNode(VisualNode):
+    """Visual representation of DateTimeAddNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "DateTime Add"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("datetime", DataType.ANY)
+        self.add_typed_input("days", DataType.INTEGER)
+        self.add_typed_input("hours", DataType.INTEGER)
+        self.add_typed_input("minutes", DataType.INTEGER)
+        self.add_typed_input("seconds", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+        self.add_typed_output("timestamp", DataType.FLOAT)
+
+
+class VisualDateTimeDiffNode(VisualNode):
+    """Visual representation of DateTimeDiffNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "DateTime Diff"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("datetime_1", DataType.ANY)
+        self.add_typed_input("datetime_2", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("total_days", DataType.FLOAT)
+        self.add_typed_output("total_hours", DataType.FLOAT)
+        self.add_typed_output("total_minutes", DataType.FLOAT)
+        self.add_typed_output("total_seconds", DataType.FLOAT)
+        self.add_typed_output("days", DataType.INTEGER)
+        self.add_typed_output("hours", DataType.INTEGER)
+        self.add_typed_output("minutes", DataType.INTEGER)
+        self.add_typed_output("seconds", DataType.INTEGER)
+
+
+class VisualDateTimeCompareNode(VisualNode):
+    """Visual representation of DateTimeCompareNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "DateTime Compare"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("datetime_1", DataType.ANY)
+        self.add_typed_input("datetime_2", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("is_before", DataType.BOOLEAN)
+        self.add_typed_output("is_after", DataType.BOOLEAN)
+        self.add_typed_output("is_equal", DataType.BOOLEAN)
+        self.add_typed_output("comparison", DataType.INTEGER)
+
+
+class VisualGetTimestampNode(VisualNode):
+    """Visual representation of GetTimestampNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Get Timestamp"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("milliseconds", "Milliseconds", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_typed_output("timestamp", DataType.FLOAT)
+
+
+# =============================================================================
+# Text Nodes
+# =============================================================================
+
+class VisualTextSplitNode(VisualNode):
+    """Visual representation of TextSplitNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Split"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_text_input("max_split", "Max Splits", text="-1", tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("separator", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+
+
+class VisualTextReplaceNode(VisualNode):
+    """Visual representation of TextReplaceNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Replace"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("use_regex", "Use Regex", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("old_value", DataType.STRING)
+        self.add_typed_input("new_value", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+        self.add_typed_output("replacements", DataType.INTEGER)
+
+
+class VisualTextTrimNode(VisualNode):
+    """Visual representation of TextTrimNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Trim"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("mode", "Mode", items=["both", "left", "right"], tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualTextCaseNode(VisualNode):
+    """Visual representation of TextCaseNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Case"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("case", "Case", items=["lower", "upper", "title", "capitalize", "swapcase"], tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualTextPadNode(VisualNode):
+    """Visual representation of TextPadNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Pad"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("mode", "Mode", items=["left", "right", "center"], tab="properties")
+        self.add_text_input("fill_char", "Fill Char", text=" ", tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("length", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualTextSubstringNode(VisualNode):
+    """Visual representation of TextSubstringNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Substring"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("start", DataType.INTEGER)
+        self.add_typed_input("end", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+        self.add_typed_output("length", DataType.INTEGER)
+
+
+class VisualTextContainsNode(VisualNode):
+    """Visual representation of TextContainsNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Contains"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("search", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("contains", DataType.BOOLEAN)
+        self.add_typed_output("position", DataType.INTEGER)
+        self.add_typed_output("count", DataType.INTEGER)
+
+
+class VisualTextStartsWithNode(VisualNode):
+    """Visual representation of TextStartsWithNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Starts With"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("prefix", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.BOOLEAN)
+
+
+class VisualTextEndsWithNode(VisualNode):
+    """Visual representation of TextEndsWithNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Ends With"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("suffix", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.BOOLEAN)
+
+
+class VisualTextLinesNode(VisualNode):
+    """Visual representation of TextLinesNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Lines"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("mode", "Mode", items=["split", "join"], tab="properties")
+        self.add_checkbox("keep_ends", "Keep Line Endings", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("input", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.ANY)
+        self.add_typed_output("count", DataType.INTEGER)
+
+
+class VisualTextReverseNode(VisualNode):
+    """Visual representation of TextReverseNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Reverse"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualTextCountNode(VisualNode):
+    """Visual representation of TextCountNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Count"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_combo_menu("mode", "Mode", items=["characters", "words", "lines"], tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("characters", DataType.INTEGER)
+        self.add_typed_output("words", DataType.INTEGER)
+        self.add_typed_output("lines", DataType.INTEGER)
+
+
+class VisualTextJoinNode(VisualNode):
+    """Visual representation of TextJoinNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Join"
+    NODE_CATEGORY = "utility"
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("items", DataType.LIST)
+        self.add_typed_input("separator", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+
+
+class VisualTextExtractNode(VisualNode):
+    """Visual representation of TextExtractNode."""
+
+    __identifier__ = "casare_rpa.utility"
+    NODE_NAME = "Text Extract"
+    NODE_CATEGORY = "utility"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.add_checkbox("all_matches", "All Matches", state=False, tab="properties")
+
+    def setup_ports(self) -> None:
+        self.add_exec_input("exec_in")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("pattern", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("match", DataType.ANY)
+        self.add_typed_output("groups", DataType.LIST)
+        self.add_typed_output("found", DataType.BOOLEAN)
