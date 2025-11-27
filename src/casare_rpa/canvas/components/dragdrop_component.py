@@ -67,15 +67,13 @@ class DragDropComponent(BaseComponent):
                 self._load_workflow_merge(prepared_data)
 
                 self._main_window.set_modified(True)
-                self._main_window.statusBar().showMessage(
+                self._main_window.show_status(
                     f"Imported {len(prepared_data.get('nodes', {}))} nodes from {Path(file_path).name}",
                     5000,
                 )
             except Exception as e:
                 logger.exception(f"Failed to import dropped file: {e}")
-                self._main_window.statusBar().showMessage(
-                    f"Error importing file: {str(e)}", 5000
-                )
+                self._main_window.show_status(f"Error importing file: {str(e)}", 5000)
 
         def on_import_data(data: dict, position: tuple) -> None:
             """Handle JSON data drop."""
@@ -94,14 +92,12 @@ class DragDropComponent(BaseComponent):
                 self._load_workflow_merge(prepared_data)
 
                 self._main_window.set_modified(True)
-                self._main_window.statusBar().showMessage(
+                self._main_window.show_status(
                     f"Imported {len(prepared_data.get('nodes', {}))} nodes", 5000
                 )
             except Exception as e:
                 logger.exception(f"Failed to import dropped JSON: {e}")
-                self._main_window.statusBar().showMessage(
-                    f"Error importing JSON: {str(e)}", 5000
-                )
+                self._main_window.show_status(f"Error importing JSON: {str(e)}", 5000)
 
         # Set callbacks and enable drag-drop
         self.node_graph.set_import_file_callback(on_import_file)
@@ -146,7 +142,10 @@ class DragDropComponent(BaseComponent):
         Returns:
             Created visual node or None
         """
-        from ..graph.node_registry import get_identifier_for_type, get_casare_class_for_type
+        from ..graph.node_registry import (
+            get_identifier_for_type,
+            get_casare_class_for_type,
+        )
 
         node_type = node_data.get("node_type")
         node_id = node_data.get("node_id")
@@ -180,7 +179,9 @@ class DragDropComponent(BaseComponent):
                 try:
                     widget.set_value(config[widget_name])
                 except Exception as e:
-                    logger.warning(f"Failed to restore widget {node_id}.{widget_name}: {e}")
+                    logger.warning(
+                        f"Failed to restore widget {node_id}.{widget_name}: {e}"
+                    )
 
         # Set position
         pos = node_data.get("position", {})

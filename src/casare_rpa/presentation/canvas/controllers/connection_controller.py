@@ -8,11 +8,14 @@ Handles all connection-related operations:
 - Auto-connect mode
 """
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from loguru import logger
 
 from .base_controller import BaseController
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class ConnectionController(BaseController):
@@ -34,7 +37,7 @@ class ConnectionController(BaseController):
     connection_validation_error = Signal(str)  # error_message
     auto_connect_toggled = Signal(bool)  # enabled
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize connection controller."""
         super().__init__(main_window)
         self._auto_connect_enabled = False
@@ -50,7 +53,11 @@ class ConnectionController(BaseController):
         logger.info("ConnectionController cleanup")
 
     def create_connection(
-        self, source_node_id: str, source_port: str, target_node_id: str, target_port: str
+        self,
+        source_node_id: str,
+        source_port: str,
+        target_node_id: str,
+        target_port: str,
     ) -> bool:
         """
         Create a connection between two nodes.
@@ -102,7 +109,11 @@ class ConnectionController(BaseController):
         logger.info(f"Connection deleted: {source_node_id} -> {target_node_id}")
 
     def validate_connection(
-        self, source_node_id: str, source_port: str, target_node_id: str, target_port: str
+        self,
+        source_node_id: str,
+        source_port: str,
+        target_node_id: str,
+        target_port: str,
     ) -> Tuple[bool, Optional[str]]:
         """
         Validate a connection before creation.
@@ -158,7 +169,4 @@ class ConnectionController(BaseController):
         Returns:
             NodeGraph instance or None if not available
         """
-        central_widget = self.main_window._central_widget
-        if not central_widget or not hasattr(central_widget, "graph"):
-            return None
-        return central_widget.graph
+        return self.main_window.get_graph()

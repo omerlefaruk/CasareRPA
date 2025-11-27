@@ -9,7 +9,7 @@ from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtGui import QColor
 
 from casare_rpa.core.base_node import BaseNode as CasareBaseNode
-from casare_rpa.core.types import PortType, DataType
+from casare_rpa.domain.value_objects.types import PortType, DataType
 from casare_rpa.core.port_type_system import PortTypeRegistry, get_port_type_registry
 from casare_rpa.canvas.graph.custom_node_item import CasareNodeItem
 

@@ -42,20 +42,24 @@ class CasareRPAApp:
 
     Responsibilities:
     - Qt application initialization
-    - Component lifecycle management
+    - Component lifecycle management with explicit dependency ordering
     - Event loop integration
     - Signal routing
 
     Business logic delegated to components:
     - WorkflowLifecycleComponent: New/Open/Save/Template operations
     - ExecutionComponent: Workflow execution and debugging
-    - NodeRegistryComponent: Node type registration
+    - NodeRegistryComponent: Node type registration (no dependencies)
     - SelectorComponent: Element selector integration
     - TriggerComponent: Trigger management
     - ProjectComponent: Project/scenario management
     - PreferencesComponent: Settings management
     - DragDropComponent: Drag-drop functionality
     - AutosaveComponent: Automatic saving
+
+    Component Initialization Order:
+    1. NodeRegistryComponent - Must be first (registers all node types)
+    2. All other components - Depend on node registry being initialized
     """
 
     def __init__(self) -> None:
@@ -74,7 +78,7 @@ class CasareRPAApp:
         # Create main window and node graph
         self._create_ui()
 
-        # Initialize components
+        # Initialize components in dependency order
         self._initialize_components()
 
         # Connect component signals
@@ -114,11 +118,31 @@ class CasareRPAApp:
         self._main_window.set_central_widget(self._node_graph)
 
     def _initialize_components(self) -> None:
-        """Initialize all application components."""
+        """
+        Initialize all application components in dependency order.
+
+        Initialization Order (Critical):
+        1. NodeRegistryComponent - MUST be first
+           - Registers all node types with NodeGraphQt
+           - Other components may need registered nodes during initialization
+
+        2. All other components - Can be initialized in any order
+           - They all depend on node registry being ready
+           - No cross-dependencies between these components
+
+        Raises:
+            RuntimeError: If component initialization fails
+        """
         logger.info("Initializing components...")
 
-        # Node registry - must be first to register node types
+        # Phase 1: Node registry (foundation - no dependencies)
+        logger.debug("Phase 1: Initializing node registry...")
         self._node_registry_component = NodeRegistryComponent(self._main_window)
+        self._node_registry_component.initialize()
+        logger.debug("Node registry initialized - all node types registered")
+
+        # Phase 2: All other components (depend on node registry)
+        logger.debug("Phase 2: Initializing application components...")
 
         # Workflow lifecycle - handles file operations
         self._workflow_lifecycle_component = WorkflowLifecycleComponent(
@@ -146,11 +170,28 @@ class CasareRPAApp:
         # Autosave - handles automatic saving
         self._autosave_component = AutosaveComponent(self._main_window)
 
-        # Initialize all components
-        for component in self._get_all_components():
-            component.initialize()
+        # Initialize all phase 2 components
+        phase_2_components = [
+            self._workflow_lifecycle_component,
+            self._execution_component,
+            self._selector_component,
+            self._trigger_component,
+            self._project_component,
+            self._preferences_component,
+            self._dragdrop_component,
+            self._autosave_component,
+        ]
 
-        logger.info("All components initialized")
+        for component in phase_2_components:
+            try:
+                component.initialize()
+                logger.debug(f"{component.__class__.__name__} initialized")
+            except Exception as e:
+                error_msg = f"Failed to initialize {component.__class__.__name__}: {e}"
+                logger.error(error_msg)
+                raise RuntimeError(error_msg) from e
+
+        logger.info("All components initialized successfully")
 
     def _connect_components(self) -> None:
         """Connect component signals for inter-component communication."""
@@ -185,7 +226,9 @@ class CasareRPAApp:
         # View operations
         self._main_window.action_zoom_in.triggered.connect(self._node_graph.zoom_in)
         self._main_window.action_zoom_out.triggered.connect(self._node_graph.zoom_out)
-        self._main_window.action_zoom_reset.triggered.connect(self._node_graph.reset_zoom)
+        self._main_window.action_zoom_reset.triggered.connect(
+            self._node_graph.reset_zoom
+        )
         self._main_window.action_fit_view.triggered.connect(
             self._node_graph.center_on_nodes
         )
@@ -233,6 +276,7 @@ class CasareRPAApp:
 
         # Delete selected frames
         from .graph.node_frame import NodeFrame
+
         scene = graph.viewer().scene()
         for item in scene.selectedItems():
             if isinstance(item, NodeFrame):
@@ -282,7 +326,7 @@ class CasareRPAApp:
     def _on_debug_step(self) -> None:
         """Handle debug step request."""
         # Delegate to execution component
-        if hasattr(self._execution_component, '_workflow_runner'):
+        if hasattr(self._execution_component, "_workflow_runner"):
             runner = self._execution_component._workflow_runner
             if runner and runner.debug_mode:
                 runner.step()
@@ -290,7 +334,7 @@ class CasareRPAApp:
     def _on_debug_continue(self) -> None:
         """Handle debug continue request."""
         # Delegate to execution component
-        if hasattr(self._execution_component, '_workflow_runner'):
+        if hasattr(self._execution_component, "_workflow_runner"):
             runner = self._execution_component._workflow_runner
             if runner and runner.debug_mode:
                 runner.continue_execution()

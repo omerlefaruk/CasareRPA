@@ -9,13 +9,16 @@ Handles all workflow-related operations:
 """
 
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog
 from loguru import logger
 
 from .base_controller import BaseController
 from ....utils.config import WORKFLOWS_DIR
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -45,7 +48,7 @@ class WorkflowController(BaseController):
     current_file_changed = Signal(object)  # Optional[Path]
     modified_changed = Signal(bool)
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize workflow controller."""
         super().__init__(main_window)
         self._current_file: Optional[Path] = None
@@ -72,8 +75,7 @@ class WorkflowController(BaseController):
         self.set_current_file(None)
         self.set_modified(False)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage("New workflow created", 3000)
+        self.main_window.show_status("New workflow created", 3000)
 
     def new_from_template(self) -> None:
         """Create a new workflow from a template."""
@@ -87,10 +89,7 @@ class WorkflowController(BaseController):
         template = show_template_browser(self.main_window)
         if template:
             # MainWindow will handle the actual template loading via signal
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Loading template: {template.name}...", 3000
-                )
+            self.main_window.show_status(f"Loading template: {template.name}...", 3000)
             # Emit through main window signal
             self.main_window.workflow_new_from_template.emit(template)
 
@@ -113,10 +112,7 @@ class WorkflowController(BaseController):
             self.set_current_file(Path(file_path))
             self.set_modified(False)
 
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Opened: {Path(file_path).name}", 3000
-                )
+            self.main_window.show_status(f"Opened: {Path(file_path).name}", 3000)
 
             # Schedule validation after opening
             from PySide6.QtCore import QTimer
@@ -136,23 +132,19 @@ class WorkflowController(BaseController):
 
         if file_path:
             self.workflow_imported.emit(file_path)
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Importing: {Path(file_path).name}...", 3000
-                )
+            self.main_window.show_status(f"Importing: {Path(file_path).name}...", 3000)
 
     def export_selected_nodes(self) -> None:
         """Export selected nodes to a workflow file."""
         logger.info("Exporting selected nodes")
 
         # Check if graph is available
-        central_widget = self.main_window._central_widget
-        if not central_widget or not hasattr(central_widget, "graph"):
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage("No graph available", 3000)
+        graph = self.main_window.get_graph()
+        if not graph:
+            self.main_window.show_status("No graph available", 3000)
             return
 
-        graph = central_widget.graph
+        graph = graph
         selected_nodes = graph.selected_nodes()
 
         if not selected_nodes:
@@ -172,10 +164,9 @@ class WorkflowController(BaseController):
 
         if file_path:
             self.workflow_exported.emit(file_path)
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Exporting {len(selected_nodes)} nodes...", 3000
-                )
+            self.main_window.show_status(
+                f"Exporting {len(selected_nodes)} nodes...", 3000
+            )
 
     def save_workflow(self) -> None:
         """Save the current workflow."""
@@ -188,10 +179,7 @@ class WorkflowController(BaseController):
         if self._current_file:
             self.workflow_saved.emit(str(self._current_file))
             self.set_modified(False)
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Saved: {self._current_file.name}", 3000
-                )
+            self.main_window.show_status(f"Saved: {self._current_file.name}", 3000)
         else:
             self.save_workflow_as()
 
@@ -214,10 +202,7 @@ class WorkflowController(BaseController):
             self.workflow_saved.emit(file_path)
             self.set_current_file(Path(file_path))
             self.set_modified(False)
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"Saved as: {Path(file_path).name}", 3000
-                )
+            self.main_window.show_status(f"Saved as: {Path(file_path).name}", 3000)
 
     def close_workflow(self) -> bool:
         """
@@ -309,10 +294,9 @@ class WorkflowController(BaseController):
             True if safe to save, False if validation errors exist
         """
         # Get validation errors from bottom panel if available
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            validation_errors = (
-                self.main_window._bottom_panel.get_validation_errors_blocking()
-            )
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            validation_errors = bottom_panel.get_validation_errors_blocking()
             if validation_errors:
                 reply = QMessageBox.warning(
                     self.main_window,
@@ -328,15 +312,14 @@ class WorkflowController(BaseController):
 
     def _validate_after_open(self) -> None:
         """Validate workflow after opening and show panel if issues found."""
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            self.main_window._bottom_panel.trigger_validation()
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            bottom_panel.trigger_validation()
 
             # Show validation tab if there are errors
-            validation_errors = (
-                self.main_window._bottom_panel.get_validation_errors_blocking()
-            )
+            validation_errors = bottom_panel.get_validation_errors_blocking()
             if validation_errors:
-                self.main_window._bottom_panel.show_validation_tab()
+                bottom_panel.show_validation_tab()
 
     def _update_window_title(self) -> None:
         """Update main window title with current file and modified state."""

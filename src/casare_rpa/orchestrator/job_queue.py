@@ -402,7 +402,18 @@ class JobQueue:
                     continue
 
                 # Check environment match
-                # TODO: Add environment matching logic
+                # Job environment must match robot environment, or robot must be in "default"
+                # which can accept jobs from any environment
+                if (
+                    job.environment != robot.environment
+                    and robot.environment != "default"
+                ):
+                    logger.debug(
+                        f"Job {job.id[:8]} requires environment '{job.environment}' "
+                        f"but robot {robot.name} is in '{robot.environment}'"
+                    )
+                    suitable_items.append(item)
+                    continue
 
                 selected_item = item
                 break

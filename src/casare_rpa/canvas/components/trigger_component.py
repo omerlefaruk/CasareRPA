@@ -71,13 +71,13 @@ class TriggerComponent(BaseComponent):
 
         triggers = bottom_panel.get_triggers()
         if not triggers:
-            self._main_window.statusBar().showMessage("No triggers configured", 3000)
+            self._main_window.show_status("No triggers configured", 3000)
             bottom_panel.set_triggers_running(False)
             return
 
         async def _start():
             count = await self._trigger_runner.start_triggers(triggers)
-            self._main_window.statusBar().showMessage(f"Started {count} triggers", 3000)
+            self._main_window.show_status(f"Started {count} triggers", 3000)
             bottom_panel.set_triggers_running(count > 0)
 
         asyncio.ensure_future(_start())
@@ -88,7 +88,7 @@ class TriggerComponent(BaseComponent):
 
         async def _stop():
             await self._trigger_runner.stop_triggers()
-            self._main_window.statusBar().showMessage("Triggers stopped", 3000)
+            self._main_window.show_status("Triggers stopped", 3000)
             if bottom_panel:
                 bottom_panel.set_triggers_running(False)
 
