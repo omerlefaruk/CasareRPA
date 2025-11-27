@@ -10,7 +10,7 @@ from casare_rpa.presentation.canvas.events import EventType, EventCategory
 class TestEventType:
     """Test EventType enum."""
 
-    def test_event_types_exist(self):
+    def test_event_types_exist(self) -> None:
         """Test that all expected event types are defined."""
         # Workflow events
         assert EventType.WORKFLOW_NEW
@@ -34,7 +34,7 @@ class TestEventType:
         assert EventType.ZOOM_CHANGED
         assert EventType.THEME_CHANGED
 
-    def test_event_type_category(self):
+    def test_event_type_category(self) -> None:
         """Test that event types return correct category."""
         assert EventType.WORKFLOW_NEW.category == EventCategory.WORKFLOW
         assert EventType.NODE_ADDED.category == EventCategory.NODE
@@ -46,17 +46,17 @@ class TestEventType:
         assert EventType.DEBUG_MODE_ENABLED.category == EventCategory.DEBUG
         assert EventType.TRIGGER_CREATED.category == EventCategory.TRIGGER
 
-    def test_event_type_string_representation(self):
+    def test_event_type_string_representation(self) -> None:
         """Test string representation of event types."""
         assert str(EventType.WORKFLOW_NEW) == "WORKFLOW_NEW"
         assert repr(EventType.WORKFLOW_NEW) == "EventType.WORKFLOW_NEW"
 
-    def test_event_type_uniqueness(self):
+    def test_event_type_uniqueness(self) -> None:
         """Test that all event types have unique values."""
         values = [e.value for e in EventType]
         assert len(values) == len(set(values)), "Event type values must be unique"
 
-    def test_event_type_count(self):
+    def test_event_type_count(self) -> None:
         """Test that we have expected number of event types."""
         # Should have 100+ event types
         event_count = len(list(EventType))
@@ -66,7 +66,7 @@ class TestEventType:
 class TestEventCategory:
     """Test EventCategory enum."""
 
-    def test_categories_exist(self):
+    def test_categories_exist(self) -> None:
         """Test that all expected categories are defined."""
         assert EventCategory.WORKFLOW
         assert EventCategory.NODE
@@ -79,7 +79,7 @@ class TestEventCategory:
         assert EventCategory.DEBUG
         assert EventCategory.TRIGGER
 
-    def test_category_values(self):
+    def test_category_values(self) -> None:
         """Test category string values."""
         assert EventCategory.WORKFLOW.value == "workflow"
         assert EventCategory.NODE.value == "node"

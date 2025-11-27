@@ -17,7 +17,7 @@ from casare_rpa.canvas.components.execution_component import ExecutionComponent
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow."""
     mock = Mock()
     mock.workflow_run = Mock()
@@ -51,7 +51,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def mock_node_graph():
+def mock_node_graph() -> None:
     """Create a mock node graph."""
     mock = Mock()
     mock.graph = Mock()
@@ -60,7 +60,7 @@ def mock_node_graph():
 
 
 @pytest.fixture
-def execution_component(mock_main_window, mock_node_graph):
+def execution_component(mock_main_window, mock_node_graph) -> None:
     """Create an ExecutionComponent instance."""
     component = ExecutionComponent(mock_main_window)
     component._node_graph = mock_node_graph
@@ -71,7 +71,7 @@ def execution_component(mock_main_window, mock_node_graph):
 class TestExecutionComponentInitialization:
     """Tests for component initialization."""
 
-    def test_initialization(self, mock_main_window, mock_node_graph):
+    def test_initialization(self, mock_main_window, mock_node_graph) -> None:
         """Test component initializes."""
         component = ExecutionComponent(mock_main_window)
         component._node_graph = mock_node_graph
@@ -81,7 +81,7 @@ class TestExecutionComponentInitialization:
         assert component.is_initialized()
         assert component._workflow_runner is None
 
-    def test_cleanup(self, execution_component):
+    def test_cleanup(self, execution_component) -> None:
         """Test cleanup."""
         execution_component._workflow_task = Mock()
         execution_component._workflow_task.done = Mock(return_value=True)
@@ -99,7 +99,7 @@ class TestRunWorkflow:
     @patch("casare_rpa.canvas.components.execution_component.asyncio.ensure_future")
     def test_on_run_workflow(
         self, mock_ensure_future, mock_pm, mock_runner_class, execution_component
-    ):
+    ) -> None:
         """Test running workflow."""
         mock_runner = Mock()
         mock_runner.state = "idle"
@@ -126,7 +126,7 @@ class TestRunWorkflow:
 class TestPauseResume:
     """Tests for pause and resume."""
 
-    def test_on_pause_workflow(self, execution_component, mock_main_window):
+    def test_on_pause_workflow(self, execution_component, mock_main_window) -> None:
         """Test pausing workflow."""
         mock_runner = Mock()
         execution_component._workflow_runner = mock_runner
@@ -136,14 +136,14 @@ class TestPauseResume:
         mock_runner.pause.assert_called_once()
         mock_main_window.statusBar().showMessage.assert_called()
 
-    def test_on_pause_workflow_no_runner(self, execution_component):
+    def test_on_pause_workflow_no_runner(self, execution_component) -> None:
         """Test pausing when no runner."""
         execution_component._workflow_runner = None
 
         # Should not raise error
         execution_component.on_pause_workflow()
 
-    def test_on_resume_workflow(self, execution_component, mock_main_window):
+    def test_on_resume_workflow(self, execution_component, mock_main_window) -> None:
         """Test resuming workflow."""
         mock_runner = Mock()
         execution_component._workflow_runner = mock_runner
@@ -156,7 +156,7 @@ class TestPauseResume:
 class TestStopWorkflow:
     """Tests for stopping workflow."""
 
-    def test_on_stop_workflow(self, execution_component, mock_main_window):
+    def test_on_stop_workflow(self, execution_component, mock_main_window) -> None:
         """Test stopping workflow."""
         mock_runner = Mock()
         mock_task = Mock()
@@ -173,7 +173,7 @@ class TestStopWorkflow:
 class TestEventHandlers:
     """Tests for event handling."""
 
-    def test_on_node_started(self, execution_component, mock_node_graph):
+    def test_on_node_started(self, execution_component, mock_node_graph) -> None:
         """Test handling node started event."""
         mock_node = Mock()
         mock_node.get_property.return_value = "node1"
@@ -183,7 +183,7 @@ class TestEventHandlers:
 
         mock_node.set_property.assert_called_with("status", "running")
 
-    def test_on_node_completed(self, execution_component, mock_node_graph):
+    def test_on_node_completed(self, execution_component, mock_node_graph) -> None:
         """Test handling node completed event."""
         mock_node = Mock()
         mock_node.get_property.return_value = "node1"
@@ -193,7 +193,7 @@ class TestEventHandlers:
 
         mock_node.set_property.assert_called_with("status", "completed")
 
-    def test_on_node_error(self, execution_component, mock_node_graph):
+    def test_on_node_error(self, execution_component, mock_node_graph) -> None:
         """Test handling node error event."""
         mock_node = Mock()
         mock_node.get_property.return_value = "node1"
@@ -203,13 +203,13 @@ class TestEventHandlers:
 
         mock_node.set_property.assert_called_with("status", "error")
 
-    def test_on_workflow_completed(self, execution_component, mock_main_window):
+    def test_on_workflow_completed(self, execution_component, mock_main_window) -> None:
         """Test handling workflow completed event."""
         execution_component._on_workflow_completed({})
 
         mock_main_window.statusBar().showMessage.assert_called()
 
-    def test_on_workflow_error(self, execution_component, mock_main_window):
+    def test_on_workflow_error(self, execution_component, mock_main_window) -> None:
         """Test handling workflow error event."""
         execution_component._on_workflow_error({"error": "Test error"})
 
@@ -219,7 +219,7 @@ class TestEventHandlers:
 class TestPrivateMethods:
     """Tests for private helper methods."""
 
-    def test_reset_all_node_visuals(self, execution_component, mock_node_graph):
+    def test_reset_all_node_visuals(self, execution_component, mock_node_graph) -> None:
         """Test resetting node visuals."""
         mock_node = Mock()
         mock_node_graph.graph.all_nodes.return_value = [mock_node]
@@ -228,7 +228,7 @@ class TestPrivateMethods:
 
         mock_node.set_property.assert_called_with("status", "idle")
 
-    def test_find_visual_node(self, execution_component, mock_node_graph):
+    def test_find_visual_node(self, execution_component, mock_node_graph) -> None:
         """Test finding visual node by ID."""
         mock_node = Mock()
         mock_node.get_property.return_value = "test_node"
@@ -238,7 +238,9 @@ class TestPrivateMethods:
 
         assert result == mock_node
 
-    def test_find_visual_node_not_found(self, execution_component, mock_node_graph):
+    def test_find_visual_node_not_found(
+        self, execution_component, mock_node_graph
+    ) -> None:
         """Test finding non-existent visual node."""
         mock_node_graph.graph.all_nodes.return_value = []
 
@@ -246,7 +248,7 @@ class TestPrivateMethods:
 
         assert result is None
 
-    def test_get_initial_variables(self, execution_component, mock_main_window):
+    def test_get_initial_variables(self, execution_component, mock_main_window) -> None:
         """Test getting initial variables."""
         mock_panel = Mock()
         mock_panel.get_all_variables.return_value = {"var1": "value1"}
@@ -258,7 +260,7 @@ class TestPrivateMethods:
 
     def test_get_initial_variables_no_panel(
         self, execution_component, mock_main_window
-    ):
+    ) -> None:
         """Test getting initial variables when no panel."""
         mock_main_window.get_variables_panel.return_value = None
 

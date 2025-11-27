@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 
 
 @pytest.fixture
-def mock_page():
+def mock_page() -> None:
     """
     Create a mock Playwright page object.
 
@@ -59,7 +59,7 @@ def mock_page():
 
 
 @pytest.fixture
-def mock_browser_context(mock_page):
+def mock_browser_context(mock_page) -> None:
     """
     Create a mock Playwright browser context.
 
@@ -73,7 +73,7 @@ def mock_browser_context(mock_page):
 
 
 @pytest.fixture
-def mock_browser(mock_browser_context):
+def mock_browser(mock_browser_context) -> None:
     """
     Create a mock Playwright browser object.
 
@@ -88,7 +88,7 @@ def mock_browser(mock_browser_context):
 
 
 @pytest.fixture
-def execution_context(mock_page, mock_browser):
+def execution_context(mock_page, mock_browser) -> None:
     """
     Create a mock execution context with browser resources.
 
@@ -123,7 +123,7 @@ def execution_context(mock_page, mock_browser):
 
 
 @pytest.fixture
-def execution_context_no_browser():
+def execution_context_no_browser() -> None:
     """
     Create a mock execution context without browser.
 
@@ -151,7 +151,7 @@ def execution_context_no_browser():
 
 
 @pytest.fixture
-def execution_context_no_page(mock_browser):
+def execution_context_no_page(mock_browser) -> None:
     """
     Create a mock execution context with browser but no active page.
 

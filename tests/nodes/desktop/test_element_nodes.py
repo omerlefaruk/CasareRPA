@@ -16,7 +16,7 @@ from typing import Dict, Any
 
 
 @pytest.fixture
-def mock_execution_context():
+def mock_execution_context() -> None:
     """Create a mock execution context with desktop context support."""
     context = Mock()
     context.variables = {}
@@ -39,7 +39,7 @@ def mock_execution_context():
 
 
 @pytest.fixture
-def mock_window():
+def mock_window() -> None:
     """Create a mock window element."""
     window = Mock()
     window.find_child = Mock()
@@ -47,7 +47,7 @@ def mock_window():
 
 
 @pytest.fixture
-def mock_element():
+def mock_element() -> None:
     """Create a mock desktop element with common properties."""
     element = Mock()
     element.get_text = Mock(return_value="Test Element Text")
@@ -70,25 +70,25 @@ def mock_element():
 
 
 @pytest.fixture
-def sample_selector_name():
+def sample_selector_name() -> None:
     """Sample selector using name strategy."""
     return {"strategy": "name", "value": "OK"}
 
 
 @pytest.fixture
-def sample_selector_automation_id():
+def sample_selector_automation_id() -> None:
     """Sample selector using automation_id strategy."""
     return {"strategy": "automation_id", "value": "btnSubmit"}
 
 
 @pytest.fixture
-def sample_selector_class_name():
+def sample_selector_class_name() -> None:
     """Sample selector using class_name strategy."""
     return {"strategy": "class_name", "value": "Button"}
 
 
 @pytest.fixture
-def sample_selector_control_type():
+def sample_selector_control_type() -> None:
     """Sample selector using control_type strategy."""
     return {"strategy": "control_type", "value": "Button"}
 
@@ -104,7 +104,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_success(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test successful element finding with valid window and selector."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -124,7 +124,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_not_found_throw(
         self, mock_execution_context, mock_window
-    ):
+    ) -> None:
         """Test element not found raises error when throw_on_not_found is True."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -143,7 +143,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_not_found_no_throw(
         self, mock_execution_context, mock_window
-    ):
+    ) -> None:
         """Test element not found returns found=False when throw_on_not_found is False."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -162,7 +162,7 @@ class TestFindElementNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_find_element_missing_window(self, mock_execution_context):
+    async def test_find_element_missing_window(self, mock_execution_context) -> None:
         """Test error when window input is missing."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -177,7 +177,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_missing_selector(
         self, mock_execution_context, mock_window
-    ):
+    ) -> None:
         """Test error when selector input is missing."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -192,7 +192,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_with_timeout(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test element finding respects timeout configuration."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -213,7 +213,7 @@ class TestFindElementNode:
     @pytest.mark.asyncio
     async def test_find_element_selector_from_config(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test selector can be read from config when not provided as input."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -240,7 +240,7 @@ class TestGetElementPropertyNode:
     @pytest.mark.asyncio
     async def test_get_property_direct_element(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test getting property from directly provided element."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -259,7 +259,7 @@ class TestGetElementPropertyNode:
     @pytest.mark.asyncio
     async def test_get_property_via_window_selector(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test getting property by finding element via window and selector."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -281,7 +281,7 @@ class TestGetElementPropertyNode:
     @pytest.mark.asyncio
     async def test_get_property_default_name(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test default property_name is Name."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -298,7 +298,7 @@ class TestGetElementPropertyNode:
     @pytest.mark.asyncio
     async def test_get_property_missing_element_and_window(
         self, mock_execution_context
-    ):
+    ) -> None:
         """Test error when neither element nor window+selector provided."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -314,7 +314,9 @@ class TestGetElementPropertyNode:
         )
 
     @pytest.mark.asyncio
-    async def test_get_property_failure(self, mock_execution_context, mock_element):
+    async def test_get_property_failure(
+        self, mock_execution_context, mock_element
+    ) -> None:
         """Test error handling when property access fails."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -339,7 +341,9 @@ class TestVerifyElementExistsNode:
     """Tests for VerifyElementExistsNode - checking element existence."""
 
     @pytest.mark.asyncio
-    async def test_element_exists_positive(self, mock_execution_context, mock_element):
+    async def test_element_exists_positive(
+        self, mock_execution_context, mock_element
+    ) -> None:
         """Test verifying element exists returns True when element found."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -362,7 +366,7 @@ class TestVerifyElementExistsNode:
         assert result["element"] is not None
 
     @pytest.mark.asyncio
-    async def test_element_exists_negative(self, mock_execution_context):
+    async def test_element_exists_negative(self, mock_execution_context) -> None:
         """Test verifying element exists returns False when element not found."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -382,7 +386,7 @@ class TestVerifyElementExistsNode:
         assert result["element"] is None
 
     @pytest.mark.asyncio
-    async def test_element_exists_with_timeout(self, mock_execution_context):
+    async def test_element_exists_with_timeout(self, mock_execution_context) -> None:
         """Test element existence check with timeout configuration."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -406,7 +410,9 @@ class TestVerifyElementExistsNode:
         mock_execution_context.desktop_context.element_exists.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_element_exists_missing_selector(self, mock_execution_context):
+    async def test_element_exists_missing_selector(
+        self, mock_execution_context
+    ) -> None:
         """Test error when selector is missing."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -420,7 +426,7 @@ class TestVerifyElementExistsNode:
         assert "selector" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_element_exists_missing_desktop_context(self):
+    async def test_element_exists_missing_desktop_context(self) -> None:
         """Test error when desktop context not available."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -449,7 +455,7 @@ class TestVerifyElementPropertyNode:
     @pytest.mark.asyncio
     async def test_verify_property_equals_success(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test verifying property equals expected value succeeds."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,
@@ -471,7 +477,9 @@ class TestVerifyElementPropertyNode:
         assert result["result"] is True
 
     @pytest.mark.asyncio
-    async def test_verify_property_contains(self, mock_execution_context, mock_element):
+    async def test_verify_property_contains(
+        self, mock_execution_context, mock_element
+    ) -> None:
         """Test verifying property contains expected substring."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,
@@ -498,7 +506,9 @@ class TestVerifyElementPropertyNode:
         )
 
     @pytest.mark.asyncio
-    async def test_verify_property_failure(self, mock_execution_context, mock_element):
+    async def test_verify_property_failure(
+        self, mock_execution_context, mock_element
+    ) -> None:
         """Test verification returns False when property does not match."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,
@@ -520,7 +530,9 @@ class TestVerifyElementPropertyNode:
         assert result["result"] is False  # But verification failed
 
     @pytest.mark.asyncio
-    async def test_verify_property_missing_element(self, mock_execution_context):
+    async def test_verify_property_missing_element(
+        self, mock_execution_context
+    ) -> None:
         """Test error when element is missing."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,
@@ -538,7 +550,7 @@ class TestVerifyElementPropertyNode:
     @pytest.mark.asyncio
     async def test_verify_property_missing_property_name(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test error when property_name is missing."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,
@@ -565,7 +577,7 @@ class TestSelectorStrategies:
     @pytest.mark.asyncio
     async def test_selector_strategy_name(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test finding element by name selector strategy."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -586,7 +598,7 @@ class TestSelectorStrategies:
     @pytest.mark.asyncio
     async def test_selector_strategy_automation_id(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test finding element by automation_id selector strategy."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -607,7 +619,7 @@ class TestSelectorStrategies:
     @pytest.mark.asyncio
     async def test_selector_strategy_class_name(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test finding element by class_name selector strategy."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -626,7 +638,7 @@ class TestSelectorStrategies:
     @pytest.mark.asyncio
     async def test_selector_strategy_control_type(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test finding element by control_type selector strategy."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -654,7 +666,7 @@ class TestExecutionResultCompliance:
     @pytest.mark.asyncio
     async def test_find_element_result_structure(
         self, mock_execution_context, mock_window, mock_element
-    ):
+    ) -> None:
         """Test FindElementNode returns proper ExecutionResult structure."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import FindElementNode
 
@@ -675,7 +687,7 @@ class TestExecutionResultCompliance:
     @pytest.mark.asyncio
     async def test_get_property_result_structure(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test GetElementPropertyNode returns proper ExecutionResult structure."""
         from casare_rpa.nodes.desktop_nodes.element_nodes import GetElementPropertyNode
 
@@ -693,7 +705,7 @@ class TestExecutionResultCompliance:
         assert "next_nodes" in result
 
     @pytest.mark.asyncio
-    async def test_verify_exists_result_structure(self, mock_execution_context):
+    async def test_verify_exists_result_structure(self, mock_execution_context) -> None:
         """Test VerifyElementExistsNode returns proper ExecutionResult structure."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementExistsNode,
@@ -717,7 +729,7 @@ class TestExecutionResultCompliance:
     @pytest.mark.asyncio
     async def test_verify_property_result_structure(
         self, mock_execution_context, mock_element
-    ):
+    ) -> None:
         """Test VerifyElementPropertyNode returns proper ExecutionResult structure."""
         from casare_rpa.nodes.desktop_nodes.wait_verification_nodes import (
             VerifyElementPropertyNode,

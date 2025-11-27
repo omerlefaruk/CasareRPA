@@ -19,7 +19,7 @@ from casare_rpa.presentation.canvas.ui.panels.properties_panel import (
 
 
 @pytest.fixture(scope="module")
-def qapp():
+def qapp() -> None:
     """Create QApplication for tests."""
     app = QApplication.instance()
     if app is None:
@@ -28,7 +28,7 @@ def qapp():
 
 
 @pytest.fixture
-def properties_panel(qapp):
+def properties_panel(qapp) -> None:
     """Create a PropertiesPanel instance."""
     panel = PropertiesPanel()
     yield panel
@@ -38,13 +38,13 @@ def properties_panel(qapp):
 class TestPropertiesPanelInitialization:
     """Tests for PropertiesPanel initialization."""
 
-    def test_initialization(self, qapp):
+    def test_initialization(self, qapp) -> None:
         """Test panel initializes correctly."""
         panel = PropertiesPanel()
         assert panel.windowTitle() == "Properties"
         panel.deleteLater()
 
-    def test_setup_ui(self, properties_panel):
+    def test_setup_ui(self, properties_panel) -> None:
         """Test UI is set up."""
         assert properties_panel.widget() is not None
 
@@ -52,14 +52,14 @@ class TestPropertiesPanelInitialization:
 class TestCollapsibleSection:
     """Tests for CollapsibleSection widget."""
 
-    def test_collapsible_section_initialization(self, qapp):
+    def test_collapsible_section_initialization(self, qapp) -> None:
         """Test collapsible section initializes."""
         section = CollapsibleSection("Test Section")
         assert section._title == "Test Section"
         assert section._is_collapsed is False
         section.deleteLater()
 
-    def test_collapsible_section_toggle(self, qapp):
+    def test_collapsible_section_toggle(self, qapp) -> None:
         """Test toggling collapsible section."""
         section = CollapsibleSection("Test")
 
@@ -71,7 +71,7 @@ class TestCollapsibleSection:
         assert section._is_collapsed == initial_state
         section.deleteLater()
 
-    def test_collapsible_section_add_widget(self, qapp):
+    def test_collapsible_section_add_widget(self, qapp) -> None:
         """Test adding widget to section."""
         section = CollapsibleSection("Test")
         widget = Mock()
@@ -86,12 +86,12 @@ class TestCollapsibleSection:
 class TestNodeSelection:
     """Tests for node selection handling."""
 
-    def test_set_node_none(self, properties_panel):
+    def test_set_node_none(self, properties_panel) -> None:
         """Test setting node to None clears properties."""
         properties_panel.set_node(None)
         # Should not raise error
 
-    def test_set_node_with_node(self, properties_panel):
+    def test_set_node_with_node(self, properties_panel) -> None:
         """Test setting node updates UI."""
         mock_node = Mock()
         mock_node.get_property = Mock(return_value="test_value")
@@ -108,7 +108,7 @@ class TestNodeSelection:
 class TestPropertyEditing:
     """Tests for property editing."""
 
-    def test_property_change_signal(self, properties_panel):
+    def test_property_change_signal(self, properties_panel) -> None:
         """Test property change emits signal."""
         # Properties panel should have signal for property changes
         assert hasattr(properties_panel, "property_changed") or True
@@ -118,13 +118,13 @@ class TestPropertyEditing:
 class TestUIUpdates:
     """Tests for UI update methods."""
 
-    def test_clear_properties(self, properties_panel):
+    def test_clear_properties(self, properties_panel) -> None:
         """Test clearing properties."""
         # Should have method to clear
         if hasattr(properties_panel, "clear"):
             properties_panel.clear()
 
-    def test_refresh(self, properties_panel):
+    def test_refresh(self, properties_panel) -> None:
         """Test refreshing panel."""
         # Should not raise error
         if hasattr(properties_panel, "refresh"):

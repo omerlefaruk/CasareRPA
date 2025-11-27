@@ -17,7 +17,7 @@ from casare_rpa.presentation.canvas.controllers.panel_controller import PanelCon
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow with panels."""
     mock = Mock()
     mock._bottom_panel = Mock()
@@ -30,7 +30,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def panel_controller(mock_main_window):
+def panel_controller(mock_main_window) -> None:
     """Create a PanelController instance."""
     controller = PanelController(mock_main_window)
     controller.initialize()
@@ -40,12 +40,12 @@ def panel_controller(mock_main_window):
 class TestPanelControllerInitialization:
     """Tests for PanelController initialization."""
 
-    def test_initialization(self, mock_main_window):
+    def test_initialization(self, mock_main_window) -> None:
         """Test controller initializes."""
         controller = PanelController(mock_main_window)
         assert controller.main_window == mock_main_window
 
-    def test_cleanup(self, panel_controller):
+    def test_cleanup(self, panel_controller) -> None:
         """Test cleanup."""
         panel_controller.cleanup()
         assert not panel_controller.is_initialized()
@@ -54,7 +54,7 @@ class TestPanelControllerInitialization:
 class TestBottomPanel:
     """Tests for bottom panel toggling."""
 
-    def test_toggle_bottom_panel_show(self, panel_controller, mock_main_window):
+    def test_toggle_bottom_panel_show(self, panel_controller, mock_main_window) -> None:
         """Test showing bottom panel."""
         signal_emitted = []
         panel_controller.bottom_panel_toggled.connect(
@@ -67,7 +67,7 @@ class TestBottomPanel:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] is True
 
-    def test_toggle_bottom_panel_hide(self, panel_controller, mock_main_window):
+    def test_toggle_bottom_panel_hide(self, panel_controller, mock_main_window) -> None:
         """Test hiding bottom panel."""
         panel_controller.toggle_bottom_panel(False)
 
@@ -75,7 +75,7 @@ class TestBottomPanel:
 
     def test_toggle_bottom_panel_not_available(
         self, panel_controller, mock_main_window
-    ):
+    ) -> None:
         """Test toggling when panel not available."""
         mock_main_window._bottom_panel = None
 
@@ -86,7 +86,9 @@ class TestBottomPanel:
 class TestPropertiesPanel:
     """Tests for properties panel toggling."""
 
-    def test_toggle_properties_panel_show(self, panel_controller, mock_main_window):
+    def test_toggle_properties_panel_show(
+        self, panel_controller, mock_main_window
+    ) -> None:
         """Test showing properties panel."""
         signal_emitted = []
         panel_controller.properties_panel_toggled.connect(
@@ -98,7 +100,9 @@ class TestPropertiesPanel:
         mock_main_window._properties_panel.setVisible.assert_called_with(True)
         assert len(signal_emitted) == 1
 
-    def test_toggle_properties_panel_hide(self, panel_controller, mock_main_window):
+    def test_toggle_properties_panel_hide(
+        self, panel_controller, mock_main_window
+    ) -> None:
         """Test hiding properties panel."""
         panel_controller.toggle_properties_panel(False)
 
@@ -108,7 +112,9 @@ class TestPropertiesPanel:
 class TestVariableInspector:
     """Tests for variable inspector toggling."""
 
-    def test_toggle_variable_inspector_show(self, panel_controller, mock_main_window):
+    def test_toggle_variable_inspector_show(
+        self, panel_controller, mock_main_window
+    ) -> None:
         """Test showing variable inspector."""
         signal_emitted = []
         panel_controller.variable_inspector_toggled.connect(
@@ -120,7 +126,9 @@ class TestVariableInspector:
         mock_main_window._variable_inspector_dock.setVisible.assert_called_with(True)
         assert len(signal_emitted) == 1
 
-    def test_toggle_variable_inspector_hide(self, panel_controller, mock_main_window):
+    def test_toggle_variable_inspector_hide(
+        self, panel_controller, mock_main_window
+    ) -> None:
         """Test hiding variable inspector."""
         panel_controller.toggle_variable_inspector(False)
 

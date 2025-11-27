@@ -16,7 +16,7 @@ from casare_rpa.presentation.canvas.ui.panels.debug_panel import DebugPanel
 
 
 @pytest.fixture(scope="module")
-def qapp():
+def qapp() -> None:
     """Create QApplication for tests."""
     app = QApplication.instance()
     if app is None:
@@ -25,7 +25,7 @@ def qapp():
 
 
 @pytest.fixture
-def debug_panel(qapp):
+def debug_panel(qapp) -> None:
     """Create a DebugPanel instance."""
     panel = DebugPanel()
     yield panel
@@ -35,13 +35,13 @@ def debug_panel(qapp):
 class TestDebugPanelInitialization:
     """Tests for DebugPanel initialization."""
 
-    def test_initialization(self, qapp):
+    def test_initialization(self, qapp) -> None:
         """Test panel initializes correctly."""
         panel = DebugPanel()
         assert panel.windowTitle() == "Debug"
         panel.deleteLater()
 
-    def test_setup_ui(self, debug_panel):
+    def test_setup_ui(self, debug_panel) -> None:
         """Test UI is set up."""
         assert debug_panel.widget() is not None
 
@@ -49,7 +49,7 @@ class TestDebugPanelInitialization:
 class TestVariableInspection:
     """Tests for variable inspection."""
 
-    def test_update_variables(self, debug_panel):
+    def test_update_variables(self, debug_panel) -> None:
         """Test updating variables display."""
         variables = {"var1": "value1", "var2": 42}
 
@@ -57,7 +57,7 @@ class TestVariableInspection:
             debug_panel.update_variables(variables)
         # Should not raise error
 
-    def test_clear_variables(self, debug_panel):
+    def test_clear_variables(self, debug_panel) -> None:
         """Test clearing variables."""
         if hasattr(debug_panel, "clear_variables"):
             debug_panel.clear_variables()
@@ -66,17 +66,17 @@ class TestVariableInspection:
 class TestBreakpoints:
     """Tests for breakpoint management."""
 
-    def test_add_breakpoint(self, debug_panel):
+    def test_add_breakpoint(self, debug_panel) -> None:
         """Test adding breakpoint."""
         if hasattr(debug_panel, "add_breakpoint"):
             debug_panel.add_breakpoint("node1")
 
-    def test_remove_breakpoint(self, debug_panel):
+    def test_remove_breakpoint(self, debug_panel) -> None:
         """Test removing breakpoint."""
         if hasattr(debug_panel, "remove_breakpoint"):
             debug_panel.remove_breakpoint("node1")
 
-    def test_clear_breakpoints(self, debug_panel):
+    def test_clear_breakpoints(self, debug_panel) -> None:
         """Test clearing all breakpoints."""
         if hasattr(debug_panel, "clear_breakpoints"):
             debug_panel.clear_breakpoints()
@@ -85,17 +85,17 @@ class TestBreakpoints:
 class TestStepControls:
     """Tests for step control buttons."""
 
-    def test_step_over(self, debug_panel):
+    def test_step_over(self, debug_panel) -> None:
         """Test step over button."""
         # Should have step control buttons
         assert hasattr(debug_panel, "widget")
 
-    def test_step_into(self, debug_panel):
+    def test_step_into(self, debug_panel) -> None:
         """Test step into button."""
         # Buttons may emit signals
         pass
 
-    def test_continue_execution(self, debug_panel):
+    def test_continue_execution(self, debug_panel) -> None:
         """Test continue button."""
         # Button should be present
         pass
@@ -104,7 +104,7 @@ class TestStepControls:
 class TestStackTrace:
     """Tests for stack trace display."""
 
-    def test_update_stack_trace(self, debug_panel):
+    def test_update_stack_trace(self, debug_panel) -> None:
         """Test updating stack trace."""
         stack = [
             {"node_id": "node1", "name": "Start"},
@@ -114,7 +114,7 @@ class TestStackTrace:
         if hasattr(debug_panel, "update_stack_trace"):
             debug_panel.update_stack_trace(stack)
 
-    def test_clear_stack_trace(self, debug_panel):
+    def test_clear_stack_trace(self, debug_panel) -> None:
         """Test clearing stack trace."""
         if hasattr(debug_panel, "clear_stack_trace"):
             debug_panel.clear_stack_trace()

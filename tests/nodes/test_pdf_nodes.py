@@ -15,7 +15,7 @@ class TestPDFNodes:
     """Tests for PDF category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -25,7 +25,7 @@ class TestPDFNodes:
         return context
 
     @pytest.fixture
-    def mock_pdf_reader(self):
+    def mock_pdf_reader(self) -> None:
         """Create a mock PDF reader."""
         reader = MagicMock()
         reader.is_encrypted = False
@@ -51,7 +51,7 @@ class TestPDFNodes:
         return reader
 
     @pytest.fixture
-    def mock_pypdf2(self, mock_pdf_reader):
+    def mock_pypdf2(self, mock_pdf_reader) -> None:
         """Create mock PyPDF2 module."""
         mock_module = MagicMock()
         mock_module.PdfReader = MagicMock(return_value=mock_pdf_reader)
@@ -65,7 +65,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_read_pdf_text_node_success(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test ReadPDFTextNode extracts text from PDF."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -87,7 +87,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_read_pdf_text_node_page_range(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test ReadPDFTextNode respects page range."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -108,7 +108,9 @@ class TestPDFNodes:
                 assert len(pages) == 2  # Pages 2-3 (0-indexed: 1-2, so 2 pages)
 
     @pytest.mark.asyncio
-    async def test_read_pdf_text_node_encrypted(self, execution_context, tmp_path):
+    async def test_read_pdf_text_node_encrypted(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test ReadPDFTextNode handles encrypted PDF."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -132,7 +134,7 @@ class TestPDFNodes:
                 mock_reader.decrypt.assert_called_once_with("secret")
 
     @pytest.mark.asyncio
-    async def test_read_pdf_text_node_file_not_found(self, execution_context):
+    async def test_read_pdf_text_node_file_not_found(self, execution_context) -> None:
         """Test ReadPDFTextNode handles missing file."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -145,7 +147,7 @@ class TestPDFNodes:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_read_pdf_text_node_empty_path(self, execution_context):
+    async def test_read_pdf_text_node_empty_path(self, execution_context) -> None:
         """Test ReadPDFTextNode handles empty file path."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -164,7 +166,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_get_pdf_info_node_success(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test GetPDFInfoNode retrieves PDF metadata."""
         from casare_rpa.nodes.pdf_nodes import GetPDFInfoNode
 
@@ -184,7 +186,9 @@ class TestPDFNodes:
                 assert node.get_output_value("author") == "Test Author"
 
     @pytest.mark.asyncio
-    async def test_get_pdf_info_node_encrypted(self, execution_context, tmp_path):
+    async def test_get_pdf_info_node_encrypted(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test GetPDFInfoNode reports encryption status."""
         from casare_rpa.nodes.pdf_nodes import GetPDFInfoNode
 
@@ -207,7 +211,7 @@ class TestPDFNodes:
                 assert node.get_output_value("is_encrypted") is True
 
     @pytest.mark.asyncio
-    async def test_get_pdf_info_node_file_not_found(self, execution_context):
+    async def test_get_pdf_info_node_file_not_found(self, execution_context) -> None:
         """Test GetPDFInfoNode handles missing file."""
         from casare_rpa.nodes.pdf_nodes import GetPDFInfoNode
 
@@ -224,7 +228,7 @@ class TestPDFNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_merge_pdfs_node_success(self, execution_context, tmp_path):
+    async def test_merge_pdfs_node_success(self, execution_context, tmp_path) -> None:
         """Test MergePDFsNode merges PDF files."""
         from casare_rpa.nodes.pdf_nodes import MergePDFsNode
 
@@ -260,7 +264,9 @@ class TestPDFNodes:
                 assert mock_writer.add_page.call_count == 3
 
     @pytest.mark.asyncio
-    async def test_merge_pdfs_node_empty_list(self, execution_context, tmp_path):
+    async def test_merge_pdfs_node_empty_list(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test MergePDFsNode handles empty file list."""
         from casare_rpa.nodes.pdf_nodes import MergePDFsNode
 
@@ -274,7 +280,9 @@ class TestPDFNodes:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_merge_pdfs_node_missing_file(self, execution_context, tmp_path):
+    async def test_merge_pdfs_node_missing_file(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test MergePDFsNode handles missing input file."""
         from casare_rpa.nodes.pdf_nodes import MergePDFsNode
 
@@ -290,7 +298,9 @@ class TestPDFNodes:
                 assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_merge_pdfs_node_no_output_path(self, execution_context, tmp_path):
+    async def test_merge_pdfs_node_no_output_path(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test MergePDFsNode handles missing output path."""
         from casare_rpa.nodes.pdf_nodes import MergePDFsNode
 
@@ -313,7 +323,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_split_pdf_node_success(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test SplitPDFNode splits PDF into pages."""
         from casare_rpa.nodes.pdf_nodes import SplitPDFNode
 
@@ -342,7 +352,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_split_pdf_node_custom_pattern(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test SplitPDFNode uses custom filename pattern."""
         from casare_rpa.nodes.pdf_nodes import SplitPDFNode
 
@@ -370,7 +380,9 @@ class TestPDFNodes:
                 assert "doc_1.pdf" in output_files[0]
 
     @pytest.mark.asyncio
-    async def test_split_pdf_node_file_not_found(self, execution_context, tmp_path):
+    async def test_split_pdf_node_file_not_found(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test SplitPDFNode handles missing input file."""
         from casare_rpa.nodes.pdf_nodes import SplitPDFNode
 
@@ -384,7 +396,7 @@ class TestPDFNodes:
         assert "not found" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_split_pdf_node_empty_inputs(self, execution_context):
+    async def test_split_pdf_node_empty_inputs(self, execution_context) -> None:
         """Test SplitPDFNode handles empty inputs."""
         from casare_rpa.nodes.pdf_nodes import SplitPDFNode
 
@@ -404,7 +416,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_extract_pdf_pages_node_success(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test ExtractPDFPagesNode extracts specific pages."""
         from casare_rpa.nodes.pdf_nodes import ExtractPDFPagesNode
 
@@ -433,7 +445,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_extract_pdf_pages_node_empty_pages(
         self, execution_context, tmp_path
-    ):
+    ) -> None:
         """Test ExtractPDFPagesNode handles empty page list."""
         from casare_rpa.nodes.pdf_nodes import ExtractPDFPagesNode
 
@@ -453,7 +465,7 @@ class TestPDFNodes:
     @pytest.mark.asyncio
     async def test_extract_pdf_pages_node_invalid_page(
         self, execution_context, mock_pdf_reader, tmp_path
-    ):
+    ) -> None:
         """Test ExtractPDFPagesNode handles out-of-range pages."""
         from casare_rpa.nodes.pdf_nodes import ExtractPDFPagesNode
 
@@ -485,7 +497,9 @@ class TestPDFNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_pdf_to_images_node_success(self, execution_context, tmp_path):
+    async def test_pdf_to_images_node_success(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test PDFToImagesNode converts PDF to images."""
         from casare_rpa.nodes.pdf_nodes import PDFToImagesNode
 
@@ -511,7 +525,9 @@ class TestPDFNodes:
                 assert len(output_files) == 2
 
     @pytest.mark.asyncio
-    async def test_pdf_to_images_node_page_range(self, execution_context, tmp_path):
+    async def test_pdf_to_images_node_page_range(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test PDFToImagesNode respects page range."""
         from casare_rpa.nodes.pdf_nodes import PDFToImagesNode
 
@@ -540,7 +556,9 @@ class TestPDFNodes:
                 assert call_kwargs["last_page"] == 3
 
     @pytest.mark.asyncio
-    async def test_pdf_to_images_node_file_not_found(self, execution_context, tmp_path):
+    async def test_pdf_to_images_node_file_not_found(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test PDFToImagesNode handles missing file."""
         from casare_rpa.nodes.pdf_nodes import PDFToImagesNode
 
@@ -558,7 +576,7 @@ class TestPDFNodesEdgeCases:
     """Edge case tests for PDF nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -566,7 +584,9 @@ class TestPDFNodesEdgeCases:
         return context
 
     @pytest.mark.asyncio
-    async def test_read_pdf_encrypted_no_password(self, execution_context, tmp_path):
+    async def test_read_pdf_encrypted_no_password(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test ReadPDFTextNode fails on encrypted PDF without password."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 
@@ -587,7 +607,7 @@ class TestPDFNodesEdgeCases:
                 assert "password" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_read_pdf_wrong_password(self, execution_context, tmp_path):
+    async def test_read_pdf_wrong_password(self, execution_context, tmp_path) -> None:
         """Test ReadPDFTextNode fails with wrong password."""
         from casare_rpa.nodes.pdf_nodes import ReadPDFTextNode
 

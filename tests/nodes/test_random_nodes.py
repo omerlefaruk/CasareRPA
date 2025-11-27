@@ -17,14 +17,14 @@ class TestRandomNumberNode:
     """Tests for RandomNumberNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_random_number_default_range(self, execution_context):
+    async def test_random_number_default_range(self, execution_context) -> None:
         """Test random number in default range (0-100)."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -37,7 +37,7 @@ class TestRandomNumberNode:
         assert 0 <= num <= 100
 
     @pytest.mark.asyncio
-    async def test_random_number_custom_range(self, execution_context):
+    async def test_random_number_custom_range(self, execution_context) -> None:
         """Test random number in custom range."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -52,7 +52,7 @@ class TestRandomNumberNode:
         assert 50 <= num <= 60
 
     @pytest.mark.asyncio
-    async def test_random_number_integer_only(self, execution_context):
+    async def test_random_number_integer_only(self, execution_context) -> None:
         """Test random integer generation."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -68,7 +68,7 @@ class TestRandomNumberNode:
         assert 1 <= num <= 10
 
     @pytest.mark.asyncio
-    async def test_random_number_swapped_range(self, execution_context):
+    async def test_random_number_swapped_range(self, execution_context) -> None:
         """Test random number handles swapped min/max."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -83,7 +83,7 @@ class TestRandomNumberNode:
         assert 50 <= num <= 100
 
     @pytest.mark.asyncio
-    async def test_random_number_distribution(self, execution_context):
+    async def test_random_number_distribution(self, execution_context) -> None:
         """Test random numbers have reasonable distribution."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -107,14 +107,14 @@ class TestRandomChoiceNode:
     """Tests for RandomChoiceNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_random_choice_single(self, execution_context):
+    async def test_random_choice_single(self, execution_context) -> None:
         """Test selecting single random item."""
         from casare_rpa.nodes.random_nodes import RandomChoiceNode
 
@@ -131,7 +131,9 @@ class TestRandomChoiceNode:
         assert 0 <= index < len(items)
 
     @pytest.mark.asyncio
-    async def test_random_choice_multiple_no_duplicates(self, execution_context):
+    async def test_random_choice_multiple_no_duplicates(
+        self, execution_context
+    ) -> None:
         """Test selecting multiple items without duplicates."""
         from casare_rpa.nodes.random_nodes import RandomChoiceNode
 
@@ -150,7 +152,9 @@ class TestRandomChoiceNode:
         assert all(item in items for item in chosen)
 
     @pytest.mark.asyncio
-    async def test_random_choice_multiple_with_duplicates(self, execution_context):
+    async def test_random_choice_multiple_with_duplicates(
+        self, execution_context
+    ) -> None:
         """Test selecting multiple items with duplicates allowed."""
         from casare_rpa.nodes.random_nodes import RandomChoiceNode
 
@@ -168,7 +172,7 @@ class TestRandomChoiceNode:
         assert all(item in items for item in chosen)
 
     @pytest.mark.asyncio
-    async def test_random_choice_count_exceeds_items(self, execution_context):
+    async def test_random_choice_count_exceeds_items(self, execution_context) -> None:
         """Test when count exceeds available items (no duplicates)."""
         from casare_rpa.nodes.random_nodes import RandomChoiceNode
 
@@ -187,7 +191,7 @@ class TestRandomChoiceNode:
         assert len(chosen) <= len(items)
 
     @pytest.mark.asyncio
-    async def test_random_choice_empty_list(self, execution_context):
+    async def test_random_choice_empty_list(self, execution_context) -> None:
         """Test random choice with empty list fails."""
         from casare_rpa.nodes.random_nodes import RandomChoiceNode
 
@@ -204,14 +208,14 @@ class TestRandomStringNode:
     """Tests for RandomStringNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_random_string_default(self, execution_context):
+    async def test_random_string_default(self, execution_context) -> None:
         """Test random string with default settings."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -227,7 +231,7 @@ class TestRandomStringNode:
         assert re.match(r"^[A-Za-z0-9]+$", string)
 
     @pytest.mark.asyncio
-    async def test_random_string_uppercase_only(self, execution_context):
+    async def test_random_string_uppercase_only(self, execution_context) -> None:
         """Test random string with uppercase only."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -249,7 +253,7 @@ class TestRandomStringNode:
         assert string.isupper()
 
     @pytest.mark.asyncio
-    async def test_random_string_digits_only(self, execution_context):
+    async def test_random_string_digits_only(self, execution_context) -> None:
         """Test random string with digits only."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -271,7 +275,7 @@ class TestRandomStringNode:
         assert string.isdigit()
 
     @pytest.mark.asyncio
-    async def test_random_string_with_special(self, execution_context):
+    async def test_random_string_with_special(self, execution_context) -> None:
         """Test random string with special characters."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -297,7 +301,7 @@ class TestRandomStringNode:
         assert all(c in string_module.punctuation for c in string)
 
     @pytest.mark.asyncio
-    async def test_random_string_custom_chars(self, execution_context):
+    async def test_random_string_custom_chars(self, execution_context) -> None:
         """Test random string with custom character set."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -314,7 +318,7 @@ class TestRandomStringNode:
         assert all(c in "ABC123" for c in string)
 
     @pytest.mark.asyncio
-    async def test_random_string_default_length(self, execution_context):
+    async def test_random_string_default_length(self, execution_context) -> None:
         """Test random string uses default length 8 when length is 0 or None."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -333,14 +337,14 @@ class TestRandomUUIDNode:
     """Tests for RandomUUIDNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_uuid_standard_format(self, execution_context):
+    async def test_uuid_standard_format(self, execution_context) -> None:
         """Test UUID generation in standard format."""
         from casare_rpa.nodes.random_nodes import RandomUUIDNode
 
@@ -356,7 +360,7 @@ class TestRandomUUIDNode:
         )
 
     @pytest.mark.asyncio
-    async def test_uuid_hex_format(self, execution_context):
+    async def test_uuid_hex_format(self, execution_context) -> None:
         """Test UUID generation in hex format."""
         from casare_rpa.nodes.random_nodes import RandomUUIDNode
 
@@ -370,7 +374,7 @@ class TestRandomUUIDNode:
         assert re.match(r"^[0-9a-f]{32}$", uid)
 
     @pytest.mark.asyncio
-    async def test_uuid_urn_format(self, execution_context):
+    async def test_uuid_urn_format(self, execution_context) -> None:
         """Test UUID generation in URN format."""
         from casare_rpa.nodes.random_nodes import RandomUUIDNode
 
@@ -384,7 +388,7 @@ class TestRandomUUIDNode:
         assert uid.startswith("urn:uuid:")
 
     @pytest.mark.asyncio
-    async def test_uuid_uniqueness(self, execution_context):
+    async def test_uuid_uniqueness(self, execution_context) -> None:
         """Test UUIDs are unique."""
         from casare_rpa.nodes.random_nodes import RandomUUIDNode
 
@@ -398,7 +402,7 @@ class TestRandomUUIDNode:
         assert len(uuids) == len(set(uuids))
 
     @pytest.mark.asyncio
-    async def test_uuid_version_4(self, execution_context):
+    async def test_uuid_version_4(self, execution_context) -> None:
         """Test UUID version 4 (random) is generated by default."""
         from casare_rpa.nodes.random_nodes import RandomUUIDNode
 
@@ -417,14 +421,14 @@ class TestShuffleListNode:
     """Tests for ShuffleListNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_shuffle_list(self, execution_context):
+    async def test_shuffle_list(self, execution_context) -> None:
         """Test shuffling a list."""
         from casare_rpa.nodes.random_nodes import ShuffleListNode
 
@@ -442,7 +446,7 @@ class TestShuffleListNode:
         assert sorted(shuffled) == sorted(original)
 
     @pytest.mark.asyncio
-    async def test_shuffle_preserves_original(self, execution_context):
+    async def test_shuffle_preserves_original(self, execution_context) -> None:
         """Test shuffling does not modify original list."""
         from casare_rpa.nodes.random_nodes import ShuffleListNode
 
@@ -456,7 +460,7 @@ class TestShuffleListNode:
         assert original == [1, 2, 3, 4, 5]
 
     @pytest.mark.asyncio
-    async def test_shuffle_empty_list(self, execution_context):
+    async def test_shuffle_empty_list(self, execution_context) -> None:
         """Test shuffling empty list."""
         from casare_rpa.nodes.random_nodes import ShuffleListNode
 
@@ -469,7 +473,7 @@ class TestShuffleListNode:
         assert node.get_output_value("result") == []
 
     @pytest.mark.asyncio
-    async def test_shuffle_single_item(self, execution_context):
+    async def test_shuffle_single_item(self, execution_context) -> None:
         """Test shuffling single item list."""
         from casare_rpa.nodes.random_nodes import ShuffleListNode
 
@@ -482,7 +486,7 @@ class TestShuffleListNode:
         assert node.get_output_value("result") == ["only"]
 
     @pytest.mark.asyncio
-    async def test_shuffle_tuple_input(self, execution_context):
+    async def test_shuffle_tuple_input(self, execution_context) -> None:
         """Test shuffling tuple input (converts to list)."""
         from casare_rpa.nodes.random_nodes import ShuffleListNode
 
@@ -501,14 +505,14 @@ class TestRandomEdgeCases:
     """Edge case tests for random nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_random_number_same_min_max(self, execution_context):
+    async def test_random_number_same_min_max(self, execution_context) -> None:
         """Test random number when min equals max."""
         from casare_rpa.nodes.random_nodes import RandomNumberNode
 
@@ -522,7 +526,7 @@ class TestRandomEdgeCases:
         assert node.get_output_value("result") == 5
 
     @pytest.mark.asyncio
-    async def test_random_string_no_chars_fallback(self, execution_context):
+    async def test_random_string_no_chars_fallback(self, execution_context) -> None:
         """Test random string falls back when all char options disabled."""
         from casare_rpa.nodes.random_nodes import RandomStringNode
 
@@ -545,7 +549,7 @@ class TestRandomEdgeCases:
         assert len(string) == 10
 
     @pytest.mark.asyncio
-    async def test_execution_result_pattern(self, execution_context):
+    async def test_execution_result_pattern(self, execution_context) -> None:
         """Test all random nodes follow ExecutionResult pattern."""
         from casare_rpa.nodes.random_nodes import (
             RandomNumberNode,

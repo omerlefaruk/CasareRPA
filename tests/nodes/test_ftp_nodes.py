@@ -15,7 +15,7 @@ class TestFTPNodes:
     """Tests for FTP category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -25,7 +25,7 @@ class TestFTPNodes:
         return context
 
     @pytest.fixture
-    def mock_ftp(self):
+    def mock_ftp(self) -> None:
         """Create a mock FTP connection."""
         ftp = MagicMock()
         ftp.login.return_value = "230 Login successful"
@@ -34,7 +34,7 @@ class TestFTPNodes:
         return ftp
 
     @pytest.fixture
-    def connected_context(self, execution_context, mock_ftp):
+    def connected_context(self, execution_context, mock_ftp) -> None:
         """Create context with active FTP connection."""
         execution_context.variables["_ftp_connection"] = mock_ftp
         return execution_context
@@ -44,7 +44,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_node_success(self, execution_context):
+    async def test_ftp_connect_node_success(self, execution_context) -> None:
         """Test FTPConnectNode establishes connection."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -66,7 +66,7 @@ class TestFTPNodes:
             assert "_ftp_connection" in execution_context.variables
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_node_tls(self, execution_context):
+    async def test_ftp_connect_node_tls(self, execution_context) -> None:
         """Test FTPConnectNode with TLS."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -87,7 +87,7 @@ class TestFTPNodes:
             mock_ftp_tls.prot_p.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_node_missing_host(self, execution_context):
+    async def test_ftp_connect_node_missing_host(self, execution_context) -> None:
         """Test FTPConnectNode handles missing host."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -101,7 +101,7 @@ class TestFTPNodes:
         assert node.get_output_value("connected") is False
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_node_connection_refused(self, execution_context):
+    async def test_ftp_connect_node_connection_refused(self, execution_context) -> None:
         """Test FTPConnectNode handles connection error."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -119,7 +119,7 @@ class TestFTPNodes:
             assert node.get_output_value("connected") is False
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_node_passive_mode(self, execution_context):
+    async def test_ftp_connect_node_passive_mode(self, execution_context) -> None:
         """Test FTPConnectNode sets passive mode."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -139,7 +139,9 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_disconnect_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_disconnect_node_success(
+        self, connected_context, mock_ftp
+    ) -> None:
         """Test FTPDisconnectNode disconnects properly."""
         from casare_rpa.nodes.ftp_nodes import FTPDisconnectNode
 
@@ -153,7 +155,7 @@ class TestFTPNodes:
         assert connected_context.variables.get("_ftp_connection") is None
 
     @pytest.mark.asyncio
-    async def test_ftp_disconnect_node_no_connection(self, execution_context):
+    async def test_ftp_disconnect_node_no_connection(self, execution_context) -> None:
         """Test FTPDisconnectNode when no connection exists."""
         from casare_rpa.nodes.ftp_nodes import FTPDisconnectNode
 
@@ -165,7 +167,9 @@ class TestFTPNodes:
         assert node.get_output_value("disconnected") is True
 
     @pytest.mark.asyncio
-    async def test_ftp_disconnect_node_quit_error(self, connected_context, mock_ftp):
+    async def test_ftp_disconnect_node_quit_error(
+        self, connected_context, mock_ftp
+    ) -> None:
         """Test FTPDisconnectNode falls back to close on quit error."""
         from casare_rpa.nodes.ftp_nodes import FTPDisconnectNode
 
@@ -183,7 +187,9 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_upload_node_success(self, connected_context, mock_ftp, tmp_path):
+    async def test_ftp_upload_node_success(
+        self, connected_context, mock_ftp, tmp_path
+    ) -> None:
         """Test FTPUploadNode uploads file."""
         from casare_rpa.nodes.ftp_nodes import FTPUploadNode
 
@@ -202,7 +208,9 @@ class TestFTPNodes:
         mock_ftp.storbinary.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ftp_upload_node_no_connection(self, execution_context, tmp_path):
+    async def test_ftp_upload_node_no_connection(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test FTPUploadNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPUploadNode
 
@@ -219,7 +227,7 @@ class TestFTPNodes:
         assert "connection" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_ftp_upload_node_file_not_found(self, connected_context):
+    async def test_ftp_upload_node_file_not_found(self, connected_context) -> None:
         """Test FTPUploadNode handles missing local file."""
         from casare_rpa.nodes.ftp_nodes import FTPUploadNode
 
@@ -235,7 +243,7 @@ class TestFTPNodes:
     @pytest.mark.asyncio
     async def test_ftp_upload_node_create_dirs(
         self, connected_context, mock_ftp, tmp_path
-    ):
+    ) -> None:
         """Test FTPUploadNode creates remote directories."""
         from casare_rpa.nodes.ftp_nodes import FTPUploadNode
 
@@ -258,7 +266,7 @@ class TestFTPNodes:
     @pytest.mark.asyncio
     async def test_ftp_download_node_success(
         self, connected_context, mock_ftp, tmp_path
-    ):
+    ) -> None:
         """Test FTPDownloadNode downloads file."""
         from casare_rpa.nodes.ftp_nodes import FTPDownloadNode
 
@@ -280,7 +288,9 @@ class TestFTPNodes:
         assert node.get_output_value("bytes_received") > 0
 
     @pytest.mark.asyncio
-    async def test_ftp_download_node_no_connection(self, execution_context, tmp_path):
+    async def test_ftp_download_node_no_connection(
+        self, execution_context, tmp_path
+    ) -> None:
         """Test FTPDownloadNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPDownloadNode
 
@@ -296,7 +306,7 @@ class TestFTPNodes:
     @pytest.mark.asyncio
     async def test_ftp_download_node_file_exists_no_overwrite(
         self, connected_context, tmp_path
-    ):
+    ) -> None:
         """Test FTPDownloadNode respects overwrite setting."""
         from casare_rpa.nodes.ftp_nodes import FTPDownloadNode
 
@@ -315,7 +325,7 @@ class TestFTPNodes:
     @pytest.mark.asyncio
     async def test_ftp_download_node_overwrite(
         self, connected_context, mock_ftp, tmp_path
-    ):
+    ) -> None:
         """Test FTPDownloadNode overwrites when allowed."""
         from casare_rpa.nodes.ftp_nodes import FTPDownloadNode
 
@@ -341,7 +351,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_list_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_list_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPListNode lists directory contents."""
         from casare_rpa.nodes.ftp_nodes import FTPListNode
 
@@ -356,7 +366,7 @@ class TestFTPNodes:
         assert "file1.txt" in items
 
     @pytest.mark.asyncio
-    async def test_ftp_list_node_detailed(self, connected_context, mock_ftp):
+    async def test_ftp_list_node_detailed(self, connected_context, mock_ftp) -> None:
         """Test FTPListNode with detailed listing."""
         from casare_rpa.nodes.ftp_nodes import FTPListNode
 
@@ -377,7 +387,7 @@ class TestFTPNodes:
         assert "file1.txt" in items[0]
 
     @pytest.mark.asyncio
-    async def test_ftp_list_node_no_connection(self, execution_context):
+    async def test_ftp_list_node_no_connection(self, execution_context) -> None:
         """Test FTPListNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPListNode
 
@@ -394,7 +404,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_delete_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_delete_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPDeleteNode deletes file."""
         from casare_rpa.nodes.ftp_nodes import FTPDeleteNode
 
@@ -408,7 +418,7 @@ class TestFTPNodes:
         mock_ftp.delete.assert_called_with("/remote/file.txt")
 
     @pytest.mark.asyncio
-    async def test_ftp_delete_node_missing_path(self, connected_context):
+    async def test_ftp_delete_node_missing_path(self, connected_context) -> None:
         """Test FTPDeleteNode handles missing path."""
         from casare_rpa.nodes.ftp_nodes import FTPDeleteNode
 
@@ -421,7 +431,7 @@ class TestFTPNodes:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_ftp_delete_node_no_connection(self, execution_context):
+    async def test_ftp_delete_node_no_connection(self, execution_context) -> None:
         """Test FTPDeleteNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPDeleteNode
 
@@ -438,7 +448,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_rename_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_rename_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPRenameNode renames file."""
         from casare_rpa.nodes.ftp_nodes import FTPRenameNode
 
@@ -453,7 +463,7 @@ class TestFTPNodes:
         mock_ftp.rename.assert_called_with("/remote/old.txt", "/remote/new.txt")
 
     @pytest.mark.asyncio
-    async def test_ftp_rename_node_missing_paths(self, connected_context):
+    async def test_ftp_rename_node_missing_paths(self, connected_context) -> None:
         """Test FTPRenameNode handles missing paths."""
         from casare_rpa.nodes.ftp_nodes import FTPRenameNode
 
@@ -467,7 +477,7 @@ class TestFTPNodes:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_ftp_rename_node_no_connection(self, execution_context):
+    async def test_ftp_rename_node_no_connection(self, execution_context) -> None:
         """Test FTPRenameNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPRenameNode
 
@@ -485,7 +495,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_mkdir_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_mkdir_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPMakeDirNode creates directory."""
         from casare_rpa.nodes.ftp_nodes import FTPMakeDirNode
 
@@ -499,7 +509,7 @@ class TestFTPNodes:
         mock_ftp.mkd.assert_called_with("/remote/newdir")
 
     @pytest.mark.asyncio
-    async def test_ftp_mkdir_node_parents(self, connected_context, mock_ftp):
+    async def test_ftp_mkdir_node_parents(self, connected_context, mock_ftp) -> None:
         """Test FTPMakeDirNode creates parent directories."""
         from casare_rpa.nodes.ftp_nodes import FTPMakeDirNode
 
@@ -513,7 +523,7 @@ class TestFTPNodes:
         assert mock_ftp.mkd.call_count >= 1
 
     @pytest.mark.asyncio
-    async def test_ftp_mkdir_node_no_connection(self, execution_context):
+    async def test_ftp_mkdir_node_no_connection(self, execution_context) -> None:
         """Test FTPMakeDirNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPMakeDirNode
 
@@ -530,7 +540,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_rmdir_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_rmdir_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPRemoveDirNode removes directory."""
         from casare_rpa.nodes.ftp_nodes import FTPRemoveDirNode
 
@@ -544,7 +554,7 @@ class TestFTPNodes:
         mock_ftp.rmd.assert_called_with("/remote/emptydir")
 
     @pytest.mark.asyncio
-    async def test_ftp_rmdir_node_missing_path(self, connected_context):
+    async def test_ftp_rmdir_node_missing_path(self, connected_context) -> None:
         """Test FTPRemoveDirNode handles missing path."""
         from casare_rpa.nodes.ftp_nodes import FTPRemoveDirNode
 
@@ -557,7 +567,7 @@ class TestFTPNodes:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_ftp_rmdir_node_no_connection(self, execution_context):
+    async def test_ftp_rmdir_node_no_connection(self, execution_context) -> None:
         """Test FTPRemoveDirNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPRemoveDirNode
 
@@ -574,7 +584,7 @@ class TestFTPNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_ftp_getsize_node_success(self, connected_context, mock_ftp):
+    async def test_ftp_getsize_node_success(self, connected_context, mock_ftp) -> None:
         """Test FTPGetSizeNode gets file size."""
         from casare_rpa.nodes.ftp_nodes import FTPGetSizeNode
 
@@ -588,7 +598,9 @@ class TestFTPNodes:
         assert node.get_output_value("size") == 1024
 
     @pytest.mark.asyncio
-    async def test_ftp_getsize_node_file_not_found(self, connected_context, mock_ftp):
+    async def test_ftp_getsize_node_file_not_found(
+        self, connected_context, mock_ftp
+    ) -> None:
         """Test FTPGetSizeNode handles missing file."""
         from casare_rpa.nodes.ftp_nodes import FTPGetSizeNode
 
@@ -604,7 +616,7 @@ class TestFTPNodes:
         assert node.get_output_value("size") == 0
 
     @pytest.mark.asyncio
-    async def test_ftp_getsize_node_missing_path(self, connected_context):
+    async def test_ftp_getsize_node_missing_path(self, connected_context) -> None:
         """Test FTPGetSizeNode handles missing path."""
         from casare_rpa.nodes.ftp_nodes import FTPGetSizeNode
 
@@ -617,7 +629,7 @@ class TestFTPNodes:
         assert "required" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_ftp_getsize_node_no_connection(self, execution_context):
+    async def test_ftp_getsize_node_no_connection(self, execution_context) -> None:
         """Test FTPGetSizeNode fails without connection."""
         from casare_rpa.nodes.ftp_nodes import FTPGetSizeNode
 
@@ -634,7 +646,7 @@ class TestFTPNodesEdgeCases:
     """Edge case tests for FTP nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -644,7 +656,7 @@ class TestFTPNodesEdgeCases:
         return context
 
     @pytest.mark.asyncio
-    async def test_ftp_connect_retry_on_failure(self, execution_context):
+    async def test_ftp_connect_retry_on_failure(self, execution_context) -> None:
         """Test FTPConnectNode retries on failure."""
         from casare_rpa.nodes.ftp_nodes import FTPConnectNode
 
@@ -675,7 +687,7 @@ class TestFTPNodesEdgeCases:
             assert call_count == 2
 
     @pytest.mark.asyncio
-    async def test_ftp_upload_text_mode(self, execution_context, tmp_path):
+    async def test_ftp_upload_text_mode(self, execution_context, tmp_path) -> None:
         """Test FTPUploadNode in text mode."""
         from casare_rpa.nodes.ftp_nodes import FTPUploadNode
 
@@ -695,7 +707,7 @@ class TestFTPNodesEdgeCases:
         mock_ftp.storlines.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ftp_download_text_mode(self, execution_context, tmp_path):
+    async def test_ftp_download_text_mode(self, execution_context, tmp_path) -> None:
         """Test FTPDownloadNode in text mode."""
         from casare_rpa.nodes.ftp_nodes import FTPDownloadNode
 
@@ -720,7 +732,7 @@ class TestFTPNodesEdgeCases:
         mock_ftp.retrlines.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ftp_list_empty_path(self, execution_context):
+    async def test_ftp_list_empty_path(self, execution_context) -> None:
         """Test FTPListNode with empty path lists current directory."""
         from casare_rpa.nodes.ftp_nodes import FTPListNode
 
@@ -738,7 +750,7 @@ class TestFTPNodesEdgeCases:
         mock_ftp.nlst.assert_called_once_with()
 
     @pytest.mark.asyncio
-    async def test_ftp_mkdir_already_exists(self, execution_context):
+    async def test_ftp_mkdir_already_exists(self, execution_context) -> None:
         """Test FTPMakeDirNode handles existing directory with parents option."""
         from casare_rpa.nodes.ftp_nodes import FTPMakeDirNode
 

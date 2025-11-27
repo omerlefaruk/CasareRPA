@@ -14,7 +14,7 @@ class TestXMLNodes:
     """Tests for XML category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -24,7 +24,7 @@ class TestXMLNodes:
         return context
 
     @pytest.fixture
-    def sample_xml(self):
+    def sample_xml(self) -> None:
         """Sample XML string for testing."""
         return """<?xml version="1.0" encoding="UTF-8"?>
 <root>
@@ -44,7 +44,7 @@ class TestXMLNodes:
 </root>"""
 
     @pytest.fixture
-    def simple_xml(self):
+    def simple_xml(self) -> None:
         """Simple XML for basic tests."""
         return "<root><item>value</item></root>"
 
@@ -53,7 +53,7 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_parse_xml_node_success(self, execution_context, sample_xml):
+    async def test_parse_xml_node_success(self, execution_context, sample_xml) -> None:
         """Test ParseXMLNode parses valid XML."""
         from casare_rpa.nodes.xml_nodes import ParseXMLNode
 
@@ -69,7 +69,7 @@ class TestXMLNodes:
         assert node.get_output_value("root_tag") == "root"
 
     @pytest.mark.asyncio
-    async def test_parse_xml_node_invalid_xml(self, execution_context):
+    async def test_parse_xml_node_invalid_xml(self, execution_context) -> None:
         """Test ParseXMLNode handles invalid XML."""
         from casare_rpa.nodes.xml_nodes import ParseXMLNode
 
@@ -85,7 +85,7 @@ class TestXMLNodes:
         assert node.get_output_value("success") is False
 
     @pytest.mark.asyncio
-    async def test_parse_xml_node_empty_input(self, execution_context):
+    async def test_parse_xml_node_empty_input(self, execution_context) -> None:
         """Test ParseXMLNode handles empty input."""
         from casare_rpa.nodes.xml_nodes import ParseXMLNode
 
@@ -100,7 +100,7 @@ class TestXMLNodes:
     @pytest.mark.asyncio
     async def test_parse_xml_node_stores_in_context(
         self, execution_context, simple_xml
-    ):
+    ) -> None:
         """Test ParseXMLNode stores parsed XML in context."""
         from casare_rpa.nodes.xml_nodes import ParseXMLNode
 
@@ -117,7 +117,9 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_xpath_query_node_find_elements(self, execution_context, sample_xml):
+    async def test_xpath_query_node_find_elements(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test XPathQueryNode finds elements."""
         from casare_rpa.nodes.xml_nodes import XPathQueryNode
 
@@ -134,7 +136,7 @@ class TestXMLNodes:
     @pytest.mark.asyncio
     async def test_xpath_query_node_with_attributes(
         self, execution_context, sample_xml
-    ):
+    ) -> None:
         """Test XPathQueryNode finds elements with attribute filter."""
         from casare_rpa.nodes.xml_nodes import XPathQueryNode
 
@@ -151,7 +153,9 @@ class TestXMLNodes:
         assert results[0]["attrib"]["role"] == "admin"
 
     @pytest.mark.asyncio
-    async def test_xpath_query_node_no_match(self, execution_context, sample_xml):
+    async def test_xpath_query_node_no_match(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test XPathQueryNode handles no matches."""
         from casare_rpa.nodes.xml_nodes import XPathQueryNode
 
@@ -166,7 +170,9 @@ class TestXMLNodes:
         assert node.get_output_value("first_text") == ""
 
     @pytest.mark.asyncio
-    async def test_xpath_query_node_missing_xpath(self, execution_context, sample_xml):
+    async def test_xpath_query_node_missing_xpath(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test XPathQueryNode handles missing xpath."""
         from casare_rpa.nodes.xml_nodes import XPathQueryNode
 
@@ -184,7 +190,7 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_xml_to_json_node_basic(self, execution_context, simple_xml):
+    async def test_xml_to_json_node_basic(self, execution_context, simple_xml) -> None:
         """Test XMLToJsonNode converts simple XML."""
         from casare_rpa.nodes.xml_nodes import XMLToJsonNode
 
@@ -199,7 +205,7 @@ class TestXMLNodes:
         assert json_data["root"]["item"] == "value"
 
     @pytest.mark.asyncio
-    async def test_xml_to_json_node_with_attributes(self, execution_context):
+    async def test_xml_to_json_node_with_attributes(self, execution_context) -> None:
         """Test XMLToJsonNode preserves attributes."""
         from casare_rpa.nodes.xml_nodes import XMLToJsonNode
 
@@ -215,7 +221,7 @@ class TestXMLNodes:
         assert json_data["root"]["item"]["@attributes"]["id"] == "1"
 
     @pytest.mark.asyncio
-    async def test_xml_to_json_node_nested(self, execution_context, sample_xml):
+    async def test_xml_to_json_node_nested(self, execution_context, sample_xml) -> None:
         """Test XMLToJsonNode handles nested structure."""
         from casare_rpa.nodes.xml_nodes import XMLToJsonNode
 
@@ -231,7 +237,7 @@ class TestXMLNodes:
         assert "person" in json_data["root"]
 
     @pytest.mark.asyncio
-    async def test_xml_to_json_node_empty_input(self, execution_context):
+    async def test_xml_to_json_node_empty_input(self, execution_context) -> None:
         """Test XMLToJsonNode handles empty input."""
         from casare_rpa.nodes.xml_nodes import XMLToJsonNode
 
@@ -248,7 +254,7 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_json_to_xml_node_basic(self, execution_context):
+    async def test_json_to_xml_node_basic(self, execution_context) -> None:
         """Test JsonToXMLNode converts simple JSON."""
         from casare_rpa.nodes.xml_nodes import JsonToXMLNode
 
@@ -264,7 +270,7 @@ class TestXMLNodes:
         assert "<name>Alice</name>" in xml_string
 
     @pytest.mark.asyncio
-    async def test_json_to_xml_node_from_string(self, execution_context):
+    async def test_json_to_xml_node_from_string(self, execution_context) -> None:
         """Test JsonToXMLNode handles JSON string input."""
         from casare_rpa.nodes.xml_nodes import JsonToXMLNode
 
@@ -279,7 +285,7 @@ class TestXMLNodes:
         assert "<item>value</item>" in xml_string
 
     @pytest.mark.asyncio
-    async def test_json_to_xml_node_nested(self, execution_context):
+    async def test_json_to_xml_node_nested(self, execution_context) -> None:
         """Test JsonToXMLNode handles nested JSON."""
         from casare_rpa.nodes.xml_nodes import JsonToXMLNode
 
@@ -299,7 +305,7 @@ class TestXMLNodes:
         assert "<city>NYC</city>" in xml_string
 
     @pytest.mark.asyncio
-    async def test_json_to_xml_node_empty_input(self, execution_context):
+    async def test_json_to_xml_node_empty_input(self, execution_context) -> None:
         """Test JsonToXMLNode handles empty input."""
         from casare_rpa.nodes.xml_nodes import JsonToXMLNode
 
@@ -316,7 +322,9 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_get_xml_element_node_found(self, execution_context, sample_xml):
+    async def test_get_xml_element_node_found(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test GetXMLElementNode finds element."""
         from casare_rpa.nodes.xml_nodes import GetXMLElementNode
 
@@ -333,7 +341,9 @@ class TestXMLNodes:
         assert node.get_output_value("tag") == "name"
 
     @pytest.mark.asyncio
-    async def test_get_xml_element_node_with_index(self, execution_context, sample_xml):
+    async def test_get_xml_element_node_with_index(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test GetXMLElementNode uses index correctly."""
         from casare_rpa.nodes.xml_nodes import GetXMLElementNode
 
@@ -349,7 +359,9 @@ class TestXMLNodes:
         assert node.get_output_value("text") == "Bob"
 
     @pytest.mark.asyncio
-    async def test_get_xml_element_node_not_found(self, execution_context, sample_xml):
+    async def test_get_xml_element_node_not_found(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test GetXMLElementNode handles missing element."""
         from casare_rpa.nodes.xml_nodes import GetXMLElementNode
 
@@ -367,7 +379,9 @@ class TestXMLNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_get_xml_attribute_node_found(self, execution_context, sample_xml):
+    async def test_get_xml_attribute_node_found(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test GetXMLAttributeNode finds attribute."""
         from casare_rpa.nodes.xml_nodes import GetXMLAttributeNode
 
@@ -383,7 +397,9 @@ class TestXMLNodes:
         assert node.get_output_value("value") == "1"
 
     @pytest.mark.asyncio
-    async def test_get_xml_attribute_node_role(self, execution_context, sample_xml):
+    async def test_get_xml_attribute_node_role(
+        self, execution_context, sample_xml
+    ) -> None:
         """Test GetXMLAttributeNode gets role attribute."""
         from casare_rpa.nodes.xml_nodes import GetXMLAttributeNode
 
@@ -401,7 +417,7 @@ class TestXMLNodes:
     @pytest.mark.asyncio
     async def test_get_xml_attribute_node_not_found(
         self, execution_context, sample_xml
-    ):
+    ) -> None:
         """Test GetXMLAttributeNode handles missing attribute."""
         from casare_rpa.nodes.xml_nodes import GetXMLAttributeNode
 
@@ -422,7 +438,7 @@ class TestXMLNodes:
     @pytest.mark.asyncio
     async def test_read_xml_file_node_success(
         self, execution_context, tmp_path, sample_xml
-    ):
+    ) -> None:
         """Test ReadXMLFileNode reads XML file."""
         from casare_rpa.nodes.xml_nodes import ReadXMLFileNode
 
@@ -439,7 +455,7 @@ class TestXMLNodes:
         assert node.get_output_value("success") is True
 
     @pytest.mark.asyncio
-    async def test_read_xml_file_node_not_found(self, execution_context):
+    async def test_read_xml_file_node_not_found(self, execution_context) -> None:
         """Test ReadXMLFileNode handles missing file."""
         from casare_rpa.nodes.xml_nodes import ReadXMLFileNode
 
@@ -454,7 +470,7 @@ class TestXMLNodes:
     @pytest.mark.asyncio
     async def test_read_xml_file_node_stores_context(
         self, execution_context, tmp_path, simple_xml
-    ):
+    ) -> None:
         """Test ReadXMLFileNode stores tree in context."""
         from casare_rpa.nodes.xml_nodes import ReadXMLFileNode
 
@@ -474,7 +490,7 @@ class TestXMLNodesEdgeCases:
     """Edge case and error handling tests for XML nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -484,7 +500,7 @@ class TestXMLNodesEdgeCases:
         return context
 
     @pytest.mark.asyncio
-    async def test_xpath_uses_context_xml(self, execution_context):
+    async def test_xpath_uses_context_xml(self, execution_context) -> None:
         """Test XPathQueryNode uses XML from context when no input."""
         from casare_rpa.nodes.xml_nodes import XPathQueryNode
 
@@ -503,7 +519,7 @@ class TestXMLNodesEdgeCases:
         assert node.get_output_value("first_text") == "test"
 
     @pytest.mark.asyncio
-    async def test_get_element_uses_context_xml(self, execution_context):
+    async def test_get_element_uses_context_xml(self, execution_context) -> None:
         """Test GetXMLElementNode uses XML from context."""
         from casare_rpa.nodes.xml_nodes import GetXMLElementNode
 
@@ -520,7 +536,7 @@ class TestXMLNodesEdgeCases:
         assert node.get_output_value("text") == "context_value"
 
     @pytest.mark.asyncio
-    async def test_xml_to_json_without_attributes(self, execution_context):
+    async def test_xml_to_json_without_attributes(self, execution_context) -> None:
         """Test XMLToJsonNode without attributes."""
         from casare_rpa.nodes.xml_nodes import XMLToJsonNode
 
@@ -539,7 +555,7 @@ class TestXMLNodesEdgeCases:
             assert "@attributes" not in json_data["root"]["item"]
 
     @pytest.mark.asyncio
-    async def test_json_to_xml_with_list(self, execution_context):
+    async def test_json_to_xml_with_list(self, execution_context) -> None:
         """Test JsonToXMLNode handles lists."""
         from casare_rpa.nodes.xml_nodes import JsonToXMLNode
 

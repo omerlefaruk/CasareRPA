@@ -15,7 +15,7 @@ class TestExtractTextNode:
     """Tests for ExtractTextNode - text content extraction."""
 
     @pytest.mark.asyncio
-    async def test_extract_text_success(self, execution_context, mock_page):
+    async def test_extract_text_success(self, execution_context, mock_page) -> None:
         """Test successful text extraction."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -36,7 +36,7 @@ class TestExtractTextNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_extract_text_inner_text(self, execution_context, mock_page):
+    async def test_extract_text_inner_text(self, execution_context, mock_page) -> None:
         """Test extraction using innerText (visible text only)."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -62,7 +62,7 @@ class TestExtractTextNode:
         mock_locator.inner_text.assert_called()
 
     @pytest.mark.asyncio
-    async def test_extract_text_no_trim(self, execution_context, mock_page):
+    async def test_extract_text_no_trim(self, execution_context, mock_page) -> None:
         """Test extraction without whitespace trimming."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -87,7 +87,9 @@ class TestExtractTextNode:
         assert result["data"]["text"] == "  spaced  "
 
     @pytest.mark.asyncio
-    async def test_extract_text_stores_variable(self, execution_context, mock_page):
+    async def test_extract_text_stores_variable(
+        self, execution_context, mock_page
+    ) -> None:
         """Test that extracted text is stored in context variable."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -108,7 +110,7 @@ class TestExtractTextNode:
         execution_context.set_variable.assert_called_with("my_var", "stored value")
 
     @pytest.mark.asyncio
-    async def test_extract_text_no_page(self, execution_context_no_page):
+    async def test_extract_text_no_page(self, execution_context_no_page) -> None:
         """Test extraction fails without active page."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -118,7 +120,7 @@ class TestExtractTextNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_extract_text_no_selector(self, execution_context, mock_page):
+    async def test_extract_text_no_selector(self, execution_context, mock_page) -> None:
         """Test extraction fails without selector."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -131,7 +133,9 @@ class TestExtractTextNode:
         assert "selector" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_extract_text_element_not_found(self, execution_context, mock_page):
+    async def test_extract_text_element_not_found(
+        self, execution_context, mock_page
+    ) -> None:
         """Test extraction fails when element not found."""
         from casare_rpa.nodes.data_nodes import ExtractTextNode
 
@@ -153,7 +157,7 @@ class TestGetAttributeNode:
     """Tests for GetAttributeNode - element attribute retrieval."""
 
     @pytest.mark.asyncio
-    async def test_get_attribute_success(self, execution_context, mock_page):
+    async def test_get_attribute_success(self, execution_context, mock_page) -> None:
         """Test successful attribute retrieval."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -179,7 +183,7 @@ class TestGetAttributeNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_get_attribute_href(self, execution_context, mock_page):
+    async def test_get_attribute_href(self, execution_context, mock_page) -> None:
         """Test getting href attribute from link."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -198,7 +202,9 @@ class TestGetAttributeNode:
         assert result["data"]["value"] == "/page/123"
 
     @pytest.mark.asyncio
-    async def test_get_attribute_data_attribute(self, execution_context, mock_page):
+    async def test_get_attribute_data_attribute(
+        self, execution_context, mock_page
+    ) -> None:
         """Test getting data-* attribute."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -217,7 +223,9 @@ class TestGetAttributeNode:
         assert result["data"]["value"] == "user-123"
 
     @pytest.mark.asyncio
-    async def test_get_attribute_stores_variable(self, execution_context, mock_page):
+    async def test_get_attribute_stores_variable(
+        self, execution_context, mock_page
+    ) -> None:
         """Test that attribute is stored in context variable."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -241,7 +249,7 @@ class TestGetAttributeNode:
         execution_context.set_variable.assert_called_with("stored_attr", "test-value")
 
     @pytest.mark.asyncio
-    async def test_get_attribute_null_value(self, execution_context, mock_page):
+    async def test_get_attribute_null_value(self, execution_context, mock_page) -> None:
         """Test getting attribute that doesn't exist returns null."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -260,7 +268,7 @@ class TestGetAttributeNode:
         assert result["data"]["value"] is None
 
     @pytest.mark.asyncio
-    async def test_get_attribute_no_page(self, execution_context_no_page):
+    async def test_get_attribute_no_page(self, execution_context_no_page) -> None:
         """Test get attribute fails without active page."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -272,7 +280,9 @@ class TestGetAttributeNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_get_attribute_no_selector(self, execution_context, mock_page):
+    async def test_get_attribute_no_selector(
+        self, execution_context, mock_page
+    ) -> None:
         """Test get attribute fails without selector."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -284,7 +294,9 @@ class TestGetAttributeNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_get_attribute_no_attribute_name(self, execution_context, mock_page):
+    async def test_get_attribute_no_attribute_name(
+        self, execution_context, mock_page
+    ) -> None:
         """Test get attribute fails without attribute name."""
         from casare_rpa.nodes.data_nodes import GetAttributeNode
 
@@ -301,7 +313,7 @@ class TestScreenshotNode:
     """Tests for ScreenshotNode - page/element screenshot capture."""
 
     @pytest.mark.asyncio
-    async def test_screenshot_page_success(self, execution_context, mock_page):
+    async def test_screenshot_page_success(self, execution_context, mock_page) -> None:
         """Test successful page screenshot."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -319,7 +331,7 @@ class TestScreenshotNode:
             mock_page.screenshot.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_screenshot_full_page(self, execution_context, mock_page):
+    async def test_screenshot_full_page(self, execution_context, mock_page) -> None:
         """Test full page screenshot."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -339,7 +351,7 @@ class TestScreenshotNode:
             assert call_kwargs.get("full_page") is True
 
     @pytest.mark.asyncio
-    async def test_screenshot_element(self, execution_context, mock_page):
+    async def test_screenshot_element(self, execution_context, mock_page) -> None:
         """Test element-specific screenshot."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -360,7 +372,9 @@ class TestScreenshotNode:
             mock_locator.screenshot.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_screenshot_jpeg_with_quality(self, execution_context, mock_page):
+    async def test_screenshot_jpeg_with_quality(
+        self, execution_context, mock_page
+    ) -> None:
         """Test JPEG screenshot with quality setting."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -386,7 +400,9 @@ class TestScreenshotNode:
             assert call_kwargs.get("quality") == 80
 
     @pytest.mark.asyncio
-    async def test_screenshot_creates_directory(self, execution_context, mock_page):
+    async def test_screenshot_creates_directory(
+        self, execution_context, mock_page
+    ) -> None:
         """Test screenshot creates parent directory if needed."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -402,7 +418,7 @@ class TestScreenshotNode:
             assert os.path.exists(os.path.dirname(nested_path))
 
     @pytest.mark.asyncio
-    async def test_screenshot_no_page(self, execution_context_no_page):
+    async def test_screenshot_no_page(self, execution_context_no_page) -> None:
         """Test screenshot fails without active page."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -414,7 +430,7 @@ class TestScreenshotNode:
             assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_screenshot_no_file_path(self, execution_context, mock_page):
+    async def test_screenshot_no_file_path(self, execution_context, mock_page) -> None:
         """Test screenshot fails without file path."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 
@@ -427,7 +443,7 @@ class TestScreenshotNode:
         assert "path" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_screenshot_outputs_path(self, execution_context, mock_page):
+    async def test_screenshot_outputs_path(self, execution_context, mock_page) -> None:
         """Test screenshot sets output file path."""
         from casare_rpa.nodes.data_nodes import ScreenshotNode
 

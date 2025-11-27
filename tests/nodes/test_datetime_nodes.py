@@ -16,7 +16,7 @@ class TestDateTimeNodes:
     """Tests for datetime category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -28,7 +28,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_get_current_datetime_basic(self, execution_context):
+    async def test_get_current_datetime_basic(self, execution_context) -> None:
         """Test GetCurrentDateTimeNode returns current datetime."""
         from casare_rpa.nodes.datetime_nodes import GetCurrentDateTimeNode
 
@@ -44,7 +44,7 @@ class TestDateTimeNodes:
         assert before.timestamp() <= ts <= after.timestamp()
 
     @pytest.mark.asyncio
-    async def test_get_current_datetime_components(self, execution_context):
+    async def test_get_current_datetime_components(self, execution_context) -> None:
         """Test GetCurrentDateTimeNode outputs all components."""
         from casare_rpa.nodes.datetime_nodes import GetCurrentDateTimeNode
 
@@ -70,7 +70,7 @@ class TestDateTimeNodes:
         ]
 
     @pytest.mark.asyncio
-    async def test_get_current_datetime_custom_format(self, execution_context):
+    async def test_get_current_datetime_custom_format(self, execution_context) -> None:
         """Test GetCurrentDateTimeNode with custom format."""
         from casare_rpa.nodes.datetime_nodes import GetCurrentDateTimeNode
 
@@ -86,7 +86,7 @@ class TestDateTimeNodes:
         assert dt_str[4] == "-" and dt_str[7] == "-"
 
     @pytest.mark.asyncio
-    async def test_get_current_datetime_with_timezone(self, execution_context):
+    async def test_get_current_datetime_with_timezone(self, execution_context) -> None:
         """Test GetCurrentDateTimeNode with timezone."""
         from casare_rpa.nodes.datetime_nodes import GetCurrentDateTimeNode
 
@@ -102,7 +102,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_format_datetime_from_string(self, execution_context):
+    async def test_format_datetime_from_string(self, execution_context) -> None:
         """Test FormatDateTimeNode formats string input."""
         from casare_rpa.nodes.datetime_nodes import FormatDateTimeNode
 
@@ -117,7 +117,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("result") == "15/01/2024"
 
     @pytest.mark.asyncio
-    async def test_format_datetime_from_timestamp(self, execution_context):
+    async def test_format_datetime_from_timestamp(self, execution_context) -> None:
         """Test FormatDateTimeNode formats timestamp input."""
         from casare_rpa.nodes.datetime_nodes import FormatDateTimeNode
 
@@ -135,7 +135,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("result") == "12:30:45"
 
     @pytest.mark.asyncio
-    async def test_format_datetime_with_input_format(self, execution_context):
+    async def test_format_datetime_with_input_format(self, execution_context) -> None:
         """Test FormatDateTimeNode with explicit input format."""
         from casare_rpa.nodes.datetime_nodes import FormatDateTimeNode
 
@@ -151,7 +151,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("result") == "2024-01-15"
 
     @pytest.mark.asyncio
-    async def test_format_datetime_invalid_input(self, execution_context):
+    async def test_format_datetime_invalid_input(self, execution_context) -> None:
         """Test FormatDateTimeNode handles invalid input."""
         from casare_rpa.nodes.datetime_nodes import FormatDateTimeNode
 
@@ -168,7 +168,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_parse_datetime_iso_format(self, execution_context):
+    async def test_parse_datetime_iso_format(self, execution_context) -> None:
         """Test ParseDateTimeNode parses ISO format."""
         from casare_rpa.nodes.datetime_nodes import ParseDateTimeNode
 
@@ -186,7 +186,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("success") is True
 
     @pytest.mark.asyncio
-    async def test_parse_datetime_common_formats(self, execution_context):
+    async def test_parse_datetime_common_formats(self, execution_context) -> None:
         """Test ParseDateTimeNode auto-detects common formats."""
         from casare_rpa.nodes.datetime_nodes import ParseDateTimeNode
 
@@ -202,7 +202,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("year") == 2024
 
     @pytest.mark.asyncio
-    async def test_parse_datetime_with_format(self, execution_context):
+    async def test_parse_datetime_with_format(self, execution_context) -> None:
         """Test ParseDateTimeNode with explicit format."""
         from casare_rpa.nodes.datetime_nodes import ParseDateTimeNode
 
@@ -219,7 +219,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("day") == 15
 
     @pytest.mark.asyncio
-    async def test_parse_datetime_empty_string(self, execution_context):
+    async def test_parse_datetime_empty_string(self, execution_context) -> None:
         """Test ParseDateTimeNode handles empty string."""
         from casare_rpa.nodes.datetime_nodes import ParseDateTimeNode
 
@@ -236,7 +236,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_datetime_add_days(self, execution_context):
+    async def test_datetime_add_days(self, execution_context) -> None:
         """Test DateTimeAddNode adds days."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -251,7 +251,7 @@ class TestDateTimeNodes:
         assert "2024-01-25" in result_dt
 
     @pytest.mark.asyncio
-    async def test_datetime_add_hours_minutes(self, execution_context):
+    async def test_datetime_add_hours_minutes(self, execution_context) -> None:
         """Test DateTimeAddNode adds hours and minutes."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -267,7 +267,7 @@ class TestDateTimeNodes:
         assert "12:30:00" in result_dt
 
     @pytest.mark.asyncio
-    async def test_datetime_subtract_days(self, execution_context):
+    async def test_datetime_subtract_days(self, execution_context) -> None:
         """Test DateTimeAddNode subtracts with negative values."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -282,7 +282,7 @@ class TestDateTimeNodes:
         assert "2024-01-10" in result_dt
 
     @pytest.mark.asyncio
-    async def test_datetime_add_uses_current_if_null(self, execution_context):
+    async def test_datetime_add_uses_current_if_null(self, execution_context) -> None:
         """Test DateTimeAddNode uses current datetime if input is None."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -303,7 +303,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_datetime_diff_positive(self, execution_context):
+    async def test_datetime_diff_positive(self, execution_context) -> None:
         """Test DateTimeDiffNode calculates positive difference."""
         from casare_rpa.nodes.datetime_nodes import DateTimeDiffNode
 
@@ -319,7 +319,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("days") == 1
 
     @pytest.mark.asyncio
-    async def test_datetime_diff_negative(self, execution_context):
+    async def test_datetime_diff_negative(self, execution_context) -> None:
         """Test DateTimeDiffNode calculates negative difference."""
         from casare_rpa.nodes.datetime_nodes import DateTimeDiffNode
 
@@ -334,7 +334,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("days") == -1
 
     @pytest.mark.asyncio
-    async def test_datetime_diff_hours_minutes(self, execution_context):
+    async def test_datetime_diff_hours_minutes(self, execution_context) -> None:
         """Test DateTimeDiffNode calculates hours and minutes."""
         from casare_rpa.nodes.datetime_nodes import DateTimeDiffNode
 
@@ -350,7 +350,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("seconds") == 45
 
     @pytest.mark.asyncio
-    async def test_datetime_diff_from_timestamps(self, execution_context):
+    async def test_datetime_diff_from_timestamps(self, execution_context) -> None:
         """Test DateTimeDiffNode works with timestamps."""
         from casare_rpa.nodes.datetime_nodes import DateTimeDiffNode
 
@@ -371,7 +371,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_datetime_compare_before(self, execution_context):
+    async def test_datetime_compare_before(self, execution_context) -> None:
         """Test DateTimeCompareNode detects before."""
         from casare_rpa.nodes.datetime_nodes import DateTimeCompareNode
 
@@ -388,7 +388,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("comparison") == -1
 
     @pytest.mark.asyncio
-    async def test_datetime_compare_after(self, execution_context):
+    async def test_datetime_compare_after(self, execution_context) -> None:
         """Test DateTimeCompareNode detects after."""
         from casare_rpa.nodes.datetime_nodes import DateTimeCompareNode
 
@@ -404,7 +404,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("comparison") == 1
 
     @pytest.mark.asyncio
-    async def test_datetime_compare_equal(self, execution_context):
+    async def test_datetime_compare_equal(self, execution_context) -> None:
         """Test DateTimeCompareNode detects equal."""
         from casare_rpa.nodes.datetime_nodes import DateTimeCompareNode
 
@@ -419,7 +419,7 @@ class TestDateTimeNodes:
         assert node.get_output_value("comparison") == 0
 
     @pytest.mark.asyncio
-    async def test_datetime_compare_invalid(self, execution_context):
+    async def test_datetime_compare_invalid(self, execution_context) -> None:
         """Test DateTimeCompareNode handles invalid input."""
         from casare_rpa.nodes.datetime_nodes import DateTimeCompareNode
 
@@ -436,7 +436,7 @@ class TestDateTimeNodes:
     # =========================================================================
 
     @pytest.mark.asyncio
-    async def test_get_timestamp_seconds(self, execution_context):
+    async def test_get_timestamp_seconds(self, execution_context) -> None:
         """Test GetTimestampNode returns seconds."""
         from casare_rpa.nodes.datetime_nodes import GetTimestampNode
 
@@ -450,7 +450,7 @@ class TestDateTimeNodes:
         assert before <= ts <= after
 
     @pytest.mark.asyncio
-    async def test_get_timestamp_milliseconds(self, execution_context):
+    async def test_get_timestamp_milliseconds(self, execution_context) -> None:
         """Test GetTimestampNode returns milliseconds."""
         from casare_rpa.nodes.datetime_nodes import GetTimestampNode
 
@@ -466,7 +466,9 @@ class TestDateTimeNodes:
         assert ts > 1000000000000
 
     @pytest.mark.asyncio
-    async def test_get_timestamp_execution_result_pattern(self, execution_context):
+    async def test_get_timestamp_execution_result_pattern(
+        self, execution_context
+    ) -> None:
         """Test GetTimestampNode follows ExecutionResult pattern."""
         from casare_rpa.nodes.datetime_nodes import GetTimestampNode
 
@@ -486,7 +488,7 @@ class TestDateTimeEdgeCases:
     """Edge case tests for datetime nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -494,7 +496,7 @@ class TestDateTimeEdgeCases:
         return context
 
     @pytest.mark.asyncio
-    async def test_leap_year_handling(self, execution_context):
+    async def test_leap_year_handling(self, execution_context) -> None:
         """Test datetime nodes handle leap years."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -509,7 +511,7 @@ class TestDateTimeEdgeCases:
         assert "2024-02-29" in result_dt  # 2024 is leap year
 
     @pytest.mark.asyncio
-    async def test_year_boundary_crossing(self, execution_context):
+    async def test_year_boundary_crossing(self, execution_context) -> None:
         """Test datetime addition across year boundary."""
         from casare_rpa.nodes.datetime_nodes import DateTimeAddNode
 
@@ -524,7 +526,7 @@ class TestDateTimeEdgeCases:
         assert "2025-01-01" in result_dt
 
     @pytest.mark.asyncio
-    async def test_iso_format_with_timezone(self, execution_context):
+    async def test_iso_format_with_timezone(self, execution_context) -> None:
         """Test parsing ISO format with timezone Z suffix."""
         from casare_rpa.nodes.datetime_nodes import ParseDateTimeNode
 

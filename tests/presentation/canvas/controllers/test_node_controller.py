@@ -18,7 +18,7 @@ from casare_rpa.presentation.canvas.controllers.node_controller import NodeContr
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow with all required attributes."""
     mock = Mock()
     mock._central_widget = Mock()
@@ -29,7 +29,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def node_controller(mock_main_window):
+def node_controller(mock_main_window) -> None:
     """Create a NodeController instance."""
     controller = NodeController(mock_main_window)
     controller.initialize()
@@ -37,7 +37,7 @@ def node_controller(mock_main_window):
 
 
 @pytest.fixture
-def mock_node():
+def mock_node() -> None:
     """Create a mock visual node."""
     node = Mock()
     node.get_property = Mock(return_value="test_node_id")
@@ -53,16 +53,16 @@ def mock_node():
 class TestNodeControllerInitialization:
     """Tests for NodeController initialization."""
 
-    def test_initialization_success(self, mock_main_window):
+    def test_initialization_success(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         controller = NodeController(mock_main_window)
         assert controller.main_window == mock_main_window
 
-    def test_initialize_sets_state(self, node_controller):
+    def test_initialize_sets_state(self, node_controller) -> None:
         """Test initialize() sets initialized state."""
         assert node_controller.is_initialized()
 
-    def test_cleanup_resets_state(self, node_controller):
+    def test_cleanup_resets_state(self, node_controller) -> None:
         """Test cleanup() resets initialized state."""
         node_controller.cleanup()
         assert not node_controller.is_initialized()
@@ -71,7 +71,9 @@ class TestNodeControllerInitialization:
 class TestSelectNearestNode:
     """Tests for selecting nearest node to mouse."""
 
-    def test_select_nearest_node_no_graph(self, node_controller, mock_main_window):
+    def test_select_nearest_node_no_graph(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test select nearest node when no graph available."""
         mock_main_window._central_widget.graph = None
 
@@ -79,7 +81,9 @@ class TestSelectNearestNode:
 
         # Should return early without error
 
-    def test_select_nearest_node_no_nodes(self, node_controller, mock_main_window):
+    def test_select_nearest_node_no_nodes(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test select nearest node when no nodes in graph."""
         mock_graph = mock_main_window._central_widget.graph
         mock_graph.all_nodes.return_value = []
@@ -94,7 +98,7 @@ class TestSelectNearestNode:
     @patch("casare_rpa.presentation.canvas.controllers.node_controller.QCursor")
     def test_select_nearest_node_success(
         self, mock_cursor, node_controller, mock_main_window, mock_node
-    ):
+    ) -> None:
         """Test selecting nearest node successfully."""
         mock_graph = mock_main_window._central_widget.graph
         mock_viewer = Mock()
@@ -124,7 +128,7 @@ class TestSelectNearestNode:
 class TestToggleDisableNode:
     """Tests for toggling node disable state."""
 
-    def test_toggle_disable_no_graph(self, node_controller, mock_main_window):
+    def test_toggle_disable_no_graph(self, node_controller, mock_main_window) -> None:
         """Test toggle disable when no graph available."""
         mock_main_window._central_widget.graph = None
 
@@ -132,7 +136,7 @@ class TestToggleDisableNode:
 
         # Should return early without error
 
-    def test_toggle_disable_no_nodes(self, node_controller, mock_main_window):
+    def test_toggle_disable_no_nodes(self, node_controller, mock_main_window) -> None:
         """Test toggle disable when no nodes in graph."""
         mock_graph = mock_main_window._central_widget.graph
         mock_graph.all_nodes.return_value = []
@@ -145,7 +149,7 @@ class TestToggleDisableNode:
     @patch("casare_rpa.presentation.canvas.controllers.node_controller.QCursor")
     def test_toggle_disable_to_disabled(
         self, mock_cursor, node_controller, mock_main_window, mock_node
-    ):
+    ) -> None:
         """Test toggling node from enabled to disabled."""
         mock_casare_node = Mock()
         mock_casare_node.config = {"_disabled": False}
@@ -177,7 +181,7 @@ class TestToggleDisableNode:
     @patch("casare_rpa.presentation.canvas.controllers.node_controller.QCursor")
     def test_toggle_disable_to_enabled(
         self, mock_cursor, node_controller, mock_main_window, mock_node
-    ):
+    ) -> None:
         """Test toggling node from disabled to enabled."""
         mock_casare_node = Mock()
         mock_casare_node.config = {"_disabled": True}
@@ -210,7 +214,7 @@ class TestToggleDisableNode:
 class TestNavigateToNode:
     """Tests for navigating to specific node."""
 
-    def test_navigate_to_node_no_graph(self, node_controller, mock_main_window):
+    def test_navigate_to_node_no_graph(self, node_controller, mock_main_window) -> None:
         """Test navigate to node when no graph available."""
         mock_main_window._central_widget.graph = None
 
@@ -218,7 +222,9 @@ class TestNavigateToNode:
 
         # Should return early without error
 
-    def test_navigate_to_node_not_found(self, node_controller, mock_main_window):
+    def test_navigate_to_node_not_found(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test navigate to node when node doesn't exist."""
         mock_graph = mock_main_window._central_widget.graph
         mock_graph.all_nodes.return_value = []
@@ -229,7 +235,7 @@ class TestNavigateToNode:
 
     def test_navigate_to_node_success(
         self, node_controller, mock_main_window, mock_node
-    ):
+    ) -> None:
         """Test navigating to node successfully."""
         mock_graph = mock_main_window._central_widget.graph
         mock_viewer = Mock()
@@ -258,7 +264,7 @@ class TestFindNode:
     )
     def test_find_node_success(
         self, mock_dialog_class, node_controller, mock_main_window
-    ):
+    ) -> None:
         """Test opening node search dialog."""
         mock_graph = mock_main_window._central_widget.graph
         mock_dialog = Mock()
@@ -269,7 +275,7 @@ class TestFindNode:
         mock_dialog_class.assert_called_once_with(mock_graph, mock_main_window)
         mock_dialog.show_search.assert_called_once()
 
-    def test_find_node_no_graph(self, node_controller, mock_main_window):
+    def test_find_node_no_graph(self, node_controller, mock_main_window) -> None:
         """Test find node when no graph available."""
         mock_main_window._central_widget.graph = None
 
@@ -285,7 +291,7 @@ class TestUpdateNodeProperty:
 
     def test_update_node_property_success(
         self, node_controller, mock_main_window, mock_node
-    ):
+    ) -> None:
         """Test updating node property successfully."""
         mock_node.set_property = Mock()
         mock_graph = mock_main_window._central_widget.graph
@@ -302,7 +308,9 @@ class TestUpdateNodeProperty:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] == ("test_node_id", "test_prop", "test_value")
 
-    def test_update_node_property_not_found(self, node_controller, mock_main_window):
+    def test_update_node_property_not_found(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test updating property on non-existent node."""
         mock_graph = mock_main_window._central_widget.graph
         mock_graph.all_nodes.return_value = []
@@ -311,7 +319,9 @@ class TestUpdateNodeProperty:
 
         # Should log warning but not crash
 
-    def test_update_node_property_no_graph(self, node_controller, mock_main_window):
+    def test_update_node_property_no_graph(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test updating property when no graph available."""
         mock_main_window._central_widget.graph = None
 
@@ -323,7 +333,7 @@ class TestUpdateNodeProperty:
 class TestPrivateMethods:
     """Tests for private helper methods."""
 
-    def test_get_graph_success(self, node_controller, mock_main_window):
+    def test_get_graph_success(self, node_controller, mock_main_window) -> None:
         """Test _get_graph returns graph successfully."""
         expected_graph = mock_main_window._central_widget.graph
 
@@ -331,7 +341,9 @@ class TestPrivateMethods:
 
         assert result == expected_graph
 
-    def test_get_graph_no_central_widget(self, node_controller, mock_main_window):
+    def test_get_graph_no_central_widget(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test _get_graph returns None when no central widget."""
         mock_main_window._central_widget = None
 
@@ -339,7 +351,9 @@ class TestPrivateMethods:
 
         assert result is None
 
-    def test_get_graph_no_graph_attribute(self, node_controller, mock_main_window):
+    def test_get_graph_no_graph_attribute(
+        self, node_controller, mock_main_window
+    ) -> None:
         """Test _get_graph returns None when central widget has no graph."""
         del mock_main_window._central_widget.graph
 

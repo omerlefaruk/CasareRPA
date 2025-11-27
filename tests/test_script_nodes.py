@@ -14,7 +14,7 @@ class TestScriptNodesIntegration:
     """Integration tests for scripts category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.resolve_value = lambda x: x
@@ -25,7 +25,7 @@ class TestScriptNodesIntegration:
     # Python Script Nodes
     # =============================================================================
 
-    def test_run_python_script_node_integration(self, execution_context):
+    def test_run_python_script_node_integration(self, execution_context) -> None:
         """Test RunPythonScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunPythonScriptNode
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
@@ -43,7 +43,7 @@ class TestScriptNodesIntegration:
         assert hasattr(node, "execute")
 
     @pytest.mark.asyncio
-    async def test_run_python_script_execution(self, execution_context):
+    async def test_run_python_script_execution(self, execution_context) -> None:
         """Test RunPythonScriptNode basic execution."""
         from casare_rpa.nodes.script_nodes import RunPythonScriptNode
 
@@ -55,7 +55,7 @@ class TestScriptNodesIntegration:
         assert result["success"] is True
         assert node.get_output_value("result") == 4
 
-    def test_run_python_file_node_integration(self, execution_context):
+    def test_run_python_file_node_integration(self, execution_context) -> None:
         """Test RunPythonFileNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunPythonFileNode
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
@@ -73,7 +73,7 @@ class TestScriptNodesIntegration:
     # Expression Eval Node
     # =============================================================================
 
-    def test_eval_expression_node_integration(self, execution_context):
+    def test_eval_expression_node_integration(self, execution_context) -> None:
         """Test EvalExpressionNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import EvalExpressionNode
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
@@ -88,7 +88,7 @@ class TestScriptNodesIntegration:
         assert node.node_type == "EvalExpressionNode"
 
     @pytest.mark.asyncio
-    async def test_eval_expression_execution(self, execution_context):
+    async def test_eval_expression_execution(self, execution_context) -> None:
         """Test EvalExpressionNode basic execution."""
         from casare_rpa.nodes.script_nodes import EvalExpressionNode
 
@@ -105,7 +105,7 @@ class TestScriptNodesIntegration:
     # Batch Script Node
     # =============================================================================
 
-    def test_run_batch_script_node_integration(self, execution_context):
+    def test_run_batch_script_node_integration(self, execution_context) -> None:
         """Test RunBatchScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunBatchScriptNode
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
@@ -120,7 +120,7 @@ class TestScriptNodesIntegration:
         assert node.node_type == "RunBatchScriptNode"
 
     @pytest.mark.asyncio
-    async def test_run_batch_script_execution(self, execution_context):
+    async def test_run_batch_script_execution(self, execution_context) -> None:
         """Test RunBatchScriptNode basic execution."""
         from casare_rpa.nodes.script_nodes import RunBatchScriptNode
 
@@ -135,7 +135,7 @@ class TestScriptNodesIntegration:
     # JavaScript Node
     # =============================================================================
 
-    def test_run_javascript_node_integration(self, execution_context):
+    def test_run_javascript_node_integration(self, execution_context) -> None:
         """Test RunJavaScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunJavaScriptNode
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
@@ -150,7 +150,7 @@ class TestScriptNodesIntegration:
         assert node.node_type == "RunJavaScriptNode"
 
     @pytest.mark.asyncio
-    async def test_run_javascript_execution(self, execution_context):
+    async def test_run_javascript_execution(self, execution_context) -> None:
         """Test RunJavaScriptNode basic execution."""
         from casare_rpa.nodes.script_nodes import RunJavaScriptNode
 
@@ -167,7 +167,7 @@ class TestScriptNodesIntegration:
     # Port Configuration Tests
     # =============================================================================
 
-    def test_all_visual_nodes_have_proper_ports(self):
+    def test_all_visual_nodes_have_proper_ports(self) -> None:
         """Test that all script visual nodes have setup_ports method."""
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
             VisualRunPythonScriptNode,
@@ -193,7 +193,7 @@ class TestScriptNodesIntegration:
                 visual_node, "get_node_class"
             ), f"{visual_node.__class__.__name__} missing get_node_class method"
 
-    def test_all_visual_nodes_have_correct_category(self):
+    def test_all_visual_nodes_have_correct_category(self) -> None:
         """Test that all script visual nodes have correct NODE_CATEGORY."""
         from casare_rpa.presentation.canvas.visual_nodes.scripts import (
             VisualRunPythonScriptNode,
@@ -220,7 +220,7 @@ class TestScriptNodesIntegration:
 class TestScriptNodesNodeRegistry:
     """Test that all script nodes are properly registered."""
 
-    def test_all_script_nodes_in_registry(self):
+    def test_all_script_nodes_in_registry(self) -> None:
         """Test that all 5 script nodes are in the node registry."""
         from casare_rpa.nodes import _NODE_REGISTRY
 
@@ -238,7 +238,7 @@ class TestScriptNodesNodeRegistry:
                 _NODE_REGISTRY[node_name] == "script_nodes"
             ), f"{node_name} registered to wrong module"
 
-    def test_can_instantiate_all_script_nodes_from_registry(self):
+    def test_can_instantiate_all_script_nodes_from_registry(self) -> None:
         """Test that all script nodes can be instantiated via registry."""
         from casare_rpa.nodes import get_node_class
 

@@ -3,6 +3,11 @@ Comprehensive tests for mouse and keyboard automation nodes.
 
 Tests MoveMouseNode, MouseClickNode, SendKeysNode, SendHotKeyNode,
 GetMousePositionNode, and DragMouseNode with mocked desktop context.
+
+Fixtures imported from tests/nodes/desktop/conftest.py:
+- MockDesktopContext: Mock desktop resource manager
+- mock_desktop_context: Fixture providing MockDesktopContext instance
+- execution_context: Fixture with desktop context
 """
 
 import pytest
@@ -20,95 +25,6 @@ from casare_rpa.nodes.desktop_nodes.mouse_keyboard_nodes import (
 from casare_rpa.core.types import NodeStatus
 
 
-class MockDesktopContext:
-    """Mock DesktopContext for testing without actual system interaction."""
-
-    def __init__(self):
-        self.move_mouse_calls = []
-        self.click_mouse_calls = []
-        self.send_keys_calls = []
-        self.send_hotkey_calls = []
-        self.drag_mouse_calls = []
-        self._mouse_position = (100, 200)
-        self._should_fail = False
-
-    def move_mouse(self, x: int, y: int, duration: float = 0.0, **kwargs) -> bool:
-        if self._should_fail:
-            return False
-        self.move_mouse_calls.append({"x": x, "y": y, "duration": duration, **kwargs})
-        self._mouse_position = (x, y)
-        return True
-
-    def click_mouse(
-        self,
-        x: int = None,
-        y: int = None,
-        button: str = "left",
-        click_type: str = "single",
-        **kwargs,
-    ) -> bool:
-        if self._should_fail:
-            return False
-        self.click_mouse_calls.append(
-            {"x": x, "y": y, "button": button, "click_type": click_type, **kwargs}
-        )
-        return True
-
-    def send_keys(self, keys: str, interval: float = 0.0) -> bool:
-        if self._should_fail:
-            return False
-        self.send_keys_calls.append({"keys": keys, "interval": interval})
-        return True
-
-    def send_hotkey(self, *keys: str) -> bool:
-        if self._should_fail:
-            return False
-        self.send_hotkey_calls.append(list(keys))
-        return True
-
-    def get_mouse_position(self) -> tuple:
-        return self._mouse_position
-
-    def drag_mouse(
-        self,
-        start_x: int,
-        start_y: int,
-        end_x: int,
-        end_y: int,
-        button: str = "left",
-        duration: float = 0.5,
-    ) -> bool:
-        if self._should_fail:
-            return False
-        self.drag_mouse_calls.append(
-            {
-                "start_x": start_x,
-                "start_y": start_y,
-                "end_x": end_x,
-                "end_y": end_y,
-                "button": button,
-                "duration": duration,
-            }
-        )
-        return True
-
-
-@pytest.fixture
-def mock_desktop_context():
-    """Create a mock desktop context."""
-    return MockDesktopContext()
-
-
-@pytest.fixture
-def execution_context(mock_desktop_context):
-    """Create execution context with mock desktop context."""
-    context = Mock()
-    context.desktop_context = mock_desktop_context
-    context.resolve_value = lambda x: x
-    context.variables = {}
-    return context
-
-
 # =============================================================================
 # MoveMouseNode Tests
 # =============================================================================
@@ -118,7 +34,7 @@ class TestMoveMouseNode:
     """Tests for MoveMouseNode."""
 
     @pytest.mark.asyncio
-    async def test_move_mouse_absolute_coordinates(self, execution_context):
+    async def test_move_mouse_absolute_coordinates(self, execution_context) -> None:
         """Test moving mouse to absolute coordinates."""
         node = MoveMouseNode(node_id="test_move")
         node.set_input_value("x", 500)
@@ -135,7 +51,7 @@ class TestMoveMouseNode:
         assert node.get_output_value("final_y") == 300
 
     @pytest.mark.asyncio
-    async def test_move_mouse_with_duration(self, execution_context):
+    async def test_move_mouse_with_duration(self, execution_context) -> None:
         """Test animated mouse movement with duration."""
         node = MoveMouseNode(node_id="test_move_duration", config={"duration": 0.5})
         node.set_input_value("x", 800)
@@ -149,7 +65,7 @@ class TestMoveMouseNode:
         assert mock_ctx.move_mouse_calls[-1]["duration"] == 0.5
 
     @pytest.mark.asyncio
-    async def test_move_mouse_missing_x_raises_error(self, execution_context):
+    async def test_move_mouse_missing_x_raises_error(self, execution_context) -> None:
         """Test that missing X coordinate raises ValueError."""
         node = MoveMouseNode(node_id="test_move_no_x")
         node.set_input_value("y", 300)
@@ -158,7 +74,7 @@ class TestMoveMouseNode:
             await node.execute(execution_context)
 
     @pytest.mark.asyncio
-    async def test_move_mouse_missing_y_raises_error(self, execution_context):
+    async def test_move_mouse_missing_y_raises_error(self, execution_context) -> None:
         """Test that missing Y coordinate raises ValueError."""
         node = MoveMouseNode(node_id="test_move_no_y")
         node.set_input_value("x", 500)
@@ -167,7 +83,7 @@ class TestMoveMouseNode:
             await node.execute(execution_context)
 
     @pytest.mark.asyncio
-    async def test_move_mouse_failed_operation(self, execution_context):
+    async def test_move_mouse_failed_operation(self, execution_context) -> None:
         """Test behavior when move operation fails.
 
         Note: The node implementation uses NodeStatus.FAILED which maps to ERROR in the enum.
@@ -199,7 +115,7 @@ class TestMouseClickNode:
     """Tests for MouseClickNode."""
 
     @pytest.mark.asyncio
-    async def test_click_at_absolute_coordinates(self, execution_context):
+    async def test_click_at_absolute_coordinates(self, execution_context) -> None:
         """Test left click at absolute coordinates."""
         node = MouseClickNode(node_id="test_click")
         node.set_input_value("x", 400)
@@ -215,7 +131,7 @@ class TestMouseClickNode:
         assert node.get_output_value("click_y") == 250
 
     @pytest.mark.asyncio
-    async def test_click_at_current_position(self, execution_context):
+    async def test_click_at_current_position(self, execution_context) -> None:
         """Test click without coordinates (uses current position)."""
         node = MouseClickNode(node_id="test_click_current")
 
@@ -228,7 +144,7 @@ class TestMouseClickNode:
         assert call["y"] is None
 
     @pytest.mark.asyncio
-    async def test_right_click(self, execution_context):
+    async def test_right_click(self, execution_context) -> None:
         """Test right mouse button click."""
         node = MouseClickNode(node_id="test_right_click", config={"button": "right"})
         node.set_input_value("x", 100)
@@ -241,7 +157,7 @@ class TestMouseClickNode:
         assert mock_ctx.click_mouse_calls[-1]["button"] == "right"
 
     @pytest.mark.asyncio
-    async def test_middle_click(self, execution_context):
+    async def test_middle_click(self, execution_context) -> None:
         """Test middle mouse button click."""
         node = MouseClickNode(node_id="test_middle_click", config={"button": "middle"})
         node.set_input_value("x", 100)
@@ -252,7 +168,7 @@ class TestMouseClickNode:
         assert result["button"] == "middle"
 
     @pytest.mark.asyncio
-    async def test_double_click(self, execution_context):
+    async def test_double_click(self, execution_context) -> None:
         """Test double click."""
         node = MouseClickNode(node_id="test_double", config={"click_type": "double"})
         node.set_input_value("x", 200)
@@ -265,7 +181,7 @@ class TestMouseClickNode:
         assert mock_ctx.click_mouse_calls[-1]["click_type"] == "double"
 
     @pytest.mark.asyncio
-    async def test_triple_click(self, execution_context):
+    async def test_triple_click(self, execution_context) -> None:
         """Test triple click (select paragraph)."""
         node = MouseClickNode(node_id="test_triple", config={"click_type": "triple"})
         node.set_input_value("x", 300)
@@ -276,7 +192,7 @@ class TestMouseClickNode:
         assert result["click_type"] == "triple"
 
     @pytest.mark.asyncio
-    async def test_click_with_ctrl_modifier(self, execution_context):
+    async def test_click_with_ctrl_modifier(self, execution_context) -> None:
         """Test click with Ctrl key held."""
         node = MouseClickNode(node_id="test_ctrl_click", config={"ctrl": True})
         node.set_input_value("x", 100)
@@ -287,7 +203,7 @@ class TestMouseClickNode:
         assert "ctrl" in result["modifiers"]
 
     @pytest.mark.asyncio
-    async def test_click_with_shift_modifier(self, execution_context):
+    async def test_click_with_shift_modifier(self, execution_context) -> None:
         """Test click with Shift key held."""
         node = MouseClickNode(node_id="test_shift_click", config={"shift": True})
         node.set_input_value("x", 100)
@@ -298,7 +214,7 @@ class TestMouseClickNode:
         assert "shift" in result["modifiers"]
 
     @pytest.mark.asyncio
-    async def test_click_with_alt_modifier(self, execution_context):
+    async def test_click_with_alt_modifier(self, execution_context) -> None:
         """Test click with Alt key held."""
         node = MouseClickNode(node_id="test_alt_click", config={"alt": True})
         node.set_input_value("x", 100)
@@ -309,7 +225,7 @@ class TestMouseClickNode:
         assert "alt" in result["modifiers"]
 
     @pytest.mark.asyncio
-    async def test_click_with_multiple_modifiers(self, execution_context):
+    async def test_click_with_multiple_modifiers(self, execution_context) -> None:
         """Test click with Ctrl+Shift modifiers."""
         node = MouseClickNode(
             node_id="test_multi_mod", config={"ctrl": True, "shift": True}
@@ -332,7 +248,7 @@ class TestSendKeysNode:
     """Tests for SendKeysNode (keyboard typing)."""
 
     @pytest.mark.asyncio
-    async def test_send_simple_text(self, execution_context):
+    async def test_send_simple_text(self, execution_context) -> None:
         """Test sending simple text."""
         node = SendKeysNode(node_id="test_type")
         node.set_input_value("keys", "Hello World")
@@ -346,7 +262,7 @@ class TestSendKeysNode:
         assert mock_ctx.send_keys_calls[-1]["keys"] == "Hello World"
 
     @pytest.mark.asyncio
-    async def test_send_keys_with_interval(self, execution_context):
+    async def test_send_keys_with_interval(self, execution_context) -> None:
         """Test typing with delay between keystrokes."""
         node = SendKeysNode(node_id="test_type_slow", config={"interval": 0.1})
         node.set_input_value("keys", "Test")
@@ -358,7 +274,7 @@ class TestSendKeysNode:
         assert mock_ctx.send_keys_calls[-1]["interval"] == 0.1
 
     @pytest.mark.asyncio
-    async def test_send_special_key_enter(self, execution_context):
+    async def test_send_special_key_enter(self, execution_context) -> None:
         """Test sending Enter key."""
         node = SendKeysNode(node_id="test_enter")
         node.set_input_value("keys", "{Enter}")
@@ -370,7 +286,7 @@ class TestSendKeysNode:
         assert "{Enter}" in mock_ctx.send_keys_calls[-1]["keys"]
 
     @pytest.mark.asyncio
-    async def test_send_special_key_tab(self, execution_context):
+    async def test_send_special_key_tab(self, execution_context) -> None:
         """Test sending Tab key."""
         node = SendKeysNode(node_id="test_tab")
         node.set_input_value("keys", "{Tab}")
@@ -380,7 +296,7 @@ class TestSendKeysNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_send_special_key_escape(self, execution_context):
+    async def test_send_special_key_escape(self, execution_context) -> None:
         """Test sending Escape key."""
         node = SendKeysNode(node_id="test_escape")
         node.set_input_value("keys", "{Escape}")
@@ -390,7 +306,7 @@ class TestSendKeysNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_send_keys_empty_raises_error(self, execution_context):
+    async def test_send_keys_empty_raises_error(self, execution_context) -> None:
         """Test that empty keys raises ValueError."""
         node = SendKeysNode(node_id="test_empty")
         node.set_input_value("keys", "")
@@ -399,7 +315,7 @@ class TestSendKeysNode:
             await node.execute(execution_context)
 
     @pytest.mark.asyncio
-    async def test_send_keys_with_press_enter_after(self, execution_context):
+    async def test_send_keys_with_press_enter_after(self, execution_context) -> None:
         """Test typing with automatic Enter press after."""
         node = SendKeysNode(
             node_id="test_enter_after", config={"press_enter_after": True}
@@ -423,7 +339,7 @@ class TestSendHotKeyNode:
     """Tests for SendHotKeyNode (hotkey combinations)."""
 
     @pytest.mark.asyncio
-    async def test_ctrl_c_copy(self, execution_context):
+    async def test_ctrl_c_copy(self, execution_context) -> None:
         """Test Ctrl+C copy hotkey."""
         node = SendHotKeyNode(
             node_id="test_copy", config={"modifier": "Ctrl", "key": "c"}
@@ -438,7 +354,7 @@ class TestSendHotKeyNode:
         assert "c" in keys
 
     @pytest.mark.asyncio
-    async def test_ctrl_v_paste(self, execution_context):
+    async def test_ctrl_v_paste(self, execution_context) -> None:
         """Test Ctrl+V paste hotkey."""
         node = SendHotKeyNode(
             node_id="test_paste", config={"modifier": "Ctrl", "key": "v"}
@@ -449,7 +365,7 @@ class TestSendHotKeyNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_alt_tab_switch(self, execution_context):
+    async def test_alt_tab_switch(self, execution_context) -> None:
         """Test Alt+Tab window switch hotkey."""
         node = SendHotKeyNode(
             node_id="test_alt_tab", config={"modifier": "Alt", "key": "Tab"}
@@ -464,7 +380,7 @@ class TestSendHotKeyNode:
         assert "Tab" in keys
 
     @pytest.mark.asyncio
-    async def test_ctrl_alt_delete(self, execution_context):
+    async def test_ctrl_alt_delete(self, execution_context) -> None:
         """Test Ctrl+Alt+Delete hotkey via custom keys."""
         node = SendHotKeyNode(node_id="test_cad", config={"keys": "Ctrl,Alt,Delete"})
 
@@ -474,7 +390,7 @@ class TestSendHotKeyNode:
         assert len(result["keys"]) == 3
 
     @pytest.mark.asyncio
-    async def test_single_key_enter(self, execution_context):
+    async def test_single_key_enter(self, execution_context) -> None:
         """Test single key (Enter) without modifier."""
         node = SendHotKeyNode(
             node_id="test_enter_only", config={"modifier": "none", "key": "Enter"}
@@ -486,7 +402,7 @@ class TestSendHotKeyNode:
         assert "Enter" in result["keys"]
 
     @pytest.mark.asyncio
-    async def test_hotkey_from_input_port(self, execution_context):
+    async def test_hotkey_from_input_port(self, execution_context) -> None:
         """Test hotkey specified via input port."""
         node = SendHotKeyNode(node_id="test_input_hotkey")
         node.set_input_value("keys", "Ctrl,Shift,S")
@@ -497,7 +413,7 @@ class TestSendHotKeyNode:
         assert len(result["keys"]) == 3
 
     @pytest.mark.asyncio
-    async def test_win_key_hotkey(self, execution_context):
+    async def test_win_key_hotkey(self, execution_context) -> None:
         """Test Windows key hotkey."""
         node = SendHotKeyNode(
             node_id="test_win", config={"modifier": "Win", "key": "d"}
@@ -517,7 +433,7 @@ class TestGetMousePositionNode:
     """Tests for GetMousePositionNode."""
 
     @pytest.mark.asyncio
-    async def test_get_current_position(self, execution_context):
+    async def test_get_current_position(self, execution_context) -> None:
         """Test getting current mouse position."""
         execution_context.desktop_context._mouse_position = (500, 400)
         node = GetMousePositionNode(node_id="test_pos")
@@ -532,7 +448,7 @@ class TestGetMousePositionNode:
         assert node.status == NodeStatus.SUCCESS
 
     @pytest.mark.asyncio
-    async def test_get_position_at_origin(self, execution_context):
+    async def test_get_position_at_origin(self, execution_context) -> None:
         """Test getting position at screen origin."""
         execution_context.desktop_context._mouse_position = (0, 0)
         node = GetMousePositionNode(node_id="test_origin")
@@ -552,7 +468,7 @@ class TestDragMouseNode:
     """Tests for DragMouseNode."""
 
     @pytest.mark.asyncio
-    async def test_drag_left_button(self, execution_context):
+    async def test_drag_left_button(self, execution_context) -> None:
         """Test drag operation with left mouse button."""
         node = DragMouseNode(node_id="test_drag")
         node.set_input_value("start_x", 100)
@@ -570,7 +486,7 @@ class TestDragMouseNode:
         assert result["button"] == "left"
 
     @pytest.mark.asyncio
-    async def test_drag_right_button(self, execution_context):
+    async def test_drag_right_button(self, execution_context) -> None:
         """Test drag operation with right mouse button."""
         node = DragMouseNode(node_id="test_drag_right", config={"button": "right"})
         node.set_input_value("start_x", 50)
@@ -583,7 +499,7 @@ class TestDragMouseNode:
         assert result["button"] == "right"
 
     @pytest.mark.asyncio
-    async def test_drag_with_duration(self, execution_context):
+    async def test_drag_with_duration(self, execution_context) -> None:
         """Test drag operation with custom duration."""
         node = DragMouseNode(node_id="test_drag_slow", config={"duration": 1.0})
         node.set_input_value("start_x", 0)
@@ -598,7 +514,7 @@ class TestDragMouseNode:
         assert mock_ctx.drag_mouse_calls[-1]["duration"] == 1.0
 
     @pytest.mark.asyncio
-    async def test_drag_missing_start_raises_error(self, execution_context):
+    async def test_drag_missing_start_raises_error(self, execution_context) -> None:
         """Test that missing start coordinates raises ValueError."""
         node = DragMouseNode(node_id="test_drag_no_start")
         node.set_input_value("end_x", 100)
@@ -608,7 +524,7 @@ class TestDragMouseNode:
             await node.execute(execution_context)
 
     @pytest.mark.asyncio
-    async def test_drag_missing_end_raises_error(self, execution_context):
+    async def test_drag_missing_end_raises_error(self, execution_context) -> None:
         """Test that missing end coordinates raises ValueError."""
         node = DragMouseNode(node_id="test_drag_no_end")
         node.set_input_value("start_x", 100)
@@ -627,7 +543,7 @@ class TestExecutionResultCompliance:
     """Verify all nodes return proper ExecutionResult dictionaries."""
 
     @pytest.mark.asyncio
-    async def test_move_mouse_returns_dict(self, execution_context):
+    async def test_move_mouse_returns_dict(self, execution_context) -> None:
         """MoveMouseNode returns dictionary result."""
         node = MoveMouseNode(node_id="test")
         node.set_input_value("x", 100)
@@ -638,7 +554,7 @@ class TestExecutionResultCompliance:
         assert "success" in result
 
     @pytest.mark.asyncio
-    async def test_click_returns_dict(self, execution_context):
+    async def test_click_returns_dict(self, execution_context) -> None:
         """MouseClickNode returns dictionary result."""
         node = MouseClickNode(node_id="test")
         node.set_input_value("x", 100)
@@ -650,7 +566,7 @@ class TestExecutionResultCompliance:
         assert "button" in result
 
     @pytest.mark.asyncio
-    async def test_send_keys_returns_dict(self, execution_context):
+    async def test_send_keys_returns_dict(self, execution_context) -> None:
         """SendKeysNode returns dictionary result."""
         node = SendKeysNode(node_id="test")
         node.set_input_value("keys", "test")
@@ -661,7 +577,7 @@ class TestExecutionResultCompliance:
         assert "keys" in result
 
     @pytest.mark.asyncio
-    async def test_hotkey_returns_dict(self, execution_context):
+    async def test_hotkey_returns_dict(self, execution_context) -> None:
         """SendHotKeyNode returns dictionary result."""
         node = SendHotKeyNode(node_id="test", config={"modifier": "Ctrl", "key": "a"})
         result = await node.execute(execution_context)
@@ -671,7 +587,7 @@ class TestExecutionResultCompliance:
         assert "keys" in result
 
     @pytest.mark.asyncio
-    async def test_get_position_returns_dict(self, execution_context):
+    async def test_get_position_returns_dict(self, execution_context) -> None:
         """GetMousePositionNode returns dictionary result."""
         node = GetMousePositionNode(node_id="test")
         result = await node.execute(execution_context)
@@ -682,7 +598,7 @@ class TestExecutionResultCompliance:
         assert "y" in result
 
     @pytest.mark.asyncio
-    async def test_drag_returns_dict(self, execution_context):
+    async def test_drag_returns_dict(self, execution_context) -> None:
         """DragMouseNode returns dictionary result."""
         node = DragMouseNode(node_id="test")
         node.set_input_value("start_x", 0)
@@ -703,7 +619,7 @@ class TestExecutionResultCompliance:
 class TestNodeConfiguration:
     """Test node configuration and defaults."""
 
-    def test_move_mouse_default_config(self):
+    def test_move_mouse_default_config(self) -> None:
         """Test MoveMouseNode default configuration."""
         node = MoveMouseNode(node_id="test")
 
@@ -711,7 +627,7 @@ class TestNodeConfiguration:
         assert node.config.get("ease") == "linear"
         assert node.config.get("steps") == 10
 
-    def test_click_default_config(self):
+    def test_click_default_config(self) -> None:
         """Test MouseClickNode default configuration."""
         node = MouseClickNode(node_id="test")
 
@@ -722,7 +638,7 @@ class TestNodeConfiguration:
         assert node.config.get("shift") is False
         assert node.config.get("alt") is False
 
-    def test_send_keys_default_config(self):
+    def test_send_keys_default_config(self) -> None:
         """Test SendKeysNode default configuration."""
         node = SendKeysNode(node_id="test")
 
@@ -733,7 +649,7 @@ class TestNodeConfiguration:
         assert node.config.get("press_enter_after") is False
         assert node.config.get("clear_first") is False
 
-    def test_hotkey_default_config(self):
+    def test_hotkey_default_config(self) -> None:
         """Test SendHotKeyNode default configuration."""
         node = SendHotKeyNode(node_id="test")
 
@@ -742,7 +658,7 @@ class TestNodeConfiguration:
         assert node.config.get("keys") == ""
         assert node.config.get("wait_time") == 0.0
 
-    def test_drag_default_config(self):
+    def test_drag_default_config(self) -> None:
         """Test DragMouseNode default configuration."""
         node = DragMouseNode(node_id="test")
 
@@ -758,7 +674,7 @@ class TestNodeConfiguration:
 class TestPortDefinitions:
     """Test that all nodes have correct port definitions."""
 
-    def test_move_mouse_ports(self):
+    def test_move_mouse_ports(self) -> None:
         """Test MoveMouseNode port definitions."""
         node = MoveMouseNode(node_id="test")
 
@@ -769,7 +685,7 @@ class TestPortDefinitions:
         assert "final_x" in node.output_ports
         assert "final_y" in node.output_ports
 
-    def test_click_ports(self):
+    def test_click_ports(self) -> None:
         """Test MouseClickNode port definitions."""
         node = MouseClickNode(node_id="test")
 
@@ -779,7 +695,7 @@ class TestPortDefinitions:
         assert "click_x" in node.output_ports
         assert "click_y" in node.output_ports
 
-    def test_send_keys_ports(self):
+    def test_send_keys_ports(self) -> None:
         """Test SendKeysNode port definitions."""
         node = SendKeysNode(node_id="test")
 
@@ -788,7 +704,7 @@ class TestPortDefinitions:
         assert "success" in node.output_ports
         assert "keys_sent" in node.output_ports
 
-    def test_hotkey_ports(self):
+    def test_hotkey_ports(self) -> None:
         """Test SendHotKeyNode port definitions."""
         node = SendHotKeyNode(node_id="test")
 
@@ -796,14 +712,14 @@ class TestPortDefinitions:
         assert "wait_time" in node.input_ports
         assert "success" in node.output_ports
 
-    def test_get_position_ports(self):
+    def test_get_position_ports(self) -> None:
         """Test GetMousePositionNode port definitions."""
         node = GetMousePositionNode(node_id="test")
 
         assert "x" in node.output_ports
         assert "y" in node.output_ports
 
-    def test_drag_ports(self):
+    def test_drag_ports(self) -> None:
         """Test DragMouseNode port definitions."""
         node = DragMouseNode(node_id="test")
 

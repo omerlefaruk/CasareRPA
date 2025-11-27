@@ -13,7 +13,7 @@ class TestClickElementNode:
     """Tests for ClickElementNode - element click interactions."""
 
     @pytest.mark.asyncio
-    async def test_click_success(self, execution_context, mock_page):
+    async def test_click_success(self, execution_context, mock_page) -> None:
         """Test successful element click."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -31,7 +31,7 @@ class TestClickElementNode:
         mock_page.click.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_click_css_selector(self, execution_context, mock_page):
+    async def test_click_css_selector(self, execution_context, mock_page) -> None:
         """Test click with CSS selector."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -46,7 +46,7 @@ class TestClickElementNode:
         assert ".btn-primary" in call_args[0]
 
     @pytest.mark.asyncio
-    async def test_click_xpath_selector(self, execution_context, mock_page):
+    async def test_click_xpath_selector(self, execution_context, mock_page) -> None:
         """Test click with XPath selector."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -61,7 +61,7 @@ class TestClickElementNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_click_double_click(self, execution_context, mock_page):
+    async def test_click_double_click(self, execution_context, mock_page) -> None:
         """Test double click with click_count=2."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -79,7 +79,7 @@ class TestClickElementNode:
         assert call_kwargs.get("click_count") == 2
 
     @pytest.mark.asyncio
-    async def test_click_right_button(self, execution_context, mock_page):
+    async def test_click_right_button(self, execution_context, mock_page) -> None:
         """Test right-click with button='right'."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -97,7 +97,7 @@ class TestClickElementNode:
         assert call_kwargs.get("button") == "right"
 
     @pytest.mark.asyncio
-    async def test_click_no_page(self, execution_context_no_page):
+    async def test_click_no_page(self, execution_context_no_page) -> None:
         """Test click fails without active page."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -108,7 +108,7 @@ class TestClickElementNode:
         assert "page" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_click_no_selector(self, execution_context, mock_page):
+    async def test_click_no_selector(self, execution_context, mock_page) -> None:
         """Test click fails without selector."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -121,7 +121,7 @@ class TestClickElementNode:
         assert "selector" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_click_element_not_found(self, execution_context, mock_page):
+    async def test_click_element_not_found(self, execution_context, mock_page) -> None:
         """Test click fails when element not found."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -135,7 +135,7 @@ class TestClickElementNode:
         assert "error" in result
 
     @pytest.mark.asyncio
-    async def test_click_with_force(self, execution_context, mock_page):
+    async def test_click_with_force(self, execution_context, mock_page) -> None:
         """Test force click bypasses actionability checks."""
         from casare_rpa.nodes.interaction_nodes import ClickElementNode
 
@@ -157,7 +157,7 @@ class TestTypeTextNode:
     """Tests for TypeTextNode - text input interactions."""
 
     @pytest.mark.asyncio
-    async def test_type_text_success(self, execution_context, mock_page):
+    async def test_type_text_success(self, execution_context, mock_page) -> None:
         """Test successful text typing."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -172,7 +172,7 @@ class TestTypeTextNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_type_text_with_delay(self, execution_context, mock_page):
+    async def test_type_text_with_delay(self, execution_context, mock_page) -> None:
         """Test typing with keystroke delay."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -195,7 +195,7 @@ class TestTypeTextNode:
         mock_page.type.assert_called()
 
     @pytest.mark.asyncio
-    async def test_type_text_press_enter(self, execution_context, mock_page):
+    async def test_type_text_press_enter(self, execution_context, mock_page) -> None:
         """Test typing with Enter key press after."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -219,7 +219,7 @@ class TestTypeTextNode:
         mock_page.keyboard.press.assert_called_with("Enter")
 
     @pytest.mark.asyncio
-    async def test_type_text_press_tab(self, execution_context, mock_page):
+    async def test_type_text_press_tab(self, execution_context, mock_page) -> None:
         """Test typing with Tab key press after."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -243,7 +243,7 @@ class TestTypeTextNode:
         mock_page.keyboard.press.assert_called_with("Tab")
 
     @pytest.mark.asyncio
-    async def test_type_text_no_page(self, execution_context_no_page):
+    async def test_type_text_no_page(self, execution_context_no_page) -> None:
         """Test typing fails without active page."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -253,7 +253,7 @@ class TestTypeTextNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_type_text_no_selector(self, execution_context, mock_page):
+    async def test_type_text_no_selector(self, execution_context, mock_page) -> None:
         """Test typing fails without selector."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -266,7 +266,7 @@ class TestTypeTextNode:
         assert "selector" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_type_text_empty_string(self, execution_context, mock_page):
+    async def test_type_text_empty_string(self, execution_context, mock_page) -> None:
         """Test typing empty string (clears field)."""
         from casare_rpa.nodes.interaction_nodes import TypeTextNode
 
@@ -284,7 +284,7 @@ class TestSelectDropdownNode:
     """Tests for SelectDropdownNode - dropdown selection."""
 
     @pytest.mark.asyncio
-    async def test_select_by_value(self, execution_context, mock_page):
+    async def test_select_by_value(self, execution_context, mock_page) -> None:
         """Test select option by value."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -300,7 +300,7 @@ class TestSelectDropdownNode:
         mock_page.select_option.assert_called()
 
     @pytest.mark.asyncio
-    async def test_select_by_label(self, execution_context, mock_page):
+    async def test_select_by_label(self, execution_context, mock_page) -> None:
         """Test select option by label."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -323,7 +323,7 @@ class TestSelectDropdownNode:
         assert "label" in call_kwargs
 
     @pytest.mark.asyncio
-    async def test_select_by_index(self, execution_context, mock_page):
+    async def test_select_by_index(self, execution_context, mock_page) -> None:
         """Test select option by index."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -346,7 +346,7 @@ class TestSelectDropdownNode:
         assert "index" in call_kwargs
 
     @pytest.mark.asyncio
-    async def test_select_no_page(self, execution_context_no_page):
+    async def test_select_no_page(self, execution_context_no_page) -> None:
         """Test select fails without active page."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -358,7 +358,7 @@ class TestSelectDropdownNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_select_no_selector(self, execution_context, mock_page):
+    async def test_select_no_selector(self, execution_context, mock_page) -> None:
         """Test select fails without selector."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -371,7 +371,7 @@ class TestSelectDropdownNode:
         assert "selector" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_select_no_value(self, execution_context, mock_page):
+    async def test_select_no_value(self, execution_context, mock_page) -> None:
         """Test select fails without value."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
@@ -384,7 +384,7 @@ class TestSelectDropdownNode:
         assert "value" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_select_element_not_found(self, execution_context, mock_page):
+    async def test_select_element_not_found(self, execution_context, mock_page) -> None:
         """Test select fails when element not found."""
         from casare_rpa.nodes.interaction_nodes import SelectDropdownNode
 
