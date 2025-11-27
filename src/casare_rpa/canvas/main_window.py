@@ -110,12 +110,6 @@ class MainWindow(QMainWindow):
         # Properties panel (right dock for selected node properties)
         self._properties_panel: Optional['PropertiesPanel'] = None
 
-        # Project panel (left dock for project/scenario management)
-        self._project_panel: Optional['ProjectPanelDock'] = None
-
-        # Breadcrumb navigation bar
-        self._breadcrumb_bar: Optional['BreadcrumbBar'] = None
-
         # Command palette
         self._command_palette: Optional['CommandPalette'] = None
 
@@ -124,9 +118,7 @@ class MainWindow(QMainWindow):
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
-        self._create_breadcrumb_bar()
         self._create_status_bar()
-        self._create_project_panel()
         self._create_bottom_panel()
         self._create_variable_inspector_dock()
         self._create_properties_panel()
@@ -319,15 +311,8 @@ class MainWindow(QMainWindow):
         self.action_toggle_navigation.setShortcut(QKeySequence("Ctrl+Shift+N"))
         self.action_toggle_navigation.setCheckable(True)
         self.action_toggle_navigation.setChecked(False)  # Hidden by default
-        self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation breadcrumb and drop zone")
+        self.action_toggle_navigation.setStatusTip("Show/hide snippet navigation drop zone")
         self.action_toggle_navigation.triggered.connect(self._on_toggle_navigation)
-
-        self.action_toggle_project_panel = QAction("&Project Panel", self)
-        self.action_toggle_project_panel.setShortcut(QKeySequence("Ctrl+Shift+P"))
-        self.action_toggle_project_panel.setCheckable(True)
-        self.action_toggle_project_panel.setChecked(False)  # Hidden by default
-        self.action_toggle_project_panel.setStatusTip("Show/hide project panel (Projects, Scenarios, Variables)")
-        self.action_toggle_project_panel.triggered.connect(self._on_toggle_project_panel)
 
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
@@ -527,7 +512,6 @@ class MainWindow(QMainWindow):
 
         # Panels submenu
         panels_menu = view_menu.addMenu("&Panels")
-        panels_menu.addAction(self.action_toggle_project_panel)
         panels_menu.addAction(self.action_toggle_bottom_panel)
         panels_menu.addAction(self.action_toggle_variable_inspector)
         panels_menu.addAction(self.action_toggle_navigation)
@@ -622,66 +606,6 @@ class MainWindow(QMainWindow):
 
         self.addToolBar(toolbar)
         self._main_toolbar = toolbar
-
-    def _create_breadcrumb_bar(self) -> None:
-        """Create the breadcrumb navigation bar below the toolbar."""
-        from .toolbar.breadcrumb_bar import BreadcrumbBar
-
-        self._breadcrumb_bar = BreadcrumbBar(self)
-
-        # Create a toolbar to hold the breadcrumb bar
-        breadcrumb_toolbar = QToolBar("Breadcrumb")
-        breadcrumb_toolbar.setObjectName("BreadcrumbToolbar")
-        breadcrumb_toolbar.setMovable(False)
-        breadcrumb_toolbar.setFloatable(False)
-        breadcrumb_toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
-
-        # Add breadcrumb widget
-        breadcrumb_toolbar.addWidget(self._breadcrumb_bar)
-
-        # Style to remove toolbar chrome
-        breadcrumb_toolbar.setStyleSheet("""
-            QToolBar {
-                background: #2b2b2b;
-                border: none;
-                padding: 0;
-                margin: 0;
-            }
-        """)
-
-        # Add below main toolbar
-        self.addToolBarBreak()
-        self.addToolBar(breadcrumb_toolbar)
-
-        # Connect signals
-        self._breadcrumb_bar.workflow_clicked.connect(self._on_breadcrumb_workflow_clicked)
-        self._breadcrumb_bar.node_clicked.connect(self._on_breadcrumb_node_clicked)
-
-        logger.debug("Breadcrumb bar created")
-
-    def _on_breadcrumb_workflow_clicked(self) -> None:
-        """Handle workflow breadcrumb click - center view on all nodes."""
-        if self._central_widget and hasattr(self._central_widget, 'center_on_nodes'):
-            self._central_widget.center_on_nodes()
-
-    def _on_breadcrumb_node_clicked(self, node_id: str) -> None:
-        """Handle node breadcrumb click - select and center on node."""
-        self._select_node_by_id(node_id)
-
-    def get_breadcrumb_bar(self) -> Optional['BreadcrumbBar']:
-        """Get the breadcrumb navigation bar."""
-        return self._breadcrumb_bar
-
-    def update_breadcrumb_node(self, node_name: Optional[str], node_id: Optional[str] = None) -> None:
-        """
-        Update the breadcrumb bar with selected node info.
-
-        Args:
-            node_name: Name of selected node, or None to clear
-            node_id: ID of selected node
-        """
-        if self._breadcrumb_bar:
-            self._breadcrumb_bar.set_selected_node(node_name, node_id)
 
     def _create_status_bar(self) -> None:
         """Create enhanced status bar with zoom, node count, and quick toggles."""
@@ -870,7 +794,6 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_zoom_out, "View")
         self._command_palette.register_action(self.action_zoom_reset, "View")
         self._command_palette.register_action(self.action_fit_view, "View")
-        self._command_palette.register_action(self.action_toggle_project_panel, "View")
         self._command_palette.register_action(self.action_toggle_bottom_panel, "View")
         self._command_palette.register_action(self.action_toggle_minimap, "View")
 
@@ -896,34 +819,6 @@ class MainWindow(QMainWindow):
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(500)  # 500ms debounce
         self._validation_timer.timeout.connect(self._do_deferred_validation)
-
-    def _create_project_panel(self) -> None:
-        """Create the project panel dock (left side)."""
-        from .project_panel import ProjectPanelDock
-
-        self._project_panel = ProjectPanelDock(self)
-
-        # Add to main window (left dock area)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._project_panel)
-
-        # Connect dock state changes to auto-save
-        self._project_panel.dockLocationChanged.connect(self._schedule_ui_state_save)
-        self._project_panel.visibilityChanged.connect(self._schedule_ui_state_save)
-        self._project_panel.topLevelChanged.connect(self._schedule_ui_state_save)
-
-        # Initially hidden (user can show via View menu or Ctrl+Shift+P)
-        self._project_panel.hide()
-        self.action_toggle_project_panel.setChecked(False)
-
-        logger.info("Project panel dock created")
-
-    def _on_toggle_project_panel(self, checked: bool) -> None:
-        """Handle toggle project panel action."""
-        if self._project_panel:
-            if checked:
-                self._project_panel.show()
-            else:
-                self._project_panel.hide()
 
     def _create_bottom_panel(self) -> None:
         """Create the unified bottom panel with Variables, Output, Log, Validation tabs."""
@@ -992,9 +887,6 @@ class MainWindow(QMainWindow):
 
     def _on_toggle_navigation(self, checked: bool) -> None:
         """Handle toggle snippet navigation UI action."""
-        if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
-            self._central_widget._snippet_breadcrumb.setVisible(checked)
-
         # Note: Drop zone visibility is controlled by navigation depth
         # It will auto-show/hide based on whether we're inside a snippet
 
@@ -1128,27 +1020,6 @@ class MainWindow(QMainWindow):
         """
         logger.debug("Trigger requested workflow run")
         self.trigger_workflow_requested.emit()
-
-    def get_project_panel(self) -> Optional['ProjectPanelDock']:
-        """
-        Get the project panel dock.
-
-        Returns:
-            ProjectPanelDock instance or None
-        """
-        return self._project_panel
-
-    def show_project_panel(self) -> None:
-        """Show the project panel."""
-        if self._project_panel:
-            self._project_panel.show()
-            self.action_toggle_project_panel.setChecked(True)
-
-    def hide_project_panel(self) -> None:
-        """Hide the project panel."""
-        if self._project_panel:
-            self._project_panel.hide()
-            self.action_toggle_project_panel.setChecked(False)
 
     def show_bottom_panel(self) -> None:
         """Show the bottom panel."""
@@ -1534,10 +1405,6 @@ class MainWindow(QMainWindow):
         self._is_modified = modified
         self._update_window_title()
 
-        # Update breadcrumb bar
-        if self._breadcrumb_bar:
-            self._breadcrumb_bar.set_modified(modified)
-
         # Trigger real-time validation when workflow is modified
         if modified:
             self.on_workflow_changed()
@@ -1561,10 +1428,6 @@ class MainWindow(QMainWindow):
         self._current_file = file_path
         self._update_window_title()
 
-        # Update breadcrumb bar
-        if self._breadcrumb_bar:
-            self._breadcrumb_bar.set_workflow_file(file_path)
-    
     def get_current_file(self) -> Optional[Path]:
         """
         Get the current workflow file path.
@@ -2640,9 +2503,6 @@ class MainWindow(QMainWindow):
             self._settings.setValue("windowState", self.saveState())
 
             # Save dock visibility states
-            if self._project_panel:
-                self._settings.setValue("projectPanelVisible", self._project_panel.isVisible())
-
             if self._bottom_panel:
                 self._settings.setValue("bottomPanelVisible", self._bottom_panel.isVisible())
                 self._settings.setValue("bottomPanelTab", self._bottom_panel._tab_widget.currentIndex())
@@ -2658,9 +2518,6 @@ class MainWindow(QMainWindow):
 
             if hasattr(self, '_minimap') and self._minimap:
                 self._settings.setValue("minimapVisible", self._minimap.isVisible())
-
-            if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
-                self._settings.setValue("navigationVisible", self._central_widget._snippet_breadcrumb.isVisible())
 
             self._settings.sync()
             logger.debug("UI state saved")
@@ -2711,11 +2568,6 @@ class MainWindow(QMainWindow):
                     self.reset_ui_state()
                     return
 
-            # Restore project panel visibility
-            if self._project_panel:
-                visible = self._settings.value("projectPanelVisible", True, type=bool)
-                self._project_panel.setVisible(visible)
-
             # Restore dock visibility states
             if self._bottom_panel:
                 visible = self._settings.value("bottomPanelVisible", True, type=bool)
@@ -2746,12 +2598,6 @@ class MainWindow(QMainWindow):
                 self._minimap.setVisible(visible)
                 if hasattr(self, 'action_toggle_minimap'):
                     self.action_toggle_minimap.setChecked(visible)
-
-            if hasattr(self, '_central_widget') and hasattr(self._central_widget, '_snippet_breadcrumb'):
-                visible = self._settings.value("navigationVisible", False, type=bool)
-                self._central_widget._snippet_breadcrumb.setVisible(visible)
-                if hasattr(self, 'action_toggle_navigation'):
-                    self.action_toggle_navigation.setChecked(visible)
 
             logger.debug("UI state restored from previous session")
         except Exception as e:

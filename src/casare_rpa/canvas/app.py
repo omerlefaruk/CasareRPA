@@ -245,16 +245,6 @@ class CasareRPAApp:
         quick_actions.duplicate_requested.connect(self._on_duplicate_nodes)
         quick_actions.delete_requested.connect(self._on_delete_selected)
 
-        # Project panel connections
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.project_opened.connect(self._on_project_opened)
-            project_panel.project_closed.connect(self._on_project_closed)
-            project_panel.scenario_opened.connect(self._on_scenario_opened)
-            project_panel.scenario_closed.connect(self._on_scenario_closed)
-            project_panel.variable_edit_requested.connect(self._on_variable_edit_requested)
-            project_panel.credential_edit_requested.connect(self._on_credential_edit_requested)
-
     def _setup_autosave(self) -> None:
         """Setup autosave timer based on settings."""
         from PySide6.QtCore import QTimer
@@ -375,30 +365,18 @@ class CasareRPAApp:
         logger.debug(f"Duplicated {len(pasted_nodes)} nodes with center at ({scene_pos.x()}, {scene_pos.y()})")
 
     def _on_node_selected_for_properties(self, node) -> None:
-        """Update properties panel and breadcrumb when a node is selected."""
+        """Update properties panel when a node is selected."""
         self._main_window.update_properties_panel(node)
-        # Update breadcrumb
-        if node:
-            node_name = node.name() if hasattr(node, 'name') else "Node"
-            node_id = node.get_property("node_id") if hasattr(node, 'get_property') else None
-            self._main_window.update_breadcrumb_node(node_name, node_id)
-        else:
-            self._main_window.update_breadcrumb_node(None)
 
     def _on_selection_changed_for_properties(self, selected, deselected) -> None:
-        """Handle selection changes for properties panel and breadcrumb."""
+        """Handle selection changes for properties panel."""
         graph = self._node_graph.graph
         selected_nodes = graph.selected_nodes()
         if selected_nodes:
             node = selected_nodes[0]
             self._main_window.update_properties_panel(node)
-            # Update breadcrumb
-            node_name = node.name() if hasattr(node, 'name') else "Node"
-            node_id = node.get_property("node_id") if hasattr(node, 'get_property') else None
-            self._main_window.update_breadcrumb_node(node_name, node_id)
         else:
             self._main_window.update_properties_panel(None)
-            self._main_window.update_breadcrumb_node(None)
 
     def _on_delete_selected(self) -> None:
         """
@@ -1312,21 +1290,10 @@ class CasareRPAApp:
         logger.info(f"Project opened: {project.name} ({project.id})")
         self._main_window.statusBar().showMessage(f"Project opened: {project.name}", 3000)
 
-        # Refresh the project panel tree
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
-
     def _on_project_closed(self) -> None:
         """Handle project closed event."""
         logger.info("Project closed")
         self._main_window.statusBar().showMessage("Project closed", 3000)
-
-        # Clear canvas if user confirms
-        # For now, just refresh the tree
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
 
     def _on_scenario_opened(self, project: Project, scenario: Scenario) -> None:
         """
@@ -1363,11 +1330,6 @@ class CasareRPAApp:
                 f"Opened empty scenario: {scenario.name}", 3000
             )
 
-        # Refresh tree to show current scenario
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
-
         # Load triggers into bottom panel
         bottom_panel = self._main_window.get_bottom_panel()
         if bottom_panel:
@@ -1385,11 +1347,6 @@ class CasareRPAApp:
         manager.close_scenario()
 
         self._main_window.statusBar().showMessage("Scenario closed", 3000)
-
-        # Refresh tree
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
 
         # Clear triggers from bottom panel
         bottom_panel = self._main_window.get_bottom_panel()
@@ -1477,14 +1434,9 @@ class CasareRPAApp:
         dialog = VariableEditorDialog(scope=scope, parent=self._main_window)
         dialog.exec()
 
-        # Refresh project panel after editing
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
-
     def _on_credential_edit_requested(self, scope: str) -> None:
         """
-        Handle credential edit request from project panel.
+        Handle credential edit request.
 
         Args:
             scope: "global" or "project"
@@ -1505,11 +1457,6 @@ class CasareRPAApp:
 
         dialog = CredentialEditorDialog(scope=scope, parent=self._main_window)
         dialog.exec()
-
-        # Refresh project panel after editing
-        project_panel = self._main_window.get_project_panel()
-        if project_panel:
-            project_panel.refresh()
 
     def _ensure_all_nodes_have_casare_nodes(self) -> bool:
         """

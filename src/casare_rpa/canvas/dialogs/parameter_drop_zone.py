@@ -15,7 +15,7 @@ class ParameterDropZone(QWidget):
     Drop zone for creating snippet parameters from node properties.
 
     Usage:
-    - When inside a snippet, this widget appears below the breadcrumb
+    - When inside a snippet, this widget appears at the top of the canvas
     - Drag a property from any node's properties panel
     - Drop it here to expose as a snippet parameter
 

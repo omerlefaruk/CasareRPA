@@ -11,11 +11,10 @@ The canvas package is organized into subpackages:
 - scheduling/: Scheduling UI (ScheduleDialog, ScheduleStorage)
 - desktop/: Desktop-specific UI (RecordingPanel)
 - execution/: Execution UI (TriggerRunner, PerformanceDashboard)
-- toolbar/: Toolbar components (BreadcrumbBar, HotkeyManager)
+- toolbar/: Toolbar components (HotkeyManager)
 - workflow/: Workflow operations (WorkflowImport, RecentFiles)
 - panels/: Dockable panels (BottomPanel, PropertiesPanel, DebugToolbar)
 - dialogs/: Dialog windows (Preferences, Templates, etc.)
-- project_panel/: Project management UI
 - visual_nodes/: Visual node definitions
 """
 
