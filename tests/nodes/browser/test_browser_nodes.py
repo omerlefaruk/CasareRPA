@@ -13,7 +13,7 @@ class TestLaunchBrowserNode:
     """Tests for LaunchBrowserNode - browser launch and initial navigation."""
 
     @pytest.mark.asyncio
-    async def test_launch_browser_success(self, execution_context):
+    async def test_launch_browser_success(self, execution_context) -> None:
         """Test successful browser launch with default config."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -46,7 +46,7 @@ class TestLaunchBrowserNode:
             assert result["data"]["browser_type"] == "chromium"
 
     @pytest.mark.asyncio
-    async def test_launch_browser_with_url(self, execution_context):
+    async def test_launch_browser_with_url(self, execution_context) -> None:
         """Test browser launch with initial URL navigation."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -82,7 +82,7 @@ class TestLaunchBrowserNode:
             mock_page.goto.assert_called()
 
     @pytest.mark.asyncio
-    async def test_launch_browser_firefox(self, execution_context):
+    async def test_launch_browser_firefox(self, execution_context) -> None:
         """Test launching Firefox browser."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -114,7 +114,7 @@ class TestLaunchBrowserNode:
             mock_firefox.launch.assert_called()
 
     @pytest.mark.asyncio
-    async def test_launch_browser_webkit(self, execution_context):
+    async def test_launch_browser_webkit(self, execution_context) -> None:
         """Test launching WebKit browser."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -145,7 +145,7 @@ class TestLaunchBrowserNode:
             assert result["data"]["browser_type"] == "webkit"
 
     @pytest.mark.asyncio
-    async def test_launch_browser_failure(self, execution_context):
+    async def test_launch_browser_failure(self, execution_context) -> None:
         """Test browser launch failure handling."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -168,7 +168,7 @@ class TestLaunchBrowserNode:
             assert "error" in result
             assert result["next_nodes"] == []
 
-    def test_validate_config_valid_browser(self):
+    def test_validate_config_valid_browser(self) -> None:
         """Test config validation with valid browser type."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -178,7 +178,7 @@ class TestLaunchBrowserNode:
         assert is_valid is True
         assert error == ""
 
-    def test_validate_config_invalid_browser(self):
+    def test_validate_config_invalid_browser(self) -> None:
         """Test config validation with invalid browser type."""
         from casare_rpa.nodes.browser_nodes import LaunchBrowserNode
 
@@ -194,7 +194,7 @@ class TestCloseBrowserNode:
     """Tests for CloseBrowserNode - browser cleanup."""
 
     @pytest.mark.asyncio
-    async def test_close_browser_success(self, execution_context, mock_browser):
+    async def test_close_browser_success(self, execution_context, mock_browser) -> None:
         """Test successful browser close."""
         from casare_rpa.nodes.browser_nodes import CloseBrowserNode
 
@@ -208,7 +208,9 @@ class TestCloseBrowserNode:
         mock_browser.close.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_close_browser_from_input(self, execution_context, mock_browser):
+    async def test_close_browser_from_input(
+        self, execution_context, mock_browser
+    ) -> None:
         """Test closing browser from input port."""
         from casare_rpa.nodes.browser_nodes import CloseBrowserNode
 
@@ -222,7 +224,7 @@ class TestCloseBrowserNode:
         mock_browser.close.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_close_browser_no_browser(self, execution_context_no_browser):
+    async def test_close_browser_no_browser(self, execution_context_no_browser) -> None:
         """Test close when no browser exists."""
         from casare_rpa.nodes.browser_nodes import CloseBrowserNode
 
@@ -236,7 +238,9 @@ class TestCloseBrowserNode:
         assert "no browser" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_close_browser_clears_context(self, execution_context, mock_browser):
+    async def test_close_browser_clears_context(
+        self, execution_context, mock_browser
+    ) -> None:
         """Test that close browser clears context state."""
         from casare_rpa.nodes.browser_nodes import CloseBrowserNode
 
@@ -254,7 +258,7 @@ class TestNewTabNode:
     @pytest.mark.asyncio
     async def test_new_tab_success(
         self, execution_context, mock_browser, mock_browser_context, mock_page
-    ):
+    ) -> None:
         """Test successful new tab creation."""
         from casare_rpa.nodes.browser_nodes import NewTabNode
 
@@ -272,7 +276,7 @@ class TestNewTabNode:
     @pytest.mark.asyncio
     async def test_new_tab_with_url(
         self, execution_context, mock_browser, mock_browser_context, mock_page
-    ):
+    ) -> None:
         """Test new tab with URL navigation."""
         from casare_rpa.nodes.browser_nodes import NewTabNode
 
@@ -295,7 +299,7 @@ class TestNewTabNode:
         mock_page.goto.assert_called()
 
     @pytest.mark.asyncio
-    async def test_new_tab_no_browser(self, execution_context_no_browser):
+    async def test_new_tab_no_browser(self, execution_context_no_browser) -> None:
         """Test new tab when no browser exists."""
         from casare_rpa.nodes.browser_nodes import NewTabNode
 
@@ -305,7 +309,7 @@ class TestNewTabNode:
         assert result["success"] is False
         assert "error" in result
 
-    def test_validate_config_empty_tab_name(self):
+    def test_validate_config_empty_tab_name(self) -> None:
         """Test config validation with empty tab name."""
         from casare_rpa.nodes.browser_nodes import NewTabNode
 
@@ -321,7 +325,7 @@ class TestGetAllImagesNode:
     """Tests for GetAllImagesNode - image extraction from page."""
 
     @pytest.mark.asyncio
-    async def test_get_all_images_success(self, execution_context, mock_page):
+    async def test_get_all_images_success(self, execution_context, mock_page) -> None:
         """Test successful image extraction."""
         from casare_rpa.nodes.browser_nodes import GetAllImagesNode
 
@@ -353,7 +357,9 @@ class TestGetAllImagesNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_get_all_images_with_size_filter(self, execution_context, mock_page):
+    async def test_get_all_images_with_size_filter(
+        self, execution_context, mock_page
+    ) -> None:
         """Test image extraction with minimum size filter."""
         from casare_rpa.nodes.browser_nodes import GetAllImagesNode
 
@@ -385,7 +391,9 @@ class TestGetAllImagesNode:
         assert result["data"]["count"] == 1
 
     @pytest.mark.asyncio
-    async def test_get_all_images_with_type_filter(self, execution_context, mock_page):
+    async def test_get_all_images_with_type_filter(
+        self, execution_context, mock_page
+    ) -> None:
         """Test image extraction with file type filter."""
         from casare_rpa.nodes.browser_nodes import GetAllImagesNode
 
@@ -424,7 +432,7 @@ class TestGetAllImagesNode:
         assert result["data"]["count"] == 2
 
     @pytest.mark.asyncio
-    async def test_get_all_images_no_page(self, execution_context_no_page):
+    async def test_get_all_images_no_page(self, execution_context_no_page) -> None:
         """Test image extraction with no active page."""
         from casare_rpa.nodes.browser_nodes import GetAllImagesNode
 
@@ -439,7 +447,7 @@ class TestDownloadFileNode:
     """Tests for DownloadFileNode - file download functionality."""
 
     @pytest.mark.asyncio
-    async def test_download_file_missing_url(self, execution_context):
+    async def test_download_file_missing_url(self, execution_context) -> None:
         """Test download fails without URL."""
         from casare_rpa.nodes.browser_nodes import DownloadFileNode
 
@@ -451,7 +459,9 @@ class TestDownloadFileNode:
         assert "url" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_download_file_with_browser(self, execution_context, mock_page):
+    async def test_download_file_with_browser(
+        self, execution_context, mock_page
+    ) -> None:
         """Test download using browser context."""
         from casare_rpa.nodes.browser_nodes import DownloadFileNode
         import tempfile

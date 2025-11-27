@@ -24,7 +24,7 @@ from casare_rpa.core.validation import (
 
 
 @pytest.fixture
-def small_workflow():
+def small_workflow() -> None:
     """Workflow with 10 nodes."""
     nodes = {}
     connections = []
@@ -47,7 +47,7 @@ def small_workflow():
 
 
 @pytest.fixture
-def medium_workflow():
+def medium_workflow() -> None:
     """Workflow with 100 nodes."""
     nodes = {}
     connections = []
@@ -70,7 +70,7 @@ def medium_workflow():
 
 
 @pytest.fixture
-def large_workflow():
+def large_workflow() -> None:
     """Workflow with 1000 nodes."""
     nodes = {}
     connections = []
@@ -93,7 +93,7 @@ def large_workflow():
 
 
 @pytest.fixture
-def dense_workflow():
+def dense_workflow() -> None:
     """Workflow with 50 nodes and dense connections (many-to-many)."""
     nodes = {}
     connections = []
@@ -128,7 +128,7 @@ def dense_workflow():
 class TestValidationTiming:
     """Test validation execution time."""
 
-    def test_small_workflow_timing(self, small_workflow, benchmark):
+    def test_small_workflow_timing(self, small_workflow, benchmark) -> None:
         """Benchmark validation of small workflow (10 nodes)."""
 
         def validate():
@@ -137,7 +137,7 @@ class TestValidationTiming:
         result = benchmark(validate)
         assert result.is_valid is True
 
-    def test_medium_workflow_timing(self, medium_workflow, benchmark):
+    def test_medium_workflow_timing(self, medium_workflow, benchmark) -> None:
         """Benchmark validation of medium workflow (100 nodes)."""
 
         def validate():
@@ -146,7 +146,7 @@ class TestValidationTiming:
         result = benchmark(validate)
         assert result.is_valid is True
 
-    def test_large_workflow_timing(self, large_workflow, benchmark):
+    def test_large_workflow_timing(self, large_workflow, benchmark) -> None:
         """Benchmark validation of large workflow (1000 nodes)."""
 
         def validate():
@@ -155,7 +155,7 @@ class TestValidationTiming:
         result = benchmark(validate)
         assert result.is_valid is True
 
-    def test_dense_workflow_timing(self, dense_workflow, benchmark):
+    def test_dense_workflow_timing(self, dense_workflow, benchmark) -> None:
         """Benchmark validation of densely connected workflow."""
 
         def validate():
@@ -166,7 +166,7 @@ class TestValidationTiming:
 
     def test_validation_scales_linearly(
         self, small_workflow, medium_workflow, large_workflow
-    ):
+    ) -> None:
         """Test that validation time scales linearly with workflow size."""
         # Validate and time each workflow
         start = time.time()
@@ -204,7 +204,7 @@ class TestValidationTiming:
 class TestOperationBenchmarks:
     """Benchmark specific validation operations."""
 
-    def test_node_validation_timing(self, benchmark):
+    def test_node_validation_timing(self, benchmark) -> None:
         """Benchmark individual node validation."""
         node_data = {
             "node_id": "test_node",
@@ -219,7 +219,7 @@ class TestOperationBenchmarks:
         result = benchmark(validate)
         assert result.is_valid is True
 
-    def test_connection_validation_timing(self, benchmark):
+    def test_connection_validation_timing(self, benchmark) -> None:
         """Benchmark connection validation."""
         connections = [
             {
@@ -238,9 +238,11 @@ class TestOperationBenchmarks:
         result = benchmark(validate)
         assert result.is_valid is True
 
-    def test_circular_dependency_detection_timing(self, benchmark):
+    def test_circular_dependency_detection_timing(self, benchmark) -> None:
         """Benchmark circular dependency detection."""
-        nodes = {f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)}
+        nodes = {
+            f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)
+        }
 
         # Create circular chain
         connections = [
@@ -259,9 +261,11 @@ class TestOperationBenchmarks:
         result = benchmark(detect)
         assert result is True  # Should detect the circle
 
-    def test_entry_point_detection_timing(self, benchmark):
+    def test_entry_point_detection_timing(self, benchmark) -> None:
         """Benchmark entry point and reachability detection."""
-        nodes = {f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)}
+        nodes = {
+            f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)
+        }
 
         connections = [
             {
@@ -289,7 +293,7 @@ class TestOperationBenchmarks:
 class TestRepeatedValidation:
     """Test performance of repeated validations."""
 
-    def test_repeated_validation_no_slowdown(self, small_workflow):
+    def test_repeated_validation_no_slowdown(self, small_workflow) -> None:
         """Test that repeated validations don't slow down."""
         times = []
 
@@ -308,7 +312,7 @@ class TestRepeatedValidation:
         # Allow 2x variance
         assert avg_last_10 < avg_first_10 * 2
 
-    def test_validation_caching_behavior(self, small_workflow):
+    def test_validation_caching_behavior(self, small_workflow) -> None:
         """Test that validation doesn't improperly cache results."""
         # First validation
         result1 = validate_workflow(small_workflow)
@@ -338,10 +342,12 @@ class TestRepeatedValidation:
 class TestWorstCaseScenarios:
     """Test performance in worst-case scenarios."""
 
-    def test_worst_case_circular_detection(self):
+    def test_worst_case_circular_detection(self) -> None:
         """Test circular detection with worst-case topology."""
         # Create a complex graph that takes longest to detect cycle
-        nodes = {f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)}
+        nodes = {
+            f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"} for i in range(100)
+        }
 
         # Create complex interconnected structure with cycle at the end
         connections = []
@@ -371,7 +377,7 @@ class TestWorstCaseScenarios:
         assert result is True  # Should detect cycle
         assert elapsed < 1.0  # Should complete within 1 second
 
-    def test_worst_case_unreachable_nodes(self):
+    def test_worst_case_unreachable_nodes(self) -> None:
         """Test reachability detection with many unreachable nodes."""
         # Create workflow with one connected component and many isolated nodes
         nodes = {}
@@ -414,7 +420,7 @@ class TestWorstCaseScenarios:
         assert elapsed < 5.0  # 5 seconds for 1000 nodes
         assert any(issue.code == "UNREACHABLE_NODES" for issue in result.warnings)
 
-    def test_worst_case_all_errors(self):
+    def test_worst_case_all_errors(self) -> None:
         """Test validation with workflow that has maximum errors."""
         # Create workflow with many different types of errors
         nodes = {}
@@ -464,7 +470,7 @@ class TestWorstCaseScenarios:
 class TestMemoryUsage:
     """Test memory usage of validation operations."""
 
-    def test_large_workflow_memory_usage(self, large_workflow):
+    def test_large_workflow_memory_usage(self, large_workflow) -> None:
         """Test that large workflow validation doesn't use excessive memory."""
         # Get memory usage before
         import gc
@@ -480,7 +486,7 @@ class TestMemoryUsage:
 
         # If we got here without MemoryError, test passes
 
-    def test_validation_result_memory_cleanup(self):
+    def test_validation_result_memory_cleanup(self) -> None:
         """Test that ValidationResult objects are properly cleaned up."""
         import gc
 
@@ -514,7 +520,7 @@ class TestMemoryUsage:
 class TestConcurrentValidation:
     """Test validation under concurrent access."""
 
-    def test_concurrent_validation_different_workflows(self, small_workflow):
+    def test_concurrent_validation_different_workflows(self, small_workflow) -> None:
         """Test concurrent validation of different workflows."""
         import threading
 
@@ -547,7 +553,7 @@ class TestConcurrentValidation:
         assert len(errors) == 0
         assert len(results) == 20
 
-    def test_concurrent_validation_same_workflow(self, medium_workflow):
+    def test_concurrent_validation_same_workflow(self, medium_workflow) -> None:
         """Test concurrent validation of the same workflow."""
         import threading
 
@@ -586,7 +592,7 @@ class TestScalability:
     """Test how validation scales with different parameters."""
 
     @pytest.mark.parametrize("node_count", [10, 50, 100, 500])
-    def test_validation_scales_with_node_count(self, node_count):
+    def test_validation_scales_with_node_count(self, node_count) -> None:
         """Test validation with varying node counts."""
         nodes = {
             f"n{i}": {"node_id": f"n{i}", "node_type": "LogNode"}
@@ -603,7 +609,7 @@ class TestScalability:
         assert elapsed < (node_count / 100) * 0.1
 
     @pytest.mark.parametrize("connection_count", [10, 50, 100, 500])
-    def test_validation_scales_with_connection_count(self, connection_count):
+    def test_validation_scales_with_connection_count(self, connection_count) -> None:
         """Test validation with varying connection counts."""
         # Create enough nodes
         node_count = connection_count + 1

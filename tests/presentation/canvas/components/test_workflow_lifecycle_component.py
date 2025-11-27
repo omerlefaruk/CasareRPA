@@ -20,7 +20,7 @@ from casare_rpa.canvas.components.workflow_lifecycle_component import (
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow."""
     mock = Mock()
     mock.workflow_new = Mock()
@@ -53,7 +53,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def mock_node_graph():
+def mock_node_graph() -> None:
     """Create a mock node graph widget."""
     mock = Mock()
     mock.graph = Mock()
@@ -66,7 +66,7 @@ def mock_node_graph():
 
 
 @pytest.fixture
-def workflow_component(mock_main_window, mock_node_graph):
+def workflow_component(mock_main_window, mock_node_graph) -> None:
     """Create a WorkflowLifecycleComponent instance."""
     component = WorkflowLifecycleComponent(mock_main_window)
     component._node_graph = mock_node_graph
@@ -77,7 +77,7 @@ def workflow_component(mock_main_window, mock_node_graph):
 class TestWorkflowLifecycleComponentInitialization:
     """Tests for component initialization."""
 
-    def test_initialization(self, mock_main_window, mock_node_graph):
+    def test_initialization(self, mock_main_window, mock_node_graph) -> None:
         """Test component initializes."""
         component = WorkflowLifecycleComponent(mock_main_window)
         component._node_graph = mock_node_graph
@@ -88,7 +88,7 @@ class TestWorkflowLifecycleComponentInitialization:
         # Verify signals were connected
         mock_main_window.workflow_new.connect.assert_called_once()
 
-    def test_cleanup(self, workflow_component):
+    def test_cleanup(self, workflow_component) -> None:
         """Test cleanup."""
         workflow_component.cleanup()
         # Should not raise errors
@@ -99,7 +99,7 @@ class TestNewWorkflow:
 
     def test_on_new_workflow(
         self, workflow_component, mock_main_window, mock_node_graph
-    ):
+    ) -> None:
         """Test creating new workflow."""
         workflow_component.on_new_workflow()
 
@@ -107,7 +107,7 @@ class TestNewWorkflow:
         mock_main_window.set_modified.assert_called_with(False)
 
     @patch("asyncio.create_task")
-    def test_on_new_from_template(self, mock_create_task, workflow_component):
+    def test_on_new_from_template(self, mock_create_task, workflow_component) -> None:
         """Test creating workflow from template."""
         mock_template = Mock()
         mock_template.name = "Test Template"
@@ -124,7 +124,7 @@ class TestOpenWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_open_workflow_success(
         self, mock_schema_class, workflow_component, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test opening workflow successfully."""
         test_file = tmp_path / "test.json"
         test_file.write_text('{"nodes": {}, "connections": []}')
@@ -141,7 +141,7 @@ class TestOpenWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_open_workflow_error(
         self, mock_schema_class, workflow_component, mock_main_window
-    ):
+    ) -> None:
         """Test opening workflow with error."""
         mock_schema_class.load_from_file.side_effect = Exception("Load error")
 
@@ -157,7 +157,7 @@ class TestSaveWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_save_workflow_success(
         self, mock_schema_class, workflow_component, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test saving workflow successfully."""
         test_file = tmp_path / "save.json"
         mock_main_window.get_current_file.return_value = test_file
@@ -178,7 +178,7 @@ class TestSaveWorkflow:
 
     def test_on_save_workflow_error(
         self, workflow_component, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test saving workflow with error."""
         test_file = tmp_path / "error.json"
         mock_main_window.get_current_file.return_value = test_file
@@ -200,7 +200,7 @@ class TestSaveAsWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_save_as_workflow(
         self, mock_schema_class, workflow_component, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test save as workflow."""
         test_file = tmp_path / "saveas.json"
         mock_workflow = Mock()
@@ -223,7 +223,7 @@ class TestImportWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_import_workflow(
         self, mock_schema_class, workflow_component, mock_main_window, tmp_path
-    ):
+    ) -> None:
         """Test importing workflow."""
         test_file = tmp_path / "import.json"
         test_file.write_text('{"nodes": {}, "connections": []}')
@@ -240,7 +240,7 @@ class TestImportWorkflow:
     @patch("casare_rpa.canvas.components.workflow_lifecycle_component.WorkflowSchema")
     def test_on_import_workflow_json(
         self, mock_schema_class, mock_orjson, workflow_component, mock_main_window
-    ):
+    ) -> None:
         """Test importing workflow from JSON string."""
         json_str = '{"nodes": {}, "connections": []}'
         mock_workflow = Mock()
@@ -258,7 +258,7 @@ class TestExportSelectedNodes:
 
     def test_on_export_selected_no_nodes(
         self, workflow_component, mock_main_window, mock_node_graph
-    ):
+    ) -> None:
         """Test export with no nodes selected."""
         mock_node_graph.graph.selected_nodes.return_value = []
 
@@ -276,7 +276,7 @@ class TestExportSelectedNodes:
         mock_main_window,
         mock_node_graph,
         tmp_path,
-    ):
+    ) -> None:
         """Test exporting selected nodes successfully."""
         mock_node1 = Mock()
         mock_node2 = Mock()
@@ -303,7 +303,7 @@ class TestPrivateMethods:
     )
     def test_load_workflow_to_graph(
         self, mock_get_class, mock_get_id, workflow_component, mock_node_graph
-    ):
+    ) -> None:
         """Test loading workflow to graph."""
         mock_get_id.return_value = "casare.nodes.StartNode"
         mock_get_class.return_value = Mock
@@ -335,7 +335,7 @@ class TestPrivateMethods:
         mock_node_graph.graph.clear_session.assert_called_once()
         mock_node_graph.graph.create_node.assert_called_once()
 
-    def test_create_workflow_from_graph(self, workflow_component):
+    def test_create_workflow_from_graph(self, workflow_component) -> None:
         """Test creating workflow from graph."""
         with patch(
             "casare_rpa.canvas.components.workflow_lifecycle_component.get_node_factory"
@@ -351,7 +351,7 @@ class TestPrivateMethods:
 
     def test_ensure_all_nodes_have_casare_nodes(
         self, workflow_component, mock_node_graph
-    ):
+    ) -> None:
         """Test ensuring all nodes have casare nodes."""
         mock_visual_node = Mock()
         mock_visual_node.get_casare_node.return_value = None

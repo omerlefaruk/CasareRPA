@@ -28,14 +28,14 @@ class TestEventBus:
         self.bus.clear_all_subscribers()
         EventBus.reset_instance()
 
-    def test_singleton_pattern(self):
+    def test_singleton_pattern(self) -> None:
         """Test that EventBus is a singleton."""
         bus1 = EventBus()
         bus2 = EventBus()
 
         assert bus1 is bus2
 
-    def test_subscribe_and_publish(self):
+    def test_subscribe_and_publish(self) -> None:
         """Test basic subscribe and publish."""
         received_events = []
 
@@ -50,7 +50,7 @@ class TestEventBus:
         assert len(received_events) == 1
         assert received_events[0] == event
 
-    def test_multiple_subscribers(self):
+    def test_multiple_subscribers(self) -> None:
         """Test multiple subscribers to same event."""
         call_count = [0]
 
@@ -68,7 +68,7 @@ class TestEventBus:
 
         assert call_count[0] == 11  # 1 + 10
 
-    def test_unsubscribe(self):
+    def test_unsubscribe(self) -> None:
         """Test unsubscribing from events."""
         received_events = []
 
@@ -93,7 +93,7 @@ class TestEventBus:
 
         assert len(received_events) == 1  # Still only 1
 
-    def test_subscribe_all(self):
+    def test_subscribe_all(self) -> None:
         """Test wildcard subscription (all events)."""
         received_events = []
 
@@ -109,7 +109,7 @@ class TestEventBus:
 
         assert len(received_events) == 3
 
-    def test_subscribe_filtered(self):
+    def test_subscribe_filtered(self) -> None:
         """Test filtered subscription."""
         received_events = []
 
@@ -129,7 +129,7 @@ class TestEventBus:
 
         assert len(received_events) == 2  # Only workflow events
 
-    def test_event_history(self):
+    def test_event_history(self) -> None:
         """Test event history tracking."""
         # Publish some events
         event1 = Event(type=EventType.WORKFLOW_NEW, source="Test")
@@ -148,7 +148,7 @@ class TestEventBus:
         assert history[1] == event2
         assert history[2] == event1
 
-    def test_event_history_filtering(self):
+    def test_event_history_filtering(self) -> None:
         """Test filtered event history."""
         # Publish events
         self.bus.publish(Event(type=EventType.WORKFLOW_NEW, source="Controller1"))
@@ -167,7 +167,7 @@ class TestEventBus:
         limited_history = self.bus.get_history(limit=2)
         assert len(limited_history) == 2
 
-    def test_clear_history(self):
+    def test_clear_history(self) -> None:
         """Test clearing event history."""
         self.bus.publish(Event(type=EventType.WORKFLOW_NEW, source="Test"))
         self.bus.publish(Event(type=EventType.NODE_ADDED, source="Test"))
@@ -178,8 +178,9 @@ class TestEventBus:
 
         assert len(self.bus.get_history()) == 0
 
-    def test_metrics(self):
+    def test_metrics(self) -> None:
         """Test performance metrics."""
+
         def handler(event: Event) -> None:
             pass
 
@@ -198,7 +199,7 @@ class TestEventBus:
         assert metrics["subscribers"] == 2
         assert "avg_handler_time" in metrics
 
-    def test_reset_metrics(self):
+    def test_reset_metrics(self) -> None:
         """Test resetting metrics."""
         self.bus.publish(Event(type=EventType.WORKFLOW_NEW, source="Test"))
 
@@ -210,7 +211,7 @@ class TestEventBus:
         metrics2 = self.bus.get_metrics()
         assert metrics2["events_published"] == 0
 
-    def test_error_handling(self):
+    def test_error_handling(self) -> None:
         """Test that handler errors are caught and logged."""
         received_events = []
 
@@ -233,7 +234,7 @@ class TestEventBus:
         metrics = self.bus.get_metrics()
         assert metrics["errors"] >= 1
 
-    def test_duplicate_subscription_prevention(self):
+    def test_duplicate_subscription_prevention(self) -> None:
         """Test that duplicate subscriptions are prevented."""
         call_count = [0]
 
@@ -250,7 +251,7 @@ class TestEventBus:
         # Handler should only be called once
         assert call_count[0] == 1
 
-    def test_enable_disable_history(self):
+    def test_enable_disable_history(self) -> None:
         """Test enabling/disabling history tracking."""
         # Disable history
         self.bus.enable_history(False)
@@ -266,8 +267,9 @@ class TestEventBus:
 
         assert len(self.bus.get_history()) == 1
 
-    def test_clear_all_subscribers(self):
+    def test_clear_all_subscribers(self) -> None:
         """Test clearing all subscribers."""
+
         def handler(event: Event) -> None:
             pass
 
@@ -284,7 +286,7 @@ class TestEventBus:
         assert metrics2["subscribers"] == 0
         assert metrics2["wildcard_subscribers"] == 0
 
-    def test_thread_safety(self):
+    def test_thread_safety(self) -> None:
         """Test basic thread safety (concurrent publishes)."""
         import threading
 
@@ -315,20 +317,21 @@ class TestEventBus:
         # Should have received all events
         assert received_count[0] == 500  # 5 threads * 100 events
 
-    def test_invalid_handler_type(self):
+    def test_invalid_handler_type(self) -> None:
         """Test that non-callable handlers raise TypeError."""
         with pytest.raises(TypeError):
             self.bus.subscribe(EventType.WORKFLOW_NEW, "not_callable")
 
-    def test_unsubscribe_nonexistent_handler(self):
+    def test_unsubscribe_nonexistent_handler(self) -> None:
         """Test unsubscribing non-existent handler returns False."""
+
         def handler(event: Event) -> None:
             pass
 
         success = self.bus.unsubscribe(EventType.WORKFLOW_NEW, handler)
         assert not success
 
-    def test_event_bus_repr(self):
+    def test_event_bus_repr(self) -> None:
         """Test EventBus string representation."""
         repr_str = repr(self.bus)
         assert "EventBus" in repr_str

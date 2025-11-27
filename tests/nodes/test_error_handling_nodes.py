@@ -20,7 +20,7 @@ class TestTryNode:
     """Tests for TryNode error handling."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -29,7 +29,7 @@ class TestTryNode:
         return context
 
     @pytest.mark.asyncio
-    async def test_try_node_initial_execution(self, execution_context):
+    async def test_try_node_initial_execution(self, execution_context) -> None:
         """Test TryNode routes to try_body on first execution."""
         from casare_rpa.nodes.error_handling_nodes import TryNode
 
@@ -44,7 +44,7 @@ class TestTryNode:
         )
 
     @pytest.mark.asyncio
-    async def test_try_node_success_path(self, execution_context):
+    async def test_try_node_success_path(self, execution_context) -> None:
         """Test TryNode routes to success when no error occurred."""
         from casare_rpa.nodes.error_handling_nodes import TryNode
 
@@ -63,7 +63,7 @@ class TestTryNode:
         assert "success" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_try_node_catch_path(self, execution_context):
+    async def test_try_node_catch_path(self, execution_context) -> None:
         """Test TryNode routes to catch when error occurred."""
         from casare_rpa.nodes.error_handling_nodes import TryNode
 
@@ -90,7 +90,7 @@ class TestTryNode:
         assert result["data"]["error_type"] == "TestException"
 
     @pytest.mark.asyncio
-    async def test_try_node_outputs_error_info(self, execution_context):
+    async def test_try_node_outputs_error_info(self, execution_context) -> None:
         """Test TryNode sets output ports with error info."""
         from casare_rpa.nodes.error_handling_nodes import TryNode
 
@@ -115,14 +115,14 @@ class TestThrowErrorNode:
     """Tests for ThrowErrorNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_throw_error_with_config_message(self, execution_context):
+    async def test_throw_error_with_config_message(self, execution_context) -> None:
         """Test ThrowErrorNode with message from config."""
         from casare_rpa.nodes.error_handling_nodes import ThrowErrorNode
 
@@ -137,7 +137,7 @@ class TestThrowErrorNode:
         assert node.status == NodeStatus.ERROR
 
     @pytest.mark.asyncio
-    async def test_throw_error_with_input_message(self, execution_context):
+    async def test_throw_error_with_input_message(self, execution_context) -> None:
         """Test ThrowErrorNode with message from input port."""
         from casare_rpa.nodes.error_handling_nodes import ThrowErrorNode
 
@@ -149,7 +149,7 @@ class TestThrowErrorNode:
         assert "Input error message" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_throw_error_default_message(self, execution_context):
+    async def test_throw_error_default_message(self, execution_context) -> None:
         """Test ThrowErrorNode with default message."""
         from casare_rpa.nodes.error_handling_nodes import ThrowErrorNode
 
@@ -164,14 +164,14 @@ class TestRetryNode:
     """Tests for RetryNode automatic retry logic."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_retry_first_attempt(self, execution_context):
+    async def test_retry_first_attempt(self, execution_context) -> None:
         """Test RetryNode first attempt routes to retry_body."""
         from casare_rpa.nodes.error_handling_nodes import RetryNode
 
@@ -183,7 +183,7 @@ class TestRetryNode:
         assert result["data"]["attempt"] == 1
 
     @pytest.mark.asyncio
-    async def test_retry_increments_attempt(self, execution_context):
+    async def test_retry_increments_attempt(self, execution_context) -> None:
         """Test RetryNode increments attempt count."""
         from casare_rpa.nodes.error_handling_nodes import RetryNode
 
@@ -200,7 +200,7 @@ class TestRetryNode:
         assert result["data"]["attempt"] == 2
 
     @pytest.mark.asyncio
-    async def test_retry_max_attempts_exceeded(self, execution_context):
+    async def test_retry_max_attempts_exceeded(self, execution_context) -> None:
         """Test RetryNode fails when max attempts exceeded."""
         from casare_rpa.nodes.error_handling_nodes import RetryNode
 
@@ -217,7 +217,7 @@ class TestRetryNode:
         assert "failed" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_retry_outputs_attempt_number(self, execution_context):
+    async def test_retry_outputs_attempt_number(self, execution_context) -> None:
         """Test RetryNode sets attempt output port."""
         from casare_rpa.nodes.error_handling_nodes import RetryNode
 
@@ -227,7 +227,7 @@ class TestRetryNode:
         assert node.get_output_value("attempt") == 1
 
     @pytest.mark.asyncio
-    async def test_retry_exponential_backoff(self, execution_context):
+    async def test_retry_exponential_backoff(self, execution_context) -> None:
         """Test RetryNode applies exponential backoff delay."""
         from casare_rpa.nodes.error_handling_nodes import RetryNode
 
@@ -258,13 +258,13 @@ class TestRetrySuccessNode:
     """Tests for RetrySuccessNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_retry_success_signals_completion(self, execution_context):
+    async def test_retry_success_signals_completion(self, execution_context) -> None:
         """Test RetrySuccessNode signals successful retry completion."""
         from casare_rpa.nodes.error_handling_nodes import RetrySuccessNode
 
@@ -280,13 +280,13 @@ class TestRetryFailNode:
     """Tests for RetryFailNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_retry_fail_signals_failure(self, execution_context):
+    async def test_retry_fail_signals_failure(self, execution_context) -> None:
         """Test RetryFailNode signals retry failure."""
         from casare_rpa.nodes.error_handling_nodes import RetryFailNode
 
@@ -299,7 +299,7 @@ class TestRetryFailNode:
         assert result["data"]["error_message"] == "Operation timed out"
 
     @pytest.mark.asyncio
-    async def test_retry_fail_default_message(self, execution_context):
+    async def test_retry_fail_default_message(self, execution_context) -> None:
         """Test RetryFailNode with default error message."""
         from casare_rpa.nodes.error_handling_nodes import RetryFailNode
 
@@ -314,14 +314,14 @@ class TestAssertNode:
     """Tests for AssertNode condition validation."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_assert_passes_on_true(self, execution_context):
+    async def test_assert_passes_on_true(self, execution_context) -> None:
         """Test AssertNode passes when condition is true."""
         from casare_rpa.nodes.error_handling_nodes import AssertNode
 
@@ -333,7 +333,7 @@ class TestAssertNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_assert_fails_on_false(self, execution_context):
+    async def test_assert_fails_on_false(self, execution_context) -> None:
         """Test AssertNode fails when condition is false."""
         from casare_rpa.nodes.error_handling_nodes import AssertNode
 
@@ -348,7 +348,7 @@ class TestAssertNode:
         assert result["error_type"] == "AssertionError"
 
     @pytest.mark.asyncio
-    async def test_assert_with_input_condition(self, execution_context):
+    async def test_assert_with_input_condition(self, execution_context) -> None:
         """Test AssertNode with condition from input port."""
         from casare_rpa.nodes.error_handling_nodes import AssertNode
 
@@ -361,7 +361,7 @@ class TestAssertNode:
         assert node.get_output_value("passed") is True
 
     @pytest.mark.asyncio
-    async def test_assert_string_condition_parsing(self, execution_context):
+    async def test_assert_string_condition_parsing(self, execution_context) -> None:
         """Test AssertNode parses string conditions correctly."""
         from casare_rpa.nodes.error_handling_nodes import AssertNode
 
@@ -382,14 +382,14 @@ class TestLogErrorNode:
     """Tests for LogErrorNode error logging."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.workflow_name = "test_workflow"
         return context
 
     @pytest.mark.asyncio
-    async def test_log_error_basic(self, execution_context):
+    async def test_log_error_basic(self, execution_context) -> None:
         """Test LogErrorNode logs error with basic info."""
         from casare_rpa.nodes.error_handling_nodes import LogErrorNode
 
@@ -407,7 +407,7 @@ class TestLogErrorNode:
         assert log_entry["workflow"] == "test_workflow"
 
     @pytest.mark.asyncio
-    async def test_log_error_with_context(self, execution_context):
+    async def test_log_error_with_context(self, execution_context) -> None:
         """Test LogErrorNode logs with additional context."""
         from casare_rpa.nodes.error_handling_nodes import LogErrorNode
 
@@ -421,7 +421,7 @@ class TestLogErrorNode:
         assert log_entry["context"]["step"] == 5
 
     @pytest.mark.asyncio
-    async def test_log_error_levels(self, execution_context):
+    async def test_log_error_levels(self, execution_context) -> None:
         """Test LogErrorNode respects log level configuration."""
         from casare_rpa.nodes.error_handling_nodes import LogErrorNode
 
@@ -439,13 +439,13 @@ class TestOnErrorNode:
     """Tests for OnErrorNode global error handling."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_on_error_initial_execution(self, execution_context):
+    async def test_on_error_initial_execution(self, execution_context) -> None:
         """Test OnErrorNode enters protected block on first execution."""
         from casare_rpa.nodes.error_handling_nodes import OnErrorNode
 
@@ -456,7 +456,7 @@ class TestOnErrorNode:
         assert "protected_body" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_on_error_catches_error(self, execution_context):
+    async def test_on_error_catches_error(self, execution_context) -> None:
         """Test OnErrorNode routes to error handler when error occurred."""
         from casare_rpa.nodes.error_handling_nodes import OnErrorNode
 
@@ -479,7 +479,7 @@ class TestOnErrorNode:
         assert node.get_output_value("error_message") == "Caught error"
 
     @pytest.mark.asyncio
-    async def test_on_error_finally_block(self, execution_context):
+    async def test_on_error_finally_block(self, execution_context) -> None:
         """Test OnErrorNode executes finally block after error handling."""
         from casare_rpa.nodes.error_handling_nodes import OnErrorNode
 
@@ -504,13 +504,13 @@ class TestErrorRecoveryNode:
     """Tests for ErrorRecoveryNode strategy configuration."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_recovery_stop_strategy(self, execution_context):
+    async def test_recovery_stop_strategy(self, execution_context) -> None:
         """Test ErrorRecoveryNode configures stop strategy."""
         from casare_rpa.nodes.error_handling_nodes import ErrorRecoveryNode
 
@@ -524,7 +524,7 @@ class TestErrorRecoveryNode:
         assert execution_context.variables["_error_recovery_strategy"] == "stop"
 
     @pytest.mark.asyncio
-    async def test_recovery_continue_strategy(self, execution_context):
+    async def test_recovery_continue_strategy(self, execution_context) -> None:
         """Test ErrorRecoveryNode configures continue strategy."""
         from casare_rpa.nodes.error_handling_nodes import ErrorRecoveryNode
 
@@ -537,7 +537,7 @@ class TestErrorRecoveryNode:
         assert execution_context.variables["_error_recovery_strategy"] == "continue"
 
     @pytest.mark.asyncio
-    async def test_recovery_retry_strategy(self, execution_context):
+    async def test_recovery_retry_strategy(self, execution_context) -> None:
         """Test ErrorRecoveryNode configures retry strategy with max_retries."""
         from casare_rpa.nodes.error_handling_nodes import ErrorRecoveryNode
 
@@ -552,7 +552,9 @@ class TestErrorRecoveryNode:
         assert execution_context.variables["_error_recovery_max_retries"] == 5
 
     @pytest.mark.asyncio
-    async def test_recovery_invalid_strategy_defaults_to_stop(self, execution_context):
+    async def test_recovery_invalid_strategy_defaults_to_stop(
+        self, execution_context
+    ) -> None:
         """Test ErrorRecoveryNode defaults to stop for invalid strategy."""
         from casare_rpa.nodes.error_handling_nodes import ErrorRecoveryNode
 
@@ -564,7 +566,7 @@ class TestErrorRecoveryNode:
         assert result["data"]["strategy"] == "stop"
 
     @pytest.mark.asyncio
-    async def test_recovery_with_input_ports(self, execution_context):
+    async def test_recovery_with_input_ports(self, execution_context) -> None:
         """Test ErrorRecoveryNode accepts strategy from input port."""
         from casare_rpa.nodes.error_handling_nodes import ErrorRecoveryNode
 
@@ -581,13 +583,13 @@ class TestWebhookNotifyNode:
     """Tests for WebhookNotifyNode notification sending."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_webhook_missing_url(self, execution_context):
+    async def test_webhook_missing_url(self, execution_context) -> None:
         """Test WebhookNotifyNode fails without URL."""
         from casare_rpa.nodes.error_handling_nodes import WebhookNotifyNode
 
@@ -598,7 +600,7 @@ class TestWebhookNotifyNode:
         assert "No webhook URL provided" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_webhook_success(self, execution_context):
+    async def test_webhook_success(self, execution_context) -> None:
         """Test WebhookNotifyNode sends notification successfully."""
         from casare_rpa.nodes.error_handling_nodes import WebhookNotifyNode
 
@@ -630,7 +632,7 @@ class TestWebhookNotifyNode:
         assert node.get_output_value("success") is True
 
     @pytest.mark.asyncio
-    async def test_webhook_slack_format(self, execution_context):
+    async def test_webhook_slack_format(self, execution_context) -> None:
         """Test WebhookNotifyNode builds Slack format payload."""
         from casare_rpa.nodes.error_handling_nodes import WebhookNotifyNode
 
@@ -645,7 +647,7 @@ class TestWebhookNotifyNode:
         assert "attachments" in payload
 
     @pytest.mark.asyncio
-    async def test_webhook_discord_format(self, execution_context):
+    async def test_webhook_discord_format(self, execution_context) -> None:
         """Test WebhookNotifyNode builds Discord format payload."""
         from casare_rpa.nodes.error_handling_nodes import WebhookNotifyNode
 
@@ -660,7 +662,7 @@ class TestWebhookNotifyNode:
         assert "embeds" in payload
 
     @pytest.mark.asyncio
-    async def test_webhook_teams_format(self, execution_context):
+    async def test_webhook_teams_format(self, execution_context) -> None:
         """Test WebhookNotifyNode builds Teams format payload."""
         from casare_rpa.nodes.error_handling_nodes import WebhookNotifyNode
 
@@ -678,7 +680,7 @@ class TestWebhookNotifyNode:
 class TestErrorHandlingNodesIntegration:
     """Integration tests for error handling nodes with ExecutionResult pattern."""
 
-    def test_all_nodes_have_execute_method(self):
+    def test_all_nodes_have_execute_method(self) -> None:
         """Test all error handling nodes implement execute method."""
         from casare_rpa.nodes.error_handling_nodes import (
             TryNode,
@@ -711,7 +713,7 @@ class TestErrorHandlingNodesIntegration:
             assert hasattr(node, "execute")
             assert callable(node.execute)
 
-    def test_all_nodes_have_define_ports(self):
+    def test_all_nodes_have_define_ports(self) -> None:
         """Test all error handling nodes define ports correctly."""
         from casare_rpa.nodes.error_handling_nodes import (
             TryNode,
@@ -744,7 +746,7 @@ class TestErrorHandlingNodesIntegration:
             # All nodes should have exec_in input port
             assert "exec_in" in node.input_ports
 
-    def test_execution_result_pattern_compliance(self):
+    def test_execution_result_pattern_compliance(self) -> None:
         """Test ExecutionResult contains required keys."""
         from casare_rpa.nodes.error_handling_nodes import AssertNode
 

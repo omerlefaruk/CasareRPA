@@ -5,6 +5,15 @@ Tests all 12 HTTP nodes:
 - HttpRequestNode, HttpGetNode, HttpPostNode, HttpPutNode, HttpPatchNode, HttpDeleteNode
 - SetHttpHeadersNode, HttpAuthNode, ParseJsonResponseNode
 - HttpDownloadFileNode, HttpUploadFileNode, BuildUrlNode
+
+Fixtures and helpers defined in tests/nodes/conftest.py:
+- create_mock_response: Create mock aiohttp response
+- create_mock_session: Create mock aiohttp ClientSession
+- mock_aiohttp_response: Fixture providing mock response
+- mock_aiohttp_session: Fixture providing mock session
+
+The create_mock_response and create_mock_session functions are defined locally
+but moved to conftest.py to avoid duplication. Test code remains unchanged.
 """
 
 import pytest
@@ -20,6 +29,7 @@ from casare_rpa.core.execution_context import ExecutionContext
 from casare_rpa.core.types import NodeStatus
 
 
+# Define mock helpers locally (from conftest.py in tests/nodes/)
 def create_mock_response(
     status: int = 200, body: str = '{"status": "ok"}', headers: dict = None
 ):
@@ -55,14 +65,14 @@ class TestHttpRequestNode:
     """Tests for generic HttpRequestNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_request_get(self, execution_context):
+    async def test_http_request_get(self, execution_context) -> None:
         """Test HttpRequestNode with GET method."""
         from casare_rpa.nodes.http_nodes import HttpRequestNode
 
@@ -82,7 +92,7 @@ class TestHttpRequestNode:
         assert node.get_output_value("success") is True
 
     @pytest.mark.asyncio
-    async def test_http_request_post_with_body(self, execution_context):
+    async def test_http_request_post_with_body(self, execution_context) -> None:
         """Test HttpRequestNode POST with JSON body."""
         from casare_rpa.nodes.http_nodes import HttpRequestNode
 
@@ -102,7 +112,7 @@ class TestHttpRequestNode:
         assert result["data"]["status_code"] == 201
 
     @pytest.mark.asyncio
-    async def test_http_request_missing_url(self, execution_context):
+    async def test_http_request_missing_url(self, execution_context) -> None:
         """Test HttpRequestNode fails without URL."""
         from casare_rpa.nodes.http_nodes import HttpRequestNode
 
@@ -113,7 +123,7 @@ class TestHttpRequestNode:
         assert "URL is required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_http_request_error_status(self, execution_context):
+    async def test_http_request_error_status(self, execution_context) -> None:
         """Test HttpRequestNode handles error status codes."""
         from casare_rpa.nodes.http_nodes import HttpRequestNode
 
@@ -137,14 +147,14 @@ class TestHttpGetNode:
     """Tests for HttpGetNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_get_basic(self, execution_context):
+    async def test_http_get_basic(self, execution_context) -> None:
         """Test HttpGetNode basic request."""
         from casare_rpa.nodes.http_nodes import HttpGetNode
 
@@ -164,7 +174,7 @@ class TestHttpGetNode:
         assert response_json[0]["name"] == "John"
 
     @pytest.mark.asyncio
-    async def test_http_get_with_params(self, execution_context):
+    async def test_http_get_with_params(self, execution_context) -> None:
         """Test HttpGetNode with query parameters."""
         from casare_rpa.nodes.http_nodes import HttpGetNode
 
@@ -182,7 +192,7 @@ class TestHttpGetNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_http_get_with_headers(self, execution_context):
+    async def test_http_get_with_headers(self, execution_context) -> None:
         """Test HttpGetNode with custom headers."""
         from casare_rpa.nodes.http_nodes import HttpGetNode
 
@@ -201,7 +211,7 @@ class TestHttpGetNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_http_get_non_json_response(self, execution_context):
+    async def test_http_get_non_json_response(self, execution_context) -> None:
         """Test HttpGetNode handles non-JSON response."""
         from casare_rpa.nodes.http_nodes import HttpGetNode
 
@@ -224,14 +234,14 @@ class TestHttpPostNode:
     """Tests for HttpPostNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_post_json_body(self, execution_context):
+    async def test_http_post_json_body(self, execution_context) -> None:
         """Test HttpPostNode with JSON body."""
         from casare_rpa.nodes.http_nodes import HttpPostNode
 
@@ -251,7 +261,7 @@ class TestHttpPostNode:
         assert node.get_output_value("response_json")["id"] == 123
 
     @pytest.mark.asyncio
-    async def test_http_post_string_body(self, execution_context):
+    async def test_http_post_string_body(self, execution_context) -> None:
         """Test HttpPostNode with string body."""
         from casare_rpa.nodes.http_nodes import HttpPostNode
 
@@ -273,7 +283,7 @@ class TestHttpPostNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_http_post_server_error(self, execution_context):
+    async def test_http_post_server_error(self, execution_context) -> None:
         """Test HttpPostNode handles 500 server error."""
         from casare_rpa.nodes.http_nodes import HttpPostNode
 
@@ -295,14 +305,14 @@ class TestHttpPutNode:
     """Tests for HttpPutNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_put_update(self, execution_context):
+    async def test_http_put_update(self, execution_context) -> None:
         """Test HttpPutNode for resource update."""
         from casare_rpa.nodes.http_nodes import HttpPutNode
 
@@ -325,14 +335,14 @@ class TestHttpPatchNode:
     """Tests for HttpPatchNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_patch_partial_update(self, execution_context):
+    async def test_http_patch_partial_update(self, execution_context) -> None:
         """Test HttpPatchNode for partial update."""
         from casare_rpa.nodes.http_nodes import HttpPatchNode
 
@@ -357,14 +367,14 @@ class TestHttpDeleteNode:
     """Tests for HttpDeleteNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_delete_resource(self, execution_context):
+    async def test_http_delete_resource(self, execution_context) -> None:
         """Test HttpDeleteNode for resource deletion."""
         from casare_rpa.nodes.http_nodes import HttpDeleteNode
 
@@ -382,7 +392,7 @@ class TestHttpDeleteNode:
         assert node.get_output_value("status_code") == 204
 
     @pytest.mark.asyncio
-    async def test_http_delete_with_body(self, execution_context):
+    async def test_http_delete_with_body(self, execution_context) -> None:
         """Test HttpDeleteNode returns response body if present."""
         from casare_rpa.nodes.http_nodes import HttpDeleteNode
 
@@ -405,13 +415,13 @@ class TestSetHttpHeadersNode:
     """Tests for SetHttpHeadersNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_set_single_header(self, execution_context):
+    async def test_set_single_header(self, execution_context) -> None:
         """Test SetHttpHeadersNode adds single header."""
         from casare_rpa.nodes.http_nodes import SetHttpHeadersNode
 
@@ -426,7 +436,7 @@ class TestSetHttpHeadersNode:
         assert headers["X-Custom-Header"] == "custom-value"
 
     @pytest.mark.asyncio
-    async def test_set_headers_from_json(self, execution_context):
+    async def test_set_headers_from_json(self, execution_context) -> None:
         """Test SetHttpHeadersNode parses JSON headers."""
         from casare_rpa.nodes.http_nodes import SetHttpHeadersNode
 
@@ -443,7 +453,7 @@ class TestSetHttpHeadersNode:
         assert headers["X-API-Version"] == "2"
 
     @pytest.mark.asyncio
-    async def test_extend_base_headers(self, execution_context):
+    async def test_extend_base_headers(self, execution_context) -> None:
         """Test SetHttpHeadersNode extends base headers."""
         from casare_rpa.nodes.http_nodes import SetHttpHeadersNode
 
@@ -463,14 +473,14 @@ class TestHttpAuthNode:
     """Tests for HttpAuthNode authentication."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_bearer_auth(self, execution_context):
+    async def test_bearer_auth(self, execution_context) -> None:
         """Test HttpAuthNode with Bearer token."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -484,7 +494,7 @@ class TestHttpAuthNode:
         assert headers["Authorization"] == "Bearer my-secret-token"
 
     @pytest.mark.asyncio
-    async def test_basic_auth(self, execution_context):
+    async def test_basic_auth(self, execution_context) -> None:
         """Test HttpAuthNode with Basic authentication."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -500,7 +510,7 @@ class TestHttpAuthNode:
         assert headers["Authorization"] == f"Basic {expected}"
 
     @pytest.mark.asyncio
-    async def test_apikey_auth(self, execution_context):
+    async def test_apikey_auth(self, execution_context) -> None:
         """Test HttpAuthNode with API key."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -517,7 +527,7 @@ class TestHttpAuthNode:
         assert headers["X-API-Key"] == "my-api-key-123"
 
     @pytest.mark.asyncio
-    async def test_bearer_auth_missing_token(self, execution_context):
+    async def test_bearer_auth_missing_token(self, execution_context) -> None:
         """Test HttpAuthNode fails without token for Bearer."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -530,7 +540,7 @@ class TestHttpAuthNode:
         assert "Bearer token is required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_basic_auth_missing_credentials(self, execution_context):
+    async def test_basic_auth_missing_credentials(self, execution_context) -> None:
         """Test HttpAuthNode fails without credentials for Basic."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -541,7 +551,7 @@ class TestHttpAuthNode:
         assert "Username and password are required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_auth_extends_base_headers(self, execution_context):
+    async def test_auth_extends_base_headers(self, execution_context) -> None:
         """Test HttpAuthNode preserves base headers."""
         from casare_rpa.nodes.http_nodes import HttpAuthNode
 
@@ -560,13 +570,13 @@ class TestParseJsonResponseNode:
     """Tests for ParseJsonResponseNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         return context
 
     @pytest.mark.asyncio
-    async def test_parse_json_simple_path(self, execution_context):
+    async def test_parse_json_simple_path(self, execution_context) -> None:
         """Test ParseJsonResponseNode with simple path."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -581,7 +591,7 @@ class TestParseJsonResponseNode:
         assert node.get_output_value("success") is True
 
     @pytest.mark.asyncio
-    async def test_parse_json_array_index(self, execution_context):
+    async def test_parse_json_array_index(self, execution_context) -> None:
         """Test ParseJsonResponseNode with array index."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -595,7 +605,7 @@ class TestParseJsonResponseNode:
         assert node.get_output_value("value") == 2
 
     @pytest.mark.asyncio
-    async def test_parse_json_string_input(self, execution_context):
+    async def test_parse_json_string_input(self, execution_context) -> None:
         """Test ParseJsonResponseNode parses JSON string."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -609,7 +619,7 @@ class TestParseJsonResponseNode:
         assert node.get_output_value("value") == "value"
 
     @pytest.mark.asyncio
-    async def test_parse_json_path_not_found(self, execution_context):
+    async def test_parse_json_path_not_found(self, execution_context) -> None:
         """Test ParseJsonResponseNode handles missing path."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -625,7 +635,7 @@ class TestParseJsonResponseNode:
         )
 
     @pytest.mark.asyncio
-    async def test_parse_json_with_default(self, execution_context):
+    async def test_parse_json_with_default(self, execution_context) -> None:
         """Test ParseJsonResponseNode uses default for missing path."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -640,7 +650,7 @@ class TestParseJsonResponseNode:
         assert node.get_output_value("value") == "default_value"
 
     @pytest.mark.asyncio
-    async def test_parse_json_invalid_json(self, execution_context):
+    async def test_parse_json_invalid_json(self, execution_context) -> None:
         """Test ParseJsonResponseNode handles invalid JSON."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -653,7 +663,7 @@ class TestParseJsonResponseNode:
         assert "Invalid JSON" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_parse_json_empty_path(self, execution_context):
+    async def test_parse_json_empty_path(self, execution_context) -> None:
         """Test ParseJsonResponseNode returns whole object for empty path."""
         from casare_rpa.nodes.http_nodes import ParseJsonResponseNode
 
@@ -671,14 +681,14 @@ class TestBuildUrlNode:
     """Tests for BuildUrlNode URL construction."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_build_url_base_only(self, execution_context):
+    async def test_build_url_base_only(self, execution_context) -> None:
         """Test BuildUrlNode with base URL only."""
         from casare_rpa.nodes.http_nodes import BuildUrlNode
 
@@ -691,7 +701,7 @@ class TestBuildUrlNode:
         assert node.get_output_value("url") == "https://api.example.com"
 
     @pytest.mark.asyncio
-    async def test_build_url_with_path(self, execution_context):
+    async def test_build_url_with_path(self, execution_context) -> None:
         """Test BuildUrlNode with path appended."""
         from casare_rpa.nodes.http_nodes import BuildUrlNode
 
@@ -705,7 +715,7 @@ class TestBuildUrlNode:
         assert "users/123" in url
 
     @pytest.mark.asyncio
-    async def test_build_url_with_params(self, execution_context):
+    async def test_build_url_with_params(self, execution_context) -> None:
         """Test BuildUrlNode with query parameters."""
         from casare_rpa.nodes.http_nodes import BuildUrlNode
 
@@ -720,7 +730,7 @@ class TestBuildUrlNode:
         assert "page=1" in url
 
     @pytest.mark.asyncio
-    async def test_build_url_missing_base(self, execution_context):
+    async def test_build_url_missing_base(self, execution_context) -> None:
         """Test BuildUrlNode fails without base URL."""
         from casare_rpa.nodes.http_nodes import BuildUrlNode
 
@@ -735,14 +745,14 @@ class TestHttpDownloadFileNode:
     """Tests for HttpDownloadFileNode file downloading."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_download_missing_url(self, execution_context):
+    async def test_download_missing_url(self, execution_context) -> None:
         """Test HttpDownloadFileNode fails without URL."""
         from casare_rpa.nodes.http_nodes import HttpDownloadFileNode
 
@@ -755,7 +765,7 @@ class TestHttpDownloadFileNode:
         assert "URL is required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_download_missing_path(self, execution_context):
+    async def test_download_missing_path(self, execution_context) -> None:
         """Test HttpDownloadFileNode fails without save path."""
         from casare_rpa.nodes.http_nodes import HttpDownloadFileNode
 
@@ -774,14 +784,14 @@ class TestHttpUploadFileNode:
     """Tests for HttpUploadFileNode file uploading."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_upload_missing_url(self, execution_context):
+    async def test_upload_missing_url(self, execution_context) -> None:
         """Test HttpUploadFileNode fails without URL."""
         from casare_rpa.nodes.http_nodes import HttpUploadFileNode
 
@@ -794,7 +804,7 @@ class TestHttpUploadFileNode:
         assert "URL is required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_upload_missing_file(self, execution_context):
+    async def test_upload_missing_file(self, execution_context) -> None:
         """Test HttpUploadFileNode fails without file path."""
         from casare_rpa.nodes.http_nodes import HttpUploadFileNode
 
@@ -808,7 +818,7 @@ class TestHttpUploadFileNode:
         assert "File path is required" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_upload_file_not_found(self, execution_context):
+    async def test_upload_file_not_found(self, execution_context) -> None:
         """Test HttpUploadFileNode fails when file doesn't exist."""
         from casare_rpa.nodes.http_nodes import HttpUploadFileNode
 
@@ -831,14 +841,14 @@ class TestHttpNodesRetry:
     """Tests for HTTP nodes retry functionality."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
         return context
 
     @pytest.mark.asyncio
-    async def test_http_get_retry_on_failure(self, execution_context):
+    async def test_http_get_retry_on_failure(self, execution_context) -> None:
         """Test HttpGetNode retries on failure."""
         from casare_rpa.nodes.http_nodes import HttpGetNode
         import aiohttp
@@ -891,7 +901,7 @@ class TestHttpNodesRetry:
 class TestHttpNodesIntegration:
     """Integration tests for HTTP nodes with ExecutionResult pattern."""
 
-    def test_all_http_nodes_have_execute(self):
+    def test_all_http_nodes_have_execute(self) -> None:
         """Test all HTTP nodes implement execute method."""
         from casare_rpa.nodes.http_nodes import (
             HttpRequestNode,
@@ -928,7 +938,7 @@ class TestHttpNodesIntegration:
             assert hasattr(node, "execute")
             assert callable(node.execute)
 
-    def test_all_http_nodes_have_ports(self):
+    def test_all_http_nodes_have_ports(self) -> None:
         """Test all HTTP nodes define ports correctly."""
         from casare_rpa.nodes.http_nodes import (
             HttpRequestNode,
@@ -965,7 +975,7 @@ class TestHttpNodesIntegration:
             assert "exec_in" in node.input_ports
             assert "exec_out" in node.output_ports
 
-    def test_execution_result_pattern(self):
+    def test_execution_result_pattern(self) -> None:
         """Test ExecutionResult pattern compliance."""
         from casare_rpa.nodes.http_nodes import BuildUrlNode
 
@@ -982,7 +992,7 @@ class TestHttpNodesIntegration:
         assert isinstance(result["success"], bool)
         assert "next_nodes" in result
 
-    def test_http_methods_coverage(self):
+    def test_http_methods_coverage(self) -> None:
         """Test all HTTP methods have corresponding nodes."""
         from casare_rpa.nodes.http_nodes import (
             HttpGetNode,

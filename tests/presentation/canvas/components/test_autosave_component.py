@@ -16,7 +16,7 @@ from casare_rpa.canvas.components.autosave_component import AutosaveComponent
 
 
 @pytest.fixture
-def mock_main_window():
+def mock_main_window() -> None:
     """Create a mock MainWindow."""
     mock = Mock()
     mock.preferences_saved = Mock()
@@ -28,7 +28,7 @@ def mock_main_window():
 
 
 @pytest.fixture
-def autosave_component(mock_main_window):
+def autosave_component(mock_main_window) -> None:
     """Create an AutosaveComponent instance."""
     component = AutosaveComponent(mock_main_window)
     component.initialize()
@@ -39,7 +39,7 @@ class TestAutosaveComponentInitialization:
     """Tests for component initialization."""
 
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
-    def test_initialization(self, mock_settings, mock_main_window):
+    def test_initialization(self, mock_settings, mock_main_window) -> None:
         """Test component initializes."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = False
@@ -51,7 +51,7 @@ class TestAutosaveComponentInitialization:
         assert component.is_initialized()
         assert component._autosave_timer is not None
 
-    def test_cleanup(self, autosave_component):
+    def test_cleanup(self, autosave_component) -> None:
         """Test cleanup stops timer."""
         mock_timer = Mock()
         autosave_component._autosave_timer = mock_timer
@@ -66,7 +66,9 @@ class TestTimerManagement:
     """Tests for autosave timer management."""
 
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
-    def test_update_timer_autosave_enabled(self, mock_settings, autosave_component):
+    def test_update_timer_autosave_enabled(
+        self, mock_settings, autosave_component
+    ) -> None:
         """Test updating timer when autosave enabled."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = True
@@ -82,7 +84,9 @@ class TestTimerManagement:
         mock_timer.start.assert_called_with(300000)
 
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
-    def test_update_timer_autosave_disabled(self, mock_settings, autosave_component):
+    def test_update_timer_autosave_disabled(
+        self, mock_settings, autosave_component
+    ) -> None:
         """Test updating timer when autosave disabled."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = False
@@ -96,7 +100,7 @@ class TestTimerManagement:
         mock_timer.stop.assert_called_once()
 
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
-    def test_update_settings(self, mock_settings, autosave_component):
+    def test_update_settings(self, mock_settings, autosave_component) -> None:
         """Test updating settings."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = True
@@ -116,7 +120,7 @@ class TestAutosaveExecution:
     """Tests for autosave execution."""
 
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
-    def test_on_autosave_disabled(self, mock_settings, autosave_component):
+    def test_on_autosave_disabled(self, mock_settings, autosave_component) -> None:
         """Test autosave when disabled."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = False
@@ -132,7 +136,7 @@ class TestAutosaveExecution:
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
     def test_on_autosave_no_file(
         self, mock_settings, autosave_component, mock_main_window
-    ):
+    ) -> None:
         """Test autosave when no file open."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = True
@@ -148,7 +152,7 @@ class TestAutosaveExecution:
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
     def test_on_autosave_success(
         self, mock_settings, autosave_component, mock_main_window
-    ):
+    ) -> None:
         """Test successful autosave."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = True
@@ -163,7 +167,7 @@ class TestAutosaveExecution:
     @patch("casare_rpa.canvas.components.autosave_component.get_settings_manager")
     def test_on_autosave_error(
         self, mock_settings, autosave_component, mock_main_window
-    ):
+    ) -> None:
         """Test autosave with error."""
         mock_settings_instance = Mock()
         mock_settings_instance.is_autosave_enabled.return_value = True

@@ -34,7 +34,7 @@ class TestSendEmailNode:
     """Tests for SendEmailNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -43,7 +43,7 @@ class TestSendEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
-    async def test_send_email_success(self, mock_smtp, execution_context):
+    async def test_send_email_success(self, mock_smtp, execution_context) -> None:
         """Test successful email sending."""
         mock_server = MagicMock()
         mock_smtp.return_value = mock_server
@@ -75,7 +75,7 @@ class TestSendEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP_SSL")
-    async def test_send_email_ssl(self, mock_smtp_ssl, execution_context):
+    async def test_send_email_ssl(self, mock_smtp_ssl, execution_context) -> None:
         """Test email sending with SSL."""
         mock_server = MagicMock()
         mock_smtp_ssl.return_value = mock_server
@@ -100,7 +100,7 @@ class TestSendEmailNode:
         mock_smtp_ssl.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_send_email_no_recipient_error(self, execution_context):
+    async def test_send_email_no_recipient_error(self, execution_context) -> None:
         """Test error when no recipient provided."""
         node = SendEmailNode(node_id="test_send_no_to")
         node.set_input_value("from_email", "sender@test.com")
@@ -115,7 +115,7 @@ class TestSendEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
-    async def test_send_email_with_cc_bcc(self, mock_smtp, execution_context):
+    async def test_send_email_with_cc_bcc(self, mock_smtp, execution_context) -> None:
         """Test email with CC and BCC recipients."""
         mock_server = MagicMock()
         mock_smtp.return_value = mock_server
@@ -138,7 +138,7 @@ class TestSendEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
-    async def test_send_email_html_body(self, mock_smtp, execution_context):
+    async def test_send_email_html_body(self, mock_smtp, execution_context) -> None:
         """Test HTML email body."""
         mock_server = MagicMock()
         mock_smtp.return_value = mock_server
@@ -157,7 +157,7 @@ class TestSendEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
-    async def test_send_email_auth_failure(self, mock_smtp, execution_context):
+    async def test_send_email_auth_failure(self, mock_smtp, execution_context) -> None:
         """Test authentication failure handling."""
         import smtplib
 
@@ -180,7 +180,7 @@ class TestSendEmailNode:
         assert result["success"] is False
         assert "authentication" in result["error"].lower()
 
-    def test_send_email_node_ports(self):
+    def test_send_email_node_ports(self) -> None:
         """Test SendEmailNode follows ExecutionResult pattern."""
         node = SendEmailNode(node_id="test_ports")
         assert node.node_type == "SendEmailNode"
@@ -193,7 +193,7 @@ class TestReadEmailsNode:
     """Tests for ReadEmailsNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -210,7 +210,7 @@ class TestReadEmailsNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_read_emails_success(self, mock_imap, execution_context):
+    async def test_read_emails_success(self, mock_imap, execution_context) -> None:
         """Test successful email reading."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -237,7 +237,7 @@ class TestReadEmailsNode:
         mock_mail.logout.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_read_emails_no_credentials_error(self, execution_context):
+    async def test_read_emails_no_credentials_error(self, execution_context) -> None:
         """Test error when credentials missing."""
         node = ReadEmailsNode(node_id="test_read_no_creds")
         node.set_input_value("imap_server", "imap.test.com")
@@ -251,7 +251,9 @@ class TestReadEmailsNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_read_emails_with_search_criteria(self, mock_imap, execution_context):
+    async def test_read_emails_with_search_criteria(
+        self, mock_imap, execution_context
+    ) -> None:
         """Test reading emails with custom search criteria."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -276,7 +278,7 @@ class TestGetEmailContentNode:
     """Tests for GetEmailContentNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -284,7 +286,7 @@ class TestGetEmailContentNode:
         return context
 
     @pytest.mark.asyncio
-    async def test_get_email_content(self, execution_context):
+    async def test_get_email_content(self, execution_context) -> None:
         """Test extracting email content."""
         email_data = {
             "subject": "Test Subject",
@@ -308,7 +310,7 @@ class TestGetEmailContentNode:
         assert len(node.get_output_value("attachments")) == 1
 
     @pytest.mark.asyncio
-    async def test_get_email_content_no_data_error(self, execution_context):
+    async def test_get_email_content_no_data_error(self, execution_context) -> None:
         """Test error when no email data provided."""
         node = GetEmailContentNode(node_id="test_no_data")
         node.set_input_value("email", None)
@@ -318,7 +320,9 @@ class TestGetEmailContentNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_get_email_content_invalid_data_error(self, execution_context):
+    async def test_get_email_content_invalid_data_error(
+        self, execution_context
+    ) -> None:
         """Test error when email data is invalid type."""
         node = GetEmailContentNode(node_id="test_invalid")
         node.set_input_value("email", "not a dict")
@@ -332,7 +336,7 @@ class TestFilterEmailsNode:
     """Tests for FilterEmailsNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -340,7 +344,7 @@ class TestFilterEmailsNode:
         return context
 
     @pytest.fixture
-    def sample_emails(self):
+    def sample_emails(self) -> None:
         """Create sample email list for filtering."""
         return [
             {
@@ -366,7 +370,7 @@ class TestFilterEmailsNode:
         ]
 
     @pytest.mark.asyncio
-    async def test_filter_by_subject(self, execution_context, sample_emails):
+    async def test_filter_by_subject(self, execution_context, sample_emails) -> None:
         """Test filtering emails by subject."""
         node = FilterEmailsNode(node_id="test_filter_subject")
         node.set_input_value("emails", sample_emails)
@@ -380,7 +384,7 @@ class TestFilterEmailsNode:
         assert all("Invoice" in e["subject"] for e in filtered)
 
     @pytest.mark.asyncio
-    async def test_filter_by_sender(self, execution_context, sample_emails):
+    async def test_filter_by_sender(self, execution_context, sample_emails) -> None:
         """Test filtering emails by sender."""
         node = FilterEmailsNode(node_id="test_filter_from")
         node.set_input_value("emails", sample_emails)
@@ -394,7 +398,9 @@ class TestFilterEmailsNode:
         assert all("billing" in e["from"] for e in filtered)
 
     @pytest.mark.asyncio
-    async def test_filter_by_attachments(self, execution_context, sample_emails):
+    async def test_filter_by_attachments(
+        self, execution_context, sample_emails
+    ) -> None:
         """Test filtering emails with attachments."""
         node = FilterEmailsNode(node_id="test_filter_attach")
         node.set_input_value("emails", sample_emails)
@@ -408,7 +414,9 @@ class TestFilterEmailsNode:
         assert all(e["has_attachments"] for e in filtered)
 
     @pytest.mark.asyncio
-    async def test_filter_combined_criteria(self, execution_context, sample_emails):
+    async def test_filter_combined_criteria(
+        self, execution_context, sample_emails
+    ) -> None:
         """Test filtering with multiple criteria."""
         node = FilterEmailsNode(node_id="test_filter_combined")
         node.set_input_value("emails", sample_emails)
@@ -422,7 +430,9 @@ class TestFilterEmailsNode:
         assert len(filtered) == 2
 
     @pytest.mark.asyncio
-    async def test_filter_case_insensitive(self, execution_context, sample_emails):
+    async def test_filter_case_insensitive(
+        self, execution_context, sample_emails
+    ) -> None:
         """Test filter is case-insensitive."""
         node = FilterEmailsNode(node_id="test_filter_case")
         node.set_input_value("emails", sample_emails)
@@ -435,7 +445,7 @@ class TestFilterEmailsNode:
         assert len(filtered) == 2
 
     @pytest.mark.asyncio
-    async def test_filter_empty_result(self, execution_context, sample_emails):
+    async def test_filter_empty_result(self, execution_context, sample_emails) -> None:
         """Test filter returning no matches."""
         node = FilterEmailsNode(node_id="test_filter_empty")
         node.set_input_value("emails", sample_emails)
@@ -452,7 +462,7 @@ class TestSaveAttachmentNode:
     """Tests for SaveAttachmentNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -460,7 +470,7 @@ class TestSaveAttachmentNode:
         return context
 
     @pytest.fixture
-    def temp_dir(self):
+    def temp_dir(self) -> None:
         """Create temp directory for attachments."""
         temp_dir = tempfile.mkdtemp()
         yield temp_dir
@@ -469,7 +479,9 @@ class TestSaveAttachmentNode:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
-    async def test_save_attachment_no_uid_error(self, execution_context, temp_dir):
+    async def test_save_attachment_no_uid_error(
+        self, execution_context, temp_dir
+    ) -> None:
         """Test error when no email UID provided."""
         node = SaveAttachmentNode(node_id="test_save_no_uid")
         node.set_input_value("imap_server", "imap.test.com")
@@ -487,7 +499,7 @@ class TestSaveAttachmentNode:
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
     async def test_save_attachment_success(
         self, mock_imap, execution_context, temp_dir
-    ):
+    ) -> None:
         """Test successful attachment save."""
         # Create email with attachment
         msg = MIMEMultipart()
@@ -526,7 +538,7 @@ class TestMarkEmailNode:
     """Tests for MarkEmailNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -534,7 +546,7 @@ class TestMarkEmailNode:
         return context
 
     @pytest.mark.asyncio
-    async def test_mark_email_no_uid_error(self, execution_context):
+    async def test_mark_email_no_uid_error(self, execution_context) -> None:
         """Test error when no email UID provided."""
         node = MarkEmailNode(node_id="test_mark_no_uid")
         node.set_input_value("imap_server", "imap.test.com")
@@ -550,7 +562,7 @@ class TestMarkEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_mark_as_read(self, mock_imap, execution_context):
+    async def test_mark_as_read(self, mock_imap, execution_context) -> None:
         """Test marking email as read."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -572,7 +584,7 @@ class TestMarkEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_mark_as_unread(self, mock_imap, execution_context):
+    async def test_mark_as_unread(self, mock_imap, execution_context) -> None:
         """Test marking email as unread."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -594,7 +606,7 @@ class TestMarkEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_mark_as_flagged(self, mock_imap, execution_context):
+    async def test_mark_as_flagged(self, mock_imap, execution_context) -> None:
         """Test flagging email."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -619,7 +631,7 @@ class TestDeleteEmailNode:
     """Tests for DeleteEmailNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -627,7 +639,7 @@ class TestDeleteEmailNode:
         return context
 
     @pytest.mark.asyncio
-    async def test_delete_email_no_uid_error(self, execution_context):
+    async def test_delete_email_no_uid_error(self, execution_context) -> None:
         """Test error when no email UID provided."""
         node = DeleteEmailNode(node_id="test_delete_no_uid")
         node.set_input_value("imap_server", "imap.test.com")
@@ -642,7 +654,7 @@ class TestDeleteEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_delete_email_success(self, mock_imap, execution_context):
+    async def test_delete_email_success(self, mock_imap, execution_context) -> None:
         """Test successful email deletion."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -664,7 +676,7 @@ class TestDeleteEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_delete_email_permanent(self, mock_imap, execution_context):
+    async def test_delete_email_permanent(self, mock_imap, execution_context) -> None:
         """Test permanent email deletion with expunge."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -688,7 +700,7 @@ class TestMoveEmailNode:
     """Tests for MoveEmailNode."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -696,7 +708,7 @@ class TestMoveEmailNode:
         return context
 
     @pytest.mark.asyncio
-    async def test_move_email_no_uid_error(self, execution_context):
+    async def test_move_email_no_uid_error(self, execution_context) -> None:
         """Test error when no email UID provided."""
         node = MoveEmailNode(node_id="test_move_no_uid")
         node.set_input_value("imap_server", "imap.test.com")
@@ -710,7 +722,7 @@ class TestMoveEmailNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_move_email_no_target_error(self, execution_context):
+    async def test_move_email_no_target_error(self, execution_context) -> None:
         """Test error when no target folder provided."""
         node = MoveEmailNode(node_id="test_move_no_target")
         node.set_input_value("imap_server", "imap.test.com")
@@ -725,7 +737,7 @@ class TestMoveEmailNode:
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.email_nodes.imaplib.IMAP4_SSL")
-    async def test_move_email_success(self, mock_imap, execution_context):
+    async def test_move_email_success(self, mock_imap, execution_context) -> None:
         """Test successful email move."""
         mock_mail = MagicMock()
         mock_imap.return_value = mock_mail
@@ -753,22 +765,22 @@ class TestMoveEmailNode:
 class TestEmailHelperFunctions:
     """Tests for email helper functions."""
 
-    def test_decode_header_value_plain(self):
+    def test_decode_header_value_plain(self) -> None:
         """Test decoding plain header value."""
         result = _decode_header_value("Simple Subject")
         assert result == "Simple Subject"
 
-    def test_decode_header_value_empty(self):
+    def test_decode_header_value_empty(self) -> None:
         """Test decoding empty header."""
         result = _decode_header_value("")
         assert result == ""
 
-    def test_decode_header_value_none(self):
+    def test_decode_header_value_none(self) -> None:
         """Test decoding None header."""
         result = _decode_header_value(None)
         assert result == ""
 
-    def test_parse_email_message_simple(self):
+    def test_parse_email_message_simple(self) -> None:
         """Test parsing simple email message."""
         msg = MIMEText("Test body content")
         msg["Subject"] = "Test Subject"
@@ -783,7 +795,7 @@ class TestEmailHelperFunctions:
         assert parsed["body_text"] == "Test body content"
         assert parsed["has_attachments"] is False
 
-    def test_parse_email_message_multipart(self):
+    def test_parse_email_message_multipart(self) -> None:
         """Test parsing multipart email message."""
         msg = MIMEMultipart()
         msg["Subject"] = "Multipart Test"
@@ -799,7 +811,7 @@ class TestEmailHelperFunctions:
         assert "Plain text body" in parsed["body_text"]
         assert "<p>HTML body</p>" in parsed["body_html"]
 
-    def test_parse_email_message_with_attachment(self):
+    def test_parse_email_message_with_attachment(self) -> None:
         """Test parsing email with attachment."""
         msg = MIMEMultipart()
         msg["Subject"] = "With Attachment"

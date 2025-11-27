@@ -11,7 +11,7 @@ import pytest
 class TestVisualNodesImports:
     """Test visual node imports."""
 
-    def test_import_from_new_location(self):
+    def test_import_from_new_location(self) -> None:
         """Test importing from new presentation.canvas.visual_nodes location."""
         # Test basic imports (3 nodes)
         from casare_rpa.presentation.canvas.visual_nodes import (
@@ -24,7 +24,7 @@ class TestVisualNodesImports:
         assert VisualEndNode is not None
         assert VisualCommentNode is not None
 
-    def test_import_from_compatibility_layer(self):
+    def test_import_from_compatibility_layer(self) -> None:
         """Test importing from old canvas.visual_nodes location (compatibility)."""
         # Test basic imports from compatibility layer
         from casare_rpa.canvas.visual_nodes import (
@@ -37,7 +37,7 @@ class TestVisualNodesImports:
         assert VisualEndNode is not None
         assert VisualCommentNode is not None
 
-    def test_import_all_categories(self):
+    def test_import_all_categories(self) -> None:
         """Test importing at least one node from each category."""
         # Basic (3 nodes)
         from casare_rpa.presentation.canvas.visual_nodes.basic import VisualStartNode
@@ -129,7 +129,7 @@ class TestVisualNodesImports:
         assert VisualRandomNumberNode is not None
         assert VisualSetVariableNode is not None
 
-    def test_no_duplicate_http_request_node(self):
+    def test_no_duplicate_http_request_node(self) -> None:
         """Test that VisualHttpRequestNode is only in rest_api, not utility."""
         # Should import from rest_api successfully
         from casare_rpa.presentation.canvas.visual_nodes.rest_api import (
@@ -145,7 +145,7 @@ class TestVisualNodesImports:
                 VisualHttpRequestNode,  # noqa: F401
             )
 
-    def test_main_init_exports_all_nodes(self):
+    def test_main_init_exports_all_nodes(self) -> None:
         """Test that main __init__.py exports all nodes correctly."""
         from casare_rpa.presentation.canvas.visual_nodes import __all__
 
@@ -162,7 +162,7 @@ class TestVisualNodesImports:
             http_request_count == 1
         ), f"VisualHttpRequestNode appears {http_request_count} times, expected 1"
 
-    def test_compatibility_layer_has_all_exports(self):
+    def test_compatibility_layer_has_all_exports(self) -> None:
         """Test that compatibility layer re-exports __all__ correctly."""
         from casare_rpa.canvas.visual_nodes import __all__ as compat_all
         from casare_rpa.presentation.canvas.visual_nodes import __all__ as new_all

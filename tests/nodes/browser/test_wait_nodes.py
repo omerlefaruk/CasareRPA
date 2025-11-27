@@ -14,7 +14,7 @@ class TestWaitNode:
     """Tests for WaitNode - fixed time delay."""
 
     @pytest.mark.asyncio
-    async def test_wait_success(self, execution_context):
+    async def test_wait_success(self, execution_context) -> None:
         """Test successful wait with default duration."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -26,7 +26,7 @@ class TestWaitNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_wait_from_input(self, execution_context):
+    async def test_wait_from_input(self, execution_context) -> None:
         """Test wait with duration from input port."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -38,7 +38,7 @@ class TestWaitNode:
         assert result["data"]["duration"] == 0.02
 
     @pytest.mark.asyncio
-    async def test_wait_string_duration(self, execution_context):
+    async def test_wait_string_duration(self, execution_context) -> None:
         """Test wait with string duration (auto-converted)."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -49,7 +49,7 @@ class TestWaitNode:
         assert result["data"]["duration"] == 0.01
 
     @pytest.mark.asyncio
-    async def test_wait_zero_duration(self, execution_context):
+    async def test_wait_zero_duration(self, execution_context) -> None:
         """Test wait with zero duration (instant)."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -60,7 +60,7 @@ class TestWaitNode:
         assert result["data"]["duration"] == 0
 
     @pytest.mark.asyncio
-    async def test_wait_negative_duration_fails(self, execution_context):
+    async def test_wait_negative_duration_fails(self, execution_context) -> None:
         """Test wait with negative duration fails."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -73,7 +73,7 @@ class TestWaitNode:
             or "non-negative" in result["error"].lower()
         )
 
-    def test_validate_config_negative(self):
+    def test_validate_config_negative(self) -> None:
         """Test config validation rejects negative duration."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -83,7 +83,7 @@ class TestWaitNode:
         assert is_valid is False
         assert "negative" in error.lower() or "non-negative" in error.lower()
 
-    def test_validate_config_valid(self):
+    def test_validate_config_valid(self) -> None:
         """Test config validation accepts valid duration."""
         from casare_rpa.nodes.wait_nodes import WaitNode
 
@@ -97,7 +97,7 @@ class TestWaitForElementNode:
     """Tests for WaitForElementNode - element appearance wait."""
 
     @pytest.mark.asyncio
-    async def test_wait_element_visible(self, execution_context, mock_page):
+    async def test_wait_element_visible(self, execution_context, mock_page) -> None:
         """Test wait for visible element."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -116,7 +116,7 @@ class TestWaitForElementNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_wait_element_hidden(self, execution_context, mock_page):
+    async def test_wait_element_hidden(self, execution_context, mock_page) -> None:
         """Test wait for element to become hidden."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -133,7 +133,7 @@ class TestWaitForElementNode:
         assert call_kwargs["state"] == "hidden"
 
     @pytest.mark.asyncio
-    async def test_wait_element_attached(self, execution_context, mock_page):
+    async def test_wait_element_attached(self, execution_context, mock_page) -> None:
         """Test wait for element to be attached to DOM."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -150,7 +150,7 @@ class TestWaitForElementNode:
         assert call_kwargs["state"] == "attached"
 
     @pytest.mark.asyncio
-    async def test_wait_element_detached(self, execution_context, mock_page):
+    async def test_wait_element_detached(self, execution_context, mock_page) -> None:
         """Test wait for element to be removed from DOM."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -165,7 +165,7 @@ class TestWaitForElementNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_wait_element_timeout(self, execution_context, mock_page):
+    async def test_wait_element_timeout(self, execution_context, mock_page) -> None:
         """Test wait times out when element not found."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -181,7 +181,7 @@ class TestWaitForElementNode:
         assert result["data"]["found"] is False
 
     @pytest.mark.asyncio
-    async def test_wait_element_xpath(self, execution_context, mock_page):
+    async def test_wait_element_xpath(self, execution_context, mock_page) -> None:
         """Test wait with XPath selector."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -196,7 +196,7 @@ class TestWaitForElementNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_wait_element_no_page(self, execution_context_no_page):
+    async def test_wait_element_no_page(self, execution_context_no_page) -> None:
         """Test wait fails without active page."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -206,7 +206,7 @@ class TestWaitForElementNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_wait_element_no_selector(self, execution_context, mock_page):
+    async def test_wait_element_no_selector(self, execution_context, mock_page) -> None:
         """Test wait fails without selector."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -219,7 +219,9 @@ class TestWaitForElementNode:
         assert "selector" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_wait_element_outputs_found(self, execution_context, mock_page):
+    async def test_wait_element_outputs_found(
+        self, execution_context, mock_page
+    ) -> None:
         """Test that found output is set correctly."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -235,7 +237,7 @@ class TestWaitForElementNode:
         if found_output:
             assert found_output.value is True
 
-    def test_validate_config_invalid_state(self):
+    def test_validate_config_invalid_state(self) -> None:
         """Test config validation rejects invalid state."""
         from casare_rpa.nodes.wait_nodes import WaitForElementNode
 
@@ -251,7 +253,7 @@ class TestWaitForNavigationNode:
     """Tests for WaitForNavigationNode - page load wait."""
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_load(self, execution_context, mock_page):
+    async def test_wait_navigation_load(self, execution_context, mock_page) -> None:
         """Test wait for load event."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -268,7 +270,9 @@ class TestWaitForNavigationNode:
         assert "exec_out" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_domcontentloaded(self, execution_context, mock_page):
+    async def test_wait_navigation_domcontentloaded(
+        self, execution_context, mock_page
+    ) -> None:
         """Test wait for DOMContentLoaded event."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -285,7 +289,9 @@ class TestWaitForNavigationNode:
         )
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_networkidle(self, execution_context, mock_page):
+    async def test_wait_navigation_networkidle(
+        self, execution_context, mock_page
+    ) -> None:
         """Test wait for networkidle state."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -300,7 +306,9 @@ class TestWaitForNavigationNode:
         mock_page.wait_for_load_state.assert_called_with("networkidle", timeout=30000)
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_with_timeout(self, execution_context, mock_page):
+    async def test_wait_navigation_with_timeout(
+        self, execution_context, mock_page
+    ) -> None:
         """Test wait navigation with custom timeout."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -317,7 +325,9 @@ class TestWaitForNavigationNode:
         mock_page.wait_for_load_state.assert_called_with("load", timeout=60000)
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_timeout_error(self, execution_context, mock_page):
+    async def test_wait_navigation_timeout_error(
+        self, execution_context, mock_page
+    ) -> None:
         """Test wait navigation timeout handling."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -333,7 +343,7 @@ class TestWaitForNavigationNode:
         assert "error" in result
 
     @pytest.mark.asyncio
-    async def test_wait_navigation_no_page(self, execution_context_no_page):
+    async def test_wait_navigation_no_page(self, execution_context_no_page) -> None:
         """Test wait navigation fails without active page."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -342,7 +352,7 @@ class TestWaitForNavigationNode:
 
         assert result["success"] is False
 
-    def test_validate_config_valid_wait_until(self):
+    def test_validate_config_valid_wait_until(self) -> None:
         """Test config validation accepts valid wait_until values."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 
@@ -351,7 +361,7 @@ class TestWaitForNavigationNode:
             is_valid, error = node._validate_config()
             assert is_valid is True, f"Failed for wait_until={wait_until}"
 
-    def test_validate_config_invalid_wait_until(self):
+    def test_validate_config_invalid_wait_until(self) -> None:
         """Test config validation rejects invalid wait_until."""
         from casare_rpa.nodes.wait_nodes import WaitForNavigationNode
 

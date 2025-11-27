@@ -14,7 +14,7 @@ class TestSystemNodesIntegration:
     """Integration tests for system category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.resolve_value = lambda x: x
@@ -25,7 +25,7 @@ class TestSystemNodesIntegration:
     # Clipboard Nodes
     # =============================================================================
 
-    def test_clipboard_copy_node_integration(self, execution_context):
+    def test_clipboard_copy_node_integration(self, execution_context) -> None:
         """Test ClipboardCopyNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import ClipboardCopyNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -42,7 +42,7 @@ class TestSystemNodesIntegration:
         assert node.node_type == "ClipboardCopyNode"
         assert hasattr(node, "execute")
 
-    def test_clipboard_paste_node_integration(self, execution_context):
+    def test_clipboard_paste_node_integration(self, execution_context) -> None:
         """Test ClipboardPasteNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import ClipboardPasteNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -56,7 +56,7 @@ class TestSystemNodesIntegration:
         node = ClipboardPasteNode(node_id="test_clipboard_paste")
         assert node.node_type == "ClipboardPasteNode"
 
-    def test_clipboard_clear_node_integration(self, execution_context):
+    def test_clipboard_clear_node_integration(self, execution_context) -> None:
         """Test ClipboardClearNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import ClipboardClearNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -74,7 +74,7 @@ class TestSystemNodesIntegration:
     # Dialog Nodes
     # =============================================================================
 
-    def test_messagebox_node_integration(self, execution_context):
+    def test_messagebox_node_integration(self, execution_context) -> None:
         """Test MessageBoxNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import MessageBoxNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -89,7 +89,7 @@ class TestSystemNodesIntegration:
         assert node.node_type == "MessageBoxNode"
         assert hasattr(node, "execute")
 
-    def test_input_dialog_node_integration(self, execution_context):
+    def test_input_dialog_node_integration(self, execution_context) -> None:
         """Test InputDialogNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import InputDialogNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -103,7 +103,7 @@ class TestSystemNodesIntegration:
         node = InputDialogNode(node_id="test_input_dialog")
         assert node.node_type == "InputDialogNode"
 
-    def test_tooltip_node_integration(self, execution_context):
+    def test_tooltip_node_integration(self, execution_context) -> None:
         """Test TooltipNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import TooltipNode
         from casare_rpa.presentation.canvas.visual_nodes.system import VisualTooltipNode
@@ -120,7 +120,7 @@ class TestSystemNodesIntegration:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_run_command_node_integration(self, execution_context):
+    async def test_run_command_node_integration(self, execution_context) -> None:
         """Test RunCommandNode logic-to-visual connection and basic execution."""
         from casare_rpa.nodes.system_nodes import RunCommandNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -142,7 +142,7 @@ class TestSystemNodesIntegration:
         assert "test" in node.get_output_value("stdout")
 
     @pytest.mark.asyncio
-    async def test_run_powershell_node_integration(self, execution_context):
+    async def test_run_powershell_node_integration(self, execution_context) -> None:
         """Test RunPowerShellNode logic-to-visual connection and basic execution."""
         from casare_rpa.nodes.system_nodes import RunPowerShellNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -165,7 +165,7 @@ class TestSystemNodesIntegration:
     # Service Nodes
     # =============================================================================
 
-    def test_get_service_status_node_integration(self, execution_context):
+    def test_get_service_status_node_integration(self, execution_context) -> None:
         """Test GetServiceStatusNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import GetServiceStatusNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -179,7 +179,7 @@ class TestSystemNodesIntegration:
         node = GetServiceStatusNode(node_id="test_get_service_status")
         assert node.node_type == "GetServiceStatusNode"
 
-    def test_start_service_node_integration(self, execution_context):
+    def test_start_service_node_integration(self, execution_context) -> None:
         """Test StartServiceNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import StartServiceNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -193,7 +193,7 @@ class TestSystemNodesIntegration:
         node = StartServiceNode(node_id="test_start_service", config={"timeout": 30})
         assert node.node_type == "StartServiceNode"
 
-    def test_stop_service_node_integration(self, execution_context):
+    def test_stop_service_node_integration(self, execution_context) -> None:
         """Test StopServiceNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import StopServiceNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -207,7 +207,7 @@ class TestSystemNodesIntegration:
         node = StopServiceNode(node_id="test_stop_service", config={"timeout": 30})
         assert node.node_type == "StopServiceNode"
 
-    def test_restart_service_node_integration(self, execution_context):
+    def test_restart_service_node_integration(self, execution_context) -> None:
         """Test RestartServiceNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import RestartServiceNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -223,7 +223,7 @@ class TestSystemNodesIntegration:
         )
         assert node.node_type == "RestartServiceNode"
 
-    def test_list_services_node_integration(self, execution_context):
+    def test_list_services_node_integration(self, execution_context) -> None:
         """Test ListServicesNode logic-to-visual connection."""
         from casare_rpa.nodes.system_nodes import ListServicesNode
         from casare_rpa.presentation.canvas.visual_nodes.system import (
@@ -243,7 +243,7 @@ class TestSystemNodesIntegration:
     # Port Configuration Tests
     # =============================================================================
 
-    def test_all_visual_nodes_have_proper_ports(self):
+    def test_all_visual_nodes_have_proper_ports(self) -> None:
         """Test that all system visual nodes have setup_ports method."""
         from casare_rpa.presentation.canvas.visual_nodes.system import (
             VisualClipboardCopyNode,
@@ -289,7 +289,7 @@ class TestSystemNodesIntegration:
 class TestSystemNodesNodeRegistry:
     """Test that all system nodes are properly registered."""
 
-    def test_all_system_nodes_in_registry(self):
+    def test_all_system_nodes_in_registry(self) -> None:
         """Test that all 13 system nodes are in the node registry."""
         from casare_rpa.nodes import _NODE_REGISTRY
 

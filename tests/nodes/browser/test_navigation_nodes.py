@@ -13,7 +13,7 @@ class TestGoToURLNode:
     """Tests for GoToURLNode - URL navigation."""
 
     @pytest.mark.asyncio
-    async def test_goto_url_success(self, execution_context, mock_page):
+    async def test_goto_url_success(self, execution_context, mock_page) -> None:
         """Test successful URL navigation."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -33,7 +33,7 @@ class TestGoToURLNode:
         mock_page.goto.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_goto_url_adds_protocol(self, execution_context, mock_page):
+    async def test_goto_url_adds_protocol(self, execution_context, mock_page) -> None:
         """Test that https:// is added to URLs without protocol."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -48,7 +48,7 @@ class TestGoToURLNode:
         assert call_args[0][0] == "https://example.com"
 
     @pytest.mark.asyncio
-    async def test_goto_url_from_input_port(self, execution_context, mock_page):
+    async def test_goto_url_from_input_port(self, execution_context, mock_page) -> None:
         """Test navigation using URL from input port."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -64,7 +64,7 @@ class TestGoToURLNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_goto_url_no_page(self, execution_context_no_page):
+    async def test_goto_url_no_page(self, execution_context_no_page) -> None:
         """Test navigation fails without active page."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -75,7 +75,7 @@ class TestGoToURLNode:
         assert "page" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_goto_url_empty_url(self, execution_context, mock_page):
+    async def test_goto_url_empty_url(self, execution_context, mock_page) -> None:
         """Test navigation fails with empty URL."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -88,7 +88,7 @@ class TestGoToURLNode:
         assert "url" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_goto_url_with_wait_until(self, execution_context, mock_page):
+    async def test_goto_url_with_wait_until(self, execution_context, mock_page) -> None:
         """Test navigation with custom wait_until option."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -110,7 +110,7 @@ class TestGoToURLNode:
         assert call_kwargs["wait_until"] == "networkidle"
 
     @pytest.mark.asyncio
-    async def test_goto_url_timeout_error(self, execution_context, mock_page):
+    async def test_goto_url_timeout_error(self, execution_context, mock_page) -> None:
         """Test navigation timeout handling."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -124,7 +124,7 @@ class TestGoToURLNode:
         assert "timeout" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_goto_url_with_referer(self, execution_context, mock_page):
+    async def test_goto_url_with_referer(self, execution_context, mock_page) -> None:
         """Test navigation with referer header."""
         from casare_rpa.nodes.navigation_nodes import GoToURLNode
 
@@ -151,7 +151,7 @@ class TestGoBackNode:
     """Tests for GoBackNode - browser history back navigation."""
 
     @pytest.mark.asyncio
-    async def test_go_back_success(self, execution_context, mock_page):
+    async def test_go_back_success(self, execution_context, mock_page) -> None:
         """Test successful back navigation."""
         from casare_rpa.nodes.navigation_nodes import GoBackNode
 
@@ -168,7 +168,7 @@ class TestGoBackNode:
         mock_page.go_back.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_go_back_from_input_page(self, execution_context, mock_page):
+    async def test_go_back_from_input_page(self, execution_context, mock_page) -> None:
         """Test back navigation using page from input port."""
         from casare_rpa.nodes.navigation_nodes import GoBackNode
 
@@ -182,7 +182,7 @@ class TestGoBackNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_go_back_no_page(self, execution_context_no_page):
+    async def test_go_back_no_page(self, execution_context_no_page) -> None:
         """Test back navigation fails without page."""
         from casare_rpa.nodes.navigation_nodes import GoBackNode
 
@@ -192,7 +192,7 @@ class TestGoBackNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_go_back_with_wait_until(self, execution_context, mock_page):
+    async def test_go_back_with_wait_until(self, execution_context, mock_page) -> None:
         """Test back navigation with custom wait_until."""
         from casare_rpa.nodes.navigation_nodes import GoBackNode
 
@@ -216,7 +216,7 @@ class TestGoForwardNode:
     """Tests for GoForwardNode - browser history forward navigation."""
 
     @pytest.mark.asyncio
-    async def test_go_forward_success(self, execution_context, mock_page):
+    async def test_go_forward_success(self, execution_context, mock_page) -> None:
         """Test successful forward navigation."""
         from casare_rpa.nodes.navigation_nodes import GoForwardNode
 
@@ -233,7 +233,7 @@ class TestGoForwardNode:
         mock_page.go_forward.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_go_forward_no_page(self, execution_context_no_page):
+    async def test_go_forward_no_page(self, execution_context_no_page) -> None:
         """Test forward navigation fails without page."""
         from casare_rpa.nodes.navigation_nodes import GoForwardNode
 
@@ -243,7 +243,9 @@ class TestGoForwardNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_go_forward_error_handling(self, execution_context, mock_page):
+    async def test_go_forward_error_handling(
+        self, execution_context, mock_page
+    ) -> None:
         """Test forward navigation error handling."""
         from casare_rpa.nodes.navigation_nodes import GoForwardNode
 
@@ -261,7 +263,7 @@ class TestRefreshPageNode:
     """Tests for RefreshPageNode - page reload."""
 
     @pytest.mark.asyncio
-    async def test_refresh_success(self, execution_context, mock_page):
+    async def test_refresh_success(self, execution_context, mock_page) -> None:
         """Test successful page refresh."""
         from casare_rpa.nodes.navigation_nodes import RefreshPageNode
 
@@ -278,7 +280,7 @@ class TestRefreshPageNode:
         mock_page.reload.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_refresh_no_page(self, execution_context_no_page):
+    async def test_refresh_no_page(self, execution_context_no_page) -> None:
         """Test refresh fails without page."""
         from casare_rpa.nodes.navigation_nodes import RefreshPageNode
 
@@ -288,7 +290,7 @@ class TestRefreshPageNode:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_refresh_with_options(self, execution_context, mock_page):
+    async def test_refresh_with_options(self, execution_context, mock_page) -> None:
         """Test refresh with custom timeout and wait_until."""
         from casare_rpa.nodes.navigation_nodes import RefreshPageNode
 
@@ -306,7 +308,7 @@ class TestRefreshPageNode:
         mock_page.reload.assert_called_with(timeout=60000, wait_until="networkidle")
 
     @pytest.mark.asyncio
-    async def test_refresh_error_handling(self, execution_context, mock_page):
+    async def test_refresh_error_handling(self, execution_context, mock_page) -> None:
         """Test refresh error handling."""
         from casare_rpa.nodes.navigation_nodes import RefreshPageNode
 
