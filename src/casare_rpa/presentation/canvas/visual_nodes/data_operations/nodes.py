@@ -183,14 +183,14 @@ class VisualCreateListNode(VisualNode):
     NODE_NAME = 'Create List'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('item_1')
         self.add_input('item_2')
         self.add_input('item_3')
         self.add_output('list')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return CreateListNode
 
 
@@ -201,13 +201,13 @@ class VisualListGetItemNode(VisualNode):
     NODE_NAME = 'Get List Item'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('list')
         self.add_input('index')
         self.add_output('item')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return ListGetItemNode
 
 
@@ -218,12 +218,12 @@ class VisualJsonParseNode(VisualNode):
     NODE_NAME = 'Parse JSON'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('json_string')
         self.add_output('data')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return JsonParseNode
 
 
@@ -234,13 +234,13 @@ class VisualGetPropertyNode(VisualNode):
     NODE_NAME = 'Get Property'
     NODE_CATEGORY = 'data_operations'
 
-    def __init__(self):
-        super().__init__()
+    def setup_ports(self) -> None:
+        """Setup ports."""
         self.add_input('object')
         self.add_input('property_path')
         self.add_output('value')
 
-    def get_node_class(self):
+    def get_node_class(self) -> type:
         return GetPropertyNode
 
 
