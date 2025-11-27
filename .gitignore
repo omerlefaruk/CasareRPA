@@ -77,3 +77,6 @@ dmypy.json
 *.spec
 build/
 dist/
+dist2/
+installer/output/
+*.exe
