@@ -21,10 +21,6 @@ from ..connections.auto_connect import AutoConnectManager
 from ..connections.connection_cutter import ConnectionCutter
 from .node_quick_actions import NodeQuickActions
 from .custom_pipe import CasarePipe
-from ..snippets.snippet_navigation import SnippetNavigationManager, set_navigation_manager
-from ..dialogs.parameter_drop_zone import ParameterDropZone
-from ..dialogs.parameter_naming_dialog import ParameterNamingDialog
-from ..dialogs.property_drag_enabler import enable_property_dragging
 
 # Import connection validator for strict type checking
 try:
@@ -554,34 +550,14 @@ class NodeGraphWidget(QWidget):
         # Setup paste hook for duplicate ID detection
         self._setup_paste_hook()
 
-        # Enable property dragging for snippet parameter creation
-        enable_property_dragging()
-
         # Import callbacks (set by app.py)
         self._import_callback = None
         self._import_file_callback = None
 
-        # Create snippet navigation system
-        self._navigation_manager = SnippetNavigationManager(self)
-
-        # Set as global navigation manager
-        set_navigation_manager(self._navigation_manager)
-
-        # Create parameter drop zone (shown only when inside snippet)
-        self._parameter_drop_zone = ParameterDropZone(self)
-        self._parameter_drop_zone.setVisible(False)  # Hidden by default
-
-        # Connect navigation signals
-        self._navigation_manager.navigation_changed.connect(self._on_navigation_changed)
-
-        # Connect drop zone signal
-        self._parameter_drop_zone.parameter_requested.connect(self._on_parameter_requested)
-
         # Create layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._parameter_drop_zone)  # Drop zone at top
-        layout.addWidget(self._graph.widget)  # Graph below
+        layout.addWidget(self._graph.widget)
 
         self.setLayout(layout)
 
@@ -1340,19 +1316,6 @@ class NodeGraphWidget(QWidget):
 
         event.ignore()
 
-    def _on_navigation_changed(self) -> None:
-        """Handle navigation stack changes - update drop zone visibility."""
-        # Show drop zone only when inside a snippet (depth > 0)
-        depth = self._navigation_manager.get_depth()
-        is_inside_snippet = depth > 0
-        self._parameter_drop_zone.setVisible(is_inside_snippet)
-
-        logger.debug(f"Navigation changed, depth: {depth}, drop zone visible: {is_inside_snippet}")
-
-    def get_navigation_manager(self):
-        """Get the snippet navigation manager."""
-        return self._navigation_manager
-
     def _show_connection_search(self, source_port, scene_pos):
         """
         Show node context menu (same as Tab search) and auto-connect created node.
@@ -1644,82 +1607,3 @@ class NodeGraphWidget(QWidget):
             logger.error(f"Failed to create SetVariable for port: {e}")
             import traceback
             logger.error(traceback.format_exc())
-
-    def _on_parameter_requested(self, node_id: str, property_key: str, data_type: str, current_value) -> None:
-        """
-        Handle parameter creation request from drop zone.
-
-        Args:
-            node_id: ID of node containing the property
-            property_key: Key of the property being exposed
-            data_type: Data type of the property
-            current_value: Current value of the property
-        """
-        from PySide6.QtWidgets import QMessageBox
-        from ...core.snippet_definition import ParameterMapping
-
-        logger.info(f"Parameter requested: {node_id}.{property_key} (type: {data_type})")
-
-        # Show parameter naming dialog
-        dialog = ParameterNamingDialog(node_id, property_key, data_type, current_value, self)
-        if dialog.exec() != ParameterNamingDialog.DialogCode.Accepted:
-            logger.debug("Parameter creation cancelled by user")
-            return
-
-        # Get dialog results
-        param_name = dialog.get_parameter_name()
-        description = dialog.get_description()
-        required = dialog.is_required()
-        default_value = dialog.get_default_value()
-
-        logger.info(f"Creating parameter: {param_name} -> {node_id}.{property_key}")
-
-        # Get current snippet definition from navigation manager
-        current_level = self._navigation_manager.get_current_level()
-        if not current_level or not current_level.snippet_definition:
-            QMessageBox.critical(
-                self,
-                "Navigation Error",
-                "Cannot create parameter: not currently inside a snippet"
-            )
-            return
-
-        snippet_def = current_level.snippet_definition
-
-        # Check if parameter name already exists
-        if any(p.name == param_name for p in snippet_def.parameters):
-            QMessageBox.warning(
-                self,
-                "Duplicate Parameter",
-                f"Parameter '{param_name}' already exists in this snippet.\n\n"
-                f"Please choose a different name."
-            )
-            return
-
-        # Create parameter mapping
-        param_mapping = ParameterMapping(
-            name=param_name,
-            target_node_id=node_id,
-            target_property=property_key,
-            data_type=data_type,
-            default_value=default_value,
-            required=required,
-            description=description
-        )
-
-        # Add to snippet definition
-        snippet_def.parameters.append(param_mapping)
-
-        logger.info(f"Parameter '{param_name}' created successfully")
-
-        # TODO: Update the VisualSnippetNode in the parent level to show the new parameter port
-        # This requires finding the snippet node at the parent level and dynamically adding a port
-
-        QMessageBox.information(
-            self,
-            "Parameter Created",
-            f"Parameter '{param_name}' has been created.\n\n"
-            f"Maps to: {node_id}.{property_key}\n"
-            f"Type: {data_type}\n"
-            f"Required: {required}"
-        )
