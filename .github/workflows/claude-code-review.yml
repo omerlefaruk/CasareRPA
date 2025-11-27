@@ -1,0 +1,39 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    name: Code Review with Claude
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-reviewer@v1
+        if: steps.changed-files.outputs.any_changed == 'true'
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          files: ${{ steps.changed-files.outputs.all_changed_files }}
+          model: claude-sonnet-4-5-20250929
+          focus-areas: |
+            - Security vulnerabilities
+            - Code quality and best practices
+            - Performance issues
+            - Bug detection
+            - Type safety

@@ -39,6 +39,8 @@ env/
 # IDEs
 .vscode/
 .idea/
+.claude/
+.gitattributes
 *.swp
 *.swo
 *~
