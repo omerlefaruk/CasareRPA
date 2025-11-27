@@ -8,14 +8,11 @@ GUI container for the RPA platform.
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import Qt, QSize, Signal, Slot, QSettings, QByteArray, QTimer
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtCore import Qt, Signal, Slot, QSettings, QTimer
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
-    QVBoxLayout,
-    QMenuBar,
-    QMenu,
     QToolBar,
     QStatusBar,
     QMessageBox,
@@ -39,10 +36,10 @@ from loguru import logger
 class MainWindow(QMainWindow):
     """
     Main application window for CasareRPA.
-    
+
     Provides the primary UI container with menu bar, toolbar, status bar,
     and central widget area for the node graph editor.
-    
+
     Signals:
         workflow_new: Emitted when user requests new workflow
         workflow_new_from_template: Emitted when user selects a template (TemplateInfo)
@@ -54,7 +51,7 @@ class MainWindow(QMainWindow):
         workflow_resume: Emitted when user requests to resume workflow
         workflow_stop: Emitted when user requests to stop workflow
     """
-    
+
     workflow_new = Signal()
     workflow_new_from_template = Signal(object)  # TemplateInfo
     workflow_open = Signal(str)
@@ -70,47 +67,51 @@ class MainWindow(QMainWindow):
     workflow_resume = Signal()
     workflow_stop = Signal()
     preferences_saved = Signal()  # Emitted when preferences are saved
-    trigger_workflow_requested = Signal()  # Emitted when a trigger wants to run the workflow
+    trigger_workflow_requested = (
+        Signal()
+    )  # Emitted when a trigger wants to run the workflow
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the main window.
-        
+
         Args:
             parent: Optional parent widget
         """
         super().__init__(parent)
-        
+
         # Window properties
         self._current_file: Optional[Path] = None
         self._is_modified: bool = False
-        
+
         # Hotkey settings
         self._hotkey_settings = get_hotkey_settings()
-        
+
         # Minimap overlay
         self._minimap: Optional[Minimap] = None
         self._central_widget: Optional[QWidget] = None
-        
+
         # Debug components
-        self._debug_toolbar: Optional['DebugToolbar'] = None
+        self._debug_toolbar: Optional["DebugToolbar"] = None
 
         # Validation components (timer and settings for auto-validation)
-        self._validation_timer: Optional['QTimer'] = None
+        self._validation_timer: Optional["QTimer"] = None
         self._auto_validate: bool = True  # Enable real-time validation
-        self._workflow_data_provider: Optional[callable] = None  # Callback to get workflow data
+        self._workflow_data_provider: Optional[callable] = (
+            None  # Callback to get workflow data
+        )
 
         # Bottom panel dock (unified panel with Variables, Output, Log, Validation tabs)
-        self._bottom_panel: Optional['BottomPanelDock'] = None
+        self._bottom_panel: Optional["BottomPanelDock"] = None
 
         # Variable Inspector dock (shows real-time variable values during execution)
-        self._variable_inspector_dock: Optional['VariableInspectorDock'] = None
+        self._variable_inspector_dock: Optional["VariableInspectorDock"] = None
 
         # Properties panel (right dock for selected node properties)
-        self._properties_panel: Optional['PropertiesPanel'] = None
+        self._properties_panel: Optional["PropertiesPanel"] = None
 
         # Command palette
-        self._command_palette: Optional['CommandPalette'] = None
+        self._command_palette: Optional["CommandPalette"] = None
 
         # Setup window
         self._setup_window()
@@ -125,7 +126,7 @@ class MainWindow(QMainWindow):
         self._create_debug_components()
         self._create_command_palette()
         self._setup_validation_timer()
-        
+
         # Set initial state
         self._update_window_title()
         self._update_actions()
@@ -143,14 +144,15 @@ class MainWindow(QMainWindow):
         """Configure window properties."""
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
         self.resize(GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT)
-        
+
         # Enable high-DPI support
         self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
-        
+
         # Apply unified dark theme stylesheet
         from casare_rpa.canvas.theme import get_canvas_stylesheet
+
         self.setStyleSheet(get_canvas_stylesheet())
-    
+
     def _create_actions(self) -> None:
         """Create actions for menus and toolbar."""
         # File actions
@@ -158,12 +160,14 @@ class MainWindow(QMainWindow):
         self.action_new.setShortcut(QKeySequence.StandardKey.New)
         self.action_new.setStatusTip("Create a new workflow")
         self.action_new.triggered.connect(self._on_new_workflow)
-        
+
         self.action_new_from_template = QAction("New from &Template...", self)
         self.action_new_from_template.setShortcut(QKeySequence("Ctrl+Shift+N"))
-        self.action_new_from_template.setStatusTip("Create a new workflow from a template")
+        self.action_new_from_template.setStatusTip(
+            "Create a new workflow from a template"
+        )
         self.action_new_from_template.triggered.connect(self._on_new_from_template)
-        
+
         self.action_open = QAction("&Open Workflow...", self)
         self.action_open.setShortcut(QKeySequence.StandardKey.Open)
         self.action_open.setStatusTip("Open an existing workflow")
@@ -171,19 +175,23 @@ class MainWindow(QMainWindow):
 
         self.action_import = QAction("&Import Workflow...", self)
         self.action_import.setShortcut(QKeySequence("Ctrl+Shift+I"))
-        self.action_import.setStatusTip("Import nodes from another workflow into current workflow")
+        self.action_import.setStatusTip(
+            "Import nodes from another workflow into current workflow"
+        )
         self.action_import.triggered.connect(self._on_import_workflow)
 
         self.action_export_selected = QAction("&Export Selected Nodes...", self)
         self.action_export_selected.setShortcut(QKeySequence("Ctrl+Shift+E"))
-        self.action_export_selected.setStatusTip("Export selected nodes to a workflow file")
+        self.action_export_selected.setStatusTip(
+            "Export selected nodes to a workflow file"
+        )
         self.action_export_selected.triggered.connect(self._on_export_selected)
 
         self.action_save = QAction("&Save Workflow", self)
         self.action_save.setShortcut(QKeySequence.StandardKey.Save)
         self.action_save.setStatusTip("Save the current workflow")
         self.action_save.triggered.connect(self._on_save_workflow)
-        
+
         self.action_save_as = QAction("Save Workflow &As...", self)
         self.action_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.action_save_as.setStatusTip("Save the workflow with a new name")
@@ -191,7 +199,9 @@ class MainWindow(QMainWindow):
 
         self.action_save_to_scenario = QAction("Save to &Scenario", self)
         self.action_save_to_scenario.setShortcut(QKeySequence("Ctrl+Shift+S"))
-        self.action_save_to_scenario.setStatusTip("Save current workflow to the open scenario")
+        self.action_save_to_scenario.setStatusTip(
+            "Save current workflow to the open scenario"
+        )
         # Connection set in app.py since it needs CasareRPAApp instance
 
         self.action_exit = QAction("E&xit", self)
@@ -210,24 +220,28 @@ class MainWindow(QMainWindow):
         self.action_undo.setShortcut(QKeySequence.StandardKey.Undo)
         self.action_undo.setStatusTip("Undo the last action")
         self.action_undo.setEnabled(False)
-        
+
         self.action_redo = QAction("&Redo", self)
-        self.action_redo.setShortcuts([QKeySequence.StandardKey.Redo, QKeySequence("Ctrl+Shift+Z")])
-        self.action_redo.setStatusTip("Redo the last undone action (Ctrl+Y or Ctrl+Shift+Z)")
+        self.action_redo.setShortcuts(
+            [QKeySequence.StandardKey.Redo, QKeySequence("Ctrl+Shift+Z")]
+        )
+        self.action_redo.setStatusTip(
+            "Redo the last undone action (Ctrl+Y or Ctrl+Shift+Z)"
+        )
         self.action_redo.setEnabled(False)
-        
+
         self.action_delete = QAction("&Delete", self)
         self.action_delete.setShortcut(QKeySequence("X"))
         self.action_delete.setStatusTip("Delete selected nodes")
-        
+
         self.action_cut = QAction("Cu&t", self)
         self.action_cut.setShortcut(QKeySequence.StandardKey.Cut)
         self.action_cut.setStatusTip("Cut selected nodes")
-        
+
         self.action_copy = QAction("&Copy", self)
         self.action_copy.setShortcut(QKeySequence.StandardKey.Copy)
         self.action_copy.setStatusTip("Copy selected nodes")
-        
+
         self.action_paste = QAction("&Paste", self)
         self.action_paste.setShortcut(QKeySequence.StandardKey.Paste)
         self.action_paste.setStatusTip("Paste nodes")
@@ -238,13 +252,15 @@ class MainWindow(QMainWindow):
 
         self.action_paste_workflow = QAction("Paste Workflow JSON", self)
         self.action_paste_workflow.setShortcut(QKeySequence("Ctrl+Shift+V"))
-        self.action_paste_workflow.setStatusTip("Paste workflow JSON from clipboard and import nodes")
+        self.action_paste_workflow.setStatusTip(
+            "Paste workflow JSON from clipboard and import nodes"
+        )
         self.action_paste_workflow.triggered.connect(self._on_paste_workflow)
 
         self.action_select_all = QAction("Select &All", self)
         self.action_select_all.setShortcut(QKeySequence.StandardKey.SelectAll)
         self.action_select_all.setStatusTip("Select all nodes")
-        
+
         self.action_deselect_all = QAction("Deselect All", self)
         self.action_deselect_all.setShortcut(QKeySequence("Ctrl+Shift+A"))
         self.action_deselect_all.setStatusTip("Deselect all nodes")
@@ -252,13 +268,17 @@ class MainWindow(QMainWindow):
         # Quick node selection
         self.action_select_nearest = QAction("Select &Nearest Node", self)
         self.action_select_nearest.setShortcut(QKeySequence("2"))
-        self.action_select_nearest.setStatusTip("Select the nearest node to mouse cursor (2)")
+        self.action_select_nearest.setStatusTip(
+            "Select the nearest node to mouse cursor (2)"
+        )
         self.action_select_nearest.triggered.connect(self._on_select_nearest_node)
 
         # Disable/bypass node
         self.action_toggle_disable = QAction("&Disable Node", self)
         self.action_toggle_disable.setShortcut(QKeySequence("4"))
-        self.action_toggle_disable.setStatusTip("Disable/enable selected node - inputs bypass to outputs (4)")
+        self.action_toggle_disable.setStatusTip(
+            "Disable/enable selected node - inputs bypass to outputs (4)"
+        )
         self.action_toggle_disable.triggered.connect(self._on_toggle_disable_node)
 
         self.action_preferences = QAction("&Preferences...", self)
@@ -270,48 +290,56 @@ class MainWindow(QMainWindow):
         self.action_zoom_in = QAction("Zoom &In", self)
         self.action_zoom_in.setShortcut(QKeySequence.StandardKey.ZoomIn)
         self.action_zoom_in.setStatusTip("Zoom in")
-        
+
         self.action_zoom_out = QAction("Zoom &Out", self)
         self.action_zoom_out.setShortcut(QKeySequence.StandardKey.ZoomOut)
         self.action_zoom_out.setStatusTip("Zoom out")
-        
+
         self.action_zoom_reset = QAction("&Reset Zoom", self)
         self.action_zoom_reset.setShortcut(QKeySequence("Ctrl+0"))
         self.action_zoom_reset.setStatusTip("Reset zoom to 100%")
-        
+
         self.action_fit_view = QAction("&Fit to View", self)
         self.action_fit_view.setShortcut(QKeySequence("Ctrl+F"))
         self.action_fit_view.setStatusTip("Fit all nodes in view")
-        
+
         self.action_toggle_bottom_panel = QAction("&Bottom Panel", self)
         self.action_toggle_bottom_panel.setShortcut(QKeySequence("Ctrl+`"))
         self.action_toggle_bottom_panel.setCheckable(True)
-        self.action_toggle_bottom_panel.setStatusTip("Show/hide bottom panel (Variables, Output, Log, Validation)")
+        self.action_toggle_bottom_panel.setStatusTip(
+            "Show/hide bottom panel (Variables, Output, Log, Validation)"
+        )
         self.action_toggle_bottom_panel.triggered.connect(self._on_toggle_bottom_panel)
 
         self.action_toggle_variable_inspector = QAction("Variable &Inspector", self)
         self.action_toggle_variable_inspector.setShortcut(QKeySequence("Ctrl+Shift+V"))
         self.action_toggle_variable_inspector.setCheckable(True)
-        self.action_toggle_variable_inspector.setStatusTip("Show/hide variable inspector (real-time variable values)")
-        self.action_toggle_variable_inspector.triggered.connect(self._on_toggle_variable_inspector)
+        self.action_toggle_variable_inspector.setStatusTip(
+            "Show/hide variable inspector (real-time variable values)"
+        )
+        self.action_toggle_variable_inspector.triggered.connect(
+            self._on_toggle_variable_inspector
+        )
 
         self.action_validate = QAction("&Validate Workflow", self)
         self.action_validate.setShortcut(QKeySequence("Ctrl+Shift+B"))
         self.action_validate.setStatusTip("Validate current workflow")
         self.action_validate.triggered.connect(lambda: self.validate_current_workflow())
-        
+
         self.action_toggle_minimap = QAction("&Minimap", self)
         self.action_toggle_minimap.setShortcut(QKeySequence("Ctrl+M"))
         self.action_toggle_minimap.setCheckable(True)
         self.action_toggle_minimap.setStatusTip("Show/hide minimap overview (Ctrl+M)")
         self.action_toggle_minimap.triggered.connect(self._on_toggle_minimap)
-        
+
         self.action_auto_connect = QAction("&Auto-Connect Nodes", self)
         self.action_auto_connect.setCheckable(True)
         self.action_auto_connect.setChecked(True)  # Enabled by default
-        self.action_auto_connect.setStatusTip("Automatically suggest connections while dragging nodes (right-click to connect/disconnect)")
+        self.action_auto_connect.setStatusTip(
+            "Automatically suggest connections while dragging nodes (right-click to connect/disconnect)"
+        )
         self.action_auto_connect.triggered.connect(self._on_toggle_auto_connect)
-        
+
         # Workflow actions with Unicode icons
         self.action_run = QAction("▶ Run", self)
         self.action_run.setShortcut(QKeySequence("F3"))
@@ -320,12 +348,16 @@ class MainWindow(QMainWindow):
 
         self.action_run_to_node = QAction("▷ To Node", self)
         self.action_run_to_node.setShortcut(QKeySequence("F4"))
-        self.action_run_to_node.setStatusTip("Execute workflow up to selected node (F4)")
+        self.action_run_to_node.setStatusTip(
+            "Execute workflow up to selected node (F4)"
+        )
         self.action_run_to_node.triggered.connect(self._on_run_to_node)
 
         self.action_run_single_node = QAction("⊙ This Node", self)
         self.action_run_single_node.setShortcut(QKeySequence("F5"))
-        self.action_run_single_node.setStatusTip("Re-run only the selected node with existing inputs (F5)")
+        self.action_run_single_node.setStatusTip(
+            "Re-run only the selected node with existing inputs (F5)"
+        )
         self.action_run_single_node.triggered.connect(self._on_run_single_node)
 
         self.action_pause = QAction("⏸ Pause", self)
@@ -344,61 +376,83 @@ class MainWindow(QMainWindow):
         # Schedule actions
         self.action_schedule = QAction("&Schedule Workflow...", self)
         self.action_schedule.setShortcut(QKeySequence("Ctrl+Shift+H"))
-        self.action_schedule.setStatusTip("Schedule this workflow to run automatically (Ctrl+Shift+H)")
+        self.action_schedule.setStatusTip(
+            "Schedule this workflow to run automatically (Ctrl+Shift+H)"
+        )
         self.action_schedule.triggered.connect(self._on_schedule_workflow)
 
         self.action_manage_schedules = QAction("&Manage Schedules...", self)
-        self.action_manage_schedules.setStatusTip("View and manage all scheduled workflows")
+        self.action_manage_schedules.setStatusTip(
+            "View and manage all scheduled workflows"
+        )
         self.action_manage_schedules.triggered.connect(self._on_manage_schedules)
 
         # Tools actions with Unicode icons
         self.action_pick_selector = QAction("⌖ Pick", self)
         self.action_pick_selector.setShortcut(QKeySequence("Ctrl+Shift+S"))
-        self.action_pick_selector.setStatusTip("Pick an element from the browser (Ctrl+Shift+S)")
+        self.action_pick_selector.setStatusTip(
+            "Pick an element from the browser (Ctrl+Shift+S)"
+        )
         self.action_pick_selector.setEnabled(False)  # Enabled when browser is running
         self.action_pick_selector.triggered.connect(self._on_pick_selector)
 
         self.action_record_workflow = QAction("⏺ Record", self)
         self.action_record_workflow.setShortcut(QKeySequence("Ctrl+Shift+R"))
-        self.action_record_workflow.setStatusTip("Record browser interactions as workflow (Ctrl+Shift+R)")
+        self.action_record_workflow.setStatusTip(
+            "Record browser interactions as workflow (Ctrl+Shift+R)"
+        )
         self.action_record_workflow.setCheckable(True)
         self.action_record_workflow.setEnabled(False)  # Enabled when browser is running
         self.action_record_workflow.triggered.connect(self._on_toggle_recording)
-        
+
         self.action_hotkey_manager = QAction("&Keyboard Shortcuts...", self)
         self.action_hotkey_manager.setShortcut(QKeySequence("Ctrl+K, Ctrl+S"))
         self.action_hotkey_manager.setStatusTip("View and customize keyboard shortcuts")
         self.action_hotkey_manager.triggered.connect(self._on_open_hotkey_manager)
 
-        self.action_desktop_selector_builder = QAction("🎯 Desktop Selector Builder", self)
+        self.action_desktop_selector_builder = QAction(
+            "🎯 Desktop Selector Builder", self
+        )
         self.action_desktop_selector_builder.setShortcut(QKeySequence("Ctrl+Shift+D"))
-        self.action_desktop_selector_builder.setStatusTip("Build desktop element selectors visually (Ctrl+Shift+D)")
-        self.action_desktop_selector_builder.triggered.connect(self._on_open_desktop_selector_builder)
+        self.action_desktop_selector_builder.setStatusTip(
+            "Build desktop element selectors visually (Ctrl+Shift+D)"
+        )
+        self.action_desktop_selector_builder.triggered.connect(
+            self._on_open_desktop_selector_builder
+        )
 
         self.action_create_frame = QAction("📋 Create Frame", self)
         self.action_create_frame.setShortcut(QKeySequence("Shift+W"))
-        self.action_create_frame.setStatusTip("Create a frame around selected nodes (Shift+W)")
+        self.action_create_frame.setStatusTip(
+            "Create a frame around selected nodes (Shift+W)"
+        )
         self.action_create_frame.triggered.connect(self._on_create_frame)
 
         self.action_performance_dashboard = QAction("📊 Performance Dashboard", self)
         self.action_performance_dashboard.setShortcut(QKeySequence("Ctrl+Shift+P"))
-        self.action_performance_dashboard.setStatusTip("View performance metrics and statistics (Ctrl+Shift+P)")
-        self.action_performance_dashboard.triggered.connect(self._on_open_performance_dashboard)
+        self.action_performance_dashboard.setStatusTip(
+            "View performance metrics and statistics (Ctrl+Shift+P)"
+        )
+        self.action_performance_dashboard.triggered.connect(
+            self._on_open_performance_dashboard
+        )
 
         # Command palette action
         self.action_command_palette = QAction("Command Palette...", self)
         self.action_command_palette.setShortcut(QKeySequence("Ctrl+Shift+P"))
-        self.action_command_palette.setStatusTip("Open command palette to search actions (Ctrl+Shift+P)")
+        self.action_command_palette.setStatusTip(
+            "Open command palette to search actions (Ctrl+Shift+P)"
+        )
         self.action_command_palette.triggered.connect(self._on_open_command_palette)
 
         # Help actions
         self.action_about = QAction("&About", self)
         self.action_about.setStatusTip("About CasareRPA")
         self.action_about.triggered.connect(self._on_about)
-        
+
         # Apply saved hotkeys
         self._load_hotkeys()
-    
+
     def _load_hotkeys(self) -> None:
         """Load and apply saved hotkeys to actions."""
         action_map = {
@@ -425,17 +479,17 @@ class MainWindow(QMainWindow):
             "create_frame": self.action_create_frame,
             "hotkey_manager": self.action_hotkey_manager,
         }
-        
+
         for action_name, action in action_map.items():
             shortcuts = self._hotkey_settings.get_shortcuts(action_name)
             if shortcuts:
                 sequences = [QKeySequence(s) for s in shortcuts]
                 action.setShortcuts(sequences)
-    
+
     def _create_menus(self) -> None:
         """Create menu bar and menus."""
         menubar = self.menuBar()
-        
+
         # File menu
         file_menu = menubar.addMenu("&File")
         file_menu.addAction(self.action_new)
@@ -455,7 +509,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.action_save_to_scenario)
         file_menu.addSeparator()
         file_menu.addAction(self.action_exit)
-        
+
         # Edit menu
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(self.action_undo)
@@ -520,11 +574,11 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self.action_performance_dashboard)
         tools_menu.addSeparator()
         tools_menu.addAction(self.action_hotkey_manager)
-        
+
         # Help menu
         help_menu = menubar.addMenu("&Help")
         help_menu.addAction(self.action_about)
-    
+
     def _create_toolbar(self) -> None:
         """Create unified compact toolbar with execution and debug controls."""
         toolbar = QToolBar("Main Toolbar")
@@ -587,7 +641,7 @@ class MainWindow(QMainWindow):
 
     def _create_status_bar(self) -> None:
         """Create enhanced status bar with zoom, node count, and quick toggles."""
-        from PySide6.QtWidgets import QLabel, QPushButton, QHBoxLayout, QWidget
+        from PySide6.QtWidgets import QLabel, QPushButton
 
         status_bar = QStatusBar()
         self.setStatusBar(status_bar)
@@ -666,7 +720,9 @@ class MainWindow(QMainWindow):
         self._btn_validation = QPushButton("Valid")
         self._btn_validation.setCheckable(True)
         self._btn_validation.setToolTip("Toggle Validation tab")
-        self._btn_validation.clicked.connect(lambda: self._toggle_panel_tab("validation"))
+        self._btn_validation.clicked.connect(
+            lambda: self._toggle_panel_tab("validation")
+        )
         status_bar.addPermanentWidget(self._btn_validation)
 
         # Separator
@@ -688,7 +744,13 @@ class MainWindow(QMainWindow):
             if self._bottom_panel.isVisible():
                 # Switch to tab or hide if already on that tab
                 current_idx = self._bottom_panel._tab_widget.currentIndex()
-                tab_map = {"variables": 0, "output": 1, "log": 2, "validation": 3, "history": 4}
+                tab_map = {
+                    "variables": 0,
+                    "output": 1,
+                    "log": 2,
+                    "validation": 3,
+                    "history": 4,
+                }
                 target_idx = tab_map.get(tab_name, 0)
                 if current_idx == target_idx:
                     self._bottom_panel.hide()
@@ -696,7 +758,13 @@ class MainWindow(QMainWindow):
                     self._bottom_panel._tab_widget.setCurrentIndex(target_idx)
             else:
                 self._bottom_panel.show()
-                tab_map = {"variables": 0, "output": 1, "log": 2, "validation": 3, "history": 4}
+                tab_map = {
+                    "variables": 0,
+                    "output": 1,
+                    "log": 2,
+                    "validation": 3,
+                    "history": 4,
+                }
                 self._bottom_panel._tab_widget.setCurrentIndex(tab_map.get(tab_name, 0))
             self._update_status_bar_buttons()
 
@@ -713,12 +781,12 @@ class MainWindow(QMainWindow):
 
     def update_zoom_display(self, zoom_percent: float) -> None:
         """Update the zoom level display in status bar."""
-        if hasattr(self, '_zoom_label'):
+        if hasattr(self, "_zoom_label"):
             self._zoom_label.setText(f"{int(zoom_percent)}%")
 
     def update_node_count(self, count: int) -> None:
         """Update the node count display in status bar."""
-        if hasattr(self, '_node_count_label'):
+        if hasattr(self, "_node_count_label"):
             self._node_count_label.setText(f"Nodes: {count}")
 
     def set_execution_status(self, status: str) -> None:
@@ -728,14 +796,14 @@ class MainWindow(QMainWindow):
         Args:
             status: One of 'ready', 'running', 'paused', 'error', 'success'
         """
-        if not hasattr(self, '_exec_status_label'):
+        if not hasattr(self, "_exec_status_label"):
             return
 
         status_config = {
-            "ready": ("● Ready", "#4CAF50"),      # Green
-            "running": ("● Running", "#FFA500"),   # Orange
-            "paused": ("● Paused", "#2196F3"),     # Blue
-            "error": ("● Error", "#f44336"),       # Red
+            "ready": ("● Ready", "#4CAF50"),  # Green
+            "running": ("● Running", "#FFA500"),  # Orange
+            "paused": ("● Paused", "#2196F3"),  # Blue
+            "error": ("● Error", "#f44336"),  # Red
             "success": ("✓ Complete", "#4CAF50"),  # Green
         }
         text, color = status_config.get(status, ("● Ready", "#4CAF50"))
@@ -749,13 +817,27 @@ class MainWindow(QMainWindow):
         self._command_palette = CommandPalette(self)
 
         # Register File actions
-        self._command_palette.register_action(self.action_new, "File", "Create new workflow")
-        self._command_palette.register_action(self.action_new_from_template, "File", "Create from template")
-        self._command_palette.register_action(self.action_open, "File", "Open existing workflow")
-        self._command_palette.register_action(self.action_import, "File", "Import nodes from another workflow")
-        self._command_palette.register_action(self.action_export_selected, "File", "Export selected nodes to file")
-        self._command_palette.register_action(self.action_save, "File", "Save current workflow")
-        self._command_palette.register_action(self.action_save_as, "File", "Save with new name")
+        self._command_palette.register_action(
+            self.action_new, "File", "Create new workflow"
+        )
+        self._command_palette.register_action(
+            self.action_new_from_template, "File", "Create from template"
+        )
+        self._command_palette.register_action(
+            self.action_open, "File", "Open existing workflow"
+        )
+        self._command_palette.register_action(
+            self.action_import, "File", "Import nodes from another workflow"
+        )
+        self._command_palette.register_action(
+            self.action_export_selected, "File", "Export selected nodes to file"
+        )
+        self._command_palette.register_action(
+            self.action_save, "File", "Save current workflow"
+        )
+        self._command_palette.register_action(
+            self.action_save_as, "File", "Save with new name"
+        )
 
         # Register Edit actions
         self._command_palette.register_action(self.action_undo, "Edit")
@@ -763,7 +845,9 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_cut, "Edit")
         self._command_palette.register_action(self.action_copy, "Edit")
         self._command_palette.register_action(self.action_paste, "Edit")
-        self._command_palette.register_action(self.action_paste_workflow, "Edit", "Paste workflow JSON from clipboard")
+        self._command_palette.register_action(
+            self.action_paste_workflow, "Edit", "Paste workflow JSON from clipboard"
+        )
         self._command_palette.register_action(self.action_delete, "Edit")
         self._command_palette.register_action(self.action_select_all, "Edit")
 
@@ -776,11 +860,21 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_toggle_minimap, "View")
 
         # Register Workflow actions
-        self._command_palette.register_action(self.action_run, "Workflow", "Execute workflow")
-        self._command_palette.register_action(self.action_run_to_node, "Workflow", "Run to selected node")
-        self._command_palette.register_action(self.action_pause, "Workflow", "Pause execution")
-        self._command_palette.register_action(self.action_stop, "Workflow", "Stop execution")
-        self._command_palette.register_action(self.action_validate, "Workflow", "Validate workflow")
+        self._command_palette.register_action(
+            self.action_run, "Workflow", "Execute workflow"
+        )
+        self._command_palette.register_action(
+            self.action_run_to_node, "Workflow", "Run to selected node"
+        )
+        self._command_palette.register_action(
+            self.action_pause, "Workflow", "Pause execution"
+        )
+        self._command_palette.register_action(
+            self.action_stop, "Workflow", "Stop execution"
+        )
+        self._command_palette.register_action(
+            self.action_validate, "Workflow", "Validate workflow"
+        )
 
         # Register Tools actions
         self._command_palette.register_action(self.action_pick_selector, "Tools")
@@ -793,6 +887,7 @@ class MainWindow(QMainWindow):
     def _setup_validation_timer(self) -> None:
         """Setup validation timer for debounced real-time validation."""
         from PySide6.QtCore import QTimer
+
         self._validation_timer = QTimer(self)
         self._validation_timer.setSingleShot(True)
         self._validation_timer.setInterval(500)  # 500ms debounce
@@ -812,9 +907,15 @@ class MainWindow(QMainWindow):
 
         # Connect trigger signals
         self._bottom_panel.trigger_add_requested.connect(self._on_trigger_add_requested)
-        self._bottom_panel.trigger_edit_requested.connect(self._on_trigger_edit_requested)
-        self._bottom_panel.trigger_delete_requested.connect(self._on_trigger_delete_requested)
-        self._bottom_panel.trigger_toggle_requested.connect(self._on_trigger_toggle_requested)
+        self._bottom_panel.trigger_edit_requested.connect(
+            self._on_trigger_edit_requested
+        )
+        self._bottom_panel.trigger_delete_requested.connect(
+            self._on_trigger_delete_requested
+        )
+        self._bottom_panel.trigger_toggle_requested.connect(
+            self._on_trigger_toggle_requested
+        )
         self._bottom_panel.trigger_run_requested.connect(self._on_trigger_run_requested)
 
         # Add to main window
@@ -838,16 +939,28 @@ class MainWindow(QMainWindow):
         self._variable_inspector_dock = VariableInspectorDock(self)
 
         # Add to main window (bottom area, will be tabified or split with bottom panel)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._variable_inspector_dock)
+        self.addDockWidget(
+            Qt.DockWidgetArea.BottomDockWidgetArea, self._variable_inspector_dock
+        )
 
         # Split dock horizontally with bottom panel (side-by-side)
         if self._bottom_panel:
-            self.splitDockWidget(self._bottom_panel, self._variable_inspector_dock, Qt.Orientation.Horizontal)
+            self.splitDockWidget(
+                self._bottom_panel,
+                self._variable_inspector_dock,
+                Qt.Orientation.Horizontal,
+            )
 
         # Connect dock state changes to auto-save
-        self._variable_inspector_dock.dockLocationChanged.connect(self._schedule_ui_state_save)
-        self._variable_inspector_dock.visibilityChanged.connect(self._schedule_ui_state_save)
-        self._variable_inspector_dock.topLevelChanged.connect(self._schedule_ui_state_save)
+        self._variable_inspector_dock.dockLocationChanged.connect(
+            self._schedule_ui_state_save
+        )
+        self._variable_inspector_dock.visibilityChanged.connect(
+            self._schedule_ui_state_save
+        )
+        self._variable_inspector_dock.topLevelChanged.connect(
+            self._schedule_ui_state_save
+        )
 
         # Initially hidden (user can show via View menu)
         self._variable_inspector_dock.hide()
@@ -873,7 +986,9 @@ class MainWindow(QMainWindow):
         self._properties_panel.property_changed.connect(self._on_property_panel_changed)
 
         # Add to main window (right side)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._properties_panel)
+        self.addDockWidget(
+            Qt.DockWidgetArea.RightDockWidgetArea, self._properties_panel
+        )
 
         # Connect dock state changes to auto-save
         self._properties_panel.dockLocationChanged.connect(self._schedule_ui_state_save)
@@ -910,16 +1025,26 @@ class MainWindow(QMainWindow):
         )
 
         # Add to main window (bottom area)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self._execution_timeline_dock)
+        self.addDockWidget(
+            Qt.DockWidgetArea.BottomDockWidgetArea, self._execution_timeline_dock
+        )
 
         # Connect dock state changes to auto-save
-        self._execution_timeline_dock.dockLocationChanged.connect(self._schedule_ui_state_save)
-        self._execution_timeline_dock.visibilityChanged.connect(self._schedule_ui_state_save)
-        self._execution_timeline_dock.topLevelChanged.connect(self._schedule_ui_state_save)
+        self._execution_timeline_dock.dockLocationChanged.connect(
+            self._schedule_ui_state_save
+        )
+        self._execution_timeline_dock.visibilityChanged.connect(
+            self._schedule_ui_state_save
+        )
+        self._execution_timeline_dock.topLevelChanged.connect(
+            self._schedule_ui_state_save
+        )
 
         # Tabify with variable inspector if exists
-        if hasattr(self, '_variable_inspector_dock') and self._variable_inspector_dock:
-            self.tabifyDockWidget(self._variable_inspector_dock, self._execution_timeline_dock)
+        if hasattr(self, "_variable_inspector_dock") and self._variable_inspector_dock:
+            self.tabifyDockWidget(
+                self._variable_inspector_dock, self._execution_timeline_dock
+            )
 
         # Add toggle action to View menu
         view_menu = None
@@ -929,7 +1054,9 @@ class MainWindow(QMainWindow):
                 break
 
         if view_menu:
-            self.action_toggle_timeline = self._execution_timeline_dock.toggleViewAction()
+            self.action_toggle_timeline = (
+                self._execution_timeline_dock.toggleViewAction()
+            )
             self.action_toggle_timeline.setText("&Execution Timeline")
             view_menu.addAction(self.action_toggle_timeline)
 
@@ -941,11 +1068,11 @@ class MainWindow(QMainWindow):
 
         logger.info("Execution Timeline dock created")
 
-    def get_execution_timeline(self) -> Optional['ExecutionTimeline']:
+    def get_execution_timeline(self) -> Optional["ExecutionTimeline"]:
         """Get the execution timeline widget."""
-        return getattr(self, '_execution_timeline', None)
+        return getattr(self, "_execution_timeline", None)
 
-    def get_properties_panel(self) -> Optional['PropertiesPanel']:
+    def get_properties_panel(self) -> Optional["PropertiesPanel"]:
         """
         Get the properties panel.
 
@@ -969,7 +1096,7 @@ class MainWindow(QMainWindow):
         self.set_modified(True)
         logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
-    def get_bottom_panel(self) -> Optional['BottomPanelDock']:
+    def get_bottom_panel(self) -> Optional["BottomPanelDock"]:
         """
         Get the bottom panel dock.
 
@@ -1023,7 +1150,6 @@ class MainWindow(QMainWindow):
     def _on_trigger_add_requested(self) -> None:
         """Handle request to add a new trigger."""
         from .dialogs import TriggerTypeSelectorDialog, TriggerConfigDialog
-        from ..triggers.base import TriggerType
 
         # Show trigger type selector
         type_dialog = TriggerTypeSelectorDialog(self)
@@ -1051,7 +1177,7 @@ class MainWindow(QMainWindow):
         from .dialogs import TriggerConfigDialog
         from ..triggers.base import TriggerType
 
-        trigger_type_str = trigger_config.get('type', 'manual')
+        trigger_type_str = trigger_config.get("type", "manual")
         try:
             trigger_type = TriggerType(trigger_type_str)
         except ValueError:
@@ -1078,7 +1204,7 @@ class MainWindow(QMainWindow):
             "Delete Trigger",
             "Are you sure you want to delete this trigger?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -1092,8 +1218,8 @@ class MainWindow(QMainWindow):
         if self._bottom_panel:
             triggers = self._bottom_panel.get_triggers()
             for trigger in triggers:
-                if trigger.get('id') == trigger_id:
-                    trigger['enabled'] = enabled
+                if trigger.get("id") == trigger_id:
+                    trigger["enabled"] = enabled
                     self._bottom_panel.update_trigger(trigger)
                     self.set_modified(True)
                     state = "enabled" if enabled else "disabled"
@@ -1148,7 +1274,7 @@ class MainWindow(QMainWindow):
 
     def _select_node_by_id(self, node_id: str) -> None:
         """Select a node by ID in the graph."""
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             return
 
         try:
@@ -1158,7 +1284,7 @@ class MainWindow(QMainWindow):
 
             # Find and select the node
             for node in graph.all_nodes():
-                if node.id() == node_id or getattr(node, 'node_id', None) == node_id:
+                if node.id() == node_id or getattr(node, "node_id", None) == node_id:
                     node.set_selected(True)
                     # Center view on node
                     graph.fit_to_selection()
@@ -1166,7 +1292,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.debug(f"Could not select node {node_id}: {e}")
 
-    def validate_current_workflow(self, show_panel: bool = True) -> 'ValidationResult':
+    def validate_current_workflow(self, show_panel: bool = True) -> "ValidationResult":
         """
         Validate the current workflow and update the validation panel.
 
@@ -1187,7 +1313,7 @@ class MainWindow(QMainWindow):
             result.add_warning(
                 "EMPTY_WORKFLOW",
                 "Workflow is empty",
-                suggestion="Add some nodes to the workflow"
+                suggestion="Add some nodes to the workflow",
             )
         else:
             result = validate_workflow(workflow_data)
@@ -1307,7 +1433,7 @@ class MainWindow(QMainWindow):
         if self._bottom_panel:
             self._bottom_panel.hide()
             self.action_toggle_bottom_panel.setChecked(False)
-    
+
     def _create_minimap(self, node_graph) -> None:
         """Create minimap overlay widget."""
         # Create minimap as overlay on central widget
@@ -1315,7 +1441,7 @@ class MainWindow(QMainWindow):
             self._minimap = Minimap(node_graph, self._central_widget)
             self._minimap.setVisible(False)  # Initially hidden
             self._position_minimap()
-    
+
     def _position_minimap(self) -> None:
         """Position minimap at bottom-left of central widget."""
         if self._minimap and self._central_widget:
@@ -1325,44 +1451,44 @@ class MainWindow(QMainWindow):
             y = self._central_widget.height() - self._minimap.height() - margin
             self._minimap.move(x, y)
             self._minimap.raise_()  # Ensure it's on top
-    
+
     def show_minimap(self) -> None:
         """Show the minimap."""
         if self._minimap:
             self._minimap.setVisible(True)
             self._position_minimap()
-    
+
     def hide_minimap(self) -> None:
         """Hide the minimap."""
         if self._minimap:
             self._minimap.setVisible(False)
-    
+
     def _on_toggle_minimap(self, checked: bool) -> None:
         """Handle minimap toggle."""
         if checked:
             self.show_minimap()
         else:
             self.hide_minimap()
-    
+
     def resizeEvent(self, event):
         """Handle window resize to reposition minimap."""
         super().resizeEvent(event)
         self._position_minimap()
-    
+
     def set_central_widget(self, widget: QWidget) -> None:
         """
         Set the central widget (typically the node graph).
-        
+
         Args:
             widget: Widget to display in the central area
         """
         self._central_widget = widget
         self.setCentralWidget(widget)
-        
+
         # Initialize minimap if widget is a node graph
-        if hasattr(widget, 'graph'):
+        if hasattr(widget, "graph"):
             self._create_minimap(widget.graph)
-    
+
     def set_modified(self, modified: bool) -> None:
         """
         Set the modified state of the workflow.
@@ -1376,16 +1502,16 @@ class MainWindow(QMainWindow):
         # Trigger real-time validation when workflow is modified
         if modified:
             self.on_workflow_changed()
-    
+
     def is_modified(self) -> bool:
         """
         Check if the workflow has unsaved changes.
-        
+
         Returns:
             True if workflow is modified
         """
         return self._is_modified
-    
+
     def set_current_file(self, file_path: Optional[Path]) -> None:
         """
         Set the current workflow file path.
@@ -1399,31 +1525,31 @@ class MainWindow(QMainWindow):
     def get_current_file(self) -> Optional[Path]:
         """
         Get the current workflow file path.
-        
+
         Returns:
             Path to current file, or None if no file
         """
         return self._current_file
-    
+
     def _update_window_title(self) -> None:
         """Update window title with current file and modified state."""
         title = APP_NAME
-        
+
         if self._current_file:
             title = f"{self._current_file.name} - {APP_NAME}"
         else:
             title = f"Untitled - {APP_NAME}"
-        
+
         if self._is_modified:
             title = f"*{title}"
-        
+
         self.setWindowTitle(title)
-    
+
     def _update_actions(self) -> None:
         """Update action states based on current state."""
         # Save action enabled only if modified
         self.action_save.setEnabled(self._is_modified)
-    
+
     def _on_new_workflow(self) -> None:
         """Handle new workflow request."""
         if self._check_unsaved_changes():
@@ -1431,21 +1557,21 @@ class MainWindow(QMainWindow):
             self.set_current_file(None)
             self.set_modified(False)
             self.statusBar().showMessage("New workflow created", 3000)
-    
+
     def _on_new_from_template(self) -> None:
         """Handle new from template request."""
         from .dialogs.template_browser import show_template_browser
-        
+
         if not self._check_unsaved_changes():
             return
-        
+
         # Show template browser
         template = show_template_browser(self)
         if template:
             # Emit signal with template info (app.py will handle loading)
             self.statusBar().showMessage(f"Loading template: {template.name}...", 3000)
             self.workflow_new_from_template.emit(template)
-    
+
     def _on_open_workflow(self) -> None:
         """Handle open workflow request."""
         if not self._check_unsaved_changes():
@@ -1455,7 +1581,7 @@ class MainWindow(QMainWindow):
             self,
             "Open Workflow",
             str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)"
+            "Workflow Files (*.json);;All Files (*.*)",
         )
 
         if file_path:
@@ -1466,15 +1592,16 @@ class MainWindow(QMainWindow):
 
             # Validate after opening and show panel if issues found
             from PySide6.QtCore import QTimer
+
             QTimer.singleShot(100, self._validate_after_open)
-    
+
     def _on_import_workflow(self) -> None:
         """Handle import workflow request."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Import Workflow",
             str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)"
+            "Workflow Files (*.json);;All Files (*.*)",
         )
 
         if file_path:
@@ -1484,7 +1611,7 @@ class MainWindow(QMainWindow):
     def _on_export_selected(self) -> None:
         """Handle export selected nodes request."""
         # Check if any nodes are selected
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             self.statusBar().showMessage("No graph available", 3000)
             return
 
@@ -1495,7 +1622,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "Export Selected Nodes",
-                "Please select one or more nodes to export."
+                "Please select one or more nodes to export.",
             )
             return
 
@@ -1503,12 +1630,14 @@ class MainWindow(QMainWindow):
             self,
             "Export Selected Nodes",
             str(WORKFLOWS_DIR / "exported_nodes.json"),
-            "Workflow Files (*.json);;All Files (*.*)"
+            "Workflow Files (*.json);;All Files (*.*)",
         )
 
         if file_path:
             self.workflow_export_selected.emit(file_path)
-            self.statusBar().showMessage(f"Exporting {len(selected_nodes)} nodes...", 3000)
+            self.statusBar().showMessage(
+                f"Exporting {len(selected_nodes)} nodes...", 3000
+            )
 
     def _on_paste_workflow(self) -> None:
         """Handle paste workflow JSON from clipboard."""
@@ -1532,14 +1661,14 @@ class MainWindow(QMainWindow):
                     self,
                     "Invalid Workflow JSON",
                     "The clipboard content does not appear to be a valid workflow.\n"
-                    "Expected a JSON object with a 'nodes' key."
+                    "Expected a JSON object with a 'nodes' key.",
                 )
                 return
         except Exception as e:
             QMessageBox.warning(
                 self,
                 "Invalid JSON",
-                f"The clipboard content is not valid JSON.\n\nError: {str(e)}"
+                f"The clipboard content is not valid JSON.\n\nError: {str(e)}",
             )
             return
 
@@ -1577,7 +1706,7 @@ class MainWindow(QMainWindow):
             self,
             "Save Workflow As",
             str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)"
+            "Workflow Files (*.json);;All Files (*.*)",
         )
 
         if file_path:
@@ -1585,7 +1714,7 @@ class MainWindow(QMainWindow):
             self.set_current_file(Path(file_path))
             self.set_modified(False)
             self.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)
-    
+
     def _on_run_workflow(self) -> None:
         """Handle run workflow request (F3)."""
         # Validate before running - block if errors
@@ -1603,7 +1732,7 @@ class MainWindow(QMainWindow):
     def _on_run_to_node(self) -> None:
         """Handle run to selected node request (F4)."""
         # Get selected node from the graph
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             self._on_run_workflow()  # Fallback to full run
             return
 
@@ -1612,7 +1741,9 @@ class MainWindow(QMainWindow):
 
         # If no node is selected, fall back to full workflow run
         if not selected_nodes:
-            self.statusBar().showMessage("No node selected - running full workflow", 3000)
+            self.statusBar().showMessage(
+                "No node selected - running full workflow", 3000
+            )
             self._on_run_workflow()
             return
 
@@ -1621,7 +1752,9 @@ class MainWindow(QMainWindow):
         target_node_id = target_node.get_property("node_id")
 
         if not target_node_id:
-            self.statusBar().showMessage("Selected node has no ID - running full workflow", 3000)
+            self.statusBar().showMessage(
+                "Selected node has no ID - running full workflow", 3000
+            )
             self._on_run_workflow()
             return
 
@@ -1630,7 +1763,9 @@ class MainWindow(QMainWindow):
             return
 
         # Get the node name for display
-        node_name = target_node.name() if hasattr(target_node, 'name') else target_node_id
+        node_name = (
+            target_node.name() if hasattr(target_node, "name") else target_node_id
+        )
 
         # Emit signal with target node ID
         self.workflow_run_to_node.emit(target_node_id)
@@ -1644,7 +1779,7 @@ class MainWindow(QMainWindow):
     def _on_run_single_node(self) -> None:
         """Handle run single selected node request (F5)."""
         # Get selected node from the graph
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             self.statusBar().showMessage("No graph available", 3000)
             return
 
@@ -1653,7 +1788,9 @@ class MainWindow(QMainWindow):
 
         # If no node is selected, show message
         if not selected_nodes:
-            self.statusBar().showMessage("No node selected - select a node to run", 3000)
+            self.statusBar().showMessage(
+                "No node selected - select a node to run", 3000
+            )
             return
 
         # Get the first selected node's ID
@@ -1665,7 +1802,9 @@ class MainWindow(QMainWindow):
             return
 
         # Get the node name for display
-        node_name = target_node.name() if hasattr(target_node, 'name') else target_node_id
+        node_name = (
+            target_node.name() if hasattr(target_node, "name") else target_node_id
+        )
 
         # Emit signal with target node ID
         self.workflow_run_single_node.emit(target_node_id)
@@ -1679,7 +1818,7 @@ class MainWindow(QMainWindow):
         else:
             self.workflow_resume.emit()
             self.statusBar().showMessage("Workflow resumed...", 0)
-    
+
     def _on_stop_workflow(self) -> None:
         """Handle stop workflow request."""
         self.workflow_stop.emit()
@@ -1692,7 +1831,7 @@ class MainWindow(QMainWindow):
 
     def _on_select_nearest_node(self) -> None:
         """Select the nearest node to the current mouse cursor position (hotkey 2)."""
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             return
 
         graph = self._central_widget.graph
@@ -1702,6 +1841,7 @@ class MainWindow(QMainWindow):
 
         # Get mouse position in scene coordinates
         from PySide6.QtGui import QCursor
+
         global_pos = QCursor.pos()
         view_pos = viewer.mapFromGlobal(global_pos)
         scene_pos = viewer.mapToScene(view_pos)
@@ -1713,7 +1853,7 @@ class MainWindow(QMainWindow):
             return
 
         nearest_node = None
-        min_distance = float('inf')
+        min_distance = float("inf")
 
         for node in all_nodes:
             node_pos = node.pos()
@@ -1730,12 +1870,12 @@ class MainWindow(QMainWindow):
             # Clear current selection and select the nearest node
             graph.clear_selection()
             nearest_node.set_selected(True)
-            node_name = nearest_node.name() if hasattr(nearest_node, 'name') else "Node"
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
             self.statusBar().showMessage(f"Selected: {node_name}", 2000)
 
     def _on_toggle_disable_node(self) -> None:
         """Toggle disable state on nearest node to mouse (hotkey 4). Disabled nodes are bypassed during execution."""
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             return
 
         graph = self._central_widget.graph
@@ -1745,6 +1885,7 @@ class MainWindow(QMainWindow):
 
         # Get mouse position in scene coordinates
         from PySide6.QtGui import QCursor
+
         global_pos = QCursor.pos()
         view_pos = viewer.mapFromGlobal(global_pos)
         scene_pos = viewer.mapToScene(view_pos)
@@ -1756,7 +1897,7 @@ class MainWindow(QMainWindow):
             return
 
         nearest_node = None
-        min_distance = float('inf')
+        min_distance = float("inf")
 
         for node in all_nodes:
             node_pos = node.pos()
@@ -1776,7 +1917,11 @@ class MainWindow(QMainWindow):
         nearest_node.set_selected(True)
 
         # Toggle disable state on the nearest node
-        casare_node = nearest_node.get_casare_node() if hasattr(nearest_node, 'get_casare_node') else None
+        casare_node = (
+            nearest_node.get_casare_node()
+            if hasattr(nearest_node, "get_casare_node")
+            else None
+        )
 
         if casare_node:
             # Toggle the disabled state
@@ -1785,21 +1930,21 @@ class MainWindow(QMainWindow):
             casare_node.config["_disabled"] = new_disabled
 
             # Update visual appearance
-            if hasattr(nearest_node, 'view') and nearest_node.view:
+            if hasattr(nearest_node, "view") and nearest_node.view:
                 if new_disabled:
                     # Make node semi-transparent when disabled
                     nearest_node.view.setOpacity(0.4)
                 else:
                     nearest_node.view.setOpacity(1.0)
 
-            node_name = nearest_node.name() if hasattr(nearest_node, 'name') else "Node"
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
             state = "disabled" if new_disabled else "enabled"
             self.statusBar().showMessage(f"{node_name} {state}", 2000)
 
     def _on_open_hotkey_manager(self) -> None:
         """Open the hotkey manager dialog."""
         from .toolbar.hotkey_manager import HotkeyManagerDialog
-        
+
         # Collect all actions
         actions = {
             "new": self.action_new,
@@ -1825,10 +1970,10 @@ class MainWindow(QMainWindow):
             "stop": self.action_stop,
             "hotkey_manager": self.action_hotkey_manager,
         }
-        
+
         dialog = HotkeyManagerDialog(actions, self)
         dialog.exec()
-    
+
     def _on_toggle_auto_connect(self, checked: bool) -> None:
         """Handle auto-connect toggle."""
         # This will be connected by the app when the node graph is available
@@ -1848,11 +1993,12 @@ class MainWindow(QMainWindow):
 
     def _on_find_node(self) -> None:
         """Open the node search dialog (Ctrl+F)."""
-        if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
             self.statusBar().showMessage("No graph available", 3000)
             return
 
         from .search.node_search import NodeSearchDialog
+
         dialog = NodeSearchDialog(self._central_widget.graph, self)
         dialog.show_search()
 
@@ -1874,7 +2020,9 @@ class MainWindow(QMainWindow):
             name = file_info["name"]
             action = self._recent_files_menu.addAction(f"&{i+1}. {name}")
             action.setToolTip(path)
-            action.triggered.connect(lambda checked, p=path: self._on_open_recent_file(p))
+            action.triggered.connect(
+                lambda checked, p=path: self._on_open_recent_file(p)
+            )
 
         self._recent_files_menu.addSeparator()
         clear_action = self._recent_files_menu.addAction("Clear Recent Files")
@@ -1883,6 +2031,7 @@ class MainWindow(QMainWindow):
     def _on_open_recent_file(self, path: str) -> None:
         """Open a recent file."""
         from pathlib import Path
+
         if not self._check_unsaved_changes():
             return
 
@@ -1896,6 +2045,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "File Not Found", f"File not found:\n{path}")
             # Remove from recent files
             from .workflow.recent_files import get_recent_files_manager
+
             manager = get_recent_files_manager()
             manager.remove_file(file_path)
             self._update_recent_files_menu()
@@ -1903,6 +2053,7 @@ class MainWindow(QMainWindow):
     def _on_clear_recent_files(self) -> None:
         """Clear the recent files list."""
         from .workflow.recent_files import get_recent_files_manager
+
         manager = get_recent_files_manager()
         manager.clear()
         self._update_recent_files_menu()
@@ -1912,6 +2063,7 @@ class MainWindow(QMainWindow):
         """Add a file to the recent files list."""
         from .workflow.recent_files import get_recent_files_manager
         from pathlib import Path
+
         manager = get_recent_files_manager()
         manager.add_file(Path(file_path) if isinstance(file_path, str) else file_path)
         self._update_recent_files_menu()
@@ -1924,29 +2076,29 @@ class MainWindow(QMainWindow):
             f"<h3>{APP_NAME} v{APP_VERSION}</h3>"
             f"<p>Windows Desktop RPA Platform</p>"
             f"<p>Visual workflow automation with node-based editor</p>"
-            f"<p>Built with PySide6, NodeGraphQt, and Playwright</p>"
+            f"<p>Built with PySide6, NodeGraphQt, and Playwright</p>",
         )
-    
+
     def _check_unsaved_changes(self) -> bool:
         """
         Check for unsaved changes and prompt user.
-        
+
         Returns:
             True if it's safe to proceed, False if user cancelled
         """
         if not self._is_modified:
             return True
-        
+
         reply = QMessageBox.question(
             self,
             "Unsaved Changes",
             "The workflow has unsaved changes. Do you want to save them?",
-            QMessageBox.StandardButton.Save |
-            QMessageBox.StandardButton.Discard |
-            QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save,
         )
-        
+
         if reply == QMessageBox.StandardButton.Save:
             self._on_save_workflow()
             return True
@@ -2053,15 +2205,15 @@ class MainWindow(QMainWindow):
         if view_menu:
             view_menu.addSeparator()
             view_menu.addAction(self._debug_toolbar.toggleViewAction())
-    
-    def get_debug_toolbar(self) -> Optional['DebugToolbar']:
+
+    def get_debug_toolbar(self) -> Optional["DebugToolbar"]:
         """
         Get the debug toolbar.
 
         Returns:
             DebugToolbar instance or None
         """
-        return self._debug_toolbar if hasattr(self, '_debug_toolbar') else None
+        return self._debug_toolbar if hasattr(self, "_debug_toolbar") else None
 
     def get_variable_inspector(self):
         """
@@ -2094,12 +2246,12 @@ class MainWindow(QMainWindow):
         if self._bottom_panel:
             self._bottom_panel.show_history_tab()
             self.action_toggle_bottom_panel.setChecked(True)
-    
+
     def _on_pick_selector(self) -> None:
         """Handle pick selector action."""
         # This will be connected in app.py to trigger selector mode
         pass
-    
+
     def _on_toggle_recording(self, checked: bool) -> None:
         """Handle recording mode toggle."""
         # This will be connected in app.py to start/stop recording
@@ -2121,10 +2273,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"Failed to open desktop selector builder: {e}")
             from PySide6.QtWidgets import QMessageBox
+
             QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to open Desktop Selector Builder:\n{str(e)}"
+                self, "Error", f"Failed to open Desktop Selector Builder:\n{str(e)}"
             )
 
     def _on_create_frame(self) -> None:
@@ -2133,7 +2284,7 @@ class MainWindow(QMainWindow):
             from .graph.node_frame import group_selected_nodes, create_frame, NodeFrame
 
             # Get the node graph from central widget
-            if not self._central_widget or not hasattr(self._central_widget, 'graph'):
+            if not self._central_widget or not hasattr(self._central_widget, "graph"):
                 logger.warning("Node graph not available")
                 return
 
@@ -2157,16 +2308,14 @@ class MainWindow(QMainWindow):
                     color_name="blue",
                     position=(0, 0),
                     size=(400, 300),
-                    graph=graph
+                    graph=graph,
                 )
                 logger.info("Created empty frame")
 
         except Exception as e:
             logger.error(f"Failed to create frame: {e}")
             QMessageBox.warning(
-                self,
-                "Create Frame",
-                f"Failed to create frame:\n{str(e)}"
+                self, "Create Frame", f"Failed to create frame:\n{str(e)}"
             )
 
     def set_browser_running(self, running: bool) -> None:
@@ -2181,7 +2330,7 @@ class MainWindow(QMainWindow):
 
     def _on_schedule_workflow(self) -> None:
         """Handle schedule workflow action."""
-        from .scheduling.schedule_dialog import ScheduleDialog, WorkflowSchedule
+        from .scheduling.schedule_dialog import ScheduleDialog
         from .scheduling.schedule_storage import get_schedule_storage
 
         # Check if workflow is saved
@@ -2190,7 +2339,7 @@ class MainWindow(QMainWindow):
                 self,
                 "Save Required",
                 "The workflow must be saved before scheduling. Save now?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
             if reply == QMessageBox.StandardButton.Yes:
                 self._on_save_as_workflow()
@@ -2204,9 +2353,7 @@ class MainWindow(QMainWindow):
 
         # Show schedule dialog
         dialog = ScheduleDialog(
-            workflow_path=self._current_file,
-            workflow_name=workflow_name,
-            parent=self
+            workflow_path=self._current_file, workflow_name=workflow_name, parent=self
         )
 
         if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_schedule:
@@ -2214,16 +2361,11 @@ class MainWindow(QMainWindow):
             storage = get_schedule_storage()
             if storage.save_schedule(dialog.result_schedule):
                 self.statusBar().showMessage(
-                    f"Schedule created: {dialog.result_schedule.name}",
-                    5000
+                    f"Schedule created: {dialog.result_schedule.name}", 5000
                 )
                 logger.info(f"Workflow scheduled: {dialog.result_schedule.name}")
             else:
-                QMessageBox.warning(
-                    self,
-                    "Schedule Error",
-                    "Failed to save schedule"
-                )
+                QMessageBox.warning(self, "Schedule Error", "Failed to save schedule")
 
     def _on_manage_schedules(self) -> None:
         """Handle manage schedules action."""
@@ -2256,7 +2398,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "Workflow Not Found",
-                f"The scheduled workflow could not be found:\n{workflow_path}"
+                f"The scheduled workflow could not be found:\n{workflow_path}",
             )
             return
 
@@ -2265,7 +2407,7 @@ class MainWindow(QMainWindow):
             self,
             "Run Scheduled Workflow",
             f"Open and run '{schedule.workflow_name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -2305,19 +2447,34 @@ class MainWindow(QMainWindow):
 
             # Save dock visibility states
             if self._bottom_panel:
-                self._settings.setValue("bottomPanelVisible", self._bottom_panel.isVisible())
-                self._settings.setValue("bottomPanelTab", self._bottom_panel._tab_widget.currentIndex())
+                self._settings.setValue(
+                    "bottomPanelVisible", self._bottom_panel.isVisible()
+                )
+                self._settings.setValue(
+                    "bottomPanelTab", self._bottom_panel._tab_widget.currentIndex()
+                )
 
             if self._variable_inspector_dock:
-                self._settings.setValue("variableInspectorVisible", self._variable_inspector_dock.isVisible())
+                self._settings.setValue(
+                    "variableInspectorVisible",
+                    self._variable_inspector_dock.isVisible(),
+                )
 
             if self._properties_panel:
-                self._settings.setValue("propertiesPanelVisible", self._properties_panel.isVisible())
+                self._settings.setValue(
+                    "propertiesPanelVisible", self._properties_panel.isVisible()
+                )
 
-            if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
-                self._settings.setValue("executionTimelineVisible", self._execution_timeline_dock.isVisible())
+            if (
+                hasattr(self, "_execution_timeline_dock")
+                and self._execution_timeline_dock
+            ):
+                self._settings.setValue(
+                    "executionTimelineVisible",
+                    self._execution_timeline_dock.isVisible(),
+                )
 
-            if hasattr(self, '_minimap') and self._minimap:
+            if hasattr(self, "_minimap") and self._minimap:
                 self._settings.setValue("minimapVisible", self._minimap.isVisible())
 
             self._settings.sync()
@@ -2346,7 +2503,9 @@ class MainWindow(QMainWindow):
             saved_version = self._settings.value("uiStateVersion", 0, type=int)
             current_version = 2
             if saved_version != current_version:
-                logger.info(f"UI state version mismatch ({saved_version} vs {current_version}), using defaults")
+                logger.info(
+                    f"UI state version mismatch ({saved_version} vs {current_version}), using defaults"
+                )
                 self.reset_ui_state()
                 return
 
@@ -2380,24 +2539,33 @@ class MainWindow(QMainWindow):
                     self._bottom_panel._tab_widget.setCurrentIndex(tab_index)
 
             if self._variable_inspector_dock:
-                visible = self._settings.value("variableInspectorVisible", False, type=bool)
+                visible = self._settings.value(
+                    "variableInspectorVisible", False, type=bool
+                )
                 self._variable_inspector_dock.setVisible(visible)
                 self.action_toggle_variable_inspector.setChecked(visible)
 
             if self._properties_panel:
-                visible = self._settings.value("propertiesPanelVisible", True, type=bool)
+                visible = self._settings.value(
+                    "propertiesPanelVisible", True, type=bool
+                )
                 self._properties_panel.setVisible(visible)
 
-            if hasattr(self, '_execution_timeline_dock') and self._execution_timeline_dock:
-                visible = self._settings.value("executionTimelineVisible", False, type=bool)
+            if (
+                hasattr(self, "_execution_timeline_dock")
+                and self._execution_timeline_dock
+            ):
+                visible = self._settings.value(
+                    "executionTimelineVisible", False, type=bool
+                )
                 self._execution_timeline_dock.setVisible(visible)
-                if hasattr(self, 'action_toggle_timeline'):
+                if hasattr(self, "action_toggle_timeline"):
                     self.action_toggle_timeline.setChecked(visible)
 
-            if hasattr(self, '_minimap') and self._minimap:
+            if hasattr(self, "_minimap") and self._minimap:
                 visible = self._settings.value("minimapVisible", False, type=bool)
                 self._minimap.setVisible(visible)
-                if hasattr(self, 'action_toggle_minimap'):
+                if hasattr(self, "action_toggle_minimap"):
                     self.action_toggle_minimap.setChecked(visible)
 
             logger.debug("UI state restored from previous session")
@@ -2412,6 +2580,6 @@ class MainWindow(QMainWindow):
     def _schedule_ui_state_save(self) -> None:
         """Schedule UI state save (debounced to avoid too frequent saves)."""
         # Check if timer exists (it's created after dock widgets)
-        if hasattr(self, '_state_save_timer') and self._state_save_timer:
+        if hasattr(self, "_state_save_timer") and self._state_save_timer:
             # Restart the timer - this provides debouncing
             self._state_save_timer.start(1000)  # Save after 1 second of inactivity

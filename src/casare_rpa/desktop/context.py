@@ -13,7 +13,6 @@ import time
 import subprocess
 import psutil
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 import uiautomation as auto
@@ -29,7 +28,9 @@ def _get_executor() -> ThreadPoolExecutor:
     """Get or create the shared thread pool executor for desktop operations."""
     global _desktop_executor
     if _desktop_executor is None:
-        _desktop_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="desktop_auto")
+        _desktop_executor = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="desktop_auto"
+        )
     return _desktop_executor
 
 
@@ -44,36 +45,38 @@ def shutdown_executor() -> None:
 class DesktopContext:
     """
     Desktop automation context for managing Windows applications and UI elements.
-    
+
     Provides methods to launch applications, find windows, and interact with desktop UI.
     """
-    
+
     def __init__(self):
         """Initialize desktop automation context."""
         logger.debug("Initializing DesktopContext")
         self._launched_processes = []  # Track processes we launched for cleanup
-    
-    def find_window(self, title: str, exact: bool = False, timeout: float = 5.0) -> Optional[DesktopElement]:
+
+    def find_window(
+        self, title: str, exact: bool = False, timeout: float = 5.0
+    ) -> Optional[DesktopElement]:
         """
         Find a window by its title.
-        
+
         Args:
             title: Window title to search for
             exact: If True, match exact title; if False, match partial title
             timeout: Maximum time to wait for window (seconds)
-            
+
         Returns:
             DesktopElement wrapping the window, or None if not found
-            
+
         Raises:
             ValueError: If window is not found within timeout
         """
         logger.debug(f"Finding window: '{title}' (exact={exact}, timeout={timeout}s)")
-        
+
         start_time = time.time()
         check_count = 0
         max_quick_checks = 30  # Check 30 times (3 seconds) before slowing down
-        
+
         while time.time() - start_time < timeout:
             check_count += 1
             try:
@@ -81,19 +84,19 @@ class DesktopContext:
                     window = auto.WindowControl(searchDepth=1, Name=title)
                 else:
                     window = auto.WindowControl(searchDepth=1, SubName=title)
-                
+
                 if window.Exists(0, 0):
                     logger.info(f"Found window: '{window.Name}'")
                     return DesktopElement(window)
             except Exception as e:
                 logger.debug(f"Window search attempt failed: {e}")
-            
+
             # Quick checks for first 3 seconds, then slow down
             if check_count < max_quick_checks:
                 time.sleep(0.1)  # Check every 100ms for first 3 seconds
             else:
                 time.sleep(0.5)  # Then check every 500ms to avoid wasting CPU
-        
+
         error_msg = f"Window not found: '{title}' (exact={exact})"
         logger.error(error_msg)
         raise ValueError(error_msg)
@@ -118,7 +121,9 @@ class DesktopContext:
         Raises:
             ValueError: If window is not found within timeout
         """
-        logger.debug(f"Async finding window: '{title}' (exact={exact}, timeout={timeout}s)")
+        logger.debug(
+            f"Async finding window: '{title}' (exact={exact}, timeout={timeout}s)"
+        )
 
         loop = asyncio.get_event_loop()
         executor = _get_executor()
@@ -162,45 +167,45 @@ class DesktopContext:
     def get_all_windows(self, include_invisible: bool = False) -> List[DesktopElement]:
         """
         Get all top-level windows.
-        
+
         Args:
             include_invisible: If True, include invisible/hidden windows
-            
+
         Returns:
             List of DesktopElement objects representing windows
         """
         logger.debug(f"Getting all windows (include_invisible={include_invisible})")
-        
+
         windows = []
         for window in auto.GetRootControl().GetChildren():
-            if window.ControlTypeName == 'WindowControl':
+            if window.ControlTypeName == "WindowControl":
                 if include_invisible or window.IsEnabled:
                     windows.append(DesktopElement(window))
-        
+
         logger.info(f"Found {len(windows)} windows")
         return windows
-    
+
     def launch_application(
-        self, 
-        path: str, 
-        args: str = "", 
+        self,
+        path: str,
+        args: str = "",
         working_dir: Optional[str] = None,
         timeout: float = 10.0,
-        window_title: Optional[str] = None
+        window_title: Optional[str] = None,
     ) -> DesktopElement:
         """
         Launch an application and return its main window.
-        
+
         Args:
             path: Path to executable or command name
             args: Command line arguments
             working_dir: Working directory for the process
             timeout: Maximum time to wait for window to appear
             window_title: Expected window title (if None, uses process name)
-            
+
         Returns:
             DesktopElement wrapping the application's main window
-            
+
         Raises:
             RuntimeError: If application fails to launch or window not found
         """
@@ -219,77 +224,93 @@ class DesktopContext:
                     cmd_list.extend(parsed_args)
                 except ValueError as e:
                     # If shlex fails (unbalanced quotes), log warning and use simple split
-                    logger.warning(f"Could not parse args with shlex: {e}, using simple split")
+                    logger.warning(
+                        f"Could not parse args with shlex: {e}, using simple split"
+                    )
                     cmd_list.extend(args.split())
 
             # Launch process without shell=True for security
             process = subprocess.Popen(
                 cmd_list,
                 cwd=working_dir,
-                shell=False  # SECURITY: Prevent command injection
+                shell=False,  # SECURITY: Prevent command injection
             )
-            
+
             self._launched_processes.append(process.pid)
             logger.debug(f"Process launched with PID: {process.pid}")
-            
+
             # Wait a moment for window to initialize
             time.sleep(0.5)
-            
+
             # Try to find the window
             if window_title is None:
                 # Extract executable name from path
                 import os
+
                 exe_name = os.path.splitext(os.path.basename(path))[0]
                 window_title = exe_name
-            
+
             # Use a shorter timeout for window search (3 seconds should be enough)
             # Most apps show a window within 1-2 seconds
             window_search_timeout = min(timeout, 3.0)
-            
+
             try:
-                window = self.find_window(window_title, exact=False, timeout=window_search_timeout)
+                window = self.find_window(
+                    window_title, exact=False, timeout=window_search_timeout
+                )
                 logger.info(f"Application launched successfully: {window_title}")
                 return window
             except ValueError:
                 # If we can't find by title, try to find by process ID
-                logger.warning(f"Could not find window by title '{window_title}' after {window_search_timeout}s, searching by process...")
-                
+                logger.warning(
+                    f"Could not find window by title '{window_title}' after {window_search_timeout}s, searching by process..."
+                )
+
                 # No additional sleep - go straight to process-based search
                 # time.sleep(1.0)  # Removed - unnecessary delay
-                
+
                 # Try to find any window from this process (with timeout)
                 logger.debug(f"Searching for windows from PID {process.pid}...")
                 search_start = time.time()
                 max_search_time = 3.0  # Maximum 3 seconds for process-based search
                 windows_checked = 0
-                
+
                 try:
                     for window in auto.GetRootControl().GetChildren():
                         # Check timeout
                         if time.time() - search_start > max_search_time:
-                            logger.warning(f"Process-based window search timed out after checking {windows_checked} windows")
+                            logger.warning(
+                                f"Process-based window search timed out after checking {windows_checked} windows"
+                            )
                             break
-                        
+
                         windows_checked += 1
-                        
+
                         # Only check window controls
-                        if window.ControlTypeName == 'WindowControl' and window.IsEnabled:
+                        if (
+                            window.ControlTypeName == "WindowControl"
+                            and window.IsEnabled
+                        ):
                             try:
                                 if window.ProcessId == process.pid:
                                     window_elem = DesktopElement(window)
                                     window_title_found = window_elem.get_text()
-                                    logger.info(f"Found window by process ID: {window_title_found}")
+                                    logger.info(
+                                        f"Found window by process ID: {window_title_found}"
+                                    )
                                     return window_elem
                             except Exception as e:
                                 logger.debug(f"Error checking window: {e}")
                                 continue
-                    
-                    logger.error(f"No window found for PID {process.pid} after checking {windows_checked} windows")
+
+                    logger.error(
+                        f"No window found for PID {process.pid} after checking {windows_checked} windows"
+                    )
                 except Exception as e:
                     logger.error(f"Error during process-based window search: {e}")
-                
+
                 raise RuntimeError(f"Failed to find window for application: {path}")
-                
+
         except Exception as e:
             error_msg = f"Failed to launch application '{path}': {e}"
             logger.error(error_msg)
@@ -301,7 +322,7 @@ class DesktopContext:
         args: str = "",
         working_dir: Optional[str] = None,
         timeout: float = 10.0,
-        window_title: Optional[str] = None
+        window_title: Optional[str] = None,
     ) -> DesktopElement:
         """
         Async version of launch_application - Launch an application without blocking.
@@ -337,15 +358,13 @@ class DesktopContext:
                     parsed_args = shlex.split(args)
                     cmd_list.extend(parsed_args)
                 except ValueError as e:
-                    logger.warning(f"Could not parse args with shlex: {e}, using simple split")
+                    logger.warning(
+                        f"Could not parse args with shlex: {e}, using simple split"
+                    )
                     cmd_list.extend(args.split())
 
             # Launch process (this is quick, doesn't need executor)
-            process = subprocess.Popen(
-                cmd_list,
-                cwd=working_dir,
-                shell=False
-            )
+            process = subprocess.Popen(cmd_list, cwd=working_dir, shell=False)
 
             self._launched_processes.append(process.pid)
             logger.debug(f"Process launched with PID: {process.pid}")
@@ -391,7 +410,10 @@ class DesktopContext:
 
                             windows_checked += 1
 
-                            if window.ControlTypeName == 'WindowControl' and window.IsEnabled:
+                            if (
+                                window.ControlTypeName == "WindowControl"
+                                and window.IsEnabled
+                            ):
                                 try:
                                     if window.ProcessId == process.pid:
                                         return DesktopElement(window)
@@ -421,27 +443,27 @@ class DesktopContext:
             raise RuntimeError(error_msg)
 
     def close_application(
-        self, 
+        self,
         window_or_pid: Union[DesktopElement, int, str],
         force: bool = False,
-        timeout: float = 5.0
+        timeout: float = 5.0,
     ) -> bool:
         """
         Close an application.
-        
+
         Args:
             window_or_pid: DesktopElement (window), process ID, or window title
             force: If True, force kill the process; if False, try graceful close
             timeout: Maximum time to wait for graceful close
-            
+
         Returns:
             True if application was closed successfully
-            
+
         Raises:
             ValueError: If application not found or failed to close
         """
         logger.debug(f"Closing application (force={force})")
-        
+
         try:
             # Get window element
             if isinstance(window_or_pid, DesktopElement):
@@ -460,10 +482,10 @@ class DesktopContext:
             else:
                 # Find window by title
                 window = self.find_window(window_or_pid)
-            
+
             # Get process ID
             pid = window._control.ProcessId
-            
+
             if force:
                 # Force kill
                 logger.info(f"Force killing process {pid}")
@@ -477,7 +499,7 @@ class DesktopContext:
             else:
                 # Try graceful close
                 logger.info(f"Attempting graceful close of window: {window.get_text()}")
-                
+
                 # Try to close window using WindowPattern
                 try:
                     window._control.GetWindowPattern().Close()
@@ -485,8 +507,8 @@ class DesktopContext:
                     # Fallback: send Alt+F4
                     logger.debug(f"WindowPattern.Close() failed, trying Alt+F4: {e}")
                     window._control.SetFocus()
-                    window._control.SendKeys('{Alt}F4')
-                
+                    window._control.SendKeys("{Alt}F4")
+
                 # Wait for window to close
                 start_time = time.time()
                 while time.time() - start_time < timeout:
@@ -494,7 +516,7 @@ class DesktopContext:
                         logger.info("Application closed successfully")
                         return True
                     time.sleep(0.1)
-                
+
                 # Timeout - force kill
                 logger.warning(f"Graceful close timed out, force killing PID {pid}")
                 try:
@@ -502,7 +524,7 @@ class DesktopContext:
                     process.kill()
                 except psutil.NoSuchProcess:
                     pass
-                
+
                 return True
 
         except Exception as e:
@@ -514,7 +536,7 @@ class DesktopContext:
         self,
         window_or_pid: Union[DesktopElement, int, str],
         force: bool = False,
-        timeout: float = 5.0
+        timeout: float = 5.0,
     ) -> bool:
         """
         Async version of close_application - Close an application without blocking.
@@ -580,9 +602,11 @@ class DesktopContext:
                     try:
                         window._control.GetWindowPattern().Close()
                     except Exception as e:
-                        logger.debug(f"WindowPattern.Close() failed, trying Alt+F4: {e}")
+                        logger.debug(
+                            f"WindowPattern.Close() failed, trying Alt+F4: {e}"
+                        )
                         window._control.SetFocus()
-                        window._control.SendKeys('{Alt}F4')
+                        window._control.SendKeys("{Alt}F4")
 
                 await loop.run_in_executor(executor, _try_close)
 
@@ -620,7 +644,7 @@ class DesktopContext:
         Clean up resources and close applications launched by this context.
         """
         logger.info("Cleaning up DesktopContext")
-        
+
         for pid in self._launched_processes:
             try:
                 process = psutil.Process(pid)
@@ -635,15 +659,10 @@ class DesktopContext:
                 pass  # Already terminated
             except Exception as e:
                 logger.warning(f"Error cleaning up process {pid}: {e}")
-        
+
         self._launched_processes.clear()
-    
-    def resize_window(
-        self,
-        window: DesktopElement,
-        width: int,
-        height: int
-    ) -> bool:
+
+    def resize_window(self, window: DesktopElement, width: int, height: int) -> bool:
         """
         Resize a window to specified dimensions.
 
@@ -662,14 +681,13 @@ class DesktopContext:
 
         try:
             import win32gui
-            import win32con
 
             hwnd = window._control.NativeWindowHandle
 
             # Get current position to preserve it
             rect = window.get_bounding_rect()
-            current_x = rect['left']
-            current_y = rect['top']
+            current_x = rect["left"]
+            current_y = rect["top"]
 
             # Resize window
             win32gui.MoveWindow(hwnd, current_x, current_y, width, height, True)
@@ -682,12 +700,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def move_window(
-        self,
-        window: DesktopElement,
-        x: int,
-        y: int
-    ) -> bool:
+    def move_window(self, window: DesktopElement, x: int, y: int) -> bool:
         """
         Move a window to specified position.
 
@@ -711,8 +724,8 @@ class DesktopContext:
 
             # Get current size to preserve it
             rect = window.get_bounding_rect()
-            current_width = rect['width']
-            current_height = rect['height']
+            current_width = rect["width"]
+            current_height = rect["height"]
 
             # Move window
             win32gui.MoveWindow(hwnd, x, y, current_width, current_height, True)
@@ -832,40 +845,40 @@ class DesktopContext:
             show_state = placement[1]
 
             state_map = {
-                win32con.SW_HIDE: 'hidden',
-                win32con.SW_MINIMIZE: 'minimized',
-                win32con.SW_MAXIMIZE: 'maximized',
-                win32con.SW_RESTORE: 'normal',
-                win32con.SW_SHOW: 'normal',
-                win32con.SW_SHOWMINIMIZED: 'minimized',
-                win32con.SW_SHOWMAXIMIZED: 'maximized',
-                win32con.SW_SHOWNOACTIVATE: 'normal',
-                win32con.SW_SHOWNORMAL: 'normal',
+                win32con.SW_HIDE: "hidden",
+                win32con.SW_MINIMIZE: "minimized",
+                win32con.SW_MAXIMIZE: "maximized",
+                win32con.SW_RESTORE: "normal",
+                win32con.SW_SHOW: "normal",
+                win32con.SW_SHOWMINIMIZED: "minimized",
+                win32con.SW_SHOWMAXIMIZED: "maximized",
+                win32con.SW_SHOWNOACTIVATE: "normal",
+                win32con.SW_SHOWNORMAL: "normal",
             }
-            window_state = state_map.get(show_state, 'normal')
+            window_state = state_map.get(show_state, "normal")
 
             # Get window style
             style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
 
             properties = {
-                'title': window.get_text(),
-                'process_id': window._control.ProcessId,
-                'handle': hwnd,
-                'automation_id': window.get_property('AutomationId'),
-                'class_name': window._control.ClassName,
-                'control_type': window._control.ControlTypeName,
-                'is_enabled': window.is_enabled(),
-                'is_visible': window.is_visible(),
-                'bounds': rect,
-                'x': rect['left'],
-                'y': rect['top'],
-                'width': rect['width'],
-                'height': rect['height'],
-                'state': window_state,
-                'is_maximized': bool(style & win32con.WS_MAXIMIZE),
-                'is_minimized': bool(style & win32con.WS_MINIMIZE),
-                'is_resizable': bool(style & win32con.WS_THICKFRAME),
-                'has_title_bar': bool(style & win32con.WS_CAPTION),
+                "title": window.get_text(),
+                "process_id": window._control.ProcessId,
+                "handle": hwnd,
+                "automation_id": window.get_property("AutomationId"),
+                "class_name": window._control.ClassName,
+                "control_type": window._control.ControlTypeName,
+                "is_enabled": window.is_enabled(),
+                "is_visible": window.is_visible(),
+                "bounds": rect,
+                "x": rect["left"],
+                "y": rect["top"],
+                "width": rect["width"],
+                "height": rect["height"],
+                "state": window_state,
+                "is_maximized": bool(style & win32con.WS_MAXIMIZE),
+                "is_minimized": bool(style & win32con.WS_MINIMIZE),
+                "is_resizable": bool(style & win32con.WS_THICKFRAME),
+                "has_title_bar": bool(style & win32con.WS_CAPTION),
             }
 
             logger.info(f"Got properties for window: {properties['title']}")
@@ -877,16 +890,16 @@ class DesktopContext:
             # Return basic properties if win32 fails
             rect = window.get_bounding_rect()
             return {
-                'title': window.get_text(),
-                'process_id': window.get_property('ProcessId'),
-                'is_enabled': window.is_enabled(),
-                'is_visible': window.is_visible(),
-                'bounds': rect,
-                'x': rect['left'],
-                'y': rect['top'],
-                'width': rect['width'],
-                'height': rect['height'],
-                'state': 'unknown',
+                "title": window.get_text(),
+                "process_id": window.get_property("ProcessId"),
+                "is_enabled": window.is_enabled(),
+                "is_visible": window.is_visible(),
+                "bounds": rect,
+                "x": rect["left"],
+                "y": rect["top"],
+                "width": rect["width"],
+                "height": rect["height"],
+                "state": "unknown",
             }
 
     # =========================================================================
@@ -894,10 +907,7 @@ class DesktopContext:
     # =========================================================================
 
     def select_from_dropdown(
-        self,
-        element: DesktopElement,
-        value: str,
-        by_text: bool = True
+        self, element: DesktopElement, value: str, by_text: bool = True
     ) -> bool:
         """
         Select an item from a dropdown/combobox.
@@ -936,21 +946,32 @@ class DesktopContext:
                     # Find the item in the dropdown list
                     items = control.GetChildren()
                     for item in items:
-                        if item.ControlTypeName == 'ListItemControl':
+                        if item.ControlTypeName == "ListItemControl":
                             if by_text:
-                                if item.Name == value or value.lower() in item.Name.lower():
+                                if (
+                                    item.Name == value
+                                    or value.lower() in item.Name.lower()
+                                ):
                                     # Select this item
                                     try:
-                                        sel_item_pattern = item.GetSelectionItemPattern()
+                                        sel_item_pattern = (
+                                            item.GetSelectionItemPattern()
+                                        )
                                         if sel_item_pattern:
                                             sel_item_pattern.Select()
-                                            logger.info(f"Selected '{item.Name}' from dropdown")
+                                            logger.info(
+                                                f"Selected '{item.Name}' from dropdown"
+                                            )
                                             return True
                                     except Exception as e:
                                         # Fallback: click the item
-                                        logger.debug(f"SelectionItemPattern failed, clicking item: {e}")
+                                        logger.debug(
+                                            f"SelectionItemPattern failed, clicking item: {e}"
+                                        )
                                         item.Click()
-                                        logger.info(f"Clicked '{item.Name}' in dropdown")
+                                        logger.info(
+                                            f"Clicked '{item.Name}' in dropdown"
+                                        )
                                         return True
             except Exception as e:
                 logger.debug(f"SelectionPattern failed: {e}")
@@ -972,7 +993,11 @@ class DesktopContext:
             # Search in list items
             list_control = None
             for child in auto.GetRootControl().GetChildren():
-                if child.ControlTypeName in ['ListControl', 'MenuControl', 'PopupControl']:
+                if child.ControlTypeName in [
+                    "ListControl",
+                    "MenuControl",
+                    "PopupControl",
+                ]:
                     if child.BoundingRectangle.width() > 0:
                         list_control = child
                         break
@@ -980,7 +1005,9 @@ class DesktopContext:
             if list_control:
                 for item in list_control.GetChildren():
                     item_text = item.Name or ""
-                    if by_text and (item_text == value or value.lower() in item_text.lower()):
+                    if by_text and (
+                        item_text == value or value.lower() in item_text.lower()
+                    ):
                         item.Click()
                         logger.info(f"Selected '{item_text}' from dropdown list")
                         return True
@@ -1002,11 +1029,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def check_checkbox(
-        self,
-        element: DesktopElement,
-        check: bool = True
-    ) -> bool:
+    def check_checkbox(self, element: DesktopElement, check: bool = True) -> bool:
         """
         Check or uncheck a checkbox.
 
@@ -1043,7 +1066,9 @@ class DesktopContext:
                         toggle_pattern.Toggle()
                         logger.info("Checkbox unchecked")
                     else:
-                        logger.info(f"Checkbox already {'checked' if check else 'unchecked'}")
+                        logger.info(
+                            f"Checkbox already {'checked' if check else 'unchecked'}"
+                        )
 
                     return True
             except Exception as e:
@@ -1064,10 +1089,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def select_radio_button(
-        self,
-        element: DesktopElement
-    ) -> bool:
+    def select_radio_button(self, element: DesktopElement) -> bool:
         """
         Select a radio button.
 
@@ -1106,10 +1128,7 @@ class DesktopContext:
             raise ValueError(error_msg)
 
     def select_tab(
-        self,
-        tab_control: DesktopElement,
-        tab_name: str = None,
-        tab_index: int = None
+        self, tab_control: DesktopElement, tab_name: str = None, tab_index: int = None
     ) -> bool:
         """
         Select a tab in a tab control.
@@ -1136,14 +1155,14 @@ class DesktopContext:
             # Get tab items
             tab_items = []
             for child in control.GetChildren():
-                if child.ControlTypeName == 'TabItemControl':
+                if child.ControlTypeName == "TabItemControl":
                     tab_items.append(child)
 
             if not tab_items:
                 # Try deeper search
                 for child in control.GetChildren():
                     for subchild in child.GetChildren():
-                        if subchild.ControlTypeName == 'TabItemControl':
+                        if subchild.ControlTypeName == "TabItemControl":
                             tab_items.append(subchild)
 
             logger.debug(f"Found {len(tab_items)} tab items")
@@ -1154,7 +1173,9 @@ class DesktopContext:
                 if 0 <= tab_index < len(tab_items):
                     target_tab = tab_items[tab_index]
                 else:
-                    raise ValueError(f"Tab index {tab_index} out of range (0-{len(tab_items)-1})")
+                    raise ValueError(
+                        f"Tab index {tab_index} out of range (0-{len(tab_items)-1})"
+                    )
 
             elif tab_name is not None:
                 for tab in tab_items:
@@ -1164,7 +1185,9 @@ class DesktopContext:
 
                 if not target_tab:
                     tab_names = [t.Name for t in tab_items]
-                    raise ValueError(f"Tab '{tab_name}' not found. Available tabs: {tab_names}")
+                    raise ValueError(
+                        f"Tab '{tab_name}' not found. Available tabs: {tab_names}"
+                    )
 
             # Select the tab
             try:
@@ -1186,11 +1209,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def expand_tree_item(
-        self,
-        element: DesktopElement,
-        expand: bool = True
-    ) -> bool:
+    def expand_tree_item(self, element: DesktopElement, expand: bool = True) -> bool:
         """
         Expand or collapse a tree item.
 
@@ -1219,11 +1238,18 @@ class DesktopContext:
                     if expand and current_state == auto.ExpandCollapseState.Collapsed:
                         expand_pattern.Expand()
                         logger.info(f"Expanded tree item: {control.Name}")
-                    elif not expand and current_state == auto.ExpandCollapseState.Expanded:
+                    elif (
+                        not expand
+                        and current_state == auto.ExpandCollapseState.Expanded
+                    ):
                         expand_pattern.Collapse()
                         logger.info(f"Collapsed tree item: {control.Name}")
                     else:
-                        state_name = "expanded" if current_state == auto.ExpandCollapseState.Expanded else "collapsed"
+                        state_name = (
+                            "expanded"
+                            if current_state == auto.ExpandCollapseState.Expanded
+                            else "collapsed"
+                        )
                         logger.info(f"Tree item already {state_name}")
 
                     return True
@@ -1244,10 +1270,7 @@ class DesktopContext:
             raise ValueError(error_msg)
 
     def scroll_element(
-        self,
-        element: DesktopElement,
-        direction: str = "down",
-        amount: float = 0.5
+        self, element: DesktopElement, direction: str = "down", amount: float = 0.5
     ) -> bool:
         """
         Scroll an element (scrollbar, list, window, etc.).
@@ -1267,7 +1290,9 @@ class DesktopContext:
 
         valid_directions = ["up", "down", "left", "right"]
         if direction.lower() not in valid_directions:
-            raise ValueError(f"Invalid direction '{direction}'. Must be one of: {valid_directions}")
+            raise ValueError(
+                f"Invalid direction '{direction}'. Must be one of: {valid_directions}"
+            )
 
         direction = direction.lower()
 
@@ -1328,7 +1353,7 @@ class DesktopContext:
                 return True
             else:
                 # Use keyboard for horizontal scroll
-                key = '{Right}' if direction == "right" else '{Left}'
+                key = "{Right}" if direction == "right" else "{Left}"
                 times = 5 if isinstance(amount, str) else max(1, int(amount * 10))
                 for _ in range(times):
                     control.SendKeys(key)
@@ -1345,12 +1370,7 @@ class DesktopContext:
     # Mouse & Keyboard Control Methods (Bite 7)
     # =========================================================================
 
-    def move_mouse(
-        self,
-        x: int,
-        y: int,
-        duration: float = 0.0
-    ) -> bool:
+    def move_mouse(self, x: int, y: int, duration: float = 0.0) -> bool:
         """
         Move mouse cursor to specified position.
 
@@ -1371,6 +1391,7 @@ class DesktopContext:
             if duration > 0:
                 # Animated move
                 import ctypes
+
                 start_x, start_y = self.get_mouse_position()
                 steps = max(10, int(duration * 60))  # ~60 fps
 
@@ -1385,6 +1406,7 @@ class DesktopContext:
             else:
                 # Instant move
                 import ctypes
+
                 ctypes.windll.user32.SetCursorPos(x, y)
 
             logger.info(f"Moved mouse to ({x}, {y})")
@@ -1400,7 +1422,7 @@ class DesktopContext:
         x: int = None,
         y: int = None,
         button: str = "left",
-        click_type: str = "single"
+        click_type: str = "single",
     ) -> bool:
         """
         Click mouse at specified position or current position.
@@ -1421,11 +1443,15 @@ class DesktopContext:
 
         valid_buttons = ["left", "right", "middle"]
         if button.lower() not in valid_buttons:
-            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
+            raise ValueError(
+                f"Invalid button '{button}'. Must be one of: {valid_buttons}"
+            )
 
         valid_types = ["single", "double", "triple"]
         if click_type.lower() not in valid_types:
-            raise ValueError(f"Invalid click_type '{click_type}'. Must be one of: {valid_types}")
+            raise ValueError(
+                f"Invalid click_type '{click_type}'. Must be one of: {valid_types}"
+            )
 
         button = button.lower()
         click_type = click_type.lower()
@@ -1483,11 +1509,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def send_keys(
-        self,
-        keys: str,
-        interval: float = 0.0
-    ) -> bool:
+    def send_keys(self, keys: str, interval: float = 0.0) -> bool:
         """
         Send keyboard input.
 
@@ -1519,10 +1541,7 @@ class DesktopContext:
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-    def send_hotkey(
-        self,
-        *keys: str
-    ) -> bool:
+    def send_hotkey(self, *keys: str) -> bool:
         """
         Send a hotkey combination (e.g., Ctrl+C, Alt+Tab).
 
@@ -1547,7 +1566,7 @@ class DesktopContext:
                 "alt": "{Alt}",
                 "shift": "{Shift}",
                 "win": "{Win}",
-                "windows": "{Win}"
+                "windows": "{Win}",
             }
 
             hotkey_str = ""
@@ -1588,7 +1607,7 @@ class DesktopContext:
         end_x: int,
         end_y: int,
         button: str = "left",
-        duration: float = 0.5
+        duration: float = 0.5,
     ) -> bool:
         """
         Drag mouse from one position to another.
@@ -1611,7 +1630,9 @@ class DesktopContext:
 
         valid_buttons = ["left", "right"]
         if button.lower() not in valid_buttons:
-            raise ValueError(f"Invalid button '{button}'. Must be one of: {valid_buttons}")
+            raise ValueError(
+                f"Invalid button '{button}'. Must be one of: {valid_buttons}"
+            )
 
         button = button.lower()
 
@@ -1622,7 +1643,6 @@ class DesktopContext:
 
             # Use win32api for drag operation
             import ctypes
-            from ctypes import wintypes
 
             # Mouse event constants
             MOUSEEVENTF_LEFTDOWN = 0x0002
@@ -1668,7 +1688,7 @@ class DesktopContext:
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
-        parent: auto.Control = None
+        parent: auto.Control = None,
     ) -> Optional[DesktopElement]:
         """
         Wait for an element to reach a specific state.
@@ -1704,28 +1724,28 @@ class DesktopContext:
                 if state == "visible":
                     # Element found and should be visible
                     if element and element.exists():
-                        logger.info(f"Element is visible")
+                        logger.info("Element is visible")
                         return element
                 elif state == "hidden":
                     # Element should not exist or not be visible
                     if not element or not element.exists():
-                        logger.info(f"Element is hidden/not found")
+                        logger.info("Element is hidden/not found")
                         return None
                 elif state == "enabled":
                     # Element should be enabled
                     if element and element._control.IsEnabled:
-                        logger.info(f"Element is enabled")
+                        logger.info("Element is enabled")
                         return element
                 elif state == "disabled":
                     # Element should be disabled
                     if element and not element._control.IsEnabled:
-                        logger.info(f"Element is disabled")
+                        logger.info("Element is disabled")
                         return element
 
             except Exception:
                 # Element not found
                 if state == "hidden":
-                    logger.info(f"Element is hidden (not found)")
+                    logger.info("Element is hidden (not found)")
                     return None
 
             time.sleep(poll_interval)
@@ -1742,7 +1762,7 @@ class DesktopContext:
         timeout: float = 10.0,
         state: str = "visible",
         poll_interval: float = 0.5,
-        parent: auto.Control = None
+        parent: auto.Control = None,
     ) -> Optional[DesktopElement]:
         """
         Async version of wait_for_element - Wait for an element without blocking.
@@ -1802,7 +1822,7 @@ class DesktopContext:
                 logger.info(f"Element is {state}")
                 return element
             elif result_type == "hidden":
-                logger.info(f"Element is hidden/not found")
+                logger.info("Element is hidden/not found")
                 return None
 
             # Use async sleep
@@ -1821,7 +1841,7 @@ class DesktopContext:
         class_name: str = None,
         timeout: float = 10.0,
         state: str = "visible",
-        poll_interval: float = 0.5
+        poll_interval: float = 0.5,
     ) -> Optional[auto.Control]:
         """
         Wait for a window to reach a specific state.
@@ -1842,7 +1862,9 @@ class DesktopContext:
             ValueError: If no search criteria provided
         """
         if not title and not title_regex and not class_name:
-            raise ValueError("Must provide at least one of: title, title_regex, class_name")
+            raise ValueError(
+                "Must provide at least one of: title, title_regex, class_name"
+            )
 
         valid_states = ["visible", "hidden"]
         if state.lower() not in valid_states:
@@ -1852,6 +1874,7 @@ class DesktopContext:
         logger.debug(f"Waiting for window to be '{state}' (timeout={timeout}s)")
 
         import re
+
         start_time = time.time()
 
         while time.time() - start_time < timeout:
@@ -1882,7 +1905,7 @@ class DesktopContext:
                     return window_found
             elif state == "hidden":
                 if not window_found:
-                    logger.info(f"Window is hidden/closed")
+                    logger.info("Window is hidden/closed")
                     return None
 
             time.sleep(poll_interval)
@@ -1901,7 +1924,7 @@ class DesktopContext:
         class_name: str = None,
         timeout: float = 10.0,
         state: str = "visible",
-        poll_interval: float = 0.5
+        poll_interval: float = 0.5,
     ) -> Optional[auto.Control]:
         """
         Async version of wait_for_window - Wait for a window without blocking.
@@ -1922,7 +1945,9 @@ class DesktopContext:
             ValueError: If no search criteria provided
         """
         if not title and not title_regex and not class_name:
-            raise ValueError("Must provide at least one of: title, title_regex, class_name")
+            raise ValueError(
+                "Must provide at least one of: title, title_regex, class_name"
+            )
 
         valid_states = ["visible", "hidden"]
         if state.lower() not in valid_states:
@@ -1932,6 +1957,7 @@ class DesktopContext:
         logger.debug(f"Async waiting for window to be '{state}' (timeout={timeout}s)")
 
         import re
+
         loop = asyncio.get_event_loop()
         executor = _get_executor()
         start_time = time.time()
@@ -1963,7 +1989,7 @@ class DesktopContext:
                     return window_found
             elif state == "hidden":
                 if not window_found:
-                    logger.info(f"Window is hidden/closed")
+                    logger.info("Window is hidden/closed")
                     return None
 
             # Use async sleep
@@ -1977,10 +2003,7 @@ class DesktopContext:
         )
 
     def element_exists(
-        self,
-        selector: dict,
-        timeout: float = 0.0,
-        parent: auto.Control = None
+        self, selector: dict, timeout: float = 0.0, parent: auto.Control = None
     ) -> bool:
         """
         Check if an element exists.
@@ -1996,12 +2019,14 @@ class DesktopContext:
         logger.debug(f"Checking if element exists: {selector}")
 
         try:
-            element = self.find_element(selector, timeout=max(0.1, timeout), parent=parent)
+            element = self.find_element(
+                selector, timeout=max(0.1, timeout), parent=parent
+            )
             exists = element is not None and element.exists()
             logger.debug(f"Element exists: {exists}")
             return exists
         except Exception:
-            logger.debug(f"Element does not exist")
+            logger.debug("Element does not exist")
             return False
 
     def verify_element_property(
@@ -2009,7 +2034,7 @@ class DesktopContext:
         element: DesktopElement,
         property_name: str,
         expected_value: any,
-        comparison: str = "equals"
+        comparison: str = "equals",
     ) -> bool:
         """
         Verify an element property has an expected value.
@@ -2025,14 +2050,24 @@ class DesktopContext:
             True if verification passes, False otherwise
         """
         valid_comparisons = [
-            "equals", "contains", "startswith", "endswith",
-            "regex", "greater", "less", "not_equals"
+            "equals",
+            "contains",
+            "startswith",
+            "endswith",
+            "regex",
+            "greater",
+            "less",
+            "not_equals",
         ]
         if comparison.lower() not in valid_comparisons:
-            raise ValueError(f"Invalid comparison '{comparison}'. Must be one of: {valid_comparisons}")
+            raise ValueError(
+                f"Invalid comparison '{comparison}'. Must be one of: {valid_comparisons}"
+            )
 
         comparison = comparison.lower()
-        logger.debug(f"Verifying element property '{property_name}' {comparison} '{expected_value}'")
+        logger.debug(
+            f"Verifying element property '{property_name}' {comparison} '{expected_value}'"
+        )
 
         try:
             control = element._control
@@ -2075,6 +2110,7 @@ class DesktopContext:
                 result = actual_str.lower().endswith(expected_str.lower())
             elif comparison == "regex":
                 import re
+
                 result = bool(re.search(expected_str, actual_str))
             elif comparison == "greater":
                 try:
@@ -2102,10 +2138,7 @@ class DesktopContext:
     # ============================================================
 
     def capture_screenshot(
-        self,
-        file_path: str = None,
-        region: dict = None,
-        format: str = "PNG"
+        self, file_path: str = None, region: dict = None, format: str = "PNG"
     ) -> Optional[any]:
         """
         Capture a screenshot of the screen or a specific region.
@@ -2154,7 +2187,7 @@ class DesktopContext:
         element: DesktopElement,
         file_path: str = None,
         padding: int = 0,
-        format: str = "PNG"
+        format: str = "PNG",
     ) -> Optional[any]:
         """
         Capture an image of a specific desktop element.
@@ -2211,7 +2244,7 @@ class DesktopContext:
         region: dict = None,
         language: str = "eng",
         config: str = "",
-        engine: str = "auto"
+        engine: str = "auto",
     ) -> Optional[str]:
         """
         Extract text from an image using OCR.
@@ -2259,14 +2292,15 @@ class DesktopContext:
                 """Try RapidOCR (ONNX-based OCR)"""
                 try:
                     from rapidocr_onnxruntime import RapidOCR
+
                     ocr = RapidOCR()
                     # Convert PIL to numpy array (RGB)
-                    img_array = np.array(image.convert('RGB'))
+                    img_array = np.array(image.convert("RGB"))
                     result, _ = ocr(img_array)
                     if result:
                         # RapidOCR returns list of [box, text, confidence]
                         text_parts = [item[1] for item in result]
-                        text = '\n'.join(text_parts)
+                        text = "\n".join(text_parts)
                         logger.info(f"RapidOCR extracted {len(text)} characters")
                         return text.strip()
                     return ""
@@ -2281,7 +2315,10 @@ class DesktopContext:
                 """Try pytesseract"""
                 try:
                     import pytesseract
-                    text = pytesseract.image_to_string(image, lang=language, config=config)
+
+                    text = pytesseract.image_to_string(
+                        image, lang=language, config=config
+                    )
                     text = text.strip()
                     logger.info(f"Tesseract OCR extracted {len(text)} characters")
                     return text
@@ -2306,6 +2343,7 @@ class DesktopContext:
                     try:
                         loop = asyncio.get_running_loop()
                         import concurrent.futures
+
                         with concurrent.futures.ThreadPoolExecutor() as pool:
                             future = pool.submit(asyncio.run, do_ocr())
                             text = future.result()
@@ -2326,14 +2364,18 @@ class DesktopContext:
                 result = try_rapidocr()
                 if result is not None:
                     return result
-                logger.error("RapidOCR not available. Install: pip install rapidocr_onnxruntime")
+                logger.error(
+                    "RapidOCR not available. Install: pip install rapidocr_onnxruntime"
+                )
                 return None
 
             elif engine == "tesseract":
                 result = try_tesseract()
                 if result is not None:
                     return result
-                logger.error("Tesseract not available. Install: pip install pytesseract")
+                logger.error(
+                    "Tesseract not available. Install: pip install pytesseract"
+                )
                 return None
 
             elif engine == "winocr":
@@ -2359,7 +2401,9 @@ class DesktopContext:
                 if result is not None:
                     return result
 
-                logger.error("No OCR engine available. Install one of: rapidocr_onnxruntime, pytesseract, winocr")
+                logger.error(
+                    "No OCR engine available. Install one of: rapidocr_onnxruntime, pytesseract, winocr"
+                )
                 return None
 
         except Exception as e:
@@ -2373,7 +2417,7 @@ class DesktopContext:
         image1_path: str = None,
         image2_path: str = None,
         method: str = "ssim",
-        threshold: float = 0.9
+        threshold: float = 0.9,
     ) -> dict:
         """
         Compare two images and return similarity metrics.
@@ -2401,7 +2445,12 @@ class DesktopContext:
 
             if image1 is None or image2 is None:
                 logger.error("Both images required for comparison")
-                return {"similarity": 0.0, "is_match": False, "method": method, "error": "Missing images"}
+                return {
+                    "similarity": 0.0,
+                    "is_match": False,
+                    "method": method,
+                    "error": "Missing images",
+                }
 
             # Resize images to same size for comparison
             if image1.size != image2.size:
@@ -2421,6 +2470,7 @@ class DesktopContext:
                 # Structural Similarity Index
                 try:
                     from skimage.metrics import structural_similarity as ssim
+
                     # Convert to grayscale for SSIM
                     if len(arr1.shape) == 3:
                         gray1 = np.mean(arr1, axis=2)
@@ -2452,21 +2502,33 @@ class DesktopContext:
                 similarity = 1.0 - (actual_diff / max_diff)
 
             is_match = similarity >= threshold
-            logger.info(f"Image comparison ({method}): similarity={similarity:.4f}, threshold={threshold}, match={is_match}")
+            logger.info(
+                f"Image comparison ({method}): similarity={similarity:.4f}, threshold={threshold}, match={is_match}"
+            )
 
             return {
                 "similarity": float(similarity),
                 "is_match": is_match,
                 "method": method,
-                "threshold": threshold
+                "threshold": threshold,
             }
 
         except ImportError as e:
             logger.error(f"Required library not installed: {e}")
-            return {"similarity": 0.0, "is_match": False, "method": method, "error": str(e)}
+            return {
+                "similarity": 0.0,
+                "is_match": False,
+                "method": method,
+                "error": str(e),
+            }
         except Exception as e:
             logger.error(f"Image comparison failed: {e}")
-            return {"similarity": 0.0, "is_match": False, "method": method, "error": str(e)}
+            return {
+                "similarity": 0.0,
+                "is_match": False,
+                "method": method,
+                "error": str(e),
+            }
 
     def __enter__(self):
         """Context manager entry."""

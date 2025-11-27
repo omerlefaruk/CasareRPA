@@ -16,7 +16,6 @@ This module provides extended text manipulation nodes:
 """
 
 import re
-from typing import Any, Optional
 
 from loguru import logger
 
@@ -78,9 +77,15 @@ class TextSplitNode(BaseNode):
                 separator = context.resolve_value(separator)
 
             if separator is None or separator == "":
-                result = text.split(maxsplit=max_split) if max_split >= 0 else text.split()
+                result = (
+                    text.split(maxsplit=max_split) if max_split >= 0 else text.split()
+                )
             else:
-                result = text.split(separator, maxsplit=max_split) if max_split >= 0 else text.split(separator)
+                result = (
+                    text.split(separator, maxsplit=max_split)
+                    if max_split >= 0
+                    else text.split(separator)
+                )
 
             self.set_output_value("result", result)
             self.set_output_value("count", len(result))
@@ -89,7 +94,7 @@ class TextSplitNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(result)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -173,9 +178,13 @@ class TextReplaceNode(BaseNode):
                     flags |= re.DOTALL
 
                 if count >= 0:
-                    result, replacements = re.subn(old_value, new_value, text, count=count, flags=flags)
+                    result, replacements = re.subn(
+                        old_value, new_value, text, count=count, flags=flags
+                    )
                 else:
-                    result, replacements = re.subn(old_value, new_value, text, flags=flags)
+                    result, replacements = re.subn(
+                        old_value, new_value, text, flags=flags
+                    )
             else:
                 original_count = text.count(old_value)
                 if count >= 0:
@@ -192,7 +201,7 @@ class TextReplaceNode(BaseNode):
             return {
                 "success": True,
                 "data": {"replacements": replacements},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -255,7 +264,7 @@ class TextTrimNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -319,7 +328,7 @@ class TextCaseNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -387,7 +396,7 @@ class TextPadNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -448,7 +457,7 @@ class TextSubstringNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result, "length": len(result)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -523,7 +532,7 @@ class TextContainsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"contains": contains, "position": position, "count": count},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -586,7 +595,7 @@ class TextStartsWithNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -649,7 +658,7 @@ class TextEndsWithNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -725,7 +734,7 @@ class TextLinesNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": count},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -773,7 +782,7 @@ class TextReverseNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -827,7 +836,9 @@ class TextCountNode(BaseNode):
 
             # Calculate all counts
             if exclude_whitespace:
-                characters = len(text.replace(" ", "").replace("\n", "").replace("\t", ""))
+                characters = len(
+                    text.replace(" ", "").replace("\n", "").replace("\t", "")
+                )
             else:
                 characters = len(text)
 
@@ -850,8 +861,13 @@ class TextCountNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"count": count, "characters": characters, "words": words, "lines": lines},
-                "next_nodes": ["exec_out"]
+                "data": {
+                    "count": count,
+                    "characters": characters,
+                    "words": words,
+                    "lines": lines,
+                },
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -913,7 +929,7 @@ class TextJoinNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1017,7 +1033,7 @@ class TextExtractNode(BaseNode):
             return {
                 "success": True,
                 "data": {"found": found, "match_count": match_count},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

@@ -15,19 +15,19 @@ from loguru import logger
 # Safe built-in functions for expressions
 SAFE_FUNCTIONS = {
     **DEFAULT_FUNCTIONS,  # Includes rand, randint, int, float, str
-    'len': len,
-    'bool': bool,
-    'abs': abs,
-    'min': min,
-    'max': max,
-    'sum': sum,
-    'round': round,
-    'sorted': sorted,
-    'list': list,
-    'tuple': tuple,
-    'range': range,
-    'any': any,
-    'all': all,
+    "len": len,
+    "bool": bool,
+    "abs": abs,
+    "min": min,
+    "max": max,
+    "sum": sum,
+    "round": round,
+    "sorted": sorted,
+    "list": list,
+    "tuple": tuple,
+    "range": range,
+    "any": any,
+    "all": all,
 }
 
 
@@ -70,7 +70,7 @@ def safe_eval(expression: str, variables: Optional[Dict[str, Any]] = None) -> An
             expression,
             operators=DEFAULT_OPERATORS,
             functions=SAFE_FUNCTIONS,
-            names=variables or {}
+            names=variables or {},
         )
         logger.debug(f"Safe eval: '{expression}' -> {result}")
         return result
@@ -138,39 +138,41 @@ def is_safe_expression(expression: str) -> bool:
 
     # Blacklist dangerous patterns
     dangerous_patterns = [
-        '__',  # Dunder methods
-        'import',
-        'exec',
-        'eval',
-        'compile',
-        'open',
-        'file',
-        'input',
-        'raw_input',
-        'globals',
-        'locals',
-        'vars',
-        'dir',
-        'getattr',
-        'setattr',
-        'delattr',
-        'hasattr',
-        'classmethod',
-        'staticmethod',
-        'property',
-        'super',
-        'lambda',
-        'def ',
-        'class ',
-        'yield',
-        'async',
-        'await',
+        "__",  # Dunder methods
+        "import",
+        "exec",
+        "eval",
+        "compile",
+        "open",
+        "file",
+        "input",
+        "raw_input",
+        "globals",
+        "locals",
+        "vars",
+        "dir",
+        "getattr",
+        "setattr",
+        "delattr",
+        "hasattr",
+        "classmethod",
+        "staticmethod",
+        "property",
+        "super",
+        "lambda",
+        "def ",
+        "class ",
+        "yield",
+        "async",
+        "await",
     ]
 
     expression_lower = expression.lower()
     for pattern in dangerous_patterns:
         if pattern in expression_lower:
-            logger.warning(f"Potentially dangerous pattern '{pattern}' found in expression")
+            logger.warning(
+                f"Potentially dangerous pattern '{pattern}' found in expression"
+            )
             return False
 
     return True

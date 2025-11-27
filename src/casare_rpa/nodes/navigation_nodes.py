@@ -6,9 +6,7 @@ going to URLs, back/forward navigation, and page refresh.
 """
 
 import asyncio
-from typing import Any, Optional
 
-from playwright.async_api import Page
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -30,17 +28,17 @@ def safe_int(value, default: int) -> int:
 class GoToURLNode(BaseNode):
     """
     Go to URL node - navigates to a specified URL.
-    
+
     Loads a web page at the given URL with optional timeout configuration.
     """
-    
+
     def __init__(
         self,
         node_id: str,
         name: str = "Go To URL",
         url: str = "",
         timeout: int = DEFAULT_PAGE_LOAD_TIMEOUT,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize go to URL node.
@@ -73,15 +71,19 @@ class GoToURLNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoToURLNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE, required=False)  # Optional: uses active page if not connected
-        self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)  # Optional: uses config value if not connected
+        self.add_input_port(
+            "page", PortType.INPUT, DataType.PAGE, required=False
+        )  # Optional: uses active page if not connected
+        self.add_input_port(
+            "url", PortType.INPUT, DataType.STRING, required=False
+        )  # Optional: uses config value if not connected
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute navigation to URL.
@@ -97,11 +99,15 @@ class GoToURLNode(BaseNode):
         try:
             # Get page from input or context
             page = self.get_input_value("page")
-            logger.info(f"Page from input: {page} (type: {type(page).__name__ if page else 'None'})")
+            logger.info(
+                f"Page from input: {page} (type: {type(page).__name__ if page else 'None'})"
+            )
 
             if page is None:
                 page = context.get_active_page()
-                logger.info(f"Page from context: {page} (type: {type(page).__name__ if page else 'None'})")
+                logger.info(
+                    f"Page from context: {page} (type: {type(page).__name__ if page else 'None'})"
+                )
 
             if page is None:
                 raise ValueError("No page instance found")
@@ -119,7 +125,9 @@ class GoToURLNode(BaseNode):
             url = context.resolve_value(url)
 
             if not url:
-                logger.error(f"URL validation failed. url='{url}', config={self.config}")
+                logger.error(
+                    f"URL validation failed. url='{url}', config={self.config}"
+                )
                 raise ValueError("URL is required")
 
             # Add protocol if missing
@@ -155,7 +163,9 @@ class GoToURLNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for URL: {url}"
+                        )
 
                     # Navigate to URL
                     response = await page.goto(url, **goto_options)
@@ -164,16 +174,18 @@ class GoToURLNode(BaseNode):
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(f"Navigation completed: {url} (status: {response.status if response else 'N/A'}, attempt {attempts})")
+                    logger.info(
+                        f"Navigation completed: {url} (status: {response.status if response else 'N/A'}, attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
                         "data": {
                             "url": url,
                             "status": response.status if response else None,
-                            "attempts": attempts
+                            "attempts": attempts,
                         },
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -189,6 +201,7 @@ class GoToURLNode(BaseNode):
                 try:
                     import os
                     from datetime import datetime
+
                     if screenshot_path:
                         path = screenshot_path
                     else:
@@ -209,23 +222,19 @@ class GoToURLNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to navigate to URL: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-    
+            return {"success": False, "error": str(e), "next_nodes": []}
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         url = self.config.get("url", "")
         if not url:
             # URL can come from input port, so empty config is ok
             return True, ""
-        
+
         # Basic URL validation
         if not (url.startswith("http://") or url.startswith("https://")):
             return False, "URL must start with http:// or https://"
-        
+
         return True, ""
 
 
@@ -301,7 +310,9 @@ class GoBackNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go back")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for go back"
+                        )
 
                     await page.go_back(timeout=timeout, wait_until=wait_until)
 
@@ -313,7 +324,7 @@ class GoBackNode(BaseNode):
                     return {
                         "success": True,
                         "data": {"url": page.url, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -329,11 +340,7 @@ class GoBackNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to go back: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
@@ -412,7 +419,9 @@ class GoForwardNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for go forward")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for go forward"
+                        )
 
                     await page.go_forward(timeout=timeout, wait_until=wait_until)
 
@@ -424,7 +433,7 @@ class GoForwardNode(BaseNode):
                     return {
                         "success": True,
                         "data": {"url": page.url, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -440,11 +449,7 @@ class GoForwardNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to go forward: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
@@ -523,7 +528,9 @@ class RefreshPageNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for page refresh")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for page refresh"
+                        )
 
                     await page.reload(timeout=timeout, wait_until=wait_until)
 
@@ -535,7 +542,7 @@ class RefreshPageNode(BaseNode):
                     return {
                         "success": True,
                         "data": {"url": page.url, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -551,13 +558,8 @@ class RefreshPageNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to refresh page: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
-

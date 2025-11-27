@@ -8,13 +8,18 @@ Displays real-time metrics from robots:
 - Error rates
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel,
-    QFrame, QProgressBar, QScrollArea, QGroupBox, QSplitter
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QLabel,
+    QFrame,
+    QProgressBar,
+    QScrollArea,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush
+from PySide6.QtCore import Qt, Signal
 
 from ..theme import THEME
 
@@ -22,13 +27,7 @@ from ..theme import THEME
 class MetricCard(QFrame):
     """Individual metric display card."""
 
-    def __init__(
-        self,
-        title: str,
-        value: str = "-",
-        subtitle: str = "",
-        parent=None
-    ):
+    def __init__(self, title: str, value: str = "-", subtitle: str = "", parent=None):
         super().__init__(parent)
         self._setup_ui(title, value, subtitle)
 
@@ -239,8 +238,11 @@ class RobotMetricsCard(QFrame):
             # Format last seen time
             try:
                 from datetime import datetime
+
                 if isinstance(last_seen, str):
-                    dt = datetime.fromisoformat(last_seen.replace('Z', '+00:00').replace('+00:00', ''))
+                    dt = datetime.fromisoformat(
+                        last_seen.replace("Z", "+00:00").replace("+00:00", "")
+                    )
                     last_seen = dt.strftime("%H:%M:%S")
             except (ValueError, TypeError):
                 pass
@@ -248,10 +250,12 @@ class RobotMetricsCard(QFrame):
 
         layout.addLayout(stats_layout)
 
-    def _add_stat(self, layout: QGridLayout, row: int, col: int, label: str, value: str):
+    def _add_stat(
+        self, layout: QGridLayout, row: int, col: int, label: str, value: str
+    ):
         """Add a statistic to the grid."""
         frame = QFrame()
-        frame.setStyleSheet(f"background: transparent;")
+        frame.setStyleSheet("background: transparent;")
         v_layout = QVBoxLayout(frame)
         v_layout.setContentsMargins(0, 0, 0, 0)
         v_layout.setSpacing(2)
@@ -373,7 +377,9 @@ class MetricsPanel(QWidget):
         self._busy_robots_card = MetricCard("Busy", "0", "executing jobs")
         summary_layout.addWidget(self._busy_robots_card)
 
-        self._avg_utilization_card = MetricCard("Avg Utilization", "0%", "across all robots")
+        self._avg_utilization_card = MetricCard(
+            "Avg Utilization", "0%", "across all robots"
+        )
         summary_layout.addWidget(self._avg_utilization_card)
 
         layout.addWidget(summary_frame)

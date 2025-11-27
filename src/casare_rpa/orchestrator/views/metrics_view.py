@@ -5,7 +5,6 @@ Displays real-time robot metrics and health information.
 """
 
 import asyncio
-from typing import Optional, List, Dict, Any
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import QTimer
 from loguru import logger
@@ -31,7 +30,9 @@ class MetricsView(QWidget):
 
         # Auto-refresh timer (more frequent for metrics)
         self._refresh_timer = QTimer()
-        self._refresh_timer.timeout.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        self._refresh_timer.timeout.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         self._refresh_timer.start(5000)  # Refresh every 5 seconds
 
     def _setup_ui(self):

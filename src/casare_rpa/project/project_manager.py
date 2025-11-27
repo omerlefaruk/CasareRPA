@@ -176,14 +176,12 @@ class ProjectManager:
 
         if self._project_variables:
             ProjectStorage.save_project_variables(
-                self._current_project,
-                self._project_variables
+                self._current_project, self._project_variables
             )
 
         if self._project_credentials:
             ProjectStorage.save_project_credentials(
-                self._current_project,
-                self._project_credentials
+                self._current_project, self._project_credentials
             )
 
         logger.debug(f"Saved project: {self._current_project.name}")
@@ -344,9 +342,7 @@ class ProjectManager:
             raise ValueError("No scenario is currently open")
 
         return ScenarioStorage.duplicate_scenario(
-            self._current_scenario,
-            new_name,
-            self._current_project
+            self._current_scenario, new_name, self._current_project
         )
 
     # =========================================================================

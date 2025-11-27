@@ -17,6 +17,7 @@ from loguru import logger
 @dataclass
 class ImportResult:
     """Result of an import operation."""
+
     success: bool
     imported_nodes: List[str] = field(default_factory=list)
     imported_frames: List[Any] = field(default_factory=list)
@@ -95,9 +96,13 @@ class WorkflowImporter:
         new_connections = []
         for conn in data.get("connections", []):
             new_conn = {
-                "source_node": id_mapping.get(conn.get("source_node", ""), conn.get("source_node", "")),
+                "source_node": id_mapping.get(
+                    conn.get("source_node", ""), conn.get("source_node", "")
+                ),
                 "source_port": conn.get("source_port", ""),
-                "target_node": id_mapping.get(conn.get("target_node", ""), conn.get("target_node", "")),
+                "target_node": id_mapping.get(
+                    conn.get("target_node", ""), conn.get("target_node", "")
+                ),
                 "target_port": conn.get("target_port", ""),
             }
             new_connections.append(new_conn)
@@ -124,9 +129,7 @@ class WorkflowImporter:
         return data, id_mapping
 
     def calculate_import_position(
-        self,
-        workflow_data: dict,
-        drop_position: Optional[Tuple[float, float]] = None
+        self, workflow_data: dict, drop_position: Optional[Tuple[float, float]] = None
     ) -> Tuple[float, float]:
         """
         Calculate position offset for imported nodes.
@@ -151,8 +154,8 @@ class WorkflowImporter:
         if not import_nodes:
             return (0, 0)
 
-        min_import_x = float('inf')
-        min_import_y = float('inf')
+        min_import_x = float("inf")
+        min_import_y = float("inf")
 
         for node_data in import_nodes.values():
             pos = node_data.get("position", {})
@@ -161,9 +164,9 @@ class WorkflowImporter:
             if "y" in pos:
                 min_import_y = min(min_import_y, pos["y"])
 
-        if min_import_x == float('inf'):
+        if min_import_x == float("inf"):
             min_import_x = 0
-        if min_import_y == float('inf'):
+        if min_import_y == float("inf"):
             min_import_y = 0
 
         if drop_position:
@@ -179,9 +182,7 @@ class WorkflowImporter:
         return (offset_x, offset_y)
 
     def apply_position_offset(
-        self,
-        workflow_data: dict,
-        offset: Tuple[float, float]
+        self, workflow_data: dict, offset: Tuple[float, float]
     ) -> dict:
         """
         Apply position offset to all nodes and frames in workflow data.
@@ -198,8 +199,12 @@ class WorkflowImporter:
         # Offset node positions
         for node_data in workflow_data.get("nodes", {}).values():
             if "position" in node_data:
-                node_data["position"]["x"] = node_data["position"].get("x", 0) + offset_x
-                node_data["position"]["y"] = node_data["position"].get("y", 0) + offset_y
+                node_data["position"]["x"] = (
+                    node_data["position"].get("x", 0) + offset_x
+                )
+                node_data["position"]["y"] = (
+                    node_data["position"].get("y", 0) + offset_y
+                )
 
         # Offset frame positions
         for frame in workflow_data.get("frames", []):
@@ -214,7 +219,7 @@ def import_workflow_data(
     graph,
     node_factory,
     workflow_data: dict,
-    drop_position: Optional[Tuple[float, float]] = None
+    drop_position: Optional[Tuple[float, float]] = None,
 ) -> Tuple[dict, Dict[str, str]]:
     """
     Prepare workflow data for import.

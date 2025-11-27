@@ -65,7 +65,7 @@ Structure your responses with clear headers and sections:
 ### Canvas (Designer)
 - [Changes required]
 
-### Orchestrator  
+### Orchestrator
 - [Changes required]
 
 ### Robot

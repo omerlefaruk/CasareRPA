@@ -12,7 +12,6 @@ performance metrics from all system components including:
 
 import asyncio
 import gc
-import os
 import sys
 import threading
 import time
@@ -20,12 +19,13 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Deque, Dict, List, Optional, Tuple
+from typing import Any, Callable, Deque, Dict, List, Optional
 
 from loguru import logger
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -33,6 +33,7 @@ except ImportError:
 
 class MetricType(Enum):
     """Types of metrics tracked."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -42,6 +43,7 @@ class MetricType(Enum):
 @dataclass
 class MetricValue:
     """A single metric measurement."""
+
     name: str
     value: float
     timestamp: float = field(default_factory=time.time)
@@ -52,6 +54,7 @@ class MetricValue:
 @dataclass
 class TimerContext:
     """Context manager for timing operations."""
+
     metrics: "PerformanceMetrics"
     name: str
     labels: Dict[str, str]
@@ -69,6 +72,7 @@ class TimerContext:
 @dataclass
 class HistogramBucket:
     """Histogram bucket for distribution tracking."""
+
     le: float  # less than or equal
     count: int = 0
 
@@ -365,7 +369,9 @@ class PerformanceMetrics:
                 metrics["system_cpu_percent"] = psutil.cpu_percent()
                 sys_mem = psutil.virtual_memory()
                 metrics["system_memory_percent"] = sys_mem.percent
-                metrics["system_memory_available_mb"] = sys_mem.available / (1024 * 1024)
+                metrics["system_memory_available_mb"] = sys_mem.available / (
+                    1024 * 1024
+                )
             except Exception as e:
                 logger.debug(f"Failed to sample system metrics: {e}")
 
@@ -450,8 +456,7 @@ class PerformanceMetrics:
                 "counters": dict(self._counters),
                 "gauges": dict(self._gauges),
                 "histograms": {
-                    name: hist.to_dict()
-                    for name, hist in self._histograms.items()
+                    name: hist.to_dict() for name, hist in self._histograms.items()
                 },
                 "nodes": {
                     "execution_counts": dict(self._node_counts),
@@ -511,7 +516,9 @@ class PerformanceMetrics:
             averages = {name: value / count for name, value in metrics_sum.items()}
 
             return {
-                "current": dict(self._system_samples[-1]) if self._system_samples else {},
+                "current": dict(self._system_samples[-1])
+                if self._system_samples
+                else {},
                 "average": averages,
                 "sample_count": count,
             }

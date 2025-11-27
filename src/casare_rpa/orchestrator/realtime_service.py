@@ -9,12 +9,12 @@ Provides real-time updates for:
 
 import asyncio
 from typing import Optional, Dict, Any, Callable, List
-from datetime import datetime, timezone
 from loguru import logger
 
 try:
     from supabase import create_client, Client
     from realtime import RealtimeChannel
+
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
@@ -138,9 +138,9 @@ class RealtimeService:
             # Get running jobs
             response = await asyncio.to_thread(
                 lambda: self._client.table("jobs")
-                    .select("id,status,progress,current_node,error_message")
-                    .in_("status", ["running", "pending"])
-                    .execute()
+                .select("id,status,progress,current_node,error_message")
+                .in_("status", ["running", "pending"])
+                .execute()
             )
 
             for job in response.data or []:
@@ -172,9 +172,7 @@ class RealtimeService:
 
         try:
             response = await asyncio.to_thread(
-                lambda: self._client.table("robots")
-                    .select("*")
-                    .execute()
+                lambda: self._client.table("robots").select("*").execute()
             )
 
             for robot in response.data or []:
@@ -224,11 +222,7 @@ class JobProgressTracker:
         self._service = realtime_service
         self._callbacks: Dict[str, List[Callable[[Dict], None]]] = {}
 
-    def subscribe(
-        self,
-        job_id: str,
-        callback: Callable[[Dict], None]
-    ):
+    def subscribe(self, job_id: str, callback: Callable[[Dict], None]):
         """
         Subscribe to progress updates for a job.
 

@@ -56,13 +56,17 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
             return str(resolved) if resolved is not None else ""
         else:
             # Keep original if variable not found
-            logger.warning(f"Variable '{var_name}' not found, keeping {{{{{{var_name}}}}}}")
+            logger.warning(
+                f"Variable '{var_name}' not found, keeping {{{{{{var_name}}}}}}"
+            )
             return match.group(0)
 
     return VARIABLE_PATTERN.sub(replace_match, value)
 
 
-def resolve_dict_variables(data: Dict[str, Any], variables: Dict[str, Any]) -> Dict[str, Any]:
+def resolve_dict_variables(
+    data: Dict[str, Any], variables: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Resolve variables in all string values of a dictionary.
 

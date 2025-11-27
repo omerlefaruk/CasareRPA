@@ -10,9 +10,9 @@ from .element import DesktopElement
 from .selector import parse_selector, find_element, find_elements
 
 __all__ = [
-    'DesktopContext',
-    'DesktopElement',
-    'parse_selector',
-    'find_element',
-    'find_elements',
+    "DesktopContext",
+    "DesktopElement",
+    "parse_selector",
+    "find_element",
+    "find_elements",
 ]

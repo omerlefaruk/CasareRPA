@@ -28,7 +28,9 @@ class TestScriptNodesIntegration:
     def test_run_python_script_node_integration(self, execution_context):
         """Test RunPythonScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunPythonScriptNode
-        from casare_rpa.presentation.canvas.visual_nodes.scripts import VisualRunPythonScriptNode
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualRunPythonScriptNode,
+        )
 
         # Test visual node returns correct logic class
         visual_node = VisualRunPythonScriptNode()
@@ -56,7 +58,9 @@ class TestScriptNodesIntegration:
     def test_run_python_file_node_integration(self, execution_context):
         """Test RunPythonFileNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunPythonFileNode
-        from casare_rpa.presentation.canvas.visual_nodes.scripts import VisualRunPythonFileNode
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualRunPythonFileNode,
+        )
 
         visual_node = VisualRunPythonFileNode()
         logic_class = visual_node.get_node_class()
@@ -72,7 +76,9 @@ class TestScriptNodesIntegration:
     def test_eval_expression_node_integration(self, execution_context):
         """Test EvalExpressionNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import EvalExpressionNode
-        from casare_rpa.presentation.canvas.visual_nodes.scripts import VisualEvalExpressionNode
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualEvalExpressionNode,
+        )
 
         visual_node = VisualEvalExpressionNode()
         logic_class = visual_node.get_node_class()
@@ -102,7 +108,9 @@ class TestScriptNodesIntegration:
     def test_run_batch_script_node_integration(self, execution_context):
         """Test RunBatchScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunBatchScriptNode
-        from casare_rpa.presentation.canvas.visual_nodes.scripts import VisualRunBatchScriptNode
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualRunBatchScriptNode,
+        )
 
         visual_node = VisualRunBatchScriptNode()
         logic_class = visual_node.get_node_class()
@@ -130,7 +138,9 @@ class TestScriptNodesIntegration:
     def test_run_javascript_node_integration(self, execution_context):
         """Test RunJavaScriptNode logic-to-visual connection."""
         from casare_rpa.nodes.script_nodes import RunJavaScriptNode
-        from casare_rpa.presentation.canvas.visual_nodes.scripts import VisualRunJavaScriptNode
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualRunJavaScriptNode,
+        )
 
         visual_node = VisualRunJavaScriptNode()
         logic_class = visual_node.get_node_class()
@@ -176,8 +186,12 @@ class TestScriptNodesIntegration:
         ]
 
         for visual_node in visual_nodes:
-            assert hasattr(visual_node, "setup_ports"), f"{visual_node.__class__.__name__} missing setup_ports method"
-            assert hasattr(visual_node, "get_node_class"), f"{visual_node.__class__.__name__} missing get_node_class method"
+            assert hasattr(
+                visual_node, "setup_ports"
+            ), f"{visual_node.__class__.__name__} missing setup_ports method"
+            assert hasattr(
+                visual_node, "get_node_class"
+            ), f"{visual_node.__class__.__name__} missing get_node_class method"
 
     def test_all_visual_nodes_have_correct_category(self):
         """Test that all script visual nodes have correct NODE_CATEGORY."""
@@ -198,7 +212,9 @@ class TestScriptNodesIntegration:
         ]
 
         for visual_node in visual_nodes:
-            assert visual_node.NODE_CATEGORY == "scripts", f"{visual_node.__class__.__name__} has wrong NODE_CATEGORY"
+            assert (
+                visual_node.NODE_CATEGORY == "scripts"
+            ), f"{visual_node.__class__.__name__} has wrong NODE_CATEGORY"
 
 
 class TestScriptNodesNodeRegistry:
@@ -218,7 +234,9 @@ class TestScriptNodesNodeRegistry:
 
         for node_name in script_nodes:
             assert node_name in _NODE_REGISTRY, f"{node_name} not in node registry"
-            assert _NODE_REGISTRY[node_name] == "script_nodes", f"{node_name} registered to wrong module"
+            assert (
+                _NODE_REGISTRY[node_name] == "script_nodes"
+            ), f"{node_name} registered to wrong module"
 
     def test_can_instantiate_all_script_nodes_from_registry(self):
         """Test that all script nodes can be instantiated via registry."""

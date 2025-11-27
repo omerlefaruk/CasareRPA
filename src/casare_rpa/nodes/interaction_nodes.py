@@ -6,9 +6,7 @@ clicking, typing, selecting, etc.
 """
 
 import asyncio
-from typing import Any, Optional
 
-from playwright.async_api import Page
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -21,17 +19,17 @@ from loguru import logger
 class ClickElementNode(BaseNode):
     """
     Click element node - clicks on a page element.
-    
+
     Finds an element by selector and performs a click action.
     """
-    
+
     def __init__(
         self,
         node_id: str,
         name: str = "Click Element",
         selector: str = "",
         timeout: int = DEFAULT_NODE_TIMEOUT * 1000,  # Convert to milliseconds
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize click element node.
@@ -71,7 +69,7 @@ class ClickElementNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ClickElementNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -79,27 +77,27 @@ class ClickElementNode(BaseNode):
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute element click.
-        
+
         Args:
             context: Execution context for the workflow
-            
+
         Returns:
             Result with success status
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             page = self.get_input_value("page")
             if page is None:
                 page = context.get_active_page()
-            
+
             if page is None:
                 raise ValueError("No page instance found")
-            
+
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
@@ -206,12 +204,16 @@ class ClickElementNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for click: {selector}")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for click: {selector}"
+                        )
 
                     # Highlight element before clicking if requested
                     if highlight_before_click:
                         try:
-                            element = await page.wait_for_selector(normalized_selector, timeout=timeout)
+                            element = await page.wait_for_selector(
+                                normalized_selector, timeout=timeout
+                            )
                             if element:
                                 await element.evaluate("""
                                     el => {
@@ -230,12 +232,14 @@ class ClickElementNode(BaseNode):
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(f"Element clicked successfully: {selector} (attempt {attempts})")
+                    logger.info(
+                        f"Element clicked successfully: {selector} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
                         "data": {"selector": selector, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -251,6 +255,7 @@ class ClickElementNode(BaseNode):
                 try:
                     import os
                     from datetime import datetime
+
                     if screenshot_path:
                         path = screenshot_path
                     else:
@@ -271,12 +276,8 @@ class ClickElementNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to click element: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-    
+            return {"success": False, "error": str(e), "next_nodes": []}
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         selector = self.config.get("selector", "")
@@ -300,7 +301,7 @@ class TypeTextNode(BaseNode):
         selector: str = "",
         text: str = "",
         delay: int = 0,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize type text node.
@@ -340,7 +341,7 @@ class TypeTextNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TypeTextNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -349,7 +350,7 @@ class TypeTextNode(BaseNode):
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute text typing.
@@ -456,7 +457,9 @@ class TypeTextNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for type text: {selector}")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for type text: {selector}"
+                        )
 
                     # Type text - use fill() for immediate input, type() for character-by-character with delay
                     # Only use one method to avoid double-typing
@@ -464,8 +467,12 @@ class TypeTextNode(BaseNode):
                         # Clear the field first if configured, then type with delay
                         if clear_first:
                             await page.fill(normalized_selector, "", **fill_options)
-                        type_delay = delay if delay > 0 else 50  # Default 50ms for press_sequentially
-                        await page.type(normalized_selector, text, delay=type_delay, timeout=timeout)
+                        type_delay = (
+                            delay if delay > 0 else 50
+                        )  # Default 50ms for press_sequentially
+                        await page.type(
+                            normalized_selector, text, delay=type_delay, timeout=timeout
+                        )
                     else:
                         # Use fill() for immediate input (faster)
                         # fill() always clears the field first, so clear_first doesn't affect behavior here
@@ -482,16 +489,18 @@ class TypeTextNode(BaseNode):
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(f"Text typed successfully: {selector} (attempt {attempts})")
+                    logger.info(
+                        f"Text typed successfully: {selector} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
                         "data": {
                             "selector": selector,
                             "text_length": len(text),
-                            "attempts": attempts
+                            "attempts": attempts,
                         },
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
@@ -507,6 +516,7 @@ class TypeTextNode(BaseNode):
                 try:
                     import os
                     from datetime import datetime
+
                     if screenshot_path:
                         path = screenshot_path
                     else:
@@ -527,12 +537,8 @@ class TypeTextNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to type text: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-    
+            return {"success": False, "error": str(e), "next_nodes": []}
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
@@ -552,7 +558,7 @@ class SelectDropdownNode(BaseNode):
         selector: str = "",
         value: str = "",
         timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize select dropdown node.
@@ -588,7 +594,7 @@ class SelectDropdownNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SelectDropdownNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -597,7 +603,7 @@ class SelectDropdownNode(BaseNode):
         self.add_input_port("value", PortType.INPUT, DataType.STRING)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute dropdown selection.
@@ -669,7 +675,9 @@ class SelectDropdownNode(BaseNode):
             screenshot_on_fail = self.config.get("screenshot_on_fail", False)
             screenshot_path = self.config.get("screenshot_path", "")
 
-            logger.info(f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})")
+            logger.info(
+                f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})"
+            )
 
             # Build select options
             select_options = {"timeout": timeout}
@@ -696,20 +704,30 @@ class SelectDropdownNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for select: {selector}")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for select: {selector}"
+                        )
 
                     # Select option based on select_by mode
                     if select_by == "index":
-                        await page.select_option(normalized_selector, index=int(value), **select_options)
+                        await page.select_option(
+                            normalized_selector, index=int(value), **select_options
+                        )
                     elif select_by == "label":
-                        await page.select_option(normalized_selector, label=value, **select_options)
+                        await page.select_option(
+                            normalized_selector, label=value, **select_options
+                        )
                     else:  # value (default)
-                        await page.select_option(normalized_selector, value=value, **select_options)
+                        await page.select_option(
+                            normalized_selector, value=value, **select_options
+                        )
 
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(f"Dropdown selected successfully: {selector} (attempt {attempts})")
+                    logger.info(
+                        f"Dropdown selected successfully: {selector} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
@@ -717,15 +735,17 @@ class SelectDropdownNode(BaseNode):
                             "selector": selector,
                             "value": value,
                             "select_by": select_by,
-                            "attempts": attempts
+                            "attempts": attempts,
                         },
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Select dropdown failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Select dropdown failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -735,6 +755,7 @@ class SelectDropdownNode(BaseNode):
                 try:
                     import os
                     from datetime import datetime
+
                     if screenshot_path:
                         path = screenshot_path
                     else:
@@ -755,13 +776,8 @@ class SelectDropdownNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to select dropdown: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-    
+            return {"success": False, "error": str(e), "next_nodes": []}
+
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         return True, ""
-

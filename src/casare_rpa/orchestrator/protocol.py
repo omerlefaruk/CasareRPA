@@ -2,9 +2,10 @@
 Robot Communication Protocol for CasareRPA Orchestrator.
 Defines message types and serialization for orchestrator-robot communication.
 """
+
 import json
 from enum import Enum
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import uuid
@@ -12,6 +13,7 @@ import uuid
 
 class MessageType(Enum):
     """Types of messages exchanged between orchestrator and robot."""
+
     # Connection
     REGISTER = "register"
     REGISTER_ACK = "register_ack"
@@ -49,6 +51,7 @@ class MessageType(Enum):
 @dataclass
 class Message:
     """Base message class for all protocol messages."""
+
     type: MessageType
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
@@ -82,6 +85,7 @@ class Message:
 
 # ==================== MESSAGE BUILDERS ====================
 
+
 class MessageBuilder:
     """Helper class to build protocol messages."""
 
@@ -92,7 +96,7 @@ class MessageBuilder:
         environment: str = "default",
         max_concurrent_jobs: int = 1,
         tags: Optional[List[str]] = None,
-        capabilities: Optional[Dict[str, Any]] = None
+        capabilities: Optional[Dict[str, Any]] = None,
     ) -> Message:
         """Build robot registration message."""
         return Message(
@@ -104,7 +108,7 @@ class MessageBuilder:
                 "max_concurrent_jobs": max_concurrent_jobs,
                 "tags": tags or [],
                 "capabilities": capabilities or {},
-            }
+            },
         )
 
     @staticmethod
@@ -113,7 +117,7 @@ class MessageBuilder:
         success: bool,
         message: str = "",
         config: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None
+        correlation_id: Optional[str] = None,
     ) -> Message:
         """Build registration acknowledgment."""
         return Message(
@@ -135,7 +139,7 @@ class MessageBuilder:
         cpu_percent: float = 0.0,
         memory_percent: float = 0.0,
         disk_percent: float = 0.0,
-        active_job_ids: Optional[List[str]] = None
+        active_job_ids: Optional[List[str]] = None,
     ) -> Message:
         """Build heartbeat message."""
         return Message(
@@ -148,14 +152,11 @@ class MessageBuilder:
                 "memory_percent": memory_percent,
                 "disk_percent": disk_percent,
                 "active_job_ids": active_job_ids or [],
-            }
+            },
         )
 
     @staticmethod
-    def heartbeat_ack(
-        robot_id: str,
-        correlation_id: Optional[str] = None
-    ) -> Message:
+    def heartbeat_ack(robot_id: str, correlation_id: Optional[str] = None) -> Message:
         """Build heartbeat acknowledgment."""
         return Message(
             type=MessageType.HEARTBEAT_ACK,
@@ -171,7 +172,7 @@ class MessageBuilder:
         workflow_json: str,
         priority: int = 1,
         timeout_seconds: int = 3600,
-        parameters: Optional[Dict[str, Any]] = None
+        parameters: Optional[Dict[str, Any]] = None,
     ) -> Message:
         """Build job assignment message."""
         return Message(
@@ -184,14 +185,12 @@ class MessageBuilder:
                 "priority": priority,
                 "timeout_seconds": timeout_seconds,
                 "parameters": parameters or {},
-            }
+            },
         )
 
     @staticmethod
     def job_accept(
-        job_id: str,
-        robot_id: str,
-        correlation_id: Optional[str] = None
+        job_id: str, robot_id: str, correlation_id: Optional[str] = None
     ) -> Message:
         """Build job acceptance message."""
         return Message(
@@ -205,10 +204,7 @@ class MessageBuilder:
 
     @staticmethod
     def job_reject(
-        job_id: str,
-        robot_id: str,
-        reason: str,
-        correlation_id: Optional[str] = None
+        job_id: str, robot_id: str, reason: str, correlation_id: Optional[str] = None
     ) -> Message:
         """Build job rejection message."""
         return Message(
@@ -227,7 +223,7 @@ class MessageBuilder:
         robot_id: str,
         progress: int,
         current_node: str = "",
-        message: str = ""
+        message: str = "",
     ) -> Message:
         """Build job progress update message."""
         return Message(
@@ -238,7 +234,7 @@ class MessageBuilder:
                 "progress": progress,
                 "current_node": current_node,
                 "message": message,
-            }
+            },
         )
 
     @staticmethod
@@ -246,7 +242,7 @@ class MessageBuilder:
         job_id: str,
         robot_id: str,
         result: Optional[Dict[str, Any]] = None,
-        duration_ms: int = 0
+        duration_ms: int = 0,
     ) -> Message:
         """Build job completion message."""
         return Message(
@@ -256,7 +252,7 @@ class MessageBuilder:
                 "robot_id": robot_id,
                 "result": result or {},
                 "duration_ms": duration_ms,
-            }
+            },
         )
 
     @staticmethod
@@ -266,7 +262,7 @@ class MessageBuilder:
         error_message: str,
         error_type: str = "ExecutionError",
         stack_trace: str = "",
-        failed_node: str = ""
+        failed_node: str = "",
     ) -> Message:
         """Build job failure message."""
         return Message(
@@ -278,28 +274,23 @@ class MessageBuilder:
                 "error_type": error_type,
                 "stack_trace": stack_trace,
                 "failed_node": failed_node,
-            }
+            },
         )
 
     @staticmethod
-    def job_cancel(
-        job_id: str,
-        reason: str = "Cancelled by orchestrator"
-    ) -> Message:
+    def job_cancel(job_id: str, reason: str = "Cancelled by orchestrator") -> Message:
         """Build job cancellation request."""
         return Message(
             type=MessageType.JOB_CANCEL,
             payload={
                 "job_id": job_id,
                 "reason": reason,
-            }
+            },
         )
 
     @staticmethod
     def job_cancelled(
-        job_id: str,
-        robot_id: str,
-        correlation_id: Optional[str] = None
+        job_id: str, robot_id: str, correlation_id: Optional[str] = None
     ) -> Message:
         """Build job cancelled confirmation."""
         return Message(
@@ -314,10 +305,7 @@ class MessageBuilder:
     @staticmethod
     def status_request(robot_id: str) -> Message:
         """Build status request message."""
-        return Message(
-            type=MessageType.STATUS_REQUEST,
-            payload={"robot_id": robot_id}
-        )
+        return Message(type=MessageType.STATUS_REQUEST, payload={"robot_id": robot_id})
 
     @staticmethod
     def status_response(
@@ -327,7 +315,7 @@ class MessageBuilder:
         active_job_ids: List[str],
         uptime_seconds: int,
         system_info: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None
+        correlation_id: Optional[str] = None,
     ) -> Message:
         """Build status response message."""
         return Message(
@@ -350,7 +338,7 @@ class MessageBuilder:
         level: str,
         message: str,
         node_id: str = "",
-        extra: Optional[Dict[str, Any]] = None
+        extra: Optional[Dict[str, Any]] = None,
     ) -> Message:
         """Build log entry message."""
         return Message(
@@ -362,15 +350,11 @@ class MessageBuilder:
                 "message": message,
                 "node_id": node_id,
                 "extra": extra or {},
-            }
+            },
         )
 
     @staticmethod
-    def log_batch(
-        job_id: str,
-        robot_id: str,
-        entries: List[Dict[str, Any]]
-    ) -> Message:
+    def log_batch(job_id: str, robot_id: str, entries: List[Dict[str, Any]]) -> Message:
         """Build batch log message."""
         return Message(
             type=MessageType.LOG_BATCH,
@@ -378,7 +362,7 @@ class MessageBuilder:
                 "job_id": job_id,
                 "robot_id": robot_id,
                 "entries": entries,
-            }
+            },
         )
 
     @staticmethod
@@ -386,7 +370,7 @@ class MessageBuilder:
         error_code: str,
         error_message: str,
         details: Optional[Dict[str, Any]] = None,
-        correlation_id: Optional[str] = None
+        correlation_id: Optional[str] = None,
     ) -> Message:
         """Build error message."""
         return Message(
@@ -402,18 +386,12 @@ class MessageBuilder:
     @staticmethod
     def pause(robot_id: str) -> Message:
         """Build pause command."""
-        return Message(
-            type=MessageType.PAUSE,
-            payload={"robot_id": robot_id}
-        )
+        return Message(type=MessageType.PAUSE, payload={"robot_id": robot_id})
 
     @staticmethod
     def resume(robot_id: str) -> Message:
         """Build resume command."""
-        return Message(
-            type=MessageType.RESUME,
-            payload={"robot_id": robot_id}
-        )
+        return Message(type=MessageType.RESUME, payload={"robot_id": robot_id})
 
     @staticmethod
     def shutdown(robot_id: str, graceful: bool = True) -> Message:
@@ -423,7 +401,7 @@ class MessageBuilder:
             payload={
                 "robot_id": robot_id,
                 "graceful": graceful,
-            }
+            },
         )
 
     @staticmethod
@@ -434,5 +412,5 @@ class MessageBuilder:
             payload={
                 "robot_id": robot_id,
                 "reason": reason,
-            }
+            },
         )

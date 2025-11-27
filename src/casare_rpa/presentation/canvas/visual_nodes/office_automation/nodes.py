@@ -1,5 +1,7 @@
 """Visual nodes for office_automation category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+
 
 class VisualExcelOpenNode(VisualNode):
     """Visual representation of ExcelOpenNode."""
@@ -24,6 +26,7 @@ class VisualExcelOpenNode(VisualNode):
         self.add_output("workbook")
         self.add_output("success")
 
+
 class VisualExcelReadCellNode(VisualNode):
     """Visual representation of ExcelReadCellNode."""
 
@@ -47,6 +50,7 @@ class VisualExcelReadCellNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("value")
         self.add_output("success")
+
 
 class VisualExcelWriteCellNode(VisualNode):
     """Visual representation of ExcelWriteCellNode."""
@@ -73,6 +77,7 @@ class VisualExcelWriteCellNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualExcelGetRangeNode(VisualNode):
     """Visual representation of ExcelGetRangeNode."""
 
@@ -84,7 +89,9 @@ class VisualExcelGetRangeNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Excel Get Range node."""
         super().__init__()
-        self.add_text_input("range_address", "Range Address", text="A1:B10", tab="inputs")
+        self.add_text_input(
+            "range_address", "Range Address", text="A1:B10", tab="inputs"
+        )
         self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
 
     def setup_ports(self) -> None:
@@ -96,6 +103,7 @@ class VisualExcelGetRangeNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("data")
         self.add_output("success")
+
 
 class VisualExcelCloseNode(VisualNode):
     """Visual representation of ExcelCloseNode."""
@@ -116,6 +124,7 @@ class VisualExcelCloseNode(VisualNode):
         self.add_input("workbook")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualWordOpenNode(VisualNode):
     """Visual representation of WordOpenNode."""
@@ -140,6 +149,7 @@ class VisualWordOpenNode(VisualNode):
         self.add_output("document")
         self.add_output("success")
 
+
 class VisualWordGetTextNode(VisualNode):
     """Visual representation of WordGetTextNode."""
 
@@ -155,6 +165,7 @@ class VisualWordGetTextNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("text")
         self.add_output("success")
+
 
 class VisualWordReplaceTextNode(VisualNode):
     """Visual representation of WordReplaceTextNode."""
@@ -182,6 +193,7 @@ class VisualWordReplaceTextNode(VisualNode):
         self.add_output("replacements")
         self.add_output("success")
 
+
 class VisualWordCloseNode(VisualNode):
     """Visual representation of WordCloseNode."""
 
@@ -201,6 +213,7 @@ class VisualWordCloseNode(VisualNode):
         self.add_input("document")
         self.add_output("exec_out")
         self.add_output("success")
+
 
 class VisualOutlookSendEmailNode(VisualNode):
     """Visual representation of OutlookSendEmailNode."""
@@ -230,6 +243,7 @@ class VisualOutlookSendEmailNode(VisualNode):
         self.add_output("exec_out")
         self.add_output("success")
 
+
 class VisualOutlookReadEmailsNode(VisualNode):
     """Visual representation of OutlookReadEmailsNode."""
 
@@ -254,6 +268,7 @@ class VisualOutlookReadEmailsNode(VisualNode):
         self.add_output("count")
         self.add_output("success")
 
+
 class VisualOutlookGetInboxCountNode(VisualNode):
     """Visual representation of OutlookGetInboxCountNode."""
 
@@ -277,4 +292,3 @@ class VisualOutlookGetInboxCountNode(VisualNode):
 
 
 # Database Nodes
-

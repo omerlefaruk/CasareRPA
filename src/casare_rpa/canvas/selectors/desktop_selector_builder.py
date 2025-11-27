@@ -8,20 +8,36 @@ with element picking, tree view, and multiple selector strategies.
 import json
 from typing import Optional, Dict, Any, List
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QTextEdit, QSplitter, QGroupBox, QListWidget, QListWidgetItem,
-    QWidget, QTableWidget, QTableWidgetItem, QHeaderView, QApplication
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QTextEdit,
+    QSplitter,
+    QGroupBox,
+    QListWidget,
+    QListWidgetItem,
+    QWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QApplication,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QColor, QBrush
+from PySide6.QtGui import QFont
 from loguru import logger
 
 import uiautomation as auto
 from ...desktop.element import DesktopElement
 from .element_picker import activate_element_picker
 from .element_tree_widget import ElementTreeWidget
-from .selector_strategy import generate_selectors, SelectorStrategy, filter_best_selectors, validate_selector_uniqueness
-from .selector_validator import SelectorValidator, ValidationResult
+from .selector_strategy import (
+    generate_selectors,
+    SelectorStrategy,
+    filter_best_selectors,
+    validate_selector_uniqueness,
+)
+from .selector_validator import SelectorValidator
 
 
 class DesktopSelectorBuilder(QDialog):
@@ -39,7 +55,9 @@ class DesktopSelectorBuilder(QDialog):
 
     selector_selected = Signal(dict)  # Emits selected selector dictionary
 
-    def __init__(self, parent=None, target_node=None, target_property: str = "selector"):
+    def __init__(
+        self, parent=None, target_node=None, target_property: str = "selector"
+    ):
         super().__init__(parent)
 
         self.target_node = target_node
@@ -118,7 +136,9 @@ class DesktopSelectorBuilder(QDialog):
         pick_btn = QPushButton("🎯 Pick Element")
         pick_btn.setObjectName("pickButton")
         pick_btn.clicked.connect(self._on_pick_element)
-        pick_btn.setToolTip("Click to select an element from any application (Ctrl+Shift+F3)")
+        pick_btn.setToolTip(
+            "Click to select an element from any application (Ctrl+Shift+F3)"
+        )
         layout.addWidget(pick_btn)
 
         # Refresh button
@@ -445,8 +465,13 @@ class DesktopSelectorBuilder(QDialog):
 
         # Common properties to display
         properties_to_show = [
-            "Name", "AutomationId", "ControlTypeName", "ClassName",
-            "IsEnabled", "IsOffscreen", "ProcessId"
+            "Name",
+            "AutomationId",
+            "ControlTypeName",
+            "ClassName",
+            "IsEnabled",
+            "IsOffscreen",
+            "ProcessId",
         ]
 
         self.properties_table.setRowCount(len(properties_to_show))
@@ -458,7 +483,9 @@ class DesktopSelectorBuilder(QDialog):
             name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
             self.properties_table.setItem(i, 0, name_item)
 
-            value_item = QTableWidgetItem(str(prop_value) if prop_value is not None else "<none>")
+            value_item = QTableWidgetItem(
+                str(prop_value) if prop_value is not None else "<none>"
+            )
             value_item.setFlags(value_item.flags() & ~Qt.ItemIsEditable)
             self.properties_table.setItem(i, 1, value_item)
 
@@ -474,23 +501,22 @@ class DesktopSelectorBuilder(QDialog):
 
         # Generate strategies
         self.selector_strategies = generate_selectors(
-            self.selected_element,
-            self.parent_control
+            self.selected_element, self.parent_control
         )
 
         # Validate uniqueness for each strategy
         for strategy in self.selector_strategies:
             try:
                 strategy.is_unique = validate_selector_uniqueness(
-                    strategy,
-                    self.parent_control,
-                    timeout=1.0
+                    strategy, self.parent_control, timeout=1.0
                 )
             except Exception as e:
                 logger.debug(f"Selector uniqueness validation failed: {e}")
 
         # Filter to best strategies
-        self.selector_strategies = filter_best_selectors(self.selector_strategies, max_count=8)
+        self.selector_strategies = filter_best_selectors(
+            self.selector_strategies, max_count=8
+        )
 
         logger.info(f"Generated {len(self.selector_strategies)} selector strategies")
 
@@ -510,11 +536,9 @@ class DesktopSelectorBuilder(QDialog):
             item = QListWidgetItem()
 
             # Format display text
-            confidence_icon = {
-                "high": "🟢",
-                "medium": "🟡",
-                "low": "🔴"
-            }.get(strategy.confidence.value, "⚪")
+            confidence_icon = {"high": "🟢", "medium": "🟡", "low": "🔴"}.get(
+                strategy.confidence.value, "⚪"
+            )
 
             unique_text = " ✓ Unique" if strategy.is_unique else ""
             display_text = f"{confidence_icon} {strategy.description} (Score: {strategy.score:.0f}){unique_text}"
@@ -556,7 +580,9 @@ class DesktopSelectorBuilder(QDialog):
             status_color = "#fbbf24"
 
         self.validation_status_label.setText(status_text)
-        self.validation_status_label.setStyleSheet(f"color: {status_color}; font-weight: bold; padding: 8px;")
+        self.validation_status_label.setStyleSheet(
+            f"color: {status_color}; font-weight: bold; padding: 8px;"
+        )
 
     def _on_validate_all(self):
         """Validate all selector strategies"""
@@ -576,7 +602,9 @@ class DesktopSelectorBuilder(QDialog):
             if item:
                 current_text = item.text()
                 # Remove old unique marker
-                current_text = current_text.replace(" ✓ Unique", "").replace(" ⚠ Multiple", "")
+                current_text = current_text.replace(" ✓ Unique", "").replace(
+                    " ⚠ Multiple", ""
+                )
 
                 if result.is_unique:
                     current_text += " ✓ Unique"
@@ -615,7 +643,9 @@ class DesktopSelectorBuilder(QDialog):
                     # Convert to JSON string for text input
                     selector_json = json.dumps(selector_dict)
                     widget.set_value(selector_json)
-                    logger.info(f"Auto-pasted selector to {self.target_node.name()}.{self.target_property}")
+                    logger.info(
+                        f"Auto-pasted selector to {self.target_node.name()}.{self.target_property}"
+                    )
             except Exception as e:
                 logger.error(f"Failed to auto-paste selector: {e}")
 

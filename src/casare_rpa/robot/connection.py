@@ -8,17 +8,16 @@ Provides resilient connection handling with:
 """
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Callable, Any
 from loguru import logger
 from supabase import create_client, Client
 
-from casare_rpa.utils.resilience.retry import RetryConfig
-
 
 class ConnectionState(Enum):
     """Connection state enumeration."""
+
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
     CONNECTED = "connected"
@@ -52,6 +51,7 @@ class ConnectionConfig:
     def get_delay(self, attempt: int) -> float:
         """Calculate delay for given attempt with exponential backoff."""
         import random
+
         delay = self.initial_delay * (self.backoff_multiplier ** (attempt - 1))
         delay = min(delay, self.max_delay)
 
@@ -168,13 +168,15 @@ class ConnectionManager:
             # Create client with timeout
             self._client = await asyncio.wait_for(
                 asyncio.to_thread(lambda: create_client(self.url, self.key)),
-                timeout=self.config.connection_timeout
+                timeout=self.config.connection_timeout,
             )
 
             # Verify connection with a simple operation
             await asyncio.wait_for(
-                asyncio.to_thread(lambda: self._client.table("robots").select("id").limit(1).execute()),
-                timeout=self.config.connection_timeout
+                asyncio.to_thread(
+                    lambda: self._client.table("robots").select("id").limit(1).execute()
+                ),
+                timeout=self.config.connection_timeout,
             )
 
             self._set_state(ConnectionState.CONNECTED)
@@ -187,7 +189,9 @@ class ConnectionManager:
             return True
 
         except asyncio.TimeoutError:
-            logger.error(f"Connection timed out after {self.config.connection_timeout}s")
+            logger.error(
+                f"Connection timed out after {self.config.connection_timeout}s"
+            )
             self._set_state(ConnectionState.DISCONNECTED)
             self._consecutive_failures += 1
             self.stats.failed_connections += 1
@@ -211,9 +215,13 @@ class ConnectionManager:
             return True
 
         # Check max attempts
-        if (self.config.max_reconnect_attempts > 0 and
-            self._reconnect_attempt >= self.config.max_reconnect_attempts):
-            logger.error(f"Max reconnection attempts ({self.config.max_reconnect_attempts}) reached")
+        if (
+            self.config.max_reconnect_attempts > 0
+            and self._reconnect_attempt >= self.config.max_reconnect_attempts
+        ):
+            logger.error(
+                f"Max reconnection attempts ({self.config.max_reconnect_attempts}) reached"
+            )
             self._set_state(ConnectionState.FAILED)
             return False
 
@@ -229,7 +237,9 @@ class ConnectionManager:
 
         # Calculate delay
         delay = self.config.get_delay(self._reconnect_attempt)
-        logger.info(f"Reconnection attempt {self._reconnect_attempt} in {delay:.1f}s...")
+        logger.info(
+            f"Reconnection attempt {self._reconnect_attempt} in {delay:.1f}s..."
+        )
 
         await asyncio.sleep(delay)
 
@@ -242,9 +252,7 @@ class ConnectionManager:
         logger.info("Disconnected from Supabase")
 
     async def execute(
-        self,
-        operation: Callable[[Client], Any],
-        retry_on_failure: bool = True
+        self, operation: Callable[[Client], Any], retry_on_failure: bool = True
     ) -> Any:
         """
         Execute an operation with automatic reconnection on failure.
@@ -266,7 +274,7 @@ class ConnectionManager:
         try:
             result = await asyncio.wait_for(
                 asyncio.to_thread(lambda: operation(self._client)),
-                timeout=self.config.heartbeat_timeout
+                timeout=self.config.heartbeat_timeout,
             )
 
             self._last_successful_operation = datetime.now(timezone.utc)
@@ -287,7 +295,7 @@ class ConnectionManager:
                     try:
                         result = await asyncio.wait_for(
                             asyncio.to_thread(lambda: operation(self._client)),
-                            timeout=self.config.heartbeat_timeout
+                            timeout=self.config.heartbeat_timeout,
                         )
                         self._last_successful_operation = datetime.now(timezone.utc)
                         self.stats.successful_operations += 1
@@ -310,8 +318,10 @@ class ConnectionManager:
 
         try:
             await asyncio.wait_for(
-                asyncio.to_thread(lambda: self._client.table("robots").select("id").limit(1).execute()),
-                timeout=self.config.heartbeat_timeout
+                asyncio.to_thread(
+                    lambda: self._client.table("robots").select("id").limit(1).execute()
+                ),
+                timeout=self.config.heartbeat_timeout,
             )
             return True
         except Exception as e:
@@ -325,8 +335,10 @@ class ConnectionManager:
             "is_connected": self.is_connected,
             "reconnect_attempt": self._reconnect_attempt,
             "consecutive_failures": self._consecutive_failures,
-            "last_successful_operation": self._last_successful_operation.isoformat() if self._last_successful_operation else None,
-            "stats": self.stats.to_dict()
+            "last_successful_operation": self._last_successful_operation.isoformat()
+            if self._last_successful_operation
+            else None,
+            "stats": self.stats.to_dict(),
         }
 
 
@@ -352,10 +364,16 @@ class ConnectionStats:
             "total_reconnects": self.total_reconnects,
             "connection_success_rate": (
                 (self.successful_connections / self.connection_attempts * 100)
-                if self.connection_attempts > 0 else 0
+                if self.connection_attempts > 0
+                else 0
             ),
             "operation_success_rate": (
-                (self.successful_operations / (self.successful_operations + self.failed_operations) * 100)
-                if (self.successful_operations + self.failed_operations) > 0 else 0
+                (
+                    self.successful_operations
+                    / (self.successful_operations + self.failed_operations)
+                    * 100
+                )
+                if (self.successful_operations + self.failed_operations) > 0
+                else 0
             ),
         }

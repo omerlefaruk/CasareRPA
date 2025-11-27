@@ -24,11 +24,11 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QIcon
+from PySide6.QtGui import QColor
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ...core.trigger_schema import TriggerConfiguration
+    pass
 
 
 # Trigger type display names and icons
@@ -94,15 +94,17 @@ class TriggersTab(QWidget):
         # Filter combo
         self._filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
-        self._filter_combo.addItems([
-            "All Types",
-            "Scheduled",
-            "Webhook",
-            "File Watch",
-            "Email",
-            "Error",
-            "Other",
-        ])
+        self._filter_combo.addItems(
+            [
+                "All Types",
+                "Scheduled",
+                "Webhook",
+                "File Watch",
+                "Email",
+                "Error",
+                "Other",
+            ]
+        )
         self._filter_combo.currentIndexChanged.connect(self._on_filter_changed)
 
         # Status filter
@@ -120,7 +122,9 @@ class TriggersTab(QWidget):
         self._start_btn = QPushButton("Start Triggers")
         self._start_btn.setCheckable(True)
         self._start_btn.clicked.connect(self._on_toggle_triggers)
-        self._start_btn.setToolTip("Start all enabled triggers to run the workflow automatically")
+        self._start_btn.setToolTip(
+            "Start all enabled triggers to run the workflow automatically"
+        )
         toolbar.addWidget(self._start_btn)
 
         # Add trigger button
@@ -139,14 +143,16 @@ class TriggersTab(QWidget):
         # Triggers table
         self._table = QTableWidget()
         self._table.setColumnCount(6)
-        self._table.setHorizontalHeaderLabels([
-            "Status",
-            "Name",
-            "Type",
-            "Last Triggered",
-            "Count",
-            "Actions",
-        ])
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Status",
+                "Name",
+                "Type",
+                "Last Triggered",
+                "Count",
+                "Actions",
+            ]
+        )
 
         # Table settings
         self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -254,16 +260,16 @@ class TriggersTab(QWidget):
 
     def update_trigger(self, trigger: Dict[str, Any]) -> None:
         """Update an existing trigger."""
-        trigger_id = trigger.get('id', '')
+        trigger_id = trigger.get("id", "")
         for i, t in enumerate(self._triggers):
-            if t.get('id') == trigger_id:
+            if t.get("id") == trigger_id:
                 self._triggers[i] = trigger
                 break
         self._refresh_table()
 
     def remove_trigger(self, trigger_id: str) -> None:
         """Remove a trigger from the list."""
-        self._triggers = [t for t in self._triggers if t.get('id') != trigger_id]
+        self._triggers = [t for t in self._triggers if t.get("id") != trigger_id]
         self._refresh_table()
 
     def get_triggers(self) -> List[Dict[str, Any]]:
@@ -275,7 +281,9 @@ class TriggersTab(QWidget):
         return len(self._triggers)
 
     @Slot(str, int, str)
-    def update_trigger_stats(self, trigger_id: str, count: int, last_triggered: str) -> None:
+    def update_trigger_stats(
+        self, trigger_id: str, count: int, last_triggered: str
+    ) -> None:
         """
         Update statistics for a specific trigger.
 
@@ -286,9 +294,9 @@ class TriggersTab(QWidget):
         """
         logger.debug(f"Updating trigger stats: id={trigger_id}, count={count}")
         for trigger in self._triggers:
-            if trigger.get('id') == trigger_id:
-                trigger['trigger_count'] = count
-                trigger['last_triggered'] = last_triggered
+            if trigger.get("id") == trigger_id:
+                trigger["trigger_count"] = count
+                trigger["last_triggered"] = last_triggered
                 logger.debug(f"Updated trigger {trigger_id}: count={count}")
                 break
         self._refresh_table()
@@ -312,35 +320,41 @@ class TriggersTab(QWidget):
 
         for row, trigger in enumerate(filtered):
             # Status toggle
-            enabled = trigger.get('enabled', True)
+            enabled = trigger.get("enabled", True)
             status_item = QTableWidgetItem("ON" if enabled else "OFF")
             status_item.setForeground(
                 QColor("#89D185") if enabled else QColor("#808080")
             )
             status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            status_item.setData(Qt.ItemDataRole.UserRole, trigger.get('id'))
+            status_item.setData(Qt.ItemDataRole.UserRole, trigger.get("id"))
             self._table.setItem(row, 0, status_item)
 
             # Name
-            name_item = QTableWidgetItem(trigger.get('name', 'Untitled'))
-            name_item.setData(Qt.ItemDataRole.UserRole, trigger.get('id'))
+            name_item = QTableWidgetItem(trigger.get("name", "Untitled"))
+            name_item.setData(Qt.ItemDataRole.UserRole, trigger.get("id"))
             self._table.setItem(row, 1, name_item)
 
             # Type
-            trigger_type = trigger.get('type', 'manual')
-            type_info = TRIGGER_TYPE_INFO.get(trigger_type, {"name": trigger_type.title()})
-            type_item = QTableWidgetItem(type_info.get('name', trigger_type))
+            trigger_type = trigger.get("type", "manual")
+            type_info = TRIGGER_TYPE_INFO.get(
+                trigger_type, {"name": trigger_type.title()}
+            )
+            type_item = QTableWidgetItem(type_info.get("name", trigger_type))
             type_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, 2, type_item)
 
             # Last triggered
-            last_triggered = trigger.get('last_triggered', '')
+            last_triggered = trigger.get("last_triggered", "")
             if last_triggered:
                 try:
                     dt = datetime.fromisoformat(last_triggered)
                     last_str = dt.strftime("%Y-%m-%d %H:%M")
                 except Exception:
-                    last_str = last_triggered[:16] if len(last_triggered) > 16 else last_triggered
+                    last_str = (
+                        last_triggered[:16]
+                        if len(last_triggered) > 16
+                        else last_triggered
+                    )
             else:
                 last_str = "-"
             last_item = QTableWidgetItem(last_str)
@@ -348,7 +362,7 @@ class TriggersTab(QWidget):
             self._table.setItem(row, 3, last_item)
 
             # Count
-            count = trigger.get('trigger_count', 0)
+            count = trigger.get("trigger_count", 0)
             count_item = QTableWidgetItem(str(count))
             count_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self._table.setItem(row, 4, count_item)
@@ -378,7 +392,7 @@ class TriggersTab(QWidget):
             run_btn = QPushButton("Run")
             run_btn.setFixedSize(50, 22)
             run_btn.setStyleSheet(btn_style)
-            run_btn.setProperty("trigger_id", trigger.get('id'))
+            run_btn.setProperty("trigger_id", trigger.get("id"))
             run_btn.clicked.connect(self._on_run_trigger)
             actions_layout.addWidget(run_btn)
 
@@ -386,7 +400,7 @@ class TriggersTab(QWidget):
             edit_btn = QPushButton("Edit")
             edit_btn.setFixedSize(50, 22)
             edit_btn.setStyleSheet(btn_style)
-            edit_btn.setProperty("trigger_id", trigger.get('id'))
+            edit_btn.setProperty("trigger_id", trigger.get("id"))
             edit_btn.clicked.connect(self._on_edit_trigger)
             actions_layout.addWidget(edit_btn)
 
@@ -407,7 +421,7 @@ class TriggersTab(QWidget):
             del_btn = QPushButton("Del")
             del_btn.setFixedSize(40, 22)
             del_btn.setStyleSheet(del_btn_style)
-            del_btn.setProperty("trigger_id", trigger.get('id'))
+            del_btn.setProperty("trigger_id", trigger.get("id"))
             del_btn.clicked.connect(self._on_delete_trigger)
             actions_layout.addWidget(del_btn)
 
@@ -429,17 +443,17 @@ class TriggersTab(QWidget):
             }
             filter_type = type_map.get(type_filter)
             if filter_type:
-                triggers = [t for t in triggers if t.get('type') == filter_type]
+                triggers = [t for t in triggers if t.get("type") == filter_type]
             elif type_filter == "Other":
                 other_types = {"form", "chat", "app_event", "workflow_call", "manual"}
-                triggers = [t for t in triggers if t.get('type') in other_types]
+                triggers = [t for t in triggers if t.get("type") in other_types]
 
         # Status filter
         status_filter = self._status_combo.currentText()
         if status_filter == "Enabled":
-            triggers = [t for t in triggers if t.get('enabled', True)]
+            triggers = [t for t in triggers if t.get("enabled", True)]
         elif status_filter == "Disabled":
-            triggers = [t for t in triggers if not t.get('enabled', True)]
+            triggers = [t for t in triggers if not t.get("enabled", True)]
 
         return triggers
 
@@ -535,12 +549,14 @@ class TriggersTab(QWidget):
 
         # Run action
         run_action = menu.addAction("Run Now")
-        run_action.triggered.connect(lambda: self.trigger_run_requested.emit(trigger_id))
+        run_action.triggered.connect(
+            lambda: self.trigger_run_requested.emit(trigger_id)
+        )
 
         menu.addSeparator()
 
         # Toggle enabled
-        enabled = trigger.get('enabled', True)
+        enabled = trigger.get("enabled", True)
         toggle_action = menu.addAction("Disable" if enabled else "Enable")
         toggle_action.triggered.connect(
             lambda: self.trigger_toggled.emit(trigger_id, not enabled)
@@ -561,7 +577,7 @@ class TriggersTab(QWidget):
     def _get_trigger_by_id(self, trigger_id: str) -> Optional[Dict[str, Any]]:
         """Get a trigger by its ID."""
         for trigger in self._triggers:
-            if trigger.get('id') == trigger_id:
+            if trigger.get("id") == trigger_id:
                 return trigger
         return None
 

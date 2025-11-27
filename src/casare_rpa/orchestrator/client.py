@@ -2,12 +2,12 @@
 WebSocket Client for CasareRPA Robot.
 Connects to orchestrator and handles job execution.
 """
+
 import asyncio
 from datetime import datetime
 from typing import Optional, Dict, Callable, Any, List
 import json
 import platform
-import uuid
 
 from loguru import logger
 
@@ -15,6 +15,7 @@ try:
     import websockets
     from websockets.client import WebSocketClientProtocol
     from websockets.exceptions import ConnectionClosed, InvalidStatusCode
+
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -22,6 +23,7 @@ except ImportError:
 
 try:
     import psutil
+
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
@@ -69,7 +71,9 @@ class RobotClient:
             max_reconnect_attempts: Max reconnection attempts (0 = infinite)
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError("websockets package required. Install with: pip install websockets")
+            raise ImportError(
+                "websockets package required. Install with: pip install websockets"
+            )
 
         self.robot_id = robot_id
         self.robot_name = robot_name
@@ -189,7 +193,10 @@ class RobotClient:
                     f"Connection failed (attempt {self._reconnect_count}): {e}"
                 )
 
-                if self.max_reconnect_attempts > 0 and self._reconnect_count >= self.max_reconnect_attempts:
+                if (
+                    self.max_reconnect_attempts > 0
+                    and self._reconnect_count >= self.max_reconnect_attempts
+                ):
                     logger.error("Max reconnection attempts reached")
                     self._running = False
                     return False
@@ -226,10 +233,12 @@ class RobotClient:
         # Send disconnect message
         if self._websocket:
             try:
-                await self._send(MessageBuilder.disconnect(
-                    robot_id=self.robot_id,
-                    reason=reason,
-                ))
+                await self._send(
+                    MessageBuilder.disconnect(
+                        robot_id=self.robot_id,
+                        reason=reason,
+                    )
+                )
                 await self._websocket.close(1000, reason)
             except Exception:
                 pass
@@ -269,10 +278,14 @@ class RobotClient:
         }
 
         if HAS_PSUTIL:
-            caps.update({
-                "cpu_count": psutil.cpu_count(),
-                "memory_total_gb": round(psutil.virtual_memory().total / (1024**3), 2),
-            })
+            caps.update(
+                {
+                    "cpu_count": psutil.cpu_count(),
+                    "memory_total_gb": round(
+                        psutil.virtual_memory().total / (1024**3), 2
+                    ),
+                }
+            )
 
         return caps
 
@@ -354,17 +367,19 @@ class RobotClient:
         if HAS_PSUTIL:
             cpu_percent = psutil.cpu_percent()
             memory_percent = psutil.virtual_memory().percent
-            disk_percent = psutil.disk_usage('/').percent
+            disk_percent = psutil.disk_usage("/").percent
 
-        await self._send(MessageBuilder.heartbeat(
-            robot_id=self.robot_id,
-            status=status,
-            current_jobs=len(self._active_jobs),
-            cpu_percent=cpu_percent,
-            memory_percent=memory_percent,
-            disk_percent=disk_percent,
-            active_job_ids=list(self._active_jobs.keys()),
-        ))
+        await self._send(
+            MessageBuilder.heartbeat(
+                robot_id=self.robot_id,
+                status=status,
+                current_jobs=len(self._active_jobs),
+                cpu_percent=cpu_percent,
+                memory_percent=memory_percent,
+                disk_percent=disk_percent,
+                active_job_ids=list(self._active_jobs.keys()),
+            )
+        )
 
     # ==================== MESSAGE HANDLERS ====================
 
@@ -394,21 +409,25 @@ class RobotClient:
 
         # Check if we can accept
         if self._paused:
-            await self._send(MessageBuilder.job_reject(
-                job_id=job_id,
-                robot_id=self.robot_id,
-                reason="Robot is paused",
-                correlation_id=msg.id,
-            ))
+            await self._send(
+                MessageBuilder.job_reject(
+                    job_id=job_id,
+                    robot_id=self.robot_id,
+                    reason="Robot is paused",
+                    correlation_id=msg.id,
+                )
+            )
             return
 
         if len(self._active_jobs) >= self.max_concurrent_jobs:
-            await self._send(MessageBuilder.job_reject(
-                job_id=job_id,
-                robot_id=self.robot_id,
-                reason="Maximum concurrent jobs reached",
-                correlation_id=msg.id,
-            ))
+            await self._send(
+                MessageBuilder.job_reject(
+                    job_id=job_id,
+                    robot_id=self.robot_id,
+                    reason="Maximum concurrent jobs reached",
+                    correlation_id=msg.id,
+                )
+            )
             return
 
         # Accept the job
@@ -423,11 +442,13 @@ class RobotClient:
             "started_at": datetime.utcnow(),
         }
 
-        await self._send(MessageBuilder.job_accept(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            correlation_id=msg.id,
-        ))
+        await self._send(
+            MessageBuilder.job_accept(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                correlation_id=msg.id,
+            )
+        )
 
         # Notify callback
         if self._on_job_received:
@@ -460,11 +481,13 @@ class RobotClient:
             # Remove from active jobs
             self._active_jobs.pop(job_id, None)
 
-        await self._send(MessageBuilder.job_cancelled(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            correlation_id=msg.id,
-        ))
+        await self._send(
+            MessageBuilder.job_cancelled(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                correlation_id=msg.id,
+            )
+        )
 
     async def _handle_status_request(self, msg: Message):
         """Handle status request."""
@@ -475,18 +498,20 @@ class RobotClient:
             system_info = {
                 "cpu_percent": psutil.cpu_percent(),
                 "memory_percent": psutil.virtual_memory().percent,
-                "disk_percent": psutil.disk_usage('/').percent,
+                "disk_percent": psutil.disk_usage("/").percent,
             }
 
-        await self._send(MessageBuilder.status_response(
-            robot_id=self.robot_id,
-            status="paused" if self._paused else "online",
-            current_jobs=len(self._active_jobs),
-            active_job_ids=list(self._active_jobs.keys()),
-            uptime_seconds=int(uptime),
-            system_info=system_info,
-            correlation_id=msg.id,
-        ))
+        await self._send(
+            MessageBuilder.status_response(
+                robot_id=self.robot_id,
+                status="paused" if self._paused else "online",
+                current_jobs=len(self._active_jobs),
+                active_job_ids=list(self._active_jobs.keys()),
+                uptime_seconds=int(uptime),
+                system_info=system_info,
+                correlation_id=msg.id,
+            )
+        )
 
     async def _handle_pause(self, msg: Message):
         """Handle pause command."""
@@ -514,16 +539,14 @@ class RobotClient:
         """Handle error message."""
         error_code = msg.payload.get("error_code")
         error_message = msg.payload.get("error_message")
-        logger.error(f"Received error from orchestrator: [{error_code}] {error_message}")
+        logger.error(
+            f"Received error from orchestrator: [{error_code}] {error_message}"
+        )
 
     # ==================== PUBLIC API ====================
 
     async def report_progress(
-        self,
-        job_id: str,
-        progress: int,
-        current_node: str = "",
-        message: str = ""
+        self, job_id: str, progress: int, current_node: str = "", message: str = ""
     ):
         """
         Report job progress to orchestrator.
@@ -534,18 +557,18 @@ class RobotClient:
             current_node: Current node being executed
             message: Optional status message
         """
-        await self._send(MessageBuilder.job_progress(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            progress=progress,
-            current_node=current_node,
-            message=message,
-        ))
+        await self._send(
+            MessageBuilder.job_progress(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                progress=progress,
+                current_node=current_node,
+                message=message,
+            )
+        )
 
     async def report_job_complete(
-        self,
-        job_id: str,
-        result: Optional[Dict[str, Any]] = None
+        self, job_id: str, result: Optional[Dict[str, Any]] = None
     ):
         """
         Report job completion to orchestrator.
@@ -557,14 +580,18 @@ class RobotClient:
         job_info = self._active_jobs.pop(job_id, None)
         duration_ms = 0
         if job_info:
-            duration_ms = int((datetime.utcnow() - job_info["started_at"]).total_seconds() * 1000)
+            duration_ms = int(
+                (datetime.utcnow() - job_info["started_at"]).total_seconds() * 1000
+            )
 
-        await self._send(MessageBuilder.job_complete(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            result=result or {},
-            duration_ms=duration_ms,
-        ))
+        await self._send(
+            MessageBuilder.job_complete(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                result=result or {},
+                duration_ms=duration_ms,
+            )
+        )
 
         logger.info(f"Job {job_id[:8]} completed")
 
@@ -574,7 +601,7 @@ class RobotClient:
         error_message: str,
         error_type: str = "ExecutionError",
         stack_trace: str = "",
-        failed_node: str = ""
+        failed_node: str = "",
     ):
         """
         Report job failure to orchestrator.
@@ -588,14 +615,16 @@ class RobotClient:
         """
         self._active_jobs.pop(job_id, None)
 
-        await self._send(MessageBuilder.job_failed(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            error_message=error_message,
-            error_type=error_type,
-            stack_trace=stack_trace,
-            failed_node=failed_node,
-        ))
+        await self._send(
+            MessageBuilder.job_failed(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                error_message=error_message,
+                error_type=error_type,
+                stack_trace=stack_trace,
+                failed_node=failed_node,
+            )
+        )
 
         logger.error(f"Job {job_id[:8]} failed: {error_message}")
 
@@ -605,7 +634,7 @@ class RobotClient:
         level: str,
         message: str,
         node_id: str = "",
-        extra: Optional[Dict[str, Any]] = None
+        extra: Optional[Dict[str, Any]] = None,
     ):
         """
         Send log entry to orchestrator.
@@ -617,20 +646,18 @@ class RobotClient:
             node_id: Associated node ID
             extra: Additional data
         """
-        await self._send(MessageBuilder.log_entry(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            level=level,
-            message=message,
-            node_id=node_id,
-            extra=extra,
-        ))
+        await self._send(
+            MessageBuilder.log_entry(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                level=level,
+                message=message,
+                node_id=node_id,
+                extra=extra,
+            )
+        )
 
-    async def send_log_batch(
-        self,
-        job_id: str,
-        entries: List[Dict[str, Any]]
-    ):
+    async def send_log_batch(self, job_id: str, entries: List[Dict[str, Any]]):
         """
         Send batch of log entries.
 
@@ -638,11 +665,13 @@ class RobotClient:
             job_id: Job ID
             entries: List of log entries
         """
-        await self._send(MessageBuilder.log_batch(
-            job_id=job_id,
-            robot_id=self.robot_id,
-            entries=entries,
-        ))
+        await self._send(
+            MessageBuilder.log_batch(
+                job_id=job_id,
+                robot_id=self.robot_id,
+                entries=entries,
+            )
+        )
 
     @property
     def is_connected(self) -> bool:
@@ -663,9 +692,9 @@ class RobotClient:
     def is_available(self) -> bool:
         """Check if robot can accept more jobs."""
         return (
-            self._connected and
-            not self._paused and
-            len(self._active_jobs) < self.max_concurrent_jobs
+            self._connected
+            and not self._paused
+            and len(self._active_jobs) < self.max_concurrent_jobs
         )
 
     def get_active_jobs(self) -> List[str]:

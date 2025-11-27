@@ -7,8 +7,8 @@ with hover highlighting and click-to-select functionality.
 
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QApplication, QLabel
-from PySide6.QtCore import Signal, Qt, QTimer, QPoint, QRect
-from PySide6.QtGui import QPainter, QPen, QColor, QCursor, QFont
+from PySide6.QtCore import Signal, Qt, QTimer, QRect
+from PySide6.QtGui import QPainter, QPen, QColor, QCursor
 from loguru import logger
 
 import uiautomation as auto
@@ -43,11 +43,7 @@ class ElementPickerOverlay(QWidget):
     def _setup_ui(self):
         """Setup overlay UI"""
         # Make fullscreen, transparent, always on top
-        self.setWindowFlags(
-            Qt.WindowStaysOnTopHint |
-            Qt.FramelessWindowHint |
-            Qt.Tool
-        )
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground)
         self.setWindowState(Qt.WindowFullScreen)
@@ -67,7 +63,9 @@ class ElementPickerOverlay(QWidget):
                 font-weight: bold;
             }
         """)
-        self.info_label.setText("🎯 Hover over an element and click to select • ESC to cancel")
+        self.info_label.setText(
+            "🎯 Hover over an element and click to select • ESC to cancel"
+        )
         self.info_label.setAlignment(Qt.AlignCenter)
         self.info_label.adjustSize()
 
@@ -117,16 +115,16 @@ class ElementPickerOverlay(QWidget):
                 new_element = DesktopElement(element_control)
 
                 # Check if this is a different element
-                if self.current_element is None or element_control != self.current_element._control:
+                if (
+                    self.current_element is None
+                    or element_control != self.current_element._control
+                ):
                     self.current_element = new_element
 
                     # Get element bounds
                     bounds = new_element.get_bounding_rect()
                     self.current_rect = QRect(
-                        bounds['left'],
-                        bounds['top'],
-                        bounds['width'],
-                        bounds['height']
+                        bounds["left"], bounds["top"], bounds["width"], bounds["height"]
                     )
 
                     # Update element info
@@ -147,7 +145,7 @@ class ElementPickerOverlay(QWidget):
             # Walk up the control tree to check if it belongs to overlay
             current = control
             for _ in range(10):  # Max 10 levels
-                if hasattr(current, 'NativeWindowHandle'):
+                if hasattr(current, "NativeWindowHandle"):
                     if current.NativeWindowHandle == overlay_hwnd:
                         return True
 

@@ -21,7 +21,7 @@ def _sanitize_filename(name: str) -> str:
     invalid_chars = '<>:"/\\|?*'
     result = name
     for char in invalid_chars:
-        result = result.replace(char, '_')
+        result = result.replace(char, "_")
     # Limit length
     return result[:50].strip()
 
@@ -103,26 +103,30 @@ class ScenarioStorage:
             # Detect if this is a raw workflow file (has nodes/connections at top level)
             # vs a proper scenario file (has id, workflow keys)
             is_raw_workflow = (
-                "nodes" in data and
-                "connections" in data and
-                "workflow" not in data and
-                "id" not in data
+                "nodes" in data
+                and "connections" in data
+                and "workflow" not in data
+                and "id" not in data
             )
 
             if is_raw_workflow:
                 # Convert raw workflow to scenario format
-                logger.debug(f"Detected raw workflow format, converting to scenario: {file_path}")
+                logger.debug(
+                    f"Detected raw workflow format, converting to scenario: {file_path}"
+                )
                 # Extract name from filename or metadata
                 name = file_path.stem
                 if "metadata" in data and data["metadata"].get("name"):
                     name = data["metadata"]["name"]
 
-                scenario = Scenario.from_dict({
-                    "id": generate_scenario_id(),
-                    "name": name,
-                    "project_id": "",  # Will be set when loaded into project context
-                    "workflow": data,  # Embed the entire workflow data
-                })
+                scenario = Scenario.from_dict(
+                    {
+                        "id": generate_scenario_id(),
+                        "name": name,
+                        "project_id": "",  # Will be set when loaded into project context
+                        "workflow": data,  # Embed the entire workflow data
+                    }
+                )
             else:
                 scenario = Scenario.from_dict(data)
 
@@ -213,9 +217,7 @@ class ScenarioStorage:
 
     @staticmethod
     def duplicate_scenario(
-        scenario: Scenario,
-        new_name: str,
-        project: Project
+        scenario: Scenario, new_name: str, project: Project
     ) -> Scenario:
         """
         Create a copy of a scenario with a new name.
@@ -285,9 +287,7 @@ class ScenarioStorage:
 
     @staticmethod
     def import_workflow_file(
-        file_path: Path,
-        project: Project,
-        scenario_name: Optional[str] = None
+        file_path: Path, project: Project, scenario_name: Optional[str] = None
     ) -> Scenario:
         """
         Import a workflow JSON file as a new scenario.
@@ -317,9 +317,7 @@ class ScenarioStorage:
 
             # Detect format
             is_raw_workflow = (
-                "nodes" in data and
-                "connections" in data and
-                "workflow" not in data
+                "nodes" in data and "connections" in data and "workflow" not in data
             )
 
             if is_raw_workflow:
@@ -353,9 +351,7 @@ class ScenarioStorage:
 
     @staticmethod
     def export_scenario(
-        scenario: Scenario,
-        export_path: Path,
-        export_format: str = "scenario"
+        scenario: Scenario, export_path: Path, export_format: str = "scenario"
     ) -> Path:
         """
         Export a scenario to a JSON file.

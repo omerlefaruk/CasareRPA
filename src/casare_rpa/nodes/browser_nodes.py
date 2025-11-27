@@ -6,9 +6,7 @@ launching browsers, managing tabs, and cleanup.
 """
 
 import asyncio
-from typing import Any, Optional
 
-from playwright.async_api import Browser, Page, BrowserContext
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -20,18 +18,18 @@ from loguru import logger
 class LaunchBrowserNode(BaseNode):
     """
     Launch browser node - creates a new browser instance.
-    
+
     Opens a browser (Chromium, Firefox, or WebKit) using Playwright
     and stores it in the execution context for use by other nodes.
     """
-    
+
     def __init__(
         self,
         node_id: str,
         name: str = "Launch Browser",
         browser_type: str = DEFAULT_BROWSER,
         headless: bool = HEADLESS_MODE,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Initialize launch browser node.
@@ -74,7 +72,7 @@ class LaunchBrowserNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LaunchBrowserNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -82,7 +80,7 @@ class LaunchBrowserNode(BaseNode):
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute browser launch.
@@ -116,7 +114,9 @@ class LaunchBrowserNode(BaseNode):
             try:
                 attempts += 1
                 if attempts > 1:
-                    logger.info(f"Retry attempt {attempts - 1}/{retry_count} for browser launch")
+                    logger.info(
+                        f"Retry attempt {attempts - 1}/{retry_count} for browser launch"
+                    )
 
                 from playwright.async_api import async_playwright
 
@@ -166,7 +166,10 @@ class LaunchBrowserNode(BaseNode):
                 # Viewport settings - safely parse with defaults (using safe_int defined above)
                 viewport_width = safe_int(self.config.get("viewport_width"), 1280)
                 viewport_height = safe_int(self.config.get("viewport_height"), 720)
-                context_options["viewport"] = {"width": viewport_width, "height": viewport_height}
+                context_options["viewport"] = {
+                    "width": viewport_width,
+                    "height": viewport_height,
+                }
 
                 # User agent
                 user_agent = self.config.get("user_agent", "")
@@ -216,7 +219,9 @@ class LaunchBrowserNode(BaseNode):
 
                 # Resolve {{variable}} patterns in URL using context variables
                 url = context.resolve_value(url)
-                logger.debug(f"LaunchBrowserNode URL after variable resolution: '{url}'")
+                logger.debug(
+                    f"LaunchBrowserNode URL after variable resolution: '{url}'"
+                )
 
                 if url:
                     # Add protocol if missing
@@ -238,7 +243,9 @@ class LaunchBrowserNode(BaseNode):
                 self.set_output_value("page", page)
 
                 self.status = NodeStatus.SUCCESS
-                logger.info(f"Browser launched successfully: {browser_type} with initial tab (attempt {attempts})")
+                logger.info(
+                    f"Browser launched successfully: {browser_type} with initial tab (attempt {attempts})"
+                )
 
                 return {
                     "success": True,
@@ -247,9 +254,9 @@ class LaunchBrowserNode(BaseNode):
                         "page": page,
                         "browser_type": browser_type,
                         "headless": headless,
-                        "attempts": attempts
+                        "attempts": attempts,
                     },
-                    "next_nodes": ["exec_out"]
+                    "next_nodes": ["exec_out"],
                 }
 
             except Exception as e:
@@ -262,12 +269,10 @@ class LaunchBrowserNode(BaseNode):
 
         # All retries exhausted
         self.status = NodeStatus.ERROR
-        logger.error(f"Failed to launch browser after {attempts} attempts: {last_error}")
-        return {
-            "success": False,
-            "error": str(last_error),
-            "next_nodes": []
-        }
+        logger.error(
+            f"Failed to launch browser after {attempts} attempts: {last_error}"
+        )
+        return {"success": False, "error": str(last_error), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
@@ -309,13 +314,13 @@ class CloseBrowserNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "CloseBrowserNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("browser", PortType.INPUT, DataType.BROWSER)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute browser close.
@@ -360,7 +365,9 @@ class CloseBrowserNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for browser close")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for browser close"
+                        )
 
                     # Close browser
                     await browser.close()
@@ -375,13 +382,15 @@ class CloseBrowserNode(BaseNode):
                     return {
                         "success": True,
                         "data": {"message": "Browser closed", "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Browser close failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Browser close failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -391,11 +400,7 @@ class CloseBrowserNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to close browser: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
@@ -410,11 +415,7 @@ class NewTabNode(BaseNode):
     """
 
     def __init__(
-        self,
-        node_id: str,
-        name: str = "New Tab",
-        tab_name: str = "main",
-        **kwargs
+        self, node_id: str, name: str = "New Tab", tab_name: str = "main", **kwargs
     ) -> None:
         """
         Initialize new tab node.
@@ -445,14 +446,16 @@ class NewTabNode(BaseNode):
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "NewTabNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)  # Optional: uses context browser if not connected
+        self.add_input_port(
+            "browser", PortType.INPUT, DataType.BROWSER, required=False
+        )  # Optional: uses context browser if not connected
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute new tab creation.
@@ -507,7 +510,9 @@ class NewTabNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for new tab")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for new tab"
+                        )
 
                     # Create new context and page
                     browser_context = await browser.new_context()
@@ -519,9 +524,13 @@ class NewTabNode(BaseNode):
                         nav_url = url.strip()
                         # Resolve {{variable}} patterns in URL
                         nav_url = context.resolve_value(nav_url)
-                        logger.debug(f"NewTabNode URL after variable resolution: '{nav_url}'")
+                        logger.debug(
+                            f"NewTabNode URL after variable resolution: '{nav_url}'"
+                        )
                         # Add protocol if missing
-                        if not nav_url.startswith(("http://", "https://", "file://", "about:")):
+                        if not nav_url.startswith(
+                            ("http://", "https://", "file://", "about:")
+                        ):
                             nav_url = f"https://{nav_url}"
                         logger.info(f"Navigating new tab to: {nav_url}")
                         await page.goto(nav_url, timeout=timeout, wait_until=wait_until)
@@ -534,7 +543,9 @@ class NewTabNode(BaseNode):
                     self.set_output_value("page", page)
 
                     self.status = NodeStatus.SUCCESS
-                    logger.info(f"Tab created successfully: {tab_name} (attempt {attempts})")
+                    logger.info(
+                        f"Tab created successfully: {tab_name} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
@@ -542,15 +553,17 @@ class NewTabNode(BaseNode):
                             "tab_name": tab_name,
                             "page": page,
                             "url": url if url else "about:blank",
-                            "attempts": attempts
+                            "attempts": attempts,
                         },
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"New tab creation failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"New tab creation failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -560,6 +573,7 @@ class NewTabNode(BaseNode):
                 try:
                     import os
                     from datetime import datetime
+
                     if screenshot_path:
                         path = screenshot_path
                     else:
@@ -580,11 +594,7 @@ class NewTabNode(BaseNode):
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to create tab: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
@@ -612,12 +622,7 @@ class GetAllImagesNode(BaseNode):
         - count: Number of images found
     """
 
-    def __init__(
-        self,
-        node_id: str,
-        name: str = "Get All Images",
-        **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Get All Images", **kwargs) -> None:
         default_config = {
             "min_width": 0,
             "min_height": 0,
@@ -653,7 +658,10 @@ class GetAllImagesNode(BaseNode):
             # Parse allowed file types
             allowed_types = []
             if file_types_str:
-                allowed_types = [f".{t.strip().lower().lstrip('.')}" for t in file_types_str.split(",")]
+                allowed_types = [
+                    f".{t.strip().lower().lstrip('.')}"
+                    for t in file_types_str.split(",")
+                ]
 
             # JavaScript to extract all images
             js_code = """
@@ -758,21 +766,14 @@ class GetAllImagesNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {
-                    "images": filtered_images,
-                    "count": len(filtered_images)
-                },
-                "next_nodes": ["exec_out"]
+                "data": {"images": filtered_images, "count": len(filtered_images)},
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to get images: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DownloadFileNode(BaseNode):
@@ -799,12 +800,7 @@ class DownloadFileNode(BaseNode):
         - success: Whether download succeeded
     """
 
-    def __init__(
-        self,
-        node_id: str,
-        name: str = "Download File",
-        **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "Download File", **kwargs) -> None:
         default_config = {
             "save_path": "",  # Directory or full path
             "use_browser": False,
@@ -839,7 +835,7 @@ class DownloadFileNode(BaseNode):
             filename_override = self.get_input_value("filename")
 
             # Resolve variables
-            if hasattr(context, 'resolve_value'):
+            if hasattr(context, "resolve_value"):
                 if url:
                     url = context.resolve_value(url)
                 if filename_override:
@@ -849,7 +845,7 @@ class DownloadFileNode(BaseNode):
                 raise ValueError("URL is required")
 
             save_path = self.config.get("save_path", "")
-            if hasattr(context, 'resolve_value') and save_path:
+            if hasattr(context, "resolve_value") and save_path:
                 save_path = context.resolve_value(save_path)
 
             use_browser = self.config.get("use_browser", False)
@@ -863,9 +859,10 @@ class DownloadFileNode(BaseNode):
                 # Extract filename from URL
                 parsed = urlparse(url)
                 filename = os.path.basename(unquote(parsed.path))
-                if not filename or '.' not in filename:
+                if not filename or "." not in filename:
                     # Generate a filename based on URL hash
                     import hashlib
+
                     url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
                     # Try to guess extension from URL
                     ext = ".jpg"  # Default
@@ -915,7 +912,7 @@ class DownloadFileNode(BaseNode):
                 response = await page.request.get(url, timeout=timeout)
                 content = await response.body()
 
-                with open(full_path, 'wb') as f:
+                with open(full_path, "wb") as f:
                     f.write(content)
                 file_size = len(content)
             else:
@@ -931,12 +928,14 @@ class DownloadFileNode(BaseNode):
                     req = urllib.request.Request(
                         url,
                         headers={
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                        }
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        },
                     )
-                    with urllib.request.urlopen(req, timeout=timeout/1000, context=ctx) as response:
+                    with urllib.request.urlopen(
+                        req, timeout=timeout / 1000, context=ctx
+                    ) as response:
                         content = response.read()
-                        with open(full_path, 'wb') as f:
+                        with open(full_path, "wb") as f:
                             f.write(content)
                         return len(content)
 
@@ -953,21 +952,12 @@ class DownloadFileNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {
-                    "path": full_path,
-                    "size": file_size,
-                    "url": url
-                },
-                "next_nodes": ["exec_out"]
+                "data": {"path": full_path, "size": file_size, "url": url},
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             self.set_output_value("success", False)
             logger.error(f"Failed to download file: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
-
+            return {"success": False, "error": str(e), "next_nodes": []}

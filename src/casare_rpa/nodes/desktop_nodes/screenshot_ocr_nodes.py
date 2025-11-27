@@ -8,11 +8,10 @@ Provides nodes for capturing screenshots and extracting text:
 - CompareImagesNode: Compare two images for similarity
 """
 
-from typing import Any, Dict, Optional
-from loguru import logger
+from typing import Any, Dict
 
 from ...core.base_node import BaseNode
-from ...core.types import PortType, DataType, NodeStatus
+from ...core.types import DataType, NodeStatus
 
 
 def safe_int(value, default: int) -> int:
@@ -42,10 +41,13 @@ class CaptureScreenshotNode(BaseNode):
         - success: Whether capture succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Capture Screenshot"):
-        default_config = {
-            "format": "PNG"
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Capture Screenshot",
+    ):
+        default_config = {"format": "PNG"}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -67,17 +69,15 @@ class CaptureScreenshotNode(BaseNode):
         format_type = self.config.get("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value') and file_path:
+        if hasattr(context, "resolve_value") and file_path:
             file_path = context.resolve_value(file_path)
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
         image = desktop_ctx.capture_screenshot(
-            file_path=file_path,
-            region=region,
-            format=format_type
+            file_path=file_path, region=region, format=format_type
         )
 
         success = image is not None
@@ -91,7 +91,7 @@ class CaptureScreenshotNode(BaseNode):
             "success": success,
             "image": image,
             "file_path": file_path,
-            "format": format_type
+            "format": format_type,
         }
 
 
@@ -113,11 +113,13 @@ class CaptureElementImageNode(BaseNode):
         - success: Whether capture succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Capture Element Image"):
-        default_config = {
-            "format": "PNG",
-            "padding": 0
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Capture Element Image",
+    ):
+        default_config = {"format": "PNG", "padding": 0}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -141,7 +143,7 @@ class CaptureElementImageNode(BaseNode):
         format_type = self.config.get("format", "PNG")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value') and file_path:
+        if hasattr(context, "resolve_value") and file_path:
             file_path = context.resolve_value(file_path)
 
         padding = safe_int(padding, 0)
@@ -149,7 +151,7 @@ class CaptureElementImageNode(BaseNode):
         if not element:
             raise ValueError("Element is required")
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -157,7 +159,7 @@ class CaptureElementImageNode(BaseNode):
             element=element,
             file_path=file_path,
             padding=int(padding),
-            format=format_type
+            format=format_type,
         )
 
         success = image is not None
@@ -172,7 +174,7 @@ class CaptureElementImageNode(BaseNode):
             "image": image,
             "file_path": file_path,
             "padding": padding,
-            "format": format_type
+            "format": format_type,
         }
 
 
@@ -196,12 +198,13 @@ class OCRExtractTextNode(BaseNode):
         - success: Whether extraction succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "OCR Extract Text"):
-        default_config = {
-            "engine": "auto",
-            "language": "eng",
-            "config": ""
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "OCR Extract Text",
+    ):
+        default_config = {"engine": "auto", "language": "eng", "config": ""}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -227,13 +230,13 @@ class OCRExtractTextNode(BaseNode):
         ocr_config = self.config.get("config", "")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if image_path:
                 image_path = context.resolve_value(image_path)
             language = context.resolve_value(language)
             ocr_config = context.resolve_value(ocr_config)
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -243,7 +246,7 @@ class OCRExtractTextNode(BaseNode):
             region=region,
             language=language,
             config=ocr_config,
-            engine=engine
+            engine=engine,
         )
 
         success = text is not None
@@ -258,7 +261,7 @@ class OCRExtractTextNode(BaseNode):
             "text": text,
             "language": language,
             "engine": engine,
-            "char_count": len(text) if text else 0
+            "char_count": len(text) if text else 0,
         }
 
 
@@ -282,11 +285,13 @@ class CompareImagesNode(BaseNode):
         - method: Comparison method used
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Compare Images"):
-        default_config = {
-            "method": "histogram",
-            "threshold": 0.9
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Compare Images",
+    ):
+        default_config = {"method": "histogram", "threshold": 0.9}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -312,7 +317,7 @@ class CompareImagesNode(BaseNode):
         method = self.config.get("method", "histogram")
         threshold = self.config.get("threshold", 0.9)
 
-        desktop_ctx = getattr(context, 'desktop_context', None)
+        desktop_ctx = getattr(context, "desktop_context", None)
         if desktop_ctx is None:
             raise ValueError("Desktop context not available")
 
@@ -322,7 +327,7 @@ class CompareImagesNode(BaseNode):
             image1_path=image1_path,
             image2_path=image2_path,
             method=method,
-            threshold=float(threshold)
+            threshold=float(threshold),
         )
 
         success = "error" not in result
@@ -341,5 +346,5 @@ class CompareImagesNode(BaseNode):
             "is_match": is_match,
             "method": used_method,
             "threshold": threshold,
-            "error": result.get("error")
+            "error": result.get("error"),
         }

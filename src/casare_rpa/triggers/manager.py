@@ -16,7 +16,6 @@ from .base import (
     BaseTrigger,
     BaseTriggerConfig,
     TriggerEvent,
-    TriggerStatus,
     TriggerType,
 )
 from .registry import get_trigger_registry
@@ -142,25 +141,17 @@ class TriggerManager:
 
             # Add webhook routes
             self._http_app.router.add_post(
-                '/hooks/{trigger_id}',
-                self._handle_webhook_by_id
+                "/hooks/{trigger_id}", self._handle_webhook_by_id
             )
             self._http_app.router.add_post(
-                '/webhooks/{path:.*}',
-                self._handle_webhook_by_path
+                "/webhooks/{path:.*}", self._handle_webhook_by_path
             )
-            self._http_app.router.add_post(
-                '/forms/{trigger_id}',
-                self._handle_form
-            )
-            self._http_app.router.add_get(
-                '/health',
-                self._handle_health
-            )
+            self._http_app.router.add_post("/forms/{trigger_id}", self._handle_form)
+            self._http_app.router.add_get("/health", self._handle_health)
 
             runner = web.AppRunner(self._http_app)
             await runner.setup()
-            site = web.TCPSite(runner, '0.0.0.0', self._http_port)
+            site = web.TCPSite(runner, "0.0.0.0", self._http_port)
             await site.start()
             self._http_server = runner
 
@@ -184,23 +175,19 @@ class TriggerManager:
 
     async def _handle_webhook_by_id(self, request) -> Any:
         """Handle webhook request by trigger ID."""
-        from aiohttp import web
 
-        trigger_id = request.match_info['trigger_id']
+        trigger_id = request.match_info["trigger_id"]
         return await self._process_webhook(request, trigger_id)
 
     async def _handle_webhook_by_path(self, request) -> Any:
         """Handle webhook request by custom path."""
         from aiohttp import web
 
-        path = '/' + request.match_info['path']
+        path = "/" + request.match_info["path"]
         trigger_id = self._webhook_routes.get(path)
 
         if not trigger_id:
-            return web.json_response(
-                {"error": "Unknown webhook path"},
-                status=404
-            )
+            return web.json_response({"error": "Unknown webhook path"}, status=404)
 
         return await self._process_webhook(request, trigger_id)
 
@@ -210,30 +197,23 @@ class TriggerManager:
 
         trigger = self._triggers.get(trigger_id)
         if not trigger:
-            return web.json_response(
-                {"error": "Trigger not found"},
-                status=404
-            )
+            return web.json_response({"error": "Trigger not found"}, status=404)
 
         if not trigger.config.enabled:
-            return web.json_response(
-                {"error": "Trigger is disabled"},
-                status=403
-            )
+            return web.json_response({"error": "Trigger is disabled"}, status=403)
 
         # Get trigger config
         config = trigger.config.config
 
         # Validate secret if configured
-        secret = config.get('secret')
+        secret = config.get("secret")
         if secret:
-            header_secret = request.headers.get('X-Webhook-Secret', '')
-            auth_header = request.headers.get('Authorization', '')
+            header_secret = request.headers.get("X-Webhook-Secret", "")
+            auth_header = request.headers.get("Authorization", "")
 
             if header_secret != secret and not auth_header.endswith(secret):
                 return web.json_response(
-                    {"error": "Invalid authentication"},
-                    status=401
+                    {"error": "Invalid authentication"}, status=401
                 )
 
         # Parse payload
@@ -258,22 +238,23 @@ class TriggerManager:
         success = await trigger.emit(payload, metadata)
 
         if success:
-            return web.json_response({
-                "status": "accepted",
-                "trigger_id": trigger_id,
-                "timestamp": datetime.utcnow().isoformat(),
-            })
+            return web.json_response(
+                {
+                    "status": "accepted",
+                    "trigger_id": trigger_id,
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            )
         else:
             return web.json_response(
-                {"error": "Trigger failed or in cooldown"},
-                status=429
+                {"error": "Trigger failed or in cooldown"}, status=429
             )
 
     async def _handle_form(self, request) -> Any:
         """Handle form submission."""
         from aiohttp import web
 
-        trigger_id = request.match_info['trigger_id']
+        trigger_id = request.match_info["trigger_id"]
         trigger = self._triggers.get(trigger_id)
 
         if not trigger:
@@ -307,11 +288,15 @@ class TriggerManager:
         """Health check endpoint."""
         from aiohttp import web
 
-        return web.json_response({
-            "status": "healthy",
-            "triggers_active": len([t for t in self._triggers.values() if t.is_active]),
-            "triggers_total": len(self._triggers),
-        })
+        return web.json_response(
+            {
+                "status": "healthy",
+                "triggers_active": len(
+                    [t for t in self._triggers.values() if t.is_active]
+                ),
+                "triggers_total": len(self._triggers),
+            }
+        )
 
     async def _on_trigger_fired(self, event: TriggerEvent) -> None:
         """
@@ -320,7 +305,9 @@ class TriggerManager:
         This is the callback passed to triggers, which routes
         events to the external job creator callback.
         """
-        logger.info(f"Trigger event received: {event.trigger_id} ({event.trigger_type.value})")
+        logger.info(
+            f"Trigger event received: {event.trigger_id} ({event.trigger_type.value})"
+        )
 
         if self._on_trigger_event:
             try:
@@ -332,7 +319,9 @@ class TriggerManager:
 
     # ==================== Public API ====================
 
-    async def register_trigger(self, config: BaseTriggerConfig) -> Optional[BaseTrigger]:
+    async def register_trigger(
+        self, config: BaseTriggerConfig
+    ) -> Optional[BaseTrigger]:
         """
         Register and start a new trigger.
 
@@ -349,9 +338,7 @@ class TriggerManager:
 
         # Create trigger instance
         trigger = self._registry.create_instance(
-            config.trigger_type,
-            config,
-            self._on_trigger_fired
+            config.trigger_type, config, self._on_trigger_fired
         )
 
         if not trigger:
@@ -370,13 +357,13 @@ class TriggerManager:
 
         # Register webhook route if applicable
         if config.trigger_type == TriggerType.WEBHOOK:
-            endpoint = config.config.get('endpoint', '')
+            endpoint = config.config.get("endpoint", "")
             if endpoint:
                 self._webhook_routes[endpoint] = config.id
 
         # Register callable if applicable
         if config.trigger_type == TriggerType.WORKFLOW_CALL:
-            alias = config.config.get('call_alias', '')
+            alias = config.config.get("call_alias", "")
             if alias:
                 self._callables[alias] = config.id
 
@@ -415,21 +402,19 @@ class TriggerManager:
         if config:
             # Remove webhook route
             if config.trigger_type == TriggerType.WEBHOOK:
-                endpoint = config.config.get('endpoint', '')
+                endpoint = config.config.get("endpoint", "")
                 self._webhook_routes.pop(endpoint, None)
 
             # Remove callable
             if config.trigger_type == TriggerType.WORKFLOW_CALL:
-                alias = config.config.get('call_alias', '')
+                alias = config.config.get("call_alias", "")
                 self._callables.pop(alias, None)
 
         logger.info(f"Unregistered trigger: {trigger_id}")
         return True
 
     async def update_trigger(
-        self,
-        trigger_id: str,
-        config: BaseTriggerConfig
+        self, trigger_id: str, config: BaseTriggerConfig
     ) -> Optional[BaseTrigger]:
         """
         Update an existing trigger.
@@ -481,9 +466,7 @@ class TriggerManager:
         return True
 
     async def fire_trigger(
-        self,
-        trigger_id: str,
-        payload: Optional[Dict[str, Any]] = None
+        self, trigger_id: str, payload: Optional[Dict[str, Any]] = None
     ) -> Optional[str]:
         """
         Manually fire a trigger.
@@ -512,10 +495,7 @@ class TriggerManager:
         return None
 
     async def call_workflow(
-        self,
-        alias: str,
-        params: Optional[Dict[str, Any]] = None,
-        wait: bool = True
+        self, alias: str, params: Optional[Dict[str, Any]] = None, wait: bool = True
     ) -> Optional[Dict[str, Any]]:
         """
         Call a workflow by its callable alias.
@@ -555,16 +535,12 @@ class TriggerManager:
     def get_triggers_by_scenario(self, scenario_id: str) -> List[BaseTrigger]:
         """Get all triggers for a scenario."""
         return [
-            t for t in self._triggers.values()
-            if t.config.scenario_id == scenario_id
+            t for t in self._triggers.values() if t.config.scenario_id == scenario_id
         ]
 
     def get_triggers_by_type(self, trigger_type: TriggerType) -> List[BaseTrigger]:
         """Get all triggers of a specific type."""
-        return [
-            t for t in self._triggers.values()
-            if t.trigger_type == trigger_type
-        ]
+        return [t for t in self._triggers.values() if t.trigger_type == trigger_type]
 
     def get_active_triggers(self) -> List[BaseTrigger]:
         """Get all active (running) triggers."""

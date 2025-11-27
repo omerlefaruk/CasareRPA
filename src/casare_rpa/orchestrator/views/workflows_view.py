@@ -2,16 +2,28 @@
 Workflows view for CasareRPA Orchestrator.
 Displays workflow library and management.
 """
+
 import asyncio
 from pathlib import Path
 from typing import Optional, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFrame, QLabel, QMessageBox, QMenu, QDialog,
-    QFormLayout, QLineEdit, QTextEdit, QComboBox, QDialogButtonBox,
-    QFileDialog
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QMenu,
+    QDialog,
+    QFormLayout,
+    QTextEdit,
+    QComboBox,
+    QDialogButtonBox,
+    QFileDialog,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 
 from ..styles import COLORS
 from ..widgets import SearchBar, ActionButton, SectionHeader, StatusBadge, EmptyState
@@ -41,8 +53,12 @@ class WorkflowDetailsDialog(QDialog):
         info_layout.addRow("Status:", status_badge)
 
         info_layout.addRow("Description:", QLabel(workflow.description or "-"))
-        info_layout.addRow("Created:", QLabel(str(workflow.created_at) if workflow.created_at else "-"))
-        info_layout.addRow("Updated:", QLabel(str(workflow.updated_at) if workflow.updated_at else "-"))
+        info_layout.addRow(
+            "Created:", QLabel(str(workflow.created_at) if workflow.created_at else "-")
+        )
+        info_layout.addRow(
+            "Updated:", QLabel(str(workflow.updated_at) if workflow.updated_at else "-")
+        )
         info_layout.addRow("Executions:", QLabel(str(workflow.execution_count)))
         info_layout.addRow("Success Rate:", QLabel(f"{workflow.success_rate:.1f}%"))
 
@@ -53,12 +69,18 @@ class WorkflowDetailsDialog(QDialog):
 
         # JSON preview
         json_label = QLabel("Workflow JSON:")
-        json_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-weight: 600;")
+        json_label.setStyleSheet(
+            f"color: {COLORS['text_secondary']}; font-weight: 600;"
+        )
         layout.addWidget(json_label)
 
         json_text = QTextEdit()
         json_text.setReadOnly(True)
-        json_text.setPlainText(workflow.json_definition[:2000] + "..." if len(workflow.json_definition) > 2000 else workflow.json_definition)
+        json_text.setPlainText(
+            workflow.json_definition[:2000] + "..."
+            if len(workflow.json_definition) > 2000
+            else workflow.json_definition
+        )
         json_text.setStyleSheet(f"""
             background-color: {COLORS['bg_medium']};
             color: {COLORS['text_primary']};
@@ -77,10 +99,7 @@ class DispatchDialog(QDialog):
     """Dialog for dispatching a workflow."""
 
     def __init__(
-        self,
-        workflow: Workflow,
-        robots: list,
-        parent: Optional[QWidget] = None
+        self, workflow: Workflow, robots: list, parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self.setWindowTitle(f"Dispatch: {workflow.name}")
@@ -93,7 +112,9 @@ class DispatchDialog(QDialog):
         layout.setSpacing(16)
 
         # Workflow info
-        info_label = QLabel(f"Dispatching workflow: <b>{workflow.name}</b> (v{workflow.version})")
+        info_label = QLabel(
+            f"Dispatching workflow: <b>{workflow.name}</b> (v{workflow.version})"
+        )
         layout.addWidget(info_label)
 
         # Robot selection
@@ -163,7 +184,9 @@ class WorkflowsView(QWidget):
         header_layout.addWidget(import_btn)
 
         refresh_btn = ActionButton("Refresh", primary=False)
-        refresh_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        refresh_btn.clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         header_layout.addWidget(refresh_btn)
 
         layout.addLayout(header_layout)
@@ -173,8 +196,7 @@ class WorkflowsView(QWidget):
         toolbar.setSpacing(12)
 
         self._search = SearchBar(
-            "Search workflows...",
-            filters=["All", "Draft", "Published", "Archived"]
+            "Search workflows...", filters=["All", "Draft", "Published", "Archived"]
         )
         self._search.search_changed.connect(self._apply_filter)
         self._search.filter_changed.connect(self._apply_filter)
@@ -186,15 +208,31 @@ class WorkflowsView(QWidget):
         # Workflows table
         self._table = QTableWidget()
         self._table.setColumnCount(7)
-        self._table.setHorizontalHeaderLabels([
-            "Status", "Name", "Version", "Executions", "Success Rate", "Updated", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Status",
+                "Name",
+                "Version",
+                "Executions",
+                "Success Rate",
+                "Updated",
+                "Actions",
+            ]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 100)
-        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(2, 80)
-        self._table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            6, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(6, 200)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setAlternatingRowColors(True)
@@ -208,7 +246,7 @@ class WorkflowsView(QWidget):
         self._empty_state = EmptyState(
             title="No Workflows Found",
             description="Import a workflow JSON file to get started.",
-            action_text="Import Workflow"
+            action_text="Import Workflow",
         )
         self._empty_state.action_clicked.connect(self._import_workflow)
         self._empty_state.hide()
@@ -253,23 +291,39 @@ class WorkflowsView(QWidget):
         view_action.triggered.connect(lambda: self._show_details(workflow))
 
         dispatch_action = menu.addAction("Dispatch")
-        dispatch_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._dispatch_workflow(workflow)))
+        dispatch_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(
+                self._dispatch_workflow(workflow)
+            )
+        )
         dispatch_action.setEnabled(workflow.status == WorkflowStatus.PUBLISHED)
 
         menu.addSeparator()
 
         if workflow.status == WorkflowStatus.DRAFT:
             publish_action = menu.addAction("Publish")
-            publish_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._publish_workflow(workflow)))
+            publish_action.triggered.connect(
+                lambda: asyncio.get_event_loop().create_task(
+                    self._publish_workflow(workflow)
+                )
+            )
 
         if workflow.status == WorkflowStatus.PUBLISHED:
             archive_action = menu.addAction("Archive")
-            archive_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._archive_workflow(workflow)))
+            archive_action.triggered.connect(
+                lambda: asyncio.get_event_loop().create_task(
+                    self._archive_workflow(workflow)
+                )
+            )
 
         menu.addSeparator()
 
         delete_action = menu.addAction("Delete")
-        delete_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._delete_workflow(workflow)))
+        delete_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(
+                self._delete_workflow(workflow)
+            )
+        )
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
 
@@ -289,7 +343,7 @@ class WorkflowsView(QWidget):
             self,
             "Import Workflow",
             str(Path.cwd() / "workflows"),
-            "Workflow Files (*.json)"
+            "Workflow Files (*.json)",
         )
 
         if file_path:
@@ -299,7 +353,9 @@ class WorkflowsView(QWidget):
         """Perform workflow import."""
         workflow = await self._service.import_workflow_from_file(file_path)
         if workflow:
-            QMessageBox.information(self, "Success", f"Workflow '{workflow.name}' imported successfully!")
+            QMessageBox.information(
+                self, "Success", f"Workflow '{workflow.name}' imported successfully!"
+            )
             await self.refresh()
         else:
             QMessageBox.warning(self, "Error", "Failed to import workflow")
@@ -311,6 +367,7 @@ class WorkflowsView(QWidget):
         dialog = DispatchDialog(workflow, robots, self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             from ..models import JobPriority
+
             priority_map = {
                 "LOW": JobPriority.LOW,
                 "NORMAL": JobPriority.NORMAL,
@@ -320,12 +377,12 @@ class WorkflowsView(QWidget):
             priority = priority_map.get(dialog.selected_priority, JobPriority.NORMAL)
 
             job = await self._service.dispatch_workflow(
-                workflow.id,
-                dialog.selected_robot_id,
-                priority
+                workflow.id, dialog.selected_robot_id, priority
             )
             if job:
-                QMessageBox.information(self, "Success", f"Job dispatched: {job.id[:8]}...")
+                QMessageBox.information(
+                    self, "Success", f"Job dispatched: {job.id[:8]}..."
+                )
             else:
                 QMessageBox.warning(self, "Error", "Failed to dispatch workflow")
 
@@ -348,9 +405,10 @@ class WorkflowsView(QWidget):
     async def _delete_workflow(self, workflow: Workflow):
         """Delete a workflow."""
         reply = QMessageBox.question(
-            self, "Delete Workflow",
+            self,
+            "Delete Workflow",
             f"Are you sure you want to delete '{workflow.name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -386,7 +444,9 @@ class WorkflowsView(QWidget):
             self._table.setItem(row, 3, QTableWidgetItem(str(workflow.execution_count)))
 
             # Success Rate
-            self._table.setItem(row, 4, QTableWidgetItem(f"{workflow.success_rate:.1f}%"))
+            self._table.setItem(
+                row, 4, QTableWidgetItem(f"{workflow.success_rate:.1f}%")
+            )
 
             # Updated
             updated = str(workflow.updated_at)[:19] if workflow.updated_at else "-"
@@ -404,7 +464,11 @@ class WorkflowsView(QWidget):
 
             dispatch_btn = ActionButton("Dispatch", primary=True)
             dispatch_btn.setEnabled(workflow.status == WorkflowStatus.PUBLISHED)
-            dispatch_btn.clicked.connect(lambda checked, w=workflow: asyncio.get_event_loop().create_task(self._dispatch_workflow(w)))
+            dispatch_btn.clicked.connect(
+                lambda checked, w=workflow: asyncio.get_event_loop().create_task(
+                    self._dispatch_workflow(w)
+                )
+            )
             actions_layout.addWidget(dispatch_btn)
 
             self._table.setCellWidget(row, 6, actions_widget)
@@ -416,5 +480,6 @@ class WorkflowsView(QWidget):
             self._update_table()
         except Exception as e:
             from loguru import logger
+
             logger.error(f"Failed to refresh workflows: {e}")
             QMessageBox.warning(self, "Error", f"Failed to load workflows: {e}")

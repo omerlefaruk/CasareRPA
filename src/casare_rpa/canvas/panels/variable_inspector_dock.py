@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QHBoxLayout,
     QPushButton,
-    QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QBrush
@@ -69,15 +68,15 @@ class VariableInspectorDock(QDockWidget):
         """Configure dock widget properties."""
         # Allow docking at bottom and right
         self.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea |
-            Qt.DockWidgetArea.RightDockWidgetArea
+            Qt.DockWidgetArea.BottomDockWidgetArea
+            | Qt.DockWidgetArea.RightDockWidgetArea
         )
 
         # Set features
         self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable |
-            QDockWidget.DockWidgetFeature.DockWidgetClosable |
-            QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
 
         # Set minimum size
@@ -306,7 +305,9 @@ class VariableInspectorDock(QDockWidget):
                 value_item.setBackground(QColor(50, 100, 50))  # Dark green
                 value_item.setForeground(QBrush(QColor("#4CAF50")))  # Green
             else:
-                value_item.setForeground(QBrush(QColor("#CE9178")))  # Orange/string color
+                value_item.setForeground(
+                    QBrush(QColor("#CE9178"))
+                )  # Orange/string color
 
             self._table.setItem(row, 2, value_item)
 

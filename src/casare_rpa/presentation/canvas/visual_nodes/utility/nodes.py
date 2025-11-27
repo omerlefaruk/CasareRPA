@@ -1,4 +1,5 @@
 """Visual nodes for utility category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.core.types import DataType
 
@@ -6,6 +7,7 @@ from casare_rpa.core.types import DataType
 # =============================================================================
 # Random Nodes
 # =============================================================================
+
 
 class VisualRandomNumberNode(VisualNode):
     """Visual representation of RandomNumberNode."""
@@ -38,7 +40,9 @@ class VisualRandomChoiceNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("count", "Count", text="1", tab="properties")
-        self.add_checkbox("allow_duplicates", "Allow Duplicates", state=True, tab="properties")
+        self.add_checkbox(
+            "allow_duplicates", "Allow Duplicates", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -58,8 +62,12 @@ class VisualRandomStringNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("length", "Length", text="10", tab="properties")
-        self.add_checkbox("include_uppercase", "Uppercase", state=True, tab="properties")
-        self.add_checkbox("include_lowercase", "Lowercase", state=True, tab="properties")
+        self.add_checkbox(
+            "include_uppercase", "Uppercase", state=True, tab="properties"
+        )
+        self.add_checkbox(
+            "include_lowercase", "Lowercase", state=True, tab="properties"
+        )
         self.add_checkbox("include_digits", "Digits", state=True, tab="properties")
         self.add_checkbox("include_special", "Special", state=False, tab="properties")
 
@@ -79,7 +87,9 @@ class VisualRandomUUIDNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("format", "Format", items=["standard", "hex", "urn"], tab="properties")
+        self.add_combo_menu(
+            "format", "Format", items=["standard", "hex", "urn"], tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -105,6 +115,7 @@ class VisualShuffleListNode(VisualNode):
 # DateTime Nodes
 # =============================================================================
 
+
 class VisualGetCurrentDateTimeNode(VisualNode):
     """Visual representation of GetCurrentDateTimeNode."""
 
@@ -114,7 +125,9 @@ class VisualGetCurrentDateTimeNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
+        self.add_text_input(
+            "format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -157,7 +170,9 @@ class VisualParseDateTimeNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties")
+        self.add_text_input(
+            "format", "Format", text="%Y-%m-%d %H:%M:%S", tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -253,6 +268,7 @@ class VisualGetTimestampNode(VisualNode):
 # Text Nodes
 # =============================================================================
 
+
 class VisualTextSplitNode(VisualNode):
     """Visual representation of TextSplitNode."""
 
@@ -303,7 +319,9 @@ class VisualTextTrimNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("mode", "Mode", items=["both", "left", "right"], tab="properties")
+        self.add_combo_menu(
+            "mode", "Mode", items=["both", "left", "right"], tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -321,7 +339,12 @@ class VisualTextCaseNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("case", "Case", items=["lower", "upper", "title", "capitalize", "swapcase"], tab="properties")
+        self.add_combo_menu(
+            "case",
+            "Case",
+            items=["lower", "upper", "title", "capitalize", "swapcase"],
+            tab="properties",
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -339,7 +362,9 @@ class VisualTextPadNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("mode", "Mode", items=["left", "right", "center"], tab="properties")
+        self.add_combo_menu(
+            "mode", "Mode", items=["left", "right", "center"], tab="properties"
+        )
         self.add_text_input("fill_char", "Fill Char", text=" ", tab="properties")
 
     def setup_ports(self) -> None:
@@ -376,7 +401,9 @@ class VisualTextContainsNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+        self.add_checkbox(
+            "case_sensitive", "Case Sensitive", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -397,7 +424,9 @@ class VisualTextStartsWithNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+        self.add_checkbox(
+            "case_sensitive", "Case Sensitive", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -416,7 +445,9 @@ class VisualTextEndsWithNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_checkbox("case_sensitive", "Case Sensitive", state=True, tab="properties")
+        self.add_checkbox(
+            "case_sensitive", "Case Sensitive", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -436,7 +467,9 @@ class VisualTextLinesNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_combo_menu("mode", "Mode", items=["split", "join"], tab="properties")
-        self.add_checkbox("keep_ends", "Keep Line Endings", state=False, tab="properties")
+        self.add_checkbox(
+            "keep_ends", "Keep Line Endings", state=False, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -469,7 +502,9 @@ class VisualTextCountNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu("mode", "Mode", items=["characters", "words", "lines"], tab="properties")
+        self.add_combo_menu(
+            "mode", "Mode", items=["characters", "words", "lines"], tab="properties"
+        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

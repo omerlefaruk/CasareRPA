@@ -14,18 +14,20 @@ from loguru import logger
 # ============================================================================
 
 # Detect if running as frozen executable (PyInstaller)
-IS_FROZEN: Final[bool] = getattr(sys, 'frozen', False)
+IS_FROZEN: Final[bool] = getattr(sys, "frozen", False)
 
 if IS_FROZEN:
     # When running as executable, use AppData for user-writable directories
-    _appdata = Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming'))
-    _localappdata = os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData' / 'Local'))
+    _appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+    _localappdata = os.environ.get(
+        "LOCALAPPDATA", str(Path.home() / "AppData" / "Local")
+    )
     USER_DATA_DIR: Final[Path] = _appdata / "CasareRPA"
 
     # CRITICAL: Set Playwright browsers path BEFORE any Playwright imports
     # This tells Playwright to use system-installed browsers instead of looking
     # inside the PyInstaller bundle
-    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(Path(_localappdata) / 'ms-playwright')
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(Path(_localappdata) / "ms-playwright")
 
     # Application installation directory (read-only)
     APP_DIR: Final[Path] = Path(sys.executable).parent

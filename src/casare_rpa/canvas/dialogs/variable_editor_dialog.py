@@ -24,8 +24,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QStackedWidget,
 )
-from PySide6.QtCore import Qt
-from loguru import logger
 
 
 # Variable types
@@ -51,7 +49,7 @@ class VariableEditorDialog(QDialog):
         self,
         variable: Optional[Dict[str, Any]] = None,
         existing_names: Optional[List[str]] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Initialize the dialog.
@@ -114,7 +112,9 @@ class VariableEditorDialog(QDialog):
 
         self._description_edit = QTextEdit()
         self._description_edit.setMaximumHeight(60)
-        self._description_edit.setPlaceholderText("Optional description for this variable")
+        self._description_edit.setPlaceholderText(
+            "Optional description for this variable"
+        )
         layout.addWidget(self._description_edit)
 
         # Buttons
@@ -162,7 +162,9 @@ class VariableEditorDialog(QDialog):
 
         # List editor (JSON)
         self._list_edit = QTextEdit()
-        self._list_edit.setPlaceholderText('Enter JSON array, e.g.: ["item1", "item2", 3]')
+        self._list_edit.setPlaceholderText(
+            'Enter JSON array, e.g.: ["item1", "item2", 3]'
+        )
         self._list_edit.setMaximumHeight(80)
         self._value_stack.addWidget(self._list_edit)
 
@@ -176,7 +178,9 @@ class VariableEditorDialog(QDialog):
         datatable_container = QWidget()
         dt_layout = QVBoxLayout(datatable_container)
         dt_layout.setContentsMargins(0, 0, 0, 0)
-        dt_label = QLabel("DataTable variables are initialized as empty.\nLoad data at runtime using nodes.")
+        dt_label = QLabel(
+            "DataTable variables are initialized as empty.\nLoad data at runtime using nodes."
+        )
         dt_label.setStyleSheet("color: #888888; font-style: italic;")
         dt_layout.addWidget(dt_label)
         self._value_stack.addWidget(datatable_container)
@@ -293,7 +297,7 @@ class VariableEditorDialog(QDialog):
                 self,
                 "Validation Error",
                 "Variable name must be a valid identifier "
-                "(letters, numbers, and underscores, not starting with a number)."
+                "(letters, numbers, and underscores, not starting with a number).",
             )
             self._name_edit.setFocus()
             return False
@@ -301,9 +305,7 @@ class VariableEditorDialog(QDialog):
         # Check name is unique
         if name in self._existing_names:
             QMessageBox.warning(
-                self,
-                "Validation Error",
-                f"A variable named '{name}' already exists."
+                self, "Validation Error", f"A variable named '{name}' already exists."
             )
             self._name_edit.setFocus()
             return False
@@ -312,11 +314,7 @@ class VariableEditorDialog(QDialog):
         try:
             self._get_value()
         except ValueError as e:
-            QMessageBox.warning(
-                self,
-                "Validation Error",
-                f"Invalid default value: {e}"
-            )
+            QMessageBox.warning(self, "Validation Error", f"Invalid default value: {e}")
             return False
 
         return True

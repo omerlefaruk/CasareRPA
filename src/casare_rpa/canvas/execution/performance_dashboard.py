@@ -13,18 +13,29 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QGroupBox, QTableWidget, QTableWidgetItem,
-    QHeaderView, QPushButton, QTabWidget, QWidget,
-    QProgressBar, QFrame, QScrollArea, QSplitter,
-    QComboBox, QSpinBox, QCheckBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QLabel,
+    QGroupBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QPushButton,
+    QTabWidget,
+    QWidget,
+    QProgressBar,
+    QFrame,
+    QComboBox,
+    QCheckBox,
 )
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QFont, QColor, QPalette
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QColor
 
 from loguru import logger
 
-from ...utils.performance.performance_metrics import PerformanceMetrics, get_metrics
+from ...utils.performance.performance_metrics import get_metrics
 
 
 class MetricCard(QFrame):
@@ -35,7 +46,7 @@ class MetricCard(QFrame):
         title: str,
         value: str = "0",
         subtitle: str = "",
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self.setFrameStyle(QFrame.Shape.StyledPanel | QFrame.Shadow.Raised)
@@ -69,7 +80,9 @@ class MetricCard(QFrame):
 
     def set_color(self, color: str) -> None:
         """Set the value text color."""
-        self.value_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {color};")
+        self.value_label.setStyleSheet(
+            f"font-size: 24px; font-weight: bold; color: {color};"
+        )
 
 
 class HistogramWidget(QWidget):
@@ -229,9 +242,9 @@ class NodeMetricsPanel(QGroupBox):
         # Node table
         self.node_table = QTableWidget()
         self.node_table.setColumnCount(6)
-        self.node_table.setHorizontalHeaderLabels([
-            "Node Type", "Count", "Errors", "Avg (ms)", "p90 (ms)", "p99 (ms)"
-        ])
+        self.node_table.setHorizontalHeaderLabels(
+            ["Node Type", "Count", "Errors", "Avg (ms)", "p90 (ms)", "p99 (ms)"]
+        )
         self.node_table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch
         )
@@ -239,9 +252,7 @@ class NodeMetricsPanel(QGroupBox):
             1, QHeaderView.ResizeMode.ResizeToContents
         )
         self.node_table.setAlternatingRowColors(True)
-        self.node_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
+        self.node_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         layout.addWidget(self.node_table)
 
     def update_metrics(self, node_data: Dict[str, Any]) -> None:
@@ -286,15 +297,17 @@ class NodeMetricsPanel(QGroupBox):
                 error_item.setForeground(QColor("#e74c3c"))
             self.node_table.setItem(i, 2, error_item)
 
-            self.node_table.setItem(i, 3, QTableWidgetItem(
-                f"{timing.get('mean', 0):.1f}" if timing else "-"
-            ))
-            self.node_table.setItem(i, 4, QTableWidgetItem(
-                f"{timing.get('p90', 0):.1f}" if timing else "-"
-            ))
-            self.node_table.setItem(i, 5, QTableWidgetItem(
-                f"{timing.get('p99', 0):.1f}" if timing else "-"
-            ))
+            self.node_table.setItem(
+                i,
+                3,
+                QTableWidgetItem(f"{timing.get('mean', 0):.1f}" if timing else "-"),
+            )
+            self.node_table.setItem(
+                i, 4, QTableWidgetItem(f"{timing.get('p90', 0):.1f}" if timing else "-")
+            )
+            self.node_table.setItem(
+                i, 5, QTableWidgetItem(f"{timing.get('p99', 0):.1f}" if timing else "-")
+            )
 
 
 class WorkflowMetricsPanel(QGroupBox):
@@ -394,9 +407,9 @@ class PoolMetricsPanel(QGroupBox):
         # Pool table
         self.pool_table = QTableWidget()
         self.pool_table.setColumnCount(7)
-        self.pool_table.setHorizontalHeaderLabels([
-            "Pool", "Type", "Available", "In Use", "Created", "Closed", "Errors"
-        ])
+        self.pool_table.setHorizontalHeaderLabels(
+            ["Pool", "Type", "Available", "In Use", "Created", "Closed", "Errors"]
+        )
         self.pool_table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch
         )
@@ -412,17 +425,29 @@ class PoolMetricsPanel(QGroupBox):
         self.pool_table.setRowCount(len(pool_data))
         for i, (pool_name, data) in enumerate(pool_data.items()):
             self.pool_table.setItem(i, 0, QTableWidgetItem(pool_name))
-            self.pool_table.setItem(i, 1, QTableWidgetItem(
-                data.get("db_type", data.get("type", "http"))
-            ))
-            self.pool_table.setItem(i, 2, QTableWidgetItem(str(data.get("available", 0))))
+            self.pool_table.setItem(
+                i, 1, QTableWidgetItem(data.get("db_type", data.get("type", "http")))
+            )
+            self.pool_table.setItem(
+                i, 2, QTableWidgetItem(str(data.get("available", 0)))
+            )
             self.pool_table.setItem(i, 3, QTableWidgetItem(str(data.get("in_use", 0))))
-            self.pool_table.setItem(i, 4, QTableWidgetItem(
-                str(data.get("connections_created", data.get("sessions_created", 0)))
-            ))
-            self.pool_table.setItem(i, 5, QTableWidgetItem(
-                str(data.get("connections_closed", data.get("sessions_closed", 0)))
-            ))
+            self.pool_table.setItem(
+                i,
+                4,
+                QTableWidgetItem(
+                    str(
+                        data.get("connections_created", data.get("sessions_created", 0))
+                    )
+                ),
+            )
+            self.pool_table.setItem(
+                i,
+                5,
+                QTableWidgetItem(
+                    str(data.get("connections_closed", data.get("sessions_closed", 0)))
+                ),
+            )
             self.pool_table.setItem(i, 6, QTableWidgetItem(str(data.get("errors", 0))))
 
 
@@ -460,9 +485,7 @@ class CountersGaugesPanel(QGroupBox):
         layout.addWidget(gauges_group)
 
     def update_metrics(
-        self,
-        counters: Dict[str, int],
-        gauges: Dict[str, float]
+        self, counters: Dict[str, int], gauges: Dict[str, float]
     ) -> None:
         """Update counters and gauges display."""
         # Update counters
@@ -646,8 +669,7 @@ class PerformanceDashboardDialog(QDialog):
 
             # Update raw metrics
             self.raw_panel.update_metrics(
-                summary.get("counters", {}),
-                summary.get("gauges", {})
+                summary.get("counters", {}), summary.get("gauges", {})
             )
 
             # Update timestamp
@@ -667,8 +689,9 @@ class PerformanceDashboardDialog(QDialog):
         # Try to get browser pool stats
         try:
             from ...utils.browser_pool import BrowserPoolManager
-            manager = getattr(BrowserPoolManager, '_instance', None)
-            if manager and hasattr(manager, 'get_all_stats'):
+
+            manager = getattr(BrowserPoolManager, "_instance", None)
+            if manager and hasattr(manager, "get_all_stats"):
                 for name, data in manager.get_all_stats().items():
                     pool_data[f"browser_{name}"] = data
         except Exception:
@@ -677,8 +700,9 @@ class PerformanceDashboardDialog(QDialog):
         # Try to get database pool stats
         try:
             from ...utils.database_pool import DatabasePoolManager
-            manager = getattr(DatabasePoolManager, '_instance', None)
-            if manager and hasattr(manager, 'get_all_stats'):
+
+            manager = getattr(DatabasePoolManager, "_instance", None)
+            if manager and hasattr(manager, "get_all_stats"):
                 for name, data in manager.get_all_stats().items():
                     pool_data[f"db_{name}"] = data
         except Exception:
@@ -687,8 +711,9 @@ class PerformanceDashboardDialog(QDialog):
         # Try to get HTTP session pool stats
         try:
             from ...utils.http_session_pool import HttpSessionManager
-            manager = getattr(HttpSessionManager, '_instance', None)
-            if manager and hasattr(manager, 'get_all_stats'):
+
+            manager = getattr(HttpSessionManager, "_instance", None)
+            if manager and hasattr(manager, "get_all_stats"):
                 for name, data in manager.get_all_stats().items():
                     pool_data[f"http_{name}"] = data
         except Exception:
@@ -705,7 +730,7 @@ class PerformanceDashboardDialog(QDialog):
             "Reset Metrics",
             "Are you sure you want to reset all performance metrics?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:

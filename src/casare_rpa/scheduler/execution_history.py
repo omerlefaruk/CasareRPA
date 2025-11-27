@@ -2,6 +2,7 @@
 Execution History for CasareRPA Scheduler.
 Tracks schedule execution results over time.
 """
+
 import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -14,6 +15,7 @@ from loguru import logger
 @dataclass
 class ExecutionHistoryEntry:
     """Single entry in execution history."""
+
     id: str
     schedule_id: str
     schedule_name: str
@@ -37,16 +39,19 @@ class ExecutionHistoryEntry:
             "workflow_name": self.workflow_name,
             "status": self.status,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
             "duration_ms": self.duration_ms,
             "success": self.success,
             "error_message": self.error_message,
-            "output": self.output
+            "output": self.output,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "ExecutionHistoryEntry":
         """Create from dictionary."""
+
         def parse_datetime(val):
             if val is None:
                 return None
@@ -69,7 +74,7 @@ class ExecutionHistoryEntry:
             duration_ms=data.get("duration_ms", 0),
             success=data.get("success", False),
             error_message=data.get("error_message", ""),
-            output=data.get("output", {})
+            output=data.get("output", {}),
         )
 
     @property
@@ -97,7 +102,7 @@ class ExecutionHistory:
         self,
         storage_path: Optional[Path] = None,
         max_entries: int = 1000,
-        retention_days: int = 30
+        retention_days: int = 30,
     ):
         """
         Initialize execution history.
@@ -162,13 +167,15 @@ class ExecutionHistory:
                 schedule_name=result.schedule_name,
                 workflow_path=result.workflow_path,
                 workflow_name=result.workflow_name,
-                status=result.status.value if hasattr(result.status, "value") else str(result.status),
+                status=result.status.value
+                if hasattr(result.status, "value")
+                else str(result.status),
                 started_at=result.started_at,
                 completed_at=result.completed_at,
                 duration_ms=result.duration_ms,
                 success=result.success,
                 error_message=result.error_message,
-                output=result.output if hasattr(result, "output") else {}
+                output=result.output if hasattr(result, "output") else {},
             )
         else:
             entry = result
@@ -206,14 +213,14 @@ class ExecutionHistory:
                 filtered.append(entry)
 
         # Trim to max entries
-        return filtered[:self._max_entries]
+        return filtered[: self._max_entries]
 
     def get_entries(
         self,
         limit: int = 100,
         schedule_id: Optional[str] = None,
         status: Optional[str] = None,
-        since: Optional[datetime] = None
+        since: Optional[datetime] = None,
     ) -> List[ExecutionHistoryEntry]:
         """
         Get execution history entries.
@@ -264,9 +271,7 @@ class ExecutionHistory:
         return self.get_entries(limit=limit)
 
     def get_for_schedule(
-        self,
-        schedule_id: str,
-        limit: int = 50
+        self, schedule_id: str, limit: int = 50
     ) -> List[ExecutionHistoryEntry]:
         """Get entries for a specific schedule."""
         return self.get_entries(limit=limit, schedule_id=schedule_id)
@@ -311,7 +316,7 @@ class ExecutionHistory:
                     "name": entry.schedule_name,
                     "total": 0,
                     "successful": 0,
-                    "failed": 0
+                    "failed": 0,
                 }
             by_schedule[sid]["total"] += 1
             if entry.success:
@@ -340,7 +345,7 @@ class ExecutionHistory:
             "success_rate": (successful / total * 100) if total > 0 else 0,
             "avg_duration_ms": avg_duration,
             "by_schedule": by_schedule,
-            "by_day": dict(sorted(by_day.items()))
+            "by_day": dict(sorted(by_day.items())),
         }
 
     def clear_history(self) -> bool:

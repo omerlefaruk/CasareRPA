@@ -2,17 +2,27 @@
 Tree navigation panel - Left sidebar with Jobs/Robots hierarchy.
 Inspired by Deadline Monitor's navigation tree.
 """
-from typing import Optional, List, Dict, Any
+
+from typing import List, Dict
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem,
-    QLabel, QComboBox, QPushButton, QLineEdit, QFrame, QButtonGroup,
-    QToolButton, QSizePolicy, QAbstractItemView
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QLabel,
+    QComboBox,
+    QLineEdit,
+    QFrame,
+    QButtonGroup,
+    QToolButton,
+    QSizePolicy,
+    QAbstractItemView,
 )
-from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QColor, QBrush, QFont, QIcon
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QBrush
 
 from ..theme import THEME, get_status_color
-from ..models import JobStatus, RobotStatus, JobPriority
 
 
 class FilterBar(QWidget):
@@ -145,10 +155,10 @@ class TreeNavigationPanel(QWidget):
     Shows Jobs by status/priority or Robots by pool/status.
     """
 
-    job_selected = Signal(str)      # job_id
-    robot_selected = Signal(str)    # robot_id
-    pool_selected = Signal(str)     # pool_name
-    filter_changed = Signal(dict)   # filter params
+    job_selected = Signal(str)  # job_id
+    robot_selected = Signal(str)  # robot_id
+    pool_selected = Signal(str)  # pool_name
+    filter_changed = Signal(dict)  # filter params
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -262,16 +272,37 @@ class TreeNavigationPanel(QWidget):
 
         # Group by status
         status_groups = {
-            "Active": {"icon": "▶", "color": THEME.job_running, "statuses": ["running"]},
-            "Queued": {"icon": "⏳", "color": THEME.job_queued, "statuses": ["pending", "queued"]},
-            "Completed": {"icon": "✓", "color": THEME.job_completed, "statuses": ["completed"]},
-            "Failed": {"icon": "✗", "color": THEME.job_failed, "statuses": ["failed", "timeout"]},
-            "Suspended": {"icon": "⏸", "color": THEME.job_suspended, "statuses": ["cancelled", "suspended"]},
+            "Active": {
+                "icon": "▶",
+                "color": THEME.job_running,
+                "statuses": ["running"],
+            },
+            "Queued": {
+                "icon": "⏳",
+                "color": THEME.job_queued,
+                "statuses": ["pending", "queued"],
+            },
+            "Completed": {
+                "icon": "✓",
+                "color": THEME.job_completed,
+                "statuses": ["completed"],
+            },
+            "Failed": {
+                "icon": "✗",
+                "color": THEME.job_failed,
+                "statuses": ["failed", "timeout"],
+            },
+            "Suspended": {
+                "icon": "⏸",
+                "color": THEME.job_suspended,
+                "statuses": ["cancelled", "suspended"],
+            },
         }
 
         for group_name, group_info in status_groups.items():
             jobs_in_group = [
-                j for j in self._jobs_data
+                j
+                for j in self._jobs_data
                 if j.get("status", "").lower() in group_info["statuses"]
             ]
             count = len(jobs_in_group)
@@ -279,7 +310,9 @@ class TreeNavigationPanel(QWidget):
             # Group header
             group_item = QTreeWidgetItem()
             group_item.setText(0, f"{group_info['icon']} {group_name} ({count})")
-            group_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "group", "name": group_name})
+            group_item.setData(
+                0, Qt.ItemDataRole.UserRole, {"type": "group", "name": group_name}
+            )
             group_item.setForeground(0, QBrush(QColor(group_info["color"])))
             font = group_item.font(0)
             font.setBold(True)
@@ -292,7 +325,9 @@ class TreeNavigationPanel(QWidget):
                 job_name = job.get("workflow_name", "Unknown")
                 progress = job.get("progress", 0)
                 job_item.setText(0, f"  {job_name} [{progress}%]")
-                job_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "job", "id": job.get("id")})
+                job_item.setData(
+                    0, Qt.ItemDataRole.UserRole, {"type": "job", "id": job.get("id")}
+                )
                 job_item.setForeground(0, QBrush(QColor(THEME.text_primary)))
                 group_item.addChild(job_item)
 
@@ -314,7 +349,8 @@ class TreeNavigationPanel(QWidget):
 
         for status_name, status_info in status_groups.items():
             robots_in_group = [
-                r for r in self._robots_data
+                r
+                for r in self._robots_data
                 if r.get("status", "").lower() == status_name.lower()
             ]
             count = len(robots_in_group)
@@ -325,7 +361,9 @@ class TreeNavigationPanel(QWidget):
             # Group header
             group_item = QTreeWidgetItem()
             group_item.setText(0, f"{status_info['icon']} {status_name} ({count})")
-            group_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "group", "status": status_name})
+            group_item.setData(
+                0, Qt.ItemDataRole.UserRole, {"type": "group", "status": status_name}
+            )
             group_item.setForeground(0, QBrush(QColor(status_info["color"])))
             font = group_item.font(0)
             font.setBold(True)
@@ -339,7 +377,11 @@ class TreeNavigationPanel(QWidget):
                 current = robot.get("current_jobs", 0)
                 max_jobs = robot.get("max_concurrent_jobs", 1)
                 robot_item.setText(0, f"  {robot_name} [{current}/{max_jobs}]")
-                robot_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "robot", "id": robot.get("id")})
+                robot_item.setData(
+                    0,
+                    Qt.ItemDataRole.UserRole,
+                    {"type": "robot", "id": robot.get("id")},
+                )
                 robot_item.setForeground(0, QBrush(QColor(THEME.text_primary)))
                 group_item.addChild(robot_item)
 
@@ -358,13 +400,19 @@ class TreeNavigationPanel(QWidget):
             pools[pool].append(robot)
 
         for pool_name, robots in pools.items():
-            online_count = sum(1 for r in robots if r.get("status", "").lower() == "online")
+            online_count = sum(
+                1 for r in robots if r.get("status", "").lower() == "online"
+            )
             total_count = len(robots)
 
             # Pool header
             pool_item = QTreeWidgetItem()
-            pool_item.setText(0, f"📁 {pool_name} ({online_count}/{total_count} online)")
-            pool_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "pool", "name": pool_name})
+            pool_item.setText(
+                0, f"📁 {pool_name} ({online_count}/{total_count} online)"
+            )
+            pool_item.setData(
+                0, Qt.ItemDataRole.UserRole, {"type": "pool", "name": pool_name}
+            )
             font = pool_item.font(0)
             font.setBold(True)
             pool_item.setFont(0, font)
@@ -378,7 +426,11 @@ class TreeNavigationPanel(QWidget):
 
                 robot_item = QTreeWidgetItem()
                 robot_item.setText(0, f"  {status_icon} {robot.get('name', 'Unknown')}")
-                robot_item.setData(0, Qt.ItemDataRole.UserRole, {"type": "robot", "id": robot.get("id")})
+                robot_item.setData(
+                    0,
+                    Qt.ItemDataRole.UserRole,
+                    {"type": "robot", "id": robot.get("id")},
+                )
                 robot_item.setForeground(0, QBrush(QColor(status_color)))
                 pool_item.addChild(robot_item)
 
@@ -406,10 +458,7 @@ class TreeNavigationPanel(QWidget):
                     visible = search_text in child.text(0).lower()
                     child.setHidden(not visible)
 
-        self.filter_changed.emit({
-            "search": search_text,
-            "status": status_filter
-        })
+        self.filter_changed.emit({"search": search_text, "status": status_filter})
 
     def _on_item_clicked(self, item: QTreeWidgetItem, column: int):
         data = item.data(0, Qt.ItemDataRole.UserRole)
@@ -433,11 +482,15 @@ class TreeNavigationPanel(QWidget):
     def _update_stats(self):
         if self._current_view == "jobs":
             total = len(self._jobs_data)
-            active = sum(1 for j in self._jobs_data if j.get("status", "").lower() == "running")
+            active = sum(
+                1 for j in self._jobs_data if j.get("status", "").lower() == "running"
+            )
             self._stats_label.setText(f"Jobs: {total} total, {active} active")
         elif self._current_view in ("robots", "pools"):
             total = len(self._robots_data)
-            online = sum(1 for r in self._robots_data if r.get("status", "").lower() == "online")
+            online = sum(
+                1 for r in self._robots_data if r.get("status", "").lower() == "online"
+            )
             self._stats_label.setText(f"Robots: {total} total, {online} online")
 
     def set_jobs(self, jobs: List[Dict]):

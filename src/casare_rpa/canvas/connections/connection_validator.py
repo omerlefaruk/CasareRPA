@@ -13,7 +13,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Optional, TYPE_CHECKING
 
-from loguru import logger
 
 from ...core.types import DataType
 from ...core.port_type_system import PortTypeRegistry, get_port_type_registry
@@ -30,13 +29,13 @@ if TYPE_CHECKING:
 class ValidationResult(Enum):
     """Result codes for connection validation."""
 
-    VALID = auto()                    # Connection is allowed
-    INCOMPATIBLE_TYPES = auto()       # Data types don't match
-    EXEC_DATA_MISMATCH = auto()       # Mixing exec and data ports
-    SELF_CONNECTION = auto()          # Node connecting to itself
-    ALREADY_CONNECTED = auto()        # Connection already exists
-    PORT_NOT_FOUND = auto()           # Port doesn't exist on node
-    DIRECTION_MISMATCH = auto()       # Input-to-input or output-to-output
+    VALID = auto()  # Connection is allowed
+    INCOMPATIBLE_TYPES = auto()  # Data types don't match
+    EXEC_DATA_MISMATCH = auto()  # Mixing exec and data ports
+    SELF_CONNECTION = auto()  # Node connecting to itself
+    ALREADY_CONNECTED = auto()  # Connection already exists
+    PORT_NOT_FOUND = auto()  # Port doesn't exist on node
+    DIRECTION_MISMATCH = auto()  # Input-to-input or output-to-output
 
 
 @dataclass
@@ -51,6 +50,7 @@ class ConnectionValidation:
         source_type: DataType of the source port (if applicable)
         target_type: DataType of the target port (if applicable)
     """
+
     result: ValidationResult
     is_valid: bool
     message: str
@@ -283,9 +283,7 @@ class ConnectionValidator:
 
         return incompatible
 
-    def _get_port_type(
-        self, node: "VisualNode", port_name: str
-    ) -> Optional[DataType]:
+    def _get_port_type(self, node: "VisualNode", port_name: str) -> Optional[DataType]:
         """
         Get the DataType for a port on a node.
 
@@ -315,9 +313,7 @@ class ConnectionValidator:
         # Type unknown
         return None
 
-    def _is_exec_port(
-        self, port_name: str, data_type: Optional[DataType]
-    ) -> bool:
+    def _is_exec_port(self, port_name: str, data_type: Optional[DataType]) -> bool:
         """
         Check if a port is an execution flow port.
 
@@ -338,12 +334,22 @@ class ConnectionValidator:
 
         # Common exec port names
         exec_port_names = {
-            "exec_in", "exec_out", "exec",
-            "loop_body", "completed",  # Loop node exec outputs
-            "true", "false",  # If/Branch node exec outputs
-            "then", "else",  # Alternative if/branch names
-            "on_success", "on_error", "on_finally",  # Error handling
-            "body", "done", "finish", "next",  # Other common exec names
+            "exec_in",
+            "exec_out",
+            "exec",
+            "loop_body",
+            "completed",  # Loop node exec outputs
+            "true",
+            "false",  # If/Branch node exec outputs
+            "then",
+            "else",  # Alternative if/branch names
+            "on_success",
+            "on_error",
+            "on_finally",  # Error handling
+            "body",
+            "done",
+            "finish",
+            "next",  # Other common exec names
         }
 
         if port_lower in exec_port_names:

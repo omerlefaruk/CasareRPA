@@ -2,6 +2,7 @@
 Professional dark theme for CasareRPA Orchestrator.
 Modern, clean styling without icons.
 """
+
 from dataclasses import dataclass
 
 
@@ -619,7 +620,6 @@ def get_status_color(status: str) -> str:
         "maintenance": THEME.status_warning,
         "idle": THEME.status_idle,
         "rendering": THEME.status_rendering,
-
         # Job statuses
         "pending": THEME.job_pending,
         "queued": THEME.job_queued,

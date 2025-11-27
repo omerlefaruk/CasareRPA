@@ -16,59 +16,12 @@ with NodeGraphQt's visual representation.
 """
 
 import inspect
-from typing import Type, Optional, Any, Dict
-from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
-from PySide6.QtGui import QColor, QPixmap, QPainter, QBrush
-from PySide6.QtCore import Qt, QSize
 
-from ...core.base_node import BaseNode as CasareBaseNode
-from ...core.types import PortType, DataType
-from loguru import logger
+from ...core.types import DataType
 
 # Import Data Operation Nodes
-from .data_operations_visual import (
-    VisualConcatenateNode,
-    VisualFormatStringNode,
-    VisualRegexMatchNode,
-    VisualRegexReplaceNode,
-    VisualMathOperationNode,
-    VisualComparisonNode,
-    VisualCreateListNode,
-    VisualListGetItemNode,
-    VisualJsonParseNode,
-    VisualGetPropertyNode,
-    # List operation nodes
-    VisualListLengthNode,
-    VisualListAppendNode,
-    VisualListContainsNode,
-    VisualListSliceNode,
-    VisualListJoinNode,
-    VisualListSortNode,
-    VisualListReverseNode,
-    VisualListUniqueNode,
-    VisualListFilterNode,
-    VisualListMapNode,
-    VisualListReduceNode,
-    VisualListFlattenNode,
-    # Dict operation nodes
-    VisualDictGetNode,
-    VisualDictSetNode,
-    VisualDictRemoveNode,
-    VisualDictMergeNode,
-    VisualDictKeysNode,
-    VisualDictValuesNode,
-    VisualDictHasKeyNode,
-    VisualCreateDictNode,
-    VisualDictToJsonNode,
-    VisualDictItemsNode,
-)
 
 # Import Rich Comment Nodes
-from ..desktop.rich_comment_node import (
-    VisualRichCommentNode,
-    VisualStickyNoteNode,
-    VisualHeaderCommentNode
-)
 
 from .base_visual_node import VisualNode, UNIFIED_NODE_COLOR
 
@@ -82,13 +35,14 @@ NODE_COLORS = {
 
 # Basic Nodes
 
+
 class VisualStartNode(VisualNode):
     """Visual representation of StartNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "Start"
     NODE_CATEGORY = "basic"
-    
+
     def setup_ports(self) -> None:
         """Setup ports for start node."""
         self.add_output("exec_out")
@@ -96,11 +50,11 @@ class VisualStartNode(VisualNode):
 
 class VisualEndNode(VisualNode):
     """Visual representation of EndNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "End"
     NODE_CATEGORY = "basic"
-    
+
     def setup_ports(self) -> None:
         """Setup ports for end node."""
         self.add_input("exec_in")
@@ -108,22 +62,23 @@ class VisualEndNode(VisualNode):
 
 class VisualCommentNode(VisualNode):
     """Visual representation of CommentNode."""
-    
+
     __identifier__ = "casare_rpa.basic"
     NODE_NAME = "Comment"
     NODE_CATEGORY = "basic"
-    
+
     def __init__(self) -> None:
         """Initialize comment node."""
         super().__init__()
         self.add_text_input("comment", "Comment", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports for comment node."""
         pass  # No ports for comment node
 
 
 # Browser Control Nodes
+
 
 class VisualLaunchBrowserNode(VisualNode):
     """Visual representation of LaunchBrowserNode."""
@@ -136,31 +91,80 @@ class VisualLaunchBrowserNode(VisualNode):
         """Initialize launch browser node."""
         super().__init__()
         # Basic options
-        self.add_text_input("url", "URL", placeholder_text="https://example.com", tab="properties")
-        self.add_combo_menu("browser_type", "Browser", items=["chromium", "firefox", "webkit"], tab="properties")
+        self.add_text_input(
+            "url", "URL", placeholder_text="https://example.com", tab="properties"
+        )
+        self.add_combo_menu(
+            "browser_type",
+            "Browser",
+            items=["chromium", "firefox", "webkit"],
+            tab="properties",
+        )
         self.add_checkbox("headless", "Headless", state=False, tab="properties")
 
         # Performance options
-        self.add_text_input("slow_mo", "Slow Mo (ms)", placeholder_text="0", tab="advanced")
-        self.add_combo_menu("channel", "Channel", items=["", "chrome", "msedge", "chrome-beta"], tab="advanced")
+        self.add_text_input(
+            "slow_mo", "Slow Mo (ms)", placeholder_text="0", tab="advanced"
+        )
+        self.add_combo_menu(
+            "channel",
+            "Channel",
+            items=["", "chrome", "msedge", "chrome-beta"],
+            tab="advanced",
+        )
 
         # Viewport options
-        self.add_text_input("viewport_width", "Viewport Width", placeholder_text="1280", tab="advanced")
-        self.add_text_input("viewport_height", "Viewport Height", placeholder_text="720", tab="advanced")
+        self.add_text_input(
+            "viewport_width", "Viewport Width", placeholder_text="1280", tab="advanced"
+        )
+        self.add_text_input(
+            "viewport_height", "Viewport Height", placeholder_text="720", tab="advanced"
+        )
 
         # Identity options
-        self.add_text_input("user_agent", "User Agent", placeholder_text="Custom user agent", tab="advanced")
-        self.add_text_input("locale", "Locale", placeholder_text="en-US", tab="advanced")
-        self.add_text_input("timezone_id", "Timezone", placeholder_text="America/New_York", tab="advanced")
-        self.add_combo_menu("color_scheme", "Color Scheme", items=["light", "dark", "no-preference"], tab="advanced")
+        self.add_text_input(
+            "user_agent",
+            "User Agent",
+            placeholder_text="Custom user agent",
+            tab="advanced",
+        )
+        self.add_text_input(
+            "locale", "Locale", placeholder_text="en-US", tab="advanced"
+        )
+        self.add_text_input(
+            "timezone_id",
+            "Timezone",
+            placeholder_text="America/New_York",
+            tab="advanced",
+        )
+        self.add_combo_menu(
+            "color_scheme",
+            "Color Scheme",
+            items=["light", "dark", "no-preference"],
+            tab="advanced",
+        )
 
         # Security options
-        self.add_checkbox("ignore_https_errors", "Ignore HTTPS Errors", state=False, tab="advanced")
-        self.add_text_input("proxy_server", "Proxy Server", placeholder_text="http://proxy:8080", tab="advanced")
+        self.add_checkbox(
+            "ignore_https_errors", "Ignore HTTPS Errors", state=False, tab="advanced"
+        )
+        self.add_text_input(
+            "proxy_server",
+            "Proxy Server",
+            placeholder_text="http://proxy:8080",
+            tab="advanced",
+        )
 
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="2000", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (ms)",
+            placeholder_text="2000",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -173,11 +177,11 @@ class VisualLaunchBrowserNode(VisualNode):
 
 class VisualCloseBrowserNode(VisualNode):
     """Visual representation of CloseBrowserNode."""
-    
+
     __identifier__ = "casare_rpa.browser"
     NODE_NAME = "Close Browser"
     NODE_CATEGORY = "browser"
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -210,10 +214,24 @@ class VisualGetAllImagesNode(VisualNode):
     def __init__(self) -> None:
         """Initialize get all images node."""
         super().__init__()
-        self.add_text_input("min_width", "Min Width", placeholder_text="0", tab="properties")
-        self.add_text_input("min_height", "Min Height", placeholder_text="0", tab="properties")
-        self.add_checkbox("include_backgrounds", "Include Background Images", state=True, tab="properties")
-        self.add_text_input("file_types", "File Types", placeholder_text="jpg,png,webp (empty=all)", tab="properties")
+        self.add_text_input(
+            "min_width", "Min Width", placeholder_text="0", tab="properties"
+        )
+        self.add_text_input(
+            "min_height", "Min Height", placeholder_text="0", tab="properties"
+        )
+        self.add_checkbox(
+            "include_backgrounds",
+            "Include Background Images",
+            state=True,
+            tab="properties",
+        )
+        self.add_text_input(
+            "file_types",
+            "File Types",
+            placeholder_text="jpg,png,webp (empty=all)",
+            tab="properties",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -233,10 +251,21 @@ class VisualDownloadFileNode(VisualNode):
     def __init__(self) -> None:
         """Initialize download file node."""
         super().__init__()
-        self.add_text_input("save_path", "Save Path", placeholder_text="C:/Downloads or full path", tab="properties")
-        self.add_checkbox("use_browser", "Use Browser Context", state=False, tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
-        self.add_checkbox("overwrite", "Overwrite Existing", state=True, tab="properties")
+        self.add_text_input(
+            "save_path",
+            "Save Path",
+            placeholder_text="C:/Downloads or full path",
+            tab="properties",
+        )
+        self.add_checkbox(
+            "use_browser", "Use Browser Context", state=False, tab="properties"
+        )
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
+        self.add_checkbox(
+            "overwrite", "Overwrite Existing", state=True, tab="properties"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -251,6 +280,7 @@ class VisualDownloadFileNode(VisualNode):
 
 # Navigation Nodes
 
+
 class VisualGoToURLNode(VisualNode):
     """Visual representation of GoToURLNode."""
 
@@ -262,8 +292,18 @@ class VisualGoToURLNode(VisualNode):
         """Initialize go to URL node."""
         super().__init__()
         self.add_text_input("url", "URL", tab="properties")
-        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
-        self.add_text_input("referer", "Referer", placeholder_text="Optional referer URL", tab="advanced")
+        self.add_combo_menu(
+            "wait_until",
+            "Wait Until",
+            items=["load", "domcontentloaded", "networkidle", "commit"],
+            tab="properties",
+        )
+        self.add_text_input(
+            "referer",
+            "Referer",
+            placeholder_text="Optional referer URL",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -284,8 +324,15 @@ class VisualGoBackNode(VisualNode):
     def __init__(self) -> None:
         """Initialize go back node."""
         super().__init__()
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
-        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
+        self.add_combo_menu(
+            "wait_until",
+            "Wait Until",
+            items=["load", "domcontentloaded", "networkidle", "commit"],
+            tab="properties",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -305,8 +352,15 @@ class VisualGoForwardNode(VisualNode):
     def __init__(self) -> None:
         """Initialize go forward node."""
         super().__init__()
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
-        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
+        self.add_combo_menu(
+            "wait_until",
+            "Wait Until",
+            items=["load", "domcontentloaded", "networkidle", "commit"],
+            tab="properties",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -326,8 +380,15 @@ class VisualRefreshPageNode(VisualNode):
     def __init__(self) -> None:
         """Initialize refresh page node."""
         super().__init__()
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
-        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle", "commit"], tab="properties")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
+        self.add_combo_menu(
+            "wait_until",
+            "Wait Until",
+            items=["load", "domcontentloaded", "networkidle", "commit"],
+            tab="properties",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -338,6 +399,7 @@ class VisualRefreshPageNode(VisualNode):
 
 
 # Interaction Nodes
+
 
 class VisualClickElementNode(VisualNode):
     """Visual representation of ClickElementNode."""
@@ -351,16 +413,24 @@ class VisualClickElementNode(VisualNode):
         super().__init__()
         # Basic options
         self.add_text_input("selector", "Selector", tab="properties")
-        self.add_combo_menu("button", "Button", items=["left", "right", "middle"], tab="properties")
+        self.add_combo_menu(
+            "button", "Button", items=["left", "right", "middle"], tab="properties"
+        )
 
         # Click behavior
-        self.add_text_input("click_count", "Click Count", placeholder_text="1", tab="advanced")
+        self.add_text_input(
+            "click_count", "Click Count", placeholder_text="1", tab="advanced"
+        )
         self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
         self.add_checkbox("force", "Force Click", state=False, tab="advanced")
 
         # Position offset
-        self.add_text_input("position_x", "Position X", placeholder_text="center", tab="advanced")
-        self.add_text_input("position_y", "Position Y", placeholder_text="center", tab="advanced")
+        self.add_text_input(
+            "position_x", "Position X", placeholder_text="center", tab="advanced"
+        )
+        self.add_text_input(
+            "position_y", "Position Y", placeholder_text="center", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -387,7 +457,9 @@ class VisualTypeTextNode(VisualNode):
 
         # Advanced options
         self.add_text_input("delay", "Delay (ms)", placeholder_text="0", tab="advanced")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="advanced")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="advanced"
+        )
         self.add_checkbox("clear_first", "Clear First", state=True, tab="advanced")
 
     def setup_ports(self) -> None:
@@ -413,14 +485,21 @@ class VisualSelectDropdownNode(VisualNode):
         # Basic options
         self.add_text_input("selector", "Selector", tab="properties")
         self.add_text_input("value", "Value", tab="properties")
-        self.add_combo_menu("select_by", "Select By", items=["value", "label", "index"], tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu(
+            "select_by",
+            "Select By",
+            items=["value", "label", "index"],
+            tab="properties",
+        )
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
 
         # Advanced options
         self.add_checkbox("force", "Force", state=False, tab="advanced")
         self.add_checkbox("no_wait_after", "No Wait After", state=False, tab="advanced")
         self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -432,6 +511,7 @@ class VisualSelectDropdownNode(VisualNode):
 
 
 # Data Extraction Nodes
+
 
 class VisualExtractTextNode(VisualNode):
     """Visual representation of ExtractTextNode."""
@@ -446,13 +526,19 @@ class VisualExtractTextNode(VisualNode):
         # Basic options
         self.add_text_input("selector", "Selector", tab="properties")
         self.add_text_input("variable_name", "Variable Name", tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
 
         # Advanced options
-        self.add_checkbox("use_inner_text", "Use Inner Text", state=False, tab="advanced")
+        self.add_checkbox(
+            "use_inner_text", "Use Inner Text", state=False, tab="advanced"
+        )
         self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
-        self.add_checkbox("trim_whitespace", "Trim Whitespace", state=True, tab="advanced")
-    
+        self.add_checkbox(
+            "trim_whitespace", "Trim Whitespace", state=True, tab="advanced"
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -477,11 +563,13 @@ class VisualGetAttributeNode(VisualNode):
         self.add_text_input("selector", "Selector", tab="properties")
         self.add_text_input("attribute", "Attribute", tab="properties")
         self.add_text_input("variable_name", "Variable Name", tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
 
         # Advanced options
         self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -506,16 +594,26 @@ class VisualScreenshotNode(VisualNode):
         # Basic options
         self.add_text_input("file_path", "File Path", tab="properties")
         self.add_checkbox("full_page", "Full Page", state=False, tab="properties")
-        self.add_combo_menu("type", "Image Type", items=["png", "jpeg"], tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu(
+            "type", "Image Type", items=["png", "jpeg"], tab="properties"
+        )
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
 
         # Advanced options
-        self.add_text_input("quality", "JPEG Quality", placeholder_text="80", tab="advanced")
+        self.add_text_input(
+            "quality", "JPEG Quality", placeholder_text="80", tab="advanced"
+        )
         self.add_combo_menu("scale", "Scale", items=["device", "css"], tab="advanced")
-        self.add_combo_menu("animations", "Animations", items=["allow", "disabled"], tab="advanced")
-        self.add_checkbox("omit_background", "Omit Background", state=False, tab="advanced")
+        self.add_combo_menu(
+            "animations", "Animations", items=["allow", "disabled"], tab="advanced"
+        )
+        self.add_checkbox(
+            "omit_background", "Omit Background", state=False, tab="advanced"
+        )
         self.add_combo_menu("caret", "Caret", items=["hide", "initial"], tab="advanced")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -527,18 +625,19 @@ class VisualScreenshotNode(VisualNode):
 
 # Wait Nodes
 
+
 class VisualWaitNode(VisualNode):
     """Visual representation of WaitNode."""
-    
+
     __identifier__ = "casare_rpa.wait"
     NODE_NAME = "Wait"
     NODE_CATEGORY = "browser"
-    
+
     def __init__(self) -> None:
         """Initialize wait node."""
         super().__init__()
         self.add_text_input("duration", "Duration (s)", text="1.0", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -557,16 +656,39 @@ class VisualWaitForElementNode(VisualNode):
         """Initialize wait for element node."""
         super().__init__()
         self.add_text_input("selector", "Selector", tab="properties")
-        self.add_combo_menu("state", "State", items=["visible", "hidden", "attached", "detached"], tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu(
+            "state",
+            "State",
+            items=["visible", "hidden", "attached", "detached"],
+            tab="properties",
+        )
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
         # Advanced options
         self.add_checkbox("strict", "Strict Mode", state=False, tab="advanced")
-        self.add_text_input("poll_interval", "Poll Interval (ms)", placeholder_text="100", tab="advanced")
+        self.add_text_input(
+            "poll_interval",
+            "Poll Interval (ms)",
+            placeholder_text="100",
+            tab="advanced",
+        )
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
-        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
-        self.add_checkbox("highlight_on_find", "Highlight on Find", state=False, tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (ms)",
+            placeholder_text="1000",
+            tab="advanced",
+        )
+        self.add_checkbox(
+            "screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced"
+        )
+        self.add_checkbox(
+            "highlight_on_find", "Highlight on Find", state=False, tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -588,15 +710,36 @@ class VisualWaitForNavigationNode(VisualNode):
     def __init__(self) -> None:
         """Initialize wait for navigation node."""
         super().__init__()
-        self.add_combo_menu("wait_until", "Wait Until", items=["load", "domcontentloaded", "networkidle"], tab="properties")
-        self.add_text_input("timeout", "Timeout (ms)", placeholder_text="30000", tab="properties")
+        self.add_combo_menu(
+            "wait_until",
+            "Wait Until",
+            items=["load", "domcontentloaded", "networkidle"],
+            tab="properties",
+        )
+        self.add_text_input(
+            "timeout", "Timeout (ms)", placeholder_text="30000", tab="properties"
+        )
         # Advanced options
-        self.add_text_input("url_pattern", "URL Pattern", placeholder_text="Optional glob or regex", tab="advanced")
+        self.add_text_input(
+            "url_pattern",
+            "URL Pattern",
+            placeholder_text="Optional glob or regex",
+            tab="advanced",
+        )
         self.add_checkbox("url_use_regex", "Use Regex", state=False, tab="advanced")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (ms)", placeholder_text="1000", tab="advanced")
-        self.add_checkbox("screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (ms)",
+            placeholder_text="1000",
+            tab="advanced",
+        )
+        self.add_checkbox(
+            "screenshot_on_fail", "Screenshot on Fail", state=False, tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -608,27 +751,26 @@ class VisualWaitForNavigationNode(VisualNode):
 
 # Variable Nodes
 
+
 class VisualSetVariableNode(VisualNode):
     """Visual representation of SetVariableNode."""
-    
+
     __identifier__ = "casare_rpa.variable"
     NODE_NAME = "Set Variable"
     NODE_CATEGORY = "variable"
-    
+
     def __init__(self) -> None:
         """Initialize set variable node."""
         super().__init__()
         self.add_text_input("variable_name", "Variable Name", tab="properties")
-        self.add_combo_menu("variable_type", "Type", items=[
-            "String", 
-            "Boolean", 
-            "Int32", 
-            "Object", 
-            "Array", 
-            "DataTable"
-        ], tab="properties")
+        self.add_combo_menu(
+            "variable_type",
+            "Type",
+            items=["String", "Boolean", "Int32", "Object", "Array", "DataTable"],
+            tab="properties",
+        )
         self.add_text_input("default_value", "Value", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -640,16 +782,16 @@ class VisualSetVariableNode(VisualNode):
 
 class VisualGetVariableNode(VisualNode):
     """Visual representation of GetVariableNode."""
-    
+
     __identifier__ = "casare_rpa.variable"
     NODE_NAME = "Get Variable"
     NODE_CATEGORY = "variable"
-    
+
     def __init__(self) -> None:
         """Initialize get variable node."""
         super().__init__()
         self.add_text_input("variable_name", "Variable Name", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -660,17 +802,17 @@ class VisualGetVariableNode(VisualNode):
 
 class VisualIncrementVariableNode(VisualNode):
     """Visual representation of IncrementVariableNode."""
-    
+
     __identifier__ = "casare_rpa.variable"
     NODE_NAME = "Increment Variable"
     NODE_CATEGORY = "variable"
-    
+
     def __init__(self) -> None:
         """Initialize increment variable node."""
         super().__init__()
         self.add_text_input("variable_name", "Variable Name", tab="properties")
         self.add_text_input("increment", "Increment", text="1.0", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -682,18 +824,19 @@ class VisualIncrementVariableNode(VisualNode):
 
 # Control Flow Nodes
 
+
 class VisualIfNode(VisualNode):
     """Visual representation of IfNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "If"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize If node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -797,7 +940,7 @@ class VisualForLoopEndNode(VisualNode):
         self.set_property("paired_start_id", start_node_id)
         # Also update the underlying CasareRPA node if it exists
         casare_node = self.get_casare_node()
-        if casare_node and hasattr(casare_node, 'set_paired_start'):
+        if casare_node and hasattr(casare_node, "set_paired_start"):
             casare_node.set_paired_start(start_node_id)
 
 
@@ -839,7 +982,9 @@ class VisualWhileLoopStartNode(VisualNode):
         """Initialize While Loop Start node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input("max_iterations", "Max Iterations", text="1000", tab="properties")
+        self.add_text_input(
+            "max_iterations", "Max Iterations", text="1000", tab="properties"
+        )
         self.paired_end_id: str = ""
 
     def setup_ports(self) -> None:
@@ -884,21 +1029,21 @@ class VisualWhileLoopEndNode(VisualNode):
         # Save to custom property for persistence
         self.set_property("paired_start_id", start_node_id)
         casare_node = self.get_casare_node()
-        if casare_node and hasattr(casare_node, 'set_paired_start'):
+        if casare_node and hasattr(casare_node, "set_paired_start"):
             casare_node.set_paired_start(start_node_id)
 
 
 class VisualBreakNode(VisualNode):
     """Visual representation of BreakNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Break"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Break node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -907,15 +1052,15 @@ class VisualBreakNode(VisualNode):
 
 class VisualContinueNode(VisualNode):
     """Visual representation of ContinueNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Continue"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Continue node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -924,22 +1069,27 @@ class VisualContinueNode(VisualNode):
 
 class VisualSwitchNode(VisualNode):
     """Visual representation of SwitchNode."""
-    
+
     __identifier__ = "casare_rpa.control_flow"
     NODE_NAME = "Switch"
     NODE_CATEGORY = "control_flow"
-    
+
     def __init__(self) -> None:
         """Initialize Switch node."""
         super().__init__()
         self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input("cases", "Cases (comma-separated)", text="success,error,pending", tab="properties")
-    
+        self.add_text_input(
+            "cases",
+            "Cases (comma-separated)",
+            text="success,error,pending",
+            tab="properties",
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
         self.add_input("value")
-        
+
         # Cases will be created dynamically based on config
         # But we need at least the default output
         self.add_output("default")
@@ -947,15 +1097,15 @@ class VisualSwitchNode(VisualNode):
 
 class VisualTryNode(VisualNode):
     """Visual representation of TryNode."""
-    
+
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Try"
     NODE_CATEGORY = "error_handling"
-    
+
     def __init__(self) -> None:
         """Initialize Try node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -968,18 +1118,22 @@ class VisualTryNode(VisualNode):
 
 class VisualRetryNode(VisualNode):
     """Visual representation of RetryNode."""
-    
+
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry"
     NODE_CATEGORY = "error_handling"
-    
+
     def __init__(self) -> None:
         """Initialize Retry node."""
         super().__init__()
         self.add_text_input("max_attempts", "Max Attempts", text="3", tab="properties")
-        self.add_text_input("initial_delay", "Initial Delay (s)", text="1.0", tab="properties")
-        self.add_text_input("backoff_multiplier", "Backoff Multiplier", text="2.0", tab="properties")
-    
+        self.add_text_input(
+            "initial_delay", "Initial Delay (s)", text="1.0", tab="properties"
+        )
+        self.add_text_input(
+            "backoff_multiplier", "Backoff Multiplier", text="2.0", tab="properties"
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -992,15 +1146,15 @@ class VisualRetryNode(VisualNode):
 
 class VisualRetrySuccessNode(VisualNode):
     """Visual representation of RetrySuccessNode."""
-    
+
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry Success"
     NODE_CATEGORY = "error_handling"
-    
+
     def __init__(self) -> None:
         """Initialize RetrySuccess node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -1009,15 +1163,15 @@ class VisualRetrySuccessNode(VisualNode):
 
 class VisualRetryFailNode(VisualNode):
     """Visual representation of RetryFailNode."""
-    
+
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry Fail"
     NODE_CATEGORY = "error_handling"
-    
+
     def __init__(self) -> None:
         """Initialize RetryFail node."""
         super().__init__()
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -1035,7 +1189,9 @@ class VisualThrowErrorNode(VisualNode):
     def __init__(self) -> None:
         """Initialize ThrowError node."""
         super().__init__()
-        self.add_text_input("error_message", "Error Message", text="Custom error", tab="properties")
+        self.add_text_input(
+            "error_message", "Error Message", text="Custom error", tab="properties"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1055,10 +1211,16 @@ class VisualWebhookNotifyNode(VisualNode):
         """Initialize Webhook Notify node."""
         super().__init__()
         self.add_text_input("webhook_url", "Webhook URL", text="", tab="inputs")
-        self.add_text_input("message", "Message", text="Error notification from CasareRPA", tab="inputs")
-        self.create_property("format", "generic",
-                           items=["generic", "slack", "discord", "teams"],
-                           widget_type=3, tab="config")
+        self.add_text_input(
+            "message", "Message", text="Error notification from CasareRPA", tab="inputs"
+        )
+        self.create_property(
+            "format",
+            "generic",
+            items=["generic", "slack", "discord", "teams"],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1104,9 +1266,13 @@ class VisualErrorRecoveryNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Error Recovery node."""
         super().__init__()
-        self.create_property("strategy", "stop",
-                           items=["stop", "continue", "retry", "restart", "fallback"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "strategy",
+            "stop",
+            items=["stop", "continue", "retry", "restart", "fallback"],
+            widget_type=3,
+            tab="config",
+        )
         self.add_text_input("max_retries", "Max Retries", text="3", tab="config")
 
     def setup_ports(self) -> None:
@@ -1128,9 +1294,13 @@ class VisualLogErrorNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Log Error node."""
         super().__init__()
-        self.create_property("level", "error",
-                           items=["debug", "info", "warning", "error", "critical"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "level",
+            "error",
+            items=["debug", "info", "warning", "error", "critical"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("include_stack_trace", False, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
@@ -1153,7 +1323,9 @@ class VisualAssertNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Assert node."""
         super().__init__()
-        self.add_text_input("message", "Assertion Message", text="Assertion failed", tab="properties")
+        self.add_text_input(
+            "message", "Assertion Message", text="Assertion failed", tab="properties"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1166,26 +1338,37 @@ class VisualAssertNode(VisualNode):
 
 # Desktop Automation Nodes
 
+
 class VisualLaunchApplicationNode(VisualNode):
     """Visual representation of LaunchApplicationNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Launch Application"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Launch Application node."""
         super().__init__()
-        self.add_text_input("application_path", "Application Path", text="calc.exe", tab="inputs")
+        self.add_text_input(
+            "application_path", "Application Path", text="calc.exe", tab="inputs"
+        )
         self.add_text_input("arguments", "Arguments", text="", tab="inputs")
-        self.add_text_input("working_directory", "Working Directory", text="", tab="inputs")
-        self.add_text_input("window_title_hint", "Window Title Hint", text="", tab="config")
+        self.add_text_input(
+            "working_directory", "Working Directory", text="", tab="inputs"
+        )
+        self.add_text_input(
+            "window_title_hint", "Window Title Hint", text="", tab="config"
+        )
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("window_state", "normal", 
-                           items=["normal", "maximized", "minimized"],
-                           widget_type=3, tab="config")
-    
+        self.create_property(
+            "window_state",
+            "normal",
+            items=["normal", "maximized", "minimized"],
+            widget_type=3,
+            tab="config",
+        )
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -1200,19 +1383,19 @@ class VisualLaunchApplicationNode(VisualNode):
 
 class VisualCloseApplicationNode(VisualNode):
     """Visual representation of CloseApplicationNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Close Application"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Close Application node."""
         super().__init__()
         self.add_text_input("window_title", "Window Title", text="", tab="inputs")
         self.create_property("force_close", False, widget_type=1, tab="config")
         self.create_property("timeout", 5.0, widget_type=2, tab="config")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -1225,19 +1408,19 @@ class VisualCloseApplicationNode(VisualNode):
 
 class VisualActivateWindowNode(VisualNode):
     """Visual representation of ActivateWindowNode."""
-    
+
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Activate Window"
     NODE_CATEGORY = "desktop_automation"
     CASARE_NODE_MODULE = "desktop"
-    
+
     def __init__(self) -> None:
         """Initialize Activate Window node."""
         super().__init__()
         self.add_text_input("window_title", "Window Title", text="", tab="inputs")
         self.create_property("match_partial", True, widget_type=1, tab="config")
         self.create_property("timeout", 5.0, widget_type=2, tab="config")
-    
+
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
@@ -1296,6 +1479,7 @@ class VisualFindElementNode(VisualNode):
 
 class VisualClickElementDesktopNode(VisualNode):
     """Visual representation of ClickElementNode (Desktop)."""
+
     CASARE_NODE_CLASS = "ClickElementNode"
 
     __identifier__ = "casare_rpa.desktop"
@@ -1323,6 +1507,7 @@ class VisualClickElementDesktopNode(VisualNode):
 
 class VisualTypeTextDesktopNode(VisualNode):
     """Visual representation of TypeTextNode (Desktop)."""
+
     CASARE_NODE_CLASS = "TypeTextNode"
 
     __identifier__ = "casare_rpa.desktop"
@@ -1399,6 +1584,7 @@ class VisualGetElementPropertyNode(VisualNode):
 
 
 # Window Management Nodes
+
 
 class VisualResizeWindowNode(VisualNode):
     """Visual representation of ResizeWindowNode."""
@@ -1533,9 +1719,13 @@ class VisualSetWindowStateNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Set Window State node."""
         super().__init__()
-        self.create_property("state", "normal",
-                           items=["normal", "maximized", "minimized"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state",
+            "normal",
+            items=["normal", "maximized", "minimized"],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1547,6 +1737,7 @@ class VisualSetWindowStateNode(VisualNode):
 
 
 # Advanced Interaction Nodes
+
 
 class VisualSelectFromDropdownNode(VisualNode):
     """Visual representation of SelectFromDropdownNode."""
@@ -1664,9 +1855,13 @@ class VisualScrollElementNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Scroll Element node."""
         super().__init__()
-        self.create_property("direction", "down",
-                           items=["up", "down", "left", "right"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "direction",
+            "down",
+            items=["up", "down", "left", "right"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("amount", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -1678,6 +1873,7 @@ class VisualScrollElementNode(VisualNode):
 
 
 # Mouse & Keyboard Control Nodes
+
 
 class VisualMoveMouseNode(VisualNode):
     """Visual representation of MoveMouseNode."""
@@ -1717,12 +1913,20 @@ class VisualMouseClickNode(VisualNode):
         super().__init__()
         self.create_property("click_x", 0, widget_type=2, tab="config")
         self.create_property("click_y", 0, widget_type=2, tab="config")
-        self.create_property("button", "left",
-                           items=["left", "right", "middle"],
-                           widget_type=3, tab="config")
-        self.create_property("click_type", "single",
-                           items=["single", "double", "triple"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "button",
+            "left",
+            items=["left", "right", "middle"],
+            widget_type=3,
+            tab="config",
+        )
+        self.create_property(
+            "click_type",
+            "single",
+            items=["single", "double", "triple"],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1768,13 +1972,23 @@ class VisualSendHotKeyNode(VisualNode):
         """Initialize Send Hotkey node."""
         super().__init__()
         # Modifier dropdown
-        self.add_combo_menu("modifier", "Modifier", items=["none", "Ctrl", "Alt", "Shift", "Win"], tab="properties")
+        self.add_combo_menu(
+            "modifier",
+            "Modifier",
+            items=["none", "Ctrl", "Alt", "Shift", "Win"],
+            tab="properties",
+        )
         # Key to send
         self.add_text_input("key", "Key", text="Enter", tab="properties")
         # Wait time after sending
         self.add_text_input("wait_time", "Wait Time (s)", text="0", tab="properties")
         # Override text (comma-separated keys) - overrides modifier + key if provided
-        self.add_text_input("keys", "Custom Keys (overrides above)", placeholder_text="e.g., Ctrl,Alt,Delete", tab="advanced")
+        self.add_text_input(
+            "keys",
+            "Custom Keys (overrides above)",
+            placeholder_text="e.g., Ctrl,Alt,Delete",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1816,9 +2030,13 @@ class VisualDragMouseNode(VisualNode):
         self.create_property("start_y", 0, widget_type=2, tab="config")
         self.create_property("end_x", 100, widget_type=2, tab="config")
         self.create_property("end_y", 100, widget_type=2, tab="config")
-        self.create_property("button", "left",
-                           items=["left", "right", "middle"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "button",
+            "left",
+            items=["left", "right", "middle"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("duration", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -1835,6 +2053,7 @@ class VisualDragMouseNode(VisualNode):
 
 # Wait & Verification Nodes
 
+
 class VisualDesktopWaitForElementNode(VisualNode):
     """Visual representation of desktop WaitForElementNode."""
 
@@ -1848,9 +2067,13 @@ class VisualDesktopWaitForElementNode(VisualNode):
         """Initialize Wait For Desktop Element node."""
         super().__init__()
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("state", "visible",
-                           items=["visible", "hidden", "enabled", "disabled"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state",
+            "visible",
+            items=["visible", "hidden", "enabled", "disabled"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -1878,9 +2101,9 @@ class VisualWaitForWindowNode(VisualNode):
         self.add_text_input("title_regex", "Title Regex", text="", tab="inputs")
         self.add_text_input("class_name", "Class Name", text="", tab="inputs")
         self.create_property("timeout", 10.0, widget_type=2, tab="config")
-        self.create_property("state", "visible",
-                           items=["visible", "hidden"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "state", "visible", items=["visible", "hidden"], widget_type=3, tab="config"
+        )
         self.create_property("poll_interval", 0.5, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -1931,10 +2154,22 @@ class VisualVerifyElementPropertyNode(VisualNode):
         super().__init__()
         self.add_text_input("property_name", "Property Name", text="Name", tab="inputs")
         self.add_text_input("expected_value", "Expected Value", text="", tab="inputs")
-        self.create_property("comparison", "equals",
-                           items=["equals", "contains", "startswith", "endswith",
-                                  "regex", "greater", "less", "not_equals"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "comparison",
+            "equals",
+            items=[
+                "equals",
+                "contains",
+                "startswith",
+                "endswith",
+                "regex",
+                "greater",
+                "less",
+                "not_equals",
+            ],
+            widget_type=3,
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1951,6 +2186,7 @@ class VisualVerifyElementPropertyNode(VisualNode):
 # Screenshot & OCR Visual Nodes (Bite 9)
 # ============================================================
 
+
 class VisualCaptureScreenshotNode(VisualNode):
     """Visual representation of CaptureScreenshotNode."""
 
@@ -1963,9 +2199,9 @@ class VisualCaptureScreenshotNode(VisualNode):
         """Initialize Capture Screenshot node."""
         super().__init__()
         self.add_text_input("file_path", "Save Path", text="", tab="inputs")
-        self.create_property("format", "PNG",
-                           items=["PNG", "JPEG", "BMP"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -1990,9 +2226,9 @@ class VisualCaptureElementImageNode(VisualNode):
         super().__init__()
         self.add_text_input("file_path", "Save Path", text="", tab="inputs")
         self.create_property("padding", 0, widget_type=2, tab="config")
-        self.create_property("format", "PNG",
-                           items=["PNG", "JPEG", "BMP"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "format", "PNG", items=["PNG", "JPEG", "BMP"], widget_type=3, tab="config"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2017,7 +2253,12 @@ class VisualOCRExtractTextNode(VisualNode):
         """Initialize OCR Extract Text node."""
         super().__init__()
         self.add_text_input("image_path", "Image Path", text="", tab="inputs")
-        self.add_combo_menu("engine", "OCR Engine", items=["auto", "rapidocr", "tesseract", "winocr"], tab="config")
+        self.add_combo_menu(
+            "engine",
+            "OCR Engine",
+            items=["auto", "rapidocr", "tesseract", "winocr"],
+            tab="config",
+        )
         self.add_text_input("language", "Language", text="eng", tab="config")
         self.add_text_input("config", "Tesseract Config", text="", tab="config")
 
@@ -2046,9 +2287,13 @@ class VisualCompareImagesNode(VisualNode):
         super().__init__()
         self.add_text_input("image1_path", "Image 1 Path", text="", tab="inputs")
         self.add_text_input("image2_path", "Image 2 Path", text="", tab="inputs")
-        self.create_property("method", "histogram",
-                           items=["histogram", "ssim", "pixel"],
-                           widget_type=3, tab="config")
+        self.create_property(
+            "method",
+            "histogram",
+            items=["histogram", "ssim", "pixel"],
+            widget_type=3,
+            tab="config",
+        )
         self.create_property("threshold", 0.9, widget_type=2, tab="config")
 
     def setup_ports(self) -> None:
@@ -2068,6 +2313,7 @@ class VisualCompareImagesNode(VisualNode):
 # File System Nodes
 # =============================================================================
 
+
 class VisualReadFileNode(VisualNode):
     """Visual representation of ReadFileNode."""
 
@@ -2083,9 +2329,24 @@ class VisualReadFileNode(VisualNode):
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("binary_mode", False, widget_type=1, tab="config")
         # Advanced options
-        self.add_combo_menu("errors", "Error Handling", items=["strict", "ignore", "replace", "backslashreplace"], tab="advanced")
-        self.add_text_input("max_size", "Max Size (bytes)", placeholder_text="0 = unlimited", tab="advanced")
-        self.add_combo_menu("newline", "Newline Mode", items=["", "\\n", "\\r\\n", "\\r"], tab="advanced")
+        self.add_combo_menu(
+            "errors",
+            "Error Handling",
+            items=["strict", "ignore", "replace", "backslashreplace"],
+            tab="advanced",
+        )
+        self.add_text_input(
+            "max_size",
+            "Max Size (bytes)",
+            placeholder_text="0 = unlimited",
+            tab="advanced",
+        )
+        self.add_combo_menu(
+            "newline",
+            "Newline Mode",
+            items=["", "\\n", "\\r\\n", "\\r"],
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2113,8 +2374,18 @@ class VisualWriteFileNode(VisualNode):
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         self.create_property("create_dirs", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_combo_menu("errors", "Error Handling", items=["strict", "ignore", "replace", "backslashreplace"], tab="advanced")
-        self.add_combo_menu("newline", "Newline Mode", items=["", "\\n", "\\r\\n", "\\r"], tab="advanced")
+        self.add_combo_menu(
+            "errors",
+            "Error Handling",
+            items=["strict", "ignore", "replace", "backslashreplace"],
+            tab="advanced",
+        )
+        self.add_combo_menu(
+            "newline",
+            "Newline Mode",
+            items=["", "\\n", "\\r\\n", "\\r"],
+            tab="advanced",
+        )
         self.create_property("append_mode", False, widget_type=1, tab="advanced")
 
     def setup_ports(self) -> None:
@@ -2339,12 +2610,18 @@ class VisualReadCSVNode(VisualNode):
         self.add_text_input("delimiter", "Delimiter", text=",", tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
         # Advanced options
-        self.add_text_input("quotechar", "Quote Char", text="\"", tab="advanced")
-        self.add_text_input("skip_rows", "Skip Rows", placeholder_text="0", tab="advanced")
-        self.add_text_input("max_rows", "Max Rows", placeholder_text="0 = unlimited", tab="advanced")
+        self.add_text_input("quotechar", "Quote Char", text='"', tab="advanced")
+        self.add_text_input(
+            "skip_rows", "Skip Rows", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "max_rows", "Max Rows", placeholder_text="0 = unlimited", tab="advanced"
+        )
         self.create_property("strict", False, widget_type=1, tab="advanced")
         self.create_property("doublequote", True, widget_type=1, tab="advanced")
-        self.add_text_input("escapechar", "Escape Char", placeholder_text="Optional", tab="advanced")
+        self.add_text_input(
+            "escapechar", "Escape Char", placeholder_text="Optional", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2485,6 +2762,7 @@ class VisualUnzipFilesNode(VisualNode):
 # Email Nodes
 # =============================================================================
 
+
 class VisualSendEmailNode(VisualNode):
     """Visual representation of SendEmailNode."""
 
@@ -2495,7 +2773,9 @@ class VisualSendEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Send Email node."""
         super().__init__()
-        self.add_text_input("smtp_server", "SMTP Server", text="smtp.gmail.com", tab="connection")
+        self.add_text_input(
+            "smtp_server", "SMTP Server", text="smtp.gmail.com", tab="connection"
+        )
         self.add_text_input("smtp_port", "SMTP Port", text="587", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
@@ -2507,14 +2787,29 @@ class VisualSendEmailNode(VisualNode):
         self.create_property("use_tls", True, widget_type=1, tab="config")
         self.create_property("is_html", False, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("timeout", "Timeout (s)", placeholder_text="30", tab="advanced")
-        self.add_text_input("reply_to", "Reply-To", placeholder_text="Optional", tab="advanced")
-        self.add_combo_menu("priority", "Priority", items=["normal", "high", "low"], tab="advanced")
+        self.add_text_input(
+            "timeout", "Timeout (s)", placeholder_text="30", tab="advanced"
+        )
+        self.add_text_input(
+            "reply_to", "Reply-To", placeholder_text="Optional", tab="advanced"
+        )
+        self.add_combo_menu(
+            "priority", "Priority", items=["normal", "high", "low"], tab="advanced"
+        )
         self.create_property("read_receipt", False, widget_type=1, tab="advanced")
-        self.add_text_input("sender_name", "Sender Name", placeholder_text="Optional", tab="advanced")
+        self.add_text_input(
+            "sender_name", "Sender Name", placeholder_text="Optional", tab="advanced"
+        )
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="2.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2538,23 +2833,37 @@ class VisualReadEmailsNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Read Emails node."""
         super().__init__()
-        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input(
+            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
+        )
         self.add_text_input("imap_port", "IMAP Port", text="993", tab="connection")
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
         self.add_text_input("limit", "Limit", text="10", tab="config")
-        self.add_combo_menu("search_criteria", "Search", items=[
-            "ALL", "UNSEEN", "SEEN", "RECENT", "FLAGGED"
-        ], tab="config")
+        self.add_combo_menu(
+            "search_criteria",
+            "Search",
+            items=["ALL", "UNSEEN", "SEEN", "RECENT", "FLAGGED"],
+            tab="config",
+        )
         # Advanced options
-        self.add_text_input("timeout", "Timeout (s)", placeholder_text="30", tab="advanced")
+        self.add_text_input(
+            "timeout", "Timeout (s)", placeholder_text="30", tab="advanced"
+        )
         self.create_property("mark_as_read", False, widget_type=1, tab="advanced")
         self.create_property("include_body", True, widget_type=1, tab="advanced")
         self.create_property("newest_first", True, widget_type=1, tab="advanced")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="2.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="2.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2602,7 +2911,9 @@ class VisualSaveAttachmentNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Save Attachment node."""
         super().__init__()
-        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input(
+            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
+        )
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("save_path", "Save Path", text=".", tab="config")
@@ -2628,7 +2939,9 @@ class VisualFilterEmailsNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Filter Emails node."""
         super().__init__()
-        self.add_text_input("subject_contains", "Subject Contains", text="", tab="filters")
+        self.add_text_input(
+            "subject_contains", "Subject Contains", text="", tab="filters"
+        )
         self.add_text_input("from_contains", "From Contains", text="", tab="filters")
         self.create_property("has_attachments", False, widget_type=1, tab="filters")
 
@@ -2653,13 +2966,18 @@ class VisualMarkEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Mark Email node."""
         super().__init__()
-        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input(
+            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
+        )
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
-        self.add_combo_menu("mark_as", "Mark As", items=[
-            "read", "unread", "flagged", "unflagged"
-        ], tab="config")
+        self.add_combo_menu(
+            "mark_as",
+            "Mark As",
+            items=["read", "unread", "flagged", "unflagged"],
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2680,7 +2998,9 @@ class VisualDeleteEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Delete Email node."""
         super().__init__()
-        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input(
+            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
+        )
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
         self.add_text_input("folder", "Folder", text="INBOX", tab="config")
@@ -2704,10 +3024,14 @@ class VisualMoveEmailNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Move Email node."""
         super().__init__()
-        self.add_text_input("imap_server", "IMAP Server", text="imap.gmail.com", tab="connection")
+        self.add_text_input(
+            "imap_server", "IMAP Server", text="imap.gmail.com", tab="connection"
+        )
         self.add_text_input("username", "Username", text="", tab="connection")
         self.add_text_input("password", "Password", text="", tab="connection")
-        self.add_text_input("source_folder", "Source Folder", text="INBOX", tab="config")
+        self.add_text_input(
+            "source_folder", "Source Folder", text="INBOX", tab="config"
+        )
         self.add_text_input("target_folder", "Target Folder", text="", tab="config")
 
     def setup_ports(self) -> None:
@@ -2723,6 +3047,7 @@ class VisualMoveEmailNode(VisualNode):
 # Utility Nodes
 # =============================================================================
 
+
 class VisualHttpRequestNode(VisualNode):
     """Visual representation of HttpRequestNode."""
 
@@ -2734,21 +3059,39 @@ class VisualHttpRequestNode(VisualNode):
     def __init__(self) -> None:
         """Initialize HTTP Request node."""
         super().__init__()
-        self.add_text_input("url", "URL", placeholder_text="https://api.example.com", tab="inputs")
-        self.add_combo_menu("method", "Method", items=[
-            "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
-        ], tab="inputs")
+        self.add_text_input(
+            "url", "URL", placeholder_text="https://api.example.com", tab="inputs"
+        )
+        self.add_combo_menu(
+            "method",
+            "Method",
+            items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+            tab="inputs",
+        )
         self.add_text_input("headers", "Headers (JSON)", text="{}", tab="inputs")
         self.add_text_input("body", "Body", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         self.create_property("follow_redirects", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
-        self.add_text_input("max_redirects", "Max Redirects", placeholder_text="10", tab="advanced")
-        self.add_combo_menu("response_encoding", "Response Encoding", items=["utf-8", "latin-1", "ascii", "auto"], tab="advanced")
+        self.add_text_input(
+            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
+        self.add_text_input(
+            "max_redirects", "Max Redirects", placeholder_text="10", tab="advanced"
+        )
+        self.add_combo_menu(
+            "response_encoding",
+            "Response Encoding",
+            items=["utf-8", "latin-1", "ascii", "auto"],
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2774,12 +3117,27 @@ class VisualValidateNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Validate node."""
         super().__init__()
-        self.add_combo_menu("validation_type", "Validation Type", items=[
-            "not_empty", "is_numeric", "is_integer", "min_length", "max_length",
-            "min_value", "max_value", "in_list", "is_email", "is_url"
-        ], tab="inputs")
+        self.add_combo_menu(
+            "validation_type",
+            "Validation Type",
+            items=[
+                "not_empty",
+                "is_numeric",
+                "is_integer",
+                "min_length",
+                "max_length",
+                "min_value",
+                "max_value",
+                "in_list",
+                "is_email",
+                "is_url",
+            ],
+            tab="inputs",
+        )
         self.add_text_input("validation_param", "Parameter", text="", tab="inputs")
-        self.add_text_input("error_message", "Error Message", text="Validation failed", tab="config")
+        self.add_text_input(
+            "error_message", "Error Message", text="Validation failed", tab="config"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2801,10 +3159,24 @@ class VisualTransformNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Transform node."""
         super().__init__()
-        self.add_combo_menu("transform_type", "Transform Type", items=[
-            "uppercase", "lowercase", "trim", "strip", "replace",
-            "split", "join", "to_int", "to_float", "to_string", "to_bool"
-        ], tab="inputs")
+        self.add_combo_menu(
+            "transform_type",
+            "Transform Type",
+            items=[
+                "uppercase",
+                "lowercase",
+                "trim",
+                "strip",
+                "replace",
+                "split",
+                "join",
+                "to_int",
+                "to_float",
+                "to_string",
+                "to_bool",
+            ],
+            tab="inputs",
+        )
         self.add_text_input("transform_param", "Parameter", text="", tab="inputs")
 
     def setup_ports(self) -> None:
@@ -2828,9 +3200,12 @@ class VisualLogNode(VisualNode):
         """Initialize Log node."""
         super().__init__()
         self.add_text_input("message", "Message", text="", tab="inputs")
-        self.add_combo_menu("level", "Level", items=[
-            "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"
-        ], tab="config")
+        self.add_combo_menu(
+            "level",
+            "Level",
+            items=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+            tab="config",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -2843,6 +3218,7 @@ class VisualLogNode(VisualNode):
 # =============================================================================
 # Office Automation Nodes
 # =============================================================================
+
 
 class VisualExcelOpenNode(VisualNode):
     """Visual representation of ExcelOpenNode."""
@@ -2930,7 +3306,9 @@ class VisualExcelGetRangeNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Excel Get Range node."""
         super().__init__()
-        self.add_text_input("range_address", "Range Address", text="A1:B10", tab="inputs")
+        self.add_text_input(
+            "range_address", "Range Address", text="A1:B10", tab="inputs"
+        )
         self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
 
     def setup_ports(self) -> None:
@@ -3132,6 +3510,7 @@ class VisualOutlookGetInboxCountNode(VisualNode):
 
 # Database Nodes
 
+
 class VisualDatabaseConnectNode(VisualNode):
     """Visual representation of DatabaseConnectNode."""
 
@@ -3143,7 +3522,12 @@ class VisualDatabaseConnectNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Database Connect node."""
         super().__init__()
-        self.add_combo_menu("db_type", "Database Type", items=["sqlite", "postgresql", "mysql"], tab="config")
+        self.add_combo_menu(
+            "db_type",
+            "Database Type",
+            items=["sqlite", "postgresql", "mysql"],
+            tab="config",
+        )
         self.add_text_input("host", "Host", text="localhost", tab="inputs")
         self.create_property("port", 5432, widget_type=2, tab="inputs")
         self.add_text_input("database", "Database", text="", tab="inputs")
@@ -3152,13 +3536,24 @@ class VisualDatabaseConnectNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         # Advanced options
         self.create_property("ssl", False, widget_type=1, tab="advanced")
-        self.add_text_input("ssl_ca", "SSL CA Path", placeholder_text="Optional", tab="advanced")
-        self.add_text_input("pool_size", "Pool Size", placeholder_text="5", tab="advanced")
+        self.add_text_input(
+            "ssl_ca", "SSL CA Path", placeholder_text="Optional", tab="advanced"
+        )
+        self.add_text_input(
+            "pool_size", "Pool Size", placeholder_text="5", tab="advanced"
+        )
         self.create_property("auto_commit", True, widget_type=1, tab="advanced")
         self.add_text_input("charset", "Charset", text="utf8mb4", tab="advanced")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3187,8 +3582,15 @@ class VisualExecuteQueryNode(VisualNode):
         super().__init__()
         self.add_text_input("query", "SQL Query", text="", tab="inputs")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3217,8 +3619,15 @@ class VisualExecuteNonQueryNode(VisualNode):
         super().__init__()
         self.add_text_input("query", "SQL Statement", text="", tab="inputs")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_interval", "Retry Interval (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_interval",
+            "Retry Interval (s)",
+            placeholder_text="1.0",
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3396,6 +3805,7 @@ class VisualExecuteBatchNode(VisualNode):
 
 # HTTP/REST API Nodes
 
+
 class VisualHttpRequestNode(VisualNode):
     """Visual representation of HttpRequestNode."""
 
@@ -3408,17 +3818,35 @@ class VisualHttpRequestNode(VisualNode):
         """Initialize HTTP Request node."""
         super().__init__()
         self.add_text_input("url", "URL", text="", tab="inputs")
-        self.add_combo_menu("method", "Method", items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], tab="config")
+        self.add_combo_menu(
+            "method",
+            "Method",
+            items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+            tab="config",
+        )
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         self.create_property("follow_redirects", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
-        self.add_text_input("max_redirects", "Max Redirects", placeholder_text="10", tab="advanced")
-        self.add_combo_menu("response_encoding", "Response Encoding", items=["utf-8", "latin-1", "ascii", "auto"], tab="advanced")
+        self.add_text_input(
+            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
+        self.add_text_input(
+            "max_redirects", "Max Redirects", placeholder_text="10", tab="advanced"
+        )
+        self.add_combo_menu(
+            "response_encoding",
+            "Response Encoding",
+            items=["utf-8", "latin-1", "ascii", "auto"],
+            tab="advanced",
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3451,8 +3879,12 @@ class VisualHttpGetNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3481,12 +3913,25 @@ class VisualHttpPostNode(VisualNode):
         super().__init__()
         self.add_text_input("url", "URL", text="", tab="inputs")
         self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
-        self.add_combo_menu("content_type", "Content Type", items=["application/json", "application/x-www-form-urlencoded", "text/plain"], tab="config")
+        self.add_combo_menu(
+            "content_type",
+            "Content Type",
+            items=[
+                "application/json",
+                "application/x-www-form-urlencoded",
+                "text/plain",
+            ],
+            tab="config",
+        )
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3518,8 +3963,12 @@ class VisualHttpPutNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3551,8 +4000,12 @@ class VisualHttpPatchNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3583,8 +4036,12 @@ class VisualHttpDeleteNode(VisualNode):
         self.create_property("timeout", 30.0, widget_type=2, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Retry options
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3634,11 +4091,15 @@ class VisualHttpAuthNode(VisualNode):
     def __init__(self) -> None:
         """Initialize HTTP Auth node."""
         super().__init__()
-        self.add_combo_menu("auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config")
+        self.add_combo_menu(
+            "auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config"
+        )
         self.add_text_input("token", "Token/API Key", text="", tab="inputs")
         self.add_text_input("username", "Username", text="", tab="inputs")
         self.add_text_input("password", "Password", text="", tab="inputs")
-        self.add_text_input("api_key_name", "API Key Header", text="X-API-Key", tab="inputs")
+        self.add_text_input(
+            "api_key_name", "API Key Header", text="X-API-Key", tab="inputs"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3694,10 +4155,18 @@ class VisualHttpDownloadFileNode(VisualNode):
         self.create_property("overwrite", True, widget_type=1, tab="config")
         self.create_property("verify_ssl", True, widget_type=1, tab="config")
         # Advanced options
-        self.add_text_input("proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced")
-        self.add_text_input("retry_count", "Retry Count", placeholder_text="0", tab="advanced")
-        self.add_text_input("retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced")
-        self.add_text_input("chunk_size", "Chunk Size (bytes)", placeholder_text="8192", tab="advanced")
+        self.add_text_input(
+            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
+        )
+        self.add_text_input(
+            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
+        )
+        self.add_text_input(
+            "chunk_size", "Chunk Size (bytes)", placeholder_text="8192", tab="advanced"
+        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -3773,11 +4242,19 @@ def _get_visual_node_classes():
     """Dynamically discover all VisualNode subclasses in this module."""
     classes = []
     for name, obj in globals().items():
-        if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
+        if (
+            inspect.isclass(obj)
+            and issubclass(obj, VisualNode)
+            and obj is not VisualNode
+        ):
             # Ensure it has a valid NODE_NAME and is not a base class
-            if hasattr(obj, 'NODE_NAME') and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
+            if (
+                hasattr(obj, "NODE_NAME")
+                and obj.NODE_NAME
+                and obj.NODE_NAME != "Visual Node"
+            ):
                 # Skip internal nodes from menu (they're created programmatically)
-                if getattr(obj, 'INTERNAL_NODE', False):
+                if getattr(obj, "INTERNAL_NODE", False):
                     continue
                 classes.append(obj)
     return classes
@@ -3787,8 +4264,16 @@ def _get_all_visual_node_classes():
     """Get ALL visual node classes including internal ones (for registration)."""
     classes = []
     for name, obj in globals().items():
-        if inspect.isclass(obj) and issubclass(obj, VisualNode) and obj is not VisualNode:
-            if hasattr(obj, 'NODE_NAME') and obj.NODE_NAME and obj.NODE_NAME != "Visual Node":
+        if (
+            inspect.isclass(obj)
+            and issubclass(obj, VisualNode)
+            and obj is not VisualNode
+        ):
+            if (
+                hasattr(obj, "NODE_NAME")
+                and obj.NODE_NAME
+                and obj.NODE_NAME != "Visual Node"
+            ):
                 classes.append(obj)
     return classes
 

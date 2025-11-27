@@ -14,13 +14,9 @@ References:
 """
 
 from typing import Set, Optional
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
-from PySide6.QtCore import Qt, QRectF, QTimer, QPointF, QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QLinearGradient, QPixmap, QFont
+from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
+from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
 from NodeGraphQt.qgraphics.node_base import NodeItem
-from NodeGraphQt.constants import Z_VAL_NODE, ITEM_CACHE_MODE
-
-from loguru import logger
 
 
 # ============================================================================
@@ -127,7 +123,7 @@ class CasareNodeItem(NodeItem):
     # Height reserved above node for execution time badge
     BADGE_AREA_HEIGHT = 24
 
-    def __init__(self, name='node', parent=None):
+    def __init__(self, name="node", parent=None):
         super().__init__(name, parent)
 
         # Execution state
@@ -151,7 +147,7 @@ class CasareNodeItem(NodeItem):
         self._node_bg_color = QColor(45, 45, 45)  # Dark background
 
         # Hide parent's text item to avoid double title
-        if hasattr(self, '_text_item') and self._text_item:
+        if hasattr(self, "_text_item") and self._text_item:
             self._text_item.setVisible(False)
 
     def boundingRect(self) -> QRectF:
@@ -165,7 +161,7 @@ class CasareNodeItem(NodeItem):
                 rect.x(),
                 rect.y() - self.BADGE_AREA_HEIGHT,
                 rect.width(),
-                rect.height() + self.BADGE_AREA_HEIGHT
+                rect.height() + self.BADGE_AREA_HEIGHT,
             )
         return rect
 
@@ -183,7 +179,7 @@ class CasareNodeItem(NodeItem):
         # Get node rectangle (actual node area, not including badge space)
         rect = self._get_node_rect()
         border_width = 2.0
-        
+
         # Determine border color and style
         if self._is_running:
             border_color = self._running_border_color
@@ -194,26 +190,26 @@ class CasareNodeItem(NodeItem):
         else:
             border_color = self._normal_border_color
             border_style = Qt.PenStyle.SolidLine
-        
+
         # Create rounded rectangle path
         radius = 8.0
         path = QPainterPath()
         path.addRoundedRect(rect, radius, radius)
-        
+
         # Fill background
         painter.fillPath(path, QBrush(self._node_bg_color))
-        
+
         # Draw border
         pen = QPen(border_color, border_width)
         pen.setStyle(border_style)
-        
+
         if self._is_running:
             # Animated dash pattern for running state
             pen.setDashOffset(self._animation_offset)
             pen.setDashPattern([4, 4])
-        
+
         painter.strokePath(path, pen)
-        
+
         # Draw node text (name) FIRST - header bar goes behind icons
         self._draw_text(painter, rect)
 
@@ -235,7 +231,7 @@ class CasareNodeItem(NodeItem):
             self._draw_checkmark(painter, rect)
 
         painter.restore()
-    
+
     def _draw_checkmark(self, painter, rect):
         """Draw a checkmark in the top-right corner."""
         size = 20
@@ -246,12 +242,20 @@ class CasareNodeItem(NodeItem):
         # Background circle
         painter.setBrush(QBrush(QColor(76, 175, 80)))  # Green
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawEllipse(QPointF(x + size/2, y + size/2), size/2, size/2)
-        
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
+
         # Checkmark symbol
-        painter.setPen(QPen(Qt.GlobalColor.white, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.setPen(
+            QPen(
+                Qt.GlobalColor.white,
+                2,
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.RoundCap,
+                Qt.PenJoinStyle.RoundJoin,
+            )
+        )
         painter.setBrush(Qt.BrushStyle.NoBrush)
-        
+
         # Draw checkmark path
         check_path = QPainterPath()
         check_path.moveTo(x + size * 0.25, y + size * 0.5)
@@ -269,16 +273,25 @@ class CasareNodeItem(NodeItem):
         # Red circle background
         painter.setBrush(QBrush(QColor(244, 67, 54)))  # Material Red
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawEllipse(QPointF(x + size/2, y + size/2), size/2, size/2)
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
 
         # White X symbol
-        painter.setPen(QPen(Qt.GlobalColor.white, 2, Qt.PenStyle.SolidLine,
-                            Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.setPen(
+            QPen(
+                Qt.GlobalColor.white,
+                2,
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.RoundCap,
+                Qt.PenJoinStyle.RoundJoin,
+            )
+        )
         inset = size * 0.3
-        painter.drawLine(QPointF(x + inset, y + inset),
-                         QPointF(x + size - inset, y + size - inset))
-        painter.drawLine(QPointF(x + size - inset, y + inset),
-                         QPointF(x + inset, y + size - inset))
+        painter.drawLine(
+            QPointF(x + inset, y + inset), QPointF(x + size - inset, y + size - inset)
+        )
+        painter.drawLine(
+            QPointF(x + size - inset, y + inset), QPointF(x + inset, y + size - inset)
+        )
 
     def _draw_execution_time(self, painter, rect):
         """Draw execution time badge above the node."""
@@ -317,7 +330,9 @@ class CasareNodeItem(NodeItem):
         # Draw badge background (lower opacity - more transparent)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
-        painter.fillPath(badge_path, QBrush(QColor(0, 0, 0, 100)))  # Lower opacity (100 vs 160)
+        painter.fillPath(
+            badge_path, QBrush(QColor(0, 0, 0, 100))
+        )  # Lower opacity (100 vs 160)
 
         # Draw text (light gray, slightly transparent)
         painter.setPen(QColor(220, 220, 220, 200))
@@ -335,11 +350,20 @@ class CasareNodeItem(NodeItem):
         # Only round top corners
         header_path.moveTo(header_rect.left() + radius, header_rect.top())
         header_path.lineTo(header_rect.right() - radius, header_rect.top())
-        header_path.arcTo(header_rect.right() - radius * 2, header_rect.top(), radius * 2, radius * 2, 90, -90)
+        header_path.arcTo(
+            header_rect.right() - radius * 2,
+            header_rect.top(),
+            radius * 2,
+            radius * 2,
+            90,
+            -90,
+        )
         header_path.lineTo(header_rect.right(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.bottom())
         header_path.lineTo(header_rect.left(), header_rect.top() + radius)
-        header_path.arcTo(header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90)
+        header_path.arcTo(
+            header_rect.left(), header_rect.top(), radius * 2, radius * 2, 180, -90
+        )
         header_path.closeSubpath()
 
         # Header color (dark reddish/maroon)
@@ -350,7 +374,7 @@ class CasareNodeItem(NodeItem):
         painter.setPen(QPen(QColor(100, 55, 60), 1))
         painter.drawLine(
             QPointF(header_rect.left(), header_rect.bottom()),
-            QPointF(header_rect.right(), header_rect.bottom())
+            QPointF(header_rect.right(), header_rect.bottom()),
         )
 
         # Draw node name (centered)
@@ -360,9 +384,9 @@ class CasareNodeItem(NodeItem):
         painter.setFont(font)
 
         # Get node name
-        node_name = self.name if hasattr(self, 'name') else "Node"
+        node_name = self.name if hasattr(self, "name") else "Node"
         painter.drawText(header_rect, Qt.AlignmentFlag.AlignCenter, node_name)
-    
+
     def set_running(self, running: bool):
         """
         Set node running state.
@@ -379,7 +403,7 @@ class CasareNodeItem(NodeItem):
             self._animation_coordinator.unregister(self)
             self._animation_offset = 0
         self.update()
-    
+
     def set_completed(self, completed: bool):
         """Set node completed state."""
         self._is_completed = completed
@@ -423,13 +447,13 @@ class CasareNodeItem(NodeItem):
         """Set custom node icon."""
         self._custom_icon_pixmap = pixmap
         self.update()
-    
+
     def borderColor(self):
         """Get current border color based on state."""
         if self._is_running or self.selected:
             return self._selected_border_color.getRgb()
         return self._normal_border_color.getRgb()
-    
+
     def setBorderColor(self, r, g, b, a=255):
         """Set normal border color."""
         self._normal_border_color = QColor(r, g, b, a)

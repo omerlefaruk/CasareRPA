@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QTabWidget,
-    QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
 from loguru import logger
@@ -96,8 +95,8 @@ class BottomPanelDock(QDockWidget):
 
         # Set features (movable but not floatable)
         self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable |
-            QDockWidget.DockWidgetFeature.DockWidgetClosable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
         )
 
         # Set minimum height
@@ -148,7 +147,9 @@ class BottomPanelDock(QDockWidget):
 
         # Validation tab
         self._validation_tab = ValidationTab()
-        self._validation_tab.validation_requested.connect(self.validation_requested.emit)
+        self._validation_tab.validation_requested.connect(
+            self.validation_requested.emit
+        )
         self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
         self._tab_widget.addTab(self._validation_tab, "Validation")
 
@@ -160,13 +161,21 @@ class BottomPanelDock(QDockWidget):
 
         # Triggers tab
         self._triggers_tab = TriggersTab()
-        self._triggers_tab.add_trigger_requested.connect(self.trigger_add_requested.emit)
+        self._triggers_tab.add_trigger_requested.connect(
+            self.trigger_add_requested.emit
+        )
         self._triggers_tab.trigger_updated.connect(self.trigger_edit_requested.emit)
         self._triggers_tab.trigger_deleted.connect(self.trigger_delete_requested.emit)
         self._triggers_tab.trigger_toggled.connect(self.trigger_toggle_requested.emit)
-        self._triggers_tab.trigger_run_requested.connect(self.trigger_run_requested.emit)
-        self._triggers_tab.triggers_start_requested.connect(self.triggers_start_requested.emit)
-        self._triggers_tab.triggers_stop_requested.connect(self.triggers_stop_requested.emit)
+        self._triggers_tab.trigger_run_requested.connect(
+            self.trigger_run_requested.emit
+        )
+        self._triggers_tab.triggers_start_requested.connect(
+            self.triggers_start_requested.emit
+        )
+        self._triggers_tab.triggers_stop_requested.connect(
+            self.triggers_stop_requested.emit
+        )
         self._tab_widget.addTab(self._triggers_tab, "Triggers")
 
     def _update_tab_badges(self) -> None:
@@ -177,17 +186,25 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget.setTabText(self.TAB_VARIABLES, var_title)
 
         # Output tab - show count if > 0
-        output_count = self._output_tab.get_output_count() if hasattr(self._output_tab, 'get_output_count') else 0
+        output_count = (
+            self._output_tab.get_output_count()
+            if hasattr(self._output_tab, "get_output_count")
+            else 0
+        )
         output_title = f"Output ({output_count})" if output_count > 0 else "Output"
         self._tab_widget.setTabText(self.TAB_OUTPUT, output_title)
 
         # Log tab - show count if > 0
-        log_count = self._log_tab.get_entry_count() if hasattr(self._log_tab, 'get_entry_count') else 0
+        log_count = (
+            self._log_tab.get_entry_count()
+            if hasattr(self._log_tab, "get_entry_count")
+            else 0
+        )
         log_title = f"Log ({log_count})" if log_count > 0 else "Log"
         self._tab_widget.setTabText(self.TAB_LOG, log_title)
 
         # Validation tab - show error/warning count
-        if hasattr(self._validation_tab, 'get_issue_count'):
+        if hasattr(self._validation_tab, "get_issue_count"):
             error_count, warning_count = self._validation_tab.get_issue_count()
             if error_count > 0:
                 val_title = f"Validation ({error_count})"
@@ -200,13 +217,23 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget.setTabText(self.TAB_VALIDATION, val_title)
 
         # History tab - show count if > 0
-        history_count = self._history_tab.get_entry_count() if hasattr(self._history_tab, 'get_entry_count') else 0
+        history_count = (
+            self._history_tab.get_entry_count()
+            if hasattr(self._history_tab, "get_entry_count")
+            else 0
+        )
         history_title = f"History ({history_count})" if history_count > 0 else "History"
         self._tab_widget.setTabText(self.TAB_HISTORY, history_title)
 
         # Triggers tab - show count if > 0
-        trigger_count = self._triggers_tab.get_trigger_count() if hasattr(self._triggers_tab, 'get_trigger_count') else 0
-        trigger_title = f"Triggers ({trigger_count})" if trigger_count > 0 else "Triggers"
+        trigger_count = (
+            self._triggers_tab.get_trigger_count()
+            if hasattr(self._triggers_tab, "get_trigger_count")
+            else 0
+        )
+        trigger_title = (
+            f"Triggers ({trigger_count})" if trigger_count > 0 else "Triggers"
+        )
         self._tab_widget.setTabText(self.TAB_TRIGGERS, trigger_title)
 
     def _apply_styles(self) -> None:
@@ -260,19 +287,19 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Public API ====================
 
-    def get_variables_tab(self) -> 'VariablesTab':
+    def get_variables_tab(self) -> "VariablesTab":
         """Get the Variables tab widget."""
         return self._variables_tab
 
-    def get_output_tab(self) -> 'OutputTab':
+    def get_output_tab(self) -> "OutputTab":
         """Get the Output tab widget."""
         return self._output_tab
 
-    def get_log_tab(self) -> 'LogTab':
+    def get_log_tab(self) -> "LogTab":
         """Get the Log tab widget."""
         return self._log_tab
 
-    def get_validation_tab(self) -> 'ValidationTab':
+    def get_validation_tab(self) -> "ValidationTab":
         """Get the Validation tab widget."""
         return self._validation_tab
 
@@ -296,7 +323,7 @@ class BottomPanelDock(QDockWidget):
         self.show()
         self._tab_widget.setCurrentIndex(self.TAB_VALIDATION)
 
-    def get_history_tab(self) -> 'HistoryTab':
+    def get_history_tab(self) -> "HistoryTab":
         """Get the History tab widget."""
         return self._history_tab
 
@@ -346,7 +373,9 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Output API ====================
 
-    def add_output(self, name: str, value: Any, timestamp: Optional[str] = None) -> None:
+    def add_output(
+        self, name: str, value: Any, timestamp: Optional[str] = None
+    ) -> None:
         """
         Add an output to the Output tab.
 
@@ -375,7 +404,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Log API ====================
 
-    def log_event(self, event: 'Event') -> None:
+    def log_event(self, event: "Event") -> None:
         """
         Log an execution event.
 
@@ -385,7 +414,9 @@ class BottomPanelDock(QDockWidget):
         self._log_tab.log_event(event)
         self._update_tab_badges()
 
-    def log_message(self, message: str, level: str = "info", node_id: Optional[str] = None) -> None:
+    def log_message(
+        self, message: str, level: str = "info", node_id: Optional[str] = None
+    ) -> None:
         """
         Log a custom message.
 
@@ -404,7 +435,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Validation API ====================
 
-    def set_validation_result(self, result: 'ValidationResult') -> None:
+    def set_validation_result(self, result: "ValidationResult") -> None:
         """
         Set validation results.
 
@@ -457,7 +488,7 @@ class BottomPanelDock(QDockWidget):
 
     # ==================== Triggers API ====================
 
-    def get_triggers_tab(self) -> 'TriggersTab':
+    def get_triggers_tab(self) -> "TriggersTab":
         """Get the Triggers tab widget."""
         return self._triggers_tab
 

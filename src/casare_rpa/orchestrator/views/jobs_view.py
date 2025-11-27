@@ -2,19 +2,34 @@
 Jobs view for CasareRPA Orchestrator.
 Displays job queue, history, and management.
 """
+
 import asyncio
 from typing import Optional, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFrame, QLabel, QMessageBox, QMenu, QDialog,
-    QVBoxLayout, QTextEdit, QDialogButtonBox, QTabWidget, QSplitter
+    QWidget,
+    QHBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QMenu,
+    QDialog,
+    QVBoxLayout,
+    QTextEdit,
+    QDialogButtonBox,
+    QTabWidget,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 
 from ..styles import COLORS
 from ..widgets import (
-    SearchBar, ActionButton, SectionHeader, StatusBadge,
-    EmptyState, ProgressIndicator
+    SearchBar,
+    ActionButton,
+    SectionHeader,
+    StatusBadge,
+    EmptyState,
+    ProgressIndicator,
 )
 from ..models import Job, JobStatus, JobPriority
 from ..services import OrchestratorService
@@ -41,7 +56,12 @@ class JobDetailsDialog(QDialog):
         info_pairs = [
             ("Job ID", job.id),
             ("Workflow", job.workflow_name),
-            ("Robot", f"{job.robot_name} ({job.robot_id[:8]}...)" if job.robot_name else job.robot_id),
+            (
+                "Robot",
+                f"{job.robot_name} ({job.robot_id[:8]}...)"
+                if job.robot_name
+                else job.robot_id,
+            ),
             ("Status", job.status.value.upper()),
             ("Priority", job.priority.name),
             ("Progress", f"{job.progress}%"),
@@ -55,7 +75,9 @@ class JobDetailsDialog(QDialog):
         for label, value in info_pairs:
             row = QHBoxLayout()
             label_widget = QLabel(label + ":")
-            label_widget.setStyleSheet(f"color: {COLORS['text_muted']}; min-width: 100px;")
+            label_widget.setStyleSheet(
+                f"color: {COLORS['text_muted']}; min-width: 100px;"
+            )
             row.addWidget(label_widget)
 
             if label == "Status":
@@ -70,7 +92,9 @@ class JobDetailsDialog(QDialog):
 
         if job.error_message:
             error_label = QLabel("Error:")
-            error_label.setStyleSheet(f"color: {COLORS['accent_error']}; font-weight: 600;")
+            error_label.setStyleSheet(
+                f"color: {COLORS['accent_error']}; font-weight: 600;"
+            )
             details_layout.addWidget(error_label)
 
             error_text = QTextEdit()
@@ -128,7 +152,9 @@ class JobsView(QWidget):
 
         # Header
         header = SectionHeader("Jobs", "Refresh")
-        header.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        header.action_clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         layout.addWidget(header)
 
         # Quick stats
@@ -136,19 +162,27 @@ class JobsView(QWidget):
         stats_layout.setSpacing(16)
 
         self._running_label = QLabel("Running: 0")
-        self._running_label.setStyleSheet(f"color: {COLORS['job_running']}; font-weight: 600;")
+        self._running_label.setStyleSheet(
+            f"color: {COLORS['job_running']}; font-weight: 600;"
+        )
         stats_layout.addWidget(self._running_label)
 
         self._queued_label = QLabel("Queued: 0")
-        self._queued_label.setStyleSheet(f"color: {COLORS['job_queued']}; font-weight: 600;")
+        self._queued_label.setStyleSheet(
+            f"color: {COLORS['job_queued']}; font-weight: 600;"
+        )
         stats_layout.addWidget(self._queued_label)
 
         self._completed_label = QLabel("Completed: 0")
-        self._completed_label.setStyleSheet(f"color: {COLORS['job_completed']}; font-weight: 600;")
+        self._completed_label.setStyleSheet(
+            f"color: {COLORS['job_completed']}; font-weight: 600;"
+        )
         stats_layout.addWidget(self._completed_label)
 
         self._failed_label = QLabel("Failed: 0")
-        self._failed_label.setStyleSheet(f"color: {COLORS['job_failed']}; font-weight: 600;")
+        self._failed_label.setStyleSheet(
+            f"color: {COLORS['job_failed']}; font-weight: 600;"
+        )
         stats_layout.addWidget(self._failed_label)
 
         stats_layout.addStretch()
@@ -160,7 +194,15 @@ class JobsView(QWidget):
 
         self._search = SearchBar(
             "Search jobs...",
-            filters=["All", "Running", "Queued", "Pending", "Completed", "Failed", "Cancelled"]
+            filters=[
+                "All",
+                "Running",
+                "Queued",
+                "Pending",
+                "Completed",
+                "Failed",
+                "Cancelled",
+            ],
         )
         self._search.search_changed.connect(self._apply_filter)
         self._search.filter_changed.connect(self._apply_filter)
@@ -172,15 +214,32 @@ class JobsView(QWidget):
         # Jobs table
         self._table = QTableWidget()
         self._table.setColumnCount(8)
-        self._table.setHorizontalHeaderLabels([
-            "Status", "Workflow", "Robot", "Priority", "Progress", "Duration", "Created", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Status",
+                "Workflow",
+                "Robot",
+                "Priority",
+                "Progress",
+                "Duration",
+                "Created",
+                "Actions",
+            ]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 100)
-        self._table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            4, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(4, 120)
-        self._table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            7, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(7, 180)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setAlternatingRowColors(True)
@@ -193,7 +252,7 @@ class JobsView(QWidget):
         # Empty state
         self._empty_state = EmptyState(
             title="No Jobs Found",
-            description="No jobs have been executed yet. Dispatch a workflow to get started."
+            description="No jobs have been executed yet. Dispatch a workflow to get started.",
         )
         self._empty_state.hide()
         layout.addWidget(self._empty_state)
@@ -242,11 +301,15 @@ class JobsView(QWidget):
 
         if not job.is_terminal:
             cancel_action = menu.addAction("Cancel Job")
-            cancel_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._cancel_job(job)))
+            cancel_action.triggered.connect(
+                lambda: asyncio.get_event_loop().create_task(self._cancel_job(job))
+            )
 
         if job.status == JobStatus.FAILED:
             retry_action = menu.addAction("Retry Job")
-            retry_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._retry_job(job)))
+            retry_action.triggered.connect(
+                lambda: asyncio.get_event_loop().create_task(self._retry_job(job))
+            )
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
 
@@ -263,9 +326,10 @@ class JobsView(QWidget):
     async def _cancel_job(self, job: Job):
         """Cancel a job."""
         reply = QMessageBox.question(
-            self, "Cancel Job",
+            self,
+            "Cancel Job",
             f"Are you sure you want to cancel job '{job.id[:8]}...'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -279,7 +343,9 @@ class JobsView(QWidget):
         """Retry a failed job."""
         new_job = await self._service.retry_job(job.id)
         if new_job:
-            QMessageBox.information(self, "Job Retried", f"New job created: {new_job.id[:8]}...")
+            QMessageBox.information(
+                self, "Job Retried", f"New job created: {new_job.id[:8]}..."
+            )
             await self.refresh()
         else:
             QMessageBox.warning(self, "Error", "Failed to retry job")
@@ -290,7 +356,9 @@ class JobsView(QWidget):
 
         # Update stats
         running = sum(1 for j in self._jobs if j.status == JobStatus.RUNNING)
-        queued = sum(1 for j in self._jobs if j.status in (JobStatus.PENDING, JobStatus.QUEUED))
+        queued = sum(
+            1 for j in self._jobs if j.status in (JobStatus.PENDING, JobStatus.QUEUED)
+        )
         completed = sum(1 for j in self._jobs if j.status == JobStatus.COMPLETED)
         failed = sum(1 for j in self._jobs if j.status == JobStatus.FAILED)
 
@@ -313,7 +381,11 @@ class JobsView(QWidget):
             self._table.setCellWidget(row, 0, status_badge)
 
             # Workflow name
-            workflow_name = job.workflow_name[:25] + "..." if len(job.workflow_name) > 25 else job.workflow_name
+            workflow_name = (
+                job.workflow_name[:25] + "..."
+                if len(job.workflow_name) > 25
+                else job.workflow_name
+            )
             self._table.setItem(row, 1, QTableWidgetItem(workflow_name))
 
             # Robot
@@ -352,7 +424,11 @@ class JobsView(QWidget):
 
             if not job.is_terminal:
                 cancel_btn = ActionButton("Cancel", primary=False)
-                cancel_btn.clicked.connect(lambda checked, j=job: asyncio.get_event_loop().create_task(self._cancel_job(j)))
+                cancel_btn.clicked.connect(
+                    lambda checked, j=job: asyncio.get_event_loop().create_task(
+                        self._cancel_job(j)
+                    )
+                )
                 actions_layout.addWidget(cancel_btn)
 
             self._table.setCellWidget(row, 7, actions_widget)
@@ -364,5 +440,6 @@ class JobsView(QWidget):
             self._update_table()
         except Exception as e:
             from loguru import logger
+
             logger.error(f"Failed to refresh jobs: {e}")
             QMessageBox.warning(self, "Error", f"Failed to load jobs: {e}")

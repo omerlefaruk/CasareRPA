@@ -2,11 +2,9 @@
 Reusable UI components for Orchestrator.
 Professional widgets - no icons, clean design.
 """
+
 from typing import Optional
-from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QProgressBar,
-    QFrame, QSizePolicy
-)
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QFrame
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QPainter
 
@@ -21,7 +19,7 @@ class ProgressBarDelegate(QWidget):
         value: int = 0,
         status: str = "queued",
         show_text: bool = True,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self._value = value
@@ -72,10 +70,7 @@ class StatusIndicator(QWidget):
     """Colored status dot indicator."""
 
     def __init__(
-        self,
-        status: str = "offline",
-        size: int = 10,
-        parent: Optional[QWidget] = None
+        self, status: str = "offline", size: int = 10, parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
         self._status = status
@@ -174,7 +169,7 @@ class InfoCard(QFrame):
         value: str = "0",
         subtitle: str = "",
         color: str = "",
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self.setObjectName("infoCard")
@@ -244,7 +239,7 @@ class PoolHeader(QFrame):
         name: str,
         count: int = 0,
         expanded: bool = True,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self._expanded = expanded
@@ -267,7 +262,9 @@ class PoolHeader(QFrame):
 
         # Expand/collapse indicator (text-based)
         self._arrow = QLabel("v" if expanded else ">")
-        self._arrow.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 10px; font-family: monospace;")
+        self._arrow.setStyleSheet(
+            f"color: {COLORS['text_muted']}; font-size: 10px; font-family: monospace;"
+        )
         self._arrow.setFixedWidth(12)
         layout.addWidget(self._arrow)
 
@@ -380,7 +377,9 @@ class QuickFilterBar(QFrame):
 class TimeDisplay(QLabel):
     """Elapsed/remaining time display."""
 
-    def __init__(self, seconds: int = 0, prefix: str = "", parent: Optional[QWidget] = None):
+    def __init__(
+        self, seconds: int = 0, prefix: str = "", parent: Optional[QWidget] = None
+    ):
         super().__init__(parent)
         self._prefix = prefix
         self.set_seconds(seconds)
@@ -420,12 +419,7 @@ class SectionTitle(QLabel):
 class DataRow(QFrame):
     """Data row for displaying key-value information."""
 
-    def __init__(
-        self,
-        label: str,
-        value: str,
-        parent: Optional[QWidget] = None
-    ):
+    def __init__(self, label: str, value: str, parent: Optional[QWidget] = None):
         super().__init__(parent)
 
         layout = QHBoxLayout(self)
@@ -438,7 +432,9 @@ class DataRow(QFrame):
         layout.addWidget(label_widget)
 
         self._value_widget = QLabel(value)
-        self._value_widget.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 12px;")
+        self._value_widget.setStyleSheet(
+            f"color: {COLORS['text_primary']}; font-size: 12px;"
+        )
         layout.addWidget(self._value_widget, stretch=1)
 
     def set_value(self, value: str):

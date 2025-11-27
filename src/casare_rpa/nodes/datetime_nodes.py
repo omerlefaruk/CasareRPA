@@ -11,14 +11,12 @@ This module provides nodes for date and time operations:
 """
 
 from datetime import datetime, timedelta
-from typing import Any, Optional
 
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
     ZoneInfo = None
 
-from loguru import logger
 
 from ..core.base_node import BaseNode
 from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
@@ -50,7 +48,9 @@ class GetCurrentDateTimeNode(BaseNode):
         day_of_week: Day name (Monday, Tuesday, etc.)
     """
 
-    def __init__(self, node_id: str, name: str = "Get Current DateTime", **kwargs) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Get Current DateTime", **kwargs
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -94,7 +94,15 @@ class GetCurrentDateTimeNode(BaseNode):
             else:
                 formatted = now.isoformat()
 
-            day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            day_names = [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+            ]
 
             self.set_output_value("datetime", formatted)
             self.set_output_value("timestamp", now.timestamp())
@@ -110,7 +118,7 @@ class GetCurrentDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"datetime": formatted},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -172,14 +180,20 @@ class FormatDateTimeNode(BaseNode):
                     dt = datetime.strptime(dt_input, input_format)
                 else:
                     # Try common formats
-                    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"]:
+                    for fmt in [
+                        "%Y-%m-%d %H:%M:%S",
+                        "%Y-%m-%dT%H:%M:%S",
+                        "%Y-%m-%d",
+                        "%d/%m/%Y",
+                        "%m/%d/%Y",
+                    ]:
                         try:
                             dt = datetime.strptime(dt_input, fmt)
                             break
                         except ValueError:
                             continue
                     else:
-                        dt = datetime.fromisoformat(dt_input.replace('Z', '+00:00'))
+                        dt = datetime.fromisoformat(dt_input.replace("Z", "+00:00"))
             else:
                 raise ValueError(f"Cannot parse datetime from: {type(dt_input)}")
 
@@ -191,7 +205,7 @@ class FormatDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -281,7 +295,7 @@ class ParseDateTimeNode(BaseNode):
 
                 if dt is None:
                     # Try ISO format with timezone
-                    dt = datetime.fromisoformat(dt_string.replace('Z', '+00:00'))
+                    dt = datetime.fromisoformat(dt_string.replace("Z", "+00:00"))
 
             self.set_output_value("timestamp", dt.timestamp())
             self.set_output_value("year", dt.year)
@@ -297,7 +311,7 @@ class ParseDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"iso_format": dt.isoformat()},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -369,7 +383,7 @@ class DateTimeAddNode(BaseNode):
             elif isinstance(dt_input, (int, float)):
                 dt = datetime.fromtimestamp(dt_input)
             elif isinstance(dt_input, str):
-                dt = datetime.fromisoformat(dt_input.replace('Z', '+00:00'))
+                dt = datetime.fromisoformat(dt_input.replace("Z", "+00:00"))
             else:
                 raise ValueError(f"Cannot parse datetime from: {type(dt_input)}")
 
@@ -377,7 +391,9 @@ class DateTimeAddNode(BaseNode):
             total_days = days + (years * 365) + (months * 30) + (weeks * 7)
 
             # Add the delta
-            delta = timedelta(days=total_days, hours=hours, minutes=minutes, seconds=seconds)
+            delta = timedelta(
+                days=total_days, hours=hours, minutes=minutes, seconds=seconds
+            )
             result_dt = dt + delta
 
             self.set_output_value("result", result_dt.isoformat())
@@ -387,7 +403,7 @@ class DateTimeAddNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result_dt.isoformat()},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -441,13 +457,14 @@ class DateTimeDiffNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
+
             def parse_dt(val):
                 if isinstance(val, datetime):
                     return val
                 elif isinstance(val, (int, float)):
                     return datetime.fromtimestamp(val)
                 elif isinstance(val, str):
-                    return datetime.fromisoformat(val.replace('Z', '+00:00'))
+                    return datetime.fromisoformat(val.replace("Z", "+00:00"))
                 else:
                     raise ValueError(f"Cannot parse datetime from: {type(val)}")
 
@@ -488,7 +505,7 @@ class DateTimeDiffNode(BaseNode):
             return {
                 "success": True,
                 "data": {"total_seconds": total_seconds, "days": days},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -534,13 +551,14 @@ class DateTimeCompareNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
+
             def parse_dt(val):
                 if isinstance(val, datetime):
                     return val
                 elif isinstance(val, (int, float)):
                     return datetime.fromtimestamp(val)
                 elif isinstance(val, str):
-                    return datetime.fromisoformat(val.replace('Z', '+00:00'))
+                    return datetime.fromisoformat(val.replace("Z", "+00:00"))
                 else:
                     raise ValueError(f"Cannot parse datetime from: {type(val)}")
 
@@ -567,7 +585,7 @@ class DateTimeCompareNode(BaseNode):
             return {
                 "success": True,
                 "data": {"comparison": comparison},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -616,7 +634,7 @@ class GetTimestampNode(BaseNode):
             return {
                 "success": True,
                 "data": {"timestamp": ts},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

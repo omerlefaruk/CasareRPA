@@ -2,6 +2,7 @@
 Resilience Module for CasareRPA Orchestrator.
 Provides error recovery, health monitoring, and secure communication features.
 """
+
 import asyncio
 import hashlib
 import hmac
@@ -18,8 +19,10 @@ from loguru import logger
 
 # ==================== ERROR RECOVERY ====================
 
+
 class RecoveryStrategy(Enum):
     """Strategies for error recovery."""
+
     RETRY = "retry"
     FAILOVER = "failover"
     RESTART = "restart"
@@ -30,6 +33,7 @@ class RecoveryStrategy(Enum):
 @dataclass
 class RecoveryAction:
     """Action taken during error recovery."""
+
     timestamp: datetime
     error_type: str
     strategy: RecoveryStrategy
@@ -42,33 +46,35 @@ class RecoveryAction:
 @dataclass
 class RetryPolicy:
     """Policy for retry behavior."""
+
     max_retries: int = 3
     initial_delay: float = 1.0
     max_delay: float = 60.0
     backoff_multiplier: float = 2.0
     jitter: bool = True
-    retriable_errors: Set[str] = field(default_factory=lambda: {
-        "ConnectionError", "TimeoutError", "NetworkError",
-        "TemporaryError", "ResourceBusy"
-    })
+    retriable_errors: Set[str] = field(
+        default_factory=lambda: {
+            "ConnectionError",
+            "TimeoutError",
+            "NetworkError",
+            "TemporaryError",
+            "ResourceBusy",
+        }
+    )
 
     def calculate_delay(self, attempt: int) -> float:
         """Calculate delay for a retry attempt."""
         delay = min(
-            self.initial_delay * (self.backoff_multiplier ** attempt),
-            self.max_delay
+            self.initial_delay * (self.backoff_multiplier**attempt), self.max_delay
         )
         if self.jitter:
             # Add 0-25% random jitter
-            delay *= (1 + secrets.randbelow(25) / 100)
+            delay *= 1 + secrets.randbelow(25) / 100
         return delay
 
     def should_retry(self, error_type: str, attempt: int) -> bool:
         """Check if error should be retried."""
-        return (
-            attempt < self.max_retries and
-            error_type in self.retriable_errors
-        )
+        return attempt < self.max_retries and error_type in self.retriable_errors
 
 
 class ErrorRecoveryManager:
@@ -165,7 +171,9 @@ class ErrorRecoveryManager:
         self._active_recoveries[key] = attempt + 1
         delay = self._retry_policy.calculate_delay(attempt)
 
-        logger.info(f"Retrying connection to robot {robot_id} in {delay:.1f}s (attempt {attempt + 1})")
+        logger.info(
+            f"Retrying connection to robot {robot_id} in {delay:.1f}s (attempt {attempt + 1})"
+        )
         await asyncio.sleep(delay)
 
         try:
@@ -224,7 +232,9 @@ class ErrorRecoveryManager:
             self._active_recoveries[key] = attempt + 1
             delay = self._retry_policy.calculate_delay(attempt)
 
-            logger.info(f"Retrying job {job_id[:8]} in {delay:.1f}s (attempt {attempt + 1})")
+            logger.info(
+                f"Retrying job {job_id[:8]} in {delay:.1f}s (attempt {attempt + 1})"
+            )
             await asyncio.sleep(delay)
 
             try:
@@ -357,7 +367,7 @@ class ErrorRecoveryManager:
 
         # Trim history
         if len(self._recovery_history) > self._max_history:
-            self._recovery_history = self._recovery_history[-self._max_history:]
+            self._recovery_history = self._recovery_history[-self._max_history :]
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get recovery statistics."""
@@ -384,8 +394,10 @@ class ErrorRecoveryManager:
 
 # ==================== HEALTH MONITORING ====================
 
+
 class HealthStatus(Enum):
     """Health status levels."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -395,6 +407,7 @@ class HealthStatus(Enum):
 @dataclass
 class HealthMetrics:
     """Health metrics for a robot."""
+
     robot_id: str
     status: HealthStatus = HealthStatus.UNKNOWN
     last_heartbeat: Optional[datetime] = None
@@ -415,7 +428,9 @@ class HealthMetrics:
         return {
             "robot_id": self.robot_id,
             "status": self.status.value,
-            "last_heartbeat": self.last_heartbeat.isoformat() if self.last_heartbeat else None,
+            "last_heartbeat": self.last_heartbeat.isoformat()
+            if self.last_heartbeat
+            else None,
             "cpu_percent": self.cpu_percent,
             "memory_percent": self.memory_percent,
             "disk_percent": self.disk_percent,
@@ -428,6 +443,7 @@ class HealthMetrics:
 @dataclass
 class HealthThresholds:
     """Thresholds for health checks."""
+
     heartbeat_timeout: float = 60.0  # seconds
     cpu_warning: float = 80.0
     cpu_critical: float = 95.0
@@ -561,8 +577,7 @@ class HealthMonitor:
             # Exponential moving average
             alpha = 0.3
             metrics.response_time_ms = (
-                alpha * response_time_ms +
-                (1 - alpha) * metrics.response_time_ms
+                alpha * response_time_ms + (1 - alpha) * metrics.response_time_ms
             )
 
     def _calculate_status(self, metrics: HealthMetrics) -> HealthStatus:
@@ -576,15 +591,19 @@ class HealthMonitor:
             return HealthStatus.UNHEALTHY
 
         # Check critical thresholds
-        if (metrics.cpu_percent > self._thresholds.cpu_critical or
-            metrics.memory_percent > self._thresholds.memory_critical or
-            metrics.disk_percent > self._thresholds.disk_critical):
+        if (
+            metrics.cpu_percent > self._thresholds.cpu_critical
+            or metrics.memory_percent > self._thresholds.memory_critical
+            or metrics.disk_percent > self._thresholds.disk_critical
+        ):
             return HealthStatus.UNHEALTHY
 
         # Check warning thresholds
-        if (metrics.cpu_percent > self._thresholds.cpu_warning or
-            metrics.memory_percent > self._thresholds.memory_warning or
-            metrics.disk_percent > self._thresholds.disk_warning):
+        if (
+            metrics.cpu_percent > self._thresholds.cpu_warning
+            or metrics.memory_percent > self._thresholds.memory_warning
+            or metrics.disk_percent > self._thresholds.disk_warning
+        ):
             return HealthStatus.DEGRADED
 
         # Check error rate
@@ -644,7 +663,9 @@ class HealthMonitor:
                 if metrics.status != HealthStatus.UNHEALTHY:
                     old_status = metrics.status
                     metrics.status = HealthStatus.UNHEALTHY
-                    self._notify_health_change(robot_id, old_status, HealthStatus.UNHEALTHY)
+                    self._notify_health_change(
+                        robot_id, old_status, HealthStatus.UNHEALTHY
+                    )
 
     def get_robot_health(self, robot_id: str) -> Optional[HealthMetrics]:
         """Get health metrics for a robot."""
@@ -657,16 +678,25 @@ class HealthMonitor:
     def get_unhealthy_robots(self) -> List[str]:
         """Get list of unhealthy robot IDs."""
         return [
-            robot_id for robot_id, metrics in self._robot_metrics.items()
+            robot_id
+            for robot_id, metrics in self._robot_metrics.items()
             if metrics.status == HealthStatus.UNHEALTHY
         ]
 
     def get_overall_health(self) -> Dict[str, Any]:
         """Get overall system health summary."""
         total = len(self._robot_metrics)
-        healthy = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.HEALTHY)
-        degraded = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.DEGRADED)
-        unhealthy = sum(1 for m in self._robot_metrics.values() if m.status == HealthStatus.UNHEALTHY)
+        healthy = sum(
+            1 for m in self._robot_metrics.values() if m.status == HealthStatus.HEALTHY
+        )
+        degraded = sum(
+            1 for m in self._robot_metrics.values() if m.status == HealthStatus.DEGRADED
+        )
+        unhealthy = sum(
+            1
+            for m in self._robot_metrics.values()
+            if m.status == HealthStatus.UNHEALTHY
+        )
 
         # Overall status
         if unhealthy > 0:
@@ -696,8 +726,10 @@ class HealthMonitor:
 
 # ==================== SECURE COMMUNICATION ====================
 
+
 class TokenType(Enum):
     """Token types for authentication."""
+
     API_KEY = "api_key"
     JWT = "jwt"
     HMAC = "hmac"
@@ -706,6 +738,7 @@ class TokenType(Enum):
 @dataclass
 class AuthToken:
     """Authentication token."""
+
     token: str
     token_type: TokenType
     robot_id: str
@@ -837,8 +870,7 @@ class SecurityManager:
             Number of tokens revoked
         """
         to_revoke = [
-            t for t, token in self._tokens.items()
-            if token.robot_id == robot_id
+            t for t, token in self._tokens.items() if token.robot_id == robot_id
         ]
 
         for token_str in to_revoke:
@@ -857,9 +889,7 @@ class SecurityManager:
             Hex-encoded signature
         """
         signature = hmac.new(
-            self._secret_key.encode(),
-            message.encode(),
-            hashlib.sha256
+            self._secret_key.encode(), message.encode(), hashlib.sha256
         ).hexdigest()
 
         return signature
@@ -893,8 +923,7 @@ class SecurityManager:
 
         # Clean old entries
         self._request_counts[identifier] = [
-            ts for ts in self._request_counts[identifier]
-            if ts > window_start
+            ts for ts in self._request_counts[identifier] if ts > window_start
         ]
 
         # Check limit
@@ -911,8 +940,7 @@ class SecurityManager:
         window_start = now - self._rate_limit_window
 
         current_count = sum(
-            1 for ts in self._request_counts.get(identifier, [])
-            if ts > window_start
+            1 for ts in self._request_counts.get(identifier, []) if ts > window_start
         )
 
         return max(0, self._rate_limit_requests - current_count)
@@ -924,10 +952,7 @@ class SecurityManager:
         Returns:
             Number of tokens removed
         """
-        expired = [
-            t for t, token in self._tokens.items()
-            if token.is_expired
-        ]
+        expired = [t for t, token in self._tokens.items() if token.is_expired]
 
         for token_str in expired:
             del self._tokens[token_str]

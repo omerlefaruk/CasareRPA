@@ -2,14 +2,11 @@
 Custom table delegates for Deadline Monitor-style rendering.
 Provides progress bars, status indicators, and priority visualization.
 """
-from typing import Optional, Any
-from PySide6.QtWidgets import (
-    QStyledItemDelegate, QStyleOptionViewItem, QStyle, QApplication
-)
+
+from typing import Optional
+from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QStyle
 from PySide6.QtCore import Qt, QRect, QSize, QModelIndex
-from PySide6.QtGui import (
-    QPainter, QColor, QFont, QPen, QBrush, QLinearGradient
-)
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QLinearGradient
 
 from .theme import THEME, get_status_color, get_priority_color, get_progress_color
 
@@ -26,7 +23,9 @@ class ProgressBarDelegate(QStyledItemDelegate):
         self._bar_margin = 3
         self._show_text = True
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -56,7 +55,7 @@ class ProgressBarDelegate(QStyledItemDelegate):
             rect.left() + self._bar_margin,
             rect.top() + (rect.height() - self._bar_height) // 2,
             rect.width() - self._bar_margin * 2,
-            self._bar_height
+            self._bar_height,
         )
         painter.fillRect(bar_rect, QColor(THEME.progress_bg))
         painter.setPen(QPen(QColor(THEME.border_dark), 1))
@@ -69,7 +68,7 @@ class ProgressBarDelegate(QStyledItemDelegate):
                 bar_rect.left() + 1,
                 bar_rect.top() + 1,
                 fill_width,
-                bar_rect.height() - 2
+                bar_rect.height() - 2,
             )
 
             # Gradient fill
@@ -103,7 +102,9 @@ class StatusDelegate(QStyledItemDelegate):
         self._dot_size = 8
         self._dot_margin = 6
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -143,7 +144,7 @@ class StatusDelegate(QStyledItemDelegate):
             dot_x + self._dot_size + self._dot_margin,
             rect.top(),
             rect.width() - self._dot_size - self._dot_margin * 2,
-            rect.height()
+            rect.height(),
         )
         painter.setPen(QColor(THEME.text_primary))
         font = painter.font()
@@ -151,7 +152,11 @@ class StatusDelegate(QStyledItemDelegate):
         painter.setFont(font)
         # Capitalize status text
         display_text = status.capitalize() if status else ""
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, display_text)
+        painter.drawText(
+            text_rect,
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            display_text,
+        )
 
         painter.restore()
 
@@ -164,17 +169,14 @@ class PriorityDelegate(QStyledItemDelegate):
     Delegate for rendering priority with colored badge.
     """
 
-    PRIORITY_LABELS = {
-        0: "Low",
-        1: "Normal",
-        2: "High",
-        3: "Critical"
-    }
+    PRIORITY_LABELS = {0: "Low", 1: "Normal", 2: "High", 3: "Critical"}
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -210,7 +212,7 @@ class PriorityDelegate(QStyledItemDelegate):
             rect.left() + 4,
             rect.top() + (rect.height() - badge_height) // 2,
             text_width,
-            badge_height
+            badge_height,
         )
 
         # Draw badge
@@ -238,7 +240,9 @@ class DurationDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
 
         # Get duration in milliseconds
@@ -278,7 +282,9 @@ class DurationDelegate(QStyledItemDelegate):
         font.setPointSize(9)
         painter.setFont(font)
         text_rect = rect.adjusted(6, 0, -6, 0)
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, text)
+        painter.drawText(
+            text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight, text
+        )
 
         painter.restore()
 
@@ -294,7 +300,9 @@ class RobotStatusDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -309,14 +317,19 @@ class RobotStatusDelegate(QStyledItemDelegate):
         # Get data (expects dict with status and utilization)
         data = index.data(Qt.ItemDataRole.UserRole)
         if not isinstance(data, dict):
-            data = {"status": str(index.data(Qt.ItemDataRole.DisplayRole) or "offline"), "utilization": 0}
+            data = {
+                "status": str(index.data(Qt.ItemDataRole.DisplayRole) or "offline"),
+                "utilization": 0,
+            }
 
         status = data.get("status", "offline")
         utilization = data.get("utilization", 0)
         color = QColor(get_status_color(status))
 
         # Status icon
-        icon_rect = QRect(rect.left() + 4, rect.top() + (rect.height() - 12) // 2, 12, 12)
+        icon_rect = QRect(
+            rect.left() + 4, rect.top() + (rect.height() - 12) // 2, 12, 12
+        )
         painter.setBrush(QBrush(color))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(icon_rect)
@@ -328,9 +341,12 @@ class RobotStatusDelegate(QStyledItemDelegate):
         font.setPointSize(9)
         painter.setFont(font)
         painter.drawText(
-            text_x, rect.top(), rect.width() - text_x - 50, rect.height(),
+            text_x,
+            rect.top(),
+            rect.width() - text_x - 50,
+            rect.height(),
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
-            status.capitalize()
+            status.capitalize(),
         )
 
         # Utilization mini bar
@@ -341,12 +357,18 @@ class RobotStatusDelegate(QStyledItemDelegate):
             bar_y = rect.top() + (rect.height() - bar_height) // 2
 
             # Background
-            painter.fillRect(bar_x, bar_y, bar_width, bar_height, QColor(THEME.progress_bg))
+            painter.fillRect(
+                bar_x, bar_y, bar_width, bar_height, QColor(THEME.progress_bg)
+            )
 
             # Fill
             fill_width = int(bar_width * min(utilization, 100) / 100)
             if fill_width > 0:
-                fill_color = QColor(THEME.status_online) if utilization < 80 else QColor(THEME.status_busy)
+                fill_color = (
+                    QColor(THEME.status_online)
+                    if utilization < 80
+                    else QColor(THEME.status_busy)
+                )
                 painter.fillRect(bar_x, bar_y, fill_width, bar_height, fill_color)
 
         painter.restore()
@@ -365,7 +387,9 @@ class IconTextDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self._icon_map = icon_map or {}
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
 
         rect = option.rect
@@ -387,8 +411,14 @@ class IconTextDelegate(QStyledItemDelegate):
             font = painter.font()
             font.setPointSize(10)
             painter.setFont(font)
-            painter.drawText(text_x, rect.top(), 20, rect.height(),
-                             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, str(icon))
+            painter.drawText(
+                text_x,
+                rect.top(),
+                20,
+                rect.height(),
+                Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+                str(icon),
+            )
             text_x += 22
 
         # Text
@@ -397,7 +427,9 @@ class IconTextDelegate(QStyledItemDelegate):
         font.setPointSize(9)
         painter.setFont(font)
         text_rect = QRect(text_x, rect.top(), rect.width() - text_x - 4, rect.height())
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+        painter.drawText(
+            text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text
+        )
 
         painter.restore()
 
@@ -413,7 +445,9 @@ class TimeDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
+    def paint(
+        self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex
+    ):
         painter.save()
 
         rect = option.rect
@@ -427,7 +461,7 @@ class TimeDelegate(QStyledItemDelegate):
 
         # Format time
         if value:
-            if hasattr(value, 'strftime'):
+            if hasattr(value, "strftime"):
                 text = value.strftime("%H:%M:%S")
             else:
                 text = str(value)
@@ -442,7 +476,9 @@ class TimeDelegate(QStyledItemDelegate):
         font.setPointSize(9)
         painter.setFont(font)
         text_rect = rect.adjusted(6, 0, -6, 0)
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+        painter.drawText(
+            text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text
+        )
 
         painter.restore()
 

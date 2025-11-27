@@ -32,12 +32,10 @@ Usage:
 
 from __future__ import annotations
 
-import json
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
 from typing import Any, Optional
 
 from loguru import logger
@@ -62,6 +60,7 @@ class CredentialScope(Enum):
         ROBOT: Credentials scoped to a specific robot
         ASSET: RPA Asset credentials (e.g., queue credentials, file shares)
     """
+
     GLOBAL = "global"
     PROJECT = "projects"
     WORKFLOW = "workflows"
@@ -71,6 +70,7 @@ class CredentialScope(Enum):
 
 class CredentialType(Enum):
     """Type of credential for proper handling."""
+
     GENERIC = "generic"
     USERNAME_PASSWORD = "username_password"
     API_KEY = "api_key"
@@ -98,6 +98,7 @@ class Credential:
         updated_at: Last update timestamp
         expires_at: Expiration timestamp (optional)
     """
+
     name: str
     credential_type: CredentialType = CredentialType.GENERIC
     username: Optional[str] = None
@@ -151,9 +152,7 @@ class Credential:
         """Create Credential from dictionary."""
         return cls(
             name=data.get("name", ""),
-            credential_type=CredentialType(
-                data.get("credential_type", "generic")
-            ),
+            credential_type=CredentialType(data.get("credential_type", "generic")),
             username=data.get("username"),
             password=data.get("password"),
             api_key=data.get("api_key"),
@@ -163,11 +162,14 @@ class Credential:
             private_key=data.get("private_key"),
             metadata=data.get("metadata", {}),
             created_at=datetime.fromisoformat(data["created_at"])
-            if data.get("created_at") else None,
+            if data.get("created_at")
+            else None,
             updated_at=datetime.fromisoformat(data["updated_at"])
-            if data.get("updated_at") else None,
+            if data.get("updated_at")
+            else None,
             expires_at=datetime.fromisoformat(data["expires_at"])
-            if data.get("expires_at") else None,
+            if data.get("expires_at")
+            else None,
         )
 
     def is_expired(self) -> bool:
@@ -179,6 +181,7 @@ class Credential:
 
 class VaultRequiredError(Exception):
     """Raised when Vault is required but not available."""
+
     pass
 
 
