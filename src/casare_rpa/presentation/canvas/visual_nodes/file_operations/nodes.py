@@ -2,6 +2,17 @@
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.core.types import DataType
 
+# Import logic layer nodes
+from casare_rpa.nodes.file_nodes import (
+    GetFileSizeNode,
+    ListFilesNode,
+    ReadCSVNode,
+    WriteCSVNode,
+    ReadJSONFileNode,
+    WriteJSONFileNode,
+    UnzipFilesNode,
+)
+
 
 # =============================================================================
 # Basic File Operations
@@ -167,10 +178,14 @@ class VisualGetFileSizeNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get File Size"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "GetFileSizeNode"
 
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
+
+    def get_node_class(self) -> type:
+        return GetFileSizeNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -210,12 +225,16 @@ class VisualListFilesNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "List Files"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "ListFilesNode"
 
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("directory_path", "Directory Path", text=".", tab="inputs")
         self.add_text_input("pattern", "Pattern", text="*", tab="config")
         self.create_property("recursive", False, widget_type=1, tab="config")
+
+    def get_node_class(self) -> type:
+        return ListFilesNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -235,6 +254,7 @@ class VisualReadCsvNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read CSV"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "ReadCSVNode"
 
     def __init__(self) -> None:
         super().__init__()
@@ -245,6 +265,9 @@ class VisualReadCsvNode(VisualNode):
         self.add_text_input("quotechar", "Quote Char", text="\"", tab="advanced")
         self.add_text_input("skip_rows", "Skip Rows", placeholder_text="0", tab="advanced")
         self.add_text_input("max_rows", "Max Rows", placeholder_text="0 = unlimited", tab="advanced")
+
+    def get_node_class(self) -> type:
+        return ReadCSVNode
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
@@ -262,6 +285,7 @@ class VisualWriteCsvNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write CSV"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "WriteCSVNode"
 
     def __init__(self) -> None:
         super().__init__()
@@ -269,6 +293,9 @@ class VisualWriteCsvNode(VisualNode):
         self.create_property("write_header", True, widget_type=1, tab="config")
         self.add_text_input("delimiter", "Delimiter", text=",", tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
+
+    def get_node_class(self) -> type:
+        return WriteCSVNode
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
@@ -290,11 +317,15 @@ class VisualReadJsonNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read JSON"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "ReadJSONFileNode"
 
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
+
+    def get_node_class(self) -> type:
+        return ReadJSONFileNode
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
@@ -310,12 +341,16 @@ class VisualWriteJsonNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write JSON"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "WriteJSONFileNode"
 
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("file_path", "File Path", text="", tab="inputs")
         self.create_property("indent", 2, widget_type=2, tab="config")
         self.add_text_input("encoding", "Encoding", text="utf-8", tab="config")
+
+    def get_node_class(self) -> type:
+        return WriteJSONFileNode
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
@@ -356,11 +391,15 @@ class VisualUnzipFileNode(VisualNode):
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Unzip File"
     NODE_CATEGORY = "file_operations"
+    CASARE_NODE_CLASS = "UnzipFilesNode"
 
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("zip_path", "ZIP Path", text="", tab="inputs")
         self.add_text_input("extract_to", "Extract To", text="", tab="inputs")
+
+    def get_node_class(self) -> type:
+        return UnzipFilesNode
 
     def setup_ports(self) -> None:
         self.add_input("exec_in")
