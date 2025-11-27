@@ -149,12 +149,6 @@ class WorkflowRunner:
         # Calculate subgraph if target node is specified
         if target_node_id:
             self._calculate_subgraph(target_node_id)
-
-        logger.info(
-            f"WorkflowRunner initialized for workflow: {workflow.metadata.name} "
-            f"(parallel={parallel_execution}, max_parallel={max_parallel_nodes}"
-            f"{f', target={target_node_id}' if target_node_id else ''})"
-        )
     
     @property
     def progress(self) -> float:
@@ -567,7 +561,6 @@ class WorkflowRunner:
                     "execution_time": execution_time
                 })
 
-                logger.info(f"Node executed successfully: {node.node_id}")
                 # Record successful execution in metrics
                 get_metrics().record_node_complete(
                     node_type, node.node_id, execution_time * 1000, success=True
