@@ -36,7 +36,7 @@ jobs:
 
       - name: Review with Claude
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
@@ -54,8 +54,17 @@ jobs:
               print("No changes detected")
               exit(0)
 
-          # Call Claude API
-          client = anthropic.Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+          # Get OAuth token
+          oauth_token = os.environ.get('CLAUDE_CODE_OAUTH_TOKEN')
+
+          if not oauth_token:
+              print("Error: CLAUDE_CODE_OAUTH_TOKEN not found in secrets")
+              exit(1)
+
+          # Call Claude API with OAuth token
+          client = anthropic.Anthropic(
+              auth_token=oauth_token
+          )
 
           message = client.messages.create(
               model="claude-sonnet-4-5-20250929",
@@ -91,7 +100,7 @@ jobs:
               "Accept": "application/vnd.github.v3+json"
           }
           data = {
-              "body": f"## Claude Code Review\n\n{review_comment}\n\n---\n*Automated review by Claude*"
+              "body": f"## Claude Code Review\n\n{review_comment}\n\n---\n*Automated review by Claude Code*"
           }
 
           response = requests.post(url, json=data, headers=headers)
