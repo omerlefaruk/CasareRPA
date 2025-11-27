@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tempfile
 import os
-from typing import Any, Optional, Dict
+from typing import Any, Dict
 from pathlib import Path
 
 from loguru import logger
@@ -88,7 +88,9 @@ class RunPythonScriptNode(BaseNode):
 
             if isolated:
                 # Run in subprocess
-                result, output, error = await self._run_isolated(code, variables, timeout)
+                result, output, error = await self._run_isolated(
+                    code, variables, timeout
+                )
             else:
                 # Run inline (faster but shares memory)
                 result, output, error = self._run_inline(code, variables)
@@ -104,7 +106,7 @@ class RunPythonScriptNode(BaseNode):
             return {
                 "success": True,
                 "data": {"success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -124,11 +126,7 @@ class RunPythonScriptNode(BaseNode):
         output_buffer = io.StringIO()
 
         # Prepare execution namespace
-        namespace = {
-            '__builtins__': __builtins__,
-            'result': None,
-            **variables
-        }
+        namespace = {"__builtins__": __builtins__, "result": None, **variables}
 
         error = ""
         result = None
@@ -137,7 +135,7 @@ class RunPythonScriptNode(BaseNode):
             with redirect_stdout(output_buffer):
                 exec(code, namespace)
 
-            result = namespace.get('result')
+            result = namespace.get("result")
             output = output_buffer.getvalue()
 
         except Exception as e:
@@ -146,12 +144,14 @@ class RunPythonScriptNode(BaseNode):
 
         return result, output, error
 
-    async def _run_isolated(self, code: str, variables: Dict[str, Any], timeout: int) -> tuple[Any, str, str]:
+    async def _run_isolated(
+        self, code: str, variables: Dict[str, Any], timeout: int
+    ) -> tuple[Any, str, str]:
         """Execute Python code in isolated subprocess."""
         import json
 
         # Create wrapper script
-        wrapper = f'''
+        wrapper = f"""
 import sys
 import json
 
@@ -168,9 +168,9 @@ for _k, _v in _vars.items():
 
 # Output result
 print("__RESULT__:" + json.dumps(result, default=str))
-'''
+"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(wrapper)
             script_path = f.name
 
@@ -179,7 +179,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
                 [sys.executable, script_path, json.dumps(variables)],
                 capture_output=True,
                 text=True,
-                timeout=timeout
+                timeout=timeout,
             )
 
             output = proc.stdout
@@ -188,7 +188,9 @@ print("__RESULT__:" + json.dumps(result, default=str))
             # Extract result
             result = None
             if "__RESULT__:" in output:
-                result_line = [l for l in output.split('\n') if l.startswith("__RESULT__:")]
+                result_line = [
+                    l for l in output.split("\n") if l.startswith("__RESULT__:")
+                ]
                 if result_line:
                     try:
                         result = json.loads(result_line[0].replace("__RESULT__:", ""))
@@ -305,14 +307,16 @@ class RunPythonFileNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for Python file execution")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for Python file execution"
+                        )
 
                     result = subprocess.run(
                         cmd,
                         capture_output=True,
                         text=True,
                         timeout=timeout,
-                        cwd=working_dir
+                        cwd=working_dir,
                     )
 
                     stdout = result.stdout
@@ -322,7 +326,9 @@ class RunPythonFileNode(BaseNode):
 
                     # Check if we should retry on non-zero return code
                     if not success and retry_on_nonzero and attempts < max_attempts:
-                        logger.warning(f"Python file returned non-zero ({return_code}), retrying...")
+                        logger.warning(
+                            f"Python file returned non-zero ({return_code}), retrying..."
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                         continue
 
@@ -332,12 +338,18 @@ class RunPythonFileNode(BaseNode):
                     self.set_output_value("success", success)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(f"Python file executed: return_code={return_code} (attempt {attempts})")
+                    logger.info(
+                        f"Python file executed: return_code={return_code} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
-                        "data": {"return_code": return_code, "success": success, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "data": {
+                            "return_code": return_code,
+                            "success": success,
+                            "attempts": attempts,
+                        },
+                        "next_nodes": ["exec_out"],
                     }
 
                 except subprocess.TimeoutExpired as e:
@@ -351,7 +363,9 @@ class RunPythonFileNode(BaseNode):
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Python file execution failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Python file execution failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -363,7 +377,9 @@ class RunPythonFileNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(f"Python file execution timed out after {max_attempts} attempts")
+                logger.error(
+                    f"Python file execution timed out after {max_attempts} attempts"
+                )
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -430,14 +446,42 @@ class EvalExpressionNode(BaseNode):
 
             # Provide safe builtins
             safe_builtins = {
-                'abs': abs, 'all': all, 'any': any, 'bin': bin, 'bool': bool,
-                'chr': chr, 'dict': dict, 'enumerate': enumerate, 'filter': filter,
-                'float': float, 'format': format, 'hex': hex, 'int': int,
-                'len': len, 'list': list, 'map': map, 'max': max, 'min': min,
-                'oct': oct, 'ord': ord, 'pow': pow, 'range': range, 'repr': repr,
-                'reversed': reversed, 'round': round, 'set': set, 'slice': slice,
-                'sorted': sorted, 'str': str, 'sum': sum, 'tuple': tuple, 'type': type,
-                'zip': zip, 'True': True, 'False': False, 'None': None,
+                "abs": abs,
+                "all": all,
+                "any": any,
+                "bin": bin,
+                "bool": bool,
+                "chr": chr,
+                "dict": dict,
+                "enumerate": enumerate,
+                "filter": filter,
+                "float": float,
+                "format": format,
+                "hex": hex,
+                "int": int,
+                "len": len,
+                "list": list,
+                "map": map,
+                "max": max,
+                "min": min,
+                "oct": oct,
+                "ord": ord,
+                "pow": pow,
+                "range": range,
+                "repr": repr,
+                "reversed": reversed,
+                "round": round,
+                "set": set,
+                "slice": slice,
+                "sorted": sorted,
+                "str": str,
+                "sum": sum,
+                "tuple": tuple,
+                "type": type,
+                "zip": zip,
+                "True": True,
+                "False": False,
+                "None": None,
             }
 
             namespace = {**safe_builtins, **variables}
@@ -454,7 +498,7 @@ class EvalExpressionNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result, "type": result_type},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -545,7 +589,7 @@ class RunBatchScriptNode(BaseNode):
             else:
                 suffix = ".sh"
 
-            logger.info(f"Running batch script")
+            logger.info("Running batch script")
 
             last_error = None
             attempts = 0
@@ -556,10 +600,14 @@ class RunBatchScriptNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for batch script")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for batch script"
+                        )
 
                     # Create temp file for each attempt
-                    with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as f:
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=suffix, delete=False
+                    ) as f:
                         if sys.platform != "win32":
                             f.write("#!/bin/bash\n")
                         f.write(script)
@@ -577,7 +625,7 @@ class RunBatchScriptNode(BaseNode):
                             capture_output=True,
                             text=True,
                             timeout=timeout,
-                            cwd=working_dir
+                            cwd=working_dir,
                         )
 
                         stdout = result.stdout
@@ -592,7 +640,9 @@ class RunBatchScriptNode(BaseNode):
 
                     # Check if we should retry on non-zero return code
                     if not success and retry_on_nonzero and attempts < max_attempts:
-                        logger.warning(f"Batch script returned non-zero ({return_code}), retrying...")
+                        logger.warning(
+                            f"Batch script returned non-zero ({return_code}), retrying..."
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                         continue
 
@@ -602,12 +652,18 @@ class RunBatchScriptNode(BaseNode):
                     self.set_output_value("success", success)
                     self.status = NodeStatus.SUCCESS
 
-                    logger.info(f"Batch script executed: return_code={return_code} (attempt {attempts})")
+                    logger.info(
+                        f"Batch script executed: return_code={return_code} (attempt {attempts})"
+                    )
 
                     return {
                         "success": True,
-                        "data": {"return_code": return_code, "success": success, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "data": {
+                            "return_code": return_code,
+                            "success": success,
+                            "attempts": attempts,
+                        },
+                        "next_nodes": ["exec_out"],
                     }
 
                 except subprocess.TimeoutExpired as e:
@@ -627,7 +683,9 @@ class RunBatchScriptNode(BaseNode):
                         os.unlink(script_path)
                         script_path = None
                     if attempts < max_attempts:
-                        logger.warning(f"Batch script execution failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Batch script execution failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -639,7 +697,9 @@ class RunBatchScriptNode(BaseNode):
                 self.set_output_value("return_code", -1)
                 self.set_output_value("success", False)
                 self.status = NodeStatus.ERROR
-                logger.error(f"Batch script execution timed out after {max_attempts} attempts")
+                logger.error(
+                    f"Batch script execution timed out after {max_attempts} attempts"
+                )
                 return {"success": False, "error": "Timeout", "next_nodes": []}
 
             raise last_error
@@ -709,13 +769,13 @@ class RunJavaScriptNode(BaseNode):
                 raise ValueError("code is required")
 
             # Create wrapper script
-            wrapper = f'''
+            wrapper = f"""
 const inputData = {json.dumps(input_data)};
 
 {code}
-'''
+"""
 
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
                 f.write(wrapper)
                 script_path = f.name
 
@@ -724,7 +784,7 @@ const inputData = {json.dumps(input_data)};
                     [node_path, script_path],
                     capture_output=True,
                     text=True,
-                    timeout=timeout
+                    timeout=timeout,
                 )
 
                 output = result.stdout.strip()
@@ -742,7 +802,7 @@ const inputData = {json.dumps(input_data)};
             return {
                 "success": True,
                 "data": {"success": success},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except FileNotFoundError:

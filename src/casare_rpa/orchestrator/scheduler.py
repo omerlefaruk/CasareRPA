@@ -2,10 +2,10 @@
 Job Scheduler for CasareRPA Orchestrator.
 Implements cron-based scheduling using APScheduler.
 """
+
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, Dict, List, Callable, Any
-import uuid
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -17,19 +17,18 @@ try:
     from apscheduler.triggers.interval import IntervalTrigger
     from apscheduler.jobstores.memory import MemoryJobStore
     from apscheduler.executors.asyncio import AsyncIOExecutor
+
     HAS_APSCHEDULER = True
 except ImportError:
     HAS_APSCHEDULER = False
     logger.warning("APScheduler not installed. Scheduling features disabled.")
 
-from .models import (
-    Schedule, ScheduleFrequency, Job, JobStatus, JobPriority,
-    Workflow, Robot
-)
+from .models import Schedule, ScheduleFrequency
 
 
 class ScheduleExecutionError(Exception):
     """Raised when a scheduled job fails to execute."""
+
     pass
 
 
@@ -98,7 +97,7 @@ class JobScheduler:
     def __init__(
         self,
         on_schedule_trigger: Optional[Callable[[Schedule], Any]] = None,
-        timezone: str = "UTC"
+        timezone: str = "UTC",
     ):
         """
         Initialize scheduler.
@@ -127,23 +126,19 @@ class JobScheduler:
             return
 
         # Configure scheduler
-        jobstores = {
-            'default': MemoryJobStore()
-        }
-        executors = {
-            'default': AsyncIOExecutor()
-        }
+        jobstores = {"default": MemoryJobStore()}
+        executors = {"default": AsyncIOExecutor()}
         job_defaults = {
-            'coalesce': True,  # Combine missed runs
-            'max_instances': 1,  # Only one instance per schedule
-            'misfire_grace_time': 60,  # Allow 1 minute late
+            "coalesce": True,  # Combine missed runs
+            "max_instances": 1,  # Only one instance per schedule
+            "misfire_grace_time": 60,  # Allow 1 minute late
         }
 
         self._scheduler = AsyncIOScheduler(
             jobstores=jobstores,
             executors=executors,
             job_defaults=job_defaults,
-            timezone=self._default_timezone
+            timezone=self._default_timezone,
         )
 
         self._scheduler.start()
@@ -193,7 +188,7 @@ class JobScheduler:
                 id=schedule.id,
                 args=[schedule.id],
                 name=schedule.name,
-                replace_existing=True
+                replace_existing=True,
             )
 
             self._schedules[schedule.id] = schedule
@@ -203,7 +198,9 @@ class JobScheduler:
             if next_run and next_run.next_run_time:
                 schedule.next_run = next_run.next_run_time
 
-            logger.info(f"Schedule '{schedule.name}' added, next run: {schedule.next_run}")
+            logger.info(
+                f"Schedule '{schedule.name}' added, next run: {schedule.next_run}"
+            )
             return True
 
         except Exception as e:
@@ -293,12 +290,14 @@ class JobScheduler:
         for job in jobs:
             if job.next_run_time and len(upcoming) < limit:
                 schedule = self._schedules.get(job.id)
-                upcoming.append({
-                    "schedule_id": job.id,
-                    "schedule_name": schedule.name if schedule else job.name,
-                    "workflow_name": schedule.workflow_name if schedule else "",
-                    "next_run": job.next_run_time,
-                })
+                upcoming.append(
+                    {
+                        "schedule_id": job.id,
+                        "schedule_name": schedule.name if schedule else job.name,
+                        "workflow_name": schedule.workflow_name if schedule else "",
+                        "next_run": job.next_run_time,
+                    }
+                )
 
         # Sort by next_run
         upcoming.sort(key=lambda x: x["next_run"])
@@ -340,7 +339,7 @@ class JobScheduler:
                 return None
             run_time = schedule.next_run
             if isinstance(run_time, str):
-                run_time = datetime.fromisoformat(run_time.replace('Z', ''))
+                run_time = datetime.fromisoformat(run_time.replace("Z", ""))
             return DateTrigger(run_date=run_time, timezone=tz)
 
         elif schedule.frequency == ScheduleFrequency.CRON:
@@ -361,10 +360,7 @@ class JobScheduler:
             if not interval:
                 logger.error(f"Unknown frequency for schedule {schedule.id}")
                 return None
-            return IntervalTrigger(
-                seconds=int(interval.total_seconds()),
-                timezone=tz
-            )
+            return IntervalTrigger(seconds=int(interval.total_seconds()), timezone=tz)
 
     async def _execute_schedule(self, schedule_id: str):
         """
@@ -406,11 +402,7 @@ class ScheduleManager:
     Combines scheduler with persistence and job creation.
     """
 
-    def __init__(
-        self,
-        job_creator: Callable[[Schedule], Any],
-        timezone: str = "UTC"
-    ):
+    def __init__(self, job_creator: Callable[[Schedule], Any], timezone: str = "UTC"):
         """
         Initialize schedule manager.
 
@@ -420,8 +412,7 @@ class ScheduleManager:
         """
         self._job_creator = job_creator
         self._scheduler = JobScheduler(
-            on_schedule_trigger=self._on_trigger,
-            timezone=timezone
+            on_schedule_trigger=self._on_trigger, timezone=timezone
         )
         self._schedules: Dict[str, Schedule] = {}
 
@@ -488,7 +479,7 @@ def calculate_next_run(
     frequency: ScheduleFrequency,
     cron_expression: str = "",
     timezone: str = "UTC",
-    from_time: Optional[datetime] = None
+    from_time: Optional[datetime] = None,
 ) -> Optional[datetime]:
     """
     Calculate the next run time for a schedule.
@@ -518,7 +509,9 @@ def calculate_next_run(
             interval = frequency_to_interval(frequency)
             if not interval:
                 return None
-            trigger = IntervalTrigger(seconds=int(interval.total_seconds()), timezone=tz)
+            trigger = IntervalTrigger(
+                seconds=int(interval.total_seconds()), timezone=tz
+            )
 
         # Get next fire time
         next_time = trigger.get_next_fire_time(None, from_time)

@@ -2,10 +2,10 @@
 WebSocket Server for CasareRPA Orchestrator.
 Handles robot connections and message routing.
 """
+
 import asyncio
 from datetime import datetime
 from typing import Optional, Dict, Set, Callable, Any, List
-from collections import defaultdict
 import json
 
 from loguru import logger
@@ -14,6 +14,7 @@ try:
     import websockets
     from websockets.server import WebSocketServerProtocol
     from websockets.exceptions import ConnectionClosed
+
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -33,7 +34,7 @@ class RobotConnection:
         robot_name: str,
         environment: str = "default",
         max_concurrent_jobs: int = 1,
-        tags: Optional[List[str]] = None
+        tags: Optional[List[str]] = None,
     ):
         self.websocket = websocket
         self.robot_id = robot_id
@@ -53,8 +54,8 @@ class RobotConnection:
     def is_available(self) -> bool:
         """Check if robot can accept more jobs."""
         return (
-            self.status == RobotStatus.ONLINE and
-            len(self.current_jobs) < self.max_concurrent_jobs
+            self.status == RobotStatus.ONLINE
+            and len(self.current_jobs) < self.max_concurrent_jobs
         )
 
     def to_robot(self) -> Robot:
@@ -88,7 +89,7 @@ class OrchestratorServer:
         host: str = "0.0.0.0",
         port: int = 8765,
         heartbeat_timeout: int = 60,
-        auth_token: Optional[str] = None
+        auth_token: Optional[str] = None,
     ):
         """
         Initialize orchestrator server.
@@ -100,7 +101,9 @@ class OrchestratorServer:
             auth_token: Optional authentication token
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError("websockets package required. Install with: pip install websockets")
+            raise ImportError(
+                "websockets package required. Install with: pip install websockets"
+            )
 
         self._host = host
         self._port = port
@@ -142,7 +145,7 @@ class OrchestratorServer:
         on_job_progress: Optional[Callable[[str, int, str], Any]] = None,
         on_job_complete: Optional[Callable[[str, Dict], Any]] = None,
         on_job_failed: Optional[Callable[[str, str], Any]] = None,
-        on_log_entry: Optional[Callable[[str, str, str, str], Any]] = None
+        on_log_entry: Optional[Callable[[str, str, str, str], Any]] = None,
     ):
         """Set event callbacks."""
         self._on_robot_connect = on_robot_connect
@@ -257,12 +260,15 @@ class OrchestratorServer:
         if self._auth_token:
             token = payload.get("auth_token")
             if token != self._auth_token:
-                await self._send(websocket, MessageBuilder.register_ack(
-                    robot_id=robot_id,
-                    success=False,
-                    message="Authentication failed",
-                    correlation_id=msg.id,
-                ))
+                await self._send(
+                    websocket,
+                    MessageBuilder.register_ack(
+                        robot_id=robot_id,
+                        success=False,
+                        message="Authentication failed",
+                        correlation_id=msg.id,
+                    ),
+                )
                 await websocket.close(4001, "Authentication failed")
                 return
 
@@ -281,16 +287,19 @@ class OrchestratorServer:
         self._ws_to_robot[websocket] = robot_id
 
         # Send acknowledgment
-        await self._send(websocket, MessageBuilder.register_ack(
-            robot_id=robot_id,
-            success=True,
-            message="Registration successful",
-            config={
-                "heartbeat_interval": 30,
-                "log_batch_size": 100,
-            },
-            correlation_id=msg.id,
-        ))
+        await self._send(
+            websocket,
+            MessageBuilder.register_ack(
+                robot_id=robot_id,
+                success=True,
+                message="Registration successful",
+                config={
+                    "heartbeat_interval": 30,
+                    "log_batch_size": 100,
+                },
+                correlation_id=msg.id,
+            ),
+        )
 
         logger.info(f"Robot '{robot_name}' ({robot_id}) registered")
 
@@ -319,19 +328,26 @@ class OrchestratorServer:
             active_jobs = msg.payload.get("active_job_ids", [])
             conn.current_jobs = set(active_jobs)
 
-        await self._send(websocket, MessageBuilder.heartbeat_ack(
-            robot_id=robot_id,
-            correlation_id=msg.id,
-        ))
+        await self._send(
+            websocket,
+            MessageBuilder.heartbeat_ack(
+                robot_id=robot_id,
+                correlation_id=msg.id,
+            ),
+        )
 
-    async def _handle_disconnect(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_disconnect(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle disconnect message."""
         robot_id = msg.payload.get("robot_id")
         reason = msg.payload.get("reason", "")
         logger.info(f"Robot {robot_id} disconnecting: {reason}")
         await websocket.close(1000, "Disconnect requested")
 
-    async def _handle_job_accept(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_accept(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job acceptance."""
         job_id = msg.payload.get("job_id")
         robot_id = msg.payload.get("robot_id")
@@ -344,20 +360,27 @@ class OrchestratorServer:
         self._resolve_response(msg.correlation_id, {"accepted": True, "job_id": job_id})
         logger.debug(f"Job {job_id[:8]} accepted by robot {robot_id}")
 
-    async def _handle_job_reject(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_reject(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job rejection."""
         job_id = msg.payload.get("job_id")
         robot_id = msg.payload.get("robot_id")
         reason = msg.payload.get("reason")
 
-        self._resolve_response(msg.correlation_id, {
-            "accepted": False,
-            "job_id": job_id,
-            "reason": reason,
-        })
+        self._resolve_response(
+            msg.correlation_id,
+            {
+                "accepted": False,
+                "job_id": job_id,
+                "reason": reason,
+            },
+        )
         logger.warning(f"Job {job_id[:8]} rejected by robot {robot_id}: {reason}")
 
-    async def _handle_job_progress(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_progress(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job progress update."""
         job_id = msg.payload.get("job_id")
         progress = msg.payload.get("progress", 0)
@@ -371,7 +394,9 @@ class OrchestratorServer:
             except Exception as e:
                 logger.error(f"Job progress callback error: {e}")
 
-    async def _handle_job_complete(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_complete(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job completion."""
         job_id = msg.payload.get("job_id")
         robot_id = msg.payload.get("robot_id")
@@ -392,7 +417,9 @@ class OrchestratorServer:
 
         logger.info(f"Job {job_id[:8]} completed by robot {robot_id}")
 
-    async def _handle_job_failed(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_failed(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job failure."""
         job_id = msg.payload.get("job_id")
         robot_id = msg.payload.get("robot_id")
@@ -413,7 +440,9 @@ class OrchestratorServer:
 
         logger.error(f"Job {job_id[:8]} failed on robot {robot_id}: {error_message}")
 
-    async def _handle_job_cancelled(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_job_cancelled(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle job cancellation confirmation."""
         job_id = msg.payload.get("job_id")
         robot_id = msg.payload.get("robot_id")
@@ -422,10 +451,14 @@ class OrchestratorServer:
         if conn:
             conn.current_jobs.discard(job_id)
 
-        self._resolve_response(msg.correlation_id, {"cancelled": True, "job_id": job_id})
+        self._resolve_response(
+            msg.correlation_id, {"cancelled": True, "job_id": job_id}
+        )
         logger.info(f"Job {job_id[:8]} cancelled on robot {robot_id}")
 
-    async def _handle_status_response(self, websocket: WebSocketServerProtocol, msg: Message):
+    async def _handle_status_response(
+        self, websocket: WebSocketServerProtocol, msg: Message
+    ):
         """Handle status response."""
         self._resolve_response(msg.correlation_id, msg.payload)
 
@@ -491,14 +524,17 @@ class OrchestratorServer:
         websocket: WebSocketServerProtocol,
         error_code: str,
         error_message: str,
-        correlation_id: Optional[str] = None
+        correlation_id: Optional[str] = None,
     ):
         """Send error message."""
-        await self._send(websocket, MessageBuilder.error(
-            error_code=error_code,
-            error_message=error_message,
-            correlation_id=correlation_id,
-        ))
+        await self._send(
+            websocket,
+            MessageBuilder.error(
+                error_code=error_code,
+                error_message=error_message,
+                correlation_id=correlation_id,
+            ),
+        )
 
     def _resolve_response(self, correlation_id: Optional[str], result: Any):
         """Resolve a pending response."""
@@ -528,7 +564,9 @@ class OrchestratorServer:
             if elapsed > self._heartbeat_timeout:
                 stale_robots.append(robot_id)
                 conn.status = RobotStatus.OFFLINE
-                logger.warning(f"Robot '{conn.robot_name}' marked offline (no heartbeat)")
+                logger.warning(
+                    f"Robot '{conn.robot_name}' marked offline (no heartbeat)"
+                )
 
         # Remove stale connections
         for robot_id in stale_robots:
@@ -537,10 +575,7 @@ class OrchestratorServer:
     # ==================== PUBLIC API ====================
 
     async def send_job(
-        self,
-        robot_id: str,
-        job: Job,
-        timeout: float = 30.0
+        self, robot_id: str, job: Job, timeout: float = 30.0
     ) -> Dict[str, Any]:
         """
         Send a job to a robot.
@@ -565,7 +600,9 @@ class OrchestratorServer:
             workflow_id=job.workflow_id,
             workflow_name=job.workflow_name,
             workflow_json=job.workflow_json,
-            priority=job.priority.value if hasattr(job.priority, 'value') else job.priority,
+            priority=job.priority.value
+            if hasattr(job.priority, "value")
+            else job.priority,
         )
 
         # Create pending response
@@ -591,7 +628,7 @@ class OrchestratorServer:
         robot_id: str,
         job_id: str,
         reason: str = "Cancelled by orchestrator",
-        timeout: float = 10.0
+        timeout: float = 10.0,
     ) -> bool:
         """
         Cancel a job on a robot.
@@ -622,7 +659,9 @@ class OrchestratorServer:
             self._pending_responses.pop(msg.id, None)
             return False
 
-    async def request_status(self, robot_id: str, timeout: float = 10.0) -> Optional[Dict]:
+    async def request_status(
+        self, robot_id: str, timeout: float = 10.0
+    ) -> Optional[Dict]:
         """Request status from a robot."""
         conn = self._connections.get(robot_id)
         if not conn:
@@ -653,7 +692,9 @@ class OrchestratorServer:
 
     def get_available_robots(self) -> List[Robot]:
         """Get list of available robots."""
-        return [conn.to_robot() for conn in self._connections.values() if conn.is_available]
+        return [
+            conn.to_robot() for conn in self._connections.values() if conn.is_available
+        ]
 
     def get_robot(self, robot_id: str) -> Optional[Robot]:
         """Get a specific robot."""

@@ -2,12 +2,12 @@
 Result Collection System for CasareRPA Orchestrator.
 Handles job result collection, storage, and analytics.
 """
+
 import asyncio
 import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Callable
 from dataclasses import dataclass, field
-from enum import Enum
 from collections import defaultdict
 import statistics
 
@@ -19,6 +19,7 @@ from .models import Job, JobStatus
 @dataclass
 class JobResult:
     """Complete result of a job execution."""
+
     job_id: str
     workflow_id: str
     workflow_name: str
@@ -57,7 +58,9 @@ class JobResult:
             "robot_name": self.robot_name,
             "status": self.status.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
             "duration_ms": self.duration_ms,
             "progress": self.progress,
             "result_data": self.result_data,
@@ -79,8 +82,12 @@ class JobResult:
             robot_id=data.get("robot_id", ""),
             robot_name=data.get("robot_name", ""),
             status=JobStatus(data.get("status", "completed")),
-            started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
-            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            started_at=datetime.fromisoformat(data["started_at"])
+            if data.get("started_at")
+            else None,
+            completed_at=datetime.fromisoformat(data["completed_at"])
+            if data.get("completed_at")
+            else None,
             duration_ms=data.get("duration_ms", 0),
             progress=data.get("progress", 100),
             result_data=data.get("result_data", {}),
@@ -96,6 +103,7 @@ class JobResult:
 @dataclass
 class ExecutionStatistics:
     """Statistics for job executions."""
+
     total_executions: int = 0
     successful: int = 0
     failed: int = 0
@@ -339,13 +347,15 @@ class ResultCollector:
             # Keep most recent logs
             logs.pop(0)
 
-        logs.append({
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": level,
-            "message": message,
-            "node_id": node_id,
-            "extra": extra or {},
-        })
+        logs.append(
+            {
+                "timestamp": datetime.utcnow().isoformat(),
+                "level": level,
+                "message": message,
+                "node_id": node_id,
+                "extra": extra or {},
+            }
+        )
 
     def add_log_batch(self, job_id: str, entries: List[Dict[str, Any]]):
         """
@@ -408,17 +418,11 @@ class ResultCollector:
 
     def get_results_by_workflow(self, workflow_id: str) -> List[JobResult]:
         """Get all results for a workflow."""
-        return [
-            r for r in self._results.values()
-            if r.workflow_id == workflow_id
-        ]
+        return [r for r in self._results.values() if r.workflow_id == workflow_id]
 
     def get_results_by_robot(self, robot_id: str) -> List[JobResult]:
         """Get all results for a robot."""
-        return [
-            r for r in self._results.values()
-            if r.robot_id == robot_id
-        ]
+        return [r for r in self._results.values() if r.robot_id == robot_id]
 
     def get_recent_results(self, limit: int = 100) -> List[JobResult]:
         """Get most recent results."""
@@ -428,7 +432,8 @@ class ResultCollector:
     def get_failed_results(self, limit: int = 100) -> List[JobResult]:
         """Get recent failed results."""
         failed = [
-            r for r in self._results.values()
+            r
+            for r in self._results.values()
             if r.status in (JobStatus.FAILED, JobStatus.TIMEOUT)
         ]
         failed.sort(key=lambda r: r.completed_at or datetime.min, reverse=True)
@@ -493,12 +498,16 @@ class ResultCollector:
 
         # Calculate throughput
         if results:
-            first_time = min(
-                r.started_at for r in results if r.started_at
-            ) if any(r.started_at for r in results) else None
-            last_time = max(
-                r.completed_at for r in results if r.completed_at
-            ) if any(r.completed_at for r in results) else None
+            first_time = (
+                min(r.started_at for r in results if r.started_at)
+                if any(r.started_at for r in results)
+                else None
+            )
+            last_time = (
+                max(r.completed_at for r in results if r.completed_at)
+                if any(r.completed_at for r in results)
+                else None
+            )
 
             if first_time and last_time and last_time > first_time:
                 hours = (last_time - first_time).total_seconds() / 3600
@@ -532,11 +541,12 @@ class ResultCollector:
         hourly_data = []
 
         for i in range(hours):
-            hour_start = now - timedelta(hours=i+1)
+            hour_start = now - timedelta(hours=i + 1)
             hour_end = now - timedelta(hours=i)
 
             results = [
-                r for r in self._results.values()
+                r
+                for r in self._results.values()
                 if r.completed_at and hour_start <= r.completed_at < hour_end
             ]
 
@@ -546,13 +556,15 @@ class ResultCollector:
             successful = sum(1 for r in results if r.status == JobStatus.COMPLETED)
             failed = sum(1 for r in results if r.status == JobStatus.FAILED)
 
-            hourly_data.append({
-                "hour": hour_start.strftime("%Y-%m-%d %H:00"),
-                "total": len(results),
-                "successful": successful,
-                "failed": failed,
-                "success_rate": successful / len(results) * 100 if results else 0.0,
-            })
+            hourly_data.append(
+                {
+                    "hour": hour_start.strftime("%Y-%m-%d %H:00"),
+                    "total": len(results),
+                    "successful": successful,
+                    "failed": failed,
+                    "success_rate": successful / len(results) * 100 if results else 0.0,
+                }
+            )
 
         return list(reversed(hourly_data))
 
@@ -621,9 +633,17 @@ class ResultExporter:
             return ""
 
         headers = [
-            "job_id", "workflow_id", "workflow_name", "robot_id", "robot_name",
-            "status", "started_at", "completed_at", "duration_ms",
-            "error_message", "error_type"
+            "job_id",
+            "workflow_id",
+            "workflow_name",
+            "robot_id",
+            "robot_name",
+            "status",
+            "started_at",
+            "completed_at",
+            "duration_ms",
+            "error_message",
+            "error_type",
         ]
 
         lines = [",".join(headers)]

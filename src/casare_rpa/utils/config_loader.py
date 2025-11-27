@@ -22,6 +22,7 @@ from loguru import logger
 # Optional dependencies - gracefully degrade if not installed
 try:
     import yaml
+
     YAML_AVAILABLE = True
 except ImportError:
     yaml = None
@@ -29,10 +30,12 @@ except ImportError:
 
 try:
     import tomllib  # Python 3.11+
+
     TOML_AVAILABLE = True
 except ImportError:
     try:
         import tomli as tomllib  # Fallback for older Python
+
         TOML_AVAILABLE = True
     except ImportError:
         tomllib = None
@@ -44,6 +47,7 @@ T = TypeVar("T")
 
 class ConfigurationError(Exception):
     """Raised when configuration loading or validation fails."""
+
     pass
 
 
@@ -105,7 +109,7 @@ class ConfigLoader:
         self,
         base_path: Optional[Path] = None,
         env_prefix: str = "CASARE_",
-        load_env: bool = True
+        load_env: bool = True,
     ):
         """
         Initialize configuration loader.
@@ -135,7 +139,7 @@ class ConfigLoader:
         self,
         path: Union[str, Path],
         format: Optional[str] = None,
-        required: bool = True
+        required: bool = True,
     ) -> Dict[str, Any]:
         """
         Load configuration from a single file.
@@ -189,10 +193,7 @@ class ConfigLoader:
         except Exception as e:
             raise ConfigurationError(f"Failed to load {path}: {e}")
 
-    def load_all(
-        self,
-        environment: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def load_all(self, environment: Optional[str] = None) -> Dict[str, Any]:
         """
         Load and merge configuration from all sources.
 
@@ -210,11 +211,7 @@ class ConfigLoader:
                 continue
 
             try:
-                source_config = self.load(
-                    source.path,
-                    source.format,
-                    source.required
-                )
+                source_config = self.load(source.path, source.format, source.required)
                 config = self._deep_merge(config, source_config)
             except ConfigurationError:
                 if source.required:
@@ -227,11 +224,7 @@ class ConfigLoader:
 
         return config
 
-    def validate(
-        self,
-        config: Dict[str, Any],
-        schema: ConfigSchema
-    ) -> Dict[str, Any]:
+    def validate(self, config: Dict[str, Any], schema: ConfigSchema) -> Dict[str, Any]:
         """
         Validate configuration against a schema.
 
@@ -279,8 +272,8 @@ class ConfigLoader:
 
         if errors:
             raise ConfigurationError(
-                f"Configuration validation failed:\n" +
-                "\n".join(f"  - {e}" for e in errors)
+                "Configuration validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
             )
 
         return validated
@@ -356,9 +349,7 @@ class ConfigLoader:
         return config
 
     def _deep_merge(
-        self,
-        base: Dict[str, Any],
-        override: Dict[str, Any]
+        self, base: Dict[str, Any], override: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Deep merge two dictionaries.
@@ -370,9 +361,9 @@ class ConfigLoader:
 
         for key, value in override.items():
             if (
-                key in result and
-                isinstance(result[key], dict) and
-                isinstance(value, dict)
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
             ):
                 result[key] = self._deep_merge(result[key], value)
             else:
@@ -383,10 +374,8 @@ class ConfigLoader:
 
 # Convenience functions for simple use cases
 
-def load_config(
-    path: Union[str, Path],
-    required: bool = True
-) -> Dict[str, Any]:
+
+def load_config(path: Union[str, Path], required: bool = True) -> Dict[str, Any]:
     """
     Load configuration from a file.
 
@@ -402,9 +391,7 @@ def load_config(
 
 
 def load_config_with_env(
-    path: Union[str, Path],
-    env_prefix: str = "CASARE_",
-    required: bool = True
+    path: Union[str, Path], env_prefix: str = "CASARE_", required: bool = True
 ) -> Dict[str, Any]:
     """
     Load configuration from file with environment variable overrides.

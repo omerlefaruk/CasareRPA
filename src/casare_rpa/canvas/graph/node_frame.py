@@ -9,15 +9,18 @@ References:
 - "Designing Data-Intensive Applications" - Resource pooling
 """
 
-from typing import Any, List, Optional, Tuple, Set, Dict, TYPE_CHECKING
+from typing import Any, List, Optional, Tuple, Set, Dict
 from PySide6.QtGui import QUndoCommand
 from PySide6.QtWidgets import (
-    QGraphicsItem, QGraphicsRectItem, QGraphicsTextItem,
-    QGraphicsEllipseItem, QMenu, QInputDialog
+    QGraphicsItem,
+    QGraphicsRectItem,
+    QGraphicsTextItem,
+    QGraphicsEllipseItem,
+    QMenu,
+    QInputDialog,
 )
-from PySide6.QtCore import QRectF, Qt, QPointF, QTimer, QObject, Signal
-from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QKeyEvent, QPainterPath
-from NodeGraphQt import BaseNode
+from PySide6.QtCore import QRectF, Qt, QPointF, QTimer, QObject
+from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter
 from NodeGraphQt.base.node import NodeObject
 
 
@@ -64,15 +67,21 @@ class FrameDeletedCmd(QUndoCommand):
     def _store_frame_state(self):
         """Store all frame state for restoration."""
         self._frame_data = {
-            'title': self._frame.frame_title,
-            'color': self._frame.frame_color,
-            'pos': (self._frame.pos().x(), self._frame.pos().y()),
-            'rect': (self._frame.rect().width(), self._frame.rect().height()),
-            'contained_node_ids': [node.id if hasattr(node, 'id') else id(node)
-                                    for node in self._frame.contained_nodes],
-            'is_collapsed': self._frame._is_collapsed,
-            'expanded_rect': (self._frame._expanded_rect.width(),
-                            self._frame._expanded_rect.height()) if self._frame._expanded_rect else None
+            "title": self._frame.frame_title,
+            "color": self._frame.frame_color,
+            "pos": (self._frame.pos().x(), self._frame.pos().y()),
+            "rect": (self._frame.rect().width(), self._frame.rect().height()),
+            "contained_node_ids": [
+                node.id if hasattr(node, "id") else id(node)
+                for node in self._frame.contained_nodes
+            ],
+            "is_collapsed": self._frame._is_collapsed,
+            "expanded_rect": (
+                self._frame._expanded_rect.width(),
+                self._frame._expanded_rect.height(),
+            )
+            if self._frame._expanded_rect
+            else None,
         }
 
     def undo(self):
@@ -85,7 +94,7 @@ class FrameDeletedCmd(QUndoCommand):
             self._scene.addItem(self._frame)
 
             # Re-register with bounds manager
-            if hasattr(self._frame, '_bounds_manager') and self._frame._bounds_manager:
+            if hasattr(self._frame, "_bounds_manager") and self._frame._bounds_manager:
                 self._frame._bounds_manager.register_frame(self._frame)
 
             self._was_deleted = False
@@ -94,7 +103,7 @@ class FrameDeletedCmd(QUndoCommand):
         """Delete the frame again."""
         if self._frame and self._frame.scene():
             # Unregister from bounds manager
-            if hasattr(self._frame, '_bounds_manager') and self._frame._bounds_manager:
+            if hasattr(self._frame, "_bounds_manager") and self._frame._bounds_manager:
                 self._frame._bounds_manager.unregister_frame(self._frame)
 
             # Remove from scene (but keep the frame object)
@@ -260,14 +269,14 @@ class CollapseButton(QGraphicsRectItem):
         # Horizontal line (always present)
         painter.drawLine(
             QPointF(center_x - symbol_size, center_y),
-            QPointF(center_x + symbol_size, center_y)
+            QPointF(center_x + symbol_size, center_y),
         )
 
         # Vertical line (only when collapsed - shows "+")
         if self._parent_frame.is_collapsed:
             painter.drawLine(
                 QPointF(center_x, center_y - symbol_size),
-                QPointF(center_x, center_y + symbol_size)
+                QPointF(center_x, center_y + symbol_size),
             )
 
     def hoverEnterEvent(self, event):
@@ -305,11 +314,7 @@ class ExposedPortIndicator(QGraphicsEllipseItem):
     """
 
     def __init__(
-        self,
-        port_name: str,
-        is_output: bool,
-        color: QColor,
-        parent: QGraphicsItem
+        self, port_name: str, is_output: bool, color: QColor, parent: QGraphicsItem
     ):
         """
         Initialize exposed port indicator.
@@ -372,7 +377,7 @@ class NodeFrame(QGraphicsRectItem):
         color: QColor = None,
         width: float = 400,
         height: float = 300,
-        parent=None
+        parent=None,
     ):
         super().__init__(parent)
 
@@ -393,18 +398,20 @@ class NodeFrame(QGraphicsRectItem):
         # Collapse state
         self._is_collapsed = False
         self._expanded_rect = QRectF(0, 0, width, height)  # Store expanded size
-        self._exposed_ports: List[ExposedPortIndicator] = []  # Indicators for external connections
+        self._exposed_ports: List[
+            ExposedPortIndicator
+        ] = []  # Indicators for external connections
         self._hidden_node_views: List[Any] = []  # Store references to hidden node views
         self._hidden_pipes: Set[Any] = set()  # Store references to hidden pipes
 
         # Set frame properties
         self.setRect(0, 0, width, height)
         self.setFlags(
-            QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
-            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable |
-            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges |
-            QGraphicsItem.GraphicsItemFlag.ItemIsFocusable |
-            QGraphicsItem.GraphicsItemFlag.ItemAcceptsInputMethod
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            | QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
+            | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
+            | QGraphicsItem.GraphicsItemFlag.ItemIsFocusable
+            | QGraphicsItem.GraphicsItemFlag.ItemAcceptsInputMethod
         )
 
         # Accept hover and drag events
@@ -496,7 +503,6 @@ class NodeFrame(QGraphicsRectItem):
         # First, capture any nodes that are inside the frame bounds but not yet tracked
         self._capture_nodes_in_bounds()
 
-
         # Store current expanded rect
         self._expanded_rect = QRectF(self.rect())
 
@@ -512,7 +518,7 @@ class NodeFrame(QGraphicsRectItem):
         # in NodeGraphQt depends on node visibility
         for node in self.contained_nodes:
             try:
-                if hasattr(node, 'view') and node.view:
+                if hasattr(node, "view") and node.view:
                     self._hidden_node_views.append(node.view)
                     node.view.setVisible(False)
             except Exception:
@@ -523,12 +529,12 @@ class NodeFrame(QGraphicsRectItem):
         for node in self.contained_nodes:
             try:
                 for port in node.input_ports():
-                    if hasattr(port, 'view') and port.view:
-                        if hasattr(port.view, 'redraw_connected_pipes'):
+                    if hasattr(port, "view") and port.view:
+                        if hasattr(port.view, "redraw_connected_pipes"):
                             port.view.redraw_connected_pipes()
                 for port in node.output_ports():
-                    if hasattr(port, 'view') and port.view:
-                        if hasattr(port.view, 'redraw_connected_pipes'):
+                    if hasattr(port, "view") and port.view:
+                        if hasattr(port.view, "redraw_connected_pipes"):
                             port.view.redraw_connected_pipes()
             except Exception:
                 pass
@@ -538,7 +544,7 @@ class NodeFrame(QGraphicsRectItem):
         self.setRect(0, 0, self.COLLAPSED_WIDTH, self.COLLAPSED_HEIGHT)
 
         # Update collapse button position
-        if hasattr(self, '_collapse_button'):
+        if hasattr(self, "_collapse_button"):
             self._collapse_button._update_position()
 
         # Create exposed port indicators
@@ -550,7 +556,6 @@ class NodeFrame(QGraphicsRectItem):
         # Force full scene invalidation to ensure all visibility changes are applied
         if self.scene():
             self.scene().invalidate()
-
 
     def expand(self) -> None:
         """
@@ -564,7 +569,6 @@ class NodeFrame(QGraphicsRectItem):
         if not self._is_collapsed:
             return
 
-
         # Remove exposed port indicators
         self._clear_exposed_ports()
 
@@ -573,7 +577,7 @@ class NodeFrame(QGraphicsRectItem):
         self.setRect(self._expanded_rect)
 
         # Update collapse button position
-        if hasattr(self, '_collapse_button'):
+        if hasattr(self, "_collapse_button"):
             self._collapse_button._update_position()
 
         # Show all node views FIRST
@@ -587,7 +591,7 @@ class NodeFrame(QGraphicsRectItem):
         # Also ensure all contained nodes are visible
         for node in self.contained_nodes:
             try:
-                if hasattr(node, 'view') and node.view:
+                if hasattr(node, "view") and node.view:
                     node.view.setVisible(True)
             except Exception:
                 pass
@@ -597,12 +601,12 @@ class NodeFrame(QGraphicsRectItem):
         for node in self.contained_nodes:
             try:
                 for port in node.input_ports():
-                    if hasattr(port, 'view') and port.view:
-                        if hasattr(port.view, 'redraw_connected_pipes'):
+                    if hasattr(port, "view") and port.view:
+                        if hasattr(port.view, "redraw_connected_pipes"):
                             port.view.redraw_connected_pipes()
                 for port in node.output_ports():
-                    if hasattr(port, 'view') and port.view:
-                        if hasattr(port.view, 'redraw_connected_pipes'):
+                    if hasattr(port, "view") and port.view:
+                        if hasattr(port.view, "redraw_connected_pipes"):
                             port.view.redraw_connected_pipes()
             except Exception:
                 pass
@@ -617,7 +621,6 @@ class NodeFrame(QGraphicsRectItem):
         # Force full scene invalidation to ensure all visibility changes are applied
         if self.scene():
             self.scene().invalidate()
-
 
     def _capture_nodes_in_bounds(self) -> None:
         """
@@ -647,10 +650,10 @@ class NodeFrame(QGraphicsRectItem):
                 continue
 
             # Check if node has a view and position
-            if hasattr(node, 'view') and node.view and hasattr(node, 'pos'):
+            if hasattr(node, "view") and node.view and hasattr(node, "pos"):
                 try:
                     node_view = node.view
-                    if hasattr(node_view, 'sceneBoundingRect'):
+                    if hasattr(node_view, "sceneBoundingRect"):
                         node_rect = node_view.sceneBoundingRect()
 
                         # Check if node center is inside the frame
@@ -662,19 +665,19 @@ class NodeFrame(QGraphicsRectItem):
 
     def _collect_pipes(self, node) -> None:
         """Collect all pipes from a node and store them (without hiding)."""
-        if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
+        if not hasattr(node, "input_ports") or not hasattr(node, "output_ports"):
             return
 
         try:
             # Collect pipes from input ports
             for port in node.input_ports():
-                if hasattr(port, 'view') and port.view:
+                if hasattr(port, "view") and port.view:
                     for pipe in port.view.connected_pipes():
                         self._hidden_pipes.add(pipe)
 
             # Collect pipes from output ports
             for port in node.output_ports():
-                if hasattr(port, 'view') and port.view:
+                if hasattr(port, "view") and port.view:
                     for pipe in port.view.connected_pipes():
                         self._hidden_pipes.add(pipe)
         except Exception:
@@ -689,7 +692,7 @@ class NodeFrame(QGraphicsRectItem):
         output_ports = []
 
         for node in self.contained_nodes:
-            if not hasattr(node, 'input_ports') or not hasattr(node, 'output_ports'):
+            if not hasattr(node, "input_ports") or not hasattr(node, "output_ports"):
                 continue
 
             try:
@@ -698,14 +701,18 @@ class NodeFrame(QGraphicsRectItem):
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self.contained_nodes:
-                            input_ports.append((port.name(), self._get_port_color(port)))
+                            input_ports.append(
+                                (port.name(), self._get_port_color(port))
+                            )
 
                 # Check output ports for external connections
                 for port in node.output_ports():
                     for connected_port in port.connected_ports():
                         connected_node = connected_port.node()
                         if connected_node not in self.contained_nodes:
-                            output_ports.append((port.name(), self._get_port_color(port)))
+                            output_ports.append(
+                                (port.name(), self._get_port_color(port))
+                            )
             except Exception:
                 pass
 
@@ -715,14 +722,18 @@ class NodeFrame(QGraphicsRectItem):
         port_spacing = 14
 
         # Input ports on left side
-        y_start = rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
+        y_start = (
+            rect.top() + rect.height() / 2 - (len(input_ports) - 1) * port_spacing / 2
+        )
         for i, (port_name, color) in enumerate(input_ports):
             indicator = ExposedPortIndicator(port_name, False, color, self)
             indicator.setPos(rect.left() + margin, y_start + i * port_spacing)
             self._exposed_ports.append(indicator)
 
         # Output ports on right side
-        y_start = rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
+        y_start = (
+            rect.top() + rect.height() / 2 - (len(output_ports) - 1) * port_spacing / 2
+        )
         for i, (port_name, color) in enumerate(output_ports):
             indicator = ExposedPortIndicator(port_name, True, color, self)
             indicator.setPos(rect.right() - margin, y_start + i * port_spacing)
@@ -743,11 +754,12 @@ class NodeFrame(QGraphicsRectItem):
         try:
             # Try to get port type from node
             node = port.node()
-            if hasattr(node, 'get_port_type'):
+            if hasattr(node, "get_port_type"):
                 data_type = node.get_port_type(port.name())
                 if data_type:
                     # Import type registry to get color
                     from ...core.port_type_system import get_port_type_registry
+
                     registry = get_port_type_registry()
                     color_tuple = registry.get_type_color(data_type)
                     return QColor(*color_tuple)
@@ -794,8 +806,14 @@ class NodeFrame(QGraphicsRectItem):
             painter.setPen(QPen(self.frame_color.lighter(180)))
             font = QFont("Segoe UI", 9)
             painter.setFont(font)
-            text_rect = QRectF(rect.left() + 10, rect.bottom() - 20, rect.width() - 20, 15)
-            painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, count_text)
+            text_rect = QRectF(
+                rect.left() + 10, rect.bottom() - 20, rect.width() - 20, 15
+            )
+            painter.drawText(
+                text_rect,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                count_text,
+            )
 
     def add_node(self, node):
         """
@@ -807,12 +825,15 @@ class NodeFrame(QGraphicsRectItem):
         if node not in self.contained_nodes:
             self.contained_nodes.append(node)
             # Store the node's relative position to the frame
-            if hasattr(node, 'pos'):
+            if hasattr(node, "pos"):
                 node_pos = node.pos()
                 frame_pos = self.pos()
                 # Store original position for movement tracking
-                if not hasattr(node, '_frame_offset'):
-                    node._frame_offset = (node_pos[0] - frame_pos.x(), node_pos[1] - frame_pos.y())
+                if not hasattr(node, "_frame_offset"):
+                    node._frame_offset = (
+                        node_pos[0] - frame_pos.x(),
+                        node_pos[1] - frame_pos.y(),
+                    )
                     node._parent_frame = self
 
     def remove_node(self, node):
@@ -824,10 +845,10 @@ class NodeFrame(QGraphicsRectItem):
         """
         if node in self.contained_nodes:
             self.contained_nodes.remove(node)
-            if hasattr(node, '_frame_offset'):
-                delattr(node, '_frame_offset')
-            if hasattr(node, '_parent_frame'):
-                delattr(node, '_parent_frame')
+            if hasattr(node, "_frame_offset"):
+                delattr(node, "_frame_offset")
+            if hasattr(node, "_parent_frame"):
+                delattr(node, "_parent_frame")
 
     def itemChange(self, change, value):
         """Handle item changes, particularly position changes."""
@@ -845,13 +866,15 @@ class NodeFrame(QGraphicsRectItem):
 
                 # Move all contained nodes with the frame
                 for node in list(self.contained_nodes):
-                    if hasattr(node, 'set_pos'):
+                    if hasattr(node, "set_pos"):
                         current_pos = node.pos()
                         node.set_pos(current_pos[0] + delta_x, current_pos[1] + delta_y)
                         # Update the offset
-                        if hasattr(node, '_frame_offset'):
-                            node._frame_offset = (current_pos[0] + delta_x - new_pos.x(),
-                                                current_pos[1] + delta_y - new_pos.y())
+                        if hasattr(node, "_frame_offset"):
+                            node._frame_offset = (
+                                current_pos[0] + delta_x - new_pos.x(),
+                                current_pos[1] + delta_y - new_pos.y(),
+                            )
 
         return super().itemChange(change, value)
 
@@ -865,10 +888,15 @@ class NodeFrame(QGraphicsRectItem):
         handle_size = self._resize_handle_size
 
         # Only check bottom-right corner
-        br_rect = QRectF(rect.right() - handle_size, rect.bottom() - handle_size, handle_size, handle_size)
+        br_rect = QRectF(
+            rect.right() - handle_size,
+            rect.bottom() - handle_size,
+            handle_size,
+            handle_size,
+        )
 
         if br_rect.contains(pos):
-            return 'BR'
+            return "BR"
         return None
 
     def mousePressEvent(self, event):
@@ -901,13 +929,13 @@ class NodeFrame(QGraphicsRectItem):
             new_rect = QRectF(self._resize_start_rect)
 
             # Adjust rect based on which corner is being dragged
-            if 'R' in self._resize_corner:  # Right side
+            if "R" in self._resize_corner:  # Right side
                 new_rect.setRight(self._resize_start_rect.right() + delta.x())
-            if 'L' in self._resize_corner:  # Left side
+            if "L" in self._resize_corner:  # Left side
                 new_rect.setLeft(self._resize_start_rect.left() + delta.x())
-            if 'T' in self._resize_corner:  # Top side
+            if "T" in self._resize_corner:  # Top side
                 new_rect.setTop(self._resize_start_rect.top() + delta.y())
-            if 'B' in self._resize_corner:  # Bottom side
+            if "B" in self._resize_corner:  # Bottom side
                 new_rect.setBottom(self._resize_start_rect.bottom() + delta.y())
 
             # Enforce minimum size
@@ -936,7 +964,7 @@ class NodeFrame(QGraphicsRectItem):
         """Change cursor when hovering over the bottom-right resize corner."""
         if self.isSelected():
             corner = self._get_resize_corner(event.pos())
-            if corner == 'BR':
+            if corner == "BR":
                 # Bottom-right corner uses diagonal resize cursor
                 self.setCursor(Qt.CursorShape.SizeFDiagCursor)  # \ diagonal
             else:
@@ -975,9 +1003,9 @@ class NodeFrame(QGraphicsRectItem):
 
         # Check contained nodes for ungrouping (moved outside frame)
         for node in list(self.contained_nodes):
-            if hasattr(node, 'view') and node.view:
+            if hasattr(node, "view") and node.view:
                 node_view = node.view
-                if hasattr(node_view, 'sceneBoundingRect'):
+                if hasattr(node_view, "sceneBoundingRect"):
                     node_rect = node_view.sceneBoundingRect()
 
                     # Check if node is mostly outside the frame
@@ -985,7 +1013,9 @@ class NodeFrame(QGraphicsRectItem):
                     node_area = node_rect.width() * node_rect.height()
 
                     if node_area > 0:
-                        overlap_ratio = (intersection.width() * intersection.height()) / node_area
+                        overlap_ratio = (
+                            intersection.width() * intersection.height()
+                        ) / node_area
                         if overlap_ratio < 0.25:
                             self.remove_node(node)
 
@@ -994,11 +1024,11 @@ class NodeFrame(QGraphicsRectItem):
             if node in self.contained_nodes:
                 continue  # Skip nodes already in this frame
 
-            if not hasattr(node, 'view') or not node.view:
+            if not hasattr(node, "view") or not node.view:
                 continue
 
             node_view = node.view
-            if not hasattr(node_view, 'sceneBoundingRect'):
+            if not hasattr(node_view, "sceneBoundingRect"):
                 continue
 
             node_rect = node_view.sceneBoundingRect()
@@ -1031,8 +1061,10 @@ class NodeFrame(QGraphicsRectItem):
                 # Track this node's position
                 if node_id in self._last_overlap_check:
                     last_pos, _ = self._last_overlap_check[node_id]
-                    pos_changed = (abs(last_pos[0] - current_pos[0]) > 2 or
-                                   abs(last_pos[1] - current_pos[1]) > 2)
+                    pos_changed = (
+                        abs(last_pos[0] - current_pos[0]) > 2
+                        or abs(last_pos[1] - current_pos[1]) > 2
+                    )
 
                     # If position changed and overlap is very significant (70%+), add the node
                     # This higher threshold allows the green highlight to stay visible longer
@@ -1060,7 +1092,6 @@ class NodeFrame(QGraphicsRectItem):
 
     def _edit_title(self):
         """Open a dialog to edit the frame title."""
-        from PySide6.QtWidgets import QApplication
 
         # Get the main window or any widget to parent the dialog
         parent = None
@@ -1068,10 +1099,7 @@ class NodeFrame(QGraphicsRectItem):
             parent = self.scene().views()[0]
 
         new_title, ok = QInputDialog.getText(
-            parent,
-            "Edit Frame Title",
-            "Frame title:",
-            text=self.frame_title
+            parent, "Edit Frame Title", "Frame title:", text=self.frame_title
         )
 
         if ok and new_title:
@@ -1142,7 +1170,9 @@ class NodeFrame(QGraphicsRectItem):
                 undo_stack = NodeFrame._graph_ref.undo_stack()
                 if undo_stack:
                     # Create and push undo command
-                    cmd = FrameDeletedCmd(self, scene, f"Delete Frame '{self.frame_title}'")
+                    cmd = FrameDeletedCmd(
+                        self, scene, f"Delete Frame '{self.frame_title}'"
+                    )
                     undo_stack.push(cmd)
                     return  # The redo() of the command will do the actual deletion
             except Exception:
@@ -1154,7 +1184,7 @@ class NodeFrame(QGraphicsRectItem):
     def _do_delete(self):
         """Perform the actual frame deletion (used by undo command)."""
         # Unregister from centralized bounds manager
-        if hasattr(self, '_bounds_manager') and self._bounds_manager:
+        if hasattr(self, "_bounds_manager") and self._bounds_manager:
             self._bounds_manager.unregister_frame(self)
 
         # Ungroup all contained nodes (but keep them in the scene)
@@ -1189,7 +1219,7 @@ class NodeFrame(QGraphicsRectItem):
         # Get contained node IDs
         contained_node_ids = []
         for node in self.contained_nodes:
-            if hasattr(node, 'get_property'):
+            if hasattr(node, "get_property"):
                 node_id = node.get_property("node_id")
                 if node_id:
                     contained_node_ids.append(node_id)
@@ -1198,7 +1228,8 @@ class NodeFrame(QGraphicsRectItem):
             "title": self.frame_title,
             "position": {"x": pos.x(), "y": pos.y()},
             "size": {"width": rect.width(), "height": rect.height()},
-            "color": color_name or {
+            "color": color_name
+            or {
                 "r": self.frame_color.red(),
                 "g": self.frame_color.green(),
                 "b": self.frame_color.blue(),
@@ -1210,9 +1241,7 @@ class NodeFrame(QGraphicsRectItem):
 
     @classmethod
     def deserialize(
-        cls,
-        data: Dict[str, Any],
-        node_map: Optional[Dict[str, Any]] = None
+        cls, data: Dict[str, Any], node_map: Optional[Dict[str, Any]] = None
     ) -> "NodeFrame":
         """
         Create a frame from serialized data.
@@ -1266,15 +1295,15 @@ class NodeFrame(QGraphicsRectItem):
 
 # Pre-defined frame color themes
 FRAME_COLORS = {
-    'blue': QColor(100, 181, 246, 60),
-    'purple': QColor(156, 39, 176, 60),
-    'green': QColor(102, 187, 106, 60),
-    'orange': QColor(255, 167, 38, 60),
-    'red': QColor(239, 83, 80, 60),
-    'yellow': QColor(255, 202, 40, 60),
-    'teal': QColor(77, 182, 172, 60),
-    'pink': QColor(236, 64, 122, 60),
-    'gray': QColor(120, 120, 120, 60),
+    "blue": QColor(100, 181, 246, 60),
+    "purple": QColor(156, 39, 176, 60),
+    "green": QColor(102, 187, 106, 60),
+    "orange": QColor(255, 167, 38, 60),
+    "red": QColor(239, 83, 80, 60),
+    "yellow": QColor(255, 202, 40, 60),
+    "teal": QColor(77, 182, 172, 60),
+    "pink": QColor(236, 64, 122, 60),
+    "gray": QColor(120, 120, 120, 60),
 }
 
 
@@ -1300,7 +1329,6 @@ class FrameNode(NodeObject):
         # Hide standard node appearance (no ports, minimal chrome)
         self.set_color(0, 0, 0, 0)  # Transparent
 
-
     def get_frame_rect(self) -> QRectF:
         """Get the frame's bounding rectangle."""
         width = self.get_property("frame_width")
@@ -1315,7 +1343,7 @@ def create_frame(
     color_name: str = "blue",
     position: Tuple[float, float] = (0, 0),
     size: Tuple[float, float] = (400, 300),
-    graph = None
+    graph=None,
 ) -> NodeFrame:
     """
     Create a node frame in the graph view.
@@ -1331,26 +1359,21 @@ def create_frame(
     Returns:
         Created NodeFrame instance
     """
-    color = FRAME_COLORS.get(color_name, FRAME_COLORS['gray'])
+    color = FRAME_COLORS.get(color_name, FRAME_COLORS["gray"])
 
     # Try to get graph reference if not provided
-    if graph is None and hasattr(graph_view, 'parent') and graph_view.parent():
+    if graph is None and hasattr(graph_view, "parent") and graph_view.parent():
         parent = graph_view.parent()
-        if hasattr(parent, 'graph'):
+        if hasattr(parent, "graph"):
             graph = parent.graph
-        elif hasattr(parent, '_graph'):
+        elif hasattr(parent, "_graph"):
             graph = parent._graph
 
     # Set graph reference for all frames
     if graph:
         NodeFrame.set_graph(graph)
 
-    frame = NodeFrame(
-        title=title,
-        color=color,
-        width=size[0],
-        height=size[1]
-    )
+    frame = NodeFrame(title=title, color=color, width=size[0], height=size[1])
 
     # Add to scene
     scene = graph_view.scene()
@@ -1362,7 +1385,9 @@ def create_frame(
     return frame
 
 
-def group_selected_nodes(graph_view, title: str = "Group", selected_nodes: List = None) -> Optional[NodeFrame]:
+def group_selected_nodes(
+    graph_view, title: str = "Group", selected_nodes: List = None
+) -> Optional[NodeFrame]:
     """
     Create a frame around currently selected nodes.
 
@@ -1375,7 +1400,7 @@ def group_selected_nodes(graph_view, title: str = "Group", selected_nodes: List 
         Created frame or None if no nodes selected
     """
     if selected_nodes is None:
-        if hasattr(graph_view, 'selected_nodes'):
+        if hasattr(graph_view, "selected_nodes"):
             selected_nodes = graph_view.selected_nodes()
         else:
             return None
@@ -1398,12 +1423,7 @@ def group_selected_nodes(graph_view, title: str = "Group", selected_nodes: List 
     height = max_y - min_y + padding * 2
 
     # Create frame
-    frame = create_frame(
-        graph_view,
-        title=title,
-        position=(x, y),
-        size=(width, height)
-    )
+    frame = create_frame(graph_view, title=title, position=(x, y), size=(width, height))
 
     # Add all selected nodes to the frame
     for node in selected_nodes:
@@ -1426,7 +1446,9 @@ def add_frame_menu_actions(graph_menu):
 
     # Add "Group Selected Nodes" action
     group_action = QAction("Group Selected Nodes", graph_menu)
-    group_action.triggered.connect(lambda: group_selected_nodes(graph_menu.graph, "Group"))
+    group_action.triggered.connect(
+        lambda: group_selected_nodes(graph_menu.graph, "Group")
+    )
     frame_menu.addAction(group_action)
 
     frame_menu.addSeparator()
@@ -1436,11 +1458,7 @@ def add_frame_menu_actions(graph_menu):
         action = QAction(f"Create {color_name.capitalize()} Frame", graph_menu)
         action.triggered.connect(
             lambda checked, c=color_name: create_frame(
-                graph_menu.graph,
-                title="Group",
-                color_name=c,
-                position=(0, 0)
+                graph_menu.graph, title="Group", color_name=c, position=(0, 0)
             )
         )
         frame_menu.addAction(action)
-

@@ -2,19 +2,32 @@
 Schedules view for CasareRPA Orchestrator.
 Displays workflow schedules and scheduling management.
 """
+
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional, List
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QFrame, QLabel, QMessageBox, QMenu, QDialog,
-    QFormLayout, QLineEdit, QComboBox, QCheckBox, QDialogButtonBox,
-    QSpinBox, QTimeEdit, QDateTimeEdit
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QMessageBox,
+    QMenu,
+    QDialog,
+    QFormLayout,
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QDialogButtonBox,
+    QSpinBox,
+    QTimeEdit,
+    QDateTimeEdit,
 )
-from PySide6.QtCore import Qt, Signal, QTime, QDateTime
+from PySide6.QtCore import Qt, QTime, QDateTime
 
-from ..styles import COLORS
-from ..widgets import SearchBar, ActionButton, SectionHeader, StatusBadge, EmptyState
+from ..widgets import SearchBar, ActionButton, SectionHeader, EmptyState
 from ..models import Schedule, ScheduleFrequency, JobPriority, Workflow
 from ..services import OrchestratorService
 
@@ -26,7 +39,7 @@ class ScheduleDialog(QDialog):
         self,
         service: OrchestratorService,
         schedule: Optional[Schedule] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
         self._service = service
@@ -67,7 +80,9 @@ class ScheduleDialog(QDialog):
 
         # Frequency
         self._frequency_combo = QComboBox()
-        self._frequency_combo.addItems(["Once", "Hourly", "Daily", "Weekly", "Monthly", "Cron"])
+        self._frequency_combo.addItems(
+            ["Once", "Hourly", "Daily", "Weekly", "Monthly", "Cron"]
+        )
         self._frequency_combo.currentTextChanged.connect(self._on_frequency_changed)
         if self._schedule:
             self._frequency_combo.setCurrentText(self._schedule.frequency.value.title())
@@ -81,7 +96,17 @@ class ScheduleDialog(QDialog):
 
         # Day of week (for weekly)
         self._day_combo = QComboBox()
-        self._day_combo.addItems(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+        self._day_combo.addItems(
+            [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+            ]
+        )
         self._day_combo.hide()
         form.addRow("Day:", self._day_combo)
         self._day_label = form.labelForField(self._day_combo)
@@ -124,14 +149,17 @@ class ScheduleDialog(QDialog):
 
         # Enabled
         self._enabled_check = QCheckBox("Enabled")
-        self._enabled_check.setChecked(self._schedule.enabled if self._schedule else True)
+        self._enabled_check.setChecked(
+            self._schedule.enabled if self._schedule else True
+        )
         form.addRow("", self._enabled_check)
 
         layout.addLayout(form)
 
         # Buttons
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Save
+            | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(self._on_save)
         buttons.rejected.connect(self.reject)
@@ -171,7 +199,10 @@ class ScheduleDialog(QDialog):
     async def _load_data(self):
         """Load workflows and robots."""
         from ..models import WorkflowStatus
-        self._workflows = await self._service.get_workflows(status=WorkflowStatus.PUBLISHED)
+
+        self._workflows = await self._service.get_workflows(
+            status=WorkflowStatus.PUBLISHED
+        )
         self._robots = await self._service.get_robots()
 
         self._workflow_combo.clear()
@@ -199,7 +230,9 @@ class ScheduleDialog(QDialog):
         """Save the schedule."""
         name = self._name_input.text().strip()
         if not name:
-            QMessageBox.warning(self, "Validation Error", "Please enter a schedule name")
+            QMessageBox.warning(
+                self, "Validation Error", "Please enter a schedule name"
+            )
             return
 
         workflow_id = self._workflow_combo.currentData()
@@ -216,7 +249,9 @@ class ScheduleDialog(QDialog):
             "Monthly": ScheduleFrequency.MONTHLY,
             "Cron": ScheduleFrequency.CRON,
         }
-        frequency = frequency_map.get(self._frequency_combo.currentText(), ScheduleFrequency.DAILY)
+        frequency = frequency_map.get(
+            self._frequency_combo.currentText(), ScheduleFrequency.DAILY
+        )
 
         priority_map = {
             "Low": JobPriority.LOW,
@@ -224,13 +259,17 @@ class ScheduleDialog(QDialog):
             "High": JobPriority.HIGH,
             "Critical": JobPriority.CRITICAL,
         }
-        priority = priority_map.get(self._priority_combo.currentText(), JobPriority.NORMAL)
+        priority = priority_map.get(
+            self._priority_combo.currentText(), JobPriority.NORMAL
+        )
 
         cron_expression = ""
         if frequency == ScheduleFrequency.CRON:
             cron_expression = self._cron_input.text().strip()
             if not cron_expression:
-                QMessageBox.warning(self, "Validation Error", "Please enter a cron expression")
+                QMessageBox.warning(
+                    self, "Validation Error", "Please enter a cron expression"
+                )
                 return
 
         # Calculate next run time
@@ -240,10 +279,14 @@ class ScheduleDialog(QDialog):
         if frequency == ScheduleFrequency.ONCE:
             next_run = self._datetime_edit.dateTime().toPython()
         elif frequency == ScheduleFrequency.HOURLY:
-            next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+            next_run = now.replace(minute=0, second=0, microsecond=0) + timedelta(
+                hours=1
+            )
         elif frequency == ScheduleFrequency.DAILY:
             time = self._time_edit.time().toPython()
-            next_run = now.replace(hour=time.hour, minute=time.minute, second=0, microsecond=0)
+            next_run = now.replace(
+                hour=time.hour, minute=time.minute, second=0, microsecond=0
+            )
             if next_run <= now:
                 next_run += timedelta(days=1)
 
@@ -253,7 +296,9 @@ class ScheduleDialog(QDialog):
             workflow_id=workflow_id,
             workflow_name=self._workflow_combo.currentText(),
             robot_id=self._robot_combo.currentData(),
-            robot_name=self._robot_combo.currentText() if self._robot_combo.currentData() else "",
+            robot_name=self._robot_combo.currentText()
+            if self._robot_combo.currentData()
+            else "",
             frequency=frequency,
             cron_expression=cron_expression,
             timezone="UTC",
@@ -291,11 +336,15 @@ class SchedulesView(QWidget):
         header_layout.addStretch()
 
         create_btn = ActionButton("Create Schedule", primary=True)
-        create_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self._create_schedule()))
+        create_btn.clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self._create_schedule())
+        )
         header_layout.addWidget(create_btn)
 
         refresh_btn = ActionButton("Refresh", primary=False)
-        refresh_btn.clicked.connect(lambda: asyncio.get_event_loop().create_task(self.refresh()))
+        refresh_btn.clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self.refresh())
+        )
         header_layout.addWidget(refresh_btn)
 
         layout.addLayout(header_layout)
@@ -305,8 +354,7 @@ class SchedulesView(QWidget):
         toolbar.setSpacing(12)
 
         self._search = SearchBar(
-            "Search schedules...",
-            filters=["All", "Enabled", "Disabled"]
+            "Search schedules...", filters=["All", "Enabled", "Disabled"]
         )
         self._search.search_changed.connect(self._apply_filter)
         self._search.filter_changed.connect(self._apply_filter)
@@ -318,13 +366,28 @@ class SchedulesView(QWidget):
         # Schedules table
         self._table = QTableWidget()
         self._table.setColumnCount(8)
-        self._table.setHorizontalHeaderLabels([
-            "Enabled", "Name", "Workflow", "Frequency", "Next Run", "Last Run", "Success", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self._table.setHorizontalHeaderLabels(
+            [
+                "Enabled",
+                "Name",
+                "Workflow",
+                "Frequency",
+                "Next Run",
+                "Last Run",
+                "Success",
+                "Actions",
+            ]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(0, 80)
-        self._table.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeMode.Fixed)
+        self._table.horizontalHeader().setSectionResizeMode(
+            7, QHeaderView.ResizeMode.Fixed
+        )
         self._table.setColumnWidth(7, 180)
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setAlternatingRowColors(True)
@@ -338,9 +401,11 @@ class SchedulesView(QWidget):
         self._empty_state = EmptyState(
             title="No Schedules Found",
             description="Create a schedule to automatically run workflows.",
-            action_text="Create Schedule"
+            action_text="Create Schedule",
         )
-        self._empty_state.action_clicked.connect(lambda: asyncio.get_event_loop().create_task(self._create_schedule()))
+        self._empty_state.action_clicked.connect(
+            lambda: asyncio.get_event_loop().create_task(self._create_schedule())
+        )
         self._empty_state.hide()
         layout.addWidget(self._empty_state)
 
@@ -382,32 +447,47 @@ class SchedulesView(QWidget):
         menu = QMenu(self)
 
         edit_action = menu.addAction("✏️ Edit")
-        edit_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._edit_schedule(schedule)))
+        edit_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(self._edit_schedule(schedule))
+        )
 
         toggle_text = "🔴 Disable" if schedule.enabled else "🟢 Enable"
         toggle_action = menu.addAction(toggle_text)
-        toggle_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._toggle_schedule(schedule)))
+        toggle_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(
+                self._toggle_schedule(schedule)
+            )
+        )
 
         run_action = menu.addAction("▶️ Run Now")
-        run_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._run_now(schedule)))
+        run_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(self._run_now(schedule))
+        )
 
         menu.addSeparator()
 
         delete_action = menu.addAction("🗑️ Delete")
-        delete_action.triggered.connect(lambda: asyncio.get_event_loop().create_task(self._delete_schedule(schedule)))
+        delete_action.triggered.connect(
+            lambda: asyncio.get_event_loop().create_task(
+                self._delete_schedule(schedule)
+            )
+        )
 
         menu.exec(self._table.viewport().mapToGlobal(pos))
 
     def _on_double_click(self, row: int, col: int):
         """Handle double-click on table row."""
         if 0 <= row < len(self._schedules):
-            asyncio.get_event_loop().create_task(self._edit_schedule(self._schedules[row]))
+            asyncio.get_event_loop().create_task(
+                self._edit_schedule(self._schedules[row])
+            )
 
     async def _create_schedule(self):
         """Create a new schedule."""
         dialog = ScheduleDialog(self._service, parent=self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             import uuid
+
             dialog.result_schedule.id = str(uuid.uuid4())
             dialog.result_schedule.created_at = datetime.utcnow().isoformat()
 
@@ -441,13 +521,13 @@ class SchedulesView(QWidget):
             if robots:
                 robot_id = robots[0].id
             else:
-                QMessageBox.warning(self, "Error", "No available robots to run the workflow")
+                QMessageBox.warning(
+                    self, "Error", "No available robots to run the workflow"
+                )
                 return
 
         job = await self._service.dispatch_workflow(
-            schedule.workflow_id,
-            robot_id,
-            schedule.priority
+            schedule.workflow_id, robot_id, schedule.priority
         )
         if job:
             QMessageBox.information(self, "Success", f"Job dispatched: {job.id[:8]}...")
@@ -457,9 +537,10 @@ class SchedulesView(QWidget):
     async def _delete_schedule(self, schedule: Schedule):
         """Delete a schedule."""
         reply = QMessageBox.question(
-            self, "Delete Schedule",
+            self,
+            "Delete Schedule",
             f"Are you sure you want to delete '{schedule.name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -486,7 +567,9 @@ class SchedulesView(QWidget):
             enabled_check.setChecked(schedule.enabled)
             enabled_check.stateChanged.connect(
                 lambda state, s=schedule: asyncio.get_event_loop().create_task(
-                    self._service.toggle_schedule(s.id, state == Qt.CheckState.Checked.value)
+                    self._service.toggle_schedule(
+                        s.id, state == Qt.CheckState.Checked.value
+                    )
                 )
             )
             self._table.setCellWidget(row, 0, enabled_check)
@@ -512,7 +595,9 @@ class SchedulesView(QWidget):
             self._table.setItem(row, 5, QTableWidgetItem(last_run))
 
             # Success Rate
-            self._table.setItem(row, 6, QTableWidgetItem(f"{schedule.success_rate:.0f}%"))
+            self._table.setItem(
+                row, 6, QTableWidgetItem(f"{schedule.success_rate:.0f}%")
+            )
 
             # Actions
             actions_widget = QWidget()
@@ -521,11 +606,19 @@ class SchedulesView(QWidget):
             actions_layout.setSpacing(4)
 
             edit_btn = ActionButton("Edit", primary=False)
-            edit_btn.clicked.connect(lambda checked, s=schedule: asyncio.get_event_loop().create_task(self._edit_schedule(s)))
+            edit_btn.clicked.connect(
+                lambda checked, s=schedule: asyncio.get_event_loop().create_task(
+                    self._edit_schedule(s)
+                )
+            )
             actions_layout.addWidget(edit_btn)
 
             run_btn = ActionButton("Run", primary=True)
-            run_btn.clicked.connect(lambda checked, s=schedule: asyncio.get_event_loop().create_task(self._run_now(s)))
+            run_btn.clicked.connect(
+                lambda checked, s=schedule: asyncio.get_event_loop().create_task(
+                    self._run_now(s)
+                )
+            )
             actions_layout.addWidget(run_btn)
 
             self._table.setCellWidget(row, 7, actions_widget)
@@ -537,5 +630,6 @@ class SchedulesView(QWidget):
             self._update_table()
         except Exception as e:
             from loguru import logger
+
             logger.error(f"Failed to refresh schedules: {e}")
             QMessageBox.warning(self, "Error", f"Failed to load schedules: {e}")

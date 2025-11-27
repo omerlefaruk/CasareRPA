@@ -15,23 +15,24 @@ from enum import Enum
 from collections import defaultdict
 import asyncio
 import traceback
-import json
 
 from loguru import logger
 
 
 class RecoveryStrategy(Enum):
     """Error recovery strategies."""
-    STOP = "stop"              # Stop workflow execution
-    CONTINUE = "continue"      # Skip failed node and continue
-    RETRY = "retry"            # Retry the failed node
-    RESTART = "restart"        # Restart entire workflow
-    FALLBACK = "fallback"      # Execute fallback workflow/node
+
+    STOP = "stop"  # Stop workflow execution
+    CONTINUE = "continue"  # Skip failed node and continue
+    RETRY = "retry"  # Retry the failed node
+    RESTART = "restart"  # Restart entire workflow
+    FALLBACK = "fallback"  # Execute fallback workflow/node
     NOTIFY_AND_STOP = "notify_and_stop"  # Send notification then stop
 
 
 class ErrorSeverity(Enum):
     """Error severity levels."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -42,6 +43,7 @@ class ErrorSeverity(Enum):
 @dataclass
 class ErrorRecord:
     """Record of a single error occurrence."""
+
     timestamp: datetime
     workflow_id: str
     workflow_name: str
@@ -69,13 +71,16 @@ class ErrorRecord:
             "severity": self.severity.value,
             "context": self.context,
             "recovered": self.recovered,
-            "recovery_strategy": self.recovery_strategy.value if self.recovery_strategy else None,
+            "recovery_strategy": self.recovery_strategy.value
+            if self.recovery_strategy
+            else None,
         }
 
 
 @dataclass
 class ErrorPattern:
     """Tracked error pattern for analytics."""
+
     error_type: str
     first_seen: datetime
     last_seen: datetime
@@ -164,9 +169,7 @@ class ErrorAnalytics:
             List of error patterns sorted by frequency
         """
         sorted_patterns = sorted(
-            self._patterns.values(),
-            key=lambda p: p.count,
-            reverse=True
+            self._patterns.values(), key=lambda p: p.count, reverse=True
         )
         return [p.to_dict() for p in sorted_patterns[:limit]]
 
@@ -213,10 +216,12 @@ class ErrorAnalytics:
         for i in range(hours, 0, -1):
             hour = now - timedelta(hours=i)
             hour_key = hour.strftime("%Y-%m-%d-%H")
-            trend.append({
-                "hour": hour.strftime("%Y-%m-%d %H:00"),
-                "count": self._hourly_counts.get(hour_key, 0)
-            })
+            trend.append(
+                {
+                    "hour": hour.strftime("%Y-%m-%d %H:00"),
+                    "count": self._hourly_counts.get(hour_key, 0),
+                }
+            )
         return trend
 
     def get_summary(self) -> Dict[str, Any]:
@@ -269,7 +274,9 @@ class GlobalErrorHandler:
         self._analytics = analytics or ErrorAnalytics()
         self._strategy_map: Dict[str, RecoveryStrategy] = {}
         self._notification_handlers: List[Callable[[ErrorRecord], Awaitable[None]]] = []
-        self._fallback_workflows: Dict[str, str] = {}  # error_type -> fallback_workflow_id
+        self._fallback_workflows: Dict[
+            str, str
+        ] = {}  # error_type -> fallback_workflow_id
         self._enabled = True
 
     @property
@@ -287,7 +294,9 @@ class GlobalErrorHandler:
         self._default_strategy = strategy
         logger.info(f"Default error recovery strategy set to: {strategy.value}")
 
-    def set_strategy_for_error(self, error_type: str, strategy: RecoveryStrategy) -> None:
+    def set_strategy_for_error(
+        self, error_type: str, strategy: RecoveryStrategy
+    ) -> None:
         """
         Set recovery strategy for a specific error type.
 
@@ -308,11 +317,12 @@ class GlobalErrorHandler:
         """
         self._fallback_workflows[error_type] = workflow_id
         self._strategy_map[error_type] = RecoveryStrategy.FALLBACK
-        logger.info(f"Fallback workflow '{workflow_id}' set for error type: {error_type}")
+        logger.info(
+            f"Fallback workflow '{workflow_id}' set for error type: {error_type}"
+        )
 
     def add_notification_handler(
-        self,
-        handler: Callable[[ErrorRecord], Awaitable[None]]
+        self, handler: Callable[[ErrorRecord], Awaitable[None]]
     ) -> None:
         """
         Add a notification handler for error events.
@@ -321,11 +331,12 @@ class GlobalErrorHandler:
             handler: Async function that receives ErrorRecord and sends notification
         """
         self._notification_handlers.append(handler)
-        logger.info(f"Added error notification handler (total: {len(self._notification_handlers)})")
+        logger.info(
+            f"Added error notification handler (total: {len(self._notification_handlers)})"
+        )
 
     def remove_notification_handler(
-        self,
-        handler: Callable[[ErrorRecord], Awaitable[None]]
+        self, handler: Callable[[ErrorRecord], Awaitable[None]]
     ) -> None:
         """Remove a notification handler."""
         if handler in self._notification_handlers:

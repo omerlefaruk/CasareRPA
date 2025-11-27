@@ -2,24 +2,23 @@
 Job Queue Manager for CasareRPA Orchestrator.
 Implements priority queue, state machine, deduplication, and timeout management.
 """
-import asyncio
+
 import heapq
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from enum import Enum
 from typing import Optional, Dict, List, Set, Callable, Any, Tuple
 from collections import defaultdict
 import threading
-import uuid
 
 from loguru import logger
 
-from .models import Job, JobStatus, JobPriority, Robot, RobotStatus
+from .models import Job, JobStatus, JobPriority, Robot
 
 
 class JobStateError(Exception):
     """Raised when an invalid state transition is attempted."""
+
     pass
 
 
@@ -41,15 +40,25 @@ class JobStateMachine:
     VALID_TRANSITIONS: Dict[JobStatus, List[JobStatus]] = {
         JobStatus.PENDING: [JobStatus.QUEUED, JobStatus.CANCELLED],
         JobStatus.QUEUED: [JobStatus.RUNNING, JobStatus.CANCELLED],
-        JobStatus.RUNNING: [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.TIMEOUT, JobStatus.CANCELLED],
+        JobStatus.RUNNING: [
+            JobStatus.COMPLETED,
+            JobStatus.FAILED,
+            JobStatus.TIMEOUT,
+            JobStatus.CANCELLED,
+        ],
         JobStatus.COMPLETED: [],  # Terminal state
-        JobStatus.FAILED: [],      # Terminal state
-        JobStatus.TIMEOUT: [],     # Terminal state
-        JobStatus.CANCELLED: [],   # Terminal state
+        JobStatus.FAILED: [],  # Terminal state
+        JobStatus.TIMEOUT: [],  # Terminal state
+        JobStatus.CANCELLED: [],  # Terminal state
     }
 
     # Terminal states (no further transitions allowed)
-    TERMINAL_STATES = {JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.TIMEOUT, JobStatus.CANCELLED}
+    TERMINAL_STATES = {
+        JobStatus.COMPLETED,
+        JobStatus.FAILED,
+        JobStatus.TIMEOUT,
+        JobStatus.CANCELLED,
+    }
 
     # States that count as "active" (consuming resources)
     ACTIVE_STATES = {JobStatus.RUNNING}
@@ -84,7 +93,7 @@ class JobStateMachine:
             if job.started_at:
                 started = job.started_at
                 if isinstance(started, str):
-                    started = datetime.fromisoformat(started.replace('Z', ''))
+                    started = datetime.fromisoformat(started.replace("Z", ""))
                 job.duration_ms = int((now - started).total_seconds() * 1000)
 
         job.status = to_state
@@ -108,6 +117,7 @@ class PriorityQueueItem:
     Item in the priority queue.
     Ordering: higher priority first, then earlier created_at.
     """
+
     priority: int = field(compare=True)  # Negative for max-heap behavior
     created_at: datetime = field(compare=True)
     job_id: str = field(compare=False)
@@ -117,18 +127,17 @@ class PriorityQueueItem:
     def from_job(cls, job: Job) -> "PriorityQueueItem":
         """Create queue item from job."""
         # Use negative priority for max-heap behavior (higher priority = lower number)
-        priority_value = -(job.priority.value if isinstance(job.priority, JobPriority) else job.priority)
+        priority_value = -(
+            job.priority.value
+            if isinstance(job.priority, JobPriority)
+            else job.priority
+        )
         created = job.created_at
         if isinstance(created, str):
-            created = datetime.fromisoformat(created.replace('Z', ''))
+            created = datetime.fromisoformat(created.replace("Z", ""))
         elif created is None:
             created = datetime.utcnow()
-        return cls(
-            priority=priority_value,
-            created_at=created,
-            job_id=job.id,
-            job=job
-        )
+        return cls(priority=priority_value, created_at=created, job_id=job.id, job=job)
 
 
 class JobDeduplicator:
@@ -148,8 +157,9 @@ class JobDeduplicator:
         self._recent_hashes: Dict[str, datetime] = {}
         self._lock = threading.Lock()
 
-    def _compute_hash(self, workflow_id: str, robot_id: Optional[str],
-                      params: Optional[Dict] = None) -> str:
+    def _compute_hash(
+        self, workflow_id: str, robot_id: Optional[str], params: Optional[Dict] = None
+    ) -> str:
         """Compute deduplication hash for a job."""
         hash_input = f"{workflow_id}:{robot_id or 'any'}"
         if params:
@@ -158,8 +168,12 @@ class JobDeduplicator:
             hash_input += f":{param_str}"
         return hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
-    def is_duplicate(self, workflow_id: str, robot_id: Optional[str] = None,
-                     params: Optional[Dict] = None) -> bool:
+    def is_duplicate(
+        self,
+        workflow_id: str,
+        robot_id: Optional[str] = None,
+        params: Optional[Dict] = None,
+    ) -> bool:
         """
         Check if a job would be a duplicate.
 
@@ -185,8 +199,12 @@ class JobDeduplicator:
 
         return False
 
-    def record(self, workflow_id: str, robot_id: Optional[str] = None,
-               params: Optional[Dict] = None) -> str:
+    def record(
+        self,
+        workflow_id: str,
+        robot_id: Optional[str] = None,
+        params: Optional[Dict] = None,
+    ) -> str:
         """
         Record a job submission for deduplication.
 
@@ -203,10 +221,7 @@ class JobDeduplicator:
     def _cleanup(self):
         """Remove expired entries."""
         now = datetime.utcnow()
-        expired = [
-            h for h, t in self._recent_hashes.items()
-            if now - t >= self._window
-        ]
+        expired = [h for h, t in self._recent_hashes.items() if now - t >= self._window]
         for h in expired:
             del self._recent_hashes[h]
 
@@ -230,7 +245,11 @@ class JobTimeoutManager:
 
     def start_tracking(self, job_id: str, timeout_seconds: Optional[int] = None):
         """Start tracking a job's timeout."""
-        timeout = timedelta(seconds=timeout_seconds) if timeout_seconds else self._default_timeout
+        timeout = (
+            timedelta(seconds=timeout_seconds)
+            if timeout_seconds
+            else self._default_timeout
+        )
         with self._lock:
             self._job_timeouts[job_id] = (datetime.utcnow(), timeout)
         logger.debug(f"Tracking timeout for job {job_id[:8]}: {timeout}")
@@ -279,7 +298,7 @@ class JobQueue:
         self,
         dedup_window_seconds: int = 300,
         default_timeout_seconds: int = 3600,
-        on_state_change: Optional[Callable[[Job, JobStatus, JobStatus], None]] = None
+        on_state_change: Optional[Callable[[Job, JobStatus, JobStatus], None]] = None,
     ):
         """
         Initialize job queue.
@@ -292,7 +311,9 @@ class JobQueue:
         self._queue: List[PriorityQueueItem] = []
         self._jobs: Dict[str, Job] = {}  # job_id -> Job
         self._running_jobs: Dict[str, str] = {}  # job_id -> robot_id
-        self._robot_jobs: Dict[str, Set[str]] = defaultdict(set)  # robot_id -> {job_ids}
+        self._robot_jobs: Dict[str, Set[str]] = defaultdict(
+            set
+        )  # robot_id -> {job_ids}
 
         self._deduplicator = JobDeduplicator(dedup_window_seconds)
         self._timeout_manager = JobTimeoutManager(default_timeout_seconds)
@@ -303,10 +324,7 @@ class JobQueue:
         logger.info("JobQueue initialized")
 
     def enqueue(
-        self,
-        job: Job,
-        check_duplicate: bool = True,
-        params: Optional[Dict] = None
+        self, job: Job, check_duplicate: bool = True, params: Optional[Dict] = None
     ) -> Tuple[bool, str]:
         """
         Add a job to the queue.
@@ -384,7 +402,18 @@ class JobQueue:
                     continue
 
                 # Check environment match
-                # TODO: Add environment matching logic
+                # Job environment must match robot environment, or robot must be in "default"
+                # which can accept jobs from any environment
+                if (
+                    job.environment != robot.environment
+                    and robot.environment != "default"
+                ):
+                    logger.debug(
+                        f"Job {job.id[:8]} requires environment '{job.environment}' "
+                        f"but robot {robot.name} is in '{robot.environment}'"
+                    )
+                    suitable_items.append(item)
+                    continue
 
                 selected_item = item
                 break
@@ -457,9 +486,13 @@ class JobQueue:
         Returns:
             Tuple of (success, message)
         """
-        return self._finish_job(job_id, JobStatus.TIMEOUT, error_message="Job execution timed out")
+        return self._finish_job(
+            job_id, JobStatus.TIMEOUT, error_message="Job execution timed out"
+        )
 
-    def cancel(self, job_id: str, reason: str = "Cancelled by user") -> Tuple[bool, str]:
+    def cancel(
+        self, job_id: str, reason: str = "Cancelled by user"
+    ) -> Tuple[bool, str]:
         """
         Cancel a job.
 
@@ -504,7 +537,7 @@ class JobQueue:
         job_id: str,
         new_status: JobStatus,
         result: Optional[Dict] = None,
-        error_message: str = ""
+        error_message: str = "",
     ) -> Tuple[bool, str]:
         """Internal method to finish a job."""
         with self._lock:
@@ -523,7 +556,9 @@ class JobQueue:
                     job.result = result
                 if error_message:
                     job.error_message = error_message
-                job.progress = 100 if new_status == JobStatus.COMPLETED else job.progress
+                job.progress = (
+                    100 if new_status == JobStatus.COMPLETED else job.progress
+                )
             except JobStateError as e:
                 return False, str(e)
 
@@ -540,7 +575,9 @@ class JobQueue:
         logger.info(f"Job {job_id[:8]} finished with status {new_status.value}")
         return True, f"Job {new_status.value}"
 
-    def update_progress(self, job_id: str, progress: int, current_node: str = "") -> bool:
+    def update_progress(
+        self, job_id: str, progress: int, current_node: str = ""
+    ) -> bool:
         """
         Update job progress.
 
@@ -612,11 +649,14 @@ class JobQueue:
     def get_queue_depth(self) -> int:
         """Get number of jobs in queue."""
         with self._lock:
-            return len([
-                1 for item in self._queue
-                if item.job_id in self._jobs
-                and self._jobs[item.job_id].status == JobStatus.QUEUED
-            ])
+            return len(
+                [
+                    1
+                    for item in self._queue
+                    if item.job_id in self._jobs
+                    and self._jobs[item.job_id].status == JobStatus.QUEUED
+                ]
+            )
 
     def get_queue_stats(self) -> Dict[str, Any]:
         """Get queue statistics."""
@@ -633,7 +673,11 @@ class JobQueue:
             # Count by priority
             by_priority = defaultdict(int)
             for job in queued:
-                priority = job.priority.value if isinstance(job.priority, JobPriority) else job.priority
+                priority = (
+                    job.priority.value
+                    if isinstance(job.priority, JobPriority)
+                    else job.priority
+                )
                 by_priority[priority] += 1
 
             return {

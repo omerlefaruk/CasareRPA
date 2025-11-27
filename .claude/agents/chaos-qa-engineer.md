@@ -97,7 +97,7 @@ class TestNodeChaos:
         """Verify node gracefully handles Playwright timeout"""
         pass
 
-    @pytest.mark.asyncio  
+    @pytest.mark.asyncio
     async def test_node_selector_not_found(self, execution_context):
         """Verify proper error when selector doesn't match"""
         pass

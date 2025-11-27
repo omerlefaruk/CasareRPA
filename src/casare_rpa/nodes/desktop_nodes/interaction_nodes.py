@@ -31,10 +31,15 @@ class SelectFromDropdownNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Select From Dropdown'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Select From Dropdown"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Select From Dropdown"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Select From Dropdown",
+    ):
         """
         Initialize Select From Dropdown node.
 
@@ -44,9 +49,7 @@ class SelectFromDropdownNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "by_text": True
-            }
+            config = {"by_text": True}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SelectFromDropdownNode"
@@ -75,12 +78,12 @@ class SelectFromDropdownNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        element = self.get_input_value('element')
-        value = self.get_input_value('value') or self.config.get('value', '')
-        by_text = self.config.get('by_text', True)
+        element = self.get_input_value("element")
+        value = self.get_input_value("value") or self.config.get("value", "")
+        by_text = self.config.get("by_text", True)
 
         # Resolve {{variable}} patterns in value
-        if hasattr(context, 'resolve_value') and value:
+        if hasattr(context, "resolve_value") and value:
             value = context.resolve_value(value)
 
         if not element:
@@ -91,7 +94,7 @@ class SelectFromDropdownNode(Node):
         logger.info(f"[{self.name}] Selecting '{value}' from dropdown")
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
@@ -102,10 +105,7 @@ class SelectFromDropdownNode(Node):
             logger.info(f"[{self.name}] Successfully selected '{value}'")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to select from dropdown: {e}"
@@ -122,10 +122,15 @@ class CheckCheckboxNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Check Checkbox'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Check Checkbox"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Check Checkbox"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Check Checkbox",
+    ):
         """
         Initialize Check Checkbox node.
 
@@ -135,9 +140,7 @@ class CheckCheckboxNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "check": True
-            }
+            config = {"check": True}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "CheckCheckboxNode"
@@ -165,8 +168,8 @@ class CheckCheckboxNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        element = self.get_input_value('element')
-        check = self.config.get('check', True)
+        element = self.get_input_value("element")
+        check = self.config.get("check", True)
 
         if not element:
             raise ValueError("Checkbox element is required")
@@ -175,7 +178,7 @@ class CheckCheckboxNode(Node):
         logger.info(f"[{self.name}] {action.capitalize()} checkbox")
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
@@ -183,13 +186,12 @@ class CheckCheckboxNode(Node):
         try:
             success = desktop_ctx.check_checkbox(element, check=check)
 
-            logger.info(f"[{self.name}] Checkbox {'checked' if check else 'unchecked'} successfully")
+            logger.info(
+                f"[{self.name}] Checkbox {'checked' if check else 'unchecked'} successfully"
+            )
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to {action} checkbox: {e}"
@@ -206,10 +208,15 @@ class SelectRadioButtonNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Select Radio Button'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Select Radio Button"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Select Radio Button"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Select Radio Button",
+    ):
         """
         Initialize Select Radio Button node.
 
@@ -230,7 +237,9 @@ class SelectRadioButtonNode(Node):
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)  # Radio button element
+        self.add_input_port(
+            "element", PortType.INPUT, DataType.ANY
+        )  # Radio button element
 
         # Output ports
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
@@ -247,7 +256,7 @@ class SelectRadioButtonNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        element = self.get_input_value('element')
+        element = self.get_input_value("element")
 
         if not element:
             raise ValueError("Radio button element is required")
@@ -255,7 +264,7 @@ class SelectRadioButtonNode(Node):
         logger.info(f"[{self.name}] Selecting radio button")
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
@@ -266,10 +275,7 @@ class SelectRadioButtonNode(Node):
             logger.info(f"[{self.name}] Radio button selected successfully")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to select radio button: {e}"
@@ -286,10 +292,15 @@ class SelectTabNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Select Tab'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Select Tab"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Select Tab"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Select Tab",
+    ):
         """
         Initialize Select Tab node.
 
@@ -299,10 +310,7 @@ class SelectTabNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "tab_name": "",
-                "tab_index": -1
-            }
+            config = {"tab_name": "", "tab_index": -1}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SelectTabNode"
@@ -313,7 +321,9 @@ class SelectTabNode(Node):
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("tab_control", PortType.INPUT, DataType.ANY)  # Tab control element
+        self.add_input_port(
+            "tab_control", PortType.INPUT, DataType.ANY
+        )  # Tab control element
         self.add_input_port("tab_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("tab_index", PortType.INPUT, DataType.INTEGER)
 
@@ -332,16 +342,18 @@ class SelectTabNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        tab_control = self.get_input_value('tab_control')
-        tab_name = self.get_input_value('tab_name') or self.config.get('tab_name') or None
-        tab_index = self.get_input_value('tab_index')
+        tab_control = self.get_input_value("tab_control")
+        tab_name = (
+            self.get_input_value("tab_name") or self.config.get("tab_name") or None
+        )
+        tab_index = self.get_input_value("tab_index")
         if tab_index is None:
-            tab_index = safe_int(self.config.get('tab_index'), -1)
+            tab_index = safe_int(self.config.get("tab_index"), -1)
         if tab_index == -1:
             tab_index = None
 
         # Resolve {{variable}} patterns in tab_name
-        if hasattr(context, 'resolve_value') and tab_name:
+        if hasattr(context, "resolve_value") and tab_name:
             tab_name = context.resolve_value(tab_name)
 
         if not tab_control:
@@ -349,24 +361,25 @@ class SelectTabNode(Node):
         if tab_name is None and tab_index is None:
             raise ValueError("Must provide either tab_name or tab_index")
 
-        logger.info(f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}")
+        logger.info(
+            f"[{self.name}] Selecting tab: name='{tab_name}', index={tab_index}"
+        )
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
 
         try:
-            success = desktop_ctx.select_tab(tab_control, tab_name=tab_name, tab_index=tab_index)
+            success = desktop_ctx.select_tab(
+                tab_control, tab_name=tab_name, tab_index=tab_index
+            )
 
             logger.info(f"[{self.name}] Tab selected successfully")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to select tab: {e}"
@@ -383,10 +396,15 @@ class ExpandTreeItemNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Expand Tree Item'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Expand Tree Item"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Expand Tree Item"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Expand Tree Item",
+    ):
         """
         Initialize Expand Tree Item node.
 
@@ -396,9 +414,7 @@ class ExpandTreeItemNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "expand": True
-            }
+            config = {"expand": True}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExpandTreeItemNode"
@@ -409,7 +425,9 @@ class ExpandTreeItemNode(Node):
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)  # Tree item element
+        self.add_input_port(
+            "element", PortType.INPUT, DataType.ANY
+        )  # Tree item element
 
         # Output ports
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
@@ -426,8 +444,8 @@ class ExpandTreeItemNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        element = self.get_input_value('element')
-        expand = self.config.get('expand', True)
+        element = self.get_input_value("element")
+        expand = self.config.get("expand", True)
 
         if not element:
             raise ValueError("Tree item element is required")
@@ -436,7 +454,7 @@ class ExpandTreeItemNode(Node):
         logger.info(f"[{self.name}] {action} tree item")
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
@@ -444,13 +462,12 @@ class ExpandTreeItemNode(Node):
         try:
             success = desktop_ctx.expand_tree_item(element, expand=expand)
 
-            logger.info(f"[{self.name}] Tree item {'expanded' if expand else 'collapsed'} successfully")
+            logger.info(
+                f"[{self.name}] Tree item {'expanded' if expand else 'collapsed'} successfully"
+            )
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to {'expand' if expand else 'collapse'} tree item: {e}"
@@ -467,10 +484,15 @@ class ScrollElementNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Scroll Element'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Scroll Element"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Scroll Element"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Scroll Element",
+    ):
         """
         Initialize Scroll Element node.
 
@@ -480,10 +502,7 @@ class ScrollElementNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "direction": "down",
-                "amount": 0.5
-            }
+            config = {"direction": "down", "amount": 0.5}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ScrollElementNode"
@@ -494,7 +513,9 @@ class ScrollElementNode(Node):
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)  # Element to scroll
+        self.add_input_port(
+            "element", PortType.INPUT, DataType.ANY
+        )  # Element to scroll
 
         # Output ports
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
@@ -511,9 +532,9 @@ class ScrollElementNode(Node):
             Dictionary with success status
         """
         # Get inputs
-        element = self.get_input_value('element')
-        direction = self.config.get('direction', 'down')
-        amount = self.config.get('amount', 0.5)
+        element = self.get_input_value("element")
+        direction = self.config.get("direction", "down")
+        amount = self.config.get("amount", 0.5)
 
         if not element:
             raise ValueError("Element to scroll is required")
@@ -521,21 +542,20 @@ class ScrollElementNode(Node):
         logger.info(f"[{self.name}] Scrolling {direction} by {amount}")
 
         # Get desktop context
-        if not hasattr(context, 'desktop_context'):
+        if not hasattr(context, "desktop_context"):
             context.desktop_context = DesktopContext()
 
         desktop_ctx = context.desktop_context
 
         try:
-            success = desktop_ctx.scroll_element(element, direction=direction, amount=amount)
+            success = desktop_ctx.scroll_element(
+                element, direction=direction, amount=amount
+            )
 
             logger.info(f"[{self.name}] Scrolled {direction} successfully")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': success,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": success, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to scroll element: {e}"

@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from ..base import BaseTrigger, BaseTriggerConfig, TriggerStatus, TriggerType
+from ..base import BaseTrigger, TriggerStatus, TriggerType
 from ..registry import register_trigger
 
 
@@ -61,23 +61,23 @@ class WebhookTrigger(BaseTrigger):
         config = self.config.config
 
         # Endpoint is optional (defaults to /hooks/{trigger_id})
-        endpoint = config.get('endpoint', '')
-        if endpoint and not endpoint.startswith('/'):
+        endpoint = config.get("endpoint", "")
+        if endpoint and not endpoint.startswith("/"):
             return False, "Endpoint must start with '/'"
 
         # Auth type validation
-        auth_type = config.get('auth_type', 'none')
-        valid_auth_types = ['none', 'api_key', 'bearer', 'jwt']
+        auth_type = config.get("auth_type", "none")
+        valid_auth_types = ["none", "api_key", "bearer", "jwt"]
         if auth_type not in valid_auth_types:
             return False, f"Invalid auth_type. Must be one of: {valid_auth_types}"
 
         # Secret required for auth types other than 'none'
-        if auth_type != 'none' and not config.get('secret'):
+        if auth_type != "none" and not config.get("secret"):
             return False, f"Secret is required for auth_type '{auth_type}'"
 
         # Methods validation
-        methods = config.get('methods', ['POST'])
-        valid_methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+        methods = config.get("methods", ["POST"])
+        valid_methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
         for method in methods:
             if method.upper() not in valid_methods:
                 return False, f"Invalid HTTP method: {method}"
@@ -92,7 +92,12 @@ class WebhookTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "endpoint": {
                     "type": "string",
@@ -111,7 +116,10 @@ class WebhookTrigger(BaseTrigger):
                 },
                 "methods": {
                     "type": "array",
-                    "items": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]},
+                    "items": {
+                        "type": "string",
+                        "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+                    },
                     "default": ["POST"],
                     "description": "Allowed HTTP methods",
                 },

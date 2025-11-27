@@ -3,7 +3,7 @@ CasareRPA - Credential Editor Dialog
 Dialog for managing credential bindings (global or project-scoped).
 """
 
-from typing import Optional, Dict
+from typing import Optional
 
 from PySide6.QtWidgets import (
     QDialog,
@@ -76,8 +76,7 @@ class CredentialEditorDialog(QDialog):
 
         # Header
         header_text = (
-            "Global Credentials" if self._scope == "global"
-            else "Project Credentials"
+            "Global Credentials" if self._scope == "global" else "Project Credentials"
         )
         header = QLabel(header_text)
         header.setFont(QFont(header.font().family(), 14, QFont.Bold))
@@ -137,14 +136,22 @@ class CredentialEditorDialog(QDialog):
         # Credentials table
         self._table = QTableWidget()
         self._table.setColumnCount(5)
-        self._table.setHorizontalHeaderLabels([
-            "Alias", "Vault Path", "Type", "Required", "Actions"
-        ])
-        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self._table.setHorizontalHeaderLabels(
+            ["Alias", "Vault Path", "Type", "Required", "Actions"]
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            0, QHeaderView.ResizeToContents
+        )
         self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self._table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self._table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self._table.horizontalHeader().setSectionResizeMode(
+            2, QHeaderView.ResizeToContents
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            3, QHeaderView.ResizeToContents
+        )
+        self._table.horizontalHeader().setSectionResizeMode(
+            4, QHeaderView.ResizeToContents
+        )
         self._table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self._table.setAlternatingRowColors(True)
         self._table.verticalHeader().setVisible(False)
@@ -354,11 +361,13 @@ class CredentialEditorDialog(QDialog):
 
         # Validate alias (alphanumeric and underscore only)
         import re
-        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', alias):
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", alias):
             QMessageBox.warning(
-                self, "Invalid Alias",
+                self,
+                "Invalid Alias",
                 "Alias must start with a letter or underscore, "
-                "and contain only letters, numbers, and underscores."
+                "and contain only letters, numbers, and underscores.",
             )
             self._alias_input.setFocus()
             return
@@ -400,7 +409,7 @@ class CredentialEditorDialog(QDialog):
             "Confirm Delete",
             f"Are you sure you want to delete credential binding '{alias}'?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.No,
         )
 
         if reply == QMessageBox.Yes:

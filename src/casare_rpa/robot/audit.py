@@ -9,8 +9,7 @@ Provides structured, searchable audit logs for all robot events:
 - Security events
 """
 
-import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -21,6 +20,7 @@ import orjson
 
 class AuditEventType(Enum):
     """Types of audit events."""
+
     # Robot lifecycle
     ROBOT_STARTED = "robot.started"
     ROBOT_STOPPED = "robot.stopped"
@@ -73,6 +73,7 @@ class AuditEventType(Enum):
 
 class AuditSeverity(Enum):
     """Severity levels for audit events."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -178,8 +179,7 @@ class AuditLogger:
         base_name = f"audit_{date_str}.jsonl"
         self._current_file = self.log_dir / base_name
         self._current_size = (
-            self._current_file.stat().st_size
-            if self._current_file.exists() else 0
+            self._current_file.stat().st_size if self._current_file.exists() else 0
         )
 
     def _rotate_if_needed(self):
@@ -204,7 +204,7 @@ class AuditLogger:
             reverse=True,
         )
 
-        for old_file in files[self.backup_count:]:
+        for old_file in files[self.backup_count :]:
             try:
                 old_file.unlink()
             except Exception as e:
@@ -476,10 +476,7 @@ class AuditLogger:
             "closed": AuditEventType.CIRCUIT_CLOSED,
         }.get(new_state, AuditEventType.CIRCUIT_OPENED)
 
-        severity = (
-            AuditSeverity.WARNING if new_state == "open"
-            else AuditSeverity.INFO
-        )
+        severity = AuditSeverity.WARNING if new_state == "open" else AuditSeverity.INFO
 
         self.log(
             event_type,

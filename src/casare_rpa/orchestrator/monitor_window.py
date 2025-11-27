@@ -2,36 +2,46 @@
 CasareRPA Orchestrator Monitor - Main Window
 Deadline Monitor-style interface with dockable panels.
 """
+
 import sys
 import asyncio
-from typing import Optional, Dict, List, Any
-from datetime import datetime, timedelta
+from typing import Optional, Dict, List
+from datetime import datetime
 import uuid
-from concurrent.futures import ThreadPoolExecutor
 
 from PySide6.QtWidgets import (
-    QMainWindow, QDockWidget, QWidget, QVBoxLayout, QHBoxLayout,
-    QToolBar, QToolButton, QLabel, QMenu, QStatusBar, QApplication,
-    QSplitter, QStackedWidget, QMessageBox, QTabWidget
+    QMainWindow,
+    QDockWidget,
+    QWidget,
+    QHBoxLayout,
+    QToolBar,
+    QToolButton,
+    QLabel,
+    QStatusBar,
+    QApplication,
+    QSplitter,
+    QStackedWidget,
+    QMessageBox,
 )
-from PySide6.QtCore import Qt, QTimer, Signal, Slot, QSize, QThread, QObject
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtCore import Qt, QTimer, Signal, Slot, QSize
+from PySide6.QtGui import QKeySequence
 
 try:
     import qasync
+
     HAS_QASYNC = True
 except ImportError:
     HAS_QASYNC = False
 
 from .theme import THEME, get_main_stylesheet
 from .panels import (
-    TreeNavigationPanel, JobsPanel, DetailPanel,
-    RobotsPanel, DashboardPanel
+    TreeNavigationPanel,
+    JobsPanel,
+    DetailPanel,
+    RobotsPanel,
+    DashboardPanel,
 )
-from .models import (
-    Job, Robot, Workflow, Schedule, JobStatus, RobotStatus,
-    JobPriority, DashboardMetrics, JobHistoryEntry
-)
+from .models import Job, Robot, JobStatus, RobotStatus, JobPriority
 from .services import OrchestratorService
 
 
@@ -117,8 +127,9 @@ class MainToolbar(QToolBar):
 
         # Spacer
         spacer = QWidget()
-        spacer.setSizePolicy(spacer.sizePolicy().horizontalPolicy(),
-                            spacer.sizePolicy().verticalPolicy())
+        spacer.setSizePolicy(
+            spacer.sizePolicy().horizontalPolicy(), spacer.sizePolicy().verticalPolicy()
+        )
         spacer.setStyleSheet("background: transparent;")
         self.addWidget(spacer)
 
@@ -260,8 +271,8 @@ class OrchestratorMonitor(QMainWindow):
         self._tree_dock = QDockWidget("Navigation", self)
         self._tree_dock.setWidget(self._tree_panel)
         self._tree_dock.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable |
-            QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self._tree_dock)
 
@@ -352,8 +363,9 @@ class OrchestratorMonitor(QMainWindow):
 
         toggle_nav = window_menu.addAction("Toggle Navigation")
         toggle_nav.setShortcut("Ctrl+B")
-        toggle_nav.triggered.connect(lambda: self._tree_dock.setVisible(
-            not self._tree_dock.isVisible()))
+        toggle_nav.triggered.connect(
+            lambda: self._tree_dock.setVisible(not self._tree_dock.isVisible())
+        )
 
     def _setup_connections(self):
         pass  # Connections are set up in _setup_ui
@@ -378,14 +390,38 @@ class OrchestratorMonitor(QMainWindow):
             if not robots:
                 # Create sample robots
                 sample_robots = [
-                    {"id": str(uuid.uuid4()), "name": "Robot-Alpha", "status": "online",
-                     "environment": "Production", "max_concurrent_jobs": 3, "current_jobs": 1},
-                    {"id": str(uuid.uuid4()), "name": "Robot-Beta", "status": "busy",
-                     "environment": "Production", "max_concurrent_jobs": 2, "current_jobs": 2},
-                    {"id": str(uuid.uuid4()), "name": "Robot-Gamma", "status": "online",
-                     "environment": "Development", "max_concurrent_jobs": 2, "current_jobs": 0},
-                    {"id": str(uuid.uuid4()), "name": "Robot-Delta", "status": "offline",
-                     "environment": "Development", "max_concurrent_jobs": 1, "current_jobs": 0},
+                    {
+                        "id": str(uuid.uuid4()),
+                        "name": "Robot-Alpha",
+                        "status": "online",
+                        "environment": "Production",
+                        "max_concurrent_jobs": 3,
+                        "current_jobs": 1,
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "name": "Robot-Beta",
+                        "status": "busy",
+                        "environment": "Production",
+                        "max_concurrent_jobs": 2,
+                        "current_jobs": 2,
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "name": "Robot-Gamma",
+                        "status": "online",
+                        "environment": "Development",
+                        "max_concurrent_jobs": 2,
+                        "current_jobs": 0,
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "name": "Robot-Delta",
+                        "status": "offline",
+                        "environment": "Development",
+                        "max_concurrent_jobs": 1,
+                        "current_jobs": 0,
+                    },
                 ]
                 for robot in sample_robots:
                     robot["last_seen"] = datetime.now().isoformat()
@@ -396,42 +432,100 @@ class OrchestratorMonitor(QMainWindow):
             if not jobs:
                 # Create sample jobs
                 sample_jobs = [
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf1", "workflow_name": "Invoice Processing",
-                     "robot_id": "r1", "robot_name": "Robot-Alpha", "status": "running",
-                     "priority": 2, "progress": 67, "current_node": "ExtractData",
-                     "duration_ms": 45000, "started_at": datetime.now().isoformat()},
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf2", "workflow_name": "Data Migration",
-                     "robot_id": "r2", "robot_name": "Robot-Beta", "status": "running",
-                     "priority": 1, "progress": 34, "current_node": "TransformData",
-                     "duration_ms": 120000, "started_at": datetime.now().isoformat()},
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf3", "workflow_name": "Report Generation",
-                     "robot_id": "", "robot_name": "", "status": "queued",
-                     "priority": 1, "progress": 0, "current_node": "",
-                     "duration_ms": 0},
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf4", "workflow_name": "Email Automation",
-                     "robot_id": "", "robot_name": "", "status": "pending",
-                     "priority": 3, "progress": 0, "current_node": "",
-                     "duration_ms": 0},
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf5", "workflow_name": "Customer Onboarding",
-                     "robot_id": "r1", "robot_name": "Robot-Alpha", "status": "completed",
-                     "priority": 1, "progress": 100, "current_node": "",
-                     "duration_ms": 180000, "completed_at": datetime.now().isoformat()},
-                    {"id": str(uuid.uuid4()), "workflow_id": "wf6", "workflow_name": "File Sync",
-                     "robot_id": "r3", "robot_name": "Robot-Gamma", "status": "failed",
-                     "priority": 0, "progress": 45, "current_node": "UploadFiles",
-                     "duration_ms": 60000, "error_message": "Connection timeout",
-                     "completed_at": datetime.now().isoformat()},
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf1",
+                        "workflow_name": "Invoice Processing",
+                        "robot_id": "r1",
+                        "robot_name": "Robot-Alpha",
+                        "status": "running",
+                        "priority": 2,
+                        "progress": 67,
+                        "current_node": "ExtractData",
+                        "duration_ms": 45000,
+                        "started_at": datetime.now().isoformat(),
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf2",
+                        "workflow_name": "Data Migration",
+                        "robot_id": "r2",
+                        "robot_name": "Robot-Beta",
+                        "status": "running",
+                        "priority": 1,
+                        "progress": 34,
+                        "current_node": "TransformData",
+                        "duration_ms": 120000,
+                        "started_at": datetime.now().isoformat(),
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf3",
+                        "workflow_name": "Report Generation",
+                        "robot_id": "",
+                        "robot_name": "",
+                        "status": "queued",
+                        "priority": 1,
+                        "progress": 0,
+                        "current_node": "",
+                        "duration_ms": 0,
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf4",
+                        "workflow_name": "Email Automation",
+                        "robot_id": "",
+                        "robot_name": "",
+                        "status": "pending",
+                        "priority": 3,
+                        "progress": 0,
+                        "current_node": "",
+                        "duration_ms": 0,
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf5",
+                        "workflow_name": "Customer Onboarding",
+                        "robot_id": "r1",
+                        "robot_name": "Robot-Alpha",
+                        "status": "completed",
+                        "priority": 1,
+                        "progress": 100,
+                        "current_node": "",
+                        "duration_ms": 180000,
+                        "completed_at": datetime.now().isoformat(),
+                    },
+                    {
+                        "id": str(uuid.uuid4()),
+                        "workflow_id": "wf6",
+                        "workflow_name": "File Sync",
+                        "robot_id": "r3",
+                        "robot_name": "Robot-Gamma",
+                        "status": "failed",
+                        "priority": 0,
+                        "progress": 45,
+                        "current_node": "UploadFiles",
+                        "duration_ms": 60000,
+                        "error_message": "Connection timeout",
+                        "completed_at": datetime.now().isoformat(),
+                    },
                 ]
                 for job in sample_jobs:
                     job["created_at"] = datetime.now().isoformat()
-                    job["logs"] = f"[INFO] Job started\n[INFO] Processing {job['workflow_name']}\n"
+                    job["logs"] = (
+                        f"[INFO] Job started\n[INFO] Processing {job['workflow_name']}\n"
+                    )
                     if job["status"] == "running":
-                        job["logs"] += f"[INFO] Currently at node: {job['current_node']}\n"
+                        job["logs"] += (
+                            f"[INFO] Currently at node: {job['current_node']}\n"
+                        )
                     elif job["status"] == "failed":
-                        job["logs"] += f"[ERROR] {job.get('error_message', 'Unknown error')}\n"
+                        job["logs"] += (
+                            f"[ERROR] {job.get('error_message', 'Unknown error')}\n"
+                        )
                     self._service._local_storage.save_job(job)
 
-        except Exception as e:
+        except Exception:
             # Silently ignore errors in sample data generation
             pass
 
@@ -457,15 +551,22 @@ class OrchestratorMonitor(QMainWindow):
 
             # Get history for chart
             history = run_async(self._service.get_job_history(days=7))
-            self._dashboard_panel.set_history([{
-                "date": h.date,
-                "total": h.total,
-                "completed": h.completed,
-                "failed": h.failed
-            } for h in history])
+            self._dashboard_panel.set_history(
+                [
+                    {
+                        "date": h.date,
+                        "total": h.total,
+                        "completed": h.completed,
+                        "failed": h.failed,
+                    }
+                    for h in history
+                ]
+            )
 
             # Update status
-            self._status_label.setText(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+            self._status_label.setText(
+                f"Last updated: {datetime.now().strftime('%H:%M:%S')}"
+            )
             self._connection_label.setText("Connected")
             self._connection_label.setStyleSheet(f"color: {THEME.status_online};")
 
@@ -482,8 +583,12 @@ class OrchestratorMonitor(QMainWindow):
             "workflow_name": job.workflow_name,
             "robot_id": job.robot_id,
             "robot_name": job.robot_name,
-            "status": job.status.value if isinstance(job.status, JobStatus) else job.status,
-            "priority": job.priority.value if isinstance(job.priority, JobPriority) else job.priority,
+            "status": job.status.value
+            if isinstance(job.status, JobStatus)
+            else job.status,
+            "priority": job.priority.value
+            if isinstance(job.priority, JobPriority)
+            else job.priority,
             "progress": job.progress,
             "current_node": job.current_node,
             "duration_ms": job.duration_ms,
@@ -499,7 +604,9 @@ class OrchestratorMonitor(QMainWindow):
         return {
             "id": robot.id,
             "name": robot.name,
-            "status": robot.status.value if isinstance(robot.status, RobotStatus) else robot.status,
+            "status": robot.status.value
+            if isinstance(robot.status, RobotStatus)
+            else robot.status,
             "environment": robot.environment,
             "max_concurrent_jobs": robot.max_concurrent_jobs,
             "current_jobs": robot.current_jobs,
@@ -585,11 +692,15 @@ class OrchestratorMonitor(QMainWindow):
         """Handle robot action (enable, disable, etc.)."""
         try:
             if action == "disable":
-                run_async(self._service.update_robot_status(robot_id, RobotStatus.OFFLINE))
-                self._status_label.setText(f"Robot disabled")
+                run_async(
+                    self._service.update_robot_status(robot_id, RobotStatus.OFFLINE)
+                )
+                self._status_label.setText("Robot disabled")
             elif action == "enable":
-                run_async(self._service.update_robot_status(robot_id, RobotStatus.ONLINE))
-                self._status_label.setText(f"Robot enabled")
+                run_async(
+                    self._service.update_robot_status(robot_id, RobotStatus.ONLINE)
+                )
+                self._status_label.setText("Robot enabled")
 
             self._refresh_data()
 

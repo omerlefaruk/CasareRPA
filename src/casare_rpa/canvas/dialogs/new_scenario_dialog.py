@@ -3,21 +3,17 @@ CasareRPA - New Scenario Dialog
 Dialog for creating a new scenario within a project.
 """
 
-from typing import Optional
-
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QFormLayout,
     QLineEdit,
     QTextEdit,
-    QPushButton,
     QLabel,
     QDialogButtonBox,
     QGroupBox,
     QCheckBox,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from ..theme import THEME
@@ -105,9 +101,7 @@ class NewScenarioDialog(QDialog):
         layout.addWidget(options_group)
 
         # Buttons
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        )
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self._on_accept)
         button_box.rejected.connect(self.reject)
 

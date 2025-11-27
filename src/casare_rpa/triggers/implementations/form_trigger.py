@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from ..base import BaseTrigger, BaseTriggerConfig, TriggerStatus, TriggerType
+from ..base import BaseTrigger, TriggerStatus, TriggerType
 from ..registry import register_trigger
 
 
@@ -49,10 +49,8 @@ class FormTrigger(BaseTrigger):
         The form endpoint is handled by TriggerManager's HTTP server.
         """
         self._status = TriggerStatus.ACTIVE
-        form_id = self.config.config.get('form_id', self.config.id)
-        logger.info(
-            f"Form trigger started: {self.config.name} (form_id: {form_id})"
-        )
+        form_id = self.config.config.get("form_id", self.config.id)
+        logger.info(f"Form trigger started: {self.config.name} (form_id: {form_id})")
         return True
 
     async def stop(self) -> bool:
@@ -62,9 +60,7 @@ class FormTrigger(BaseTrigger):
         return True
 
     async def process_submission(
-        self,
-        form_data: Dict[str, Any],
-        submitter_ip: Optional[str] = None
+        self, form_data: Dict[str, Any], submitter_ip: Optional[str] = None
     ) -> tuple[bool, Optional[str]]:
         """
         Process a form submission.
@@ -81,23 +77,25 @@ class FormTrigger(BaseTrigger):
         config = self.config.config
 
         # Validate required fields
-        required_fields = config.get('required_fields', [])
+        required_fields = config.get("required_fields", [])
         for field in required_fields:
             if field not in form_data or not form_data[field]:
                 return False, f"Required field missing: {field}"
 
         # Validate field types (basic validation)
-        field_definitions = config.get('fields', {})
+        field_definitions = config.get("fields", {})
         for field_name, field_value in form_data.items():
             if field_name in field_definitions:
-                field_type = field_definitions[field_name].get('type', 'string')
-                validation_error = self._validate_field(field_name, field_value, field_type)
+                field_type = field_definitions[field_name].get("type", "string")
+                validation_error = self._validate_field(
+                    field_name, field_value, field_type
+                )
                 if validation_error:
                     return False, validation_error
 
         # Build payload
         payload = {
-            "form_id": config.get('form_id', self.config.id),
+            "form_id": config.get("form_id", self.config.id),
             "fields": form_data,
             "submitted_at": datetime.utcnow().isoformat(),
             "submitter_ip": submitter_ip,
@@ -115,35 +113,38 @@ class FormTrigger(BaseTrigger):
         return success, None if success else "Failed to process form"
 
     def _validate_field(
-        self,
-        field_name: str,
-        field_value: Any,
-        field_type: str
+        self, field_name: str, field_value: Any, field_type: str
     ) -> Optional[str]:
         """Validate a form field value."""
-        if field_type == 'string':
+        if field_type == "string":
             if not isinstance(field_value, str):
                 return f"Field '{field_name}' must be a string"
 
-        elif field_type == 'number':
+        elif field_type == "number":
             try:
                 float(field_value)
             except (TypeError, ValueError):
                 return f"Field '{field_name}' must be a number"
 
-        elif field_type == 'integer':
+        elif field_type == "integer":
             try:
                 int(field_value)
             except (TypeError, ValueError):
                 return f"Field '{field_name}' must be an integer"
 
-        elif field_type == 'email':
+        elif field_type == "email":
             import re
-            if not re.match(r'^[^@]+@[^@]+\.[^@]+$', str(field_value)):
+
+            if not re.match(r"^[^@]+@[^@]+\.[^@]+$", str(field_value)):
                 return f"Field '{field_name}' must be a valid email"
 
-        elif field_type == 'boolean':
-            if not isinstance(field_value, bool) and field_value not in ['true', 'false', '1', '0']:
+        elif field_type == "boolean":
+            if not isinstance(field_value, bool) and field_value not in [
+                "true",
+                "false",
+                "1",
+                "0",
+            ]:
                 return f"Field '{field_name}' must be a boolean"
 
         return None
@@ -161,7 +162,12 @@ class FormTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "form_id": {
                     "type": "string",
@@ -174,7 +180,14 @@ class FormTrigger(BaseTrigger):
                         "properties": {
                             "type": {
                                 "type": "string",
-                                "enum": ["string", "number", "integer", "email", "boolean", "date"],
+                                "enum": [
+                                    "string",
+                                    "number",
+                                    "integer",
+                                    "email",
+                                    "boolean",
+                                    "date",
+                                ],
                             },
                             "label": {"type": "string"},
                             "placeholder": {"type": "string"},

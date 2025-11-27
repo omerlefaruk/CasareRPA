@@ -18,16 +18,13 @@ from loguru import logger
 from dotenv import load_dotenv
 import orjson
 
-from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
-from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 from .config import (
     RobotConfig,
     get_config,
     validate_credentials,
-    validate_credentials_async,
 )
-from .connection import ConnectionManager, ConnectionConfig, ConnectionState
+from .connection import ConnectionManager, ConnectionConfig
 from .circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
@@ -35,13 +32,14 @@ from .circuit_breaker import (
 )
 from .offline_queue import OfflineQueue
 from .checkpoint import CheckpointManager
-from .metrics import MetricsCollector, get_metrics_collector
-from .audit import AuditLogger, init_audit_logger, AuditEventType, AuditSeverity
-from .progress_reporter import ProgressReporter, CancellationChecker, JobLocker
+from .metrics import get_metrics_collector
+from .audit import init_audit_logger, AuditEventType, AuditSeverity
+from .progress_reporter import ProgressReporter, JobLocker
 from .job_executor import JobExecutor
 
 try:
     from .websocket_client import RobotWebSocketClient
+
     HAS_WEBSOCKET = True
 except ImportError:
     HAS_WEBSOCKET = False
@@ -223,7 +221,9 @@ class RobotAgent:
                 if success:
                     await self._ws_client.send_job_complete(job_id, {"success": True})
                 else:
-                    await self._ws_client.send_job_failed(job_id, error or "Unknown error")
+                    await self._ws_client.send_job_failed(
+                        job_id, error or "Unknown error"
+                    )
             except Exception as e:
                 logger.error(f"Failed to report job via WebSocket: {e}")
 
@@ -232,11 +232,16 @@ class RobotAgent:
             try:
                 status = "success" if success else "failed"
                 await self.connection.execute(
-                    lambda client: client.table("jobs").update({
-                        "status": status,
-                        "completed_at": datetime.now(timezone.utc).isoformat(),
-                        "error": error if error else None,
-                    }).eq("id", job_id).execute()
+                    lambda client: client.table("jobs")
+                    .update(
+                        {
+                            "status": status,
+                            "completed_at": datetime.now(timezone.utc).isoformat(),
+                            "error": error if error else None,
+                        }
+                    )
+                    .eq("id", job_id)
+                    .execute()
                 )
             except Exception as e:
                 logger.error(f"Failed to update job status: {e}")
@@ -245,7 +250,9 @@ class RobotAgent:
 
     # ==================== ORCHESTRATOR WEBSOCKET CONNECTION ====================
 
-    async def connect_to_orchestrator(self, orchestrator_url: str = "ws://localhost:8765"):
+    async def connect_to_orchestrator(
+        self, orchestrator_url: str = "ws://localhost:8765"
+    ):
         """
         Connect to orchestrator via WebSocket for job distribution.
 
@@ -256,7 +263,9 @@ class RobotAgent:
             orchestrator_url: WebSocket URL of the orchestrator server
         """
         if not HAS_WEBSOCKET:
-            logger.error("websockets package not installed, cannot connect to orchestrator")
+            logger.error(
+                "websockets package not installed, cannot connect to orchestrator"
+            )
             return
 
         logger.info(f"Connecting to orchestrator at {orchestrator_url}")
@@ -363,11 +372,13 @@ class RobotAgent:
         self._shutdown_event.clear()
 
         if self.audit:
-            self.audit.robot_started({
-                "robot_id": self.robot_id,
-                "robot_name": self.name,
-                "config": self.config.to_dict(),
-            })
+            self.audit.robot_started(
+                {
+                    "robot_id": self.robot_id,
+                    "robot_name": self.name,
+                    "config": self.config.to_dict(),
+                }
+            )
 
         logger.info("Robot Agent starting...")
 
@@ -470,11 +481,16 @@ class RobotAgent:
         """Send heartbeat to backend."""
         try:
             await self.connection.execute(
-                lambda client: client.table("robots").update({
-                    "last_seen": datetime.now(timezone.utc).isoformat(),
-                    "status": "online",
-                    "metrics": self.metrics.get_summary(),
-                }).eq("id", self.robot_id).execute(),
+                lambda client: client.table("robots")
+                .update(
+                    {
+                        "last_seen": datetime.now(timezone.utc).isoformat(),
+                        "status": "online",
+                        "metrics": self.metrics.get_summary(),
+                    }
+                )
+                .eq("id", self.robot_id)
+                .execute(),
                 retry_on_failure=False,
             )
         except Exception as e:
@@ -491,13 +507,13 @@ class RobotAgent:
         try:
             result = await self.connection.execute(
                 lambda client: client.table("jobs")
-                    .select("*")
-                    .eq("robot_id", self.robot_id)
-                    .eq("status", "pending")
-                    .is_("claimed_by", "null")
-                    .order("created_at")
-                    .limit(self.config.job_execution.max_concurrent_jobs)
-                    .execute()
+                .select("*")
+                .eq("robot_id", self.robot_id)
+                .eq("status", "pending")
+                .is_("claimed_by", "null")
+                .order("created_at")
+                .limit(self.config.job_execution.max_concurrent_jobs)
+                .execute()
             )
 
             jobs = result.data or []
@@ -512,7 +528,9 @@ class RobotAgent:
                     if self.audit:
                         self.audit.job_received(
                             job["id"],
-                            job.get("workflow", {}).get("metadata", {}).get("name", "unknown")
+                            job.get("workflow", {})
+                            .get("metadata", {})
+                            .get("name", "unknown"),
                         )
 
                     # Submit to executor
@@ -542,12 +560,17 @@ class RobotAgent:
                 status = "success" if job["cached_status"] == "completed" else "failed"
 
                 await self.connection.execute(
-                    lambda client: client.table("jobs").update({
-                        "status": status,
-                        "completed_at": job.get("completed_at"),
-                        "logs": job.get("logs"),
-                        "error": job.get("error"),
-                    }).eq("id", job["id"]).execute()
+                    lambda client: client.table("jobs")
+                    .update(
+                        {
+                            "status": status,
+                            "completed_at": job.get("completed_at"),
+                            "logs": job.get("logs"),
+                            "error": job.get("error"),
+                        }
+                    )
+                    .eq("id", job["id"])
+                    .execute()
                 )
 
                 await self.offline_queue.mark_synced(job["id"])
@@ -573,7 +596,7 @@ class RobotAgent:
             if self.audit:
                 self.audit.log(
                     AuditEventType.CHECKPOINT_RESTORED,
-                    f"Recovering interrupted job from checkpoint",
+                    "Recovering interrupted job from checkpoint",
                     job_id=job["id"],
                 )
 
@@ -612,10 +635,15 @@ class RobotAgent:
         if self.connection.is_connected:
             try:
                 await self.connection.execute(
-                    lambda client: client.table("robots").update({
-                        "status": "offline",
-                        "last_seen": datetime.now(timezone.utc).isoformat(),
-                    }).eq("id", self.robot_id).execute(),
+                    lambda client: client.table("robots")
+                    .update(
+                        {
+                            "status": "offline",
+                            "last_seen": datetime.now(timezone.utc).isoformat(),
+                        }
+                    )
+                    .eq("id", self.robot_id)
+                    .execute(),
                     retry_on_failure=False,
                 )
             except Exception:

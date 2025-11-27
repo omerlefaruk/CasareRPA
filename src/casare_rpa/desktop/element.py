@@ -17,6 +17,7 @@ T = TypeVar("T")
 
 class StaleElementError(Exception):
     """Raised when an element is no longer valid in the UI tree."""
+
     pass
 
 
@@ -26,6 +27,7 @@ def with_stale_check(method: Callable[..., T]) -> Callable[..., T]:
 
     If the element is stale, attempts to re-find it using stored locator info.
     """
+
     @wraps(method)
     def wrapper(self: "DesktopElement", *args: Any, **kwargs: Any) -> T:
         if not self._validate_element():
@@ -34,21 +36,22 @@ def with_stale_check(method: Callable[..., T]) -> Callable[..., T]:
                     f"Element is stale and could not be recovered: {self._locator_info}"
                 )
         return method(self, *args, **kwargs)
+
     return wrapper
 
 
 class DesktopElement:
     """
     Wrapper around UI Automation Control with simplified API.
-    
+
     Provides methods to interact with desktop UI elements (click, type, read text, etc.)
     """
-    
+
     def __init__(
         self,
         control: auto.Control,
         locator_info: Optional[Dict[str, Any]] = None,
-        parent: Optional["DesktopElement"] = None
+        parent: Optional["DesktopElement"] = None,
     ):
         """
         Initialize DesktopElement wrapper.
@@ -69,8 +72,10 @@ class DesktopElement:
         # Store locator info for stale element recovery
         self._locator_info = locator_info or self._capture_locator_info()
 
-        logger.debug(f"DesktopElement created: {self._control.ControlTypeName} - '{self._control.Name}'")
-    
+        logger.debug(
+            f"DesktopElement created: {self._control.ControlTypeName} - '{self._control.Name}'"
+        )
+
     def _capture_locator_info(self) -> Dict[str, Any]:
         """Capture identifying information for re-finding this element."""
         try:
@@ -153,8 +158,7 @@ class DesktopElement:
                     "TabItemControl": auto.TabItemControl,
                 }
                 control_class = control_type_map.get(
-                    self._locator_info["control_type"],
-                    auto.Control
+                    self._locator_info["control_type"], auto.Control
                 )
             else:
                 control_class = auto.Control
@@ -167,7 +171,9 @@ class DesktopElement:
 
             # Attempt to find the element
             if search_kwargs:
-                new_control = control_class(searchFromControl=search_root, **search_kwargs)
+                new_control = control_class(
+                    searchFromControl=search_root, **search_kwargs
+                )
                 if new_control.Exists(1, 0.5):  # Wait up to 1 second
                     self._control = new_control
                     self._last_validated = time.time()
@@ -205,7 +211,9 @@ class DesktopElement:
         return self._try_recover()
 
     @with_stale_check
-    def click(self, simulate: bool = False, x_offset: int = 0, y_offset: int = 0) -> bool:
+    def click(
+        self, simulate: bool = False, x_offset: int = 0, y_offset: int = 0
+    ) -> bool:
         """
         Click the element.
 
@@ -222,7 +230,7 @@ class DesktopElement:
             StaleElementError: If element is stale and cannot be recovered
         """
         logger.debug(f"Clicking element: {self._control.Name} (simulate={simulate})")
-        
+
         try:
             # Try to use InvokePattern first (most reliable for buttons)
             if not simulate:
@@ -230,54 +238,62 @@ class DesktopElement:
                     invoke_pattern = self._control.GetInvokePattern()
                     if invoke_pattern:
                         invoke_pattern.Invoke()
-                        logger.info(f"Clicked element using InvokePattern: {self._control.Name}")
+                        logger.info(
+                            f"Clicked element using InvokePattern: {self._control.Name}"
+                        )
                         return True
                 except Exception as e:
-                    logger.debug(f"InvokePattern not available, falling back to mouse click: {e}")
-            
+                    logger.debug(
+                        f"InvokePattern not available, falling back to mouse click: {e}"
+                    )
+
             # Fallback to mouse click
             rect = self._control.BoundingRectangle
             if rect.width() > 0 and rect.height() > 0:
                 center_x = rect.left + rect.width() // 2 + x_offset
                 center_y = rect.top + rect.height() // 2 + y_offset
-                
+
                 if simulate:
                     self._control.Click(simulateMove=True, x=center_x, y=center_y)
                 else:
                     self._control.Click(simulateMove=False, x=center_x, y=center_y)
-                
-                logger.info(f"Clicked element at ({center_x}, {center_y}): {self._control.Name}")
+
+                logger.info(
+                    f"Clicked element at ({center_x}, {center_y}): {self._control.Name}"
+                )
                 return True
             else:
                 raise RuntimeError(f"Element has invalid bounds: {rect}")
-                
+
         except Exception as e:
             error_msg = f"Failed to click element '{self._control.Name}': {e}"
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
     @with_stale_check
-    def type_text(self, text: str, clear_first: bool = False, interval: float = 0.01) -> bool:
+    def type_text(
+        self, text: str, clear_first: bool = False, interval: float = 0.01
+    ) -> bool:
         """
         Type text into the element.
-        
+
         Args:
             text: Text to type
             clear_first: If True, clear existing text before typing
             interval: Interval between keystrokes in seconds
-            
+
         Returns:
             True if typing was successful
-            
+
         Raises:
             RuntimeError: If typing fails
         """
         logger.debug(f"Typing text into element: {self._control.Name}")
-        
+
         try:
             # Set focus first
             self._control.SetFocus()
-            
+
             # Clear existing text if requested
             if clear_first:
                 try:
@@ -287,9 +303,11 @@ class DesktopElement:
                         value_pattern.SetValue("")
                 except Exception as e:
                     # Fallback: select all and delete
-                    logger.debug(f"ValuePattern not available for clear, using SendKeys: {e}")
-                    self._control.SendKeys('{Ctrl}a{Delete}')
-            
+                    logger.debug(
+                        f"ValuePattern not available for clear, using SendKeys: {e}"
+                    )
+                    self._control.SendKeys("{Ctrl}a{Delete}")
+
             # Type the text
             if text:
                 # Try using ValuePattern for direct value setting (faster)
@@ -300,14 +318,16 @@ class DesktopElement:
                         logger.info(f"Set text using ValuePattern: '{text[:50]}...'")
                         return True
                 except Exception as e:
-                    logger.debug(f"ValuePattern not available for set text, using SendKeys: {e}")
-                
+                    logger.debug(
+                        f"ValuePattern not available for set text, using SendKeys: {e}"
+                    )
+
                 # Fallback: send keys
                 self._control.SendKeys(text, interval=interval)
                 logger.info(f"Typed text using SendKeys: '{text[:50]}...'")
-            
+
             return True
-            
+
         except Exception as e:
             error_msg = f"Failed to type text into element '{self._control.Name}': {e}"
             logger.error(error_msg)
@@ -317,7 +337,7 @@ class DesktopElement:
     def get_text(self) -> str:
         """
         Get the text content of the element.
-        
+
         Returns:
             Element text (Name property by default)
         """
@@ -331,11 +351,11 @@ class DesktopElement:
                         return text
             except Exception as e:
                 logger.debug(f"ValuePattern not available for get_text: {e}")
-            
+
             # Try Name property
             if self._control.Name:
                 return self._control.Name
-            
+
             # Try LegacyValue
             try:
                 legacy_pattern = self._control.GetLegacyIAccessiblePattern()
@@ -343,10 +363,10 @@ class DesktopElement:
                     return legacy_pattern.Value
             except Exception as e:
                 logger.debug(f"LegacyIAccessiblePattern not available: {e}")
-            
+
             # Return empty string if no text found
             return ""
-            
+
         except Exception as e:
             logger.warning(f"Failed to get text from element: {e}")
             return ""
@@ -355,10 +375,10 @@ class DesktopElement:
     def get_property(self, property_name: str) -> Any:
         """
         Get an element property by name.
-        
+
         Args:
             property_name: Property name (e.g., "Name", "AutomationId", "ControlType")
-            
+
         Returns:
             Property value, or None if property doesn't exist
         """
@@ -367,34 +387,38 @@ class DesktopElement:
         except Exception as e:
             logger.warning(f"Failed to get property '{property_name}': {e}")
             return None
-    
-    def find_child(self, selector: Dict[str, Any], timeout: float = 5.0) -> Optional["DesktopElement"]:
+
+    def find_child(
+        self, selector: Dict[str, Any], timeout: float = 5.0
+    ) -> Optional["DesktopElement"]:
         """
         Find a child element using selector.
-        
+
         Args:
             selector: Selector dictionary
             timeout: Maximum time to wait for element
-            
+
         Returns:
             DesktopElement if found, None otherwise
         """
         from .selector import find_element
+
         return find_element(self._control, selector, timeout=timeout)
-    
+
     def find_children(self, selector: Dict[str, Any]) -> List["DesktopElement"]:
         """
         Find all child elements matching selector.
-        
+
         Args:
             selector: Selector dictionary
-            
+
         Returns:
             List of DesktopElement objects
         """
         from .selector import find_elements
+
         return find_elements(self._control, selector)
-    
+
     def exists(self) -> bool:
         """
         Check if element still exists in UI tree.
@@ -420,28 +444,35 @@ class DesktopElement:
             return self._control.IsOffscreen == False
         except Exception:
             return False
-    
+
     def get_bounding_rect(self) -> Dict[str, int]:
         """
         Get element's bounding rectangle.
-        
+
         Returns:
             Dictionary with keys: left, top, right, bottom, width, height
         """
         try:
             rect = self._control.BoundingRectangle
             return {
-                'left': rect.left,
-                'top': rect.top,
-                'right': rect.right,
-                'bottom': rect.bottom,
-                'width': rect.width(),
-                'height': rect.height()
+                "left": rect.left,
+                "top": rect.top,
+                "right": rect.right,
+                "bottom": rect.bottom,
+                "width": rect.width(),
+                "height": rect.height(),
             }
         except Exception as e:
             logger.warning(f"Failed to get bounding rect: {e}")
-            return {'left': 0, 'top': 0, 'right': 0, 'bottom': 0, 'width': 0, 'height': 0}
-    
+            return {
+                "left": 0,
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "width": 0,
+                "height": 0,
+            }
+
     def __repr__(self) -> str:
         """String representation of element."""
         try:

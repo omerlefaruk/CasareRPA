@@ -7,10 +7,8 @@ Provides:
 - Output preview on hover
 """
 
-from typing import Optional
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QPen, QFont, QFontMetrics, QColor, QPainter, QBrush
-from PySide6.QtWidgets import QGraphicsItem
 from NodeGraphQt.qgraphics.pipe import PipeItem
 
 
@@ -102,7 +100,7 @@ class CasarePipe(PipeItem):
             midpoint.x() - text_rect.width() / 2 - padding,
             midpoint.y() - text_rect.height() / 2 - padding,
             text_rect.width() + padding * 2,
-            text_rect.height() + padding * 2
+            text_rect.height() + padding * 2,
         )
 
         # Draw background
@@ -146,7 +144,7 @@ class CasarePipe(PipeItem):
             pos.x() + 10,
             pos.y() - text_rect.height() / 2 - padding,
             text_rect.width() + padding * 2,
-            text_rect.height() + padding * 2
+            text_rect.height() + padding * 2,
         )
 
         # Draw background with slight yellow tint
@@ -171,13 +169,17 @@ class CasarePipe(PipeItem):
 
             # Get port type from node if available
             port_name = self.output_port.name()
-            if hasattr(node, '_port_types'):
+            if hasattr(node, "_port_types"):
                 data_type = node._port_types.get(port_name)
                 if data_type:
-                    return data_type.value if hasattr(data_type, 'value') else str(data_type)
+                    return (
+                        data_type.value
+                        if hasattr(data_type, "value")
+                        else str(data_type)
+                    )
 
             # Use port name as fallback
-            if port_name in ('exec_out', 'exec_in'):
+            if port_name in ("exec_out", "exec_in"):
                 return ""  # Don't show label for exec ports
             return port_name
         except Exception:

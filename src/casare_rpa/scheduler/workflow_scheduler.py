@@ -2,10 +2,10 @@
 Workflow Scheduler Service for CasareRPA.
 Executes workflows at scheduled times.
 """
+
 import asyncio
-import json
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable
 from enum import Enum
@@ -19,6 +19,7 @@ try:
     from apscheduler.triggers.interval import IntervalTrigger
     from apscheduler.jobstores.memory import MemoryJobStore
     from apscheduler.executors.asyncio import AsyncIOExecutor
+
     HAS_APSCHEDULER = True
 except ImportError:
     HAS_APSCHEDULER = False
@@ -27,6 +28,7 @@ except ImportError:
 
 class ScheduleStatus(Enum):
     """Status of a scheduled execution."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -37,6 +39,7 @@ class ScheduleStatus(Enum):
 @dataclass
 class ScheduleExecutionResult:
     """Result of a scheduled workflow execution."""
+
     schedule_id: str
     schedule_name: str
     workflow_path: str
@@ -58,17 +61,20 @@ class ScheduleExecutionResult:
             "workflow_name": self.workflow_name,
             "status": self.status.value,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
             "duration_ms": self.duration_ms,
             "success": self.success,
             "error_message": self.error_message,
-            "output": self.output
+            "output": self.output,
         }
 
 
 @dataclass
 class SchedulerConfig:
     """Configuration for the workflow scheduler."""
+
     check_interval_seconds: int = 60
     max_concurrent_executions: int = 3
     execution_timeout_seconds: int = 3600  # 1 hour
@@ -96,7 +102,7 @@ class WorkflowSchedulerService:
         config: Optional[SchedulerConfig] = None,
         on_execution_start: Optional[Callable] = None,
         on_execution_complete: Optional[Callable] = None,
-        on_execution_error: Optional[Callable] = None
+        on_execution_error: Optional[Callable] = None,
     ):
         """
         Initialize the scheduler service.
@@ -148,9 +154,7 @@ class WorkflowSchedulerService:
             }
 
             self._scheduler = AsyncIOScheduler(
-                jobstores=jobstores,
-                executors=executors,
-                job_defaults=job_defaults
+                jobstores=jobstores, executors=executors, job_defaults=job_defaults
             )
 
             # Start scheduler
@@ -239,7 +243,7 @@ class WorkflowSchedulerService:
                 id=schedule.id,
                 args=[schedule.id],
                 name=schedule.name,
-                replace_existing=True
+                replace_existing=True,
             )
 
             logger.debug(f"Registered schedule: {schedule.name} ({schedule.frequency})")
@@ -262,10 +266,7 @@ class WorkflowSchedulerService:
             return IntervalTrigger(hours=1)
 
         elif schedule.frequency == ScheduleFrequency.DAILY:
-            return CronTrigger(
-                hour=schedule.time_hour,
-                minute=schedule.time_minute
-            )
+            return CronTrigger(hour=schedule.time_hour, minute=schedule.time_minute)
 
         elif schedule.frequency == ScheduleFrequency.WEEKLY:
             # day_of_week: 0=Monday, 6=Sunday
@@ -273,14 +274,14 @@ class WorkflowSchedulerService:
             return CronTrigger(
                 day_of_week=day_map[schedule.day_of_week],
                 hour=schedule.time_hour,
-                minute=schedule.time_minute
+                minute=schedule.time_minute,
             )
 
         elif schedule.frequency == ScheduleFrequency.MONTHLY:
             return CronTrigger(
                 day=schedule.day_of_month,
                 hour=schedule.time_hour,
-                minute=schedule.time_minute
+                minute=schedule.time_minute,
             )
 
         elif schedule.frequency == ScheduleFrequency.CRON:
@@ -293,7 +294,7 @@ class WorkflowSchedulerService:
                     hour=parts[1],
                     day=parts[2],
                     month=parts[3],
-                    day_of_week=parts[4]
+                    day_of_week=parts[4],
                 )
             elif len(parts) == 6:
                 return CronTrigger(
@@ -302,7 +303,7 @@ class WorkflowSchedulerService:
                     hour=parts[2],
                     day=parts[3],
                     month=parts[4],
-                    day_of_week=parts[5]
+                    day_of_week=parts[5],
                 )
 
         return None
@@ -327,9 +328,7 @@ class WorkflowSchedulerService:
         for schedule in due_schedules:
             if schedule.id not in self._active_executions:
                 # Start execution
-                task = asyncio.create_task(
-                    self._execute_schedule(schedule.id)
-                )
+                task = asyncio.create_task(self._execute_schedule(schedule.id))
                 self._active_executions[schedule.id] = task
 
     async def _execute_schedule(self, schedule_id: str) -> None:
@@ -346,6 +345,7 @@ class WorkflowSchedulerService:
             # Get schedule
             if not self._schedule_storage:
                 from ..canvas.scheduling.schedule_storage import get_schedule_storage
+
                 self._schedule_storage = get_schedule_storage()
 
             schedule = self._schedule_storage.get_schedule(schedule_id)
@@ -364,7 +364,7 @@ class WorkflowSchedulerService:
                     workflow_path=schedule.workflow_path,
                     workflow_name=schedule.workflow_name,
                     status=ScheduleStatus.RUNNING,
-                    started_at=started_at
+                    started_at=started_at,
                 )
 
                 # Notify start
@@ -377,9 +377,7 @@ class WorkflowSchedulerService:
                 # Check workflow exists
                 workflow_path = Path(schedule.workflow_path)
                 if not workflow_path.exists():
-                    raise FileNotFoundError(
-                        f"Workflow file not found: {workflow_path}"
-                    )
+                    raise FileNotFoundError(f"Workflow file not found: {workflow_path}")
 
                 # Load and execute workflow
                 success, error = await self._run_workflow(workflow_path)
@@ -389,7 +387,9 @@ class WorkflowSchedulerService:
                 duration_ms = int((completed_at - started_at).total_seconds() * 1000)
 
                 # Update result
-                result.status = ScheduleStatus.COMPLETED if success else ScheduleStatus.FAILED
+                result.status = (
+                    ScheduleStatus.COMPLETED if success else ScheduleStatus.FAILED
+                )
                 result.completed_at = completed_at
                 result.duration_ms = duration_ms
                 result.success = success
@@ -397,9 +397,7 @@ class WorkflowSchedulerService:
 
                 # Update schedule stats
                 self._schedule_storage.mark_schedule_run(
-                    schedule_id,
-                    success=success,
-                    error_message=error or ""
+                    schedule_id, success=success, error_message=error or ""
                 )
 
                 # Notify completion
@@ -414,9 +412,7 @@ class WorkflowSchedulerService:
                         except Exception:
                             pass
                 else:
-                    logger.error(
-                        f"Schedule failed: {schedule.name} - {error}"
-                    )
+                    logger.error(f"Schedule failed: {schedule.name} - {error}")
                     if self._on_execution_error:
                         try:
                             self._on_execution_error(result)
@@ -481,8 +477,7 @@ class WorkflowSchedulerService:
             # Execute with timeout
             try:
                 success = await asyncio.wait_for(
-                    runner.run(),
-                    timeout=self._config.execution_timeout_seconds
+                    runner.run(), timeout=self._config.execution_timeout_seconds
                 )
                 return success, None if success else "Workflow execution failed"
 
@@ -497,6 +492,7 @@ class WorkflowSchedulerService:
         """Log execution to history."""
         try:
             from .execution_history import get_execution_history
+
             history = get_execution_history()
             history.add_entry(result)
         except Exception as e:
@@ -589,11 +585,13 @@ class WorkflowSchedulerService:
 
         for job in jobs:
             if job.next_run_time and len(upcoming) < limit:
-                upcoming.append({
-                    "schedule_id": job.id,
-                    "schedule_name": job.name,
-                    "next_run": job.next_run_time.isoformat()
-                })
+                upcoming.append(
+                    {
+                        "schedule_id": job.id,
+                        "schedule_name": job.name,
+                        "next_run": job.next_run_time.isoformat(),
+                    }
+                )
 
         upcoming.sort(key=lambda x: x["next_run"])
         return upcoming[:limit]

@@ -3,11 +3,11 @@ Playwright Browser Auto-Setup
 Automatically installs Playwright browsers on first run.
 Provides GUI dialogs when running in Canvas, silent install for Robot.
 """
+
 import subprocess
 import sys
 import os
 from pathlib import Path
-from typing import Optional
 from loguru import logger
 
 
@@ -49,7 +49,7 @@ def install_playwright_browsers_silent() -> bool:
             check=True,
             capture_output=True,
             text=True,
-            timeout=600  # 10 minute timeout
+            timeout=600,  # 10 minute timeout
         )
 
         logger.info("Playwright browsers installed successfully!")
@@ -79,13 +79,18 @@ def install_playwright_browsers_gui(parent=None) -> bool:
     """
     try:
         from PySide6.QtWidgets import (
-            QMessageBox, QDialog, QVBoxLayout, QLabel,
-            QProgressBar, QApplication
+            QMessageBox,
+            QDialog,
+            QVBoxLayout,
+            QLabel,
+            QProgressBar,
+            QApplication,
         )
         from PySide6.QtCore import Qt, QThread, Signal, QTimer
 
         class InstallWorker(QThread):
             """Worker thread for browser installation."""
+
             progress_update = Signal(str)
             finished_signal = Signal(bool, str)
 
@@ -98,7 +103,7 @@ def install_playwright_browsers_gui(parent=None) -> bool:
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
                         text=True,
-                        bufsize=1
+                        bufsize=1,
                     )
 
                     # Read output line by line
@@ -118,7 +123,10 @@ def install_playwright_browsers_gui(parent=None) -> bool:
                     if process.returncode == 0:
                         self.finished_signal.emit(True, "Installation complete!")
                     else:
-                        self.finished_signal.emit(False, f"Installation failed (exit code: {process.returncode})")
+                        self.finished_signal.emit(
+                            False,
+                            f"Installation failed (exit code: {process.returncode})",
+                        )
 
                 except subprocess.TimeoutExpired:
                     self.finished_signal.emit(False, "Installation timed out")
@@ -157,7 +165,9 @@ def install_playwright_browsers_gui(parent=None) -> bool:
                 layout.addWidget(self.progress_bar)
 
                 # Info label
-                info = QLabel("This may take a few minutes depending on your internet connection.")
+                info = QLabel(
+                    "This may take a few minutes depending on your internet connection."
+                )
                 info.setStyleSheet("color: gray; font-size: 11px;")
                 layout.addWidget(info)
 
@@ -233,7 +243,7 @@ def ensure_playwright_ready(show_gui: bool = True, parent=None) -> bool:
             "This is a one-time download of approximately 150-200 MB.\n\n"
             "Would you like to install it now?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
+            QMessageBox.Yes,
         )
 
         if reply != QMessageBox.Yes:
@@ -242,7 +252,7 @@ def ensure_playwright_ready(show_gui: bool = True, parent=None) -> bool:
                 parent,
                 "Browser Not Installed",
                 "Web automation features will not work until the browser is installed.\n\n"
-                "You can install it later by restarting the application."
+                "You can install it later by restarting the application.",
             )
             return False
 
@@ -254,7 +264,7 @@ def ensure_playwright_ready(show_gui: bool = True, parent=None) -> bool:
                 parent,
                 "Installation Complete",
                 "Chromium browser has been installed successfully!\n\n"
-                "You can now use web automation features."
+                "You can now use web automation features.",
             )
         else:
             QMessageBox.warning(
@@ -263,7 +273,7 @@ def ensure_playwright_ready(show_gui: bool = True, parent=None) -> bool:
                 "Failed to install the browser.\n\n"
                 "You can try again by restarting the application,\n"
                 "or run this command manually:\n\n"
-                "playwright install chromium"
+                "playwright install chromium",
             )
 
         return success

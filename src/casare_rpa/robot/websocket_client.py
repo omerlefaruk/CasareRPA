@@ -3,8 +3,8 @@ WebSocket client for Robot to connect to CasareRPA Orchestrator.
 
 Provides resilient connection with auto-reconnect and message handling.
 """
+
 import asyncio
-from datetime import datetime
 from typing import Optional, Callable, Any, Set
 import platform
 import psutil
@@ -15,6 +15,7 @@ try:
     import websockets
     from websockets.client import WebSocketClientProtocol
     from websockets.exceptions import ConnectionClosed
+
     HAS_WEBSOCKETS = True
 except ImportError:
     HAS_WEBSOCKETS = False
@@ -64,7 +65,9 @@ class RobotWebSocketClient:
             heartbeat_interval: Seconds between heartbeats
         """
         if not HAS_WEBSOCKETS:
-            raise ImportError("websockets package required. Install with: pip install websockets")
+            raise ImportError(
+                "websockets package required. Install with: pip install websockets"
+            )
 
         self.robot_id = robot_id
         self.robot_name = robot_name
@@ -196,7 +199,7 @@ class RobotWebSocketClient:
                 "browser": True,
                 "desktop": platform.system() == "Windows",
                 "python_version": platform.python_version(),
-            }
+            },
         )
 
         await self._send(msg)
@@ -209,7 +212,9 @@ class RobotWebSocketClient:
             if ack.type == MessageType.REGISTER_ACK:
                 if ack.payload.get("success"):
                     self._server_config = ack.payload.get("config", {})
-                    logger.info(f"Registered with orchestrator: {ack.payload.get('message')}")
+                    logger.info(
+                        f"Registered with orchestrator: {ack.payload.get('message')}"
+                    )
                     return True
                 else:
                     logger.error(f"Registration rejected: {ack.payload.get('message')}")
@@ -367,7 +372,9 @@ class RobotWebSocketClient:
             return {
                 "cpu_percent": psutil.cpu_percent(),
                 "memory_percent": psutil.virtual_memory().percent,
-                "disk_percent": psutil.disk_usage('/').percent if platform.system() != "Windows" else psutil.disk_usage('C:\\').percent,
+                "disk_percent": psutil.disk_usage("/").percent
+                if platform.system() != "Windows"
+                else psutil.disk_usage("C:\\").percent,
                 "platform": platform.system(),
                 "python_version": platform.python_version(),
             }
@@ -408,11 +415,7 @@ class RobotWebSocketClient:
     # ==================== PUBLIC API ====================
 
     async def send_job_progress(
-        self,
-        job_id: str,
-        progress: int,
-        current_node: str = "",
-        message: str = ""
+        self, job_id: str, progress: int, current_node: str = "", message: str = ""
     ):
         """
         Report job progress to orchestrator.
@@ -436,10 +439,7 @@ class RobotWebSocketClient:
         await self._send(msg)
 
     async def send_job_complete(
-        self,
-        job_id: str,
-        result: Optional[dict] = None,
-        duration_ms: int = 0
+        self, job_id: str, result: Optional[dict] = None, duration_ms: int = 0
     ):
         """
         Report job completion to orchestrator.
@@ -470,7 +470,7 @@ class RobotWebSocketClient:
         error_message: str,
         error_type: str = "ExecutionError",
         stack_trace: str = "",
-        failed_node: str = ""
+        failed_node: str = "",
     ):
         """
         Report job failure to orchestrator.
@@ -500,11 +500,7 @@ class RobotWebSocketClient:
         logger.error(f"Reported job {job_id[:8]} failed: {error_message}")
 
     async def send_log_entry(
-        self,
-        job_id: str,
-        level: str,
-        message: str,
-        node_id: str = ""
+        self, job_id: str, level: str, message: str, node_id: str = ""
     ):
         """Send log entry to orchestrator."""
         if not self._connected:

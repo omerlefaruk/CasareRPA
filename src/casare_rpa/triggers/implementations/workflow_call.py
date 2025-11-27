@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from ..base import BaseTrigger, BaseTriggerConfig, TriggerStatus, TriggerType
+from ..base import BaseTrigger, TriggerStatus, TriggerType
 from ..registry import register_trigger
 
 
@@ -53,7 +53,7 @@ class WorkflowCallTrigger(BaseTrigger):
         not handled directly by this trigger.
         """
         config = self.config.config
-        call_alias = config.get('call_alias', '')
+        call_alias = config.get("call_alias", "")
 
         if not call_alias:
             self._error_message = "call_alias is required"
@@ -77,7 +77,7 @@ class WorkflowCallTrigger(BaseTrigger):
         caller_scenario_id: str,
         caller_workflow_id: str,
         input_params: Optional[Dict[str, Any]] = None,
-        call_id: Optional[str] = None
+        call_id: Optional[str] = None,
     ) -> bool:
         """
         Invoke this trigger from another workflow.
@@ -97,7 +97,7 @@ class WorkflowCallTrigger(BaseTrigger):
         config = self.config.config
 
         # Check if caller is allowed
-        allowed_callers = config.get('allowed_callers', [])
+        allowed_callers = config.get("allowed_callers", [])
         if allowed_callers and caller_scenario_id not in allowed_callers:
             logger.warning(
                 f"Workflow call from {caller_scenario_id} not allowed by {self.config.id}"
@@ -105,10 +105,10 @@ class WorkflowCallTrigger(BaseTrigger):
             return False
 
         # Validate input parameters against schema
-        input_schema = config.get('input_schema', {})
+        input_schema = config.get("input_schema", {})
         if input_schema and input_params:
             # Basic schema validation (could be expanded)
-            required_params = input_schema.get('required', [])
+            required_params = input_schema.get("required", [])
             for param in required_params:
                 if param not in input_params:
                     logger.warning(f"Missing required parameter: {param}")
@@ -119,7 +119,8 @@ class WorkflowCallTrigger(BaseTrigger):
             "caller_scenario_id": caller_scenario_id,
             "caller_workflow_id": caller_workflow_id,
             "input_params": input_params or {},
-            "call_id": call_id or f"call_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}",
+            "call_id": call_id
+            or f"call_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}",
             "timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -129,8 +130,8 @@ class WorkflowCallTrigger(BaseTrigger):
 
         metadata = {
             "source": "workflow_call",
-            "call_alias": config.get('call_alias', ''),
-            "synchronous": config.get('synchronous', True),
+            "call_alias": config.get("call_alias", ""),
+            "synchronous": config.get("synchronous", True),
         }
 
         return await self.emit(payload, metadata)
@@ -139,14 +140,18 @@ class WorkflowCallTrigger(BaseTrigger):
         """Validate workflow call trigger configuration."""
         config = self.config.config
 
-        call_alias = config.get('call_alias', '')
+        call_alias = config.get("call_alias", "")
         if not call_alias:
             return False, "call_alias is required"
 
         # Validate alias format (alphanumeric and underscores only)
         import re
-        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', call_alias):
-            return False, "call_alias must be alphanumeric (start with letter or underscore)"
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", call_alias):
+            return (
+                False,
+                "call_alias must be alphanumeric (start with letter or underscore)",
+            )
 
         return True, None
 
@@ -158,7 +163,12 @@ class WorkflowCallTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "call_alias": {
                     "type": "string",

@@ -16,6 +16,7 @@ from .connection import ConnectionManager
 
 class ProgressStage(Enum):
     """Stages of job execution."""
+
     QUEUED = "queued"
     STARTING = "starting"
     LOADING_WORKFLOW = "loading_workflow"
@@ -111,14 +112,16 @@ class ProgressReporter:
         self._current_node = None
         self._started_at = datetime.now(timezone.utc)
 
-        await self._send_update({
-            "stage": ProgressStage.STARTING.value,
-            "workflow_name": workflow_name,
-            "total_nodes": total_nodes,
-            "completed_nodes": 0,
-            "percent_complete": 0,
-            "started_at": self._started_at.isoformat(),
-        })
+        await self._send_update(
+            {
+                "stage": ProgressStage.STARTING.value,
+                "workflow_name": workflow_name,
+                "total_nodes": total_nodes,
+                "completed_nodes": 0,
+                "percent_complete": 0,
+                "started_at": self._started_at.isoformat(),
+            }
+        )
 
         logger.debug(f"Started progress tracking for job {job_id}")
 
@@ -152,12 +155,14 @@ class ProgressReporter:
         """
         self._current_node = node_id
 
-        await self._send_update({
-            "stage": ProgressStage.EXECUTING.value,
-            "current_node_id": node_id,
-            "current_node_type": node_type,
-            "current_node_name": node_name or node_type,
-        })
+        await self._send_update(
+            {
+                "stage": ProgressStage.EXECUTING.value,
+                "current_node_id": node_id,
+                "current_node_type": node_type,
+                "current_node_name": node_name or node_type,
+            }
+        )
 
     async def report_node_complete(
         self,
@@ -180,7 +185,8 @@ class ProgressReporter:
 
         percent = (
             (self._completed_nodes / self._total_nodes * 100)
-            if self._total_nodes > 0 else 0
+            if self._total_nodes > 0
+            else 0
         )
 
         update = {
@@ -216,7 +222,8 @@ class ProgressReporter:
         completed_at = datetime.now(timezone.utc)
         duration_ms = (
             (completed_at - self._started_at).total_seconds() * 1000
-            if self._started_at else 0
+            if self._started_at
+            else 0
         )
 
         stage = ProgressStage.COMPLETED if success else ProgressStage.FAILED
@@ -243,11 +250,14 @@ class ProgressReporter:
 
     async def report_cancelled(self, reason: Optional[str] = None):
         """Report that job was cancelled."""
-        await self._send_update({
-            "stage": ProgressStage.CANCELLED.value,
-            "cancelled_at": datetime.now(timezone.utc).isoformat(),
-            "cancel_reason": reason,
-        }, force=True)
+        await self._send_update(
+            {
+                "stage": ProgressStage.CANCELLED.value,
+                "cancelled_at": datetime.now(timezone.utc).isoformat(),
+                "cancel_reason": reason,
+            },
+            force=True,
+        )
 
         self._current_job_id = None
         self._current_stage = None
@@ -311,9 +321,14 @@ class ProgressReporter:
         try:
             # Update job progress column
             await self.connection.execute(
-                lambda client: client.table("jobs").update({
-                    "progress": progress_data,
-                }).eq("id", self._current_job_id).execute(),
+                lambda client: client.table("jobs")
+                .update(
+                    {
+                        "progress": progress_data,
+                    }
+                )
+                .eq("id", self._current_job_id)
+                .execute(),
                 retry_on_failure=False,  # Don't retry progress updates
             )
 
@@ -376,10 +391,10 @@ class CancellationChecker:
         try:
             result = await self.connection.execute(
                 lambda client: client.table("jobs")
-                    .select("cancel_requested")
-                    .eq("id", self._current_job_id)
-                    .single()
-                    .execute(),
+                .select("cancel_requested")
+                .eq("id", self._current_job_id)
+                .single()
+                .execute(),
                 retry_on_failure=False,
             )
 
@@ -450,15 +465,17 @@ class JobLocker:
 
             result = await self.connection.execute(
                 lambda client: client.table("jobs")
-                    .update({
+                .update(
+                    {
                         "claimed_by": self.robot_id,
                         "claimed_at": claimed_at,
                         "status": "running",
-                    })
-                    .eq("id", job_id)
-                    .eq("status", "pending")
-                    .is_("claimed_by", "null")
-                    .execute(),
+                    }
+                )
+                .eq("id", job_id)
+                .eq("status", "pending")
+                .is_("claimed_by", "null")
+                .execute(),
             )
 
             # Check if update affected any rows
@@ -466,7 +483,9 @@ class JobLocker:
                 logger.info(f"Successfully claimed job {job_id}")
                 return True
             else:
-                logger.debug(f"Failed to claim job {job_id} - already claimed or not pending")
+                logger.debug(
+                    f"Failed to claim job {job_id} - already claimed or not pending"
+                )
                 return False
 
         except Exception as e:
@@ -484,14 +503,16 @@ class JobLocker:
         try:
             await self.connection.execute(
                 lambda client: client.table("jobs")
-                    .update({
+                .update(
+                    {
                         "claimed_by": None,
                         "claimed_at": None,
                         "status": status,
-                    })
-                    .eq("id", job_id)
-                    .eq("claimed_by", self.robot_id)
-                    .execute(),
+                    }
+                )
+                .eq("id", job_id)
+                .eq("claimed_by", self.robot_id)
+                .execute(),
             )
             logger.debug(f"Released job {job_id}")
 
@@ -508,10 +529,10 @@ class JobLocker:
         try:
             await self.connection.execute(
                 lambda client: client.table("jobs")
-                    .update({"lock_heartbeat": datetime.now(timezone.utc).isoformat()})
-                    .eq("id", job_id)
-                    .eq("claimed_by", self.robot_id)
-                    .execute(),
+                .update({"lock_heartbeat": datetime.now(timezone.utc).isoformat()})
+                .eq("id", job_id)
+                .eq("claimed_by", self.robot_id)
+                .execute(),
                 retry_on_failure=False,
             )
         except Exception as e:

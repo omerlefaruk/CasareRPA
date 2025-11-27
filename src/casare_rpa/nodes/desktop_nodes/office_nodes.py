@@ -7,11 +7,11 @@ Provides nodes for automating Microsoft Office applications:
 - Outlook: SendEmail, ReadEmail, GetInboxCount
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from loguru import logger
 
 from ...core.base_node import BaseNode
-from ...core.types import PortType, DataType, NodeStatus
+from ...core.types import DataType, NodeStatus
 
 
 def safe_int(value, default: int) -> int:
@@ -23,9 +23,11 @@ def safe_int(value, default: int) -> int:
     except (ValueError, TypeError):
         return default
 
+
 # Try to import win32com for Office automation
 try:
     import win32com.client
+
     HAS_WIN32COM = True
 except ImportError:
     HAS_WIN32COM = False
@@ -35,6 +37,7 @@ except ImportError:
 # ============================================================================
 # Excel Nodes
 # ============================================================================
+
 
 class ExcelOpenNode(BaseNode):
     """
@@ -52,11 +55,13 @@ class ExcelOpenNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Excel Open"):
-        default_config = {
-            "visible": False,
-            "create_if_missing": False
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Excel Open",
+    ):
+        default_config = {"visible": False, "create_if_missing": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -73,14 +78,16 @@ class ExcelOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Excel open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+            raise RuntimeError(
+                "pywin32 not installed. Install with: pip install pywin32"
+            )
 
         file_path = self.get_input_value("file_path")
         visible = self.config.get("visible", False)
         create_if_missing = self.config.get("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value') and file_path:
+        if hasattr(context, "resolve_value") and file_path:
             file_path = context.resolve_value(file_path)
 
         try:
@@ -128,10 +135,13 @@ class ExcelReadCellNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Excel Read Cell"):
-        default_config = {
-            "sheet": 1
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Excel Read Cell",
+    ):
+        default_config = {"sheet": 1}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -153,7 +163,7 @@ class ExcelReadCellNode(BaseNode):
         cell = self.get_input_value("cell")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if isinstance(sheet, str):
                 sheet = context.resolve_value(sheet)
             if cell:
@@ -200,10 +210,13 @@ class ExcelWriteCellNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Excel Write Cell"):
-        default_config = {
-            "sheet": 1
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Excel Write Cell",
+    ):
+        default_config = {"sheet": 1}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -226,7 +239,7 @@ class ExcelWriteCellNode(BaseNode):
         value = self.get_input_value("value")
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if isinstance(sheet, str):
                 sheet = context.resolve_value(sheet)
             if cell:
@@ -274,10 +287,13 @@ class ExcelGetRangeNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Excel Get Range"):
-        default_config = {
-            "sheet": 1
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Excel Get Range",
+    ):
+        default_config = {"sheet": 1}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -357,11 +373,13 @@ class ExcelCloseNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Excel Close"):
-        default_config = {
-            "save": True,
-            "quit_app": True
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Excel Close",
+    ):
+        default_config = {"save": True, "quit_app": True}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -407,6 +425,7 @@ class ExcelCloseNode(BaseNode):
 # Word Nodes
 # ============================================================================
 
+
 class WordOpenNode(BaseNode):
     """
     Node to open a Word document.
@@ -424,11 +443,13 @@ class WordOpenNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Word Open"):
-        default_config = {
-            "visible": False,
-            "create_if_missing": False
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Word Open",
+    ):
+        default_config = {"visible": False, "create_if_missing": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -445,14 +466,16 @@ class WordOpenNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Word open operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+            raise RuntimeError(
+                "pywin32 not installed. Install with: pip install pywin32"
+            )
 
         file_path = self.get_input_value("file_path")
         visible = self.config.get("visible", False)
         create_if_missing = self.config.get("create_if_missing", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value') and file_path:
+        if hasattr(context, "resolve_value") and file_path:
             file_path = context.resolve_value(file_path)
 
         try:
@@ -498,7 +521,12 @@ class WordGetTextNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Word Get Text"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Word Get Text",
+    ):
         super().__init__(node_id, config or {})
         self.name = name
         self.node_type = "WordGetTextNode"
@@ -554,11 +582,13 @@ class WordReplaceTextNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Word Replace Text"):
-        default_config = {
-            "match_case": False,
-            "replace_all": True
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Word Replace Text",
+    ):
+        default_config = {"match_case": False, "replace_all": True}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -582,7 +612,7 @@ class WordReplaceTextNode(BaseNode):
         replace_all = self.config.get("replace_all", True)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if find_text:
                 find_text = context.resolve_value(find_text)
             if replace_text:
@@ -605,7 +635,7 @@ class WordReplaceTextNode(BaseNode):
                 FindText=find_text,
                 MatchCase=match_case,
                 ReplaceWith=replace_text,
-                Replace=replace_type
+                Replace=replace_type,
             ):
                 count += 1
                 if not replace_all:
@@ -641,11 +671,13 @@ class WordCloseNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Word Close"):
-        default_config = {
-            "save": True,
-            "quit_app": True
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Word Close",
+    ):
+        default_config = {"save": True, "quit_app": True}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -691,6 +723,7 @@ class WordCloseNode(BaseNode):
 # Outlook Nodes
 # ============================================================================
 
+
 class OutlookSendEmailNode(BaseNode):
     """
     Node to send an email via Outlook.
@@ -710,10 +743,13 @@ class OutlookSendEmailNode(BaseNode):
         - success: Whether email was sent
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Outlook Send Email"):
-        default_config = {
-            "html_body": False
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Outlook Send Email",
+    ):
+        default_config = {"html_body": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -733,7 +769,9 @@ class OutlookSendEmailNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook send email operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+            raise RuntimeError(
+                "pywin32 not installed. Install with: pip install pywin32"
+            )
 
         to = self.get_input_value("to")
         subject = self.get_input_value("subject")
@@ -744,7 +782,7 @@ class OutlookSendEmailNode(BaseNode):
         html_body = self.config.get("html_body", False)
 
         # Resolve {{variable}} patterns
-        if hasattr(context, 'resolve_value'):
+        if hasattr(context, "resolve_value"):
             if to:
                 to = context.resolve_value(to)
             if subject:
@@ -812,12 +850,13 @@ class OutlookReadEmailsNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Outlook Read Emails"):
-        default_config = {
-            "folder": "Inbox",
-            "count": 10,
-            "unread_only": False
-        }
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Outlook Read Emails",
+    ):
+        default_config = {"folder": "Inbox", "count": 10, "unread_only": False}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -833,7 +872,9 @@ class OutlookReadEmailsNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook read emails operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+            raise RuntimeError(
+                "pywin32 not installed. Install with: pip install pywin32"
+            )
 
         folder_name = self.config.get("folder", "Inbox")
         max_count = self.config.get("count", 10)
@@ -867,9 +908,11 @@ class OutlookReadEmailsNode(BaseNode):
                     "sender": message.SenderEmailAddress,
                     "sender_name": message.SenderName,
                     "received": str(message.ReceivedTime),
-                    "body": message.Body[:500] if message.Body else "",  # First 500 chars
+                    "body": message.Body[:500]
+                    if message.Body
+                    else "",  # First 500 chars
                     "unread": message.UnRead,
-                    "has_attachments": message.Attachments.Count > 0
+                    "has_attachments": message.Attachments.Count > 0,
                 }
                 emails.append(email_data)
                 count += 1
@@ -902,7 +945,12 @@ class OutlookGetInboxCountNode(BaseNode):
         - success: Whether operation succeeded
     """
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Outlook Get Inbox Count"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Outlook Get Inbox Count",
+    ):
         default_config = {}
         if config:
             default_config.update(config)
@@ -919,7 +967,9 @@ class OutlookGetInboxCountNode(BaseNode):
     async def execute(self, context) -> Dict[str, Any]:
         """Execute Outlook get inbox count operation"""
         if not HAS_WIN32COM:
-            raise RuntimeError("pywin32 not installed. Install with: pip install pywin32")
+            raise RuntimeError(
+                "pywin32 not installed. Install with: pip install pywin32"
+            )
 
         try:
             outlook = win32com.client.Dispatch("Outlook.Application")
@@ -935,7 +985,11 @@ class OutlookGetInboxCountNode(BaseNode):
             self.status = NodeStatus.SUCCESS
 
             logger.info(f"Inbox: {total_count} total, {unread_count} unread")
-            return {"success": True, "total_count": total_count, "unread_count": unread_count}
+            return {
+                "success": True,
+                "total_count": total_count,
+                "unread_count": unread_count,
+            }
 
         except Exception as e:
             self.set_output_value("success", False)

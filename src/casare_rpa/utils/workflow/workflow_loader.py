@@ -4,15 +4,19 @@ Deserializes workflow JSON into executable WorkflowSchema with node instances.
 
 SECURITY: All workflows are validated against a strict schema before execution.
 """
-from typing import Any, Dict, List, Optional
+
+from typing import Any, Dict
 from loguru import logger
 
-from casare_rpa.core.workflow_schema import WorkflowSchema, WorkflowMetadata, NodeConnection
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
+from casare_rpa.domain.entities.node_connection import NodeConnection
 from casare_rpa.core.base_node import BaseNode
 
 
 class WorkflowValidationError(Exception):
     """Raised when workflow validation fails."""
+
     pass
 
 
@@ -24,7 +28,9 @@ MAX_CONFIG_DEPTH = 10
 MAX_STRING_LENGTH = 10000
 
 
-def _validate_string(value: Any, field_name: str, max_length: int = MAX_STRING_LENGTH) -> str:
+def _validate_string(
+    value: Any, field_name: str, max_length: int = MAX_STRING_LENGTH
+) -> str:
     """Validate a string field."""
     if value is None:
         return ""
@@ -58,18 +64,25 @@ def _validate_config_value(value: Any, path: str, depth: int = 0) -> Any:
                 f"Config value at '{path}' exceeds maximum length of {MAX_STRING_LENGTH}"
             )
         # SECURITY: Check for potential code injection patterns
-        dangerous_patterns = ['__import__', 'eval(', 'exec(', 'compile(', 'os.system']
+        dangerous_patterns = ["__import__", "eval(", "exec(", "compile(", "os.system"]
         for pattern in dangerous_patterns:
             if pattern in value.lower():
-                logger.warning(f"Potentially dangerous pattern '{pattern}' found in config at '{path}'")
+                logger.warning(
+                    f"Potentially dangerous pattern '{pattern}' found in config at '{path}'"
+                )
         return value
 
     if isinstance(value, list):
-        return [_validate_config_value(item, f"{path}[{i}]", depth + 1) for i, item in enumerate(value)]
+        return [
+            _validate_config_value(item, f"{path}[{i}]", depth + 1)
+            for i, item in enumerate(value)
+        ]
 
     if isinstance(value, dict):
         return {
-            _validate_string(k, f"{path}.key", MAX_NODE_ID_LENGTH): _validate_config_value(v, f"{path}.{k}", depth + 1)
+            _validate_string(
+                k, f"{path}.key", MAX_NODE_ID_LENGTH
+            ): _validate_config_value(v, f"{path}.{k}", depth + 1)
             for k, v in value.items()
         }
 
@@ -135,7 +148,9 @@ def validate_workflow_structure(workflow_data: Dict) -> None:
         # Validate config
         config = node_data.get("config", {})
         if not isinstance(config, dict):
-            raise WorkflowValidationError(f"Node '{node_id}' config must be a dictionary")
+            raise WorkflowValidationError(
+                f"Node '{node_id}' config must be a dictionary"
+            )
 
         _validate_config_value(config, f"nodes.{node_id}.config")
 
@@ -153,140 +168,295 @@ def validate_workflow_structure(workflow_data: Dict) -> None:
         if not isinstance(conn, dict):
             raise WorkflowValidationError(f"Connection {i} must be a dictionary")
 
-        _validate_string(conn.get("source_node"), f"connections[{i}].source_node", MAX_NODE_ID_LENGTH)
-        _validate_string(conn.get("target_node"), f"connections[{i}].target_node", MAX_NODE_ID_LENGTH)
-        _validate_string(conn.get("source_port", ""), f"connections[{i}].source_port", 128)
-        _validate_string(conn.get("target_port", ""), f"connections[{i}].target_port", 128)
+        _validate_string(
+            conn.get("source_node"), f"connections[{i}].source_node", MAX_NODE_ID_LENGTH
+        )
+        _validate_string(
+            conn.get("target_node"), f"connections[{i}].target_node", MAX_NODE_ID_LENGTH
+        )
+        _validate_string(
+            conn.get("source_port", ""), f"connections[{i}].source_port", 128
+        )
+        _validate_string(
+            conn.get("target_port", ""), f"connections[{i}].target_port", 128
+        )
 
-    logger.debug(f"Workflow validation passed: {len(nodes)} nodes, {len(connections)} connections")
+    logger.debug(
+        f"Workflow validation passed: {len(nodes)} nodes, {len(connections)} connections"
+    )
+
 
 # Import all node classes
 # Basic nodes
 from casare_rpa.nodes.basic_nodes import StartNode, EndNode, CommentNode
 
 # Variable nodes
-from casare_rpa.nodes.variable_nodes import SetVariableNode, GetVariableNode, IncrementVariableNode
+from casare_rpa.nodes.variable_nodes import (
+    SetVariableNode,
+    GetVariableNode,
+    IncrementVariableNode,
+)
 
 # Control flow nodes
 from casare_rpa.nodes.control_flow_nodes import (
-    IfNode, ForLoopStartNode, ForLoopEndNode,
-    WhileLoopStartNode, WhileLoopEndNode, BreakNode, ContinueNode, SwitchNode
+    IfNode,
+    ForLoopStartNode,
+    ForLoopEndNode,
+    WhileLoopStartNode,
+    WhileLoopEndNode,
+    BreakNode,
+    ContinueNode,
+    SwitchNode,
 )
 
 # Error handling nodes
 from casare_rpa.nodes.error_handling_nodes import (
-    TryNode, RetryNode, RetrySuccessNode, RetryFailNode, ThrowErrorNode,
-    WebhookNotifyNode, OnErrorNode, ErrorRecoveryNode, LogErrorNode, AssertNode
+    TryNode,
+    RetryNode,
+    RetrySuccessNode,
+    RetryFailNode,
+    ThrowErrorNode,
+    WebhookNotifyNode,
+    OnErrorNode,
+    ErrorRecoveryNode,
+    LogErrorNode,
+    AssertNode,
 )
 
 # Wait nodes (browser)
-from casare_rpa.nodes.wait_nodes import WaitNode, WaitForElementNode, WaitForNavigationNode
+from casare_rpa.nodes.wait_nodes import (
+    WaitNode,
+    WaitForElementNode,
+    WaitForNavigationNode,
+)
 
 # Browser nodes
 from casare_rpa.nodes.browser_nodes import (
-    LaunchBrowserNode, CloseBrowserNode, NewTabNode,
-    GetAllImagesNode, DownloadFileNode
+    LaunchBrowserNode,
+    CloseBrowserNode,
+    NewTabNode,
+    GetAllImagesNode,
+    DownloadFileNode,
 )
 
 # Navigation nodes
-from casare_rpa.nodes.navigation_nodes import GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode
+from casare_rpa.nodes.navigation_nodes import (
+    GoToURLNode,
+    GoBackNode,
+    GoForwardNode,
+    RefreshPageNode,
+)
 
 # Interaction nodes (browser)
-from casare_rpa.nodes.interaction_nodes import ClickElementNode, TypeTextNode, SelectDropdownNode
+from casare_rpa.nodes.interaction_nodes import (
+    ClickElementNode,
+    TypeTextNode,
+    SelectDropdownNode,
+)
 
 # Data extraction nodes
-from casare_rpa.nodes.data_nodes import ExtractTextNode, GetAttributeNode, ScreenshotNode
+from casare_rpa.nodes.data_nodes import (
+    ExtractTextNode,
+    GetAttributeNode,
+    ScreenshotNode,
+)
 
 # DateTime nodes
 from casare_rpa.nodes.datetime_nodes import (
-    GetCurrentDateTimeNode, FormatDateTimeNode, ParseDateTimeNode,
-    DateTimeAddNode, DateTimeDiffNode, DateTimeCompareNode, GetTimestampNode
+    GetCurrentDateTimeNode,
+    FormatDateTimeNode,
+    ParseDateTimeNode,
+    DateTimeAddNode,
+    DateTimeDiffNode,
+    DateTimeCompareNode,
+    GetTimestampNode,
 )
 
 # Database nodes
 from casare_rpa.nodes.database_nodes import (
-    DatabaseConnectNode, ExecuteQueryNode, ExecuteNonQueryNode,
-    BeginTransactionNode, CommitTransactionNode, RollbackTransactionNode,
-    CloseDatabaseNode, TableExistsNode, GetTableColumnsNode, ExecuteBatchNode
+    DatabaseConnectNode,
+    ExecuteQueryNode,
+    ExecuteNonQueryNode,
+    BeginTransactionNode,
+    CommitTransactionNode,
+    RollbackTransactionNode,
+    CloseDatabaseNode,
+    TableExistsNode,
+    GetTableColumnsNode,
+    ExecuteBatchNode,
 )
 
 # Data operation nodes
 from casare_rpa.nodes.data_operation_nodes import (
-    ConcatenateNode, FormatStringNode, RegexMatchNode, RegexReplaceNode,
-    MathOperationNode, ComparisonNode, CreateListNode, ListGetItemNode,
-    JsonParseNode, GetPropertyNode, ListLengthNode, ListAppendNode,
-    ListContainsNode, ListSliceNode, ListJoinNode, ListSortNode,
-    ListReverseNode, ListUniqueNode, ListFilterNode, ListMapNode,
-    ListReduceNode, ListFlattenNode, DictGetNode, DictSetNode,
-    DictRemoveNode, DictMergeNode, DictKeysNode, DictValuesNode,
-    DictHasKeyNode, CreateDictNode, DictToJsonNode, DictItemsNode
+    ConcatenateNode,
+    FormatStringNode,
+    RegexMatchNode,
+    RegexReplaceNode,
+    MathOperationNode,
+    ComparisonNode,
+    CreateListNode,
+    ListGetItemNode,
+    JsonParseNode,
+    GetPropertyNode,
+    ListLengthNode,
+    ListAppendNode,
+    ListContainsNode,
+    ListSliceNode,
+    ListJoinNode,
+    ListSortNode,
+    ListReverseNode,
+    ListUniqueNode,
+    ListFilterNode,
+    ListMapNode,
+    ListReduceNode,
+    ListFlattenNode,
+    DictGetNode,
+    DictSetNode,
+    DictRemoveNode,
+    DictMergeNode,
+    DictKeysNode,
+    DictValuesNode,
+    DictHasKeyNode,
+    CreateDictNode,
+    DictToJsonNode,
+    DictItemsNode,
 )
 
 # File nodes
 from casare_rpa.nodes.file_nodes import (
-    ReadFileNode, WriteFileNode, AppendFileNode, DeleteFileNode,
-    CopyFileNode, MoveFileNode, CreateDirectoryNode, ListDirectoryNode,
-    FileExistsNode, GetFileInfoNode, ReadCSVNode, WriteCSVNode,
-    ReadJSONFileNode, WriteJSONFileNode, ZipFilesNode, UnzipFilesNode
+    ReadFileNode,
+    WriteFileNode,
+    AppendFileNode,
+    DeleteFileNode,
+    CopyFileNode,
+    MoveFileNode,
+    CreateDirectoryNode,
+    ListDirectoryNode,
+    FileExistsNode,
+    GetFileInfoNode,
+    ReadCSVNode,
+    WriteCSVNode,
+    ReadJSONFileNode,
+    WriteJSONFileNode,
+    ZipFilesNode,
+    UnzipFilesNode,
 )
 
 # Text nodes
 from casare_rpa.nodes.text_nodes import (
-    TextSplitNode, TextReplaceNode, TextTrimNode, TextCaseNode,
-    TextPadNode, TextSubstringNode, TextContainsNode, TextStartsWithNode,
-    TextEndsWithNode, TextLinesNode, TextReverseNode, TextCountNode,
-    TextJoinNode, TextExtractNode
+    TextSplitNode,
+    TextReplaceNode,
+    TextTrimNode,
+    TextCaseNode,
+    TextPadNode,
+    TextSubstringNode,
+    TextContainsNode,
+    TextStartsWithNode,
+    TextEndsWithNode,
+    TextLinesNode,
+    TextReverseNode,
+    TextCountNode,
+    TextJoinNode,
+    TextExtractNode,
 )
 
 # HTTP nodes
 from casare_rpa.nodes.http_nodes import (
-    HttpRequestNode, HttpGetNode, HttpPostNode, HttpPutNode, HttpPatchNode,
-    HttpDeleteNode, SetHttpHeadersNode, HttpAuthNode, ParseJsonResponseNode,
-    HttpDownloadFileNode, HttpUploadFileNode, BuildUrlNode
+    HttpRequestNode,
+    HttpGetNode,
+    HttpPostNode,
+    HttpPutNode,
+    HttpPatchNode,
+    HttpDeleteNode,
+    SetHttpHeadersNode,
+    HttpAuthNode,
+    ParseJsonResponseNode,
+    HttpDownloadFileNode,
+    HttpUploadFileNode,
+    BuildUrlNode,
 )
 
 # Email nodes
 from casare_rpa.nodes.email_nodes import (
-    SendEmailNode, ReadEmailsNode, GetEmailContentNode, SaveAttachmentNode,
-    FilterEmailsNode, MarkEmailNode, DeleteEmailNode, MoveEmailNode
+    SendEmailNode,
+    ReadEmailsNode,
+    GetEmailContentNode,
+    SaveAttachmentNode,
+    FilterEmailsNode,
+    MarkEmailNode,
+    DeleteEmailNode,
+    MoveEmailNode,
 )
 
 # FTP nodes
 from casare_rpa.nodes.ftp_nodes import (
-    FTPConnectNode, FTPUploadNode, FTPDownloadNode, FTPListNode,
-    FTPDeleteNode, FTPMakeDirNode, FTPRemoveDirNode, FTPRenameNode,
-    FTPDisconnectNode, FTPGetSizeNode
+    FTPConnectNode,
+    FTPUploadNode,
+    FTPDownloadNode,
+    FTPListNode,
+    FTPDeleteNode,
+    FTPMakeDirNode,
+    FTPRemoveDirNode,
+    FTPRenameNode,
+    FTPDisconnectNode,
+    FTPGetSizeNode,
 )
 
 # PDF nodes
 from casare_rpa.nodes.pdf_nodes import (
-    ReadPDFTextNode, GetPDFInfoNode, MergePDFsNode, SplitPDFNode,
-    ExtractPDFPagesNode, PDFToImagesNode
+    ReadPDFTextNode,
+    GetPDFInfoNode,
+    MergePDFsNode,
+    SplitPDFNode,
+    ExtractPDFPagesNode,
+    PDFToImagesNode,
 )
 
 # XML nodes
 from casare_rpa.nodes.xml_nodes import (
-    ParseXMLNode, ReadXMLFileNode, WriteXMLFileNode, XPathQueryNode,
-    GetXMLElementNode, GetXMLAttributeNode, XMLToJsonNode, JsonToXMLNode
+    ParseXMLNode,
+    ReadXMLFileNode,
+    WriteXMLFileNode,
+    XPathQueryNode,
+    GetXMLElementNode,
+    GetXMLAttributeNode,
+    XMLToJsonNode,
+    JsonToXMLNode,
 )
 
 # Random nodes
 from casare_rpa.nodes.random_nodes import (
-    RandomNumberNode, RandomChoiceNode, RandomStringNode, RandomUUIDNode, ShuffleListNode
+    RandomNumberNode,
+    RandomChoiceNode,
+    RandomStringNode,
+    RandomUUIDNode,
+    ShuffleListNode,
 )
 
 # System nodes
 from casare_rpa.nodes.system_nodes import (
-    ClipboardCopyNode, ClipboardPasteNode, ClipboardClearNode,
-    MessageBoxNode, InputDialogNode, TooltipNode, RunCommandNode,
-    RunPowerShellNode, GetServiceStatusNode, StartServiceNode,
-    StopServiceNode, RestartServiceNode, ListServicesNode
+    ClipboardCopyNode,
+    ClipboardPasteNode,
+    ClipboardClearNode,
+    MessageBoxNode,
+    InputDialogNode,
+    TooltipNode,
+    RunCommandNode,
+    RunPowerShellNode,
+    GetServiceStatusNode,
+    StartServiceNode,
+    StopServiceNode,
+    RestartServiceNode,
+    ListServicesNode,
 )
 
 # Script nodes
 from casare_rpa.nodes.script_nodes import (
-    RunPythonScriptNode, RunPythonFileNode, EvalExpressionNode,
-    RunBatchScriptNode, RunJavaScriptNode
+    RunPythonScriptNode,
+    RunPythonFileNode,
+    EvalExpressionNode,
+    RunBatchScriptNode,
+    RunJavaScriptNode,
 )
 
 # Utility nodes
@@ -295,30 +465,61 @@ from casare_rpa.nodes.utility_nodes import ValidateNode, TransformNode, LogNode
 # Desktop nodes (aliased where they conflict with browser nodes)
 from casare_rpa.nodes.desktop_nodes import (
     # Application nodes
-    LaunchApplicationNode, CloseApplicationNode, ActivateWindowNode, GetWindowListNode,
+    LaunchApplicationNode,
+    CloseApplicationNode,
+    ActivateWindowNode,
+    GetWindowListNode,
     # Element nodes (aliased to avoid conflict with browser interaction_nodes)
     FindElementNode as DesktopFindElementNode,
     ClickElementNode as DesktopClickElementNode,
     TypeTextNode as DesktopTypeTextNode,
-    GetElementTextNode, GetElementPropertyNode,
+    GetElementTextNode,
+    GetElementPropertyNode,
     # Window management nodes
-    ResizeWindowNode, MoveWindowNode, MaximizeWindowNode, MinimizeWindowNode,
-    RestoreWindowNode, GetWindowPropertiesNode, SetWindowStateNode,
+    ResizeWindowNode,
+    MoveWindowNode,
+    MaximizeWindowNode,
+    MinimizeWindowNode,
+    RestoreWindowNode,
+    GetWindowPropertiesNode,
+    SetWindowStateNode,
     # Interaction nodes
-    SelectFromDropdownNode, CheckCheckboxNode, SelectRadioButtonNode,
-    SelectTabNode, ExpandTreeItemNode, ScrollElementNode,
+    SelectFromDropdownNode,
+    CheckCheckboxNode,
+    SelectRadioButtonNode,
+    SelectTabNode,
+    ExpandTreeItemNode,
+    ScrollElementNode,
     # Mouse and keyboard nodes
-    MoveMouseNode, MouseClickNode, SendKeysNode, SendHotKeyNode,
-    GetMousePositionNode, DragMouseNode,
+    MoveMouseNode,
+    MouseClickNode,
+    SendKeysNode,
+    SendHotKeyNode,
+    GetMousePositionNode,
+    DragMouseNode,
     # Wait and verification nodes (aliased for desktop)
     WaitForElementNode as DesktopWaitForElementNode,
-    WaitForWindowNode, VerifyElementExistsNode, VerifyElementPropertyNode,
+    WaitForWindowNode,
+    VerifyElementExistsNode,
+    VerifyElementPropertyNode,
     # Screenshot and OCR nodes
-    CaptureScreenshotNode, CaptureElementImageNode, OCRExtractTextNode, CompareImagesNode,
+    CaptureScreenshotNode,
+    CaptureElementImageNode,
+    OCRExtractTextNode,
+    CompareImagesNode,
     # Office automation nodes
-    ExcelOpenNode, ExcelReadCellNode, ExcelWriteCellNode, ExcelGetRangeNode, ExcelCloseNode,
-    WordOpenNode, WordGetTextNode, WordReplaceTextNode, WordCloseNode,
-    OutlookSendEmailNode, OutlookReadEmailsNode, OutlookGetInboxCountNode,
+    ExcelOpenNode,
+    ExcelReadCellNode,
+    ExcelWriteCellNode,
+    ExcelGetRangeNode,
+    ExcelCloseNode,
+    WordOpenNode,
+    WordGetTextNode,
+    WordReplaceTextNode,
+    WordCloseNode,
+    OutlookSendEmailNode,
+    OutlookReadEmailsNode,
+    OutlookGetInboxCountNode,
 )
 
 # Map node types to classes
@@ -327,12 +528,10 @@ NODE_TYPE_MAP = {
     "StartNode": StartNode,
     "EndNode": EndNode,
     "CommentNode": CommentNode,
-
     # Variable nodes
     "SetVariableNode": SetVariableNode,
     "GetVariableNode": GetVariableNode,
     "IncrementVariableNode": IncrementVariableNode,
-
     # Control flow nodes
     "IfNode": IfNode,
     "ForLoopStartNode": ForLoopStartNode,
@@ -342,7 +541,6 @@ NODE_TYPE_MAP = {
     "BreakNode": BreakNode,
     "ContinueNode": ContinueNode,
     "SwitchNode": SwitchNode,
-
     # Error handling nodes
     "TryNode": TryNode,
     "RetryNode": RetryNode,
@@ -354,35 +552,29 @@ NODE_TYPE_MAP = {
     "ErrorRecoveryNode": ErrorRecoveryNode,
     "LogErrorNode": LogErrorNode,
     "AssertNode": AssertNode,
-
     # Wait nodes (browser)
     "WaitNode": WaitNode,
     "WaitForElementNode": WaitForElementNode,
     "WaitForNavigationNode": WaitForNavigationNode,
-
     # Browser nodes
     "LaunchBrowserNode": LaunchBrowserNode,
     "CloseBrowserNode": CloseBrowserNode,
     "NewTabNode": NewTabNode,
     "GetAllImagesNode": GetAllImagesNode,
     "DownloadFileNode": DownloadFileNode,
-
     # Navigation nodes
     "GoToURLNode": GoToURLNode,
     "GoBackNode": GoBackNode,
     "GoForwardNode": GoForwardNode,
     "RefreshPageNode": RefreshPageNode,
-
     # Interaction nodes (browser)
     "ClickElementNode": ClickElementNode,
     "TypeTextNode": TypeTextNode,
     "SelectDropdownNode": SelectDropdownNode,
-
     # Data extraction nodes
     "ExtractTextNode": ExtractTextNode,
     "GetAttributeNode": GetAttributeNode,
     "ScreenshotNode": ScreenshotNode,
-
     # DateTime nodes
     "GetCurrentDateTimeNode": GetCurrentDateTimeNode,
     "FormatDateTimeNode": FormatDateTimeNode,
@@ -391,7 +583,6 @@ NODE_TYPE_MAP = {
     "DateTimeDiffNode": DateTimeDiffNode,
     "DateTimeCompareNode": DateTimeCompareNode,
     "GetTimestampNode": GetTimestampNode,
-
     # Database nodes
     "DatabaseConnectNode": DatabaseConnectNode,
     "ExecuteQueryNode": ExecuteQueryNode,
@@ -403,7 +594,6 @@ NODE_TYPE_MAP = {
     "TableExistsNode": TableExistsNode,
     "GetTableColumnsNode": GetTableColumnsNode,
     "ExecuteBatchNode": ExecuteBatchNode,
-
     # Data operation nodes
     "ConcatenateNode": ConcatenateNode,
     "FormatStringNode": FormatStringNode,
@@ -437,7 +627,6 @@ NODE_TYPE_MAP = {
     "CreateDictNode": CreateDictNode,
     "DictToJsonNode": DictToJsonNode,
     "DictItemsNode": DictItemsNode,
-
     # File nodes
     "ReadFileNode": ReadFileNode,
     "WriteFileNode": WriteFileNode,
@@ -455,7 +644,6 @@ NODE_TYPE_MAP = {
     "WriteJSONFileNode": WriteJSONFileNode,
     "ZipFilesNode": ZipFilesNode,
     "UnzipFilesNode": UnzipFilesNode,
-
     # Text nodes
     "TextSplitNode": TextSplitNode,
     "TextReplaceNode": TextReplaceNode,
@@ -471,7 +659,6 @@ NODE_TYPE_MAP = {
     "TextCountNode": TextCountNode,
     "TextJoinNode": TextJoinNode,
     "TextExtractNode": TextExtractNode,
-
     # HTTP nodes
     "HttpRequestNode": HttpRequestNode,
     "HttpGetNode": HttpGetNode,
@@ -485,7 +672,6 @@ NODE_TYPE_MAP = {
     "HttpDownloadFileNode": HttpDownloadFileNode,
     "HttpUploadFileNode": HttpUploadFileNode,
     "BuildUrlNode": BuildUrlNode,
-
     # Email nodes
     "SendEmailNode": SendEmailNode,
     "ReadEmailsNode": ReadEmailsNode,
@@ -495,7 +681,6 @@ NODE_TYPE_MAP = {
     "MarkEmailNode": MarkEmailNode,
     "DeleteEmailNode": DeleteEmailNode,
     "MoveEmailNode": MoveEmailNode,
-
     # FTP nodes
     "FTPConnectNode": FTPConnectNode,
     "FTPUploadNode": FTPUploadNode,
@@ -507,7 +692,6 @@ NODE_TYPE_MAP = {
     "FTPRenameNode": FTPRenameNode,
     "FTPDisconnectNode": FTPDisconnectNode,
     "FTPGetSizeNode": FTPGetSizeNode,
-
     # PDF nodes
     "ReadPDFTextNode": ReadPDFTextNode,
     "GetPDFInfoNode": GetPDFInfoNode,
@@ -515,7 +699,6 @@ NODE_TYPE_MAP = {
     "SplitPDFNode": SplitPDFNode,
     "ExtractPDFPagesNode": ExtractPDFPagesNode,
     "PDFToImagesNode": PDFToImagesNode,
-
     # XML nodes
     "ParseXMLNode": ParseXMLNode,
     "ReadXMLFileNode": ReadXMLFileNode,
@@ -525,14 +708,12 @@ NODE_TYPE_MAP = {
     "GetXMLAttributeNode": GetXMLAttributeNode,
     "XMLToJsonNode": XMLToJsonNode,
     "JsonToXMLNode": JsonToXMLNode,
-
     # Random nodes
     "RandomNumberNode": RandomNumberNode,
     "RandomChoiceNode": RandomChoiceNode,
     "RandomStringNode": RandomStringNode,
     "RandomUUIDNode": RandomUUIDNode,
     "ShuffleListNode": ShuffleListNode,
-
     # System nodes
     "ClipboardCopyNode": ClipboardCopyNode,
     "ClipboardPasteNode": ClipboardPasteNode,
@@ -547,32 +728,27 @@ NODE_TYPE_MAP = {
     "StopServiceNode": StopServiceNode,
     "RestartServiceNode": RestartServiceNode,
     "ListServicesNode": ListServicesNode,
-
     # Script nodes
     "RunPythonScriptNode": RunPythonScriptNode,
     "RunPythonFileNode": RunPythonFileNode,
     "EvalExpressionNode": EvalExpressionNode,
     "RunBatchScriptNode": RunBatchScriptNode,
     "RunJavaScriptNode": RunJavaScriptNode,
-
     # Utility nodes
     "ValidateNode": ValidateNode,
     "TransformNode": TransformNode,
     "LogNode": LogNode,
-
     # Desktop nodes - Application
     "LaunchApplicationNode": LaunchApplicationNode,
     "CloseApplicationNode": CloseApplicationNode,
     "ActivateWindowNode": ActivateWindowNode,
     "GetWindowListNode": GetWindowListNode,
-
     # Desktop nodes - Element (prefixed to distinguish from browser nodes)
     "DesktopFindElementNode": DesktopFindElementNode,
     "DesktopClickElementNode": DesktopClickElementNode,
     "DesktopTypeTextNode": DesktopTypeTextNode,
     "GetElementTextNode": GetElementTextNode,
     "GetElementPropertyNode": GetElementPropertyNode,
-
     # Desktop nodes - Window management
     "ResizeWindowNode": ResizeWindowNode,
     "MoveWindowNode": MoveWindowNode,
@@ -581,7 +757,6 @@ NODE_TYPE_MAP = {
     "RestoreWindowNode": RestoreWindowNode,
     "GetWindowPropertiesNode": GetWindowPropertiesNode,
     "SetWindowStateNode": SetWindowStateNode,
-
     # Desktop nodes - Interaction
     "SelectFromDropdownNode": SelectFromDropdownNode,
     "CheckCheckboxNode": CheckCheckboxNode,
@@ -589,7 +764,6 @@ NODE_TYPE_MAP = {
     "SelectTabNode": SelectTabNode,
     "ExpandTreeItemNode": ExpandTreeItemNode,
     "ScrollElementNode": ScrollElementNode,
-
     # Desktop nodes - Mouse and keyboard
     "MoveMouseNode": MoveMouseNode,
     "MouseClickNode": MouseClickNode,
@@ -597,19 +771,16 @@ NODE_TYPE_MAP = {
     "SendHotKeyNode": SendHotKeyNode,
     "GetMousePositionNode": GetMousePositionNode,
     "DragMouseNode": DragMouseNode,
-
     # Desktop nodes - Wait and verification (prefixed to distinguish from browser)
     "DesktopWaitForElementNode": DesktopWaitForElementNode,
     "WaitForWindowNode": WaitForWindowNode,
     "VerifyElementExistsNode": VerifyElementExistsNode,
     "VerifyElementPropertyNode": VerifyElementPropertyNode,
-
     # Desktop nodes - Screenshot and OCR
     "CaptureScreenshotNode": CaptureScreenshotNode,
     "CaptureElementImageNode": CaptureElementImageNode,
     "OCRExtractTextNode": OCRExtractTextNode,
     "CompareImagesNode": CompareImagesNode,
-
     # Desktop nodes - Office automation
     "ExcelOpenNode": ExcelOpenNode,
     "ExcelReadCellNode": ExcelReadCellNode,
@@ -626,7 +797,9 @@ NODE_TYPE_MAP = {
 }
 
 
-def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) -> WorkflowSchema:
+def load_workflow_from_dict(
+    workflow_data: Dict, skip_validation: bool = False
+) -> WorkflowSchema:
     """
     Load a workflow from serialized dictionary data.
 
@@ -647,19 +820,21 @@ def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) 
         validate_workflow_structure(workflow_data)
         logger.info("Workflow validation passed")
     else:
-        logger.warning("Workflow validation SKIPPED - this is not recommended for untrusted workflows")
+        logger.warning(
+            "Workflow validation SKIPPED - this is not recommended for untrusted workflows"
+        )
 
     # Create metadata
     metadata = WorkflowMetadata.from_dict(workflow_data.get("metadata", {}))
     workflow = WorkflowSchema(metadata)
-    
+
     # Deserialize nodes into instances
     nodes_dict: Dict[str, BaseNode] = {}
-    
+
     for node_id, node_data in workflow_data.get("nodes", {}).items():
         node_type = node_data.get("node_type")
         config = node_data.get("config", {})
-        
+
         if node_type in NODE_TYPE_MAP:
             node_class = NODE_TYPE_MAP[node_type]
             # Pass config as keyword argument
@@ -668,11 +843,10 @@ def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) 
             logger.debug(f"Loaded node {node_id}: {node_type} with config: {config}")
         else:
             logger.warning(f"Unknown node type: {node_type}")
-    
-    
+
     # Check if workflow already has a StartNode (from Canvas)
     has_start_node = any(node.node_type == "StartNode" for node in nodes_dict.values())
-    
+
     # Auto-create hidden Start node ONLY if workflow doesn't have one (like Canvas does)
     if not has_start_node:
         start_node = StartNode("__auto_start__")
@@ -680,14 +854,14 @@ def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) 
         logger.info("Added auto-start node (no StartNode found in workflow)")
     else:
         logger.info("Workflow already has a StartNode, skipping auto-start creation")
-    
+
     # Set nodes as instances (WorkflowRunner needs this)
     workflow.nodes = nodes_dict
-    
+
     # Load connections
     for conn_data in workflow_data.get("connections", []):
         workflow.connections.append(NodeConnection.from_dict(conn_data))
-    
+
     # Find entry points (nodes without exec_in connections) and auto-connect Start node
     # Only do this if we created __auto_start__
     if not has_start_node:
@@ -695,7 +869,7 @@ def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) 
         for conn in workflow.connections:
             if conn.target_port == "exec_in":
                 connected_exec_ins.add(conn.target_node)
-        
+
         # Auto-connect Start to entry points
         for node_id, node in nodes_dict.items():
             if node_id == "__auto_start__":
@@ -706,14 +880,16 @@ def load_workflow_from_dict(workflow_data: Dict, skip_validation: bool = False) 
                     source_node="__auto_start__",
                     source_port="exec_out",
                     target_node=node_id,
-                    target_port="exec_in"
+                    target_port="exec_in",
                 )
                 workflow.connections.append(connection)
                 logger.info(f"Auto-connected Start → {node_id}")
-    
+
     # Load variables and settings
     workflow.variables = workflow_data.get("variables", {})
     workflow.settings = workflow_data.get("settings", workflow.settings)
-    
-    logger.info(f"Loaded workflow '{metadata.name}' with {len(nodes_dict)} nodes and {len(workflow.connections)} connections")
+
+    logger.info(
+        f"Loaded workflow '{metadata.name}' with {len(nodes_dict)} nodes and {len(workflow.connections)} connections"
+    )
     return workflow

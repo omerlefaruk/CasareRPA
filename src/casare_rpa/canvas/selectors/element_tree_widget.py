@@ -5,13 +5,20 @@ Hierarchical tree view for displaying desktop UI element structure
 with lazy loading and custom styling.
 """
 
-from typing import Optional, Dict
-from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout, QLineEdit, QHBoxLayout, QPushButton
-from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QIcon, QColor, QBrush, QFont
+from typing import Optional
+from PySide6.QtWidgets import (
+    QTreeWidget,
+    QTreeWidgetItem,
+    QWidget,
+    QVBoxLayout,
+    QLineEdit,
+    QHBoxLayout,
+    QPushButton,
+)
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColor, QBrush
 from loguru import logger
 
-import uiautomation as auto
 from ...desktop.element import DesktopElement
 
 
@@ -117,9 +124,16 @@ class ElementTreeItem(QTreeWidgetItem):
 
         # These types typically don't have children
         leaf_types = [
-            "ButtonControl", "EditControl", "TextControl", "ImageControl",
-            "CheckBoxControl", "RadioButtonControl", "HyperlinkControl",
-            "ProgressBarControl", "SliderControl", "SeparatorControl"
+            "ButtonControl",
+            "EditControl",
+            "TextControl",
+            "ImageControl",
+            "CheckBoxControl",
+            "RadioButtonControl",
+            "HyperlinkControl",
+            "ProgressBarControl",
+            "SliderControl",
+            "SeparatorControl",
         ]
 
         return control_type not in leaf_types

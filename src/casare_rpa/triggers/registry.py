@@ -59,6 +59,7 @@ class TriggerRegistry:
         # Auto-import implementations to register them
         try:
             from . import implementations
+
             logger.debug("Trigger implementations loaded")
         except ImportError as e:
             logger.warning(f"Could not load trigger implementations: {e}")
@@ -73,14 +74,16 @@ class TriggerRegistry:
         Raises:
             ValueError: If trigger_class doesn't have trigger_type attribute
         """
-        if not hasattr(trigger_class, 'trigger_type'):
+        if not hasattr(trigger_class, "trigger_type"):
             raise ValueError(
                 f"Trigger class {trigger_class.__name__} must have a trigger_type attribute"
             )
 
         trigger_type = trigger_class.trigger_type
         self._triggers[trigger_type] = trigger_class
-        logger.debug(f"Registered trigger: {trigger_type.value} -> {trigger_class.__name__}")
+        logger.debug(
+            f"Registered trigger: {trigger_type.value} -> {trigger_class.__name__}"
+        )
 
     def unregister(self, trigger_type: TriggerType) -> bool:
         """
@@ -148,7 +151,7 @@ class TriggerRegistry:
         self,
         trigger_type: TriggerType,
         config: BaseTriggerConfig,
-        event_callback: Optional[TriggerEventCallback] = None
+        event_callback: Optional[TriggerEventCallback] = None,
     ) -> Optional[BaseTrigger]:
         """
         Create a trigger instance.

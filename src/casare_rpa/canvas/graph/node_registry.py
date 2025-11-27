@@ -52,18 +52,18 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
             continue
 
         # Skip composite marker nodes (they create multiple real nodes)
-        if getattr(visual_class, 'COMPOSITE_NODE', False):
+        if getattr(visual_class, "COMPOSITE_NODE", False):
             logger.debug(f"Skipping composite marker node: {visual_class.__name__}")
             continue
 
         # Get the CasareRPA node class name from attribute or derive from class name
-        casare_class_name = getattr(visual_class, 'CASARE_NODE_CLASS', None)
-        casare_module = getattr(visual_class, 'CASARE_NODE_MODULE', None)
+        casare_class_name = getattr(visual_class, "CASARE_NODE_CLASS", None)
+        casare_module = getattr(visual_class, "CASARE_NODE_MODULE", None)
 
         if casare_class_name is None:
             # Derive from visual node class name: VisualFooNode -> FooNode
             visual_name = visual_class.__name__
-            if visual_name.startswith('Visual') and visual_name.endswith('Node'):
+            if visual_name.startswith("Visual") and visual_name.endswith("Node"):
                 casare_class_name = visual_name[6:]  # Remove "Visual" prefix
             else:
                 logger.warning(f"Cannot derive CasareRPA node name for {visual_name}")
@@ -74,22 +74,27 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
             if casare_module == "desktop":
                 # Import from desktop_nodes
                 from ...nodes import desktop_nodes
+
                 casare_class = getattr(desktop_nodes, casare_class_name, None)
             elif casare_module == "file":
                 # Import from file_nodes
                 from ...nodes import file_nodes
+
                 casare_class = getattr(file_nodes, casare_class_name, None)
             elif casare_module == "utility":
                 # Import from utility_nodes
                 from ...nodes import utility_nodes
+
                 casare_class = getattr(utility_nodes, casare_class_name, None)
             elif casare_module == "office":
                 # Import from desktop_nodes.office_nodes
                 from ...nodes.desktop_nodes import office_nodes
+
                 casare_class = getattr(office_nodes, casare_class_name, None)
             else:
                 # Import from main nodes module (uses lazy loading)
                 from ...nodes import _lazy_import, _NODE_REGISTRY
+
                 if casare_class_name in _NODE_REGISTRY:
                     casare_class = _lazy_import(casare_class_name)
                 else:
@@ -99,10 +104,14 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
                 mapping[visual_class] = casare_class
                 logger.debug(f"Mapped {visual_class.__name__} -> {casare_class_name}")
             else:
-                logger.warning(f"CasareRPA node class '{casare_class_name}' not found for {visual_class.__name__}")
+                logger.warning(
+                    f"CasareRPA node class '{casare_class_name}' not found for {visual_class.__name__}"
+                )
 
         except Exception as e:
-            logger.warning(f"Failed to load CasareRPA node class '{casare_class_name}': {e}")
+            logger.warning(
+                f"Failed to load CasareRPA node class '{casare_class_name}': {e}"
+            )
 
     return mapping
 
@@ -137,6 +146,7 @@ CASARE_NODE_MAPPING = property(lambda self: get_casare_node_mapping())
 # These functions provide a single source of truth for looking up nodes by type.
 # Use these instead of building your own mappings!
 
+
 def _build_node_type_mapping() -> Dict[str, tuple]:
     """
     Build unified mapping from node type name to all related classes/identifiers.
@@ -154,7 +164,7 @@ def _build_node_type_mapping() -> Dict[str, tuple]:
         visual_name = visual_class.__name__
 
         # Derive node type from visual class name: VisualXxxNode -> XxxNode
-        if visual_name.startswith('Visual') and visual_name.endswith('Node'):
+        if visual_name.startswith("Visual") and visual_name.endswith("Node"):
             node_type = visual_name[6:]  # Remove "Visual" prefix
 
             # Build identifier for graph.create_node()
@@ -315,6 +325,7 @@ def create_node_from_type(
             # Generate node ID if not provided
             if not node_id:
                 from ...utils.id_generator import generate_node_id
+
                 node_id = generate_node_id(casare_class.__name__)
 
             casare_node = casare_class(node_id, config or {})
@@ -343,9 +354,7 @@ class NodeRegistry:
         self._categories: Dict[str, List[Type]] = {}
 
     def register_node(
-        self,
-        node_class: Type,
-        graph: Optional[NodeGraph] = None
+        self, node_class: Type, graph: Optional[NodeGraph] = None
     ) -> None:
         """
         Register a visual node class.
@@ -385,10 +394,9 @@ class NodeRegistry:
             self.register_node(node_class, graph)
 
         # Get the graph's context menu (right-click on canvas to add nodes)
-        graph_menu = graph.get_context_menu('graph')
+        graph_menu = graph.get_context_menu("graph")
 
         # Get the underlying QMenu and enhance it with search functionality
-        from ..search.searchable_menu import SearchableNodeMenu
         qmenu = graph_menu.qmenu
 
         # Clear the existing menu
@@ -417,13 +425,15 @@ class NodeRegistry:
                     auto_connect = bool(event.modifiers() & Qt.ShiftModifier)
 
                     # Create first matched node when Enter is pressed
-                    if hasattr(qmenu, '_first_match') and qmenu._first_match:
+                    if hasattr(qmenu, "_first_match") and qmenu._first_match:
                         # Determine source node for auto-connect
                         source_node = None
                         if auto_connect:
                             # First try: use last created node (for chaining)
                             if qmenu._last_created_node_id:
-                                source_node = self._find_node_by_id(qmenu._last_created_node_id)
+                                source_node = self._find_node_by_id(
+                                    qmenu._last_created_node_id
+                                )
                             # Fallback: use selected node
                             if not source_node:
                                 selected_nodes = graph.selected_nodes()
@@ -444,14 +454,16 @@ class NodeRegistry:
                             pos = qmenu._initial_scene_pos
                             if pos is None:
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                                pos = viewer.mapToScene(
+                                    viewer.mapFromGlobal(viewer.cursor().pos())
+                                )
                             pos_x = pos.x() - 100
                             pos_y = pos.y() - 30
 
                         node = graph.create_node(
-                            f'{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}',
+                            f"{qmenu._first_match.__identifier__}.{qmenu._first_match.__name__}",
                             name=qmenu._first_match.NODE_NAME,
-                            pos=[pos_x, pos_y]
+                            pos=[pos_x, pos_y],
                         )
                         # Attach CasareRPA node immediately with unique ID
                         factory = get_node_factory()
@@ -486,7 +498,11 @@ class NodeRegistry:
                     output_ports = source_node.output_ports()
                     for port in output_ports:
                         port_name = port.name().lower()
-                        if 'exec' in port_name or port_name in ('exec_out', 'output', 'out'):
+                        if "exec" in port_name or port_name in (
+                            "exec_out",
+                            "output",
+                            "out",
+                        ):
                             source_output = port
                             break
                     # Fallback: use first output port
@@ -498,7 +514,11 @@ class NodeRegistry:
                     input_ports = target_node.input_ports()
                     for port in input_ports:
                         port_name = port.name().lower()
-                        if 'exec' in port_name or port_name in ('exec_in', 'input', 'in'):
+                        if "exec" in port_name or port_name in (
+                            "exec_in",
+                            "input",
+                            "in",
+                        ):
                             target_input = port
                             break
                     # Fallback: use first input port
@@ -508,7 +528,9 @@ class NodeRegistry:
                     # Connect if both ports found
                     if source_output and target_input:
                         source_output.connect_to(target_input)
-                        logger.info(f"Auto-connected {source_node.name()} -> {target_node.name()}")
+                        logger.info(
+                            f"Auto-connected {source_node.name()} -> {target_node.name()}"
+                        )
                 except Exception as e:
                     logger.warning(f"Auto-connect failed: {e}")
 
@@ -542,22 +564,26 @@ class NodeRegistry:
         qmenu._initial_scene_pos = None  # Store initial mouse position when menu opens
 
         # Organize nodes by category and add to menu (sorted A-Z, case-insensitive)
-        for category, nodes in sorted(self._categories.items(), key=lambda x: x[0].lower()):
-            category_label = category.replace('_', ' ').title()
+        for category, nodes in sorted(
+            self._categories.items(), key=lambda x: x[0].lower()
+        ):
+            category_label = category.replace("_", " ").title()
             category_menu = qmenu.addMenu(category_label)
             qmenu._category_menus[category_label] = category_menu
 
             for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                 # Skip internal nodes (created programmatically, not from menu)
-                if getattr(node_class, 'INTERNAL_NODE', False):
+                if getattr(node_class, "INTERNAL_NODE", False):
                     continue
 
                 # Get description from node class
                 description = ""
                 if node_class.__doc__:
-                    description = node_class.__doc__.strip().split('\n')[0]
+                    description = node_class.__doc__.strip().split("\n")[0]
 
-                qmenu._node_items.append((category_label, node_class.NODE_NAME, description))
+                qmenu._node_items.append(
+                    (category_label, node_class.NODE_NAME, description)
+                )
 
                 # Create a function to instantiate this specific node class
                 def make_creator(cls):
@@ -567,13 +593,15 @@ class NodeRegistry:
                         if pos is None:
                             # Fallback to current position if not captured
                             viewer = graph.viewer()
-                            pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                            pos = viewer.mapToScene(
+                                viewer.mapFromGlobal(viewer.cursor().pos())
+                            )
 
                         # Create node at initial mouse position (centered)
                         node = graph.create_node(
-                            f'{cls.__identifier__}.{cls.__name__}',
+                            f"{cls.__identifier__}.{cls.__name__}",
                             name=cls.NODE_NAME,
-                            pos=[pos.x() - 100, pos.y() - 30]
+                            pos=[pos.x() - 100, pos.y() - 30],
                         )
                         # Attach CasareRPA node immediately with unique ID
                         factory = get_node_factory()
@@ -581,11 +609,14 @@ class NodeRegistry:
                         if casare_node:
                             node.set_casare_node(casare_node)
                         return node
+
                     return create_node
 
                 action = category_menu.addAction(node_class.NODE_NAME)
                 action.triggered.connect(make_creator(node_class))
-                action.setData({'category': category_label, 'name': node_class.NODE_NAME})
+                action.setData(
+                    {"category": category_label, "name": node_class.NODE_NAME}
+                )
                 qmenu._all_actions.append(action)
 
         # Store references needed for search functionality
@@ -595,15 +626,19 @@ class NodeRegistry:
 
         # Build mapping of node names to their classes for quick lookup
         for category, nodes in self._categories.items():
-            category_label = category.replace('_', ' ').title()
+            category_label = category.replace("_", " ").title()
             for node_class in nodes:
                 # Skip internal nodes from search/menu
-                if getattr(node_class, 'INTERNAL_NODE', False):
+                if getattr(node_class, "INTERNAL_NODE", False):
                     continue
-                qmenu._category_data[node_class.NODE_NAME] = (category_label, node_class)
+                qmenu._category_data[node_class.NODE_NAME] = (
+                    category_label,
+                    node_class,
+                )
 
         # Pre-build SearchIndex for lightning-fast search (avoids rebuilding on every keystroke)
         from ...utils.fuzzy_search import SearchIndex
+
         qmenu._search_index = SearchIndex(qmenu._node_items)
 
         # Connect search functionality
@@ -623,12 +658,12 @@ class NodeRegistry:
                 # Restore full categorized menu structure
 
                 for category, nodes in self._categories.items():
-                    category_label = category.replace('_', ' ').title()
+                    category_label = category.replace("_", " ").title()
                     category_menu = qmenu.addMenu(category_label)
 
                     for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                         # Skip internal nodes (created programmatically, not from menu)
-                        if getattr(node_class, 'INTERNAL_NODE', False):
+                        if getattr(node_class, "INTERNAL_NODE", False):
                             continue
 
                         def make_creator(cls):
@@ -638,12 +673,14 @@ class NodeRegistry:
                                 if pos is None:
                                     # Fallback to current position if not captured
                                     viewer = graph.viewer()
-                                    pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                                    pos = viewer.mapToScene(
+                                        viewer.mapFromGlobal(viewer.cursor().pos())
+                                    )
 
                                 node = graph.create_node(
-                                    f'{cls.__identifier__}.{cls.__name__}',
+                                    f"{cls.__identifier__}.{cls.__name__}",
                                     name=cls.NODE_NAME,
-                                    pos=[pos.x() - 100, pos.y() - 30]
+                                    pos=[pos.x() - 100, pos.y() - 30],
                                 )
                                 # Attach CasareRPA node immediately with unique ID
                                 factory = get_node_factory()
@@ -651,6 +688,7 @@ class NodeRegistry:
                                 if casare_node:
                                     node.set_casare_node(casare_node)
                                 return node
+
                             return create_node
 
                         action = category_menu.addAction(node_class.NODE_NAME)
@@ -669,7 +707,9 @@ class NodeRegistry:
                 return
 
             # Add all matching nodes as flat list (no categories)
-            for i, (category, name, description, score, positions) in enumerate(results):
+            for i, (category, name, description, score, positions) in enumerate(
+                results
+            ):
                 # Get the node class for this match
                 if name in qmenu._category_data:
                     _, node_class = qmenu._category_data[name]
@@ -681,12 +721,14 @@ class NodeRegistry:
                             if pos is None:
                                 # Fallback to current position if not captured
                                 viewer = graph.viewer()
-                                pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                                pos = viewer.mapToScene(
+                                    viewer.mapFromGlobal(viewer.cursor().pos())
+                                )
 
                             node = graph.create_node(
-                                f'{cls.__identifier__}.{cls.__name__}',
+                                f"{cls.__identifier__}.{cls.__name__}",
                                 name=cls.NODE_NAME,
-                                pos=[pos.x() - 100, pos.y() - 30]
+                                pos=[pos.x() - 100, pos.y() - 30],
                             )
                             # Attach CasareRPA node immediately with unique ID
                             factory = get_node_factory()
@@ -695,13 +737,14 @@ class NodeRegistry:
                                 node.set_casare_node(casare_node)
                             qmenu.close()  # Close menu after adding node
                             return node
+
                         return create_node
 
                     # Create action with category prefix for clarity
                     action_text = f"{name} ({category})"
                     action = qmenu.addAction(action_text)
                     action.triggered.connect(make_creator(node_class))
-                    action.setData({'node_class': node_class, 'name': name})
+                    action.setData({"node_class": node_class, "name": name})
 
                     # Mark first match visually
                     if i == 0:
@@ -718,7 +761,9 @@ class NodeRegistry:
             # Only capture position if not already set by event filter (right-click or Tab)
             if qmenu._initial_scene_pos is None:
                 viewer = graph.viewer()
-                qmenu._initial_scene_pos = viewer.mapToScene(viewer.mapFromGlobal(viewer.cursor().pos()))
+                qmenu._initial_scene_pos = viewer.mapToScene(
+                    viewer.mapFromGlobal(viewer.cursor().pos())
+                )
             search_input.setFocus()
             search_input.clear()
 
@@ -729,7 +774,9 @@ class NodeRegistry:
         # when create_node() is called. The position will be overwritten on each
         # new right-click anyway.
 
-        logger.info(f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu")
+        logger.info(
+            f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu"
+        )
 
     def get_node_class(self, node_name: str) -> Optional[Type]:
         """
@@ -787,10 +834,7 @@ class NodeFactory:
         self._node_counter = 0
 
     def create_visual_node(
-        self,
-        graph: NodeGraph,
-        node_class: Type,
-        pos: Optional[Tuple[int, int]] = None
+        self, graph: NodeGraph, node_class: Type, pos: Optional[Tuple[int, int]] = None
     ) -> Any:
         """
         Create a visual node instance in the graph.
@@ -805,8 +849,7 @@ class NodeFactory:
         """
         # Create visual node
         visual_node = graph.create_node(
-            f"{node_class.__identifier__}.{node_class.NODE_NAME}",
-            pos=pos
+            f"{node_class.__identifier__}.{node_class.NODE_NAME}", pos=pos
         )
 
         # Setup ports
@@ -816,11 +859,7 @@ class NodeFactory:
 
         return visual_node
 
-    def create_casare_node(
-        self,
-        visual_node: Any,
-        **kwargs
-    ) -> Optional[object]:
+    def create_casare_node(self, visual_node: Any, **kwargs) -> Optional[object]:
         """
         Create a CasareRPA node instance for a visual node.
 
@@ -841,6 +880,7 @@ class NodeFactory:
 
         # Generate unique node ID using UUID
         from ...utils.id_generator import generate_node_id
+
         node_id = generate_node_id(node_class.__name__)
 
         # Create CasareRPA node
@@ -858,7 +898,7 @@ class NodeFactory:
         graph: NodeGraph,
         node_class: Type,
         pos: Optional[Tuple[int, int]] = None,
-        **kwargs
+        **kwargs,
     ) -> Tuple[Any, object]:
         """
         Create both visual and CasareRPA nodes and link them.

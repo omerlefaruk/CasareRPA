@@ -10,13 +10,13 @@ References:
 """
 
 import math
-from typing import List, Tuple, Optional
+from typing import Tuple, Optional
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPainterPath, QPolygonF
+from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPolygonF
 
 from ...core.types import DataType
-from ...core.port_type_system import PortShape, PortTypeRegistry, get_port_type_registry
+from ...core.port_type_system import PortShape, get_port_type_registry
 
 
 # ============================================================================
@@ -91,10 +91,10 @@ def draw_diamond(
     """
     half = size
     points = [
-        QPointF(center.x(), center.y() - half),      # Top
-        QPointF(center.x() + half, center.y()),      # Right
-        QPointF(center.x(), center.y() + half),      # Bottom
-        QPointF(center.x() - half, center.y()),      # Left
+        QPointF(center.x(), center.y() - half),  # Top
+        QPointF(center.x() + half, center.y()),  # Right
+        QPointF(center.x(), center.y() + half),  # Bottom
+        QPointF(center.x() - half, center.y()),  # Left
     ]
 
     polygon = QPolygonF(points)
@@ -352,8 +352,7 @@ def draw_port_shape(
     # Exec ports always use triangle
     if is_exec or data_type is None:
         draw_triangle(
-            painter, center, size, fill_qcolor, border_qcolor,
-            pointing_right=is_output
+            painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output
         )
         return
 
@@ -378,8 +377,7 @@ def draw_port_shape(
         draw_pentagon(painter, center, size, fill_qcolor, border_qcolor)
     elif shape == PortShape.TRIANGLE:
         draw_triangle(
-            painter, center, size, fill_qcolor, border_qcolor,
-            pointing_right=is_output
+            painter, center, size, fill_qcolor, border_qcolor, pointing_right=is_output
         )
     else:
         # Default: circle

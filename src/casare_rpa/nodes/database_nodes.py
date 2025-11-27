@@ -21,9 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
-from contextlib import asynccontextmanager
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
@@ -34,6 +32,7 @@ from ..core.types import DataType, ExecutionResult, NodeStatus, PortType
 # Try to import optional database drivers
 try:
     import aiosqlite
+
     AIOSQLITE_AVAILABLE = True
 except ImportError:
     AIOSQLITE_AVAILABLE = False
@@ -41,6 +40,7 @@ except ImportError:
 
 try:
     import asyncpg
+
     ASYNCPG_AVAILABLE = True
 except ImportError:
     ASYNCPG_AVAILABLE = False
@@ -48,6 +48,7 @@ except ImportError:
 
 try:
     import aiomysql
+
     AIOMYSQL_AVAILABLE = True
 except ImportError:
     AIOMYSQL_AVAILABLE = False
@@ -66,7 +67,7 @@ class DatabaseConnection:
         db_type: str,
         connection: Any,
         connection_string: str = "",
-        in_transaction: bool = False
+        in_transaction: bool = False,
     ) -> None:
         self.db_type = db_type
         self.connection = connection
@@ -80,7 +81,7 @@ class DatabaseConnection:
     async def close(self) -> None:
         """Close the database connection."""
         if self.cursor:
-            if hasattr(self.cursor, 'close'):
+            if hasattr(self.cursor, "close"):
                 if asyncio.iscoroutinefunction(self.cursor.close):
                     await self.cursor.close()
                 else:
@@ -88,7 +89,7 @@ class DatabaseConnection:
             self.cursor = None
 
         if self.connection:
-            if hasattr(self.connection, 'close'):
+            if hasattr(self.connection, "close"):
                 if asyncio.iscoroutinefunction(self.connection.close):
                     await self.connection.close()
                 else:
@@ -122,7 +123,9 @@ class DatabaseConnectNode(BaseNode):
         - error: Error message if connection failed
     """
 
-    def __init__(self, node_id: str, name: str = "Database Connect", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Database Connect", **kwargs: Any
+    ) -> None:
         # Default config with all database connection options
         default_config = {
             "db_type": "sqlite",
@@ -174,13 +177,23 @@ class DatabaseConnectNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            db_type = (self.get_input_value("db_type") or self.config.get("db_type", "sqlite")).lower()
+            db_type = (
+                self.get_input_value("db_type") or self.config.get("db_type", "sqlite")
+            ).lower()
             host = self.get_input_value("host") or self.config.get("host", "localhost")
             port = self.get_input_value("port") or self.config.get("port", 5432)
-            database = self.get_input_value("database") or self.config.get("database", "")
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
-            connection_string = self.get_input_value("connection_string") or self.config.get("connection_string", "")
+            database = self.get_input_value("database") or self.config.get(
+                "database", ""
+            )
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
+            connection_string = self.get_input_value(
+                "connection_string"
+            ) or self.config.get("connection_string", "")
 
             # Resolve {{variable}} patterns in connection parameters
             host = context.resolve_value(host)
@@ -212,16 +225,22 @@ class DatabaseConnectNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for database connection")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for database connection"
+                        )
 
                     connection: Optional[DatabaseConnection] = None
 
                     if db_type == "sqlite":
                         connection = await self._connect_sqlite(database)
                     elif db_type == "postgresql":
-                        connection = await self._connect_postgresql(host, port, database, username, password, connection_string)
+                        connection = await self._connect_postgresql(
+                            host, port, database, username, password, connection_string
+                        )
                     elif db_type == "mysql":
-                        connection = await self._connect_mysql(host, port, database, username, password)
+                        connection = await self._connect_mysql(
+                            host, port, database, username, password
+                        )
                     else:
                         raise ValueError(f"Unsupported database type: {db_type}")
 
@@ -235,13 +254,15 @@ class DatabaseConnectNode(BaseNode):
                     return {
                         "success": True,
                         "data": {"db_type": db_type, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Database connection failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Database connection failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -279,11 +300,13 @@ class DatabaseConnectNode(BaseNode):
         database: str,
         username: str,
         password: str,
-        connection_string: str
+        connection_string: str,
     ) -> DatabaseConnection:
         """Connect to PostgreSQL database."""
         if not ASYNCPG_AVAILABLE:
-            raise ImportError("asyncpg is required for PostgreSQL support. Install with: pip install asyncpg")
+            raise ImportError(
+                "asyncpg is required for PostgreSQL support. Install with: pip install asyncpg"
+            )
 
         if connection_string:
             conn = await asyncpg.connect(connection_string)
@@ -293,29 +316,24 @@ class DatabaseConnectNode(BaseNode):
                 port=int(port),
                 database=database,
                 user=username,
-                password=password
+                password=password,
             )
 
-        return DatabaseConnection("postgresql", conn, f"postgresql://{host}:{port}/{database}")
+        return DatabaseConnection(
+            "postgresql", conn, f"postgresql://{host}:{port}/{database}"
+        )
 
     async def _connect_mysql(
-        self,
-        host: str,
-        port: int,
-        database: str,
-        username: str,
-        password: str
+        self, host: str, port: int, database: str, username: str, password: str
     ) -> DatabaseConnection:
         """Connect to MySQL database."""
         if not AIOMYSQL_AVAILABLE:
-            raise ImportError("aiomysql is required for MySQL support. Install with: pip install aiomysql")
+            raise ImportError(
+                "aiomysql is required for MySQL support. Install with: pip install aiomysql"
+            )
 
         conn = await aiomysql.connect(
-            host=host,
-            port=int(port),
-            db=database,
-            user=username,
-            password=password
+            host=host, port=int(port), db=database, user=username, password=password
         )
 
         return DatabaseConnection("mysql", conn, f"mysql://{host}:{port}/{database}")
@@ -340,7 +358,9 @@ class ExecuteQueryNode(BaseNode):
         - error: Error message if query failed
     """
 
-    def __init__(self, node_id: str, name: str = "Execute Query", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Execute Query", **kwargs: Any
+    ) -> None:
         # Default config with all query options
         default_config = {
             "query": "",
@@ -378,9 +398,13 @@ class ExecuteQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
             query = self.get_input_value("query") or self.config.get("query", "")
-            parameters = self.get_input_value("parameters") or self.config.get("parameters", [])
+            parameters = self.get_input_value("parameters") or self.config.get(
+                "parameters", []
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -413,17 +437,25 @@ class ExecuteQueryNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for query")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for query"
+                        )
 
                     results: List[Dict[str, Any]] = []
                     columns: List[str] = []
 
                     if connection.db_type == "sqlite":
-                        results, columns = await self._execute_sqlite(connection, query, parameters)
+                        results, columns = await self._execute_sqlite(
+                            connection, query, parameters
+                        )
                     elif connection.db_type == "postgresql":
-                        results, columns = await self._execute_postgresql(connection, query, parameters)
+                        results, columns = await self._execute_postgresql(
+                            connection, query, parameters
+                        )
                     elif connection.db_type == "mysql":
-                        results, columns = await self._execute_mysql(connection, query, parameters)
+                        results, columns = await self._execute_mysql(
+                            connection, query, parameters
+                        )
 
                     connection.last_results = results
 
@@ -433,19 +465,23 @@ class ExecuteQueryNode(BaseNode):
                     self.set_output_value("success", True)
                     self.set_output_value("error", "")
 
-                    logger.debug(f"Query returned {len(results)} rows (attempt {attempts})")
+                    logger.debug(
+                        f"Query returned {len(results)} rows (attempt {attempts})"
+                    )
 
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
                         "data": {"row_count": len(results), "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Query execution failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Query execution failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -464,10 +500,7 @@ class ExecuteQueryNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
     async def _execute_sqlite(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
         """Execute query on SQLite."""
         conn = connection.connection
@@ -475,27 +508,32 @@ class ExecuteQueryNode(BaseNode):
         if AIOSQLITE_AVAILABLE:
             cursor = await conn.execute(query, parameters or [])
             rows = await cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
             results = [dict(zip(columns, row)) for row in rows]
         else:
             cursor = conn.execute(query, parameters or [])
             rows = cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
             results = [dict(zip(columns, row)) for row in rows]
 
         return results, columns
 
     async def _execute_postgresql(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
         """Execute query on PostgreSQL."""
         conn = connection.connection
 
         # asyncpg uses $1, $2 for parameters
-        rows = await conn.fetch(query, *parameters) if parameters else await conn.fetch(query)
+        rows = (
+            await conn.fetch(query, *parameters)
+            if parameters
+            else await conn.fetch(query)
+        )
 
         if rows:
             columns = list(rows[0].keys())
@@ -507,10 +545,7 @@ class ExecuteQueryNode(BaseNode):
         return results, columns
 
     async def _execute_mysql(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
         """Execute query on MySQL."""
         conn = connection.connection
@@ -518,7 +553,9 @@ class ExecuteQueryNode(BaseNode):
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             await cursor.execute(query, parameters or [])
             rows = await cursor.fetchall()
-            columns = [desc[0] for desc in cursor.description] if cursor.description else []
+            columns = (
+                [desc[0] for desc in cursor.description] if cursor.description else []
+            )
 
         return list(rows), columns
 
@@ -541,7 +578,9 @@ class ExecuteNonQueryNode(BaseNode):
         - error: Error message if execution failed
     """
 
-    def __init__(self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any
+    ) -> None:
         # Default config with all non-query options
         default_config = {
             "query": "",
@@ -578,9 +617,13 @@ class ExecuteNonQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
             query = self.get_input_value("query") or self.config.get("query", "")
-            parameters = self.get_input_value("parameters") or self.config.get("parameters", [])
+            parameters = self.get_input_value("parameters") or self.config.get(
+                "parameters", []
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -613,17 +656,25 @@ class ExecuteNonQueryNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for statement")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for statement"
+                        )
 
                     rows_affected = 0
                     last_insert_id = None
 
                     if connection.db_type == "sqlite":
-                        rows_affected, last_insert_id = await self._execute_sqlite(connection, query, parameters)
+                        rows_affected, last_insert_id = await self._execute_sqlite(
+                            connection, query, parameters
+                        )
                     elif connection.db_type == "postgresql":
-                        rows_affected, last_insert_id = await self._execute_postgresql(connection, query, parameters)
+                        rows_affected, last_insert_id = await self._execute_postgresql(
+                            connection, query, parameters
+                        )
                     elif connection.db_type == "mysql":
-                        rows_affected, last_insert_id = await self._execute_mysql(connection, query, parameters)
+                        rows_affected, last_insert_id = await self._execute_mysql(
+                            connection, query, parameters
+                        )
 
                     connection.last_rowcount = rows_affected
                     connection.last_lastrowid = last_insert_id
@@ -633,19 +684,23 @@ class ExecuteNonQueryNode(BaseNode):
                     self.set_output_value("success", True)
                     self.set_output_value("error", "")
 
-                    logger.debug(f"Statement affected {rows_affected} rows (attempt {attempts})")
+                    logger.debug(
+                        f"Statement affected {rows_affected} rows (attempt {attempts})"
+                    )
 
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
                         "data": {"rows_affected": rows_affected, "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except Exception as e:
                     last_error = e
                     if attempts < max_attempts:
-                        logger.warning(f"Statement execution failed (attempt {attempts}): {e}")
+                        logger.warning(
+                            f"Statement execution failed (attempt {attempts}): {e}"
+                        )
                         await asyncio.sleep(retry_interval / 1000)
                     else:
                         break
@@ -663,10 +718,7 @@ class ExecuteNonQueryNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
     async def _execute_sqlite(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[int, Optional[int]]:
         """Execute non-query on SQLite."""
         conn = connection.connection
@@ -687,16 +739,17 @@ class ExecuteNonQueryNode(BaseNode):
         return rows_affected, last_insert_id
 
     async def _execute_postgresql(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[int, Optional[int]]:
         """Execute non-query on PostgreSQL."""
         conn = connection.connection
 
         # asyncpg returns status string like "INSERT 0 1" or "UPDATE 5"
-        result = await conn.execute(query, *parameters) if parameters else await conn.execute(query)
+        result = (
+            await conn.execute(query, *parameters)
+            if parameters
+            else await conn.execute(query)
+        )
 
         # Parse rows affected from result
         rows_affected = 0
@@ -711,10 +764,7 @@ class ExecuteNonQueryNode(BaseNode):
         return rows_affected, None
 
     async def _execute_mysql(
-        self,
-        connection: DatabaseConnection,
-        query: str,
-        parameters: List[Any]
+        self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[int, Optional[int]]:
         """Execute non-query on MySQL."""
         conn = connection.connection
@@ -744,7 +794,9 @@ class BeginTransactionNode(BaseNode):
         - error: Error message if failed
     """
 
-    def __init__(self, node_id: str, name: str = "Begin Transaction", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Begin Transaction", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -764,7 +816,9 @@ class BeginTransactionNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -793,7 +847,7 @@ class BeginTransactionNode(BaseNode):
             return {
                 "success": True,
                 "data": {"transaction": "started"},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -821,7 +875,9 @@ class CommitTransactionNode(BaseNode):
         - error: Error message if failed
     """
 
-    def __init__(self, node_id: str, name: str = "Commit Transaction", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Commit Transaction", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -841,7 +897,9 @@ class CommitTransactionNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -870,7 +928,7 @@ class CommitTransactionNode(BaseNode):
             return {
                 "success": True,
                 "data": {"transaction": "committed"},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -898,7 +956,9 @@ class RollbackTransactionNode(BaseNode):
         - error: Error message if failed
     """
 
-    def __init__(self, node_id: str, name: str = "Rollback Transaction", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Rollback Transaction", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -918,7 +978,9 @@ class RollbackTransactionNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -947,7 +1009,7 @@ class RollbackTransactionNode(BaseNode):
             return {
                 "success": True,
                 "data": {"transaction": "rolled_back"},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -974,7 +1036,9 @@ class CloseDatabaseNode(BaseNode):
         - error: Error message if failed
     """
 
-    def __init__(self, node_id: str, name: str = "Close Database", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Close Database", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -993,7 +1057,9 @@ class CloseDatabaseNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -1009,7 +1075,7 @@ class CloseDatabaseNode(BaseNode):
             return {
                 "success": True,
                 "data": {"connection": "closed"},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1059,8 +1125,12 @@ class TableExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
-            table_name = self.get_input_value("table_name") or self.config.get("table_name", "")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
+            table_name = self.get_input_value("table_name") or self.config.get(
+                "table_name", ""
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -1089,7 +1159,7 @@ class TableExistsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"table": table_name, "exists": exists},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1101,7 +1171,9 @@ class TableExistsNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": error_msg, "next_nodes": []}
 
-    async def _check_sqlite(self, connection: DatabaseConnection, table_name: str) -> bool:
+    async def _check_sqlite(
+        self, connection: DatabaseConnection, table_name: str
+    ) -> bool:
         """Check if table exists in SQLite."""
         conn = connection.connection
         query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
@@ -1115,14 +1187,18 @@ class TableExistsNode(BaseNode):
 
         return row is not None
 
-    async def _check_postgresql(self, connection: DatabaseConnection, table_name: str) -> bool:
+    async def _check_postgresql(
+        self, connection: DatabaseConnection, table_name: str
+    ) -> bool:
         """Check if table exists in PostgreSQL."""
         conn = connection.connection
         query = "SELECT EXISTS(SELECT 1 FROM information_schema.tables WHERE table_name = $1)"
         result = await conn.fetchval(query, table_name)
         return result
 
-    async def _check_mysql(self, connection: DatabaseConnection, table_name: str) -> bool:
+    async def _check_mysql(
+        self, connection: DatabaseConnection, table_name: str
+    ) -> bool:
         """Check if table exists in MySQL."""
         conn = connection.connection
         query = "SHOW TABLES LIKE %s"
@@ -1151,7 +1227,9 @@ class GetTableColumnsNode(BaseNode):
         - error: Error message if failed
     """
 
-    def __init__(self, node_id: str, name: str = "Get Table Columns", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Get Table Columns", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         config.setdefault("table_name", "")
         super().__init__(node_id, config)
@@ -1174,8 +1252,12 @@ class GetTableColumnsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
-            table_name = self.get_input_value("table_name") or self.config.get("table_name", "")
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
+            table_name = self.get_input_value("table_name") or self.config.get(
+                "table_name", ""
+            )
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -1207,7 +1289,7 @@ class GetTableColumnsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"table": table_name, "column_count": len(columns)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1221,9 +1303,7 @@ class GetTableColumnsNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
     async def _get_sqlite_columns(
-        self,
-        connection: DatabaseConnection,
-        table_name: str
+        self, connection: DatabaseConnection, table_name: str
     ) -> List[Dict[str, Any]]:
         """Get column info for SQLite table."""
         conn = connection.connection
@@ -1238,20 +1318,20 @@ class GetTableColumnsNode(BaseNode):
 
         columns = []
         for row in rows:
-            columns.append({
-                "name": row[1],
-                "type": row[2],
-                "nullable": not row[3],
-                "default": row[4],
-                "primary_key": bool(row[5])
-            })
+            columns.append(
+                {
+                    "name": row[1],
+                    "type": row[2],
+                    "nullable": not row[3],
+                    "default": row[4],
+                    "primary_key": bool(row[5]),
+                }
+            )
 
         return columns
 
     async def _get_postgresql_columns(
-        self,
-        connection: DatabaseConnection,
-        table_name: str
+        self, connection: DatabaseConnection, table_name: str
     ) -> List[Dict[str, Any]]:
         """Get column info for PostgreSQL table."""
         conn = connection.connection
@@ -1265,20 +1345,20 @@ class GetTableColumnsNode(BaseNode):
 
         columns = []
         for row in rows:
-            columns.append({
-                "name": row["column_name"],
-                "type": row["data_type"],
-                "nullable": row["is_nullable"] == "YES",
-                "default": row["column_default"],
-                "primary_key": False  # Would need additional query
-            })
+            columns.append(
+                {
+                    "name": row["column_name"],
+                    "type": row["data_type"],
+                    "nullable": row["is_nullable"] == "YES",
+                    "default": row["column_default"],
+                    "primary_key": False,  # Would need additional query
+                }
+            )
 
         return columns
 
     async def _get_mysql_columns(
-        self,
-        connection: DatabaseConnection,
-        table_name: str
+        self, connection: DatabaseConnection, table_name: str
     ) -> List[Dict[str, Any]]:
         """Get column info for MySQL table."""
         conn = connection.connection
@@ -1290,13 +1370,15 @@ class GetTableColumnsNode(BaseNode):
 
         columns = []
         for row in rows:
-            columns.append({
-                "name": row["Field"],
-                "type": row["Type"],
-                "nullable": row["Null"] == "YES",
-                "default": row["Default"],
-                "primary_key": row["Key"] == "PRI"
-            })
+            columns.append(
+                {
+                    "name": row["Field"],
+                    "type": row["Type"],
+                    "nullable": row["Null"] == "YES",
+                    "default": row["Default"],
+                    "primary_key": row["Key"] == "PRI",
+                }
+            )
 
         return columns
 
@@ -1319,7 +1401,9 @@ class ExecuteBatchNode(BaseNode):
         - error: Error message if any statement failed
     """
 
-    def __init__(self, node_id: str, name: str = "Execute Batch", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Execute Batch", **kwargs: Any
+    ) -> None:
         # Default config with all batch options
         default_config = {
             "statements": [],
@@ -1355,8 +1439,12 @@ class ExecuteBatchNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            connection: Optional[DatabaseConnection] = self.get_input_value("connection")
-            statements = self.get_input_value("statements") or self.config.get("statements", [])
+            connection: Optional[DatabaseConnection] = self.get_input_value(
+                "connection"
+            )
+            statements = self.get_input_value("statements") or self.config.get(
+                "statements", []
+            )
             stop_on_error = self.config.get("stop_on_error", True)
 
             # Helper to safely parse int values with defaults
@@ -1393,7 +1481,9 @@ class ExecuteBatchNode(BaseNode):
                     try:
                         stmt_attempts += 1
                         if stmt_attempts > 1:
-                            logger.info(f"Retry attempt {stmt_attempts - 1}/{retry_count} for statement {i}")
+                            logger.info(
+                                f"Retry attempt {stmt_attempts - 1}/{retry_count} for statement {i}"
+                            )
 
                         rows = 0
                         if connection.db_type == "sqlite":
@@ -1412,17 +1502,34 @@ class ExecuteBatchNode(BaseNode):
                                 await cursor.execute(stmt)
                                 rows = cursor.rowcount
 
-                        results.append({"statement": i, "rows_affected": rows, "success": True, "attempts": stmt_attempts})
+                        results.append(
+                            {
+                                "statement": i,
+                                "rows_affected": rows,
+                                "success": True,
+                                "attempts": stmt_attempts,
+                            }
+                        )
                         total_rows += rows
                         stmt_success = True
 
                     except Exception as e:
                         if stmt_attempts < stmt_max_attempts:
-                            logger.warning(f"Statement {i} failed (attempt {stmt_attempts}): {e}")
+                            logger.warning(
+                                f"Statement {i} failed (attempt {stmt_attempts}): {e}"
+                            )
                             await asyncio.sleep(retry_interval / 1000)
                         else:
                             # All retries exhausted for this statement
-                            results.append({"statement": i, "rows_affected": 0, "success": False, "error": str(e), "attempts": stmt_attempts})
+                            results.append(
+                                {
+                                    "statement": i,
+                                    "rows_affected": 0,
+                                    "success": False,
+                                    "error": str(e),
+                                    "attempts": stmt_attempts,
+                                }
+                            )
                             errors.append(f"Statement {i}: {str(e)}")
                             if stop_on_error:
                                 break
@@ -1448,13 +1555,15 @@ class ExecuteBatchNode(BaseNode):
             self.set_output_value("success", all_success)
             self.set_output_value("error", "; ".join(errors) if errors else "")
 
-            logger.debug(f"Batch executed {len(statements)} statements, {total_rows} rows affected")
+            logger.debug(
+                f"Batch executed {len(statements)} statements, {total_rows} rows affected"
+            )
 
             self.status = NodeStatus.SUCCESS if all_success else NodeStatus.ERROR
             return {
                 "success": all_success,
                 "data": {"statements": len(statements), "rows_affected": total_rows},
-                "next_nodes": ["exec_out"] if all_success else []
+                "next_nodes": ["exec_out"] if all_success else [],
             }
 
         except Exception as e:

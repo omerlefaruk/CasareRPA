@@ -173,9 +173,7 @@ class SelectorHealer:
     """
 
     def __init__(
-        self,
-        storage_path: Optional[Path] = None,
-        min_confidence: float = 0.6
+        self, storage_path: Optional[Path] = None, min_confidence: float = 0.6
     ):
         """
         Initialize selector healer.
@@ -192,11 +190,7 @@ class SelectorHealer:
         if storage_path and storage_path.exists():
             self._load_fingerprints()
 
-    def store_fingerprint(
-        self,
-        selector: str,
-        fingerprint: ElementFingerprint
-    ) -> None:
+    def store_fingerprint(self, selector: str, fingerprint: ElementFingerprint) -> None:
         """
         Store a fingerprint for a selector.
 
@@ -217,7 +211,7 @@ class SelectorHealer:
     async def capture_fingerprint(
         self,
         page: Any,  # Playwright Page
-        selector: str
+        selector: str,
     ) -> Optional[ElementFingerprint]:
         """
         Capture fingerprint of an element on a page.
@@ -230,7 +224,8 @@ class SelectorHealer:
             ElementFingerprint or None if element not found
         """
         try:
-            fingerprint_data = await page.evaluate("""
+            fingerprint_data = await page.evaluate(
+                """
                 (selector) => {
                     const el = document.querySelector(selector);
                     if (!el) return null;
@@ -260,7 +255,9 @@ class SelectorHealer:
                         position: [Math.round(rect.x), Math.round(rect.y)]
                     };
                 }
-            """, selector)
+            """,
+                selector,
+            )
 
             if fingerprint_data:
                 return ElementFingerprint.from_dict(fingerprint_data)
@@ -274,7 +271,7 @@ class SelectorHealer:
         self,
         page: Any,  # Playwright Page
         selector: str,
-        fingerprint: Optional[ElementFingerprint] = None
+        fingerprint: Optional[ElementFingerprint] = None,
     ) -> HealingResult:
         """
         Attempt to heal a broken selector.
@@ -316,7 +313,9 @@ class SelectorHealer:
                         similarity = self._calculate_similarity(fp, found_fp)
                         final_score = base_score * similarity
                         scored_alternatives.append((alt_selector, final_score))
-                        logger.debug(f"Alternative '{alt_selector}' score: {final_score:.2f}")
+                        logger.debug(
+                            f"Alternative '{alt_selector}' score: {final_score:.2f}"
+                        )
             except Exception as e:
                 logger.debug(f"Alternative '{alt_selector}' failed: {e}")
 
@@ -351,10 +350,7 @@ class SelectorHealer:
         self._healing_history.append(result)
         return result
 
-    def _generate_alternatives(
-        self,
-        fp: ElementFingerprint
-    ) -> List[Tuple[str, float]]:
+    def _generate_alternatives(self, fp: ElementFingerprint) -> List[Tuple[str, float]]:
         """
         Generate alternative selectors from fingerprint.
 
@@ -368,7 +364,7 @@ class SelectorHealer:
 
         # Strategy 2: id attribute
         if fp.id_attr:
-            alternatives.append((f'#{fp.id_attr}', 0.9))
+            alternatives.append((f"#{fp.id_attr}", 0.9))
 
         # Strategy 3: aria-label
         if fp.aria_label:
@@ -381,9 +377,9 @@ class SelectorHealer:
         # Strategy 5: text content (for buttons, links)
         if fp.text_content and len(fp.text_content) < 50:
             text = fp.text_content.strip()
-            if fp.tag_name == 'button':
+            if fp.tag_name == "button":
                 alternatives.append((f'button:has-text("{text}")', 0.75))
-            elif fp.tag_name == 'a':
+            elif fp.tag_name == "a":
                 alternatives.append((f'a:has-text("{text}")', 0.75))
             else:
                 alternatives.append((f'text="{text}"', 0.7))
@@ -395,10 +391,12 @@ class SelectorHealer:
         # Strategy 7: role + type combination
         if fp.role_attr:
             if fp.type_attr:
-                alternatives.append((
-                    f'{fp.tag_name}[role="{fp.role_attr}"][type="{fp.type_attr}"]',
-                    0.7
-                ))
+                alternatives.append(
+                    (
+                        f'{fp.tag_name}[role="{fp.role_attr}"][type="{fp.type_attr}"]',
+                        0.7,
+                    )
+                )
             else:
                 alternatives.append((f'[role="{fp.role_attr}"]', 0.65))
 
@@ -408,18 +406,16 @@ class SelectorHealer:
             specific_classes = [c for c in fp.class_list if len(c) > 3]
             if specific_classes:
                 class_selector = ".".join(specific_classes[:3])
-                alternatives.append((f'{fp.tag_name}.{class_selector}', 0.6))
+                alternatives.append((f"{fp.tag_name}.{class_selector}", 0.6))
 
         # Strategy 9: tag + type for inputs
-        if fp.tag_name == 'input' and fp.type_attr:
+        if fp.tag_name == "input" and fp.type_attr:
             alternatives.append((f'input[type="{fp.type_attr}"]', 0.5))
 
         return alternatives
 
     def _calculate_similarity(
-        self,
-        original: ElementFingerprint,
-        found: ElementFingerprint
+        self, original: ElementFingerprint, found: ElementFingerprint
     ) -> float:
         """
         Calculate similarity between two fingerprints.
@@ -448,10 +444,7 @@ class SelectorHealer:
 
         # Text content similarity
         if original.text_content and found.text_content:
-            text_sim = self._text_similarity(
-                original.text_content,
-                found.text_content
-            )
+            text_sim = self._text_similarity(original.text_content, found.text_content)
             score += weights["text_content"] * text_sim
 
         # Class list overlap
@@ -507,21 +500,21 @@ class SelectorHealer:
 
     def _get_strategy_name(self, selector: str, fp: ElementFingerprint) -> str:
         """Get the name of the strategy used for a selector."""
-        if 'data-testid' in selector:
+        if "data-testid" in selector:
             return "data-testid"
-        if selector.startswith('#'):
+        if selector.startswith("#"):
             return "id"
-        if 'aria-label' in selector:
+        if "aria-label" in selector:
             return "aria-label"
-        if 'name=' in selector:
+        if "name=" in selector:
             return "name"
-        if ':has-text' in selector or 'text=' in selector:
+        if ":has-text" in selector or "text=" in selector:
             return "text-content"
-        if 'placeholder' in selector:
+        if "placeholder" in selector:
             return "placeholder"
-        if 'role=' in selector:
+        if "role=" in selector:
             return "role"
-        if '.' in selector:
+        if "." in selector:
             return "class"
         return "unknown"
 
@@ -546,8 +539,7 @@ class SelectorHealer:
 
         try:
             data = {
-                selector: fp.to_dict()
-                for selector, fp in self._fingerprints.items()
+                selector: fp.to_dict() for selector, fp in self._fingerprints.items()
             }
             self.storage_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.storage_path, "w", encoding="utf-8") as f:

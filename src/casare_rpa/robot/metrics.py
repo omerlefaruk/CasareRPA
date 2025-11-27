@@ -9,7 +9,6 @@ Collects and tracks:
 """
 
 import asyncio
-import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Any
@@ -18,6 +17,7 @@ from loguru import logger
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
@@ -27,6 +27,7 @@ except ImportError:
 @dataclass
 class NodeMetrics:
     """Metrics for a single node execution."""
+
     node_id: str
     node_type: str
     duration_ms: float
@@ -39,6 +40,7 @@ class NodeMetrics:
 @dataclass
 class JobMetrics:
     """Metrics for a job execution."""
+
     job_id: str
     workflow_name: str
     started_at: datetime
@@ -59,7 +61,9 @@ class JobMetrics:
             "job_id": self.job_id,
             "workflow_name": self.workflow_name,
             "started_at": self.started_at.isoformat(),
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": self.completed_at.isoformat()
+            if self.completed_at
+            else None,
             "duration_ms": self.duration_ms,
             "success": self.success,
             "total_nodes": self.total_nodes,
@@ -74,6 +78,7 @@ class JobMetrics:
 @dataclass
 class ResourceSnapshot:
     """Snapshot of system resource usage."""
+
     timestamp: datetime
     cpu_percent: float
     memory_percent: float
@@ -183,8 +188,8 @@ class MetricsCollector:
 
         self._current_job.completed_at = datetime.now(timezone.utc)
         self._current_job.duration_ms = (
-            (self._current_job.completed_at - self._current_job.started_at).total_seconds() * 1000
-        )
+            self._current_job.completed_at - self._current_job.started_at
+        ).total_seconds() * 1000
         self._current_job.success = success
         self._current_job.error_message = error_message
 
@@ -326,7 +331,9 @@ class MetricsCollector:
                 cpu_percent=process.cpu_percent(),
                 memory_percent=process.memory_percent(),
                 memory_mb=memory_info.rss / (1024 * 1024),
-                disk_percent=psutil.disk_usage('/').percent if hasattr(psutil, 'disk_usage') else None,
+                disk_percent=psutil.disk_usage("/").percent
+                if hasattr(psutil, "disk_usage")
+                else None,
                 network_bytes_sent=net_io.bytes_sent,
                 network_bytes_recv=net_io.bytes_recv,
             )
@@ -351,12 +358,12 @@ class MetricsCollector:
     def get_summary(self) -> Dict[str, Any]:
         """Get overall metrics summary."""
         avg_duration = (
-            self._total_duration_ms / self._total_jobs
-            if self._total_jobs > 0 else 0
+            self._total_duration_ms / self._total_jobs if self._total_jobs > 0 else 0
         )
         success_rate = (
             self._successful_jobs / self._total_jobs * 100
-            if self._total_jobs > 0 else 0
+            if self._total_jobs > 0
+            else 0
         )
 
         return {
@@ -395,10 +402,7 @@ class MetricsCollector:
             reverse=True,
         )[:limit]
 
-        return [
-            {"error": error, "count": count}
-            for error, count in sorted_errors
-        ]
+        return [{"error": error, "count": count} for error, count in sorted_errors]
 
     def get_recent_jobs(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Get recent job metrics."""

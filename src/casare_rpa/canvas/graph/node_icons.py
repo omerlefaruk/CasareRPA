@@ -6,122 +6,111 @@ Unicode symbols and custom drawing.
 """
 
 from typing import Dict, Tuple, Optional
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QFont, QPainterPath
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QFont
+from PySide6.QtCore import Qt, QRectF
 import tempfile
 import os
 
 
 # Category color scheme - VSCode Dark+ syntax colors for semantic consistency
 CATEGORY_COLORS = {
-    'basic': QColor(0x56, 0x9C, 0xD6),           # #569CD6 - Keyword blue
-    'browser': QColor(0xC5, 0x86, 0xC0),         # #C586C0 - Control flow purple
-    'navigation': QColor(0x4E, 0xC9, 0xB0),      # #4EC9B0 - Type teal
-    'interaction': QColor(0xCE, 0x91, 0x78),     # #CE9178 - String orange
-    'data': QColor(0x89, 0xD1, 0x85),            # #89D185 - Success green
-    'wait': QColor(0xD7, 0xBA, 0x7D),            # #D7BA7D - Warning yellow
-    'variable': QColor(0x9C, 0xDC, 0xFE),        # #9CDCFE - Variable light blue
-    'control_flow': QColor(0xF4, 0x87, 0x71),    # #F48771 - Error red
-    'error_handling': QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
-    'desktop_automation': QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
-    'debug': QColor(0xD7, 0xBA, 0x7D),           # #D7BA7D - Yellow
-    'file': QColor(0x4E, 0xC9, 0xB0),            # #4EC9B0 - Teal
+    "basic": QColor(0x56, 0x9C, 0xD6),  # #569CD6 - Keyword blue
+    "browser": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Control flow purple
+    "navigation": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
+    "interaction": QColor(0xCE, 0x91, 0x78),  # #CE9178 - String orange
+    "data": QColor(0x89, 0xD1, 0x85),  # #89D185 - Success green
+    "wait": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Warning yellow
+    "variable": QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Variable light blue
+    "control_flow": QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
+    "error_handling": QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
+    "desktop_automation": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
+    "debug": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
+    "file": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
 }
 
 
 # Node type to icon mapping using Unicode symbols and custom shapes
 NODE_ICONS = {
     # Basic nodes
-    'Start': ('▶', 'basic'),
-    'End': ('⬛', 'basic'),
-    'Comment': ('💬', 'basic'),
-
+    "Start": ("▶", "basic"),
+    "End": ("⬛", "basic"),
+    "Comment": ("💬", "basic"),
     # Browser nodes
-    'Launch Browser': ('🌐', 'browser'),
-    'Close Browser': ('✖', 'browser'),
-    'Navigate': ('➜', 'navigation'),
-    'Go Back': ('◀', 'navigation'),
-    'Go Forward': ('▶', 'navigation'),
-    'Refresh Page': ('↻', 'navigation'),
-    'Get URL': ('🔗', 'navigation'),
-    'Get Page Title': ('📄', 'navigation'),
-
+    "Launch Browser": ("🌐", "browser"),
+    "Close Browser": ("✖", "browser"),
+    "Navigate": ("➜", "navigation"),
+    "Go Back": ("◀", "navigation"),
+    "Go Forward": ("▶", "navigation"),
+    "Refresh Page": ("↻", "navigation"),
+    "Get URL": ("🔗", "navigation"),
+    "Get Page Title": ("📄", "navigation"),
     # Interaction nodes
-    'Click Element': ('👆', 'interaction'),
-    'Type Text': ('⌨', 'interaction'),
-    'Select Option': ('☑', 'interaction'),
-    'Clear Input': ('⌫', 'interaction'),
-    'Submit Form': ('📤', 'interaction'),
-    'Hover Element': ('👋', 'interaction'),
-
+    "Click Element": ("👆", "interaction"),
+    "Type Text": ("⌨", "interaction"),
+    "Select Option": ("☑", "interaction"),
+    "Clear Input": ("⌫", "interaction"),
+    "Submit Form": ("📤", "interaction"),
+    "Hover Element": ("👋", "interaction"),
     # Data nodes
-    'Get Element Text': ('📝', 'data'),
-    'Get Element Attribute': ('🏷', 'data'),
-    'Get Element Count': ('🔢', 'data'),
-    'Extract Data': ('📊', 'data'),
-    'Set Variable': ('📌', 'variable'),
-    'Get Variable': ('📍', 'variable'),
-    'Concatenate': ('🔗', 'data'),
-    'Format String': ('✏', 'data'),
-    'Regex Match': ('🔍', 'data'),
-    'Regex Replace': ('🔄', 'data'),
-    'Math Operation': ('➕', 'data'),
-    'Comparison': ('⚖', 'data'),
-    'Create List': ('📋', 'data'),
-    'List Get Item': ('📑', 'data'),
-    'JSON Parse': ('{ }', 'data'),
-    'Get Property': ('🔑', 'data'),
-
+    "Get Element Text": ("📝", "data"),
+    "Get Element Attribute": ("🏷", "data"),
+    "Get Element Count": ("🔢", "data"),
+    "Extract Data": ("📊", "data"),
+    "Set Variable": ("📌", "variable"),
+    "Get Variable": ("📍", "variable"),
+    "Concatenate": ("🔗", "data"),
+    "Format String": ("✏", "data"),
+    "Regex Match": ("🔍", "data"),
+    "Regex Replace": ("🔄", "data"),
+    "Math Operation": ("➕", "data"),
+    "Comparison": ("⚖", "data"),
+    "Create List": ("📋", "data"),
+    "List Get Item": ("📑", "data"),
+    "JSON Parse": ("{ }", "data"),
+    "Get Property": ("🔑", "data"),
     # Wait nodes
-    'Wait': ('⏱', 'wait'),
-    'Wait For Element': ('⏳', 'wait'),
-    'Wait For URL': ('🕐', 'wait'),
-    'Wait For Condition': ('⌛', 'wait'),
-
+    "Wait": ("⏱", "wait"),
+    "Wait For Element": ("⏳", "wait"),
+    "Wait For URL": ("🕐", "wait"),
+    "Wait For Condition": ("⌛", "wait"),
     # Control flow nodes
-    'If': ('❓', 'control_flow'),
-    'For Loop': ('🔁', 'control_flow'),
-    'While Loop': ('↻', 'control_flow'),
-    'For Each': ('⤴', 'control_flow'),
-    'Break': ('🛑', 'control_flow'),
-    'Continue': ('⏭', 'control_flow'),
-    'Switch': ('⚡', 'control_flow'),
-
+    "If": ("❓", "control_flow"),
+    "For Loop": ("🔁", "control_flow"),
+    "While Loop": ("↻", "control_flow"),
+    "For Each": ("⤴", "control_flow"),
+    "Break": ("🛑", "control_flow"),
+    "Continue": ("⏭", "control_flow"),
+    "Switch": ("⚡", "control_flow"),
     # Error handling
-    'Try': ('🛡', 'error_handling'),
-    'Catch': ('🚨', 'error_handling'),
-    'Finally': ('✓', 'error_handling'),
-    'Throw': ('💥', 'error_handling'),
-
+    "Try": ("🛡", "error_handling"),
+    "Catch": ("🚨", "error_handling"),
+    "Finally": ("✓", "error_handling"),
+    "Throw": ("💥", "error_handling"),
     # Desktop automation
-    'Launch Application': ('🚀', 'desktop_automation'),
-    'Close Application': ('✖', 'desktop_automation'),
-    'Activate Window': ('🪟', 'desktop_automation'),
-    'Get Window List': ('📋', 'desktop_automation'),
-    'Find Element': ('🔍', 'desktop_automation'),
-    'Click Element (Desktop)': ('👆', 'desktop_automation'),
-    'Type Text (Desktop)': ('⌨', 'desktop_automation'),
-    'Get Element Text': ('📝', 'desktop_automation'),
-    'Get Element Property': ('🏷', 'desktop_automation'),
-
+    "Launch Application": ("🚀", "desktop_automation"),
+    "Close Application": ("✖", "desktop_automation"),
+    "Activate Window": ("🪟", "desktop_automation"),
+    "Get Window List": ("📋", "desktop_automation"),
+    "Find Element": ("🔍", "desktop_automation"),
+    "Click Element (Desktop)": ("👆", "desktop_automation"),
+    "Type Text (Desktop)": ("⌨", "desktop_automation"),
+    "Get Element Text": ("📝", "desktop_automation"),
+    "Get Element Property": ("🏷", "desktop_automation"),
     # Debug nodes
-    'Breakpoint': ('🔴', 'debug'),
-    'Log': ('📋', 'debug'),
-    'Print': ('🖨', 'debug'),
-    'Assert': ('✓', 'debug'),
-
+    "Breakpoint": ("🔴", "debug"),
+    "Log": ("📋", "debug"),
+    "Print": ("🖨", "debug"),
+    "Assert": ("✓", "debug"),
     # File operations
-    'Read File': ('📄', 'file'),
-    'Write File': ('💾', 'file'),
-    'Delete File': ('🗑', 'file'),
-    'File Exists': ('❓', 'file'),
+    "Read File": ("📄", "file"),
+    "Write File": ("💾", "file"),
+    "Delete File": ("🗑", "file"),
+    "File Exists": ("❓", "file"),
 }
 
 
 def create_node_icon(
-    node_name: str,
-    size: int = 24,
-    custom_color: Optional[QColor] = None
+    node_name: str, size: int = 24, custom_color: Optional[QColor] = None
 ) -> str:
     """
     Create a professional icon for a node type.
@@ -139,10 +128,12 @@ def create_node_icon(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+        base_color = custom_color or CATEGORY_COLORS.get(
+            category, QColor(158, 158, 158)
+        )
     else:
         # Fallback for unknown nodes
-        symbol = '●'
+        symbol = "●"
         base_color = custom_color or QColor(158, 158, 158)
 
     # Create pixmap
@@ -156,7 +147,7 @@ def create_node_icon(
     # Draw background circle with gradient
     from PySide6.QtGui import QRadialGradient
 
-    gradient = QRadialGradient(size/2, size/2, size/2)
+    gradient = QRadialGradient(size / 2, size / 2, size / 2)
     gradient.setColorAt(0, base_color.lighter(120))
     gradient.setColorAt(1, base_color)
 
@@ -164,7 +155,7 @@ def create_node_icon(
     painter.setPen(QPen(base_color.darker(130), 1.5))
 
     margin = 2
-    painter.drawEllipse(margin, margin, size - margin*2, size - margin*2)
+    painter.drawEllipse(margin, margin, size - margin * 2, size - margin * 2)
 
     # Draw icon symbol
     font_size = max(1, int(size * 0.5))  # Ensure font size is at least 1
@@ -179,7 +170,10 @@ def create_node_icon(
     painter.end()
 
     # Save to temp file
-    temp_path = os.path.join(tempfile.gettempdir(), f"casare_icon_{node_name.replace(' ', '_')}_{id(pixmap)}.png")
+    temp_path = os.path.join(
+        tempfile.gettempdir(),
+        f"casare_icon_{node_name.replace(' ', '_')}_{id(pixmap)}.png",
+    )
     pixmap.save(temp_path, "PNG")
 
     return temp_path
@@ -209,16 +203,14 @@ def create_category_icon(category: str, size: int = 24) -> str:
     painter.setPen(QPen(color.darker(120), 1.5))
 
     margin = 2
-    painter.drawRoundedRect(
-        margin, margin,
-        size - margin*2, size - margin*2,
-        4, 4
-    )
+    painter.drawRoundedRect(margin, margin, size - margin * 2, size - margin * 2, 4, 4)
 
     painter.end()
 
     # Save to temp file
-    temp_path = os.path.join(tempfile.gettempdir(), f"casare_category_{category}_{id(pixmap)}.png")
+    temp_path = os.path.join(
+        tempfile.gettempdir(), f"casare_category_{category}_{id(pixmap)}.png"
+    )
     pixmap.save(temp_path, "PNG")
 
     return temp_path
@@ -272,9 +264,7 @@ _icon_path_cache: Dict[str, str] = {}
 
 
 def create_node_icon_pixmap(
-    node_name: str,
-    size: int = 24,
-    custom_color: Optional[QColor] = None
+    node_name: str, size: int = 24, custom_color: Optional[QColor] = None
 ) -> QPixmap:
     """
     Create a professional icon for a node type and return QPixmap directly.
@@ -293,10 +283,12 @@ def create_node_icon_pixmap(
 
     if icon_data:
         symbol, category = icon_data
-        base_color = custom_color or CATEGORY_COLORS.get(category, QColor(158, 158, 158))
+        base_color = custom_color or CATEGORY_COLORS.get(
+            category, QColor(158, 158, 158)
+        )
     else:
         # Fallback for unknown nodes
-        symbol = '●'
+        symbol = "●"
         base_color = custom_color or QColor(158, 158, 158)
 
     # Create pixmap
@@ -310,7 +302,7 @@ def create_node_icon_pixmap(
     # Draw background circle with gradient
     from PySide6.QtGui import QRadialGradient
 
-    gradient = QRadialGradient(size/2, size/2, size/2)
+    gradient = QRadialGradient(size / 2, size / 2, size / 2)
     gradient.setColorAt(0, base_color.lighter(120))
     gradient.setColorAt(1, base_color)
 
@@ -318,7 +310,7 @@ def create_node_icon_pixmap(
     painter.setPen(QPen(base_color.darker(130), 1.5))
 
     margin = 2
-    painter.drawEllipse(margin, margin, size - margin*2, size - margin*2)
+    painter.drawEllipse(margin, margin, size - margin * 2, size - margin * 2)
 
     # Draw icon symbol
     font_size = max(1, int(size * 0.5))

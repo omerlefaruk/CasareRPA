@@ -7,7 +7,6 @@ Provides a context menu with quick actions when right-clicking on nodes.
 from typing import TYPE_CHECKING, Optional
 from PySide6.QtWidgets import QMenu, QApplication, QInputDialog
 from PySide6.QtCore import QObject, Signal, QEvent, Qt, QPointF
-from PySide6.QtGui import QAction
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -41,7 +40,7 @@ class NodeQuickActions(QObject):
     paste_requested = Signal()
     center_view_requested = Signal(str)
 
-    def __init__(self, graph: 'NodeGraph', parent: Optional[QObject] = None) -> None:
+    def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
         """
         Initialize the quick actions manager.
 
@@ -103,7 +102,7 @@ class NodeQuickActions(QObject):
                 if isinstance(current, NodeItem):
                     # Found a node item, get the actual node object
                     for node in self._graph.all_nodes():
-                        if hasattr(node, 'view') and node.view == current:
+                        if hasattr(node, "view") and node.view == current:
                             return node
                     break
                 current = current.parentItem()
@@ -128,7 +127,10 @@ class NodeQuickActions(QObject):
             if event.button() == Qt.MouseButton.RightButton:
                 # If auto-connect is in drag mode, let it handle the RMB event
                 # for connection confirmation
-                if self._auto_connect_manager and self._auto_connect_manager._dragging_node:
+                if (
+                    self._auto_connect_manager
+                    and self._auto_connect_manager._dragging_node
+                ):
                     return False  # Pass through to AutoConnectManager
 
                 # Check if click is directly on a node
@@ -257,16 +259,13 @@ class NodeQuickActions(QObject):
             return
 
         node = selected[0]
-        current_name = node.name() if hasattr(node, 'name') else "Node"
+        current_name = node.name() if hasattr(node, "name") else "Node"
 
         # Get the main window as parent for the dialog
         viewer = self._graph.viewer()
 
         new_name, ok = QInputDialog.getText(
-            viewer,
-            "Rename Node",
-            "Enter new name:",
-            text=current_name
+            viewer, "Rename Node", "Enter new name:", text=current_name
         )
 
         if ok and new_name and new_name != current_name:
@@ -291,7 +290,7 @@ class NodeQuickActions(QObject):
             logger.debug(f"Copied node ID to clipboard: {node_id}")
 
 
-def setup_node_quick_actions(graph: 'NodeGraph') -> NodeQuickActions:
+def setup_node_quick_actions(graph: "NodeGraph") -> NodeQuickActions:
     """
     Setup quick actions for a node graph.
 

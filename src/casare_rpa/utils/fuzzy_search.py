@@ -8,13 +8,14 @@ Optimized for instant responsiveness with:
 - Aggressive early termination
 """
 
-from typing import List, Tuple, Optional, Set, Dict
+from typing import List, Tuple, Dict
 from dataclasses import dataclass
 
 
 @dataclass(slots=True, frozen=True)
 class IndexedItem:
     """Pre-computed data for a searchable item."""
+
     category: str
     name: str
     description: str
@@ -34,7 +35,7 @@ class SearchIndex:
     - Early termination on good matches
     """
 
-    __slots__ = ('_indexed', '_cache', '_cache_limit')
+    __slots__ = ("_indexed", "_cache", "_cache_limit")
 
     def __init__(self, items: List[Tuple[str, str, str]]):
         """
@@ -57,19 +58,23 @@ class SearchIndex:
             words = _split_into_words(name_lower)
 
             # Build initials from first char of each word
-            initials = ''.join(w[0] for w in words if w)
+            initials = "".join(w[0] for w in words if w)
 
-            self._indexed.append(IndexedItem(
-                category=category,
-                name=name,
-                description=description,
-                name_lower=name_lower,
-                name_words=tuple(words),
-                initials=initials,
-                all_chars=frozenset(name_lower)
-            ))
+            self._indexed.append(
+                IndexedItem(
+                    category=category,
+                    name=name,
+                    description=description,
+                    name_lower=name_lower,
+                    name_words=tuple(words),
+                    initials=initials,
+                    all_chars=frozenset(name_lower),
+                )
+            )
 
-    def search(self, query: str, max_results: int = 15) -> List[Tuple[str, str, str, int, List[int]]]:
+    def search(
+        self, query: str, max_results: int = 15
+    ) -> List[Tuple[str, str, str, int, List[int]]]:
         """
         Search indexed items using optimized fuzzy matching.
 
@@ -84,8 +89,10 @@ class SearchIndex:
 
         if not query:
             # Return first N items when no query
-            return [(item.category, item.name, item.description, 0, [])
-                    for item in self._indexed[:max_results]]
+            return [
+                (item.category, item.name, item.description, 0, [])
+                for item in self._indexed[:max_results]
+            ]
 
         # Check cache for exact query or shorter prefix
         cached = self._cache.get(query)
@@ -93,10 +100,12 @@ class SearchIndex:
             return cached[:max_results]
 
         # Remove spaces for matching
-        query_chars = query.replace(' ', '')
+        query_chars = query.replace(" ", "")
         if not query_chars:
-            return [(item.category, item.name, item.description, 0, [])
-                    for item in self._indexed[:max_results]]
+            return [
+                (item.category, item.name, item.description, 0, [])
+                for item in self._indexed[:max_results]
+            ]
 
         query_set = frozenset(query_chars)
         query_first = query_chars[0]
@@ -112,7 +121,9 @@ class SearchIndex:
             score, positions = _match_item(query_chars, query_set, item)
 
             if score < 10000:  # Valid match found
-                results.append((item.category, item.name, item.description, score, positions))
+                results.append(
+                    (item.category, item.name, item.description, score, positions)
+                )
 
         # Sort by score (lower is better)
         results.sort(key=lambda x: x[3])
@@ -139,24 +150,26 @@ def _split_into_words(text: str) -> List[str]:
     current = []
 
     for i, c in enumerate(text):
-        if c in ' -_':
+        if c in " -_":
             if current:
-                words.append(''.join(current))
+                words.append("".join(current))
                 current = []
         elif c.isupper() and current and not current[-1].isupper():
             # camelCase boundary
-            words.append(''.join(current))
+            words.append("".join(current))
             current = [c.lower()]
         else:
             current.append(c.lower() if c.isupper() else c)
 
     if current:
-        words.append(''.join(current))
+        words.append("".join(current))
 
     return words
 
 
-def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[int, List[int]]:
+def _match_item(
+    query: str, query_set: frozenset, item: IndexedItem
+) -> Tuple[int, List[int]]:
     """
     Match query against item using multiple strategies.
     Returns (score, positions) where lower score is better.
@@ -167,7 +180,7 @@ def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[in
     # Strategy 1: EXACT substring match (best)
     idx = name_lower.find(query)
     if idx != -1:
-        is_word_start = idx == 0 or name_lower[idx - 1] in ' -_'
+        is_word_start = idx == 0 or name_lower[idx - 1] in " -_"
         positions = list(range(idx, idx + len(query)))
         if is_word_start:
             return (idx, positions)  # Score = position (0 is best)
@@ -178,12 +191,16 @@ def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[in
     if len(query) <= len(item.initials):
         if item.initials.startswith(query):
             # Perfect initials prefix match
-            positions = _get_initial_positions(item.name_words, len(query), item.name_lower)
+            positions = _get_initial_positions(
+                item.name_words, len(query), item.name_lower
+            )
             return (50 + len(query), positions)
         elif query in item.initials:
             # Initials substring match
             start = item.initials.index(query)
-            positions = _get_initial_positions(item.name_words, len(query), item.name_lower, start)
+            positions = _get_initial_positions(
+                item.name_words, len(query), item.name_lower, start
+            )
             return (75 + start * 10, positions)
 
     # Strategy 3: ABBREVIATION match (consecutive chars from word starts)
@@ -200,7 +217,9 @@ def _match_item(query: str, query_set: frozenset, item: IndexedItem) -> Tuple[in
     return (10000, [])  # No match
 
 
-def _get_initial_positions(words: Tuple[str, ...], count: int, full_name: str, start: int = 0) -> List[int]:
+def _get_initial_positions(
+    words: Tuple[str, ...], count: int, full_name: str, start: int = 0
+) -> List[int]:
     """Get positions of first characters of words."""
     positions = []
     pos = 0
@@ -211,14 +230,16 @@ def _get_initial_positions(words: Tuple[str, ...], count: int, full_name: str, s
             positions.append(pos)
         pos += len(word)
         # Account for separator (space, dash, etc.)
-        while pos < len(full_name) and full_name[pos] in ' -_':
+        while pos < len(full_name) and full_name[pos] in " -_":
             pos += 1
         word_idx += 1
 
     return positions
 
 
-def _match_abbreviation(query: str, words: Tuple[str, ...], full_name: str) -> Tuple[int, List[int]]:
+def _match_abbreviation(
+    query: str, words: Tuple[str, ...], full_name: str
+) -> Tuple[int, List[int]]:
     """
     Match query as abbreviation of words.
 
@@ -250,7 +271,7 @@ def _match_abbreviation(query: str, words: Tuple[str, ...], full_name: str) -> T
 
         name_pos += len(word)
         # Skip separator
-        while name_pos < len(full_name) and full_name[name_pos] in ' -_':
+        while name_pos < len(full_name) and full_name[name_pos] in " -_":
             name_pos += 1
 
     if query_idx == len(query):
@@ -258,7 +279,7 @@ def _match_abbreviation(query: str, words: Tuple[str, ...], full_name: str) -> T
         # Score based on compactness (fewer gaps = better)
         gap_penalty = 0
         for i in range(1, len(positions)):
-            gap = positions[i] - positions[i-1] - 1
+            gap = positions[i] - positions[i - 1] - 1
             if gap > 0:
                 gap_penalty += gap * 2
         return (150 + gap_penalty, positions)
@@ -294,7 +315,7 @@ def _match_subsequence_fast(query: str, target: str) -> Tuple[int, List[int]]:
     # Bonus for consecutive matches
     consecutive = 0
     for i in range(1, len(positions)):
-        if positions[i] == positions[i-1] + 1:
+        if positions[i] == positions[i - 1] + 1:
             consecutive += 1
     score -= consecutive * 10
 
@@ -313,6 +334,7 @@ def _match_subsequence_fast(query: str, target: str) -> Tuple[int, List[int]]:
 # Convenience functions for non-indexed searches
 # ============================================================================
 
+
 def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
     """
     Quick fuzzy match for a single query-target pair.
@@ -320,13 +342,13 @@ def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
     Returns:
         Tuple of (matched: bool, score: int, positions: List[int])
     """
-    query = query.lower().strip().replace(' ', '')
+    query = query.lower().strip().replace(" ", "")
     if not query:
         return True, 0, []
 
     target_lower = target.lower()
     words = tuple(_split_into_words(target_lower))
-    initials = ''.join(w[0] for w in words if w)
+    initials = "".join(w[0] for w in words if w)
 
     item = IndexedItem(
         category="",
@@ -335,7 +357,7 @@ def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
         name_lower=target_lower,
         name_words=words,
         initials=initials,
-        all_chars=frozenset(target_lower)
+        all_chars=frozenset(target_lower),
     )
 
     query_set = frozenset(query)
@@ -344,7 +366,9 @@ def fuzzy_match(query: str, target: str) -> Tuple[bool, int, List[int]]:
     return (score < 10000, score, positions)
 
 
-def fuzzy_search(query: str, items: List[Tuple[str, str, str]], max_results: int = 15) -> List[Tuple[str, str, str, int, List[int]]]:
+def fuzzy_search(
+    query: str, items: List[Tuple[str, str, str]], max_results: int = 15
+) -> List[Tuple[str, str, str, int, List[int]]]:
     """
     Search items using fuzzy matching.
 
@@ -386,4 +410,4 @@ def highlight_matches(text: str, positions: List[int]) -> str:
         else:
             result.append(char)
 
-    return ''.join(result)
+    return "".join(result)

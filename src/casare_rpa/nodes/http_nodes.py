@@ -23,13 +23,12 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urlencode, urlparse, parse_qs, urljoin
+from typing import Any
+from urllib.parse import urlencode, urljoin
 
 import aiohttp
-from aiohttp import ClientTimeout, FormData, BasicAuth
+from aiohttp import ClientTimeout, FormData
 from loguru import logger
 
 from ..core.base_node import BaseNode
@@ -119,11 +118,15 @@ class HttpRequestNode(BaseNode):
         try:
             # Get input values
             url = self.get_input_value("url") or self.config.get("url", "")
-            method = (self.get_input_value("method") or self.config.get("method", "GET")).upper()
+            method = (
+                self.get_input_value("method") or self.config.get("method", "GET")
+            ).upper()
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             body = self.get_input_value("body") or self.config.get("body", "")
             params = self.get_input_value("params") or self.config.get("params", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             follow_redirects = self.config.get("follow_redirects", True)
             max_redirects = self.config.get("max_redirects", 10)
@@ -195,7 +198,9 @@ class HttpRequestNode(BaseNode):
                         async with session.request(**request_kwargs) as response:
                             # Handle response encoding
                             if response_encoding:
-                                response_body = await response.text(encoding=response_encoding)
+                                response_body = await response.text(
+                                    encoding=response_encoding
+                                )
                             else:
                                 response_body = await response.text()
                             status_code = response.status
@@ -217,7 +222,9 @@ class HttpRequestNode(BaseNode):
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("response_headers", response_headers)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
                             logger.info(f"HTTP {method} {url} -> {status_code}")
 
@@ -228,15 +235,17 @@ class HttpRequestNode(BaseNode):
                                     "status_code": status_code,
                                     "url": url,
                                     "method": method,
-                                    "attempts": attempt + 1
+                                    "attempts": attempt + 1,
                                 },
-                                "next_nodes": ["exec_out"]
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     last_error = e
                     if attempt < retry_count:
-                        logger.warning(f"HTTP request failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP request failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -332,7 +341,9 @@ class HttpGetNode(BaseNode):
             url = self.get_input_value("url") or self.config.get("url", "")
             params = self.get_input_value("params") or self.config.get("params", {})
             headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
@@ -365,10 +376,7 @@ class HttpGetNode(BaseNode):
                 try:
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.get(
-                            url,
-                            params=params,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, params=params, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -385,20 +393,30 @@ class HttpGetNode(BaseNode):
                             self.set_output_value("response_json", response_json)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"HTTP GET {url} -> {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"HTTP GET {url} -> {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"HTTP GET failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP GET failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -480,7 +498,9 @@ class HttpPostNode(BaseNode):
             body = self.get_input_value("body") or self.config.get("body", "")
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
@@ -521,10 +541,7 @@ class HttpPostNode(BaseNode):
                 try:
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.post(
-                            url,
-                            data=request_body,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, data=request_body, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -541,20 +558,30 @@ class HttpPostNode(BaseNode):
                             self.set_output_value("response_json", response_json)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"HTTP POST {url} -> {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"HTTP POST {url} -> {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"HTTP POST failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP POST failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -634,7 +661,9 @@ class HttpPutNode(BaseNode):
             body = self.get_input_value("body") or self.config.get("body", "")
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
@@ -673,10 +702,7 @@ class HttpPutNode(BaseNode):
                 try:
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.put(
-                            url,
-                            data=request_body,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, data=request_body, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -693,20 +719,30 @@ class HttpPutNode(BaseNode):
                             self.set_output_value("response_json", response_json)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"HTTP PUT {url} -> {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"HTTP PUT {url} -> {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"HTTP PUT failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP PUT failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -786,7 +822,9 @@ class HttpPatchNode(BaseNode):
             body = self.get_input_value("body") or self.config.get("body", "")
             headers = self.get_input_value("headers") or self.config.get("headers", {})
             content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
@@ -825,10 +863,7 @@ class HttpPatchNode(BaseNode):
                 try:
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.patch(
-                            url,
-                            data=request_body,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, data=request_body, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -845,20 +880,30 @@ class HttpPatchNode(BaseNode):
                             self.set_output_value("response_json", response_json)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"HTTP PATCH {url} -> {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"HTTP PATCH {url} -> {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"HTTP PATCH failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP PATCH failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -930,7 +975,9 @@ class HttpDeleteNode(BaseNode):
         try:
             url = self.get_input_value("url") or self.config.get("url", "")
             headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 30.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 30.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
             retry_count = self.config.get("retry_count", 0)
             retry_delay = self.config.get("retry_delay", 1.0)
@@ -957,9 +1004,7 @@ class HttpDeleteNode(BaseNode):
                 try:
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.delete(
-                            url,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -969,20 +1014,30 @@ class HttpDeleteNode(BaseNode):
                             self.set_output_value("response_body", response_body)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"HTTP DELETE {url} -> {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"HTTP DELETE {url} -> {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "url": url, "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "url": url,
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"HTTP DELETE failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"HTTP DELETE failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -1013,7 +1068,9 @@ class SetHttpHeadersNode(BaseNode):
         - headers: Combined headers dict
     """
 
-    def __init__(self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any
+    ) -> None:
         config = kwargs.get("config", {})
         config.setdefault("header_name", "")
         config.setdefault("header_value", "")
@@ -1038,9 +1095,15 @@ class SetHttpHeadersNode(BaseNode):
 
         try:
             base_headers = self.get_input_value("base_headers") or {}
-            header_name = self.get_input_value("header_name") or self.config.get("header_name", "")
-            header_value = self.get_input_value("header_value") or self.config.get("header_value", "")
-            headers_json = self.get_input_value("headers_json") or self.config.get("headers_json", "{}")
+            header_name = self.get_input_value("header_name") or self.config.get(
+                "header_name", ""
+            )
+            header_value = self.get_input_value("header_value") or self.config.get(
+                "header_value", ""
+            )
+            headers_json = self.get_input_value("headers_json") or self.config.get(
+                "headers_json", "{}"
+            )
 
             # Start with base headers
             headers = dict(base_headers)
@@ -1066,7 +1129,7 @@ class SetHttpHeadersNode(BaseNode):
             return {
                 "success": True,
                 "data": {"header_count": len(headers)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1127,11 +1190,19 @@ class HttpAuthNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            auth_type = self.get_input_value("auth_type") or self.config.get("auth_type", "Bearer")
+            auth_type = self.get_input_value("auth_type") or self.config.get(
+                "auth_type", "Bearer"
+            )
             token = self.get_input_value("token") or self.config.get("token", "")
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
-            api_key_name = self.get_input_value("api_key_name") or self.config.get("api_key_name", "X-API-Key")
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
+            api_key_name = self.get_input_value("api_key_name") or self.config.get(
+                "api_key_name", "X-API-Key"
+            )
             base_headers = self.get_input_value("base_headers") or {}
 
             # Resolve {{variable}} patterns in credentials
@@ -1149,8 +1220,12 @@ class HttpAuthNode(BaseNode):
 
             elif auth_type.lower() == "basic":
                 if not username or not password:
-                    raise ValueError("Username and password are required for Basic auth")
-                credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
+                    raise ValueError(
+                        "Username and password are required for Basic auth"
+                    )
+                credentials = base64.b64encode(
+                    f"{username}:{password}".encode()
+                ).decode()
                 headers["Authorization"] = f"Basic {credentials}"
                 logger.debug("Set Basic authentication")
 
@@ -1169,7 +1244,7 @@ class HttpAuthNode(BaseNode):
             return {
                 "success": True,
                 "data": {"auth_type": auth_type},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1280,11 +1355,7 @@ class ParseJsonResponseNode(BaseNode):
                     raise ValueError(str(e))
 
             self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"path": path},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {"path": path}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"JSON parse error: {str(e)}"
@@ -1314,7 +1385,9 @@ class HttpDownloadFileNode(BaseNode):
         - success: True if download succeeded
     """
 
-    def __init__(self, node_id: str, name: str = "HTTP Download File", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "HTTP Download File", **kwargs: Any
+    ) -> None:
         # Default config with all download options
         default_config = {
             "url": "",
@@ -1362,9 +1435,13 @@ class HttpDownloadFileNode(BaseNode):
 
         try:
             url = self.get_input_value("url") or self.config.get("url", "")
-            save_path = self.get_input_value("save_path") or self.config.get("save_path", "")
+            save_path = self.get_input_value("save_path") or self.config.get(
+                "save_path", ""
+            )
             headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 300.0)
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 300.0
+            )
             overwrite = self.config.get("overwrite", True)
             verify_ssl = self.config.get("verify_ssl", True)
             proxy = self.config.get("proxy", "")
@@ -1417,8 +1494,10 @@ class HttpDownloadFileNode(BaseNode):
                                 raise aiohttp.ClientError(f"HTTP {response.status}")
 
                             # Download and write file
-                            with open(save_path, 'wb') as f:
-                                async for chunk in response.content.iter_chunked(chunk_size):
+                            with open(save_path, "wb") as f:
+                                async for chunk in response.content.iter_chunked(
+                                    chunk_size
+                                ):
                                     f.write(chunk)
 
                             file_size = save_path.stat().st_size
@@ -1436,14 +1515,16 @@ class HttpDownloadFileNode(BaseNode):
                                 "data": {
                                     "file_path": str(save_path),
                                     "file_size": file_size,
-                                    "attempts": attempt + 1
+                                    "attempts": attempt + 1,
                                 },
-                                "next_nodes": ["exec_out"]
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"Download failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"Download failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -1478,7 +1559,9 @@ class HttpUploadFileNode(BaseNode):
         - success: True if upload succeeded
     """
 
-    def __init__(self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any) -> None:
+    def __init__(
+        self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any
+    ) -> None:
         # Default config with all upload options
         default_config = {
             "url": "",
@@ -1524,11 +1607,19 @@ class HttpUploadFileNode(BaseNode):
 
         try:
             url = self.get_input_value("url") or self.config.get("url", "")
-            file_path = self.get_input_value("file_path") or self.config.get("file_path", "")
-            field_name = self.get_input_value("field_name") or self.config.get("field_name", "file")
+            file_path = self.get_input_value("file_path") or self.config.get(
+                "file_path", ""
+            )
+            field_name = self.get_input_value("field_name") or self.config.get(
+                "field_name", "file"
+            )
             headers = self.get_input_value("headers") or self.config.get("headers", {})
-            extra_fields = self.get_input_value("extra_fields") or self.config.get("extra_fields", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get("timeout", 300.0)
+            extra_fields = self.get_input_value("extra_fields") or self.config.get(
+                "extra_fields", {}
+            )
+            timeout_seconds = self.get_input_value("timeout") or self.config.get(
+                "timeout", 300.0
+            )
             verify_ssl = self.config.get("verify_ssl", True)
 
             # Resolve {{variable}} patterns in URL and file_path
@@ -1570,19 +1661,14 @@ class HttpUploadFileNode(BaseNode):
                     # Need to create FormData inside the loop since it can only be read once
                     data = FormData()
                     data.add_field(
-                        field_name,
-                        open(file_path, 'rb'),
-                        filename=file_path.name
+                        field_name, open(file_path, "rb"), filename=file_path.name
                     )
                     for key, value in extra_fields.items():
                         data.add_field(key, str(value))
 
                     async with aiohttp.ClientSession(timeout=timeout) as session:
                         async with session.post(
-                            url,
-                            data=data,
-                            headers=headers,
-                            ssl=ssl_context
+                            url, data=data, headers=headers, ssl=ssl_context
                         ) as response:
                             response_body = await response.text()
                             status_code = response.status
@@ -1599,20 +1685,30 @@ class HttpUploadFileNode(BaseNode):
                             self.set_output_value("response_json", response_json)
                             self.set_output_value("status_code", status_code)
                             self.set_output_value("success", success)
-                            self.set_output_value("error", "" if success else f"HTTP {status_code}")
+                            self.set_output_value(
+                                "error", "" if success else f"HTTP {status_code}"
+                            )
 
-                            logger.info(f"Upload completed: HTTP {status_code} (attempt {attempt + 1})")
+                            logger.info(
+                                f"Upload completed: HTTP {status_code} (attempt {attempt + 1})"
+                            )
 
                             self.status = NodeStatus.SUCCESS
                             return {
                                 "success": True,
-                                "data": {"status_code": status_code, "file": str(file_path), "attempts": attempt + 1},
-                                "next_nodes": ["exec_out"]
+                                "data": {
+                                    "status_code": status_code,
+                                    "file": str(file_path),
+                                    "attempts": attempt + 1,
+                                },
+                                "next_nodes": ["exec_out"],
                             }
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     if attempt < retry_count:
-                        logger.warning(f"Upload failed (attempt {attempt + 1}/{retry_count + 1}): {e}")
+                        logger.warning(
+                            f"Upload failed (attempt {attempt + 1}/{retry_count + 1}): {e}"
+                        )
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
@@ -1665,7 +1761,9 @@ class BuildUrlNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            base_url = self.get_input_value("base_url") or self.config.get("base_url", "")
+            base_url = self.get_input_value("base_url") or self.config.get(
+                "base_url", ""
+            )
             path = self.get_input_value("path") or self.config.get("path", "")
             params = self.get_input_value("params") or self.config.get("params", {})
 
@@ -1685,12 +1783,12 @@ class BuildUrlNode(BaseNode):
             # Build URL
             url = base_url
             if path:
-                url = urljoin(base_url.rstrip('/') + '/', path.lstrip('/'))
+                url = urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
 
             # Add query parameters
             if params:
                 query_string = urlencode(params)
-                separator = '&' if '?' in url else '?'
+                separator = "&" if "?" in url else "?"
                 url = f"{url}{separator}{query_string}"
 
             self.set_output_value("url", url)
@@ -1698,11 +1796,7 @@ class BuildUrlNode(BaseNode):
             logger.debug(f"Built URL: {url}")
 
             self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "data": {"url": url},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {"url": url}, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Build URL error: {str(e)}"

@@ -92,7 +92,12 @@ def create_icon(output_path: Path) -> None:
         images.append(img)
 
     # Save as ICO with all sizes
-    images[0].save(output_path, format="ICO", sizes=[(s, s) for s in sizes], append_images=images[1:])
+    images[0].save(
+        output_path,
+        format="ICO",
+        sizes=[(s, s) for s in sizes],
+        append_images=images[1:],
+    )
     print(f"Created: {output_path}")
 
 

@@ -9,7 +9,7 @@ import asyncio
 import fnmatch
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Optional
 
 from loguru import logger
 
@@ -53,7 +53,7 @@ class FileWatchTrigger(BaseTrigger):
     async def start(self) -> bool:
         """Start the file watch trigger."""
         config = self.config.config
-        watch_path = config.get('watch_path', '')
+        watch_path = config.get("watch_path", "")
 
         if not watch_path:
             self._error_message = "watch_path is required"
@@ -85,12 +85,12 @@ class FileWatchTrigger(BaseTrigger):
 
                     # Check if event type is in our watched events
                     event_type = event.event_type  # created, modified, deleted, moved
-                    watched_events = config.get('events', ['created', 'modified'])
+                    watched_events = config.get("events", ["created", "modified"])
                     if event_type not in watched_events:
                         return
 
                     # Check if file matches patterns
-                    patterns = config.get('patterns', ['*'])
+                    patterns = config.get("patterns", ["*"])
                     file_name = Path(event.src_path).name
                     matches = any(fnmatch.fnmatch(file_name, p) for p in patterns)
                     if not matches:
@@ -99,13 +99,13 @@ class FileWatchTrigger(BaseTrigger):
                     # Queue the event for debounced processing
                     asyncio.run_coroutine_threadsafe(
                         trigger._queue_event(event.src_path, event_type),
-                        asyncio.get_event_loop()
+                        asyncio.get_event_loop(),
                     )
 
             self._handler = TriggerHandler()
             self._observer = Observer()
 
-            recursive = config.get('recursive', False)
+            recursive = config.get("recursive", False)
             self._observer.schedule(self._handler, str(path), recursive=recursive)
             self._observer.start()
 
@@ -148,7 +148,7 @@ class FileWatchTrigger(BaseTrigger):
 
     async def _queue_event(self, file_path: str, event_type: str) -> None:
         """Queue a file event for debounced processing."""
-        debounce_ms = self.config.config.get('debounce_ms', 1000)
+        debounce_ms = self.config.config.get("debounce_ms", 1000)
 
         # Record the event
         self._pending_events[file_path] = datetime.utcnow()
@@ -163,9 +163,7 @@ class FileWatchTrigger(BaseTrigger):
         )
 
     async def _process_events_after_debounce(
-        self,
-        debounce_seconds: float,
-        event_type: str
+        self, debounce_seconds: float, event_type: str
     ) -> None:
         """Process pending events after debounce period."""
         await asyncio.sleep(debounce_seconds)
@@ -186,7 +184,7 @@ class FileWatchTrigger(BaseTrigger):
 
             metadata = {
                 "source": "file_watch",
-                "watch_path": self.config.config.get('watch_path', ''),
+                "watch_path": self.config.config.get("watch_path", ""),
             }
 
             await self.emit(payload, metadata)
@@ -195,19 +193,22 @@ class FileWatchTrigger(BaseTrigger):
         """Validate file watch configuration."""
         config = self.config.config
 
-        watch_path = config.get('watch_path', '')
+        watch_path = config.get("watch_path", "")
         if not watch_path:
             return False, "watch_path is required"
 
         # Validate events
-        events = config.get('events', ['created', 'modified'])
-        valid_events = ['created', 'modified', 'deleted', 'moved']
+        events = config.get("events", ["created", "modified"])
+        valid_events = ["created", "modified", "deleted", "moved"]
         for event in events:
             if event not in valid_events:
-                return False, f"Invalid event type: {event}. Must be one of: {valid_events}"
+                return (
+                    False,
+                    f"Invalid event type: {event}. Must be one of: {valid_events}",
+                )
 
         # Validate debounce
-        debounce = config.get('debounce_ms', 1000)
+        debounce = config.get("debounce_ms", 1000)
         if debounce < 0:
             return False, "debounce_ms must be >= 0"
 
@@ -221,7 +222,12 @@ class FileWatchTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "watch_path": {
                     "type": "string",
@@ -241,7 +247,10 @@ class FileWatchTrigger(BaseTrigger):
                 },
                 "events": {
                     "type": "array",
-                    "items": {"type": "string", "enum": ["created", "modified", "deleted", "moved"]},
+                    "items": {
+                        "type": "string",
+                        "enum": ["created", "modified", "deleted", "moved"],
+                    },
                     "default": ["created", "modified"],
                     "description": "File event types to watch",
                 },

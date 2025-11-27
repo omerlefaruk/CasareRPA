@@ -11,16 +11,12 @@ import imaplib
 import email
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.base import MIMEBase
 from email.mime.application import MIMEApplication
-from email import encoders
 from email.header import decode_header
 from email.utils import parsedate_to_datetime
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, Dict
 from pathlib import Path
-from datetime import datetime
 import os
-import re
 
 from loguru import logger
 
@@ -38,23 +34,23 @@ def _decode_header_value(value: str) -> str:
     for part, charset in decoded_parts:
         if isinstance(part, bytes):
             try:
-                result.append(part.decode(charset or 'utf-8', errors='replace'))
+                result.append(part.decode(charset or "utf-8", errors="replace"))
             except (LookupError, UnicodeDecodeError):
-                result.append(part.decode('utf-8', errors='replace'))
+                result.append(part.decode("utf-8", errors="replace"))
         else:
             result.append(part)
-    return ''.join(result)
+    return "".join(result)
 
 
 def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
     """Parse an email message into a dictionary."""
     # Get basic headers
-    subject = _decode_header_value(msg.get('Subject', ''))
-    from_addr = _decode_header_value(msg.get('From', ''))
-    to_addr = _decode_header_value(msg.get('To', ''))
-    cc_addr = _decode_header_value(msg.get('Cc', ''))
-    date_str = msg.get('Date', '')
-    message_id = msg.get('Message-ID', '')
+    subject = _decode_header_value(msg.get("Subject", ""))
+    from_addr = _decode_header_value(msg.get("From", ""))
+    to_addr = _decode_header_value(msg.get("To", ""))
+    cc_addr = _decode_header_value(msg.get("Cc", ""))
+    date_str = msg.get("Date", "")
+    message_id = msg.get("Message-ID", "")
 
     # Parse date
     date = None
@@ -72,26 +68,32 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
-            content_disposition = str(part.get('Content-Disposition', ''))
+            content_disposition = str(part.get("Content-Disposition", ""))
 
-            if 'attachment' in content_disposition:
+            if "attachment" in content_disposition:
                 # Attachment
                 filename = part.get_filename()
                 if filename:
                     filename = _decode_header_value(filename)
-                    attachments.append({
-                        "filename": filename,
-                        "content_type": content_type,
-                        "size": len(part.get_payload(decode=True) or b''),
-                    })
-            elif content_type == 'text/plain':
+                    attachments.append(
+                        {
+                            "filename": filename,
+                            "content_type": content_type,
+                            "size": len(part.get_payload(decode=True) or b""),
+                        }
+                    )
+            elif content_type == "text/plain":
                 try:
-                    body_text = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    body_text = part.get_payload(decode=True).decode(
+                        "utf-8", errors="replace"
+                    )
                 except (AttributeError, UnicodeDecodeError):
                     body_text = str(part.get_payload())
-            elif content_type == 'text/html':
+            elif content_type == "text/html":
                 try:
-                    body_html = part.get_payload(decode=True).decode('utf-8', errors='replace')
+                    body_html = part.get_payload(decode=True).decode(
+                        "utf-8", errors="replace"
+                    )
                 except (AttributeError, UnicodeDecodeError):
                     body_html = str(part.get_payload())
     else:
@@ -100,8 +102,8 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
         try:
             payload = msg.get_payload(decode=True)
             if payload:
-                text = payload.decode('utf-8', errors='replace')
-                if content_type == 'text/html':
+                text = payload.decode("utf-8", errors="replace")
+                if content_type == "text/html":
                     body_html = text
                 else:
                     body_text = text
@@ -196,10 +198,18 @@ class SendEmailNode(BaseNode):
 
         try:
             # Get connection settings
-            smtp_server = self.get_input_value("smtp_server") or self.config.get("smtp_server", "smtp.gmail.com")
-            smtp_port = self.get_input_value("smtp_port") or self.config.get("smtp_port", 587)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
+            smtp_server = self.get_input_value("smtp_server") or self.config.get(
+                "smtp_server", "smtp.gmail.com"
+            )
+            smtp_port = self.get_input_value("smtp_port") or self.config.get(
+                "smtp_port", 587
+            )
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
             use_tls = self.config.get("use_tls", True)
             use_ssl = self.config.get("use_ssl", False)
             timeout = self.config.get("timeout", 30)
@@ -223,8 +233,12 @@ class SendEmailNode(BaseNode):
             retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
             # Get email content
-            from_email = self.get_input_value("from_email") or self.config.get("from_email", username)
-            to_email = self.get_input_value("to_email") or self.config.get("to_email", "")
+            from_email = self.get_input_value("from_email") or self.config.get(
+                "from_email", username
+            )
+            to_email = self.get_input_value("to_email") or self.config.get(
+                "to_email", ""
+            )
             subject = self.get_input_value("subject") or self.config.get("subject", "")
             body = self.get_input_value("body") or self.config.get("body", "")
             cc = self.get_input_value("cc") or self.config.get("cc", "")
@@ -252,7 +266,7 @@ class SendEmailNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No recipient email address provided",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             # Create message
@@ -260,55 +274,55 @@ class SendEmailNode(BaseNode):
 
             # Set From with optional sender name
             if sender_name:
-                msg['From'] = f"{sender_name} <{from_email}>"
+                msg["From"] = f"{sender_name} <{from_email}>"
             else:
-                msg['From'] = from_email
+                msg["From"] = from_email
 
-            msg['To'] = to_email
-            msg['Subject'] = subject
+            msg["To"] = to_email
+            msg["Subject"] = subject
 
             if cc:
-                msg['Cc'] = cc
+                msg["Cc"] = cc
             if bcc:
-                msg['Bcc'] = bcc
+                msg["Bcc"] = bcc
 
             # Reply-To header
             if reply_to:
-                msg['Reply-To'] = reply_to
+                msg["Reply-To"] = reply_to
 
             # Priority header
             if priority == "high":
-                msg['X-Priority'] = '1'
-                msg['Importance'] = 'High'
+                msg["X-Priority"] = "1"
+                msg["Importance"] = "High"
             elif priority == "low":
-                msg['X-Priority'] = '5'
-                msg['Importance'] = 'Low'
+                msg["X-Priority"] = "5"
+                msg["Importance"] = "Low"
 
             # Read receipt request
             if read_receipt and from_email:
-                msg['Disposition-Notification-To'] = from_email
+                msg["Disposition-Notification-To"] = from_email
 
             # Add body
             if is_html:
-                msg.attach(MIMEText(body, 'html'))
+                msg.attach(MIMEText(body, "html"))
             else:
-                msg.attach(MIMEText(body, 'plain'))
+                msg.attach(MIMEText(body, "plain"))
 
             # Add attachments
             for attachment_path in attachments:
                 if attachment_path and os.path.exists(attachment_path):
                     filename = os.path.basename(attachment_path)
-                    with open(attachment_path, 'rb') as f:
+                    with open(attachment_path, "rb") as f:
                         part = MIMEApplication(f.read(), Name=filename)
-                    part['Content-Disposition'] = f'attachment; filename="{filename}"'
+                    part["Content-Disposition"] = f'attachment; filename="{filename}"'
                     msg.attach(part)
 
             # Build recipient list
-            all_recipients = [addr.strip() for addr in to_email.split(',')]
+            all_recipients = [addr.strip() for addr in to_email.split(",")]
             if cc:
-                all_recipients.extend([addr.strip() for addr in cc.split(',')])
+                all_recipients.extend([addr.strip() for addr in cc.split(",")])
             if bcc:
-                all_recipients.extend([addr.strip() for addr in bcc.split(',')])
+                all_recipients.extend([addr.strip() for addr in bcc.split(",")])
 
             logger.info(f"Sending email to {to_email} via {smtp_server}:{smtp_port}")
 
@@ -320,11 +334,15 @@ class SendEmailNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for send email")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for send email"
+                        )
 
                     # Send email with timeout
                     if use_ssl:
-                        server = smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=timeout)
+                        server = smtplib.SMTP_SSL(
+                            smtp_server, smtp_port, timeout=timeout
+                        )
                     else:
                         server = smtplib.SMTP(smtp_server, smtp_port, timeout=timeout)
                         if use_tls:
@@ -336,16 +354,22 @@ class SendEmailNode(BaseNode):
                     server.sendmail(from_email, all_recipients, msg.as_string())
                     server.quit()
 
-                    message_id = msg.get('Message-ID', '')
+                    message_id = msg.get("Message-ID", "")
                     self.set_output_value("success", True)
                     self.set_output_value("message_id", message_id)
 
-                    logger.info(f"Email sent successfully to {to_email} (attempt {attempts})")
+                    logger.info(
+                        f"Email sent successfully to {to_email} (attempt {attempts})"
+                    )
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
-                        "data": {"message_id": message_id, "recipients": len(all_recipients), "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "data": {
+                            "message_id": message_id,
+                            "recipients": len(all_recipients),
+                            "attempts": attempts,
+                        },
+                        "next_nodes": ["exec_out"],
                     }
 
                 except smtplib.SMTPAuthenticationError:
@@ -367,17 +391,13 @@ class SendEmailNode(BaseNode):
             return {
                 "success": False,
                 "error": f"Authentication failed: {e}",
-                "next_nodes": []
+                "next_nodes": [],
             }
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to send email: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ReadEmailsNode(BaseNode):
@@ -443,13 +463,25 @@ class ReadEmailsNode(BaseNode):
 
         try:
             # Get connection settings
-            imap_server = self.get_input_value("imap_server") or self.config.get("imap_server", "imap.gmail.com")
-            imap_port = self.get_input_value("imap_port") or self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
-            folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
+            imap_server = self.get_input_value("imap_server") or self.config.get(
+                "imap_server", "imap.gmail.com"
+            )
+            imap_port = self.get_input_value("imap_port") or self.config.get(
+                "imap_port", 993
+            )
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
+            folder = self.get_input_value("folder") or self.config.get(
+                "folder", "INBOX"
+            )
             limit = self.get_input_value("limit") or self.config.get("limit", 10)
-            search_criteria = self.get_input_value("search_criteria") or self.config.get("search_criteria", "ALL")
+            search_criteria = self.get_input_value(
+                "search_criteria"
+            ) or self.config.get("search_criteria", "ALL")
             use_ssl = self.config.get("use_ssl", True)
 
             # Resolve {{variable}} patterns in connection parameters
@@ -479,7 +511,7 @@ class ReadEmailsNode(BaseNode):
                 return {
                     "success": False,
                     "error": "Username and password required",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             logger.info(f"Reading emails from {imap_server}:{imap_port}/{folder}")
@@ -492,7 +524,9 @@ class ReadEmailsNode(BaseNode):
                 try:
                     attempts += 1
                     if attempts > 1:
-                        logger.info(f"Retry attempt {attempts - 1}/{retry_count} for read emails")
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for read emails"
+                        )
 
                     # Connect to IMAP server
                     if use_ssl:
@@ -505,7 +539,7 @@ class ReadEmailsNode(BaseNode):
 
                     # Search for emails
                     status, message_ids = mail.search(None, search_criteria)
-                    if status != 'OK':
+                    if status != "OK":
                         mail.logout()
                         raise Exception("Failed to search emails")
 
@@ -516,12 +550,16 @@ class ReadEmailsNode(BaseNode):
 
                     emails = []
                     for msg_id in id_list:
-                        status, msg_data = mail.fetch(msg_id, '(RFC822)')
-                        if status == 'OK':
+                        status, msg_data = mail.fetch(msg_id, "(RFC822)")
+                        if status == "OK":
                             raw_email = msg_data[0][1]
                             msg = email.message_from_bytes(raw_email)
                             parsed = _parse_email_message(msg)
-                            parsed['uid'] = msg_id.decode() if isinstance(msg_id, bytes) else str(msg_id)
+                            parsed["uid"] = (
+                                msg_id.decode()
+                                if isinstance(msg_id, bytes)
+                                else str(msg_id)
+                            )
                             emails.append(parsed)
 
                     mail.logout()
@@ -529,12 +567,14 @@ class ReadEmailsNode(BaseNode):
                     self.set_output_value("emails", emails)
                     self.set_output_value("count", len(emails))
 
-                    logger.info(f"Read {len(emails)} emails from {folder} (attempt {attempts})")
+                    logger.info(
+                        f"Read {len(emails)} emails from {folder} (attempt {attempts})"
+                    )
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
                         "data": {"count": len(emails), "attempts": attempts},
-                        "next_nodes": ["exec_out"]
+                        "next_nodes": ["exec_out"],
                     }
 
                 except imaplib.IMAP4.error as e:
@@ -561,21 +601,13 @@ class ReadEmailsNode(BaseNode):
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             logger.error(f"IMAP error: {e}")
-            return {
-                "success": False,
-                "error": f"IMAP error: {e}",
-                "next_nodes": []
-            }
+            return {"success": False, "error": f"IMAP error: {e}", "next_nodes": []}
         except Exception as e:
             self.set_output_value("emails", [])
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to read emails: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class GetEmailContentNode(BaseNode):
@@ -616,7 +648,7 @@ class GetEmailContentNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No email data provided",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             # Extract fields
@@ -628,21 +660,16 @@ class GetEmailContentNode(BaseNode):
             self.set_output_value("body_html", email_data.get("body_html", ""))
             self.set_output_value("attachments", email_data.get("attachments", []))
 
-            logger.debug(f"Extracted email content: {email_data.get('subject', 'No subject')}")
+            logger.debug(
+                f"Extracted email content: {email_data.get('subject', 'No subject')}"
+            )
             self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to extract email content: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class SaveAttachmentNode(BaseNode):
@@ -676,13 +703,23 @@ class SaveAttachmentNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get("imap_server", "imap.gmail.com")
+            imap_server = self.get_input_value("imap_server") or self.config.get(
+                "imap_server", "imap.gmail.com"
+            )
             imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
             email_uid = self.get_input_value("email_uid") or ""
-            save_path = self.get_input_value("save_path") or self.config.get("save_path", ".")
-            folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
+            save_path = self.get_input_value("save_path") or self.config.get(
+                "save_path", "."
+            )
+            folder = self.get_input_value("folder") or self.config.get(
+                "folder", "INBOX"
+            )
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -699,7 +736,7 @@ class SaveAttachmentNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No email UID provided",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             # Ensure save path exists
@@ -711,8 +748,8 @@ class SaveAttachmentNode(BaseNode):
             mail.select(folder)
 
             # Fetch the email
-            status, msg_data = mail.fetch(email_uid.encode(), '(RFC822)')
-            if status != 'OK':
+            status, msg_data = mail.fetch(email_uid.encode(), "(RFC822)")
+            if status != "OK":
                 mail.logout()
                 self.set_output_value("saved_files", [])
                 self.set_output_value("count", 0)
@@ -720,7 +757,7 @@ class SaveAttachmentNode(BaseNode):
                 return {
                     "success": False,
                     "error": "Failed to fetch email",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             raw_email = msg_data[0][1]
@@ -728,8 +765,8 @@ class SaveAttachmentNode(BaseNode):
 
             saved_files = []
             for part in msg.walk():
-                content_disposition = str(part.get('Content-Disposition', ''))
-                if 'attachment' in content_disposition:
+                content_disposition = str(part.get("Content-Disposition", ""))
+                if "attachment" in content_disposition:
                     filename = part.get_filename()
                     if filename:
                         filename = _decode_header_value(filename)
@@ -744,7 +781,7 @@ class SaveAttachmentNode(BaseNode):
 
                         payload = part.get_payload(decode=True)
                         if payload:
-                            with open(filepath, 'wb') as f:
+                            with open(filepath, "wb") as f:
                                 f.write(payload)
                             saved_files.append(filepath)
 
@@ -758,7 +795,7 @@ class SaveAttachmentNode(BaseNode):
             return {
                 "success": True,
                 "data": {"saved_files": saved_files},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -766,11 +803,7 @@ class SaveAttachmentNode(BaseNode):
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to save attachments: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class FilterEmailsNode(BaseNode):
@@ -846,7 +879,7 @@ class FilterEmailsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(filtered)},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -854,11 +887,7 @@ class FilterEmailsNode(BaseNode):
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to filter emails: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class MarkEmailNode(BaseNode):
@@ -891,13 +920,23 @@ class MarkEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get("imap_server", "imap.gmail.com")
+            imap_server = self.get_input_value("imap_server") or self.config.get(
+                "imap_server", "imap.gmail.com"
+            )
             imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
             email_uid = self.get_input_value("email_uid") or ""
-            folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
-            mark_as = self.get_input_value("mark_as") or self.config.get("mark_as", "read")
+            folder = self.get_input_value("folder") or self.config.get(
+                "folder", "INBOX"
+            )
+            mark_as = self.get_input_value("mark_as") or self.config.get(
+                "mark_as", "read"
+            )
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -913,7 +952,7 @@ class MarkEmailNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No email UID provided",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             mail = imaplib.IMAP4_SSL(imap_server, imap_port)
@@ -922,13 +961,13 @@ class MarkEmailNode(BaseNode):
 
             # Apply flag based on mark_as
             if mark_as == "read":
-                mail.store(email_uid.encode(), '+FLAGS', '\\Seen')
+                mail.store(email_uid.encode(), "+FLAGS", "\\Seen")
             elif mark_as == "unread":
-                mail.store(email_uid.encode(), '-FLAGS', '\\Seen')
+                mail.store(email_uid.encode(), "-FLAGS", "\\Seen")
             elif mark_as == "flagged":
-                mail.store(email_uid.encode(), '+FLAGS', '\\Flagged')
+                mail.store(email_uid.encode(), "+FLAGS", "\\Flagged")
             elif mark_as == "unflagged":
-                mail.store(email_uid.encode(), '-FLAGS', '\\Flagged')
+                mail.store(email_uid.encode(), "-FLAGS", "\\Flagged")
 
             mail.logout()
 
@@ -938,18 +977,14 @@ class MarkEmailNode(BaseNode):
             return {
                 "success": True,
                 "data": {"marked_as": mark_as},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to mark email: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DeleteEmailNode(BaseNode):
@@ -981,12 +1016,20 @@ class DeleteEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get("imap_server", "imap.gmail.com")
+            imap_server = self.get_input_value("imap_server") or self.config.get(
+                "imap_server", "imap.gmail.com"
+            )
             imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
             email_uid = self.get_input_value("email_uid") or ""
-            folder = self.get_input_value("folder") or self.config.get("folder", "INBOX")
+            folder = self.get_input_value("folder") or self.config.get(
+                "folder", "INBOX"
+            )
             permanent = self.config.get("permanent", False)
 
             # Resolve {{variable}} patterns
@@ -1002,7 +1045,7 @@ class DeleteEmailNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No email UID provided",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             mail = imaplib.IMAP4_SSL(imap_server, imap_port)
@@ -1010,7 +1053,7 @@ class DeleteEmailNode(BaseNode):
             mail.select(folder)
 
             # Mark as deleted
-            mail.store(email_uid.encode(), '+FLAGS', '\\Deleted')
+            mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
 
             if permanent:
                 mail.expunge()
@@ -1020,20 +1063,13 @@ class DeleteEmailNode(BaseNode):
             self.set_output_value("success", True)
             logger.info(f"Deleted email {email_uid}")
             self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to delete email: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class MoveEmailNode(BaseNode):
@@ -1066,13 +1102,23 @@ class MoveEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get("imap_server", "imap.gmail.com")
+            imap_server = self.get_input_value("imap_server") or self.config.get(
+                "imap_server", "imap.gmail.com"
+            )
             imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get("username", "")
-            password = self.get_input_value("password") or self.config.get("password", "")
+            username = self.get_input_value("username") or self.config.get(
+                "username", ""
+            )
+            password = self.get_input_value("password") or self.config.get(
+                "password", ""
+            )
             email_uid = self.get_input_value("email_uid") or ""
-            source_folder = self.get_input_value("source_folder") or self.config.get("source_folder", "INBOX")
-            target_folder = self.get_input_value("target_folder") or self.config.get("target_folder", "")
+            source_folder = self.get_input_value("source_folder") or self.config.get(
+                "source_folder", "INBOX"
+            )
+            target_folder = self.get_input_value("target_folder") or self.config.get(
+                "target_folder", ""
+            )
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -1088,7 +1134,7 @@ class MoveEmailNode(BaseNode):
                 return {
                     "success": False,
                     "error": "Email UID and target folder required",
-                    "next_nodes": []
+                    "next_nodes": [],
                 }
 
             mail = imaplib.IMAP4_SSL(imap_server, imap_port)
@@ -1097,9 +1143,9 @@ class MoveEmailNode(BaseNode):
 
             # Copy to target folder
             result = mail.copy(email_uid.encode(), target_folder)
-            if result[0] == 'OK':
+            if result[0] == "OK":
                 # Mark original as deleted
-                mail.store(email_uid.encode(), '+FLAGS', '\\Deleted')
+                mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
                 mail.expunge()
 
             mail.logout()
@@ -1110,15 +1156,11 @@ class MoveEmailNode(BaseNode):
             return {
                 "success": True,
                 "data": {"target_folder": target_folder},
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to move email: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}

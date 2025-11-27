@@ -4,7 +4,7 @@ Control flow nodes for CasareRPA.
 This module implements conditional and loop nodes for workflow control flow.
 """
 
-from typing import Any, Optional
+from typing import Optional
 from loguru import logger
 
 from ..core.base_node import BaseNode
@@ -16,40 +16,40 @@ from ..utils.security.safe_eval import safe_eval, is_safe_expression
 class IfNode(BaseNode):
     """
     Conditional node that executes different paths based on condition.
-    
+
     Evaluates a condition and routes execution to either 'true' or 'false' output.
     Supports boolean inputs or expression evaluation.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize If node."""
         super().__init__(node_id, config)
         self.name = "If"
         self.node_type = "IfNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("condition", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("true", PortType.EXEC_OUTPUT)
         self.add_output_port("false", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute conditional logic.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with next node based on condition
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get condition value
             condition = self.get_input_value("condition")
-            
+
             # If no input, check config for expression
             if condition is None:
                 expression = self.config.get("expression", "")
@@ -57,37 +57,37 @@ class IfNode(BaseNode):
                     # Safely evaluate expression with context variables
                     try:
                         if not is_safe_expression(expression):
-                            raise ValueError(f"Unsafe expression detected: {expression}")
+                            raise ValueError(
+                                f"Unsafe expression detected: {expression}"
+                            )
                         condition = safe_eval(expression, context.variables)
                     except Exception as e:
-                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
+                        logger.warning(
+                            f"Failed to evaluate expression '{expression}': {e}"
+                        )
                         condition = False
                 else:
                     condition = False
-            
+
             # Convert to boolean
             result = bool(condition)
-            
+
             # Determine next node
             next_port = "true" if result else "false"
-            
+
             self.status = NodeStatus.SUCCESS
             logger.info(f"If condition evaluated to: {result} -> {next_port}")
-            
+
             return {
                 "success": True,
                 "data": {"condition": result},
-                "next_nodes": [next_port]
+                "next_nodes": [next_port],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"If node execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ForLoopStartNode(BaseNode):
@@ -138,7 +138,11 @@ class ForLoopStartNode(BaseNode):
             if items is None:
                 start = int(self.config.get("start", 0))
                 end_input = self.get_input_value("end")
-                end = int(end_input) if end_input is not None else int(self.config.get("end", 10))
+                end = (
+                    int(end_input)
+                    if end_input is not None
+                    else int(self.config.get("end", 10))
+                )
                 step = int(self.config.get("step", 1))
                 items = list(range(start, end, step))
 
@@ -152,10 +156,7 @@ class ForLoopStartNode(BaseNode):
             # Check if this is first iteration or continuation (from ForLoopEnd)
             if loop_state_key not in context.variables:
                 # Initialize loop state
-                context.variables[loop_state_key] = {
-                    "items": list(items),
-                    "index": 0
-                }
+                context.variables[loop_state_key] = {"items": list(items), "index": 0}
 
             loop_state = context.variables[loop_state_key]
             index = loop_state["index"]
@@ -171,7 +172,7 @@ class ForLoopStartNode(BaseNode):
                 return {
                     "success": True,
                     "data": {"iterations": index},
-                    "next_nodes": ["completed"]
+                    "next_nodes": ["completed"],
                 }
 
             # Get current item
@@ -185,16 +186,18 @@ class ForLoopStartNode(BaseNode):
             loop_state["index"] = index + 1
 
             self.status = NodeStatus.RUNNING
-            logger.info(f"For loop iteration {index}/{len(items_list)}: current_item={repr(current_item)[:100]}")
+            logger.info(
+                f"For loop iteration {index}/{len(items_list)}: current_item={repr(current_item)[:100]}"
+            )
 
             return {
                 "success": True,
                 "data": {
                     "item": current_item,
                     "index": index,
-                    "remaining": len(items_list) - index - 1
+                    "remaining": len(items_list) - index - 1,
                 },
-                "next_nodes": ["body"]
+                "next_nodes": ["body"],
             }
 
         except Exception as e:
@@ -203,11 +206,7 @@ class ForLoopStartNode(BaseNode):
             loop_state_key = f"{self.node_id}_loop_state"
             if loop_state_key in context.variables:
                 del context.variables[loop_state_key]
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ForLoopEndNode(BaseNode):
@@ -251,23 +250,21 @@ class ForLoopEndNode(BaseNode):
 
         if not loop_start_id:
             # Try to find it from context (fallback)
-            logger.warning("ForLoopEndNode has no paired ForLoopStartNode - check loop setup")
+            logger.warning(
+                "ForLoopEndNode has no paired ForLoopStartNode - check loop setup"
+            )
             return {
                 "success": True,
                 "data": {},
-                "next_nodes": ["exec_out"]  # Just continue to exec_out
+                "next_nodes": ["exec_out"],  # Just continue to exec_out
             }
 
         # Check if the loop is complete by looking at loop state
         loop_state_key = f"{loop_start_id}_loop_state"
         if loop_state_key not in context.variables:
             # Loop has completed - go to exec_out
-            logger.debug(f"For loop completed - continuing to exec_out")
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            logger.debug("For loop completed - continuing to exec_out")
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         logger.debug(f"For loop end - looping back to {loop_start_id}")
 
@@ -276,7 +273,7 @@ class ForLoopEndNode(BaseNode):
             "success": True,
             "data": {},
             "next_nodes": [],
-            "loop_back_to": loop_start_id  # Special key for workflow runner
+            "loop_back_to": loop_start_id,  # Special key for workflow runner
         }
 
 
@@ -305,7 +302,9 @@ class WhileLoopStartNode(BaseNode):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_input_port("condition", PortType.INPUT, DataType.BOOLEAN, required=False)
+        self.add_input_port(
+            "condition", PortType.INPUT, DataType.BOOLEAN, required=False
+        )
         self.add_output_port("body", PortType.EXEC_OUTPUT)
         self.add_output_port("completed", PortType.EXEC_OUTPUT)
         self.add_output_port("current_iteration", PortType.OUTPUT, DataType.INTEGER)
@@ -333,7 +332,7 @@ class WhileLoopStartNode(BaseNode):
                 return {
                     "success": True,
                     "data": {"iterations": iteration, "reason": "max_iterations"},
-                    "next_nodes": ["completed"]
+                    "next_nodes": ["completed"],
                 }
 
             # Evaluate condition
@@ -345,10 +344,14 @@ class WhileLoopStartNode(BaseNode):
                 if expression:
                     try:
                         if not is_safe_expression(expression):
-                            raise ValueError(f"Unsafe expression detected: {expression}")
+                            raise ValueError(
+                                f"Unsafe expression detected: {expression}"
+                            )
                         condition = safe_eval(expression, context.variables)
                     except Exception as e:
-                        logger.warning(f"Failed to evaluate expression '{expression}': {e}")
+                        logger.warning(
+                            f"Failed to evaluate expression '{expression}': {e}"
+                        )
                         condition = False
                 else:
                     condition = False
@@ -363,7 +366,7 @@ class WhileLoopStartNode(BaseNode):
                 return {
                     "success": True,
                     "data": {"iterations": iteration},
-                    "next_nodes": ["completed"]
+                    "next_nodes": ["completed"],
                 }
 
             # Continue loop
@@ -376,7 +379,7 @@ class WhileLoopStartNode(BaseNode):
             return {
                 "success": True,
                 "data": {"iteration": iteration},
-                "next_nodes": ["body"]
+                "next_nodes": ["body"],
             }
 
         except Exception as e:
@@ -385,11 +388,7 @@ class WhileLoopStartNode(BaseNode):
             loop_state_key = f"{self.node_id}_loop_state"
             if loop_state_key in context.variables:
                 del context.variables[loop_state_key]
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class WhileLoopEndNode(BaseNode):
@@ -428,21 +427,13 @@ class WhileLoopEndNode(BaseNode):
 
         if not loop_start_id:
             logger.warning("WhileLoopEndNode has no paired WhileLoopStartNode")
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         # Check if the loop is complete
         loop_state_key = f"{loop_start_id}_loop_state"
         if loop_state_key not in context.variables:
-            logger.debug(f"While loop completed - continuing to exec_out")
-            return {
-                "success": True,
-                "data": {},
-                "next_nodes": ["exec_out"]
-            }
+            logger.debug("While loop completed - continuing to exec_out")
+            return {"success": True, "data": {}, "next_nodes": ["exec_out"]}
 
         logger.debug(f"While loop end - looping back to {loop_start_id}")
 
@@ -450,155 +441,147 @@ class WhileLoopEndNode(BaseNode):
             "success": True,
             "data": {},
             "next_nodes": [],
-            "loop_back_to": loop_start_id
+            "loop_back_to": loop_start_id,
         }
 
 
 class BreakNode(BaseNode):
     """
     Loop control node that exits from the current loop.
-    
+
     Signals the parent loop (For/While) to terminate immediately.
     Can only be used inside loop_body execution path.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Break node."""
         super().__init__(node_id, config)
         self.name = "Break"
         self.node_type = "BreakNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute break - signals loop to exit.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with break signal
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             logger.info("Break executed - loop will exit")
-            
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "control_flow": "break",
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Break execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ContinueNode(BaseNode):
     """
     Loop control node that skips to next iteration.
-    
+
     Signals the parent loop (For/While) to skip remaining loop body
     and proceed to the next iteration.
     Can only be used inside loop_body execution path.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Continue node."""
         super().__init__(node_id, config)
         self.name = "Continue"
         self.node_type = "ContinueNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute continue - signals loop to skip to next iteration.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with continue signal
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             logger.info("Continue executed - skipping to next iteration")
-            
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "control_flow": "continue",
-                "next_nodes": ["exec_out"]
+                "next_nodes": ["exec_out"],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Continue execution failed: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "next_nodes": []
-            }
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class SwitchNode(BaseNode):
     """
     Multi-way branching node based on value matching.
-    
+
     Evaluates an input value and routes to matching case output.
     Falls back to 'default' if no case matches.
     """
-    
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Switch node."""
         super().__init__(node_id, config)
         self.name = "Switch"
         self.node_type = "SwitchNode"
-    
+
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
-        
+
         # Get cases from config (e.g., ["success", "error", "pending"])
         cases = self.config.get("cases", [])
         for case in cases:
             self.add_output_port(f"case_{case}", PortType.EXEC_OUTPUT)
-        
+
         self.add_output_port("default", PortType.EXEC_OUTPUT)
-    
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
         Execute switch logic - match value to case.
-        
+
         Args:
             context: Execution context
-            
+
         Returns:
             Result with matched case or default
         """
         self.status = NodeStatus.RUNNING
-        
+
         try:
             # Get value to match
             value = self.get_input_value("value")
-            
+
             # If no value input, try expression
             if value is None:
                 expression = self.config.get("expression", "")
@@ -607,39 +590,39 @@ class SwitchNode(BaseNode):
                     if not is_safe_expression(expression):
                         raise ValueError(f"Unsafe expression detected: {expression}")
                     value = safe_eval(expression, context.variables)
-            
+
             # Convert to string for matching
             value_str = str(value) if value is not None else ""
-            
+
             # Check each case
             cases = self.config.get("cases", [])
             for case in cases:
                 if str(case) == value_str:
                     next_port = f"case_{case}"
                     logger.info(f"Switch matched case: {case} -> {next_port}")
-                    
+
                     self.status = NodeStatus.SUCCESS
                     return {
                         "success": True,
                         "data": {"matched_case": case, "value": value},
-                        "next_nodes": [next_port]
+                        "next_nodes": [next_port],
                     }
-            
+
             # No match - use default
             logger.info(f"Switch no match for '{value}' -> default")
-            
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
                 "data": {"matched_case": "default", "value": value},
-                "next_nodes": ["default"]
+                "next_nodes": ["default"],
             }
-            
+
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Switch execution failed: {e}")
             return {
                 "success": False,
                 "error": str(e),
-                "next_nodes": ["default"]  # Fallback on error
+                "next_nodes": ["default"],  # Fallback on error
             }

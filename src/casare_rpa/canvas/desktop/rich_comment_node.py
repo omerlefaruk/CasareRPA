@@ -4,9 +4,7 @@ Rich Comment Node
 Enhanced comment node with rich text formatting, colors, and styling options.
 """
 
-from PySide6.QtWidgets import QTextEdit, QColorDialog, QFontDialog
-from PySide6.QtGui import QTextCharFormat, QFont, QColor, QTextCursor
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from loguru import logger
 
 from ..visual_nodes.base_visual_node import VisualNode
@@ -67,12 +65,12 @@ class VisualStickyNoteNode(VisualNode):
 
     # Sticky note color themes
     THEMES = {
-        'yellow': {'bg': '#FFF59D', 'text': '#000000'},
-        'pink': {'bg': '#F48FB1', 'text': '#000000'},
-        'blue': {'bg': '#81D4FA', 'text': '#000000'},
-        'green': {'bg': '#A5D6A7', 'text': '#000000'},
-        'orange': {'bg': '#FFAB91', 'text': '#000000'},
-        'purple': {'bg': '#CE93D8', 'text': '#000000'},
+        "yellow": {"bg": "#FFF59D", "text": "#000000"},
+        "pink": {"bg": "#F48FB1", "text": "#000000"},
+        "blue": {"bg": "#81D4FA", "text": "#000000"},
+        "green": {"bg": "#A5D6A7", "text": "#000000"},
+        "orange": {"bg": "#FFAB91", "text": "#000000"},
+        "purple": {"bg": "#CE93D8", "text": "#000000"},
     }
 
     def __init__(self) -> None:
@@ -99,10 +97,10 @@ class VisualStickyNoteNode(VisualNode):
     def _apply_sticky_style(self):
         """Apply sticky note visual styling."""
         theme_name = self.get_property("theme") or "yellow"
-        theme = self.THEMES.get(theme_name, self.THEMES['yellow'])
+        theme = self.THEMES.get(theme_name, self.THEMES["yellow"])
 
         # Set node colors to match sticky note
-        bg_color = QColor(theme['bg'])
+        bg_color = QColor(theme["bg"])
         self.set_color(bg_color.red(), bg_color.green(), bg_color.blue())
 
         # Set border to slightly darker
@@ -110,8 +108,13 @@ class VisualStickyNoteNode(VisualNode):
         self.model.border_color = (border.red(), border.green(), border.blue(), 255)
 
         # Set text color
-        text_color = QColor(theme['text'])
-        self.model.text_color = (text_color.red(), text_color.green(), text_color.blue(), 255)
+        text_color = QColor(theme["text"])
+        self.model.text_color = (
+            text_color.red(),
+            text_color.green(),
+            text_color.blue(),
+            255,
+        )
 
 
 class VisualHeaderCommentNode(VisualNode):
@@ -169,23 +172,23 @@ def create_markdown_comment(text: str) -> str:
     import re
 
     # Convert bold
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
-    text = re.sub(r'__(.*?)__', r'<b>\1</b>', text)
+    text = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", text)
+    text = re.sub(r"__(.*?)__", r"<b>\1</b>", text)
 
     # Convert italic
-    text = re.sub(r'\*(.*?)\*', r'<i>\1</i>', text)
-    text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
+    text = re.sub(r"\*(.*?)\*", r"<i>\1</i>", text)
+    text = re.sub(r"_(.*?)_", r"<i>\1</i>", text)
 
     # Convert headings
-    text = re.sub(r'^# (.*?)$', r'<h1>\1</h1>', text, flags=re.MULTILINE)
-    text = re.sub(r'^## (.*?)$', r'<h2>\1</h2>', text, flags=re.MULTILINE)
-    text = re.sub(r'^### (.*?)$', r'<h3>\1</h3>', text, flags=re.MULTILINE)
+    text = re.sub(r"^# (.*?)$", r"<h1>\1</h1>", text, flags=re.MULTILINE)
+    text = re.sub(r"^## (.*?)$", r"<h2>\1</h2>", text, flags=re.MULTILINE)
+    text = re.sub(r"^### (.*?)$", r"<h3>\1</h3>", text, flags=re.MULTILINE)
 
     # Convert lists
-    text = re.sub(r'^- (.*?)$', r'<li>\1</li>', text, flags=re.MULTILINE)
+    text = re.sub(r"^- (.*?)$", r"<li>\1</li>", text, flags=re.MULTILINE)
 
     # Convert links
-    text = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2">\1</a>', text)
+    text = re.sub(r"\[(.*?)\]\((.*?)\)", r'<a href="\2">\1</a>', text)
 
     # Wrap in HTML
     html = f"""

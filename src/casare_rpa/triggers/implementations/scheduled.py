@@ -63,57 +63,56 @@ class ScheduledTrigger(BaseTrigger):
 
             # Build trigger based on frequency
             config = self.config.config
-            frequency = config.get('frequency', 'daily')
-            timezone = config.get('timezone', 'UTC')
+            frequency = config.get("frequency", "daily")
+            timezone = config.get("timezone", "UTC")
 
-            if frequency == 'once':
-                run_at = config.get('run_at')
+            if frequency == "once":
+                run_at = config.get("run_at")
                 if run_at:
                     if isinstance(run_at, str):
                         run_at = datetime.fromisoformat(run_at)
                     trigger = DateTrigger(run_date=run_at, timezone=timezone)
                 else:
                     # Schedule for next available time
-                    hour = config.get('time_hour', 9)
-                    minute = config.get('time_minute', 0)
+                    hour = config.get("time_hour", 9)
+                    minute = config.get("time_minute", 0)
                     run_at = datetime.now().replace(hour=hour, minute=minute, second=0)
                     if run_at < datetime.now():
                         run_at += timedelta(days=1)
                     trigger = DateTrigger(run_date=run_at, timezone=timezone)
 
-            elif frequency == 'hourly':
-                minute = config.get('time_minute', 0)
+            elif frequency == "hourly":
+                minute = config.get("time_minute", 0)
                 trigger = CronTrigger(minute=minute, timezone=timezone)
 
-            elif frequency == 'daily':
-                hour = config.get('time_hour', 9)
-                minute = config.get('time_minute', 0)
+            elif frequency == "daily":
+                hour = config.get("time_hour", 9)
+                minute = config.get("time_minute", 0)
                 trigger = CronTrigger(hour=hour, minute=minute, timezone=timezone)
 
-            elif frequency == 'weekly':
-                hour = config.get('time_hour', 9)
-                minute = config.get('time_minute', 0)
-                day_of_week = config.get('day_of_week', 0)  # 0=Monday
+            elif frequency == "weekly":
+                hour = config.get("time_hour", 9)
+                minute = config.get("time_minute", 0)
+                day_of_week = config.get("day_of_week", 0)  # 0=Monday
                 trigger = CronTrigger(
-                    day_of_week=day_of_week,
-                    hour=hour,
-                    minute=minute,
-                    timezone=timezone
+                    day_of_week=day_of_week, hour=hour, minute=minute, timezone=timezone
                 )
 
-            elif frequency == 'monthly':
-                hour = config.get('time_hour', 9)
-                minute = config.get('time_minute', 0)
-                day = config.get('day_of_month', 1)
-                trigger = CronTrigger(day=day, hour=hour, minute=minute, timezone=timezone)
+            elif frequency == "monthly":
+                hour = config.get("time_hour", 9)
+                minute = config.get("time_minute", 0)
+                day = config.get("day_of_month", 1)
+                trigger = CronTrigger(
+                    day=day, hour=hour, minute=minute, timezone=timezone
+                )
 
-            elif frequency == 'cron':
-                cron_expr = config.get('cron_expression', '0 9 * * *')
+            elif frequency == "cron":
+                cron_expr = config.get("cron_expression", "0 9 * * *")
                 trigger = CronTrigger.from_crontab(cron_expr, timezone=timezone)
 
-            elif frequency == 'interval':
+            elif frequency == "interval":
                 # Interval-based scheduling (every N seconds)
-                interval_seconds = config.get('interval_seconds', 60)
+                interval_seconds = config.get("interval_seconds", 60)
                 trigger = IntervalTrigger(seconds=interval_seconds, timezone=timezone)
 
             else:
@@ -140,7 +139,9 @@ class ScheduledTrigger(BaseTrigger):
             return True
 
         except ImportError:
-            logger.error("APScheduler not installed. Install with: pip install apscheduler")
+            logger.error(
+                "APScheduler not installed. Install with: pip install apscheduler"
+            )
             self._status = TriggerStatus.ERROR
             self._error_message = "APScheduler not installed"
             return False
@@ -167,7 +168,7 @@ class ScheduledTrigger(BaseTrigger):
     async def _on_schedule(self) -> None:
         """Called when schedule fires."""
         # Check max_runs limit
-        max_runs = self.config.config.get('max_runs', 0)
+        max_runs = self.config.config.get("max_runs", 0)
         if max_runs > 0 and self.config.trigger_count >= max_runs:
             logger.info(
                 f"Trigger {self.config.name} reached max_runs ({max_runs}), stopping"
@@ -178,7 +179,7 @@ class ScheduledTrigger(BaseTrigger):
         payload = {
             "scheduled_time": datetime.utcnow().isoformat(),
             "trigger_name": self.config.name,
-            "frequency": self.config.config.get('frequency', 'daily'),
+            "frequency": self.config.config.get("frequency", "daily"),
             "run_number": self.config.trigger_count + 1,
         }
 
@@ -186,10 +187,13 @@ class ScheduledTrigger(BaseTrigger):
             "source": "scheduled",
             "next_run": (
                 self._job.next_run_time.isoformat()
-                if self._job and self._job.next_run_time else None
+                if self._job and self._job.next_run_time
+                else None
             ),
             "max_runs": max_runs,
-            "runs_remaining": max_runs - self.config.trigger_count - 1 if max_runs > 0 else None,
+            "runs_remaining": max_runs - self.config.trigger_count - 1
+            if max_runs > 0
+            else None,
         }
 
         await self.emit(payload, metadata)
@@ -205,29 +209,37 @@ class ScheduledTrigger(BaseTrigger):
         """Validate scheduled trigger configuration."""
         config = self.config.config
 
-        frequency = config.get('frequency', 'daily')
-        valid_frequencies = ['once', 'interval', 'hourly', 'daily', 'weekly', 'monthly', 'cron']
+        frequency = config.get("frequency", "daily")
+        valid_frequencies = [
+            "once",
+            "interval",
+            "hourly",
+            "daily",
+            "weekly",
+            "monthly",
+            "cron",
+        ]
         if frequency not in valid_frequencies:
             return False, f"Invalid frequency. Must be one of: {valid_frequencies}"
 
         # Validate interval_seconds for interval frequency
-        if frequency == 'interval':
-            interval_seconds = config.get('interval_seconds', 60)
+        if frequency == "interval":
+            interval_seconds = config.get("interval_seconds", 60)
             if not isinstance(interval_seconds, (int, float)) or interval_seconds < 1:
                 return False, "interval_seconds must be at least 1"
 
         # Validate time values
-        hour = config.get('time_hour', 0)
+        hour = config.get("time_hour", 0)
         if not (0 <= hour <= 23):
             return False, "time_hour must be between 0 and 23"
 
-        minute = config.get('time_minute', 0)
+        minute = config.get("time_minute", 0)
         if not (0 <= minute <= 59):
             return False, "time_minute must be between 0 and 59"
 
         # Validate cron expression
-        if frequency == 'cron':
-            cron_expr = config.get('cron_expression', '')
+        if frequency == "cron":
+            cron_expr = config.get("cron_expression", "")
             if not cron_expr:
                 return False, "cron_expression is required for frequency='cron'"
 
@@ -237,14 +249,14 @@ class ScheduledTrigger(BaseTrigger):
                 return False, "Invalid cron expression format"
 
         # Validate day_of_week for weekly
-        if frequency == 'weekly':
-            dow = config.get('day_of_week', 0)
+        if frequency == "weekly":
+            dow = config.get("day_of_week", 0)
             if not (0 <= dow <= 6):
                 return False, "day_of_week must be between 0 (Monday) and 6 (Sunday)"
 
         # Validate day_of_month for monthly
-        if frequency == 'monthly':
-            dom = config.get('day_of_month', 1)
+        if frequency == "monthly":
+            dom = config.get("day_of_month", 1)
             if not (1 <= dom <= 31):
                 return False, "day_of_month must be between 1 and 31"
 
@@ -264,11 +276,24 @@ class ScheduledTrigger(BaseTrigger):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "frequency": {
                     "type": "string",
-                    "enum": ["once", "interval", "hourly", "daily", "weekly", "monthly", "cron"],
+                    "enum": [
+                        "once",
+                        "interval",
+                        "hourly",
+                        "daily",
+                        "weekly",
+                        "monthly",
+                        "cron",
+                    ],
                     "default": "daily",
                     "description": "Schedule frequency type",
                 },

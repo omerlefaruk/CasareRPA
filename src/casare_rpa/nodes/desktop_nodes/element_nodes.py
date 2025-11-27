@@ -4,12 +4,11 @@ Desktop Element Interaction Nodes
 Nodes for finding and interacting with Windows desktop UI elements.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from loguru import logger
 
 from ...core.base_node import BaseNode as Node
 from ...core.types import NodeStatus
-from ...desktop import DesktopContext
 
 
 def safe_int(value, default: int) -> int:
@@ -30,10 +29,15 @@ class FindElementNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Find Element'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Find Element"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Find Element"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Find Element",
+    ):
         """
         Initialize Find Element node.
 
@@ -43,10 +47,7 @@ class FindElementNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "timeout": 5.0,
-                "throw_on_not_found": True
-            }
+            config = {"timeout": 5.0, "throw_on_not_found": True}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FindElementNode"
@@ -76,12 +77,12 @@ class FindElementNode(Node):
             Dictionary with element and found status
         """
         # Get inputs
-        window = self.get_input_value('window')
-        selector = self.get_input_value('selector') or self.config.get('selector')
+        window = self.get_input_value("window")
+        selector = self.get_input_value("selector") or self.config.get("selector")
 
         # Get configuration
-        timeout = self.config.get('timeout', 5.0)
-        throw_on_not_found = self.config.get('throw_on_not_found', True)
+        timeout = self.config.get("timeout", 5.0)
+        throw_on_not_found = self.config.get("throw_on_not_found", True)
 
         # Validate inputs
         if not window:
@@ -107,10 +108,10 @@ class FindElementNode(Node):
                 logger.info(f"[{self.name}] Found element: {element}")
                 self.status = NodeStatus.SUCCESS
                 return {
-                    'success': True,
-                    'element': element,
-                    'found': True,
-                    'next_nodes': ['exec_out']
+                    "success": True,
+                    "element": element,
+                    "found": True,
+                    "next_nodes": ["exec_out"],
                 }
             else:
                 if throw_on_not_found:
@@ -119,13 +120,15 @@ class FindElementNode(Node):
                     self.status = NodeStatus.ERROR
                     raise RuntimeError(error_msg)
                 else:
-                    logger.warning(f"[{self.name}] Element not found, but throw_on_not_found is False")
+                    logger.warning(
+                        f"[{self.name}] Element not found, but throw_on_not_found is False"
+                    )
                     self.status = NodeStatus.SUCCESS
                     return {
-                        'success': True,
-                        'element': None,
-                        'found': False,
-                        'next_nodes': ['exec_out']
+                        "success": True,
+                        "element": None,
+                        "found": False,
+                        "next_nodes": ["exec_out"],
                     }
 
         except Exception as e:
@@ -143,10 +146,15 @@ class ClickElementNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Click Element'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Click Element"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Click Element"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Click Element",
+    ):
         """
         Initialize Click Element node.
 
@@ -156,12 +164,7 @@ class ClickElementNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "simulate": False,
-                "x_offset": 0,
-                "y_offset": 0,
-                "timeout": 5.0
-            }
+            config = {"simulate": False, "x_offset": 0, "y_offset": 0, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ClickElementNode"
@@ -191,11 +194,11 @@ class ClickElementNode(Node):
             Dictionary with success status
         """
         # Get element - directly or via window+selector
-        element = self.get_input_value('element')
+        element = self.get_input_value("element")
 
         if not element:
-            window = self.get_input_value('window')
-            selector = self.get_input_value('selector') or self.config.get('selector')
+            window = self.get_input_value("window")
+            selector = self.get_input_value("selector") or self.config.get("selector")
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -203,7 +206,7 @@ class ClickElementNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get('timeout', 5.0)
+            timeout = self.config.get("timeout", 5.0)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -214,27 +217,22 @@ class ClickElementNode(Node):
                 raise RuntimeError(error_msg)
 
         # Get configuration
-        simulate = self.config.get('simulate', False)
-        x_offset = self.config.get('x_offset', 0)
-        y_offset = self.config.get('y_offset', 0)
+        simulate = self.config.get("simulate", False)
+        x_offset = self.config.get("x_offset", 0)
+        y_offset = self.config.get("y_offset", 0)
 
         logger.info(f"[{self.name}] Clicking element: {element}")
-        logger.debug(f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})")
+        logger.debug(
+            f"[{self.name}] simulate={simulate}, offset=({x_offset}, {y_offset})"
+        )
 
         try:
             # Perform click
-            element.click(
-                simulate=simulate,
-                x_offset=x_offset,
-                y_offset=y_offset
-            )
+            element.click(simulate=simulate, x_offset=x_offset, y_offset=y_offset)
 
             logger.info(f"[{self.name}] Click successful")
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': True,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": True, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to click element: {e}"
@@ -251,10 +249,15 @@ class TypeTextNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Type Text'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Type Text"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Type Text"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Type Text",
+    ):
         """
         Initialize Type Text node.
 
@@ -264,11 +267,7 @@ class TypeTextNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "clear_first": False,
-                "interval": 0.01,
-                "timeout": 5.0
-            }
+            config = {"clear_first": False, "interval": 0.01, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TypeTextNode"
@@ -299,10 +298,10 @@ class TypeTextNode(Node):
             Dictionary with success status
         """
         # Get text to type
-        text = self.get_input_value('text') or self.config.get('text', '')
+        text = self.get_input_value("text") or self.config.get("text", "")
 
         # Resolve {{variable}} patterns in text
-        if hasattr(context, 'resolve_value') and text:
+        if hasattr(context, "resolve_value") and text:
             text = context.resolve_value(text)
 
         if not text:
@@ -312,11 +311,11 @@ class TypeTextNode(Node):
             raise ValueError(error_msg)
 
         # Get element - directly or via window+selector
-        element = self.get_input_value('element')
+        element = self.get_input_value("element")
 
         if not element:
-            window = self.get_input_value('window')
-            selector = self.get_input_value('selector') or self.config.get('selector')
+            window = self.get_input_value("window")
+            selector = self.get_input_value("selector") or self.config.get("selector")
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -324,7 +323,7 @@ class TypeTextNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get('timeout', 5.0)
+            timeout = self.config.get("timeout", 5.0)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -335,26 +334,21 @@ class TypeTextNode(Node):
                 raise RuntimeError(error_msg)
 
         # Get configuration
-        clear_first = self.config.get('clear_first', False)
-        interval = self.config.get('interval', 0.01)
+        clear_first = self.config.get("clear_first", False)
+        interval = self.config.get("interval", 0.01)
 
         logger.info(f"[{self.name}] Typing text into element: {element}")
-        logger.debug(f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}")
+        logger.debug(
+            f"[{self.name}] Text length: {len(text)}, clear_first={clear_first}"
+        )
 
         try:
             # Type text
-            element.type_text(
-                text=text,
-                clear_first=clear_first,
-                interval=interval
-            )
+            element.type_text(text=text, clear_first=clear_first, interval=interval)
 
             logger.info(f"[{self.name}] Text typed successfully")
             self.status = NodeStatus.SUCCESS
-            return {
-                'success': True,
-                'next_nodes': ['exec_out']
-            }
+            return {"success": True, "next_nodes": ["exec_out"]}
 
         except Exception as e:
             error_msg = f"Failed to type text: {e}"
@@ -371,10 +365,15 @@ class GetElementTextNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Get Element Text'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Get Element Text"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Get Element Text"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Get Element Text",
+    ):
         """
         Initialize Get Element Text node.
 
@@ -384,10 +383,7 @@ class GetElementTextNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "timeout": 5.0,
-                "variable_name": ""
-            }
+            config = {"timeout": 5.0, "variable_name": ""}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetElementTextNode"
@@ -418,11 +414,11 @@ class GetElementTextNode(Node):
             Dictionary with text and element
         """
         # Get element - directly or via window+selector
-        element = self.get_input_value('element')
+        element = self.get_input_value("element")
 
         if not element:
-            window = self.get_input_value('window')
-            selector = self.get_input_value('selector') or self.config.get('selector')
+            window = self.get_input_value("window")
+            selector = self.get_input_value("selector") or self.config.get("selector")
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -430,7 +426,7 @@ class GetElementTextNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get('timeout', 5.0)
+            timeout = self.config.get("timeout", 5.0)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -446,23 +442,27 @@ class GetElementTextNode(Node):
             # Get text
             text = element.get_text()
 
-            logger.info(f"[{self.name}] Got text: '{text[:50]}...' ({len(text)} chars)" if len(text) > 50 else f"[{self.name}] Got text: '{text}'")
+            logger.info(
+                f"[{self.name}] Got text: '{text[:50]}...' ({len(text)} chars)"
+                if len(text) > 50
+                else f"[{self.name}] Got text: '{text}'"
+            )
 
             # Store in context variable if specified
-            variable_name = self.config.get('variable_name', '')
+            variable_name = self.config.get("variable_name", "")
             # Resolve {{variable}} patterns in variable_name
-            if hasattr(context, 'resolve_value') and variable_name:
+            if hasattr(context, "resolve_value") and variable_name:
                 variable_name = context.resolve_value(variable_name)
-            if variable_name and hasattr(context, 'set_variable'):
+            if variable_name and hasattr(context, "set_variable"):
                 context.set_variable(variable_name, text)
                 logger.debug(f"[{self.name}] Stored text in variable: {variable_name}")
 
             self.status = NodeStatus.SUCCESS
             return {
-                'success': True,
-                'text': text,
-                'element': element,
-                'next_nodes': ['exec_out']
+                "success": True,
+                "text": text,
+                "element": element,
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -480,10 +480,15 @@ class GetElementPropertyNode(Node):
     """
 
     # Node metadata
-    __identifier__ = 'casare_rpa.nodes.desktop'
-    NODE_NAME = 'Get Element Property'
+    __identifier__ = "casare_rpa.nodes.desktop"
+    NODE_NAME = "Get Element Property"
 
-    def __init__(self, node_id: str = None, config: Dict[str, Any] = None, name: str = "Get Element Property"):
+    def __init__(
+        self,
+        node_id: str = None,
+        config: Dict[str, Any] = None,
+        name: str = "Get Element Property",
+    ):
         """
         Initialize Get Element Property node.
 
@@ -493,10 +498,7 @@ class GetElementPropertyNode(Node):
             name: Display name for the node
         """
         if config is None:
-            config = {
-                "timeout": 5.0,
-                "property_name": "Name"
-            }
+            config = {"timeout": 5.0, "property_name": "Name"}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetElementPropertyNode"
@@ -528,14 +530,16 @@ class GetElementPropertyNode(Node):
             Dictionary with property value and element
         """
         # Get property name
-        property_name = self.get_input_value('property_name') or self.config.get('property_name', 'Name')
+        property_name = self.get_input_value("property_name") or self.config.get(
+            "property_name", "Name"
+        )
 
         # Get element - directly or via window+selector
-        element = self.get_input_value('element')
+        element = self.get_input_value("element")
 
         if not element:
-            window = self.get_input_value('window')
-            selector = self.get_input_value('selector') or self.config.get('selector')
+            window = self.get_input_value("window")
+            selector = self.get_input_value("selector") or self.config.get("selector")
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -543,7 +547,7 @@ class GetElementPropertyNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get('timeout', 5.0)
+            timeout = self.config.get("timeout", 5.0)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -553,7 +557,9 @@ class GetElementPropertyNode(Node):
                 self.status = NodeStatus.ERROR
                 raise RuntimeError(error_msg)
 
-        logger.info(f"[{self.name}] Getting property '{property_name}' from element: {element}")
+        logger.info(
+            f"[{self.name}] Getting property '{property_name}' from element: {element}"
+        )
 
         try:
             # Get property
@@ -563,10 +569,10 @@ class GetElementPropertyNode(Node):
 
             self.status = NodeStatus.SUCCESS
             return {
-                'success': True,
-                'value': value,
-                'element': element,
-                'next_nodes': ['exec_out']
+                "success": True,
+                "value": value,
+                "element": element,
+                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:

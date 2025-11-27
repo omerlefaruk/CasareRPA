@@ -10,7 +10,7 @@ but the .env file should NEVER be committed to version control.
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 from loguru import logger
 
 
@@ -125,7 +125,9 @@ class SecretsManager:
         # Environment variables have highest priority
         # They're accessed directly in get() method
 
-        logger.info(f"Secrets manager initialized with {len(self._secrets)} secrets from files")
+        logger.info(
+            f"Secrets manager initialized with {len(self._secrets)} secrets from files"
+        )
 
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         """

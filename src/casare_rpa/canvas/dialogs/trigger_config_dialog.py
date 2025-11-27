@@ -20,17 +20,14 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QCheckBox,
     QComboBox,
-    QGroupBox,
     QPushButton,
     QDialogButtonBox,
     QScrollArea,
     QWidget,
     QFrame,
     QListWidget,
-    QListWidgetItem,
     QTabWidget,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from ..theme import THEME
@@ -45,17 +42,14 @@ FIELD_HINTS = {
     "jwt_secret": {"widget": "password", "placeholder": "JWT signing secret"},
     "allowed_ips": {"widget": "list", "placeholder": "IP address"},
     "expected_headers": {"widget": "key_value", "placeholder": "Header name"},
-
     # Scheduled
     "cron_expression": {"placeholder": "e.g., 0 9 * * MON-FRI (9am weekdays)"},
     "interval_seconds": {"min": 1, "max": 86400 * 365},
     "timezone": {"placeholder": "e.g., America/New_York"},
-
     # File Watch
     "watch_paths": {"widget": "list", "placeholder": "Path to watch"},
     "patterns": {"widget": "list", "placeholder": "e.g., *.csv, *.xlsx"},
     "ignore_patterns": {"widget": "list", "placeholder": "e.g., *.tmp"},
-
     # Email
     "imap_server": {"placeholder": "e.g., imap.gmail.com"},
     "email_address": {"placeholder": "your@email.com"},
@@ -63,26 +57,21 @@ FIELD_HINTS = {
     "from_filter": {"widget": "list", "placeholder": "sender@domain.com"},
     "subject_pattern": {"placeholder": "Regex pattern for subject"},
     "body_pattern": {"placeholder": "Regex pattern for body"},
-
     # App Event
     "event_name": {"placeholder": "e.g., window_created, file_downloaded"},
     "process_filter": {"widget": "list", "placeholder": "e.g., chrome.exe"},
     "window_title_pattern": {"placeholder": "Regex for window title"},
-
     # Error
     "source_scenario_ids": {"widget": "list", "placeholder": "Scenario ID"},
     "error_types": {"widget": "list", "placeholder": "Error type"},
     "error_pattern": {"placeholder": "Regex pattern for error message"},
-
     # Workflow Call
     "call_alias": {"placeholder": "e.g., process_invoice"},
     "allowed_callers": {"widget": "list", "placeholder": "Scenario ID"},
-
     # Chat
     "message_pattern": {"placeholder": "Regex pattern for messages"},
     "channel_filter": {"widget": "list", "placeholder": "Channel name or ID"},
     "user_filter": {"widget": "list", "placeholder": "Username or ID"},
-
     # Form
     "form_id": {"placeholder": "Unique form identifier"},
     "required_fields": {"widget": "list", "placeholder": "Field name"},
@@ -94,11 +83,7 @@ FIELD_HINTS = {
 class ListEditorWidget(QWidget):
     """Widget for editing a list of strings."""
 
-    def __init__(
-        self,
-        placeholder: str = "",
-        parent: Optional[QWidget] = None
-    ) -> None:
+    def __init__(self, placeholder: str = "", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._placeholder = placeholder
         self._setup_ui()
@@ -165,14 +150,14 @@ class TriggerConfigDialog(QDialog):
         self,
         trigger_type: TriggerType,
         existing_config: Optional[Dict[str, Any]] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
 
         self._trigger_type = trigger_type
         self._existing_config = existing_config or {}
         self._field_widgets: Dict[str, QWidget] = {}
-        self._is_edit_mode = bool(existing_config and existing_config.get('id'))
+        self._is_edit_mode = bool(existing_config and existing_config.get("id"))
 
         self.setWindowTitle(
             f"{'Edit' if self._is_edit_mode else 'Configure'} "
@@ -190,14 +175,16 @@ class TriggerConfigDialog(QDialog):
         registry = get_trigger_registry()
         trigger_class = registry.get(self._trigger_type)
         if trigger_class:
-            return getattr(trigger_class, 'display_name', self._trigger_type.value.title())
+            return getattr(
+                trigger_class, "display_name", self._trigger_type.value.title()
+            )
         return self._trigger_type.value.title()
 
     def _get_schema(self) -> Dict[str, Any]:
         """Get the configuration schema for the trigger type."""
         registry = get_trigger_registry()
         trigger_class = registry.get(self._trigger_type)
-        if trigger_class and hasattr(trigger_class, 'get_config_schema'):
+        if trigger_class and hasattr(trigger_class, "get_config_schema"):
             return trigger_class.get_config_schema()
         return {"type": "object", "properties": {"name": {"type": "string"}}}
 
@@ -263,20 +250,20 @@ class TriggerConfigDialog(QDialog):
         # Name
         name_input = QLineEdit()
         name_input.setPlaceholderText("e.g., Daily Report Trigger")
-        self._field_widgets['name'] = name_input
+        self._field_widgets["name"] = name_input
         form.addRow("Name:", name_input)
 
         # Description (optional)
         desc_input = QTextEdit()
         desc_input.setPlaceholderText("Describe what this trigger does...")
         desc_input.setMaximumHeight(60)
-        self._field_widgets['description'] = desc_input
+        self._field_widgets["description"] = desc_input
         form.addRow("Description:", desc_input)
 
         # Enabled
         enabled_check = QCheckBox("Enabled")
         enabled_check.setChecked(True)
-        self._field_widgets['enabled'] = enabled_check
+        self._field_widgets["enabled"] = enabled_check
         form.addRow("", enabled_check)
 
         scroll.setWidget(content)
@@ -287,10 +274,16 @@ class TriggerConfigDialog(QDialog):
     def _create_specific_tab(self) -> Optional[QWidget]:
         """Create trigger-type-specific settings tab."""
         schema = self._get_schema()
-        properties = schema.get('properties', {})
+        properties = schema.get("properties", {})
 
         # Filter out general properties
-        general_props = {'name', 'description', 'enabled', 'priority', 'cooldown_seconds'}
+        general_props = {
+            "name",
+            "description",
+            "enabled",
+            "priority",
+            "cooldown_seconds",
+        }
         specific_props = {k: v for k, v in properties.items() if k not in general_props}
 
         if not specific_props:
@@ -312,8 +305,12 @@ class TriggerConfigDialog(QDialog):
             field_widget = self._create_field_widget(prop_name, prop_schema)
             if field_widget:
                 label = self._format_label(prop_name)
-                if prop_schema.get('description'):
-                    label += f"\n({prop_schema['description'][:50]}...)" if len(prop_schema.get('description', '')) > 50 else f"\n({prop_schema.get('description', '')})"
+                if prop_schema.get("description"):
+                    label += (
+                        f"\n({prop_schema['description'][:50]}...)"
+                        if len(prop_schema.get("description", "")) > 50
+                        else f"\n({prop_schema.get('description', '')})"
+                    )
                 form.addRow(self._format_label(prop_name) + ":", field_widget)
                 self._field_widgets[prop_name] = field_widget
 
@@ -341,7 +338,7 @@ class TriggerConfigDialog(QDialog):
         priority_spin.setRange(0, 3)
         priority_spin.setValue(1)
         priority_spin.setToolTip("0=Low, 1=Normal, 2=High, 3=Critical")
-        self._field_widgets['priority'] = priority_spin
+        self._field_widgets["priority"] = priority_spin
         form.addRow("Priority:", priority_spin)
 
         # Cooldown
@@ -350,7 +347,7 @@ class TriggerConfigDialog(QDialog):
         cooldown_spin.setValue(0)
         cooldown_spin.setSuffix(" seconds")
         cooldown_spin.setToolTip("Minimum time between triggers")
-        self._field_widgets['cooldown_seconds'] = cooldown_spin
+        self._field_widgets["cooldown_seconds"] = cooldown_spin
         form.addRow("Cooldown:", cooldown_spin)
 
         # Max runs
@@ -359,7 +356,7 @@ class TriggerConfigDialog(QDialog):
         max_runs_spin.setValue(0)
         max_runs_spin.setSpecialValueText("Unlimited")
         max_runs_spin.setToolTip("Maximum number of times to trigger (0 = unlimited)")
-        self._field_widgets['max_runs'] = max_runs_spin
+        self._field_widgets["max_runs"] = max_runs_spin
         form.addRow("Max Runs:", max_runs_spin)
 
         scroll.setWidget(content)
@@ -369,58 +366,58 @@ class TriggerConfigDialog(QDialog):
         return widget
 
     def _create_field_widget(
-        self,
-        prop_name: str,
-        prop_schema: Dict[str, Any]
+        self, prop_name: str, prop_schema: Dict[str, Any]
     ) -> Optional[QWidget]:
         """Create appropriate widget for a schema property."""
-        prop_type = prop_schema.get('type', 'string')
+        prop_type = prop_schema.get("type", "string")
         hint = FIELD_HINTS.get(prop_name, {})
-        widget_type = hint.get('widget', prop_type)
+        widget_type = hint.get("widget", prop_type)
 
-        if widget_type == 'password':
+        if widget_type == "password":
             widget = QLineEdit()
             widget.setEchoMode(QLineEdit.EchoMode.Password)
-            widget.setPlaceholderText(hint.get('placeholder', ''))
+            widget.setPlaceholderText(hint.get("placeholder", ""))
             return widget
 
-        elif widget_type == 'list' or prop_type == 'array':
-            return ListEditorWidget(hint.get('placeholder', 'Item'))
+        elif widget_type == "list" or prop_type == "array":
+            return ListEditorWidget(hint.get("placeholder", "Item"))
 
-        elif prop_type == 'string':
-            if 'enum' in prop_schema:
+        elif prop_type == "string":
+            if "enum" in prop_schema:
                 widget = QComboBox()
-                widget.addItems(prop_schema['enum'])
+                widget.addItems(prop_schema["enum"])
                 return widget
             else:
                 widget = QLineEdit()
-                widget.setPlaceholderText(hint.get('placeholder', prop_schema.get('description', '')))
+                widget.setPlaceholderText(
+                    hint.get("placeholder", prop_schema.get("description", ""))
+                )
                 return widget
 
-        elif prop_type == 'integer':
+        elif prop_type == "integer":
             widget = QSpinBox()
             widget.setRange(
-                prop_schema.get('minimum', hint.get('min', 0)),
-                prop_schema.get('maximum', hint.get('max', 999999))
+                prop_schema.get("minimum", hint.get("min", 0)),
+                prop_schema.get("maximum", hint.get("max", 999999)),
             )
-            widget.setValue(prop_schema.get('default', 0))
+            widget.setValue(prop_schema.get("default", 0))
             return widget
 
-        elif prop_type == 'number':
+        elif prop_type == "number":
             widget = QDoubleSpinBox()
             widget.setRange(
-                prop_schema.get('minimum', hint.get('min', 0)),
-                prop_schema.get('maximum', hint.get('max', 999999))
+                prop_schema.get("minimum", hint.get("min", 0)),
+                prop_schema.get("maximum", hint.get("max", 999999)),
             )
-            widget.setValue(prop_schema.get('default', 0))
+            widget.setValue(prop_schema.get("default", 0))
             return widget
 
-        elif prop_type == 'boolean':
+        elif prop_type == "boolean":
             widget = QCheckBox()
-            widget.setChecked(prop_schema.get('default', False))
+            widget.setChecked(prop_schema.get("default", False))
             return widget
 
-        elif prop_type == 'object':
+        elif prop_type == "object":
             # For complex objects, use a text area with JSON
             widget = QTextEdit()
             widget.setMaximumHeight(100)
@@ -431,7 +428,7 @@ class TriggerConfigDialog(QDialog):
 
     def _format_label(self, prop_name: str) -> str:
         """Format property name as label."""
-        return prop_name.replace('_', ' ').title()
+        return prop_name.replace("_", " ").title()
 
     def _load_existing_values(self) -> None:
         """Load existing configuration values into widgets."""
@@ -442,7 +439,7 @@ class TriggerConfigDialog(QDialog):
             value = self._existing_config.get(prop_name)
             if value is None:
                 # Check nested config dict
-                value = self._existing_config.get('config', {}).get(prop_name)
+                value = self._existing_config.get("config", {}).get(prop_name)
 
             if value is None:
                 continue
@@ -452,6 +449,7 @@ class TriggerConfigDialog(QDialog):
             elif isinstance(widget, QTextEdit):
                 if isinstance(value, dict):
                     import json
+
                     widget.setText(json.dumps(value, indent=2))
                 else:
                     widget.setText(str(value))
@@ -553,7 +551,7 @@ class TriggerConfigDialog(QDialog):
     def _on_accept(self) -> None:
         """Handle accept - validate and close."""
         # Validate required fields
-        name_widget = self._field_widgets.get('name')
+        name_widget = self._field_widgets.get("name")
         if isinstance(name_widget, QLineEdit):
             if not name_widget.text().strip():
                 name_widget.setFocus()
@@ -568,9 +566,9 @@ class TriggerConfigDialog(QDialog):
     def get_config(self) -> Dict[str, Any]:
         """Get the complete trigger configuration."""
         config = {
-            'id': self._existing_config.get('id', str(uuid.uuid4())),
-            'type': self._trigger_type.value,
-            'config': {},
+            "id": self._existing_config.get("id", str(uuid.uuid4())),
+            "type": self._trigger_type.value,
+            "config": {},
         }
 
         # Extract values from widgets
@@ -582,9 +580,10 @@ class TriggerConfigDialog(QDialog):
             elif isinstance(widget, QTextEdit):
                 text = widget.toPlainText().strip()
                 # Try to parse as JSON for object fields
-                if text.startswith('{'):
+                if text.startswith("{"):
                     try:
                         import json
+
                         value = json.loads(text)
                     except json.JSONDecodeError:
                         value = text
@@ -600,9 +599,16 @@ class TriggerConfigDialog(QDialog):
                 value = widget.get_value()
 
             # Top-level vs nested config
-            if prop_name in ('name', 'enabled', 'priority', 'cooldown_seconds', 'description', 'max_runs'):
+            if prop_name in (
+                "name",
+                "enabled",
+                "priority",
+                "cooldown_seconds",
+                "description",
+                "max_runs",
+            ):
                 config[prop_name] = value
             else:
-                config['config'][prop_name] = value
+                config["config"][prop_name] = value
 
         return config

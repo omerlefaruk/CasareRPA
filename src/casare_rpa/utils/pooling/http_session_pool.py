@@ -16,6 +16,7 @@ from loguru import logger
 
 try:
     import aiohttp
+
     AIOHTTP_AVAILABLE = True
 except ImportError:
     AIOHTTP_AVAILABLE = False
@@ -24,6 +25,7 @@ except ImportError:
 @dataclass
 class SessionStatistics:
     """Statistics for HTTP session pool monitoring."""
+
     sessions_created: int = 0
     sessions_closed: int = 0
     requests_made: int = 0
@@ -51,6 +53,7 @@ class SessionStatistics:
 @dataclass
 class PooledSession:
     """An HTTP session managed by the pool."""
+
     session: Any  # aiohttp.ClientSession
     base_url: Optional[str]
     created_at: float = field(default_factory=time.time)
@@ -359,7 +362,7 @@ class HttpSessionPool:
 
             return response
 
-        except Exception as e:
+        except Exception:
             self._stats.requests_failed += 1
             raise
 

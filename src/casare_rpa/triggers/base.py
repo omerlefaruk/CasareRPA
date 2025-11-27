@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, Optional
 import asyncio
 import uuid
 
@@ -18,6 +18,7 @@ from loguru import logger
 
 class TriggerType(Enum):
     """Types of workflow triggers."""
+
     MANUAL = "manual"
     SCHEDULED = "scheduled"
     WEBHOOK = "webhook"
@@ -32,6 +33,7 @@ class TriggerType(Enum):
 
 class TriggerStatus(Enum):
     """Trigger lifecycle states."""
+
     INACTIVE = "inactive"
     STARTING = "starting"
     ACTIVE = "active"
@@ -42,6 +44,7 @@ class TriggerStatus(Enum):
 
 class TriggerPriority(Enum):
     """Trigger priority levels (maps to JobPriority)."""
+
     LOW = 0
     NORMAL = 1
     HIGH = 2
@@ -66,6 +69,7 @@ class TriggerEvent:
         metadata: Additional metadata about the trigger event
         priority: Execution priority for the resulting job
     """
+
     trigger_id: str
     trigger_type: TriggerType
     workflow_id: str
@@ -129,6 +133,7 @@ class BaseTriggerConfig:
         description: Optional description
         config: Type-specific configuration dictionary
     """
+
     id: str
     name: str
     trigger_type: TriggerType
@@ -167,7 +172,9 @@ class BaseTriggerConfig:
             "description": self.description,
             "config": self.config,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "last_triggered": self.last_triggered.isoformat() if self.last_triggered else None,
+            "last_triggered": self.last_triggered.isoformat()
+            if self.last_triggered
+            else None,
             "trigger_count": self.trigger_count,
             "success_count": self.success_count,
             "error_count": self.error_count,
@@ -240,7 +247,7 @@ class BaseTrigger(ABC):
     def __init__(
         self,
         config: BaseTriggerConfig,
-        event_callback: Optional[TriggerEventCallback] = None
+        event_callback: Optional[TriggerEventCallback] = None,
     ) -> None:
         """
         Initialize the trigger.
@@ -255,7 +262,9 @@ class BaseTrigger(ABC):
         self._error_message: Optional[str] = None
         self._task: Optional[asyncio.Task] = None
 
-        logger.debug(f"Trigger initialized: {self.config.name} ({self.trigger_type.value})")
+        logger.debug(
+            f"Trigger initialized: {self.config.name} ({self.trigger_type.value})"
+        )
 
     @abstractmethod
     async def start(self) -> bool:
@@ -310,9 +319,7 @@ class BaseTrigger(ABC):
         pass
 
     async def emit(
-        self,
-        payload: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None
+        self, payload: Dict[str, Any], metadata: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
         Emit a trigger event.
@@ -407,7 +414,8 @@ class BaseTrigger(ABC):
             "cooldown_seconds": self.config.cooldown_seconds,
             "last_triggered": (
                 self.config.last_triggered.isoformat()
-                if self.config.last_triggered else None
+                if self.config.last_triggered
+                else None
             ),
             "trigger_count": self.config.trigger_count,
             "success_count": self.config.success_count,
@@ -431,7 +439,12 @@ class BaseTrigger(ABC):
             "properties": {
                 "name": {"type": "string", "description": "Trigger name"},
                 "enabled": {"type": "boolean", "default": True},
-                "priority": {"type": "integer", "minimum": 0, "maximum": 3, "default": 1},
+                "priority": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 1,
+                },
                 "cooldown_seconds": {"type": "integer", "minimum": 0, "default": 0},
                 "description": {"type": "string", "default": ""},
             },

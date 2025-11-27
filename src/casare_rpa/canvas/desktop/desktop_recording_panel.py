@@ -5,17 +5,25 @@ Provides UI for recording desktop actions and generating workflows.
 """
 
 from PySide6.QtWidgets import (
-    QDockWidget, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QListWidget, QListWidgetItem,
-    QMessageBox, QProgressBar, QFrame, QToolBar,
-    QSizePolicy
+    QDockWidget,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QFrame,
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QIcon, QColor, QFont
 from loguru import logger
 
 from ...desktop.desktop_recorder import (
-    DesktopRecorder, DesktopRecordedAction, DesktopActionType, WorkflowGenerator
+    DesktopRecorder,
+    DesktopRecordedAction,
+    DesktopActionType,
+    WorkflowGenerator,
 )
 
 
@@ -80,7 +88,7 @@ class DesktopRecordingPanel(QDockWidget):
             on_action_recorded=self._on_action_recorded,
             on_recording_started=self._on_recording_started,
             on_recording_stopped=self._on_recording_stopped,
-            on_recording_paused=self._on_recording_paused
+            on_recording_paused=self._on_recording_paused,
         )
 
         self._setup_ui()
@@ -94,9 +102,11 @@ class DesktopRecordingPanel(QDockWidget):
 
     def _setup_ui(self):
         """Setup the user interface."""
-        self.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea |
-                           Qt.DockWidgetArea.RightDockWidgetArea |
-                           Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.setAllowedAreas(
+            Qt.DockWidgetArea.LeftDockWidgetArea
+            | Qt.DockWidgetArea.RightDockWidgetArea
+            | Qt.DockWidgetArea.BottomDockWidgetArea
+        )
 
         # Main widget
         main_widget = QWidget()
@@ -320,6 +330,7 @@ class DesktopRecordingPanel(QDockWidget):
         """Update the timer display."""
         if self.recorder.start_time:
             from datetime import datetime
+
             elapsed = (datetime.now() - self.recorder.start_time).total_seconds()
             mins = int(elapsed // 60)
             secs = int(elapsed % 60)
@@ -347,7 +358,7 @@ class DesktopRecordingPanel(QDockWidget):
             self,
             "Clear All",
             "Are you sure you want to clear all recorded actions?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -379,7 +390,9 @@ class DesktopRecordingPanel(QDockWidget):
     def _generate_workflow(self):
         """Generate workflow from recorded actions."""
         if self.action_list.count() == 0:
-            QMessageBox.warning(self, "No Actions", "No actions recorded to generate workflow.")
+            QMessageBox.warning(
+                self, "No Actions", "No actions recorded to generate workflow."
+            )
             return
 
         actions = self.recorder.get_actions()
@@ -394,7 +407,7 @@ class DesktopRecordingPanel(QDockWidget):
             self,
             "Workflow Generated",
             f"Generated workflow with {len(actions)} nodes.\n"
-            "The workflow has been added to the canvas."
+            "The workflow has been added to the canvas.",
         )
 
     def keyPressEvent(self, event):

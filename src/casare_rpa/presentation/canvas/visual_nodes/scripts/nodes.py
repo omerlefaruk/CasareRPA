@@ -1,6 +1,7 @@
 """Visual nodes for scripts category."""
+
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
-from casare_rpa.core.types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import logic layer nodes
 from casare_rpa.nodes.script_nodes import (
@@ -15,6 +16,7 @@ from casare_rpa.nodes.script_nodes import (
 # =============================================================================
 # Script Nodes
 # =============================================================================
+
 
 class VisualRunPythonScriptNode(VisualNode):
     """Visual representation of RunPythonScriptNode."""
