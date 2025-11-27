@@ -11,7 +11,7 @@ from ..core.execution_context import ExecutionContext
 
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
-    
+
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
         super().__init__(node_id, config)
         # Configurable separator
@@ -22,46 +22,46 @@ class ConcatenateNode(BaseNode):
         self.add_input_port("string_2", DataType.STRING)
         self.add_output_port("result", DataType.STRING)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             # Get inputs (support dynamic number of inputs in future, for now just 2 fixed + optional extras from config if we were to expand)
             # Actually, let's stick to the ports defined.
             s1 = str(self.get_input_value("string_1", ""))
             s2 = str(self.get_input_value("string_2", ""))
-            
+
             result = f"{s1}{self.separator}{s2}"
-            
+
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Concatenate failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
-    
+
     def _define_ports(self) -> None:
         self.add_input_port("template", DataType.STRING)
         self.add_input_port("variables", DataType.DICT) # Dict of variables to format with
         self.add_output_port("result", DataType.STRING)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             template = self.get_input_value("template", "")
             variables = self.get_input_value("variables", {})
-            
+
             if not isinstance(variables, dict):
                 raise ValueError("Variables input must be a dictionary")
-                
+
             result = template.format(**variables)
-            
+
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Format string failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
@@ -88,7 +88,7 @@ class RegexMatchNode(BaseNode):
         self.add_output_port("groups", DataType.LIST)
         self.add_output_port("match_count", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             text = self.get_input_value("text", "")
             pattern = self.get_input_value("pattern", "")
@@ -117,11 +117,11 @@ class RegexMatchNode(BaseNode):
             self.set_output_value("groups", groups)
             self.set_output_value("match_count", len(matches))
 
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"match_found": match_found, "first_match": first_match, "all_matches": all_matches, "groups": groups, "match_count": len(matches)}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Regex match failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
@@ -147,7 +147,7 @@ class RegexReplaceNode(BaseNode):
         self.add_output_port("result", DataType.STRING)
         self.add_output_port("count", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             text = self.get_input_value("text", "")
             pattern = self.get_input_value("pattern", "")
@@ -170,11 +170,11 @@ class RegexReplaceNode(BaseNode):
 
             self.set_output_value("result", result)
             self.set_output_value("count", count)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result, "count": count}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Regex replace failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
@@ -197,7 +197,7 @@ class MathOperationNode(BaseNode):
         self.add_input_port("b", DataType.FLOAT)
         self.add_output_port("result", DataType.FLOAT)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             a = float(self.get_input_value("a", 0))
             b = float(self.get_input_value("b", 0))
@@ -262,15 +262,15 @@ class MathOperationNode(BaseNode):
                 result = round(result, int(round_digits))
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Math operation failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
-    
+
     def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
         super().__init__(node_id, config)
         # Operator: ==, !=, >, <, >=, <=
@@ -281,7 +281,7 @@ class ComparisonNode(BaseNode):
         self.add_input_port("b", DataType.ANY)
         self.add_output_port("result", DataType.BOOLEAN)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             a = self.get_input_value("a")
             b = self.get_input_value("b")
@@ -317,15 +317,15 @@ class ComparisonNode(BaseNode):
                 raise ValueError(f"Unknown operator: {op}")
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Comparison failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
-    
+
     def _define_ports(self) -> None:
         # Dynamic inputs would be better, but for now let's support up to 5 items
         # or take a single input that is already a list/tuple to convert
@@ -334,82 +334,82 @@ class CreateListNode(BaseNode):
         self.add_input_port("item_3", DataType.ANY)
         self.add_output_port("list", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             result = []
             # Check for connected inputs
             # In a real implementation, we might check which ports are actually connected
             # For now, we'll just take non-None values or values that were explicitly set
-            
+
             # Note: get_input_value returns None if not set and no default provided.
             # But we might want to allow None in the list.
             # A better way is to check if the port has a connection or value.
-            # BaseNode doesn't expose 'is_connected' easily without checking the graph, 
+            # BaseNode doesn't expose 'is_connected' easily without checking the graph,
             # but we can check if the value is in self.inputs
-            
+
             for i in range(1, 4):
                 key = f"item_{i}"
                 val = self.get_input_value(key)
                 if val is not None:
                     result.append(val)
-            
+
             self.set_output_value("list", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"list": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Create list failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
-    
+
     def _define_ports(self) -> None:
         self.add_input_port("list", DataType.LIST)
         self.add_input_port("index", DataType.INTEGER)
         self.add_output_port("item", DataType.ANY)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             idx = int(self.get_input_value("index", 0))
-            
+
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
-            
+
             if idx < 0:
                 idx += len(lst)
-                
+
             if idx < 0 or idx >= len(lst):
                 raise IndexError(f"List index out of range: {idx}")
-                
+
             item = lst[idx]
             self.set_output_value("item", item)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"item": item}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List get item failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
-    
+
     def _define_ports(self) -> None:
         self.add_input_port("json_string", DataType.STRING)
         self.add_output_port("data", DataType.ANY)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             json_str = self.get_input_value("json_string", "")
             if not json_str:
                 raise ValueError("Empty JSON string")
-                
+
             data = json.loads(json_str)
             self.set_output_value("data", data)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"data": data}, "next_nodes": []}
         except Exception as e:
             logger.error(f"JSON parse failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
@@ -419,7 +419,7 @@ class GetPropertyNode(BaseNode):
         self.add_input_port("property_path", DataType.STRING) # dot notation supported e.g. "user.address.city"
         self.add_output_port("value", DataType.ANY)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             obj = self.get_input_value("object", {})
             path = self.get_input_value("property_path", "")
@@ -440,11 +440,11 @@ class GetPropertyNode(BaseNode):
                     break
 
             self.set_output_value("value", current)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"value": current}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Get property failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 # ==================== LIST OPERATIONS ====================
@@ -456,18 +456,19 @@ class ListLengthNode(BaseNode):
         self.add_input_port("list", DataType.LIST)
         self.add_output_port("length", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
 
-            self.set_output_value("length", len(lst))
-            return NodeStatus.SUCCESS
+            length = len(lst)
+            self.set_output_value("length", length)
+            return {"success": True, "data": {"length": length}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List length failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListAppendNode(BaseNode):
@@ -478,7 +479,7 @@ class ListAppendNode(BaseNode):
         self.add_input_port("item", DataType.ANY)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             item = self.get_input_value("item")
@@ -490,11 +491,11 @@ class ListAppendNode(BaseNode):
             result.append(item)
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List append failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListContainsNode(BaseNode):
@@ -506,7 +507,7 @@ class ListContainsNode(BaseNode):
         self.add_output_port("contains", DataType.BOOLEAN)
         self.add_output_port("index", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             item = self.get_input_value("item")
@@ -519,11 +520,11 @@ class ListContainsNode(BaseNode):
 
             self.set_output_value("contains", contains)
             self.set_output_value("index", index)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"contains": contains, "index": index}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List contains failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListSliceNode(BaseNode):
@@ -535,7 +536,7 @@ class ListSliceNode(BaseNode):
         self.add_input_port("end", DataType.INTEGER)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             start = self.get_input_value("start", 0)
@@ -550,11 +551,11 @@ class ListSliceNode(BaseNode):
             result = list(lst[start:end])
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List slice failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListJoinNode(BaseNode):
@@ -569,7 +570,7 @@ class ListJoinNode(BaseNode):
         self.add_input_port("separator", DataType.STRING)
         self.add_output_port("result", DataType.STRING)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             separator = self.get_input_value("separator", self.separator)
@@ -580,11 +581,11 @@ class ListJoinNode(BaseNode):
             result = separator.join(str(item) for item in lst)
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List join failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListSortNode(BaseNode):
@@ -601,7 +602,7 @@ class ListSortNode(BaseNode):
         self.add_input_port("key_path", DataType.STRING)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             reverse = self.get_input_value("reverse", self.reverse)
@@ -627,11 +628,11 @@ class ListSortNode(BaseNode):
                 result.sort(reverse=bool(reverse))
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List sort failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListReverseNode(BaseNode):
@@ -641,7 +642,7 @@ class ListReverseNode(BaseNode):
         self.add_input_port("list", DataType.LIST)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
 
@@ -651,11 +652,11 @@ class ListReverseNode(BaseNode):
             result = list(reversed(lst))
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List reverse failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListUniqueNode(BaseNode):
@@ -665,7 +666,7 @@ class ListUniqueNode(BaseNode):
         self.add_input_port("list", DataType.LIST)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
 
@@ -689,11 +690,11 @@ class ListUniqueNode(BaseNode):
                         result.append(item)
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List unique failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListFilterNode(BaseNode):
@@ -714,7 +715,7 @@ class ListFilterNode(BaseNode):
         self.add_output_port("result", DataType.LIST)
         self.add_output_port("removed", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             condition = self.get_input_value("condition", self.condition)
@@ -767,11 +768,11 @@ class ListFilterNode(BaseNode):
 
             self.set_output_value("result", result)
             self.set_output_value("removed", removed)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result, "removed": removed}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List filter failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListMapNode(BaseNode):
@@ -789,7 +790,7 @@ class ListMapNode(BaseNode):
         self.add_input_port("key_path", DataType.STRING)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             transform = self.get_input_value("transform", self.transform)
@@ -832,11 +833,11 @@ class ListMapNode(BaseNode):
             result = [apply_transform(item) for item in lst]
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List map failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListReduceNode(BaseNode):
@@ -855,7 +856,7 @@ class ListReduceNode(BaseNode):
         self.add_input_port("initial", DataType.ANY)
         self.add_output_port("result", DataType.ANY)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             operation = self.get_input_value("operation", self.operation)
@@ -908,11 +909,11 @@ class ListReduceNode(BaseNode):
                 raise ValueError(f"Unknown operation: {operation}")
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List reduce failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class ListFlattenNode(BaseNode):
@@ -927,7 +928,7 @@ class ListFlattenNode(BaseNode):
         self.add_input_port("depth", DataType.INTEGER)
         self.add_output_port("result", DataType.LIST)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             lst = self.get_input_value("list", [])
             depth = int(self.get_input_value("depth", self.depth))
@@ -947,11 +948,11 @@ class ListFlattenNode(BaseNode):
             result = flatten(lst, depth)
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"List flatten failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 # ==================== DICTIONARY OPERATIONS ====================
@@ -966,7 +967,7 @@ class DictGetNode(BaseNode):
         self.add_output_port("value", DataType.ANY)
         self.add_output_port("found", DataType.BOOLEAN)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
             key = self.get_input_value("key", "")
@@ -980,11 +981,11 @@ class DictGetNode(BaseNode):
 
             self.set_output_value("value", value)
             self.set_output_value("found", found)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"value": value, "found": found}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict get failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictSetNode(BaseNode):
@@ -996,7 +997,7 @@ class DictSetNode(BaseNode):
         self.add_input_port("value", DataType.ANY)
         self.add_output_port("result", DataType.DICT)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
             key = self.get_input_value("key", "")
@@ -1012,11 +1013,11 @@ class DictSetNode(BaseNode):
             result[key] = value
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict set failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictRemoveNode(BaseNode):
@@ -1028,7 +1029,7 @@ class DictRemoveNode(BaseNode):
         self.add_output_port("result", DataType.DICT)
         self.add_output_port("removed_value", DataType.ANY)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
             key = self.get_input_value("key", "")
@@ -1041,11 +1042,11 @@ class DictRemoveNode(BaseNode):
 
             self.set_output_value("result", result)
             self.set_output_value("removed_value", removed_value)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result, "removed_value": removed_value}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict remove failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictMergeNode(BaseNode):
@@ -1056,7 +1057,7 @@ class DictMergeNode(BaseNode):
         self.add_input_port("dict_2", DataType.DICT)
         self.add_output_port("result", DataType.DICT)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d1 = self.get_input_value("dict_1", {})
             d2 = self.get_input_value("dict_2", {})
@@ -1069,11 +1070,11 @@ class DictMergeNode(BaseNode):
             result = {**d1, **d2}
 
             self.set_output_value("result", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"result": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict merge failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictKeysNode(BaseNode):
@@ -1084,7 +1085,7 @@ class DictKeysNode(BaseNode):
         self.add_output_port("keys", DataType.LIST)
         self.add_output_port("count", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
 
@@ -1092,14 +1093,15 @@ class DictKeysNode(BaseNode):
                 raise ValueError("Input is not a dictionary")
 
             keys = list(d.keys())
+            count = len(keys)
 
             self.set_output_value("keys", keys)
-            self.set_output_value("count", len(keys))
-            return NodeStatus.SUCCESS
+            self.set_output_value("count", count)
+            return {"success": True, "data": {"keys": keys, "count": count}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict keys failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictValuesNode(BaseNode):
@@ -1110,7 +1112,7 @@ class DictValuesNode(BaseNode):
         self.add_output_port("values", DataType.LIST)
         self.add_output_port("count", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
 
@@ -1118,14 +1120,15 @@ class DictValuesNode(BaseNode):
                 raise ValueError("Input is not a dictionary")
 
             values = list(d.values())
+            count = len(values)
 
             self.set_output_value("values", values)
-            self.set_output_value("count", len(values))
-            return NodeStatus.SUCCESS
+            self.set_output_value("count", count)
+            return {"success": True, "data": {"values": values, "count": count}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict values failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictHasKeyNode(BaseNode):
@@ -1136,7 +1139,7 @@ class DictHasKeyNode(BaseNode):
         self.add_input_port("key", DataType.STRING)
         self.add_output_port("has_key", DataType.BOOLEAN)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
             key = self.get_input_value("key", "")
@@ -1147,11 +1150,11 @@ class DictHasKeyNode(BaseNode):
             has_key = key in d
 
             self.set_output_value("has_key", has_key)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"has_key": has_key}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict has key failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class CreateDictNode(BaseNode):
@@ -1166,7 +1169,7 @@ class CreateDictNode(BaseNode):
         self.add_input_port("value_3", DataType.ANY)
         self.add_output_port("dict", DataType.DICT)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             result = {}
 
@@ -1177,11 +1180,11 @@ class CreateDictNode(BaseNode):
                     result[key] = value
 
             self.set_output_value("dict", result)
-            return NodeStatus.SUCCESS
+            return {"success": True, "data": {"dict": result}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Create dict failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictToJsonNode(BaseNode):
@@ -1207,7 +1210,7 @@ class DictToJsonNode(BaseNode):
         self.add_input_port("indent", DataType.INTEGER)
         self.add_output_port("json_string", DataType.STRING)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
             indent = self.get_input_value("indent", self.indent)
@@ -1218,7 +1221,7 @@ class DictToJsonNode(BaseNode):
             sort_keys = self.config.get("sort_keys", False)
             ensure_ascii = self.config.get("ensure_ascii", True)
 
-            result = json.dumps(
+            json_string = json.dumps(
                 d,
                 indent=indent,
                 sort_keys=sort_keys,
@@ -1226,12 +1229,12 @@ class DictToJsonNode(BaseNode):
                 default=str
             )
 
-            self.set_output_value("json_string", result)
-            return NodeStatus.SUCCESS
+            self.set_output_value("json_string", json_string)
+            return {"success": True, "data": {"json_string": json_string}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict to JSON failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
 
 
 class DictItemsNode(BaseNode):
@@ -1242,7 +1245,7 @@ class DictItemsNode(BaseNode):
         self.add_output_port("items", DataType.LIST)
         self.add_output_port("count", DataType.INTEGER)
 
-    async def execute(self, context) -> NodeStatus:
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_input_value("dict", {})
 
@@ -1251,11 +1254,12 @@ class DictItemsNode(BaseNode):
 
             # Return as list of dicts for easier use in workflows
             items = [{"key": k, "value": v} for k, v in d.items()]
+            count = len(items)
 
             self.set_output_value("items", items)
-            self.set_output_value("count", len(items))
-            return NodeStatus.SUCCESS
+            self.set_output_value("count", count)
+            return {"success": True, "data": {"items": items, "count": count}, "next_nodes": []}
         except Exception as e:
             logger.error(f"Dict items failed: {e}")
             self.error_message = str(e)
-            return NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
