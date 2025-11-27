@@ -43,6 +43,7 @@ class WorkflowController(BaseController):
     workflow_loaded = Signal(str)  # file_path
     workflow_saved = Signal(str)  # file_path
     workflow_imported = Signal(str)  # file_path
+    workflow_imported_json = Signal(str)  # json_string for paste workflow
     workflow_exported = Signal(str)  # file_path
     workflow_closed = Signal()
     current_file_changed = Signal(object)  # Optional[Path]
@@ -68,7 +69,7 @@ class WorkflowController(BaseController):
         """Create a new empty workflow."""
         logger.info("Creating new workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         self.workflow_created.emit()
@@ -81,7 +82,7 @@ class WorkflowController(BaseController):
         """Create a new workflow from a template."""
         logger.info("Creating workflow from template")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         from ....canvas.dialogs.template_browser import show_template_browser
@@ -97,7 +98,7 @@ class WorkflowController(BaseController):
         """Open an existing workflow file."""
         logger.info("Opening workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -213,7 +214,7 @@ class WorkflowController(BaseController):
         """
         logger.info("Closing workflow")
 
-        if not self._check_unsaved_changes():
+        if not self.check_unsaved_changes():
             return False
 
         self.workflow_closed.emit()
@@ -256,7 +257,7 @@ class WorkflowController(BaseController):
         """Check if workflow has unsaved changes."""
         return self._is_modified
 
-    def _check_unsaved_changes(self) -> bool:
+    def check_unsaved_changes(self) -> bool:
         """
         Check for unsaved changes and prompt user.
 
@@ -339,3 +340,87 @@ class WorkflowController(BaseController):
         """Update save action enabled state."""
         if hasattr(self.main_window, "action_save"):
             self.main_window.action_save.setEnabled(self._is_modified)
+
+    def paste_workflow(self) -> None:
+        """
+        Paste workflow JSON from clipboard and import nodes.
+
+        Validates the clipboard content as valid workflow JSON and
+        emits workflow_imported_json signal for the app to handle.
+        """
+        logger.info("Pasting workflow from clipboard")
+
+        from PySide6.QtWidgets import QApplication
+        import orjson
+
+        clipboard = QApplication.clipboard()
+        text = clipboard.text()
+
+        if not text:
+            self.main_window.show_status("Clipboard is empty", 3000)
+            return
+
+        # Try to parse as JSON
+        try:
+            data = orjson.loads(text)
+
+            # Basic validation - should have nodes key
+            if "nodes" not in data:
+                QMessageBox.warning(
+                    self.main_window,
+                    "Invalid Workflow JSON",
+                    "The clipboard content does not appear to be a valid workflow.\n"
+                    "Expected a JSON object with a 'nodes' key.",
+                )
+                return
+
+            # Emit signal with the JSON string for app to handle
+            self.workflow_imported_json.emit(text)
+            self.main_window.show_status(
+                f"Importing {len(data.get('nodes', []))} nodes from clipboard...", 3000
+            )
+
+        except Exception as e:
+            logger.warning(f"Failed to parse clipboard as workflow JSON: {e}")
+            QMessageBox.warning(
+                self.main_window,
+                "Invalid JSON",
+                f"The clipboard content is not valid JSON.\n\nError: {str(e)}",
+            )
+
+    def check_validation_before_run(self) -> bool:
+        """
+        Check validation before running workflow.
+
+        Returns:
+            True if workflow is valid or user wants to run anyway,
+            False if validation errors exist and user cancels
+        """
+        logger.debug("Checking validation before run")
+
+        # Get validation errors from bottom panel if available
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            validation_errors = bottom_panel.get_validation_errors_blocking()
+            if validation_errors:
+                # Count errors vs warnings
+                error_count = sum(
+                    1
+                    for e in validation_errors
+                    if getattr(e, "severity", "error") == "error"
+                )
+                warning_count = len(validation_errors) - error_count
+
+                if error_count > 0:
+                    reply = QMessageBox.warning(
+                        self.main_window,
+                        "Validation Errors",
+                        f"The workflow has {error_count} error(s) and {warning_count} warning(s).\n\n"
+                        "Running a workflow with errors may cause unexpected behavior.\n\n"
+                        "Do you want to run anyway?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    return reply == QMessageBox.StandardButton.Yes
+
+        return True
