@@ -23,29 +23,45 @@ repos:
       - id: debug-statements
         name: Check for debug statements
 
-  # Ruff - Fast Python linter and formatter (optional for now)
-  # Note: 108 linting errors to fix during Week 2 refactoring
-  # - repo: https://github.com/astral-sh/ruff-pre-commit
-  #   rev: v0.8.4
-  #   hooks:
-  #     - id: ruff
-  #       name: Ruff linter
-  #       args: [--fix]
-  #     - id: ruff-format
-  #       name: Ruff formatter
+  # Ruff - Fast Python linter and formatter
+  # Enabled with selective ignores for legacy code (Week 2 improvement)
+  # GitHub issue created for incremental fixes of ignored rules
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        name: Ruff linter (with selective ignores)
+        args:
+          - --fix
+          - --exit-non-zero-on-fix
+          - --ignore=E402,F401,F821,F841
+        # E402: module import not at top of file (~90 errors)
+        # F401: unused imports (~10 errors)
+        # F821: undefined name (6 errors)
+        # F841: unused variable (2 errors)
+      - id: ruff-format
+        name: Ruff formatter
 
-  # MyPy - Static type checker (optional, has many errors in current codebase)
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.14.1
-  #   hooks:
-  #     - id: mypy
-  #       name: MyPy type checker
-  #       files: ^src/
-  #       args: [--ignore-missing-imports, --python-version=3.12]
-  #       additional_dependencies:
-  #         - types-requests
-  #         - types-PyYAML
-  #         - pydantic
+  # MyPy - Static type checker
+  # Enabled only for clean architecture layers (Week 2 improvement)
+  # Domain, Infrastructure, and Application layers must be type-safe
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.1
+    hooks:
+      - id: mypy
+        name: MyPy type checker (clean architecture only)
+        files: ^src/casare_rpa/(domain|infrastructure|application|presentation)/.*\.py$
+        args:
+          - --ignore-missing-imports
+          - --python-version=3.12
+          - --no-strict-optional
+          - --warn-redundant-casts
+          - --warn-unused-ignores
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+          - pydantic
+          - PySide6-stubs
 
   # Quick test suite (optional - run manually with pytest)
   # - repo: local

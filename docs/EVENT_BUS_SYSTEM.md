@@ -2,13 +2,23 @@
 
 **Version**: 1.0.0
 **Created**: November 27, 2025
-**Status**: Production Ready
+**Status**: Production Ready (Presentation Layer)
+
+---
+
+> **IMPLEMENTATION STATUS**: This document describes the **Presentation EventBus** system for Canvas UI components.
+>
+> CasareRPA uses TWO EventBus implementations:
+> - **Core EventBus** (`casare_rpa.core.events`) - Workflow execution events (12 types)
+> - **Presentation EventBus** (`casare_rpa.presentation.canvas.events`) - Canvas UI events (115+ types)
+>
+> See [EVENT_BUS_STATUS.md](EVENT_BUS_STATUS.md) for complete implementation status, usage guidelines, and migration timeline.
 
 ---
 
 ## Overview
 
-The EventBus system provides a unified, type-safe event-driven architecture for Canvas UI component communication. It replaces scattered Qt signal/slot connections with a centralized event routing mechanism, enabling loose coupling between components while maintaining full Qt compatibility.
+The **Presentation EventBus** system provides a unified, type-safe event-driven architecture for Canvas UI component communication. It replaces scattered Qt signal/slot connections with a centralized event routing mechanism, enabling loose coupling between components while maintaining full Qt compatibility.
 
 ### Key Benefits
 
