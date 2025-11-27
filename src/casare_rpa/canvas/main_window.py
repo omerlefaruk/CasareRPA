@@ -91,10 +91,6 @@ class MainWindow(QMainWindow):
         """
         super().__init__(parent)
 
-        # Window properties
-        self._current_file: Optional[Path] = None
-        self._is_modified: bool = False
-
         # Hotkey settings
         self._hotkey_settings = get_hotkey_settings()
 
@@ -151,7 +147,7 @@ class MainWindow(QMainWindow):
         self._init_controllers()
 
         # Set initial state
-        self._update_window_title()
+        # Window title will be updated by WorkflowController via signal
         self._update_actions()
 
         # Setup UI state persistence
@@ -524,7 +520,7 @@ class MainWindow(QMainWindow):
 
         # Recent Files submenu
         self._recent_files_menu = file_menu.addMenu("Recent Files")
-        self._update_recent_files_menu()
+        # Note: Recent files menu will be populated by MenuController after initialization
 
         file_menu.addSeparator()
         file_menu.addAction(self.action_save)
@@ -1616,10 +1612,7 @@ class MainWindow(QMainWindow):
         """
         if self._workflow_controller:
             self._workflow_controller.set_modified(modified)
-        else:
-            # Fallback for initialization phase
-            self._is_modified = modified
-            self._update_window_title()
+        # Note: No fallback needed - controller should be initialized before this is called
 
         # Trigger real-time validation when workflow is modified
         if modified:
@@ -1635,7 +1628,7 @@ class MainWindow(QMainWindow):
         """
         if self._workflow_controller:
             return self._workflow_controller.is_modified
-        return self._is_modified
+        return False  # Fallback during initialization
 
     def set_current_file(self, file_path: Optional[Path]) -> None:
         """
@@ -1647,10 +1640,7 @@ class MainWindow(QMainWindow):
         """
         if self._workflow_controller:
             self._workflow_controller.set_current_file(file_path)
-        else:
-            # Fallback for initialization phase
-            self._current_file = file_path
-            self._update_window_title()
+        # Note: No fallback needed - controller should be initialized before this is called
 
     def get_current_file(self) -> Optional[Path]:
         """
@@ -1662,26 +1652,15 @@ class MainWindow(QMainWindow):
         """
         if self._workflow_controller:
             return self._workflow_controller.current_file
-        return self._current_file
-
-    def _update_window_title(self) -> None:
-        """Update window title with current file and modified state."""
-        title = APP_NAME
-
-        if self._current_file:
-            title = f"{self._current_file.name} - {APP_NAME}"
-        else:
-            title = f"Untitled - {APP_NAME}"
-
-        if self._is_modified:
-            title = f"*{title}"
-
-        self.setWindowTitle(title)
+        return None  # Fallback during initialization
 
     def _update_actions(self) -> None:
         """Update action states based on current state."""
         # Save action enabled only if modified
-        self.action_save.setEnabled(self._is_modified)
+        if self._workflow_controller:
+            self.action_save.setEnabled(self._workflow_controller.is_modified)
+        else:
+            self.action_save.setEnabled(False)
 
     def _on_new_workflow(self) -> None:
         """Handle new workflow request - delegate to WorkflowController."""
@@ -1737,15 +1716,8 @@ class MainWindow(QMainWindow):
             return
 
     def _on_preferences(self) -> None:
-        """Handle preferences dialog request."""
-        from .dialogs.preferences_dialog import PreferencesDialog
-
-        dialog = PreferencesDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            logger.info("Preferences saved")
-            # Settings are already saved in the dialog
-            # Emit signal so app can update autosave timer
-            self.preferences_saved.emit()
+        """Handle preferences dialog request - delegate to MenuController."""
+        self._menu_controller.open_preferences()
 
     def _on_save_workflow(self) -> None:
         """Handle save workflow request - delegate to WorkflowController."""
@@ -1888,37 +1860,8 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"{node_name} {state}", 2000)
 
     def _on_open_hotkey_manager(self) -> None:
-        """Open the hotkey manager dialog."""
-        from .toolbar.hotkey_manager import HotkeyManagerDialog
-
-        # Collect all actions
-        actions = {
-            "new": self.action_new,
-            "open": self.action_open,
-            "save": self.action_save,
-            "save_as": self.action_save_as,
-            "exit": self.action_exit,
-            "undo": self.action_undo,
-            "redo": self.action_redo,
-            "cut": self.action_cut,
-            "copy": self.action_copy,
-            "paste": self.action_paste,
-            "delete": self.action_delete,
-            "select_all": self.action_select_all,
-            "deselect_all": self.action_deselect_all,
-            "zoom_in": self.action_zoom_in,
-            "zoom_out": self.action_zoom_out,
-            "zoom_reset": self.action_zoom_reset,
-            "fit_view": self.action_fit_view,
-            "run": self.action_run,
-            "run_to_node": self.action_run_to_node,
-            "pause": self.action_pause,
-            "stop": self.action_stop,
-            "hotkey_manager": self.action_hotkey_manager,
-        }
-
-        dialog = HotkeyManagerDialog(actions, self)
-        dialog.exec()
+        """Open the hotkey manager dialog - delegate to MenuController."""
+        self._menu_controller.open_hotkey_manager()
 
     def _on_toggle_auto_connect(self, checked: bool) -> None:
         """Handle auto-connect toggle."""
@@ -1926,16 +1869,12 @@ class MainWindow(QMainWindow):
         pass
 
     def _on_open_performance_dashboard(self) -> None:
-        """Open the performance dashboard dialog."""
-        from .execution.performance_dashboard import PerformanceDashboardDialog
-
-        dialog = PerformanceDashboardDialog(self)
-        dialog.exec()
+        """Open the performance dashboard dialog - delegate to MenuController."""
+        self._menu_controller.open_performance_dashboard()
 
     def _on_open_command_palette(self) -> None:
-        """Open the command palette dialog."""
-        if self._command_palette:
-            self._command_palette.show_palette()
+        """Open the command palette dialog - delegate to MenuController."""
+        self._menu_controller.open_command_palette()
 
     def _on_find_node(self) -> None:
         """Open the node search dialog (Ctrl+F)."""
@@ -1948,37 +1887,11 @@ class MainWindow(QMainWindow):
         dialog = NodeSearchDialog(self._central_widget.graph, self)
         dialog.show_search()
 
-    def _update_recent_files_menu(self) -> None:
-        """Update the recent files submenu."""
-        from .workflow.recent_files import get_recent_files_manager
-
-        self._recent_files_menu.clear()
-        manager = get_recent_files_manager()
-        recent = manager.get_recent_files()
-
-        if not recent:
-            action = self._recent_files_menu.addAction("(No recent files)")
-            action.setEnabled(False)
-            return
-
-        for i, file_info in enumerate(recent[:10]):
-            path = file_info["path"]
-            name = file_info["name"]
-            action = self._recent_files_menu.addAction(f"&{i+1}. {name}")
-            action.setToolTip(path)
-            action.triggered.connect(
-                lambda checked, p=path: self._on_open_recent_file(p)
-            )
-
-        self._recent_files_menu.addSeparator()
-        clear_action = self._recent_files_menu.addAction("Clear Recent Files")
-        clear_action.triggered.connect(self._on_clear_recent_files)
-
     def _on_open_recent_file(self, path: str) -> None:
         """Open a recent file."""
         from pathlib import Path
 
-        if not self._check_unsaved_changes():
+        if not self._workflow_controller._check_unsaved_changes():
             return
 
         file_path = Path(path)
@@ -1994,7 +1907,7 @@ class MainWindow(QMainWindow):
 
             manager = get_recent_files_manager()
             manager.remove_file(file_path)
-            self._update_recent_files_menu()
+            self._menu_controller.update_recent_files_menu()
 
     def _on_clear_recent_files(self) -> None:
         """Clear the recent files list."""
@@ -2002,7 +1915,7 @@ class MainWindow(QMainWindow):
 
         manager = get_recent_files_manager()
         manager.clear()
-        self._update_recent_files_menu()
+        self._menu_controller.update_recent_files_menu()
         self.statusBar().showMessage("Recent files cleared", 3000)
 
     def add_to_recent_files(self, file_path) -> None:
@@ -2012,7 +1925,7 @@ class MainWindow(QMainWindow):
 
         manager = get_recent_files_manager()
         manager.add_file(Path(file_path) if isinstance(file_path, str) else file_path)
-        self._update_recent_files_menu()
+        self._menu_controller.update_recent_files_menu()
 
     def _on_about(self) -> None:
         """Show about dialog."""
@@ -2024,114 +1937,6 @@ class MainWindow(QMainWindow):
             f"<p>Visual workflow automation with node-based editor</p>"
             f"<p>Built with PySide6, NodeGraphQt, and Playwright</p>",
         )
-
-    def _check_unsaved_changes(self) -> bool:
-        """
-        Check for unsaved changes and prompt user.
-
-        Returns:
-            True if it's safe to proceed, False if user cancelled
-        """
-        if not self._is_modified:
-            return True
-
-        reply = QMessageBox.question(
-            self,
-            "Unsaved Changes",
-            "The workflow has unsaved changes. Do you want to save them?",
-            QMessageBox.StandardButton.Save
-            | QMessageBox.StandardButton.Discard
-            | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Save,
-        )
-
-        if reply == QMessageBox.StandardButton.Save:
-            self._on_save_workflow()
-            return True
-        elif reply == QMessageBox.StandardButton.Discard:
-            return True
-        else:
-            return False
-
-    def _validate_after_open(self) -> None:
-        """Validate workflow after opening and show warnings if issues found."""
-        result = self.validate_current_workflow(show_panel=False)
-
-        if not result.is_valid:
-            # Show error dialog for blocking issues
-            QMessageBox.warning(
-                self,
-                "Validation Issues",
-                f"The opened workflow has {result.error_count} error(s) and "
-                f"{result.warning_count} warning(s).\n\n"
-                "Please review the validation panel for details.",
-            )
-            self.show_validation_panel()
-        elif result.warning_count > 0:
-            # Just show the panel for warnings
-            self.show_validation_panel()
-
-    def _check_validation_before_save(self) -> bool:
-        """
-        Check validation before saving. Warn about issues but allow saving.
-
-        Returns:
-            True if save should proceed, False to cancel
-        """
-        result = self.validate_current_workflow(show_panel=False)
-
-        if not result.is_valid:
-            # Show warning but allow saving
-            reply = QMessageBox.warning(
-                self,
-                "Validation Issues",
-                f"The workflow has {result.error_count} error(s).\n\n"
-                "Do you want to save anyway?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if reply == QMessageBox.StandardButton.No:
-                self.show_validation_panel()
-                return False
-
-        return True
-
-    def _check_validation_before_run(self) -> bool:
-        """
-        Check validation before running. Block execution if there are errors.
-
-        Returns:
-            True if run should proceed, False to block
-        """
-        result = self.validate_current_workflow(show_panel=False)
-
-        if not result.is_valid:
-            # Block execution if there are errors
-            QMessageBox.critical(
-                self,
-                "Cannot Run Workflow",
-                f"The workflow has {result.error_count} validation error(s) "
-                "that must be fixed before running.\n\n"
-                "Please review the validation panel for details.",
-            )
-            self.show_validation_panel()
-            return False
-
-        if result.warning_count > 0:
-            # Warn but allow running
-            reply = QMessageBox.warning(
-                self,
-                "Validation Warnings",
-                f"The workflow has {result.warning_count} warning(s).\n\n"
-                "Do you want to run anyway?",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.Yes,
-            )
-            if reply == QMessageBox.StandardButton.No:
-                self.show_validation_panel()
-                return False
-
-        return True
 
     def _create_debug_components(self) -> None:
         """Create debug toolbar."""
@@ -2280,7 +2085,8 @@ class MainWindow(QMainWindow):
         from .scheduling.schedule_storage import get_schedule_storage
 
         # Check if workflow is saved
-        if not self._current_file:
+        current_file = self.get_current_file()
+        if not current_file:
             reply = QMessageBox.question(
                 self,
                 "Save Required",
@@ -2289,17 +2095,18 @@ class MainWindow(QMainWindow):
             )
             if reply == QMessageBox.StandardButton.Yes:
                 self._on_save_as_workflow()
-                if not self._current_file:
+                current_file = self.get_current_file()
+                if not current_file:
                     return  # User cancelled save
             else:
                 return
 
         # Get workflow name
-        workflow_name = self._current_file.stem if self._current_file else "Untitled"
+        workflow_name = current_file.stem if current_file else "Untitled"
 
         # Show schedule dialog
         dialog = ScheduleDialog(
-            workflow_path=self._current_file, workflow_name=workflow_name, parent=self
+            workflow_path=current_file, workflow_name=workflow_name, parent=self
         )
 
         if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_schedule:
@@ -2358,7 +2165,7 @@ class MainWindow(QMainWindow):
 
         if reply == QMessageBox.StandardButton.Yes:
             # Check for unsaved changes
-            if self._check_unsaved_changes():
+            if self._workflow_controller._check_unsaved_changes():
                 # Open the workflow
                 self.workflow_open.emit(str(workflow_path))
                 self.set_current_file(workflow_path)
@@ -2373,7 +2180,7 @@ class MainWindow(QMainWindow):
         Args:
             event: Close event
         """
-        if self._check_unsaved_changes():
+        if self._workflow_controller._check_unsaved_changes():
             # Clean up controllers before closing
             self._cleanup_controllers()
 
