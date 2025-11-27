@@ -124,11 +124,102 @@ src/casare_rpa/presentation/canvas/visual_nodes/
 └── ... (8 more categories)
 ```
 
+---
+
+### Day 2 (Continued): Code Review Fixes & Critical Bug Fixes ✅
+
+**Date**: November 27, 2025
+
+#### Completed Tasks
+
+5. ✅ **Code Review Recommendations**
+   - Removed security contact email from [SECURITY.md](SECURITY.md)
+     - Replaced `dev@casarerpa.com` with GitHub Security Advisories
+     - Better privacy and follows GitHub best practices
+   - Added restrictive version ranges in [pyproject.toml](pyproject.toml)
+     - `APScheduler>=3.10.0,<4.0.0` (prevents breaking major version bumps)
+     - `aiohttp>=3.8.0,<4.0.0`
+     - `asyncpg>=0.29.0,<1.0.0`
+     - `aiomysql>=0.2.0,<1.0.0`
+   - Added Python 3.12 requirement to [CONTRIBUTING.md](CONTRIBUTING.md)
+     - New "Prerequisites" section explaining modern features used
+     - `|` union syntax, `match` statements, asyncio improvements
+
+6. ✅ **Critical: Removed Duplicate VisualHttpRequestNode**
+   - **Problem**: Same class in both `rest_api` and `utility` categories
+   - **Impact**: Import conflicts - only one version would be accessible
+   - **Solution**: Removed from `utility`, kept `rest_api` version
+   - Files changed:
+     - [utility/nodes.py](src/casare_rpa/presentation/canvas/visual_nodes/utility/nodes.py:4-5) - Removed class, added migration note
+     - [utility/__init__.py](src/casare_rpa/presentation/canvas/visual_nodes/utility/__init__.py) - Removed from exports
+     - [__init__.py](src/casare_rpa/presentation/canvas/visual_nodes/__init__.py:182) - Updated to "3 nodes"
+   - **Node count updated**: 142 → **141 nodes**
+
+7. ✅ **Added Deprecation Notices**
+   - Updated [visual_nodes.py](src/casare_rpa/canvas/visual_nodes/visual_nodes.py:4-12) with warning:
+     ```
+     ⚠️ DEPRECATED: This file has been reorganized into category-based modules.
+     Migration path documented. Will be removed in v3.0.
+     ```
+
+8. ✅ **Fixed Compatibility Layer**
+   - [canvas/visual_nodes/__init__.py](src/casare_rpa/canvas/visual_nodes/__init__.py:19)
+   - Was: Empty `__all__` list (broke IDE autocomplete)
+   - Now: Re-exports `__all__` from new location
+   - Maintains IDE autocomplete support for both import paths
+
+9. ✅ **Created Comprehensive Smoke Tests**
+   - Created [tests/test_visual_nodes_imports.py](tests/test_visual_nodes_imports.py)
+   - **6 tests, all passing ✅**:
+     - ✅ Import from new location
+     - ✅ Import from compatibility layer
+     - ✅ Import all 12 categories
+     - ✅ Verify no duplicate VisualHttpRequestNode
+     - ✅ Validate 141 nodes in `__all__`
+     - ✅ Verify compatibility layer matches new location
+
+10. ✅ **Fixed Import Errors**
+    - Fixed relative imports in [base_visual_node.py](src/casare_rpa/presentation/canvas/visual_nodes/base_visual_node.py:12-15)
+      - Changed from relative (`...core`) to absolute (`casare_rpa.core`)
+      - Was looking for `casare_rpa.presentation.core` (wrong)
+      - Now correctly imports from `casare_rpa.core`
+    - Added missing `inspect` import to [rest_api/nodes.py](src/casare_rpa/presentation/canvas/visual_nodes/rest_api/nodes.py:2)
+    - Removed undefined `EXTENDED_VISUAL_NODE_CLASSES` references
+
+#### Updated Metrics
+
+- **Final Node Count**: **141 nodes** (was 142, removed 1 duplicate)
+- **Utility Category**: 3 nodes (was 4)
+- **Tests Created**: 6 smoke tests, all passing ✅
+- **Import Errors Fixed**: 3 (relative imports, missing inspect, undefined var)
+
+#### Node Distribution (Final)
+
+- `basic/` - 3 nodes
+- `browser/` - 18 nodes
+- `variable/` - 3 nodes
+- `control_flow/` - 10 nodes
+- `error_handling/` - 10 nodes
+- `desktop_automation/` - 36 nodes
+- `file_operations/` - 16 nodes
+- `email/` - 8 nodes
+- **`utility/` - 3 nodes** *(was 4, removed HttpRequest duplicate)*
+- `office_automation/` - 12 nodes
+- `database/` - 10 nodes
+- `rest_api/` - 12 nodes
+- **Total: 141 nodes**
+
+#### Commits
+
+- `b567342` - Code review recommendations
+- `108f222` - Remove duplicate, add tests
+- `4ccfb27` - Fix import errors
+
 #### Next Steps (Day 3)
 
 - Move remaining split files (data_operations_visual.py, extended_visual_nodes.py)
 - Test Canvas loads successfully
-- Verify all 142 nodes are discoverable
+- Verify all 141 nodes are discoverable
 - Test node creation in Canvas
 
 ---
@@ -163,9 +254,11 @@ Presentation → Application → Domain ← Infrastructure
 
 ### Week 1 Goals
 
-- [x] Visual nodes: 3,793 lines → 142 nodes in 26 files (<300 lines each) ✅
+- [x] Visual nodes: 3,793 lines → **141 nodes** in 26 files (<300 lines each) ✅
 - [x] Dependencies: 0 conflicts ✅
 - [x] Architecture directories created ✅
+- [x] Import errors fixed ✅
+- [x] Smoke tests created (6/6 passing) ✅
 - [ ] Canvas loads and runs (Day 3)
 - [x] GitHub community health: 100% ✅
 
@@ -187,4 +280,6 @@ Presentation → Application → Domain ← Infrastructure
 
 ---
 
-*Last Updated: November 27, 2025 - Day 2 Complete*
+*Last Updated: November 27, 2025 - Day 2 Complete (including fixes)*
+
+**Day 2 Summary**: Split 3,793-line monolith into 141 organized nodes, fixed critical bugs, added smoke tests. All tests passing ✅
