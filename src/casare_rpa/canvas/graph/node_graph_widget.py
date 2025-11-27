@@ -21,7 +21,6 @@ from ..connections.auto_connect import AutoConnectManager
 from ..connections.connection_cutter import ConnectionCutter
 from .node_quick_actions import NodeQuickActions
 from .custom_pipe import CasarePipe
-from ..snippets.snippet_breadcrumb_bar import SnippetBreadcrumbBar
 from ..snippets.snippet_navigation import SnippetNavigationManager, set_navigation_manager
 from ..dialogs.parameter_drop_zone import ParameterDropZone
 from ..dialogs.parameter_naming_dialog import ParameterNamingDialog
@@ -563,8 +562,6 @@ class NodeGraphWidget(QWidget):
         self._import_file_callback = None
 
         # Create snippet navigation system
-        self._snippet_breadcrumb = SnippetBreadcrumbBar(self)
-        self._snippet_breadcrumb.setVisible(False)  # Hidden by default
         self._navigation_manager = SnippetNavigationManager(self)
 
         # Set as global navigation manager
@@ -576,7 +573,6 @@ class NodeGraphWidget(QWidget):
 
         # Connect navigation signals
         self._navigation_manager.navigation_changed.connect(self._on_navigation_changed)
-        self._snippet_breadcrumb.level_clicked.connect(self._on_breadcrumb_clicked)
 
         # Connect drop zone signal
         self._parameter_drop_zone.parameter_requested.connect(self._on_parameter_requested)
@@ -584,8 +580,7 @@ class NodeGraphWidget(QWidget):
         # Create layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self._snippet_breadcrumb)  # Breadcrumb at top
-        layout.addWidget(self._parameter_drop_zone)  # Drop zone below breadcrumb
+        layout.addWidget(self._parameter_drop_zone)  # Drop zone at top
         layout.addWidget(self._graph.widget)  # Graph below
 
         self.setLayout(layout)
@@ -1346,26 +1341,13 @@ class NodeGraphWidget(QWidget):
         event.ignore()
 
     def _on_navigation_changed(self) -> None:
-        """Handle navigation stack changes - update breadcrumb display and drop zone visibility."""
-        path = self._navigation_manager.get_breadcrumb_path()
-        self._snippet_breadcrumb.set_path(path)
-
+        """Handle navigation stack changes - update drop zone visibility."""
         # Show drop zone only when inside a snippet (depth > 0)
         depth = self._navigation_manager.get_depth()
         is_inside_snippet = depth > 0
         self._parameter_drop_zone.setVisible(is_inside_snippet)
 
         logger.debug(f"Navigation changed, depth: {depth}, drop zone visible: {is_inside_snippet}")
-
-    def _on_breadcrumb_clicked(self, level_index: int) -> None:
-        """
-        Handle breadcrumb level click - navigate back to that level.
-
-        Args:
-            level_index: Index of level clicked (0 = root workflow)
-        """
-        logger.info(f"Navigating back to level {level_index}")
-        self._navigation_manager.navigate_back_to_level(level_index)
 
     def get_navigation_manager(self):
         """Get the snippet navigation manager."""
