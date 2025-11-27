@@ -2,6 +2,23 @@
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 from casare_rpa.core.types import DataType
 
+# Import logic layer nodes
+from casare_rpa.nodes.system_nodes import (
+    ClipboardCopyNode,
+    ClipboardPasteNode,
+    ClipboardClearNode,
+    MessageBoxNode,
+    InputDialogNode,
+    TooltipNode,
+    RunCommandNode,
+    RunPowerShellNode,
+    GetServiceStatusNode,
+    StartServiceNode,
+    StopServiceNode,
+    RestartServiceNode,
+    ListServicesNode,
+)
+
 
 # =============================================================================
 # System Nodes - Clipboard
@@ -13,6 +30,9 @@ class VisualClipboardCopyNode(VisualNode):
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Clipboard Copy"
     NODE_CATEGORY = "system"
+
+    def get_node_class(self) -> type:
+        return ClipboardCopyNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -28,6 +48,9 @@ class VisualClipboardPasteNode(VisualNode):
     NODE_NAME = "Clipboard Paste"
     NODE_CATEGORY = "system"
 
+    def get_node_class(self) -> type:
+        return ClipboardPasteNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_exec_output("exec_out")
@@ -40,6 +63,9 @@ class VisualClipboardClearNode(VisualNode):
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Clipboard Clear"
     NODE_CATEGORY = "system"
+
+    def get_node_class(self) -> type:
+        return ClipboardClearNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -72,6 +98,9 @@ class VisualMessageBoxNode(VisualNode):
         self.add_checkbox("play_sound", "Play Sound", state=False, tab="advanced")
         self.add_text_input("auto_close_timeout", "Auto-Close (sec)", placeholder_text="0 = disabled", tab="advanced")
 
+    def get_node_class(self) -> type:
+        return MessageBoxNode
+
     def setup_ports(self) -> None:
         self.add_input("exec_in")
         self.add_input("message")
@@ -93,6 +122,9 @@ class VisualInputDialogNode(VisualNode):
         self.add_text_input("default_value", "Default", text="", tab="properties")
         self.add_checkbox("password_mode", "Password Mode", state=False, tab="properties")
 
+    def get_node_class(self) -> type:
+        return InputDialogNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("prompt", DataType.STRING)
@@ -112,6 +144,9 @@ class VisualTooltipNode(VisualNode):
         super().__init__()
         self.add_text_input("title", "Title", text="Notification", tab="properties")
         self.add_text_input("duration", "Duration (s)", text="5", tab="properties")
+
+    def get_node_class(self) -> type:
+        return TooltipNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -136,6 +171,9 @@ class VisualRunCommandNode(VisualNode):
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
         self.add_checkbox("shell", "Use Shell", state=True, tab="properties")
 
+    def get_node_class(self) -> type:
+        return RunCommandNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("command", DataType.STRING)
@@ -158,6 +196,9 @@ class VisualRunPowerShellNode(VisualNode):
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
 
+    def get_node_class(self) -> type:
+        return RunPowerShellNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("script", DataType.STRING)
@@ -179,6 +220,9 @@ class VisualGetServiceStatusNode(VisualNode):
     NODE_NAME = "Get Service Status"
     NODE_CATEGORY = "system"
 
+    def get_node_class(self) -> type:
+        return GetServiceStatusNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("service_name", DataType.STRING)
@@ -199,6 +243,9 @@ class VisualStartServiceNode(VisualNode):
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
 
+    def get_node_class(self) -> type:
+        return StartServiceNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("service_name", DataType.STRING)
@@ -217,6 +264,9 @@ class VisualStopServiceNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
+
+    def get_node_class(self) -> type:
+        return StopServiceNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -237,6 +287,9 @@ class VisualRestartServiceNode(VisualNode):
         super().__init__()
         self.add_text_input("timeout", "Timeout (s)", text="60", tab="properties")
 
+    def get_node_class(self) -> type:
+        return RestartServiceNode
+
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("service_name", DataType.STRING)
@@ -255,6 +308,9 @@ class VisualListServicesNode(VisualNode):
     def __init__(self) -> None:
         super().__init__()
         self.add_combo_menu("filter_status", "Filter", items=["all", "running", "stopped"], tab="properties")
+
+    def get_node_class(self) -> type:
+        return ListServicesNode
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
