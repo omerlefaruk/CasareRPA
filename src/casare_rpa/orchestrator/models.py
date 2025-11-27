@@ -165,6 +165,7 @@ class Job:
     robot_name: str = ""
     status: JobStatus = JobStatus.PENDING
     priority: JobPriority = JobPriority.NORMAL
+    environment: str = "default"  # Target environment for job execution
     workflow_json: str = "{}"
     scheduled_time: Optional[datetime] = None
     started_at: Optional[datetime] = None
@@ -189,6 +190,7 @@ class Job:
             robot_name=data.get("robot_name", ""),
             status=JobStatus(data.get("status", "pending")),
             priority=JobPriority(data.get("priority", 1)),
+            environment=data.get("environment", "default"),
             workflow_json=data.get("workflow", data.get("workflow_json", "{}")),
             scheduled_time=data.get("scheduled_time"),
             started_at=data.get("started_at"),

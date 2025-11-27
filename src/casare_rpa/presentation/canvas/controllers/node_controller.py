@@ -8,12 +8,15 @@ Handles all node-related operations:
 - Property updates
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QCursor
 from loguru import logger
 
 from .base_controller import BaseController
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class NodeController(BaseController):
@@ -39,7 +42,7 @@ class NodeController(BaseController):
     node_navigated = Signal(str)  # node_id
     node_property_changed = Signal(str, str, object)  # node_id, property, value
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize node controller."""
         super().__init__(main_window)
 
@@ -73,8 +76,7 @@ class NodeController(BaseController):
         # Find nearest node
         all_nodes = graph.all_nodes()
         if not all_nodes:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage("No nodes in graph", 2000)
+            self.main_window.show_status("No nodes in graph", 2000)
             return
 
         nearest_node = None
@@ -100,11 +102,8 @@ class NodeController(BaseController):
             if node_id:
                 self.node_selected.emit(node_id)
 
-            node_name = (
-                nearest_node.name() if hasattr(nearest_node, "name") else "Node"
-            )
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(f"Selected: {node_name}", 2000)
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
+            self.main_window.show_status(f"Selected: {node_name}", 2000)
 
     def toggle_disable_node(self) -> None:
         """
@@ -130,8 +129,7 @@ class NodeController(BaseController):
         # Find nearest node to mouse
         all_nodes = graph.all_nodes()
         if not all_nodes:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage("No nodes in graph", 2000)
+            self.main_window.show_status("No nodes in graph", 2000)
             return
 
         nearest_node = None
@@ -176,9 +174,7 @@ class NodeController(BaseController):
                     nearest_node.view.setOpacity(1.0)
 
             node_id = nearest_node.get_property("node_id")
-            node_name = (
-                nearest_node.name() if hasattr(nearest_node, "name") else "Node"
-            )
+            node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
             state = "disabled" if new_disabled else "enabled"
 
             # Emit appropriate signal
@@ -189,10 +185,7 @@ class NodeController(BaseController):
                 if node_id:
                     self.node_enabled.emit(node_id)
 
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    f"{node_name} {state}", 2000
-                )
+            self.main_window.show_status(f"{node_name} {state}", 2000)
 
     def navigate_to_node(self, node_id: str) -> None:
         """
@@ -232,10 +225,7 @@ class NodeController(BaseController):
         self.node_navigated.emit(node_id)
 
         node_name = target_node.name() if hasattr(target_node, "name") else "Node"
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                f"Navigated to: {node_name}", 2000
-            )
+        self.main_window.show_status(f"Navigated to: {node_name}", 2000)
 
     def find_node(self) -> None:
         """Open the node search dialog (Ctrl+F)."""
@@ -243,8 +233,7 @@ class NodeController(BaseController):
 
         graph = self._get_graph()
         if not graph:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage("No graph available", 3000)
+            self.main_window.show_status("No graph available", 3000)
             return
 
         from ....canvas.search.node_search import NodeSearchDialog
@@ -252,9 +241,7 @@ class NodeController(BaseController):
         dialog = NodeSearchDialog(graph, self.main_window)
         dialog.show_search()
 
-    def update_node_property(
-        self, node_id: str, property_name: str, value
-    ) -> None:
+    def update_node_property(self, node_id: str, property_name: str, value) -> None:
         """
         Update a node's property.
 
@@ -263,9 +250,7 @@ class NodeController(BaseController):
             property_name: Name of property to change
             value: New property value
         """
-        logger.debug(
-            f"Updating node property: {node_id}.{property_name} = {value}"
-        )
+        logger.debug(f"Updating node property: {node_id}.{property_name} = {value}")
 
         graph = self._get_graph()
         if not graph:
@@ -294,7 +279,4 @@ class NodeController(BaseController):
         Returns:
             NodeGraph instance or None if not available
         """
-        central_widget = self.main_window._central_widget
-        if not central_widget or not hasattr(central_widget, "graph"):
-            return None
-        return central_widget.graph
+        return self.main_window.get_graph()

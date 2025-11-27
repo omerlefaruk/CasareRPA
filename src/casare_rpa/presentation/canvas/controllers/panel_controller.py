@@ -10,11 +10,14 @@ Handles all panel-related operations:
 - Panel state persistence
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from loguru import logger
 
 from .base_controller import BaseController
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class PanelController(BaseController):
@@ -38,7 +41,7 @@ class PanelController(BaseController):
     minimap_toggled = Signal(bool)  # visible
     panel_tab_changed = Signal(str)  # tab_name
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize panel controller."""
         super().__init__(main_window)
 
@@ -61,8 +64,8 @@ class PanelController(BaseController):
         """
         logger.debug(f"Toggling bottom panel: {visible}")
 
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            dock = self.main_window._bottom_panel
+        dock = self.main_window.get_bottom_panel()
+        if dock:
             dock.setVisible(visible)
             self.bottom_panel_toggled.emit(visible)
 
@@ -75,11 +78,8 @@ class PanelController(BaseController):
         """
         logger.debug(f"Toggling properties panel: {visible}")
 
-        if (
-            hasattr(self.main_window, "_properties_panel")
-            and self.main_window._properties_panel
-        ):
-            dock = self.main_window._properties_panel
+        dock = self.main_window.get_properties_panel()
+        if dock:
             dock.setVisible(visible)
             self.properties_panel_toggled.emit(visible)
 
@@ -92,11 +92,8 @@ class PanelController(BaseController):
         """
         logger.debug(f"Toggling variable inspector: {visible}")
 
-        if (
-            hasattr(self.main_window, "_variable_inspector_dock")
-            and self.main_window._variable_inspector_dock
-        ):
-            dock = self.main_window._variable_inspector_dock
+        dock = self.main_window.get_variable_inspector_dock()
+        if dock:
             dock.setVisible(visible)
             self.variable_inspector_toggled.emit(visible)
 
@@ -109,8 +106,8 @@ class PanelController(BaseController):
         """
         logger.debug(f"Toggling minimap: {visible}")
 
-        if hasattr(self.main_window, "_minimap") and self.main_window._minimap:
-            minimap = self.main_window._minimap
+        minimap = self.main_window.get_minimap()
+        if minimap:
             if visible:
                 minimap.show()
             else:
@@ -126,9 +123,8 @@ class PanelController(BaseController):
         """
         logger.debug(f"Showing panel tab: {tab_name}")
 
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            panel = self.main_window._bottom_panel
-
+        panel = self.main_window.get_bottom_panel()
+        if panel:
             # Make panel visible if hidden
             if not panel.isVisible():
                 panel.setVisible(True)
@@ -156,8 +152,9 @@ class PanelController(BaseController):
         logger.debug(f"Panel navigation to node: {node_id}")
 
         # Get node controller from main window and delegate
-        if hasattr(self.main_window, "_node_controller"):
-            self.main_window._node_controller.navigate_to_node(node_id)
+        node_controller = self.main_window.get_node_controller()
+        if node_controller:
+            node_controller.navigate_to_node(node_id)
 
     def update_variables_panel(self, variables: dict) -> None:
         """
@@ -168,22 +165,17 @@ class PanelController(BaseController):
         """
         logger.debug(f"Updating variables panel: {len(variables)} variables")
 
-        if (
-            hasattr(self.main_window, "_variable_inspector_dock")
-            and self.main_window._variable_inspector_dock
-        ):
-            inspector = self.main_window._variable_inspector_dock
-            if hasattr(inspector, "update_variables"):
-                inspector.update_variables(variables)
+        inspector = self.main_window.get_variable_inspector_dock()
+        if inspector and hasattr(inspector, "update_variables"):
+            inspector.update_variables(variables)
 
     def trigger_validation(self) -> None:
         """Trigger workflow validation and update validation panel."""
         logger.debug("Triggering workflow validation")
 
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            panel = self.main_window._bottom_panel
-            if hasattr(panel, "trigger_validation"):
-                panel.trigger_validation()
+        panel = self.main_window.get_bottom_panel()
+        if panel and hasattr(panel, "trigger_validation"):
+            panel.trigger_validation()
 
     def get_validation_errors(self) -> list:
         """
@@ -192,10 +184,9 @@ class PanelController(BaseController):
         Returns:
             List of validation error messages
         """
-        if hasattr(self.main_window, "_bottom_panel") and self.main_window._bottom_panel:
-            panel = self.main_window._bottom_panel
-            if hasattr(panel, "get_validation_errors_blocking"):
-                return panel.get_validation_errors_blocking()
+        panel = self.main_window.get_bottom_panel()
+        if panel and hasattr(panel, "get_validation_errors_blocking"):
+            return panel.get_validation_errors_blocking()
         return []
 
     def show_validation_tab_if_errors(self) -> None:

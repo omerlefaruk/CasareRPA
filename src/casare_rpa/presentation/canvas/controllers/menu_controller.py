@@ -9,13 +9,16 @@ Handles all menu-related operations:
 - Recent files menu
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
 from loguru import logger
 
 from .base_controller import BaseController
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class MenuController(BaseController):
@@ -35,7 +38,7 @@ class MenuController(BaseController):
     recent_files_updated = Signal()
     hotkey_changed = Signal(str, str)  # action_name, new_shortcut
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize menu controller."""
         super().__init__(main_window)
         self._actions: Dict[str, QAction] = {}
@@ -73,12 +76,12 @@ class MenuController(BaseController):
         """Update the recent files submenu."""
         logger.debug("Updating recent files menu")
 
-        if not hasattr(self.main_window, "_recent_files_menu"):
+        menu = self.main_window.get_recent_files_menu()
+        if not menu:
             return
 
         from ....canvas.workflow.recent_files import get_recent_files_manager
 
-        menu = self.main_window._recent_files_menu
         menu.clear()
 
         manager = get_recent_files_manager()
@@ -131,7 +134,9 @@ class MenuController(BaseController):
         """Open the performance dashboard dialog."""
         logger.info("Opening performance dashboard")
 
-        from ....canvas.execution.performance_dashboard import PerformanceDashboardDialog
+        from ....canvas.execution.performance_dashboard import (
+            PerformanceDashboardDialog,
+        )
 
         dialog = PerformanceDashboardDialog(self.main_window)
         dialog.exec()
@@ -140,8 +145,9 @@ class MenuController(BaseController):
         """Open the command palette dialog."""
         logger.info("Opening command palette")
 
-        if hasattr(self.main_window, "_command_palette") and self.main_window._command_palette:
-            self.main_window._command_palette.show_palette()
+        command_palette = self.main_window.get_command_palette()
+        if command_palette:
+            command_palette.show_palette()
 
     def _collect_actions(self) -> None:
         """Collect all actions from main window."""

@@ -32,6 +32,17 @@ from ..utils.hotkey_settings import get_hotkey_settings
 from .graph.minimap import Minimap
 from loguru import logger
 
+# Import controllers for MVC architecture
+from ..presentation.canvas.controllers import (
+    WorkflowController,
+    ExecutionController,
+    NodeController,
+    ConnectionController,
+    PanelController,
+    MenuController,
+    EventBusController,
+)
+
 
 class MainWindow(QMainWindow):
     """
@@ -113,6 +124,15 @@ class MainWindow(QMainWindow):
         # Command palette
         self._command_palette: Optional["CommandPalette"] = None
 
+        # Controllers (MVC architecture)
+        self._workflow_controller: Optional[WorkflowController] = None
+        self._execution_controller: Optional[ExecutionController] = None
+        self._node_controller: Optional[NodeController] = None
+        self._connection_controller: Optional[ConnectionController] = None
+        self._panel_controller: Optional[PanelController] = None
+        self._menu_controller: Optional[MenuController] = None
+        self._event_bus_controller: Optional[EventBusController] = None
+
         # Setup window
         self._setup_window()
         self._create_actions()
@@ -126,6 +146,9 @@ class MainWindow(QMainWindow):
         self._create_debug_components()
         self._create_command_palette()
         self._setup_validation_timer()
+
+        # Initialize controllers after UI is set up
+        self._init_controllers()
 
         # Set initial state
         self._update_window_title()
@@ -1256,6 +1279,100 @@ class MainWindow(QMainWindow):
             self._bottom_panel.hide()
             self.action_toggle_bottom_panel.setChecked(False)
 
+    def get_graph(self):
+        """
+        Get the node graph widget for controller access.
+
+        Returns:
+            NodeGraphWidget instance or None
+        """
+        if self._central_widget and hasattr(self._central_widget, "graph"):
+            return self._central_widget.graph
+        return None
+
+    def get_workflow_runner(self):
+        """
+        Get the workflow runner for execution control.
+
+        Returns:
+            WorkflowRunner instance or None
+        """
+        return getattr(self, "_workflow_runner", None)
+
+    def get_project_manager(self):
+        """
+        Get the project manager.
+
+        Returns:
+            ProjectManager instance or None
+        """
+        return getattr(self, "_project_manager", None)
+
+    def get_node_registry(self):
+        """
+        Get the node registry.
+
+        Returns:
+            Node registry instance or None
+        """
+        return getattr(self, "_node_registry", None)
+
+    def get_command_palette(self):
+        """
+        Get the command palette.
+
+        Returns:
+            CommandPalette instance or None
+        """
+        return self._command_palette
+
+    def get_recent_files_menu(self):
+        """
+        Get the recent files menu.
+
+        Returns:
+            QMenu instance or None
+        """
+        return getattr(self, "_recent_files_menu", None)
+
+    def get_minimap(self):
+        """
+        Get the minimap widget.
+
+        Returns:
+            Minimap instance or None
+        """
+        return self._minimap
+
+    def get_variable_inspector_dock(self):
+        """
+        Get the variable inspector dock.
+
+        Returns:
+            VariableInspectorDock instance or None
+        """
+        return self._variable_inspector_dock
+
+    def show_status(self, message: str, duration: int = 3000) -> None:
+        """
+        Show status message (wrapper for statusBar).
+
+        Args:
+            message: Message to display
+            duration: Duration in milliseconds (0 for permanent)
+        """
+        if self.statusBar():
+            self.statusBar().showMessage(message, duration)
+
+    def get_node_controller(self):
+        """
+        Get the node controller.
+
+        Returns:
+            NodeController instance or None
+        """
+        return getattr(self, "_node_controller", None)
+
     def _on_validate_workflow(self) -> None:
         """Handle validation request from panel."""
         self.validate_current_workflow()
@@ -1492,12 +1609,17 @@ class MainWindow(QMainWindow):
     def set_modified(self, modified: bool) -> None:
         """
         Set the modified state of the workflow.
+        Delegates to WorkflowController.
 
         Args:
             modified: Whether the workflow has unsaved changes
         """
-        self._is_modified = modified
-        self._update_window_title()
+        if self._workflow_controller:
+            self._workflow_controller.set_modified(modified)
+        else:
+            # Fallback for initialization phase
+            self._is_modified = modified
+            self._update_window_title()
 
         # Trigger real-time validation when workflow is modified
         if modified:
@@ -1506,29 +1628,40 @@ class MainWindow(QMainWindow):
     def is_modified(self) -> bool:
         """
         Check if the workflow has unsaved changes.
+        Delegates to WorkflowController.
 
         Returns:
             True if workflow is modified
         """
+        if self._workflow_controller:
+            return self._workflow_controller.is_modified
         return self._is_modified
 
     def set_current_file(self, file_path: Optional[Path]) -> None:
         """
         Set the current workflow file path.
+        Delegates to WorkflowController.
 
         Args:
             file_path: Path to the workflow file, or None for new workflow
         """
-        self._current_file = file_path
-        self._update_window_title()
+        if self._workflow_controller:
+            self._workflow_controller.set_current_file(file_path)
+        else:
+            # Fallback for initialization phase
+            self._current_file = file_path
+            self._update_window_title()
 
     def get_current_file(self) -> Optional[Path]:
         """
         Get the current workflow file path.
+        Delegates to WorkflowController.
 
         Returns:
             Path to current file, or None if no file
         """
+        if self._workflow_controller:
+            return self._workflow_controller.current_file
         return self._current_file
 
     def _update_window_title(self) -> None:
@@ -1551,93 +1684,24 @@ class MainWindow(QMainWindow):
         self.action_save.setEnabled(self._is_modified)
 
     def _on_new_workflow(self) -> None:
-        """Handle new workflow request."""
-        if self._check_unsaved_changes():
-            self.workflow_new.emit()
-            self.set_current_file(None)
-            self.set_modified(False)
-            self.statusBar().showMessage("New workflow created", 3000)
+        """Handle new workflow request - delegate to WorkflowController."""
+        self._workflow_controller.new_workflow()
 
     def _on_new_from_template(self) -> None:
-        """Handle new from template request."""
-        from .dialogs.template_browser import show_template_browser
-
-        if not self._check_unsaved_changes():
-            return
-
-        # Show template browser
-        template = show_template_browser(self)
-        if template:
-            # Emit signal with template info (app.py will handle loading)
-            self.statusBar().showMessage(f"Loading template: {template.name}...", 3000)
-            self.workflow_new_from_template.emit(template)
+        """Handle new from template request - delegate to WorkflowController."""
+        self._workflow_controller.new_from_template()
 
     def _on_open_workflow(self) -> None:
-        """Handle open workflow request."""
-        if not self._check_unsaved_changes():
-            return
-
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open Workflow",
-            str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)",
-        )
-
-        if file_path:
-            self.workflow_open.emit(file_path)
-            self.set_current_file(Path(file_path))
-            self.set_modified(False)
-            self.statusBar().showMessage(f"Opened: {Path(file_path).name}", 3000)
-
-            # Validate after opening and show panel if issues found
-            from PySide6.QtCore import QTimer
-
-            QTimer.singleShot(100, self._validate_after_open)
+        """Handle open workflow request - delegate to WorkflowController."""
+        self._workflow_controller.open_workflow()
 
     def _on_import_workflow(self) -> None:
-        """Handle import workflow request."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Import Workflow",
-            str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)",
-        )
-
-        if file_path:
-            self.workflow_import.emit(file_path)
-            self.statusBar().showMessage(f"Importing: {Path(file_path).name}...", 3000)
+        """Handle import workflow request - delegate to WorkflowController."""
+        self._workflow_controller.import_workflow()
 
     def _on_export_selected(self) -> None:
-        """Handle export selected nodes request."""
-        # Check if any nodes are selected
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            self.statusBar().showMessage("No graph available", 3000)
-            return
-
-        graph = self._central_widget.graph
-        selected_nodes = graph.selected_nodes()
-
-        if not selected_nodes:
-            QMessageBox.information(
-                self,
-                "Export Selected Nodes",
-                "Please select one or more nodes to export.",
-            )
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Export Selected Nodes",
-            str(WORKFLOWS_DIR / "exported_nodes.json"),
-            "Workflow Files (*.json);;All Files (*.*)",
-        )
-
-        if file_path:
-            self.workflow_export_selected.emit(file_path)
-            self.statusBar().showMessage(
-                f"Exporting {len(selected_nodes)} nodes...", 3000
-            )
+        """Handle export selected nodes request - delegate to WorkflowController."""
+        self._workflow_controller.export_selected_nodes()
 
     def _on_paste_workflow(self) -> None:
         """Handle paste workflow JSON from clipboard."""
@@ -1684,150 +1748,32 @@ class MainWindow(QMainWindow):
             self.preferences_saved.emit()
 
     def _on_save_workflow(self) -> None:
-        """Handle save workflow request."""
-        # Validate before saving
-        if not self._check_validation_before_save():
-            return
-
-        if self._current_file:
-            self.workflow_save.emit()
-            self.set_modified(False)
-            self.statusBar().showMessage(f"Saved: {self._current_file.name}", 3000)
-        else:
-            self._on_save_as_workflow()
+        """Handle save workflow request - delegate to WorkflowController."""
+        self._workflow_controller.save_workflow()
 
     def _on_save_as_workflow(self) -> None:
-        """Handle save as workflow request."""
-        # Validate before saving
-        if not self._check_validation_before_save():
-            return
-
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Save Workflow As",
-            str(WORKFLOWS_DIR),
-            "Workflow Files (*.json);;All Files (*.*)",
-        )
-
-        if file_path:
-            self.workflow_save_as.emit(file_path)
-            self.set_current_file(Path(file_path))
-            self.set_modified(False)
-            self.statusBar().showMessage(f"Saved as: {Path(file_path).name}", 3000)
+        """Handle save as workflow request - delegate to WorkflowController."""
+        self._workflow_controller.save_workflow_as()
 
     def _on_run_workflow(self) -> None:
-        """Handle run workflow request (F3)."""
-        # Validate before running - block if errors
-        if not self._check_validation_before_run():
-            return
-
-        self.workflow_run.emit()
-        self.action_run.setEnabled(False)
-        self.action_run_to_node.setEnabled(False)
-        self.action_pause.setEnabled(True)
-        self.action_pause.setChecked(False)
-        self.action_stop.setEnabled(True)
-        self.statusBar().showMessage("Workflow execution started...", 0)
+        """Handle run workflow request (F3) - delegate to ExecutionController."""
+        self._execution_controller.run_workflow()
 
     def _on_run_to_node(self) -> None:
-        """Handle run to selected node request (F4)."""
-        # Get selected node from the graph
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            self._on_run_workflow()  # Fallback to full run
-            return
-
-        graph = self._central_widget.graph
-        selected_nodes = graph.selected_nodes()
-
-        # If no node is selected, fall back to full workflow run
-        if not selected_nodes:
-            self.statusBar().showMessage(
-                "No node selected - running full workflow", 3000
-            )
-            self._on_run_workflow()
-            return
-
-        # Get the first selected node's ID
-        target_node = selected_nodes[0]
-        target_node_id = target_node.get_property("node_id")
-
-        if not target_node_id:
-            self.statusBar().showMessage(
-                "Selected node has no ID - running full workflow", 3000
-            )
-            self._on_run_workflow()
-            return
-
-        # Validate before running
-        if not self._check_validation_before_run():
-            return
-
-        # Get the node name for display
-        node_name = (
-            target_node.name() if hasattr(target_node, "name") else target_node_id
-        )
-
-        # Emit signal with target node ID
-        self.workflow_run_to_node.emit(target_node_id)
-        self.action_run.setEnabled(False)
-        self.action_run_to_node.setEnabled(False)
-        self.action_pause.setEnabled(True)
-        self.action_pause.setChecked(False)
-        self.action_stop.setEnabled(True)
-        self.statusBar().showMessage(f"Running to node: {node_name}...", 0)
+        """Handle run to selected node request (F4) - delegate to ExecutionController."""
+        self._execution_controller.run_to_node()
 
     def _on_run_single_node(self) -> None:
-        """Handle run single selected node request (F5)."""
-        # Get selected node from the graph
-        if not self._central_widget or not hasattr(self._central_widget, "graph"):
-            self.statusBar().showMessage("No graph available", 3000)
-            return
-
-        graph = self._central_widget.graph
-        selected_nodes = graph.selected_nodes()
-
-        # If no node is selected, show message
-        if not selected_nodes:
-            self.statusBar().showMessage(
-                "No node selected - select a node to run", 3000
-            )
-            return
-
-        # Get the first selected node's ID
-        target_node = selected_nodes[0]
-        target_node_id = target_node.get_property("node_id")
-
-        if not target_node_id:
-            self.statusBar().showMessage("Selected node has no ID", 3000)
-            return
-
-        # Get the node name for display
-        node_name = (
-            target_node.name() if hasattr(target_node, "name") else target_node_id
-        )
-
-        # Emit signal with target node ID
-        self.workflow_run_single_node.emit(target_node_id)
-        self.statusBar().showMessage(f"Running node: {node_name}...", 0)
+        """Handle run single selected node request (F5) - delegate to ExecutionController."""
+        self._execution_controller.run_single_node()
 
     def _on_pause_workflow(self, checked: bool) -> None:
-        """Handle pause/resume workflow request."""
-        if checked:
-            self.workflow_pause.emit()
-            self.statusBar().showMessage("Workflow paused", 0)
-        else:
-            self.workflow_resume.emit()
-            self.statusBar().showMessage("Workflow resumed...", 0)
+        """Handle pause/resume workflow request - delegate to ExecutionController."""
+        self._execution_controller.toggle_pause(checked)
 
     def _on_stop_workflow(self) -> None:
-        """Handle stop workflow request."""
-        self.workflow_stop.emit()
-        self.action_run.setEnabled(True)
-        self.action_run_to_node.setEnabled(True)
-        self.action_pause.setEnabled(False)
-        self.action_pause.setChecked(False)
-        self.action_stop.setEnabled(False)
-        self.statusBar().showMessage("Workflow execution stopped", 3000)
+        """Handle stop workflow request - delegate to ExecutionController."""
+        self._execution_controller.stop_workflow()
 
     def _on_select_nearest_node(self) -> None:
         """Select the nearest node to the current mouse cursor position (hotkey 2)."""
@@ -2428,11 +2374,39 @@ class MainWindow(QMainWindow):
             event: Close event
         """
         if self._check_unsaved_changes():
+            # Clean up controllers before closing
+            self._cleanup_controllers()
+
             # Save UI state before closing
             self._save_ui_state()
             event.accept()
         else:
             event.ignore()
+
+    def _cleanup_controllers(self) -> None:
+        """Clean up all controllers."""
+        logger.info("Cleaning up controllers...")
+
+        controllers = [
+            self._workflow_controller,
+            self._execution_controller,
+            self._node_controller,
+            self._connection_controller,
+            self._panel_controller,
+            self._menu_controller,
+            self._event_bus_controller,
+        ]
+
+        for controller in controllers:
+            if controller:
+                try:
+                    controller.cleanup()
+                except Exception as e:
+                    logger.error(
+                        f"Error cleaning up controller {controller.__class__.__name__}: {e}"
+                    )
+
+        logger.info("Controllers cleaned up")
 
     # ==================== UI State Persistence ====================
 
@@ -2576,6 +2550,144 @@ class MainWindow(QMainWindow):
                 self.reset_ui_state()
             except Exception:
                 pass
+
+    def _init_controllers(self) -> None:
+        """Initialize all controllers for MVC architecture."""
+        logger.info("Initializing controllers...")
+
+        # Create controllers
+        self._workflow_controller = WorkflowController(self)
+        self._execution_controller = ExecutionController(self)
+        self._node_controller = NodeController(self)
+        self._connection_controller = ConnectionController(self)
+        self._panel_controller = PanelController(self)
+        self._menu_controller = MenuController(self)
+        self._event_bus_controller = EventBusController(self)
+
+        # Initialize each controller
+        self._workflow_controller.initialize()
+        self._execution_controller.initialize()
+        self._node_controller.initialize()
+        self._connection_controller.initialize()
+        self._panel_controller.initialize()
+        self._menu_controller.initialize()
+        self._event_bus_controller.initialize()
+
+        # Connect controller signals to MainWindow
+        self._connect_controller_signals()
+
+        logger.info("Controllers initialized successfully")
+
+    def _connect_controller_signals(self) -> None:
+        """Connect controller signals to MainWindow handlers and other controllers."""
+        logger.debug("Connecting controller signals...")
+
+        # Workflow controller signals
+        self._workflow_controller.workflow_created.connect(
+            lambda: self.workflow_new.emit()
+        )
+        self._workflow_controller.workflow_loaded.connect(
+            lambda path: self.workflow_open.emit(path)
+        )
+        self._workflow_controller.workflow_saved.connect(
+            lambda path: logger.info(f"Workflow saved: {path}")
+        )
+        self._workflow_controller.workflow_imported.connect(
+            lambda path: self.workflow_import.emit(path)
+        )
+        self._workflow_controller.workflow_exported.connect(
+            lambda path: self.workflow_export_selected.emit(path)
+        )
+        self._workflow_controller.current_file_changed.connect(
+            lambda file: self._on_current_file_changed(file)
+        )
+        self._workflow_controller.modified_changed.connect(
+            lambda modified: self._on_modified_changed(modified)
+        )
+
+        # Execution controller signals
+        self._execution_controller.execution_started.connect(
+            lambda: self._on_execution_started()
+        )
+        self._execution_controller.execution_paused.connect(
+            lambda: logger.info("Execution paused")
+        )
+        self._execution_controller.execution_resumed.connect(
+            lambda: logger.info("Execution resumed")
+        )
+        self._execution_controller.execution_stopped.connect(
+            lambda: self._on_execution_stopped()
+        )
+        self._execution_controller.execution_completed.connect(
+            lambda: self._on_execution_completed()
+        )
+        self._execution_controller.execution_error.connect(
+            lambda error: self._on_execution_error(error)
+        )
+        self._execution_controller.run_to_node_requested.connect(
+            lambda node_id: self.workflow_run_to_node.emit(node_id)
+        )
+        self._execution_controller.run_single_node_requested.connect(
+            lambda node_id: self.workflow_run_single_node.emit(node_id)
+        )
+
+        # Node controller signals
+        self._node_controller.node_selected.connect(
+            lambda node_id: logger.debug(f"Node selected: {node_id}")
+        )
+        self._node_controller.node_deselected.connect(
+            lambda node_id: logger.debug(f"Node deselected: {node_id}")
+        )
+
+        # Panel controller signals
+        self._panel_controller.bottom_panel_toggled.connect(
+            lambda visible: logger.debug(f"Bottom panel toggled: {visible}")
+        )
+
+        logger.debug("Controller signals connected")
+
+    def _on_current_file_changed(self, file: Optional[Path]) -> None:
+        """Handle current file changed from WorkflowController."""
+        # Update window title and other UI elements as needed
+        pass
+
+    def _on_modified_changed(self, modified: bool) -> None:
+        """Handle modified state changed from WorkflowController."""
+        # Update UI to reflect modified state as needed
+        pass
+
+    def _on_execution_started(self) -> None:
+        """Handle execution started from ExecutionController."""
+        self.action_run.setEnabled(False)
+        self.action_run_to_node.setEnabled(False)
+        self.action_pause.setEnabled(True)
+        self.action_pause.setChecked(False)
+        self.action_stop.setEnabled(True)
+        self.statusBar().showMessage("Workflow execution started...", 0)
+
+    def _on_execution_stopped(self) -> None:
+        """Handle execution stopped from ExecutionController."""
+        self.action_run.setEnabled(True)
+        self.action_run_to_node.setEnabled(True)
+        self.action_pause.setEnabled(False)
+        self.action_stop.setEnabled(False)
+        self.statusBar().showMessage("Workflow execution stopped", 3000)
+
+    def _on_execution_completed(self) -> None:
+        """Handle execution completed from ExecutionController."""
+        self.action_run.setEnabled(True)
+        self.action_run_to_node.setEnabled(True)
+        self.action_pause.setEnabled(False)
+        self.action_stop.setEnabled(False)
+        self.statusBar().showMessage("Workflow execution completed", 3000)
+
+    def _on_execution_error(self, error: str) -> None:
+        """Handle execution error from ExecutionController."""
+        self.action_run.setEnabled(True)
+        self.action_run_to_node.setEnabled(True)
+        self.action_pause.setEnabled(False)
+        self.action_stop.setEnabled(False)
+        self.statusBar().showMessage(f"Execution error: {error}", 5000)
 
     def _schedule_ui_state_save(self) -> None:
         """Schedule UI state save (debounced to avoid too frequent saves)."""

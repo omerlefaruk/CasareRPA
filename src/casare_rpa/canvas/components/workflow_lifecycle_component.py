@@ -85,7 +85,7 @@ class WorkflowLifecycleComponent(BaseComponent):
                 )
 
                 # Convert to serialized format for GUI
-                from casare_rpa.core.workflow_schema import WorkflowSchema
+                from casare_rpa.domain.entities.workflow import WorkflowSchema
 
                 serialized_workflow = WorkflowSchema(workflow_with_instances.metadata)
 
@@ -106,7 +106,7 @@ class WorkflowLifecycleComponent(BaseComponent):
                 self._load_workflow_to_graph(serialized_workflow)
 
                 self._main_window.set_modified(True)
-                self._main_window.statusBar().showMessage(
+                self._main_window.show_status(
                     f"Loaded template: {template_info.name}", 5000
                 )
                 logger.info(f"Successfully loaded template: {template_info.name}")
@@ -138,15 +138,11 @@ class WorkflowLifecycleComponent(BaseComponent):
             self._load_workflow_to_graph(workflow)
 
             self._main_window.set_modified(False)
-            self._main_window.statusBar().showMessage(
-                f"Opened: {Path(file_path).name}", 3000
-            )
+            self._main_window.show_status(f"Opened: {Path(file_path).name}", 3000)
 
         except Exception as e:
             logger.exception("Failed to open workflow")
-            self._main_window.statusBar().showMessage(
-                f"Error opening file: {str(e)}", 5000
-            )
+            self._main_window.show_status(f"Error opening file: {str(e)}", 5000)
 
     def on_save_workflow(self) -> None:
         """Handle workflow saving."""
@@ -165,15 +161,11 @@ class WorkflowLifecycleComponent(BaseComponent):
                 self._save_workflow_to_file(workflow, current_file)
 
                 self._main_window.set_modified(False)
-                self._main_window.statusBar().showMessage(
-                    f"Saved: {current_file.name}", 3000
-                )
+                self._main_window.show_status(f"Saved: {current_file.name}", 3000)
 
             except Exception as e:
                 logger.exception("Failed to save workflow")
-                self._main_window.statusBar().showMessage(
-                    f"Error saving file: {str(e)}", 5000
-                )
+                self._main_window.show_status(f"Error saving file: {str(e)}", 5000)
 
     def on_save_as_workflow(self, file_path: str) -> None:
         """
@@ -195,15 +187,11 @@ class WorkflowLifecycleComponent(BaseComponent):
             self._save_workflow_to_file(workflow, Path(file_path))
 
             self._main_window.set_modified(False)
-            self._main_window.statusBar().showMessage(
-                f"Saved as: {Path(file_path).name}", 3000
-            )
+            self._main_window.show_status(f"Saved as: {Path(file_path).name}", 3000)
 
         except Exception as e:
             logger.exception("Failed to save workflow")
-            self._main_window.statusBar().showMessage(
-                f"Error saving file: {str(e)}", 5000
-            )
+            self._main_window.show_status(f"Error saving file: {str(e)}", 5000)
 
     def on_import_workflow(self, file_path: str) -> None:
         """
@@ -221,15 +209,11 @@ class WorkflowLifecycleComponent(BaseComponent):
             self._import_workflow_merge(workflow)
 
             self._main_window.set_modified(True)
-            self._main_window.statusBar().showMessage(
-                f"Imported: {Path(file_path).name}", 3000
-            )
+            self._main_window.show_status(f"Imported: {Path(file_path).name}", 3000)
 
         except Exception as e:
             logger.exception("Failed to import workflow")
-            self._main_window.statusBar().showMessage(
-                f"Error importing file: {str(e)}", 5000
-            )
+            self._main_window.show_status(f"Error importing file: {str(e)}", 5000)
 
     def on_import_workflow_json(self, json_str: str) -> None:
         """
@@ -250,13 +234,11 @@ class WorkflowLifecycleComponent(BaseComponent):
             self._import_workflow_merge(workflow)
 
             self._main_window.set_modified(True)
-            self._main_window.statusBar().showMessage("Imported workflow from JSON", 3000)
+            self._main_window.show_status("Imported workflow from JSON", 3000)
 
         except Exception as e:
             logger.exception("Failed to import workflow JSON")
-            self._main_window.statusBar().showMessage(
-                f"Error importing JSON: {str(e)}", 5000
-            )
+            self._main_window.show_status(f"Error importing JSON: {str(e)}", 5000)
 
     def on_export_selected(self, file_path: str) -> None:
         """
@@ -271,7 +253,7 @@ class WorkflowLifecycleComponent(BaseComponent):
             # Get selected nodes
             selected_nodes = self.node_graph.graph.selected_nodes()
             if not selected_nodes:
-                self._main_window.statusBar().showMessage("No nodes selected", 3000)
+                self._main_window.show_status("No nodes selected", 3000)
                 return
 
             # Create workflow from selected nodes only
@@ -280,15 +262,11 @@ class WorkflowLifecycleComponent(BaseComponent):
             # Save to file
             self._save_workflow_to_file(workflow, Path(file_path))
 
-            self._main_window.statusBar().showMessage(
-                f"Exported {len(selected_nodes)} nodes", 3000
-            )
+            self._main_window.show_status(f"Exported {len(selected_nodes)} nodes", 3000)
 
         except Exception as e:
             logger.exception("Failed to export selected nodes")
-            self._main_window.statusBar().showMessage(
-                f"Error exporting: {str(e)}", 5000
-            )
+            self._main_window.show_status(f"Error exporting: {str(e)}", 5000)
 
     def _load_workflow_to_graph(self, workflow: WorkflowSchema) -> None:
         """
@@ -317,13 +295,17 @@ class WorkflowLifecycleComponent(BaseComponent):
             # Get identifier for creating visual node
             identifier = get_identifier_for_type(node_type)
             if not identifier:
-                logger.warning(f"Unknown node type '{node_type}' for node {node_id} - skipping")
+                logger.warning(
+                    f"Unknown node type '{node_type}' for node {node_id} - skipping"
+                )
                 continue
 
             # Create visual node in graph
             visual_node = graph.create_node(identifier)
             if not visual_node:
-                logger.error(f"Failed to create visual node for {node_id} (type={node_type})")
+                logger.error(
+                    f"Failed to create visual node for {node_id} (type={node_type})"
+                )
                 continue
 
             # Create the underlying CasareRPA node
@@ -346,7 +328,9 @@ class WorkflowLifecycleComponent(BaseComponent):
                         widget.set_value(config[widget_name])
                         logger.debug(f"Restored widget {node_id}.{widget_name}")
                     except Exception as e:
-                        logger.warning(f"Failed to restore widget {node_id}.{widget_name}: {e}")
+                        logger.warning(
+                            f"Failed to restore widget {node_id}.{widget_name}: {e}"
+                        )
 
             # Restore node name
             name = node_data.get("name")
@@ -398,7 +382,9 @@ class WorkflowLifecycleComponent(BaseComponent):
         # Deserialize frames
         self._deserialize_frames(workflow.frames, node_map)
 
-        logger.info(f"Loaded workflow '{workflow.metadata.name}' with {len(workflow.nodes)} nodes")
+        logger.info(
+            f"Loaded workflow '{workflow.metadata.name}' with {len(workflow.nodes)} nodes"
+        )
 
     def _import_workflow_merge(self, workflow: WorkflowSchema) -> None:
         """
@@ -428,7 +414,9 @@ class WorkflowLifecycleComponent(BaseComponent):
         workflow = factory.create_workflow_from_graph(graph)
         return workflow
 
-    def _create_workflow_from_selected_nodes(self, selected_nodes: list) -> WorkflowSchema:
+    def _create_workflow_from_selected_nodes(
+        self, selected_nodes: list
+    ) -> WorkflowSchema:
         """
         Create a workflow from selected nodes only.
 
@@ -558,7 +546,9 @@ class WorkflowLifecycleComponent(BaseComponent):
                         config = {}
                         casare_node = casare_class(node_id, config)
                         visual_node.set_casare_node(casare_node)
-                        logger.info(f"Created missing CasareRPA node for {visual_node.name()}")
+                        logger.info(
+                            f"Created missing CasareRPA node for {visual_node.name()}"
+                        )
                     except Exception as e:
                         logger.error(f"Failed to create CasareRPA node: {e}")
 

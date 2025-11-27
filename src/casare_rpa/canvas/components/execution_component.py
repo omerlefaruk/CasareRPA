@@ -56,7 +56,9 @@ class ExecutionComponent(BaseComponent):
         self._event_bus.subscribe(EventType.NODE_STARTED, self._on_node_started)
         self._event_bus.subscribe(EventType.NODE_COMPLETED, self._on_node_completed)
         self._event_bus.subscribe(EventType.NODE_ERROR, self._on_node_error)
-        self._event_bus.subscribe(EventType.WORKFLOW_COMPLETED, self._on_workflow_completed)
+        self._event_bus.subscribe(
+            EventType.WORKFLOW_COMPLETED, self._on_workflow_completed
+        )
         self._event_bus.subscribe(EventType.WORKFLOW_ERROR, self._on_workflow_error)
         self._event_bus.subscribe(EventType.WORKFLOW_STOPPED, self._on_workflow_stopped)
 
@@ -151,7 +153,7 @@ class ExecutionComponent(BaseComponent):
 
         except Exception as e:
             logger.exception("Failed to start workflow execution")
-            self._main_window.statusBar().showMessage(f"Error: {str(e)}", 5000)
+            self._main_window.show_status(f"Error: {str(e)}", 5000)
             self._main_window.action_run.setEnabled(True)
 
     def on_run_to_node(self, target_node_id: str) -> None:
@@ -181,14 +183,14 @@ class ExecutionComponent(BaseComponent):
         if self._workflow_runner:
             logger.info("Pausing workflow execution")
             self._workflow_runner.pause()
-            self._main_window.statusBar().showMessage("Workflow paused", 3000)
+            self._main_window.show_status("Workflow paused", 3000)
 
     def on_resume_workflow(self) -> None:
         """Handle workflow resume."""
         if self._workflow_runner:
             logger.info("Resuming workflow execution")
             self._workflow_runner.resume()
-            self._main_window.statusBar().showMessage("Workflow resumed", 3000)
+            self._main_window.show_status("Workflow resumed", 3000)
 
     def on_stop_workflow(self) -> None:
         """Handle workflow stop."""
@@ -197,7 +199,7 @@ class ExecutionComponent(BaseComponent):
             self._workflow_runner.stop()
             if self._workflow_task and not self._workflow_task.done():
                 self._workflow_task.cancel()
-            self._main_window.statusBar().showMessage("Workflow stopped", 3000)
+            self._main_window.show_status("Workflow stopped", 3000)
 
     def _on_node_started(self, event_data: dict) -> None:
         """Handle node started event."""
@@ -231,18 +233,18 @@ class ExecutionComponent(BaseComponent):
     def _on_workflow_completed(self, event_data: dict) -> None:
         """Handle workflow completed event."""
         logger.info("Workflow execution completed")
-        self._main_window.statusBar().showMessage("Workflow completed", 3000)
+        self._main_window.show_status("Workflow completed", 3000)
 
     def _on_workflow_error(self, event_data: dict) -> None:
         """Handle workflow error event."""
         error = event_data.get("error", "Unknown error")
         logger.error(f"Workflow error: {error}")
-        self._main_window.statusBar().showMessage(f"Workflow error: {error}", 5000)
+        self._main_window.show_status(f"Workflow error: {error}", 5000)
 
     def _on_workflow_stopped(self, event_data: dict) -> None:
         """Handle workflow stopped event."""
         logger.info("Workflow execution stopped")
-        self._main_window.statusBar().showMessage("Workflow stopped", 3000)
+        self._main_window.show_status("Workflow stopped", 3000)
 
     def _reset_all_node_visuals(self) -> None:
         """Reset all node visual states."""

@@ -8,12 +8,15 @@ Handles all execution-related operations:
 - Debug mode controls
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
 from .base_controller import BaseController
+
+if TYPE_CHECKING:
+    from ....canvas.main_window import MainWindow
 
 
 class ExecutionController(BaseController):
@@ -43,7 +46,7 @@ class ExecutionController(BaseController):
     run_to_node_requested = Signal(str)  # node_id
     run_single_node_requested = Signal(str)  # node_id
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: "MainWindow"):
         """Initialize execution controller."""
         super().__init__(main_window)
         self._is_running = False
@@ -71,34 +74,32 @@ class ExecutionController(BaseController):
         self._is_paused = False
         self.execution_started.emit()
 
+        # Emit MainWindow signal for backward compatibility
+        self.main_window.workflow_run.emit()
+
         # Update UI state
         self._update_execution_actions(running=True)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                "Workflow execution started...", 0
-            )
+        self.main_window.show_status("Workflow execution started...", 0)
 
     def run_to_node(self) -> None:
         """Run workflow up to the selected node (F4)."""
         logger.info("Running to selected node")
 
         # Get selected node from graph
-        central_widget = self.main_window._central_widget
-        if not central_widget or not hasattr(central_widget, "graph"):
+        graph = self.main_window.get_graph()
+        if not graph:
             # Fallback to full run if no graph
             self.run_workflow()
             return
 
-        graph = central_widget.graph
         selected_nodes = graph.selected_nodes()
 
         # If no node selected, fallback to full workflow run
         if not selected_nodes:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    "No node selected - running full workflow", 3000
-                )
+            self.main_window.show_status(
+                "No node selected - running full workflow", 3000
+            )
             self.run_workflow()
             return
 
@@ -107,10 +108,9 @@ class ExecutionController(BaseController):
         target_node_id = target_node.get_property("node_id")
 
         if not target_node_id:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    "Selected node has no ID - running full workflow", 3000
-                )
+            self.main_window.show_status(
+                "Selected node has no ID - running full workflow", 3000
+            )
             self.run_workflow()
             return
 
@@ -130,31 +130,25 @@ class ExecutionController(BaseController):
         # Update UI state
         self._update_execution_actions(running=True)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                f"Running to node: {node_name}...", 0
-            )
+        self.main_window.show_status(f"Running to node: {node_name}...", 0)
 
     def run_single_node(self) -> None:
         """Run only the selected node in isolation (F5)."""
         logger.info("Running single node")
 
         # Get selected node from graph
-        central_widget = self.main_window._central_widget
-        if not central_widget or not hasattr(central_widget, "graph"):
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage("No graph available", 3000)
+        graph = self.main_window.get_graph()
+        if not graph:
+            self.main_window.show_status("No graph available", 3000)
             return
 
-        graph = central_widget.graph
         selected_nodes = graph.selected_nodes()
 
         # If no node selected, show message
         if not selected_nodes:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    "No node selected - select a node to run", 3000
-                )
+            self.main_window.show_status(
+                "No node selected - select a node to run", 3000
+            )
             return
 
         # Get first selected node's ID
@@ -162,10 +156,7 @@ class ExecutionController(BaseController):
         target_node_id = target_node.get_property("node_id")
 
         if not target_node_id:
-            if self.main_window.statusBar():
-                self.main_window.statusBar().showMessage(
-                    "Selected node has no ID", 3000
-                )
+            self.main_window.show_status("Selected node has no ID", 3000)
             return
 
         # Get node name for display
@@ -175,8 +166,7 @@ class ExecutionController(BaseController):
 
         self.run_single_node_requested.emit(target_node_id)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(f"Running node: {node_name}...", 0)
+        self.main_window.show_status(f"Running node: {node_name}...", 0)
 
     def pause_workflow(self) -> None:
         """Pause running workflow."""
@@ -189,8 +179,10 @@ class ExecutionController(BaseController):
         self._is_paused = True
         self.execution_paused.emit()
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage("Workflow paused", 0)
+        # Emit MainWindow signal for backward compatibility
+        self.main_window.workflow_pause.emit()
+
+        self.main_window.show_status("Workflow paused", 0)
 
     def resume_workflow(self) -> None:
         """Resume paused workflow."""
@@ -203,8 +195,10 @@ class ExecutionController(BaseController):
         self._is_paused = False
         self.execution_resumed.emit()
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage("Workflow resumed...", 0)
+        # Emit MainWindow signal for backward compatibility
+        self.main_window.workflow_resume.emit()
+
+        self.main_window.show_status("Workflow resumed...", 0)
 
     def toggle_pause(self, checked: bool) -> None:
         """
@@ -230,13 +224,13 @@ class ExecutionController(BaseController):
         self._is_paused = False
         self.execution_stopped.emit()
 
+        # Emit MainWindow signal for backward compatibility
+        self.main_window.workflow_stop.emit()
+
         # Update UI state
         self._update_execution_actions(running=False)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                "Workflow execution stopped", 3000
-            )
+        self.main_window.show_status("Workflow execution stopped", 3000)
 
     def on_execution_completed(self) -> None:
         """Handle workflow execution completion."""
@@ -249,10 +243,7 @@ class ExecutionController(BaseController):
         # Update UI state
         self._update_execution_actions(running=False)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                "Workflow execution completed", 3000
-            )
+        self.main_window.show_status("Workflow execution completed", 3000)
 
     def on_execution_error(self, error_message: str) -> None:
         """
@@ -270,10 +261,7 @@ class ExecutionController(BaseController):
         # Update UI state
         self._update_execution_actions(running=False)
 
-        if self.main_window.statusBar():
-            self.main_window.statusBar().showMessage(
-                "Workflow execution failed", 3000
-            )
+        self.main_window.show_status("Workflow execution failed", 3000)
 
     @property
     def is_running(self) -> bool:
@@ -293,13 +281,9 @@ class ExecutionController(BaseController):
             True if safe to run, False if validation errors block execution
         """
         # Get validation errors from bottom panel if available
-        if (
-            hasattr(self.main_window, "_bottom_panel")
-            and self.main_window._bottom_panel
-        ):
-            validation_errors = (
-                self.main_window._bottom_panel.get_validation_errors_blocking()
-            )
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            validation_errors = bottom_panel.get_validation_errors_blocking()
             if validation_errors:
                 QMessageBox.warning(
                     self.main_window,
@@ -309,7 +293,7 @@ class ExecutionController(BaseController):
                     "Please check the Validation tab for details.",
                 )
                 # Show validation tab
-                self.main_window._bottom_panel.show_validation_tab()
+                bottom_panel.show_validation_tab()
                 return False
 
         return True
