@@ -85,7 +85,7 @@ class VisualNode(NodeGraphQtBaseNode):
 
     def _apply_category_colors(self) -> None:
         """Apply VSCode Dark+ category-based colors to the node."""
-        from ..graph.node_icons import CATEGORY_COLORS
+        from casare_rpa.canvas.graph.node_icons import CATEGORY_COLORS
 
         # Get category color
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
