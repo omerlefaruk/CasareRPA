@@ -1,7 +1,7 @@
 """
 CasareRPA Visual Nodes - Organized by Category
 
-All 142+ visual nodes organized into 12 categories for better navigation.
+All visual nodes organized into categories for better navigation.
 """
 
 # Basic (3 nodes)
@@ -59,6 +59,45 @@ from .database import (
     VisualTableExistsNode,
     VisualGetTableColumnsNode,
     VisualExecuteBatchNode,
+)
+
+# Data Operations (40 nodes) - NEW
+from .data_operations import (
+    # Data operations
+    VisualConcatenateNode,
+    VisualFormatStringNode,
+    VisualRegexMatchNode,
+    VisualRegexReplaceNode,
+    VisualMathOperationNode,
+    VisualComparisonNode,
+    VisualCreateListNode,
+    VisualListGetItemNode,
+    VisualJsonParseNode,
+    VisualGetPropertyNode,
+    # List operations
+    VisualListLengthNode,
+    VisualListAppendNode,
+    VisualListContainsNode,
+    VisualListSliceNode,
+    VisualListJoinNode,
+    VisualListSortNode,
+    VisualListReverseNode,
+    VisualListUniqueNode,
+    VisualListFilterNode,
+    VisualListMapNode,
+    VisualListReduceNode,
+    VisualListFlattenNode,
+    # Dict operations
+    VisualDictGetNode,
+    VisualDictSetNode,
+    VisualDictRemoveNode,
+    VisualDictMergeNode,
+    VisualDictKeysNode,
+    VisualDictValuesNode,
+    VisualDictHasKeyNode,
+    VisualCreateDictNode,
+    VisualDictToJsonNode,
+    VisualDictItemsNode,
 )
 
 # Desktop Automation (36 nodes)
@@ -127,7 +166,7 @@ from .error_handling import (
     VisualAssertNode,
 )
 
-# File Operations (16 nodes)
+# File Operations (40 nodes)
 from .file_operations import (
     VisualReadFileNode,
     VisualWriteFileNode,
@@ -135,16 +174,100 @@ from .file_operations import (
     VisualDeleteFileNode,
     VisualCopyFileNode,
     VisualMoveFileNode,
-    VisualCreateDirectoryNode,
-    VisualListDirectoryNode,
     VisualFileExistsNode,
+    VisualGetFileSizeNode,
     VisualGetFileInfoNode,
-    VisualReadCSVNode,
-    VisualWriteCSVNode,
-    VisualReadJSONFileNode,
-    VisualWriteJSONFileNode,
+    VisualListFilesNode,
+    VisualReadCsvNode,
+    VisualWriteCsvNode,
+    VisualReadJsonNode,
+    VisualWriteJsonNode,
     VisualZipFilesNode,
-    VisualUnzipFilesNode,
+    VisualUnzipFileNode,
+    VisualParseXMLNode,
+    VisualReadXMLFileNode,
+    VisualWriteXMLFileNode,
+    VisualXPathQueryNode,
+    VisualGetXMLElementNode,
+    VisualGetXMLAttributeNode,
+    VisualXMLToJsonNode,
+    VisualJsonToXMLNode,
+    VisualReadPDFTextNode,
+    VisualGetPDFInfoNode,
+    VisualMergePDFsNode,
+    VisualSplitPDFNode,
+    VisualExtractPDFPagesNode,
+    VisualPDFToImagesNode,
+    VisualFTPConnectNode,
+    VisualFTPUploadNode,
+    VisualFTPDownloadNode,
+    VisualFTPListNode,
+    VisualFTPDeleteNode,
+    VisualFTPMakeDirNode,
+    VisualFTPRemoveDirNode,
+    VisualFTPRenameNode,
+    VisualFTPDisconnectNode,
+    VisualFTPGetSizeNode,
+)
+
+# Scripts (5 nodes)
+from .scripts import (
+    VisualRunPythonScriptNode,
+    VisualRunPythonFileNode,
+    VisualEvalExpressionNode,
+    VisualRunBatchScriptNode,
+    VisualRunJavaScriptNode,
+)
+
+# System (13 nodes)
+from .system import (
+    # Clipboard operations
+    VisualClipboardCopyNode,
+    VisualClipboardPasteNode,
+    VisualClipboardClearNode,
+    # Dialogs
+    VisualMessageBoxNode,
+    VisualInputDialogNode,
+    VisualTooltipNode,
+    # Terminal
+    VisualRunCommandNode,
+    VisualRunPowerShellNode,
+    # Windows Services
+    VisualGetServiceStatusNode,
+    VisualStartServiceNode,
+    VisualStopServiceNode,
+    VisualRestartServiceNode,
+    VisualListServicesNode,
+)
+
+# Utility (26 nodes)
+from .utility import (
+    VisualRandomNumberNode,
+    VisualRandomChoiceNode,
+    VisualRandomStringNode,
+    VisualRandomUUIDNode,
+    VisualShuffleListNode,
+    VisualGetCurrentDateTimeNode,
+    VisualFormatDateTimeNode,
+    VisualParseDateTimeNode,
+    VisualDateTimeAddNode,
+    VisualDateTimeDiffNode,
+    VisualDateTimeCompareNode,
+    VisualGetTimestampNode,
+    VisualTextSplitNode,
+    VisualTextReplaceNode,
+    VisualTextTrimNode,
+    VisualTextCaseNode,
+    VisualTextPadNode,
+    VisualTextSubstringNode,
+    VisualTextContainsNode,
+    VisualTextStartsWithNode,
+    VisualTextEndsWithNode,
+    VisualTextLinesNode,
+    VisualTextReverseNode,
+    VisualTextCountNode,
+    VisualTextJoinNode,
+    VisualTextExtractNode,
 )
 
 # Office Automation (12 nodes)
@@ -163,7 +286,7 @@ from .office_automation import (
     VisualOutlookGetInboxCountNode,
 )
 
-# Rest Api (12 nodes)
+# REST API (12 nodes)
 from .rest_api import (
     VisualHttpRequestNode,
     VisualHttpGetNode,
@@ -177,13 +300,6 @@ from .rest_api import (
     VisualHttpDownloadFileNode,
     VisualHttpUploadFileNode,
     VisualBuildUrlNode,
-)
-
-# Utility (3 nodes)
-from .utility import (
-    VisualValidateNode,
-    VisualTransformNode,
-    VisualLogNode,
 )
 
 # Variable (3 nodes)
@@ -239,6 +355,39 @@ __all__ = [
     "VisualTableExistsNode",
     "VisualGetTableColumnsNode",
     "VisualExecuteBatchNode",
+    # data_operations
+    "VisualConcatenateNode",
+    "VisualFormatStringNode",
+    "VisualRegexMatchNode",
+    "VisualRegexReplaceNode",
+    "VisualMathOperationNode",
+    "VisualComparisonNode",
+    "VisualCreateListNode",
+    "VisualListGetItemNode",
+    "VisualJsonParseNode",
+    "VisualGetPropertyNode",
+    "VisualListLengthNode",
+    "VisualListAppendNode",
+    "VisualListContainsNode",
+    "VisualListSliceNode",
+    "VisualListJoinNode",
+    "VisualListSortNode",
+    "VisualListReverseNode",
+    "VisualListUniqueNode",
+    "VisualListFilterNode",
+    "VisualListMapNode",
+    "VisualListReduceNode",
+    "VisualListFlattenNode",
+    "VisualDictGetNode",
+    "VisualDictSetNode",
+    "VisualDictRemoveNode",
+    "VisualDictMergeNode",
+    "VisualDictKeysNode",
+    "VisualDictValuesNode",
+    "VisualDictHasKeyNode",
+    "VisualCreateDictNode",
+    "VisualDictToJsonNode",
+    "VisualDictItemsNode",
     # desktop_automation
     "VisualLaunchApplicationNode",
     "VisualCloseApplicationNode",
@@ -276,6 +425,7 @@ __all__ = [
     "VisualCaptureElementImageNode",
     "VisualOCRExtractTextNode",
     "VisualCompareImagesNode",
+
     # email
     "VisualSendEmailNode",
     "VisualReadEmailsNode",
@@ -285,6 +435,7 @@ __all__ = [
     "VisualMarkEmailNode",
     "VisualDeleteEmailNode",
     "VisualMoveEmailNode",
+
     # error_handling
     "VisualTryNode",
     "VisualRetryNode",
@@ -296,6 +447,7 @@ __all__ = [
     "VisualErrorRecoveryNode",
     "VisualLogErrorNode",
     "VisualAssertNode",
+
     # file_operations
     "VisualReadFileNode",
     "VisualWriteFileNode",
@@ -303,16 +455,89 @@ __all__ = [
     "VisualDeleteFileNode",
     "VisualCopyFileNode",
     "VisualMoveFileNode",
-    "VisualCreateDirectoryNode",
-    "VisualListDirectoryNode",
     "VisualFileExistsNode",
+    "VisualGetFileSizeNode",
     "VisualGetFileInfoNode",
-    "VisualReadCSVNode",
-    "VisualWriteCSVNode",
-    "VisualReadJSONFileNode",
-    "VisualWriteJSONFileNode",
+    "VisualListFilesNode",
+    "VisualReadCsvNode",
+    "VisualWriteCsvNode",
+    "VisualReadJsonNode",
+    "VisualWriteJsonNode",
     "VisualZipFilesNode",
-    "VisualUnzipFilesNode",
+    "VisualUnzipFileNode",
+    "VisualParseXMLNode",
+    "VisualReadXMLFileNode",
+    "VisualWriteXMLFileNode",
+    "VisualXPathQueryNode",
+    "VisualGetXMLElementNode",
+    "VisualGetXMLAttributeNode",
+    "VisualXMLToJsonNode",
+    "VisualJsonToXMLNode",
+    "VisualReadPDFTextNode",
+    "VisualGetPDFInfoNode",
+    "VisualMergePDFsNode",
+    "VisualSplitPDFNode",
+    "VisualExtractPDFPagesNode",
+    "VisualPDFToImagesNode",
+    "VisualFTPConnectNode",
+    "VisualFTPUploadNode",
+    "VisualFTPDownloadNode",
+    "VisualFTPListNode",
+    "VisualFTPDeleteNode",
+    "VisualFTPMakeDirNode",
+    "VisualFTPRemoveDirNode",
+    "VisualFTPRenameNode",
+    "VisualFTPDisconnectNode",
+    "VisualFTPGetSizeNode",
+
+    # scripts
+    "VisualRunPythonScriptNode",
+    "VisualRunPythonFileNode",
+    "VisualEvalExpressionNode",
+    "VisualRunBatchScriptNode",
+    "VisualRunJavaScriptNode",
+    # system
+    "VisualClipboardCopyNode",
+    "VisualClipboardPasteNode",
+    "VisualClipboardClearNode",
+    "VisualMessageBoxNode",
+    "VisualInputDialogNode",
+    "VisualTooltipNode",
+    "VisualRunCommandNode",
+    "VisualRunPowerShellNode",
+    "VisualGetServiceStatusNode",
+    "VisualStartServiceNode",
+    "VisualStopServiceNode",
+    "VisualRestartServiceNode",
+    "VisualListServicesNode",
+    # utility
+    "VisualRandomNumberNode",
+    "VisualRandomChoiceNode",
+    "VisualRandomStringNode",
+    "VisualRandomUUIDNode",
+    "VisualShuffleListNode",
+    "VisualGetCurrentDateTimeNode",
+    "VisualFormatDateTimeNode",
+    "VisualParseDateTimeNode",
+    "VisualDateTimeAddNode",
+    "VisualDateTimeDiffNode",
+    "VisualDateTimeCompareNode",
+    "VisualGetTimestampNode",
+    "VisualTextSplitNode",
+    "VisualTextReplaceNode",
+    "VisualTextTrimNode",
+    "VisualTextCaseNode",
+    "VisualTextPadNode",
+    "VisualTextSubstringNode",
+    "VisualTextContainsNode",
+    "VisualTextStartsWithNode",
+    "VisualTextEndsWithNode",
+    "VisualTextLinesNode",
+    "VisualTextReverseNode",
+    "VisualTextCountNode",
+    "VisualTextJoinNode",
+    "VisualTextExtractNode",
+
     # office_automation
     "VisualExcelOpenNode",
     "VisualExcelReadCellNode",
@@ -326,6 +551,7 @@ __all__ = [
     "VisualOutlookSendEmailNode",
     "VisualOutlookReadEmailsNode",
     "VisualOutlookGetInboxCountNode",
+
     # rest_api
     "VisualHttpRequestNode",
     "VisualHttpGetNode",
@@ -339,12 +565,28 @@ __all__ = [
     "VisualHttpDownloadFileNode",
     "VisualHttpUploadFileNode",
     "VisualBuildUrlNode",
-    # utility
-    "VisualValidateNode",
-    "VisualTransformNode",
-    "VisualLogNode",
     # variable
     "VisualSetVariableNode",
     "VisualGetVariableNode",
     "VisualIncrementVariableNode",
 ]
+
+# =============================================================================
+# ALL_VISUAL_NODE_CLASSES - For node registration
+# =============================================================================
+
+# Collect all classes from this module's __all__ list
+_THIS_MODULE_CLASSES = [
+    globals()[name] for name in __all__
+]
+
+# Import extended nodes from old location (until migration is complete)
+try:
+    from casare_rpa.canvas.visual_nodes.extended_visual_nodes import EXTENDED_VISUAL_NODE_CLASSES
+    _EXTENDED_CLASSES = EXTENDED_VISUAL_NODE_CLASSES
+except ImportError:
+    _EXTENDED_CLASSES = []
+
+# Combine all classes: this module + extended
+# Note: data_operations nodes are now in _THIS_MODULE_CLASSES
+ALL_VISUAL_NODE_CLASSES = _THIS_MODULE_CLASSES + _EXTENDED_CLASSES

@@ -72,9 +72,6 @@ from ..desktop.rich_comment_node import (
 
 from .base_visual_node import VisualNode, UNIFIED_NODE_COLOR
 
-# Import Extended Visual Nodes
-from .extended_visual_nodes import EXTENDED_VISUAL_NODE_CLASSES
-
 # Legacy color scheme (kept for reference but not used)
 NODE_COLORS = {
     "basic": UNIFIED_NODE_COLOR,
@@ -3797,7 +3794,7 @@ def _get_all_visual_node_classes():
 
 
 # VISUAL_NODE_CLASSES - for menu display (excludes internal nodes)
-VISUAL_NODE_CLASSES = _get_visual_node_classes() + EXTENDED_VISUAL_NODE_CLASSES
+VISUAL_NODE_CLASSES = _get_visual_node_classes()
 
 # ALL_VISUAL_NODE_CLASSES - for registration (includes internal nodes)
-ALL_VISUAL_NODE_CLASSES = _get_all_visual_node_classes() + EXTENDED_VISUAL_NODE_CLASSES
+ALL_VISUAL_NODE_CLASSES = _get_all_visual_node_classes()

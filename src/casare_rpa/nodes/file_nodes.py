@@ -795,6 +795,83 @@ class CreateDirectoryNode(BaseNode):
         return True, ""
 
 
+class ListFilesNode(BaseNode):
+    """
+    List files in a directory.
+
+    Config:
+        pattern: Glob pattern to filter (default: *)
+        recursive: Search recursively (default: False)
+
+    Inputs:
+        directory_path: Directory to list
+
+    Outputs:
+        files: List of file paths
+        count: Number of files found
+    """
+
+    def __init__(self, node_id: str, name: str = "List Files", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListFilesNode"
+
+    def _define_ports(self) -> None:
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        self.status = NodeStatus.RUNNING
+
+        try:
+            dir_path = self.get_input_value("directory_path", context)
+            pattern = self.config.get("pattern", "*")
+            recursive = self.config.get("recursive", False)
+
+            if not dir_path:
+                raise ValueError("directory_path is required")
+
+            # Resolve {{variable}} patterns in dir_path and pattern
+            dir_path = context.resolve_value(dir_path)
+            pattern = context.resolve_value(pattern)
+
+            path = Path(dir_path)
+            if not path.exists():
+                raise FileNotFoundError(f"Directory not found: {dir_path}")
+
+            if not path.is_dir():
+                raise NotADirectoryError(f"Not a directory: {dir_path}")
+
+            if recursive:
+                matches = list(path.rglob(pattern))
+            else:
+                matches = list(path.glob(pattern))
+
+            # Filter to only files (not directories)
+            files = [str(item) for item in matches if item.is_file()]
+
+            self.set_output_value("files", files)
+            self.set_output_value("count", len(files))
+            self.status = NodeStatus.SUCCESS
+
+            return {
+                "success": True,
+                "data": {"count": len(files), "files": files[:10]},
+                "next_nodes": ["exec_out"]
+            }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
+
+    def _validate_config(self) -> tuple[bool, str]:
+        return True, ""
+
+
 class ListDirectoryNode(BaseNode):
     """
     List files and directories in a folder.
@@ -958,6 +1035,68 @@ class FileExistsNode(BaseNode):
         check_type = self.config.get("check_type", "any")
         if check_type not in ["file", "directory", "any"]:
             return False, "check_type must be 'file', 'directory', or 'any'"
+        return True, ""
+
+
+class GetFileSizeNode(BaseNode):
+    """
+    Get the size of a file in bytes.
+
+    Inputs:
+        file_path: Path to the file
+
+    Outputs:
+        size: File size in bytes
+        success: Whether operation succeeded
+    """
+
+    def __init__(self, node_id: str, name: str = "Get File Size", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "GetFileSizeNode"
+
+    def _define_ports(self) -> None:
+        self.add_input_port("exec_in", PortType.EXEC_INPUT)
+        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        self.status = NodeStatus.RUNNING
+
+        try:
+            file_path = self.get_input_value("file_path", context)
+
+            if not file_path:
+                raise ValueError("file_path is required")
+
+            # Resolve {{variable}} patterns in file_path
+            file_path = context.resolve_value(file_path)
+
+            path = Path(file_path)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            size = path.stat().st_size
+
+            self.set_output_value("size", size)
+            self.set_output_value("success", True)
+            self.status = NodeStatus.SUCCESS
+
+            return {
+                "success": True,
+                "data": {"size": size},
+                "next_nodes": ["exec_out"]
+            }
+
+        except Exception as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
+
+    def _validate_config(self) -> tuple[bool, str]:
         return True, ""
 
 
