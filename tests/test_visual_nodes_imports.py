@@ -1,7 +1,7 @@
 """
 Smoke tests for visual node imports.
 
-This test ensures all 141 visual nodes can be imported successfully
+This test ensures all 238 visual nodes can be imported successfully
 from both the new location and the compatibility layer.
 """
 
@@ -57,6 +57,11 @@ class TestVisualNodesImports:
             VisualDatabaseConnectNode,
         )
 
+        # Data Operations (32 nodes)
+        from casare_rpa.presentation.canvas.visual_nodes.data_operations import (
+            VisualConcatenateNode,
+        )
+
         # Desktop Automation (36 nodes)
         from casare_rpa.presentation.canvas.visual_nodes.desktop_automation import (
             VisualLaunchApplicationNode,
@@ -72,9 +77,19 @@ class TestVisualNodesImports:
             VisualTryNode,
         )
 
-        # File Operations (16 nodes)
+        # File Operations (40 nodes)
         from casare_rpa.presentation.canvas.visual_nodes.file_operations import (
             VisualReadFileNode,
+        )
+
+        # Scripts (5 nodes)
+        from casare_rpa.presentation.canvas.visual_nodes.scripts import (
+            VisualRunPythonScriptNode,
+        )
+
+        # System (13 nodes)
+        from casare_rpa.presentation.canvas.visual_nodes.system import (
+            VisualClipboardCopyNode,
         )
 
         # Office Automation (12 nodes)
@@ -87,9 +102,9 @@ class TestVisualNodesImports:
             VisualHttpRequestNode,
         )
 
-        # Utility (3 nodes - HttpRequestNode removed as duplicate)
+        # Utility (26 nodes - random, datetime, text operations)
         from casare_rpa.presentation.canvas.visual_nodes.utility import (
-            VisualValidateNode,
+            VisualRandomNumberNode,
         )
 
         # Variable (3 nodes)
@@ -102,13 +117,16 @@ class TestVisualNodesImports:
         assert VisualLaunchBrowserNode is not None
         assert VisualIfNode is not None
         assert VisualDatabaseConnectNode is not None
+        assert VisualConcatenateNode is not None
         assert VisualLaunchApplicationNode is not None
         assert VisualSendEmailNode is not None
         assert VisualTryNode is not None
         assert VisualReadFileNode is not None
+        assert VisualRunPythonScriptNode is not None
+        assert VisualClipboardCopyNode is not None
         assert VisualExcelOpenNode is not None
         assert VisualHttpRequestNode is not None
-        assert VisualValidateNode is not None
+        assert VisualRandomNumberNode is not None
         assert VisualSetVariableNode is not None
 
     def test_no_duplicate_http_request_node(self):
@@ -131,9 +149,12 @@ class TestVisualNodesImports:
         """Test that main __init__.py exports all nodes correctly."""
         from casare_rpa.presentation.canvas.visual_nodes import __all__
 
-        # Check that __all__ contains expected number of nodes (141 after removing duplicate)
-        # 3 + 18 + 10 + 10 + 36 + 8 + 10 + 16 + 12 + 12 + 3 + 3 = 141
-        assert len(__all__) == 141
+        # Check that __all__ contains expected number of nodes (238 total)
+        # basic(3) + browser(18) + control_flow(10) + database(10) + data_operations(32)
+        # + desktop_automation(36) + email(8) + error_handling(10) + file_operations(40)
+        # + scripts(5) + system(13) + utility(26) + office_automation(12) + rest_api(12)
+        # + variable(3) = 238
+        assert len(__all__) == 238
 
         # Check that VisualHttpRequestNode appears only once
         http_request_count = __all__.count("VisualHttpRequestNode")
@@ -146,4 +167,4 @@ class TestVisualNodesImports:
 
         # Both should have the same __all__ list
         assert compat_all == new_all
-        assert len(compat_all) == 141
+        assert len(compat_all) == 238
