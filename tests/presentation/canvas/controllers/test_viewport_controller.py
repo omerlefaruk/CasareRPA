@@ -18,7 +18,7 @@ from casare_rpa.presentation.canvas.controllers.viewport_controller import (
 
 
 @pytest.fixture
-def mock_main_window(qtbot):
+def mock_main_window(qtbot) -> None:
     """Create a mock MainWindow with viewport-related components."""
     main_window = QMainWindow()
     qtbot.addWidget(main_window)
@@ -50,7 +50,7 @@ def mock_main_window(qtbot):
 
 
 @pytest.fixture
-def viewport_controller(mock_main_window):
+def viewport_controller(mock_main_window) -> None:
     """Create a ViewportController instance."""
     controller = ViewportController(mock_main_window)
     controller.initialize()
@@ -60,20 +60,20 @@ def viewport_controller(mock_main_window):
 class TestViewportControllerInitialization:
     """Tests for ViewportController initialization."""
 
-    def test_initialization(self, mock_main_window):
+    def test_initialization(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         controller = ViewportController(mock_main_window)
         assert controller.main_window == mock_main_window
         assert controller._current_zoom == 100.0
         assert controller._minimap_visible is False
 
-    def test_initialize_method(self, mock_main_window):
+    def test_initialize_method(self, mock_main_window) -> None:
         """Test initialize method sets initialized flag."""
         controller = ViewportController(mock_main_window)
         controller.initialize()
         assert controller.is_initialized is True
 
-    def test_cleanup(self, viewport_controller):
+    def test_cleanup(self, viewport_controller) -> None:
         """Test cleanup method."""
         viewport_controller.cleanup()
         assert viewport_controller.is_initialized is False
@@ -82,7 +82,7 @@ class TestViewportControllerInitialization:
 class TestMinimapManagement:
     """Tests for minimap management functionality."""
 
-    def test_show_minimap(self, viewport_controller, mock_main_window):
+    def test_show_minimap(self, viewport_controller, mock_main_window) -> None:
         """Test showing the minimap."""
         signal_emitted = []
         viewport_controller.minimap_toggled.connect(
@@ -96,7 +96,7 @@ class TestMinimapManagement:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] is True
 
-    def test_hide_minimap(self, viewport_controller, mock_main_window):
+    def test_hide_minimap(self, viewport_controller, mock_main_window) -> None:
         """Test hiding the minimap."""
         viewport_controller._minimap_visible = True
 
@@ -112,14 +112,14 @@ class TestMinimapManagement:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] is False
 
-    def test_toggle_minimap_on(self, viewport_controller, mock_main_window):
+    def test_toggle_minimap_on(self, viewport_controller, mock_main_window) -> None:
         """Test toggling minimap on."""
         viewport_controller.toggle_minimap(True)
 
         mock_main_window._minimap.setVisible.assert_called_with(True)
         assert viewport_controller._minimap_visible is True
 
-    def test_toggle_minimap_off(self, viewport_controller, mock_main_window):
+    def test_toggle_minimap_off(self, viewport_controller, mock_main_window) -> None:
         """Test toggling minimap off."""
         viewport_controller._minimap_visible = True
 
@@ -128,19 +128,19 @@ class TestMinimapManagement:
         mock_main_window._minimap.setVisible.assert_called_with(False)
         assert viewport_controller._minimap_visible is False
 
-    def test_position_minimap(self, viewport_controller, mock_main_window):
+    def test_position_minimap(self, viewport_controller, mock_main_window) -> None:
         """Test positioning minimap at bottom-left."""
         viewport_controller._position_minimap()
 
         mock_main_window._minimap.move.assert_called()
         mock_main_window._minimap.raise_.assert_called()
 
-    def test_is_minimap_visible_true(self, viewport_controller):
+    def test_is_minimap_visible_true(self, viewport_controller) -> None:
         """Test is_minimap_visible returns true when visible."""
         viewport_controller._minimap_visible = True
         assert viewport_controller.is_minimap_visible() is True
 
-    def test_is_minimap_visible_false(self, viewport_controller):
+    def test_is_minimap_visible_false(self, viewport_controller) -> None:
         """Test is_minimap_visible returns false when hidden."""
         viewport_controller._minimap_visible = False
         assert viewport_controller.is_minimap_visible() is False
@@ -149,7 +149,7 @@ class TestMinimapManagement:
 class TestZoomManagement:
     """Tests for zoom display functionality."""
 
-    def test_update_zoom_display(self, viewport_controller, mock_main_window):
+    def test_update_zoom_display(self, viewport_controller, mock_main_window) -> None:
         """Test updating zoom display."""
         signal_emitted = []
         viewport_controller.zoom_changed.connect(
@@ -163,16 +163,16 @@ class TestZoomManagement:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] == 150.0
 
-    def test_get_current_zoom(self, viewport_controller):
+    def test_get_current_zoom(self, viewport_controller) -> None:
         """Test getting current zoom level."""
         viewport_controller._current_zoom = 75.0
         assert viewport_controller.get_current_zoom() == 75.0
 
-    def test_get_current_zoom_default(self, viewport_controller):
+    def test_get_current_zoom_default(self, viewport_controller) -> None:
         """Test default zoom level is 100%."""
         assert viewport_controller.get_current_zoom() == 100.0
 
-    def test_zoom_changed_signal_emitted(self, viewport_controller):
+    def test_zoom_changed_signal_emitted(self, viewport_controller) -> None:
         """Test zoom_changed signal is emitted when zoom updates."""
         signal_values = []
         viewport_controller.zoom_changed.connect(
@@ -188,7 +188,7 @@ class TestZoomManagement:
 class TestViewportOperations:
     """Tests for viewport operations."""
 
-    def test_reset_viewport(self, viewport_controller, mock_main_window):
+    def test_reset_viewport(self, viewport_controller, mock_main_window) -> None:
         """Test resetting viewport to default state."""
         mock_graph = Mock()
         mock_main_window._central_widget.graph = mock_graph
@@ -203,7 +203,7 @@ class TestViewportOperations:
         assert viewport_controller._current_zoom == 100.0
         assert len(signal_emitted) == 1
 
-    def test_fit_to_view(self, viewport_controller, mock_main_window):
+    def test_fit_to_view(self, viewport_controller, mock_main_window) -> None:
         """Test fitting viewport to show all nodes."""
         mock_graph = Mock()
         mock_main_window._central_widget.graph = mock_graph
@@ -212,7 +212,7 @@ class TestViewportOperations:
 
         mock_graph.fit_to_selection.assert_called_once()
 
-    def test_center_on_node(self, viewport_controller, mock_main_window):
+    def test_center_on_node(self, viewport_controller, mock_main_window) -> None:
         """Test centering viewport on a specific node."""
         mock_graph = Mock()
         mock_node = Mock()
@@ -228,7 +228,9 @@ class TestViewportOperations:
         mock_node.set_selected.assert_called_once_with(True)
         mock_graph.fit_to_selection.assert_called_once()
 
-    def test_center_on_node_not_found(self, viewport_controller, mock_main_window):
+    def test_center_on_node_not_found(
+        self, viewport_controller, mock_main_window
+    ) -> None:
         """Test centering on non-existent node."""
         mock_graph = Mock()
         mock_graph.all_nodes.return_value = []
@@ -241,7 +243,7 @@ class TestViewportOperations:
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
-    def test_minimap_operations_without_minimap(self, qtbot):
+    def test_minimap_operations_without_minimap(self, qtbot) -> None:
         """Test minimap operations when minimap is None."""
         main_window = QMainWindow()
         qtbot.addWidget(main_window)
@@ -257,7 +259,7 @@ class TestEdgeCases:
         controller.hide_minimap()
         controller.toggle_minimap(True)
 
-    def test_zoom_without_label(self, qtbot):
+    def test_zoom_without_label(self, qtbot) -> None:
         """Test zoom display update when label is not available."""
         main_window = QMainWindow()
         qtbot.addWidget(main_window)
@@ -272,7 +274,7 @@ class TestEdgeCases:
         # Should not raise error
         controller.update_zoom_display(150.0)
 
-    def test_viewport_operations_no_graph(self, qtbot):
+    def test_viewport_operations_no_graph(self, qtbot) -> None:
         """Test viewport operations when graph is not available."""
         main_window = QMainWindow()
         qtbot.addWidget(main_window)
@@ -288,7 +290,7 @@ class TestEdgeCases:
         controller.fit_to_view()
         controller.center_on_node("any-node")
 
-    def test_create_frame_no_graph_available(self, qtbot):
+    def test_create_frame_no_graph_available(self, qtbot) -> None:
         """Test frame creation when graph is not available."""
         main_window = QMainWindow()
         qtbot.addWidget(main_window)

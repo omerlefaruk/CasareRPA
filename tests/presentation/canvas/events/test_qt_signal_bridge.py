@@ -21,7 +21,7 @@ from casare_rpa.presentation.canvas.events.qt_signal_bridge import (
 
 
 @pytest.fixture
-def qapp():
+def qapp() -> None:
     """Provide Qt application instance."""
     app = QCoreApplication.instance()
     if app is None:
@@ -42,13 +42,13 @@ class TestQtSignalBridge:
         """Clean up after each test."""
         EventBus.reset_instance()
 
-    def test_bridge_initialization(self, qapp):
+    def test_bridge_initialization(self, qapp) -> None:
         """Test that bridge initializes correctly."""
         bridge = QtSignalBridge()
         assert bridge is not None
         bridge.cleanup()
 
-    def test_bridge_emits_generic_signal(self, qapp):
+    def test_bridge_emits_generic_signal(self, qapp) -> None:
         """Test that bridge emits generic event signal."""
         bridge = QtSignalBridge()
         received_events = []
@@ -70,7 +70,7 @@ class TestQtSignalBridge:
 
         bridge.cleanup()
 
-    def test_bridge_emits_category_signals(self, qapp):
+    def test_bridge_emits_category_signals(self, qapp) -> None:
         """Test that bridge emits category-specific signals."""
         bridge = QtSignalBridge()
         workflow_events = []
@@ -98,7 +98,7 @@ class TestQtSignalBridge:
 
         bridge.cleanup()
 
-    def test_bridge_publish(self, qapp):
+    def test_bridge_publish(self, qapp) -> None:
         """Test publishing through bridge."""
         bridge = QtSignalBridge()
         received_events = []
@@ -131,12 +131,12 @@ class TestQtEventEmitter:
         """Clean up after each test."""
         EventBus.reset_instance()
 
-    def test_emitter_initialization(self, qapp):
+    def test_emitter_initialization(self, qapp) -> None:
         """Test that emitter initializes correctly."""
         emitter = QtEventEmitter()
         assert emitter is not None
 
-    def test_emitter_emits_qt_signal(self, qapp):
+    def test_emitter_emits_qt_signal(self, qapp) -> None:
         """Test that emitter emits Qt signal."""
         emitter = QtEventEmitter()
         received_events = []
@@ -155,7 +155,7 @@ class TestQtEventEmitter:
         assert len(received_events) == 1
         assert received_events[0] == event
 
-    def test_emitter_publishes_to_event_bus(self, qapp):
+    def test_emitter_publishes_to_event_bus(self, qapp) -> None:
         """Test that emitter publishes to EventBus."""
         emitter = QtEventEmitter()
         received_events = []
@@ -184,13 +184,13 @@ class TestQtEventSubscriber:
         """Clean up after each test."""
         EventBus.reset_instance()
 
-    def test_subscriber_initialization(self, qapp):
+    def test_subscriber_initialization(self, qapp) -> None:
         """Test that subscriber initializes correctly."""
         subscriber = QtEventSubscriber()
         assert subscriber is not None
         subscriber.cleanup()
 
-    def test_subscriber_receives_events(self, qapp):
+    def test_subscriber_receives_events(self, qapp) -> None:
         """Test that subscriber receives subscribed events."""
         subscriber = QtEventSubscriber()
         received_events = []
@@ -212,7 +212,7 @@ class TestQtEventSubscriber:
 
         subscriber.cleanup()
 
-    def test_subscriber_filters_events(self, qapp):
+    def test_subscriber_filters_events(self, qapp) -> None:
         """Test that subscriber only receives subscribed events."""
         subscriber = QtEventSubscriber()
         received_events = []
@@ -237,7 +237,7 @@ class TestQtEventSubscriber:
 
         subscriber.cleanup()
 
-    def test_subscriber_unsubscribe(self, qapp):
+    def test_subscriber_unsubscribe(self, qapp) -> None:
         """Test unsubscribing from events."""
         subscriber = QtEventSubscriber()
         received_events = []
@@ -263,7 +263,7 @@ class TestQtEventSubscriber:
 
         subscriber.cleanup()
 
-    def test_subscriber_cleanup(self, qapp):
+    def test_subscriber_cleanup(self, qapp) -> None:
         """Test that cleanup unsubscribes all events."""
         subscriber = QtEventSubscriber()
         received_events = []

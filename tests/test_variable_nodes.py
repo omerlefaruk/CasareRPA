@@ -13,7 +13,7 @@ class TestVariableNodes:
     """Integration tests for variable category nodes."""
 
     @pytest.fixture
-    def execution_context(self):
+    def execution_context(self) -> None:
         """Create a mock execution context with real variable storage."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -32,7 +32,7 @@ class TestVariableNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_set_variable_node_basic(self, execution_context):
+    async def test_set_variable_node_basic(self, execution_context) -> None:
         """Test SetVariableNode stores a value in context."""
         from casare_rpa.nodes.variable_nodes import SetVariableNode
 
@@ -45,7 +45,7 @@ class TestVariableNodes:
         assert execution_context.variables["test_var"] == "Hello, World!"
 
     @pytest.mark.asyncio
-    async def test_set_variable_node_type_conversion(self, execution_context):
+    async def test_set_variable_node_type_conversion(self, execution_context) -> None:
         """Test SetVariableNode with type conversion."""
         from casare_rpa.nodes.variable_nodes import SetVariableNode
 
@@ -61,7 +61,7 @@ class TestVariableNodes:
         assert isinstance(execution_context.variables["count"], int)
 
     @pytest.mark.asyncio
-    async def test_set_variable_node_default_value(self, execution_context):
+    async def test_set_variable_node_default_value(self, execution_context) -> None:
         """Test SetVariableNode uses default value when no input."""
         from casare_rpa.nodes.variable_nodes import SetVariableNode
 
@@ -81,7 +81,7 @@ class TestVariableNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_get_variable_node_existing(self, execution_context):
+    async def test_get_variable_node_existing(self, execution_context) -> None:
         """Test GetVariableNode retrieves existing variable."""
         from casare_rpa.nodes.variable_nodes import GetVariableNode
 
@@ -96,7 +96,7 @@ class TestVariableNodes:
         assert result["data"]["value"] == "test_value"
 
     @pytest.mark.asyncio
-    async def test_get_variable_node_missing(self, execution_context):
+    async def test_get_variable_node_missing(self, execution_context) -> None:
         """Test GetVariableNode handles missing variable."""
         from casare_rpa.nodes.variable_nodes import GetVariableNode
 
@@ -111,7 +111,7 @@ class TestVariableNodes:
         assert result["data"]["value"] is None
 
     @pytest.mark.asyncio
-    async def test_get_variable_node_output_port(self, execution_context):
+    async def test_get_variable_node_output_port(self, execution_context) -> None:
         """Test GetVariableNode sets output port value."""
         from casare_rpa.nodes.variable_nodes import GetVariableNode
 
@@ -131,7 +131,7 @@ class TestVariableNodes:
     # =============================================================================
 
     @pytest.mark.asyncio
-    async def test_increment_node_basic(self, execution_context):
+    async def test_increment_node_basic(self, execution_context) -> None:
         """Test IncrementNode increments counter."""
         from casare_rpa.nodes.variable_nodes import IncrementNode
 
@@ -148,7 +148,7 @@ class TestVariableNodes:
         assert execution_context.variables["counter"] == 1
 
     @pytest.mark.asyncio
-    async def test_increment_node_custom_step(self, execution_context):
+    async def test_increment_node_custom_step(self, execution_context) -> None:
         """Test IncrementNode with custom increment value."""
         from casare_rpa.nodes.variable_nodes import IncrementNode
 
@@ -164,7 +164,7 @@ class TestVariableNodes:
         assert execution_context.variables["counter"] == 15
 
     @pytest.mark.asyncio
-    async def test_increment_node_decrement(self, execution_context):
+    async def test_increment_node_decrement(self, execution_context) -> None:
         """Test IncrementNode can decrement with negative value."""
         from casare_rpa.nodes.variable_nodes import IncrementNode
 
@@ -183,7 +183,7 @@ class TestVariableNodes:
 class TestVariableNodesIntegration:
     """Integration tests for variable nodes visual layer."""
 
-    def test_set_variable_visual_integration(self):
+    def test_set_variable_visual_integration(self) -> None:
         """Test SetVariableNode logic-to-visual connection."""
         from casare_rpa.nodes.variable_nodes import SetVariableNode
         from casare_rpa.presentation.canvas.visual_nodes.variables import (
@@ -198,7 +198,7 @@ class TestVariableNodesIntegration:
         assert node.node_type == "SetVariableNode"
         assert hasattr(node, "execute")
 
-    def test_get_variable_visual_integration(self):
+    def test_get_variable_visual_integration(self) -> None:
         """Test GetVariableNode logic-to-visual connection."""
         from casare_rpa.nodes.variable_nodes import GetVariableNode
         from casare_rpa.presentation.canvas.visual_nodes.variables import (
@@ -212,7 +212,7 @@ class TestVariableNodesIntegration:
         node = GetVariableNode(node_id="test_get", variable_name="test")
         assert node.node_type == "GetVariableNode"
 
-    def test_increment_visual_integration(self):
+    def test_increment_visual_integration(self) -> None:
         """Test IncrementNode logic-to-visual connection."""
         from casare_rpa.nodes.variable_nodes import IncrementNode
         from casare_rpa.presentation.canvas.visual_nodes.variables import (

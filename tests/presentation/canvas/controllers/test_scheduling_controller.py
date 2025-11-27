@@ -19,7 +19,7 @@ from casare_rpa.presentation.canvas.controllers.scheduling_controller import (
 
 
 @pytest.fixture
-def mock_main_window(qtbot):
+def mock_main_window(qtbot) -> None:
     """Create a mock MainWindow with scheduling-related components."""
     main_window = QMainWindow()
     qtbot.addWidget(main_window)
@@ -53,7 +53,7 @@ def mock_main_window(qtbot):
 
 
 @pytest.fixture
-def scheduling_controller(mock_main_window):
+def scheduling_controller(mock_main_window) -> None:
     """Create a SchedulingController instance."""
     with patch(
         "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
@@ -67,7 +67,7 @@ def scheduling_controller(mock_main_window):
 class TestSchedulingControllerInitialization:
     """Tests for SchedulingController initialization."""
 
-    def test_initialization(self, mock_main_window):
+    def test_initialization(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         with patch(
             "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
@@ -76,7 +76,7 @@ class TestSchedulingControllerInitialization:
             assert controller.main_window == mock_main_window
             assert controller._active_schedules == []
 
-    def test_initialize_loads_schedules(self, mock_main_window):
+    def test_initialize_loads_schedules(self, mock_main_window) -> None:
         """Test initialize method loads existing schedules."""
         mock_schedule = Mock()
         with patch(
@@ -88,7 +88,7 @@ class TestSchedulingControllerInitialization:
 
             assert controller._active_schedules == [mock_schedule]
 
-    def test_cleanup(self, scheduling_controller):
+    def test_cleanup(self, scheduling_controller) -> None:
         """Test cleanup clears schedules."""
         scheduling_controller._active_schedules = [Mock(), Mock()]
         scheduling_controller.cleanup()
@@ -100,7 +100,7 @@ class TestSchedulingControllerInitialization:
 class TestScheduleStateManagement:
     """Tests for schedule state management."""
 
-    def test_get_schedules(self, scheduling_controller):
+    def test_get_schedules(self, scheduling_controller) -> None:
         """Test get_schedules returns copy of schedules list."""
         mock_schedules = [Mock(), Mock()]
         scheduling_controller._active_schedules = mock_schedules
@@ -110,12 +110,12 @@ class TestScheduleStateManagement:
         assert result == mock_schedules
         assert result is not mock_schedules  # Should be a copy
 
-    def test_get_schedule_count(self, scheduling_controller):
+    def test_get_schedule_count(self, scheduling_controller) -> None:
         """Test get_schedule_count returns correct count."""
         scheduling_controller._active_schedules = [Mock(), Mock(), Mock()]
         assert scheduling_controller.get_schedule_count() == 3
 
-    def test_get_schedule_count_empty(self, scheduling_controller):
+    def test_get_schedule_count_empty(self, scheduling_controller) -> None:
         """Test get_schedule_count returns 0 when empty."""
         scheduling_controller._active_schedules = []
         assert scheduling_controller.get_schedule_count() == 0
@@ -124,7 +124,7 @@ class TestScheduleStateManagement:
 class TestSignals:
     """Tests for controller signals."""
 
-    def test_schedule_updated_signal(self, scheduling_controller):
+    def test_schedule_updated_signal(self, scheduling_controller) -> None:
         """Test schedule_updated signal can be emitted."""
         received_schedules = []
         scheduling_controller.schedule_updated.connect(
@@ -137,7 +137,7 @@ class TestSignals:
         assert len(received_schedules) == 1
         assert received_schedules[0] == mock_schedule
 
-    def test_schedules_changed_signal(self, scheduling_controller):
+    def test_schedules_changed_signal(self, scheduling_controller) -> None:
         """Test schedules_changed signal can be emitted."""
         signal_count = []
         scheduling_controller.schedules_changed.connect(
@@ -148,7 +148,7 @@ class TestSignals:
 
         assert len(signal_count) == 1
 
-    def test_schedule_created_signal(self, scheduling_controller):
+    def test_schedule_created_signal(self, scheduling_controller) -> None:
         """Test schedule_created signal can be emitted."""
         received = []
         scheduling_controller.schedule_created.connect(lambda s: received.append(s))
@@ -159,7 +159,7 @@ class TestSignals:
         assert len(received) == 1
         assert received[0] == mock_schedule
 
-    def test_schedule_deleted_signal(self, scheduling_controller):
+    def test_schedule_deleted_signal(self, scheduling_controller) -> None:
         """Test schedule_deleted signal can be emitted."""
         received_ids = []
         scheduling_controller.schedule_deleted.connect(
@@ -171,7 +171,7 @@ class TestSignals:
         assert len(received_ids) == 1
         assert received_ids[0] == "test-id"
 
-    def test_schedule_run_requested_signal(self, scheduling_controller):
+    def test_schedule_run_requested_signal(self, scheduling_controller) -> None:
         """Test schedule_run_requested signal can be emitted."""
         received = []
         scheduling_controller.schedule_run_requested.connect(
@@ -188,7 +188,7 @@ class TestSignals:
 class TestErrorHandling:
     """Tests for error handling."""
 
-    def test_load_schedules_handles_missing_storage(self, qtbot):
+    def test_load_schedules_handles_missing_storage(self, qtbot) -> None:
         """Test _load_schedules handles missing storage gracefully."""
         main_window = QMainWindow()
         qtbot.addWidget(main_window)
@@ -208,7 +208,7 @@ class TestErrorHandling:
 class TestDeleteSchedule:
     """Tests for delete_schedule functionality."""
 
-    def test_delete_schedule_success(self, scheduling_controller):
+    def test_delete_schedule_success(self, scheduling_controller) -> None:
         """Test delete_schedule removes schedule and emits signals."""
         mock_schedule = Mock()
         mock_schedule.id = "test-schedule-id"
@@ -236,7 +236,7 @@ class TestDeleteSchedule:
             assert deleted_signals[0] == "test-schedule-id"
             assert len(changed_signals) == 1
 
-    def test_delete_schedule_not_found(self, scheduling_controller):
+    def test_delete_schedule_not_found(self, scheduling_controller) -> None:
         """Test delete_schedule returns False when deletion fails."""
         with patch(
             "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
@@ -247,7 +247,7 @@ class TestDeleteSchedule:
 
             assert result is False
 
-    def test_delete_schedule_handles_exception(self, scheduling_controller):
+    def test_delete_schedule_handles_exception(self, scheduling_controller) -> None:
         """Test delete_schedule handles exceptions gracefully."""
         with patch(
             "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"

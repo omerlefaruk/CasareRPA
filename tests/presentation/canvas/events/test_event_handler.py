@@ -18,7 +18,7 @@ from casare_rpa.presentation.canvas.events import (
 class TestEventHandlerDecorator:
     """Test @event_handler decorator."""
 
-    def test_decorator_marks_function(self):
+    def test_decorator_marks_function(self) -> None:
         """Test that decorator marks function as event handler."""
 
         @event_handler(EventType.WORKFLOW_NEW)
@@ -29,7 +29,7 @@ class TestEventHandlerDecorator:
         assert handler._is_event_handler is True
         assert handler._event_type == EventType.WORKFLOW_NEW
 
-    def test_decorator_with_filter(self):
+    def test_decorator_with_filter(self) -> None:
         """Test decorator with event filter."""
         filter = EventFilter(categories=[EventCategory.WORKFLOW])
 
@@ -40,7 +40,7 @@ class TestEventHandlerDecorator:
         assert handler._is_event_handler is True
         assert handler._event_filter == filter
 
-    def test_decorator_without_parameters(self):
+    def test_decorator_without_parameters(self) -> None:
         """Test decorator without parameters (manual subscription)."""
 
         @event_handler()
@@ -64,7 +64,7 @@ class TestEventHandlerBaseClass:
         """Clean up after each test."""
         EventBus.reset_instance()
 
-    def test_manual_subscription(self):
+    def test_manual_subscription(self) -> None:
         """Test manual event subscription."""
         received_events = []
 
@@ -86,7 +86,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_auto_subscription_with_decorator(self):
+    def test_auto_subscription_with_decorator(self) -> None:
         """Test automatic subscription using decorators."""
         received_events = []
 
@@ -108,7 +108,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_multiple_decorated_handlers(self):
+    def test_multiple_decorated_handlers(self) -> None:
         """Test multiple decorated event handlers."""
         call_tracker = {"workflow": 0, "node": 0}
 
@@ -135,7 +135,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_filtered_subscription(self):
+    def test_filtered_subscription(self) -> None:
         """Test filtered event subscription."""
         received_events = []
 
@@ -160,7 +160,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_wildcard_subscription(self):
+    def test_wildcard_subscription(self) -> None:
         """Test subscribing to all events."""
         received_events = []
 
@@ -183,7 +183,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_unsubscribe(self):
+    def test_unsubscribe(self) -> None:
         """Test manual unsubscription."""
         received_events = []
 
@@ -210,7 +210,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_publish_event(self):
+    def test_publish_event(self) -> None:
         """Test publishing events from handler."""
         received_events = []
 
@@ -236,7 +236,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_cleanup_unsubscribes_all(self):
+    def test_cleanup_unsubscribes_all(self) -> None:
         """Test that cleanup unsubscribes from all events."""
         call_count = [0]
 
@@ -263,7 +263,7 @@ class TestEventHandlerBaseClass:
         self.bus.publish(Event(type=EventType.NODE_ADDED, source="Test"))
         assert call_count[0] == 1  # Still 1
 
-    def test_custom_event_bus(self):
+    def test_custom_event_bus(self) -> None:
         """Test using custom EventBus instance."""
         custom_bus = EventBus()
         received_events = []
@@ -287,7 +287,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_subscription_tracking(self):
+    def test_subscription_tracking(self) -> None:
         """Test that subscriptions are tracked correctly."""
 
         class TestHandler(EventHandler):
@@ -306,7 +306,7 @@ class TestEventHandlerBaseClass:
 
         handler.cleanup()
 
-    def test_decorator_without_type_or_filter_warning(self):
+    def test_decorator_without_type_or_filter_warning(self) -> None:
         """Test that decorator without type/filter issues warning."""
         import logging
 
