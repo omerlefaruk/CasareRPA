@@ -1,0 +1,96 @@
+# ============================================================================
+# DBOS Configuration for Project Aether
+# CasareRPA v3.0 - Enterprise RPA Platform
+# ============================================================================
+#
+# This configuration enables durable workflow execution with automatic
+# checkpointing and crash recovery for the CasareRPA platform.
+#
+# Documentation: https://docs.dbos.dev/api-reference/configuration
+# Plan: C:\Users\Rau\.claude\plans\tender-puzzling-ullman.md
+# ============================================================================
+
+name: casare-rpa-aether
+language: python
+version: 3.0.0
+
+# ============================================================================
+# Database Configuration
+# ============================================================================
+# DBOS uses PostgreSQL for durable execution state.
+# Supports both Supabase and local PostgreSQL.
+#
+# For Supabase:
+#   - Use your project's database connection string
+#   - Format: postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+#
+# For local dev:
+#   - Use local PostgreSQL instance
+#   - Run: docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres:15
+# ============================================================================
+
+database:
+  hostname: localhost  # Or db.[project-ref].supabase.co for Supabase
+  port: 5432
+  username: postgres
+  password: ${DB_PASSWORD}  # Load from environment variable
+  app_db_name: postgres     # Database name (default: postgres)
+
+  # Connection pool settings (optional)
+  connectionTimeoutMillis: 3000
+  app_db_client: postgres  # postgres or pg8000
+
+# ============================================================================
+# Runtime Configuration
+# ============================================================================
+# Configure DBOS runtime behavior, HTTP server, and workflow entrypoints.
+# ============================================================================
+
+runtimeConfig:
+  # Workflow entrypoint modules
+  # DBOS will auto-discover @workflow and @step decorated functions
+  entrypoints:
+    - casare_rpa.infrastructure.dbos.workflow_runner
+    - casare_rpa.infrastructure.dbos.step_functions  # To be created in Phase 3
+
+  # HTTP server (for DBOS Cloud, optional for local)
+  start_http_server: false  # Set to true when using DBOS Cloud
+  port: 8000
+
+  # Maximum concurrent workflows (adjust based on resources)
+  max_concurrent_workflows: 10
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+
+logging:
+  logLevel: INFO  # DEBUG, INFO, WARN, ERROR
+  logDir: logs    # Directory for DBOS logs
+  addDatabaseLogs: false  # Enable SQL query logging (verbose)
+
+# ============================================================================
+# Environment Variables
+# ============================================================================
+# Set these in your environment or .env file:
+#
+# Required:
+#   DB_PASSWORD=your_database_password
+#
+# Optional (for Supabase):
+#   SUPABASE_URL=https://your-project.supabase.co
+#   SUPABASE_KEY=your_anon_key
+#   SUPABASE_DB_PASSWORD=your_db_password
+#
+# Optional (for local dev):
+#   DBOS_LOCAL_MODE=true
+# ============================================================================
+
+# ============================================================================
+# Migration Instructions
+# ============================================================================
+# 1. Install DBOS: pip install dbos
+# 2. Set DB_PASSWORD environment variable
+# 3. Initialize DBOS: dbos migrate
+# 4. Test with: python -m casare_rpa.infrastructure.dbos.workflow_runner
+# ============================================================================
