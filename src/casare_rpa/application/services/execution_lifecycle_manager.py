@@ -101,7 +101,13 @@ class ExecutionLifecycleManager:
                     logger.warning(
                         "Forcing cleanup of previous execution before starting new"
                     )
-                    await self._force_cleanup()
+                    try:
+                        await self._force_cleanup()
+                    except Exception as e:
+                        logger.error(f"Force cleanup failed: {e}")
+                        # Reset to IDLE on cleanup failure
+                        self._state = ExecutionState.IDLE
+                        return False
                 else:
                     logger.error("Cannot start: workflow already running")
                     return False
@@ -303,6 +309,9 @@ class ExecutionLifecycleManager:
         """
         Track browser process PID for orphan cleanup.
 
+        NOTE: Uses Playwright internal API (_impl_obj._proc) which may change.
+        Fallback to psutil parent PID search if this fails in future versions.
+
         Args:
             context: ExecutionContext instance
         """
@@ -312,15 +321,21 @@ class ExecutionLifecycleManager:
             ):
                 browser = context._resources.browser
                 if browser:
-                    # Try to get browser process PID
+                    # Try to get browser process PID via Playwright internals
+                    # WARNING: Relies on undocumented API, may break in future versions
                     if hasattr(browser, "_impl_obj") and hasattr(
                         browser._impl_obj, "_proc"
                     ):
                         pid = browser._impl_obj._proc.pid
                         self._orphaned_browser_pids.add(pid)
-                        logger.debug(f"Tracking browser PID {pid} for cleanup")
+                        logger.debug(f"Tracking browser PID {pid} for cleanup (via Playwright internal API)")
+                    else:
+                        logger.warning(
+                            "Playwright internal API changed - cannot track browser PID. "
+                            "Orphaned browser processes may not be cleaned up automatically."
+                        )
         except Exception as e:
-            logger.debug(f"Could not track browser PID: {e}")
+            logger.warning(f"Could not track browser PID: {e}. Orphan cleanup may be incomplete.")
 
     async def _force_cleanup(self):
         """Force cleanup of orphaned resources."""

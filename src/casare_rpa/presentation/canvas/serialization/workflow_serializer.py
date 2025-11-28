@@ -146,8 +146,19 @@ class WorkflowSerializer:
         # Get config from CasareRPA node
         config = casare_node.config.copy() if hasattr(casare_node, "config") else {}
 
-        # Sync widget values from visual node to config
-        # NodeGraphQt stores widget values as node properties
+        # CRITICAL BUG FIX: Sync widget values from visual node to config
+        #
+        # Problem: Widget values (URL in LaunchBrowser, Duration in Wait, Message in MessageBox)
+        # were entered by users but never persisted to casare_node.config, causing only default
+        # values to execute instead of custom values.
+        #
+        # Root Cause: Visual nodes store widget values as NodeGraphQt properties, but these
+        # were never synchronized to the domain node's config dict before serialization.
+        #
+        # Solution: Iterate through all custom properties on the visual node and copy their
+        # values to the config dict that will be serialized and executed.
+        #
+        # This ensures: User inputs → Visual node properties → Config dict → Execution
         for prop_name in visual_node.model.custom_properties:
             # Skip internal properties
             if prop_name.startswith("_") or prop_name in (

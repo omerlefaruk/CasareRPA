@@ -267,11 +267,13 @@ class CanvasWorkflowRunner:
 
     def pause(self) -> None:
         """
-        Pause workflow execution.
+        Pause workflow execution (legacy method).
 
-        Note: ExecuteWorkflowUseCase does not currently support pause/resume.
-        This sets the local flag for UI state tracking only.
-        Full pause support requires implementation in ExecuteWorkflowUseCase.
+        NOTE: This method is for legacy run_workflow() calls. Workflows started
+        via run_workflow_with_pause_support() (called by ExecutionLifecycleManager)
+        have full pause/resume support via asyncio.Event.
+
+        This legacy method only sets UI state flag and has no effect on execution.
         """
         if not self._is_running:
             logger.debug("Pause called but workflow is not running")
@@ -287,21 +289,20 @@ class CanvasWorkflowRunner:
 
         logger.info("Pausing workflow execution (UI state only)")
         self._is_paused = True
-        # TODO: Implement pause in ExecuteWorkflowUseCase when needed
-        # Currently, pause only affects UI state. The execution loop in
-        # ExecuteWorkflowUseCase would need to check a _pause_requested flag
-        # and await a resume signal before continuing to the next node.
         logger.warning(
-            "Pause functionality is limited - execution will complete current node "
-            "but may continue to next node. Use stop() for reliable termination."
+            "Legacy pause method called - execution will not actually pause. "
+            "Use ExecutionLifecycleManager.pause_workflow() for real pause/resume."
         )
 
     def resume(self) -> None:
         """
-        Resume workflow execution.
+        Resume workflow execution (legacy method).
 
-        Note: ExecuteWorkflowUseCase does not currently support pause/resume.
-        This clears the local pause flag for UI state tracking only.
+        NOTE: This method is for legacy run_workflow() calls. Workflows started
+        via run_workflow_with_pause_support() (called by ExecutionLifecycleManager)
+        have full pause/resume support via asyncio.Event.
+
+        This legacy method only clears UI state flag and has no effect on execution.
         """
         if not self._is_running:
             logger.debug("Resume called but workflow is not running")
@@ -317,8 +318,7 @@ class CanvasWorkflowRunner:
 
         logger.info("Resuming workflow execution (UI state only)")
         self._is_paused = False
-        # TODO: Implement resume in ExecuteWorkflowUseCase when needed
-        # Would need to signal the paused execution loop to continue.
+        logger.debug("Legacy resume method - use ExecutionLifecycleManager for real functionality")
 
     @property
     def is_running(self) -> bool:
