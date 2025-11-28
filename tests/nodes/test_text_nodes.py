@@ -10,7 +10,8 @@ Tests 14 text nodes:
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestTextSplitNode:
