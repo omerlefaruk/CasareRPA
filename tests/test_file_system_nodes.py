@@ -9,19 +9,14 @@ import tempfile
 import csv
 from pathlib import Path
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestFileSystemNodes:
     """Integration tests for file system category nodes."""
 
-    @pytest.fixture
-    def execution_context(self) -> None:
-        """Create a mock execution context."""
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
+    # Uses execution_context fixture from conftest.py
 
     @pytest.fixture
     def temp_file(self) -> None:

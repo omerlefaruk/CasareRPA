@@ -8,7 +8,8 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock, call
 import ftplib
 from pathlib import Path
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestFTPNodes:

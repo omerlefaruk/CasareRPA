@@ -25,8 +25,8 @@ from pathlib import Path
 import tempfile
 import os
 
-from casare_rpa.core.execution_context import ExecutionContext
-from casare_rpa.core.types import NodeStatus
+# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.domain.value_objects.types import NodeStatus
 
 
 # Define mock helpers locally (from conftest.py in tests/nodes/)

@@ -15,7 +15,8 @@ from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch, call
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 from casare_rpa.nodes.email_nodes import (
     SendEmailNode,
     ReadEmailsNode,

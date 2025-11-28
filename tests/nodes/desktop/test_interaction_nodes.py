@@ -20,7 +20,7 @@ Fixtures and classes imported from tests/nodes/desktop/conftest.py:
 
 import pytest
 from unittest.mock import Mock, MagicMock, AsyncMock, patch
-from casare_rpa.core.types import NodeStatus
+from casare_rpa.domain.value_objects.types import NodeStatus
 
 # Import mock classes from conftest
 try:

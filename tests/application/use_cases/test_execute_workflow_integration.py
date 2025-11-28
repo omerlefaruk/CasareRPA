@@ -21,7 +21,7 @@ from casare_rpa.application.use_cases.execute_workflow import (
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 from casare_rpa.domain.entities.node_connection import NodeConnection
-from casare_rpa.core.types import EventType
+from casare_rpa.domain.value_objects.types import EventType
 
 
 # ============================================================================

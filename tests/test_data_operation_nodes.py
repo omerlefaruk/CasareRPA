@@ -6,19 +6,14 @@ Tests 20 high-priority data operation nodes across string, math, list, and dict 
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestDataOperationNodes:
     """Integration tests for data operation category nodes."""
 
-    @pytest.fixture
-    def execution_context(self) -> None:
-        """Create a mock execution context."""
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
+    # Uses execution_context fixture from conftest.py
 
     # =============================================================================
     # String Operations (4 tests)
