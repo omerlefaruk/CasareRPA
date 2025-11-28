@@ -9,6 +9,7 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -21,6 +22,7 @@ from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 
+@executable_node
 class WaitNode(BaseNode):
     """
     Wait node - pauses execution for a specified duration.
@@ -48,9 +50,7 @@ class WaitNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("duration", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -104,6 +104,7 @@ class WaitNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WaitForElementNode(BaseNode):
     """
     Wait for element node - waits for an element to appear.
@@ -156,10 +157,8 @@ class WaitForElementNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -347,6 +346,7 @@ class WaitForElementNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WaitForNavigationNode(BaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.
@@ -395,9 +395,7 @@ class WaitForNavigationNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

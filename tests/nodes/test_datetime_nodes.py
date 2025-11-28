@@ -10,7 +10,7 @@ import pytest
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
-# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class TestDateTimeNodes:

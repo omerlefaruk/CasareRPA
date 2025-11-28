@@ -19,6 +19,7 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -38,6 +39,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
@@ -64,10 +66,8 @@ class RunPythonScriptNode(BaseNode):
         self.node_type = "RunPythonScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("code", PortType.INPUT, DataType.STRING)
         self.add_input_port("variables", PortType.INPUT, DataType.DICT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("output", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -214,6 +214,7 @@ print("__RESULT__:" + json.dumps(result, default=str))
         return True, ""
 
 
+@executable_node
 class RunPythonFileNode(BaseNode):
     """
     Execute a Python file.
@@ -257,11 +258,9 @@ class RunPythonFileNode(BaseNode):
         self.node_type = "RunPythonFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("args", PortType.INPUT, DataType.ANY)
         self.add_input_port("working_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
@@ -404,6 +403,7 @@ class RunPythonFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class EvalExpressionNode(BaseNode):
     """
     Evaluate a Python expression and return the result.
@@ -426,10 +426,8 @@ class EvalExpressionNode(BaseNode):
         self.node_type = "EvalExpressionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("expression", PortType.INPUT, DataType.STRING)
         self.add_input_port("variables", PortType.INPUT, DataType.DICT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("type", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -520,6 +518,7 @@ class EvalExpressionNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RunBatchScriptNode(BaseNode):
     """
     Execute a batch script (Windows) or shell script (Unix).
@@ -560,10 +559,8 @@ class RunBatchScriptNode(BaseNode):
         self.node_type = "RunBatchScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("script", PortType.INPUT, DataType.STRING)
         self.add_input_port("working_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
@@ -724,6 +721,7 @@ class RunBatchScriptNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RunJavaScriptNode(BaseNode):
     """
     Execute JavaScript code using Node.js.
@@ -749,10 +747,8 @@ class RunJavaScriptNode(BaseNode):
         self.node_type = "RunJavaScriptNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("code", PortType.INPUT, DataType.STRING)
         self.add_input_port("input_data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("error", PortType.OUTPUT, DataType.STRING)

@@ -9,14 +9,14 @@ import sys
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
 
-# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class TestPDFNodes:
     """Tests for PDF category nodes."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}
@@ -577,7 +577,7 @@ class TestPDFNodesEdgeCases:
     """Edge case tests for PDF nodes."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         """Create a mock execution context."""
         context = Mock(spec=ExecutionContext)
         context.variables = {}

@@ -25,7 +25,7 @@ class RobotTrayApp(QObject):
 
         # Setup Tray Icon
         self.tray_icon = QSystemTrayIcon(self.app)
-        # TODO: Add a real icon
+        # Uses system theme icon as placeholder; custom icon can be loaded from assets
         self.tray_icon.setIcon(QIcon.fromTheme("computer"))
         self.tray_icon.setToolTip(f"CasareRPA Robot: {self.agent.name}")
 

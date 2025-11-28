@@ -22,6 +22,7 @@ from pathlib import Path
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -41,6 +42,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class ParseXMLNode(BaseNode):
     """
     Parse XML from a string.
@@ -63,9 +65,7 @@ class ParseXMLNode(BaseNode):
         self._xml_root = None
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("root_tag", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("root_text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("child_count", PortType.OUTPUT, DataType.INTEGER)
@@ -116,6 +116,7 @@ class ParseXMLNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -139,9 +140,7 @@ class ReadXMLFileNode(BaseNode):
         self.node_type = "ReadXMLFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("root_tag", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("xml_string", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -193,6 +192,7 @@ class ReadXMLFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
@@ -218,10 +218,8 @@ class WriteXMLFileNode(BaseNode):
         self.node_type = "WriteXMLFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -286,6 +284,7 @@ class WriteXMLFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class XPathQueryNode(BaseNode):
     """
     Query XML using XPath.
@@ -308,10 +307,8 @@ class XPathQueryNode(BaseNode):
         self.node_type = "XPathQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
         self.add_input_port("xpath", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("first_text", PortType.OUTPUT, DataType.STRING)
@@ -381,6 +378,7 @@ class XPathQueryNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetXMLElementNode(BaseNode):
     """
     Get XML element by tag name.
@@ -405,11 +403,9 @@ class GetXMLElementNode(BaseNode):
         self.node_type = "GetXMLElementNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
         self.add_input_port("tag_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("index", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("tag", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("attributes", PortType.OUTPUT, DataType.DICT)
@@ -471,6 +467,7 @@ class GetXMLElementNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetXMLAttributeNode(BaseNode):
     """
     Get an attribute value from an XML element.
@@ -492,11 +489,9 @@ class GetXMLAttributeNode(BaseNode):
         self.node_type = "GetXMLAttributeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
         self.add_input_port("xpath", PortType.INPUT, DataType.STRING)
         self.add_input_port("attribute_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -548,6 +543,7 @@ class GetXMLAttributeNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -572,9 +568,7 @@ class XMLToJsonNode(BaseNode):
         self.node_type = "XMLToJsonNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("xml_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("json_data", PortType.OUTPUT, DataType.DICT)
         self.add_output_port("json_string", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -638,6 +632,7 @@ class XMLToJsonNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.
@@ -661,9 +656,7 @@ class JsonToXMLNode(BaseNode):
         self.node_type = "JsonToXMLNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("json_data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("xml_string", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 

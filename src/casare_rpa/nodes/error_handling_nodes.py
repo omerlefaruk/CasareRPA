@@ -12,6 +12,7 @@ import asyncio
 import json
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -217,6 +218,7 @@ class RetryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class RetrySuccessNode(BaseNode):
     """
     Marks successful completion of retry body.
@@ -233,8 +235,7 @@ class RetrySuccessNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        pass  # exec_in and exec_out added by @executable_node decorator
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -264,6 +265,7 @@ class RetrySuccessNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class RetryFailNode(BaseNode):
     """
     Marks failed attempt in retry body.
@@ -279,9 +281,7 @@ class RetryFailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -314,6 +314,7 @@ class RetryFailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
@@ -330,9 +331,7 @@ class ThrowErrorNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -368,6 +367,7 @@ class ThrowErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class WebhookNotifyNode(BaseNode):
     """
     Send error notifications via webhook.
@@ -399,11 +399,9 @@ class WebhookNotifyNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("webhook_url", PortType.INPUT, DataType.STRING)
         self.add_input_port("message", PortType.INPUT, DataType.STRING)
         self.add_input_port("error_details", PortType.INPUT, DataType.DICT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("response", PortType.OUTPUT, DataType.STRING)
 
@@ -770,6 +768,7 @@ class ErrorRecoveryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class LogErrorNode(BaseNode):
     """
     Log error details with structured information.
@@ -786,11 +785,9 @@ class LogErrorNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("error_message", PortType.INPUT, DataType.STRING)
         self.add_input_port("error_type", PortType.INPUT, DataType.STRING)
         self.add_input_port("context", PortType.INPUT, DataType.DICT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("log_entry", PortType.OUTPUT, DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -862,6 +859,7 @@ class LogErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class AssertNode(BaseNode):
     """
     Assert a condition and throw error if false.
@@ -879,10 +877,8 @@ class AssertNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("condition", PortType.INPUT, DataType.BOOLEAN)
         self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("passed", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

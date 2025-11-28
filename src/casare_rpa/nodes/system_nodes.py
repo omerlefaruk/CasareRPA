@@ -14,6 +14,7 @@ import sys
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -42,6 +43,7 @@ class SecurityError(Exception):
 # ==================== CLIPBOARD OPERATIONS ====================
 
 
+@executable_node
 class ClipboardCopyNode(BaseNode):
     """
     Copy text to the clipboard.
@@ -60,9 +62,7 @@ class ClipboardCopyNode(BaseNode):
         self.node_type = "ClipboardCopyNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -122,6 +122,7 @@ class ClipboardCopyNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ClipboardPasteNode(BaseNode):
     """
     Get text from the clipboard.
@@ -138,8 +139,6 @@ class ClipboardPasteNode(BaseNode):
         self.node_type = "ClipboardPasteNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -198,6 +197,7 @@ class ClipboardPasteNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ClipboardClearNode(BaseNode):
     """
     Clear the clipboard.
@@ -213,8 +213,6 @@ class ClipboardClearNode(BaseNode):
         self.node_type = "ClipboardClearNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -255,6 +253,7 @@ class ClipboardClearNode(BaseNode):
 # ==================== MESSAGE BOX / DIALOG OPERATIONS ====================
 
 
+@executable_node
 class MessageBoxNode(BaseNode):
     """
     Display a message box dialog.
@@ -282,9 +281,7 @@ class MessageBoxNode(BaseNode):
         self.node_type = "MessageBoxNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("accepted", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -508,6 +505,7 @@ class MessageBoxNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class InputDialogNode(BaseNode):
     """
     Display an input dialog to get user input.
@@ -532,11 +530,9 @@ class InputDialogNode(BaseNode):
         self.node_type = "InputDialogNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("title", PortType.INPUT, DataType.STRING)
         self.add_input_port("prompt", PortType.INPUT, DataType.STRING)
         self.add_input_port("default_value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("confirmed", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -601,6 +597,7 @@ class InputDialogNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TooltipNode(BaseNode):
     """
     Display a tooltip/notification.
@@ -624,10 +621,8 @@ class TooltipNode(BaseNode):
         self.node_type = "TooltipNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("title", PortType.INPUT, DataType.STRING)
         self.add_input_port("message", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -686,6 +681,7 @@ class TooltipNode(BaseNode):
 # ==================== TERMINAL / CMD OPERATIONS ====================
 
 
+@executable_node
 class RunCommandNode(BaseNode):
     """
     Run a terminal/CMD command.
@@ -714,10 +710,8 @@ class RunCommandNode(BaseNode):
         self.node_type = "RunCommandNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("command", PortType.INPUT, DataType.STRING)
         self.add_input_port("args", PortType.INPUT, DataType.ANY)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
@@ -895,6 +889,7 @@ class RunCommandNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RunPowerShellNode(BaseNode):
     """
     Run a PowerShell script or command.
@@ -967,9 +962,7 @@ class RunPowerShellNode(BaseNode):
         self.node_type = "RunPowerShellNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("script", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
@@ -1060,6 +1053,7 @@ class RunPowerShellNode(BaseNode):
 # ==================== WINDOWS SERVICES ====================
 
 
+@executable_node
 class GetServiceStatusNode(BaseNode):
     """
     Get the status of a Windows service.
@@ -1082,9 +1076,7 @@ class GetServiceStatusNode(BaseNode):
         self.node_type = "GetServiceStatusNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("status", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("display_name", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
@@ -1165,6 +1157,7 @@ class GetServiceStatusNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class StartServiceNode(BaseNode):
     """
     Start a Windows service.
@@ -1184,9 +1177,7 @@ class StartServiceNode(BaseNode):
         self.node_type = "StartServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
 
@@ -1234,6 +1225,7 @@ class StartServiceNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class StopServiceNode(BaseNode):
     """
     Stop a Windows service.
@@ -1253,9 +1245,7 @@ class StopServiceNode(BaseNode):
         self.node_type = "StopServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
 
@@ -1301,6 +1291,7 @@ class StopServiceNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RestartServiceNode(BaseNode):
     """
     Restart a Windows service.
@@ -1323,9 +1314,7 @@ class RestartServiceNode(BaseNode):
         self.node_type = "RestartServiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("service_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("message", PortType.OUTPUT, DataType.STRING)
 
@@ -1381,6 +1370,7 @@ class RestartServiceNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ListServicesNode(BaseNode):
     """
     List all Windows services.
@@ -1400,8 +1390,6 @@ class ListServicesNode(BaseNode):
         self.node_type = "ListServicesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("services", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 

@@ -8,6 +8,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.decorators import executable_node
 from ...domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
 
@@ -22,6 +23,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class LaunchApplicationNode(Node):
     """
     Launch a Windows desktop application.
@@ -62,13 +64,11 @@ class LaunchApplicationNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("application_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("arguments", PortType.INPUT, DataType.STRING)
         self.add_input_port("working_directory", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port(
             "window", PortType.OUTPUT, DataType.ANY
         )  # Desktop window object
@@ -230,6 +230,7 @@ class LaunchApplicationNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class CloseApplicationNode(Node):
     """
     Close a Windows desktop application.
@@ -266,7 +267,6 @@ class CloseApplicationNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
@@ -274,7 +274,6 @@ class CloseApplicationNode(Node):
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -331,6 +330,7 @@ class CloseApplicationNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class ActivateWindowNode(Node):
     """
     Activate (bring to foreground) a Windows desktop window.
@@ -367,14 +367,12 @@ class ActivateWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port(
             "window", PortType.OUTPUT, DataType.ANY
@@ -448,6 +446,7 @@ class ActivateWindowNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class GetWindowListNode(Node):
     """
     Get a list of all open Windows desktop windows.
@@ -484,10 +483,7 @@ class GetWindowListNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("window_list", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("window_count", PortType.OUTPUT, DataType.INTEGER)
 

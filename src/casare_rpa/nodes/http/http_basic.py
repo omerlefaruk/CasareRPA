@@ -21,6 +21,7 @@ from aiohttp import ClientTimeout
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -30,6 +31,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
+@executable_node
 class HttpRequestNode(BaseNode):
     """
     Generic HTTP request node supporting all HTTP methods.
@@ -81,9 +83,6 @@ class HttpRequestNode(BaseNode):
         self.node_type = "HttpRequestNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("method", PortType.INPUT, DataType.STRING)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -247,6 +246,7 @@ class HttpRequestNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpGetNode(BaseNode):
     """
     HTTP GET request node with query parameter support.
@@ -287,9 +287,6 @@ class HttpGetNode(BaseNode):
         self.node_type = "HttpGetNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("params", PortType.INPUT, DataType.DICT)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -396,6 +393,7 @@ class HttpGetNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpPostNode(BaseNode):
     """
     HTTP POST request node with body support.
@@ -438,9 +436,6 @@ class HttpPostNode(BaseNode):
         self.node_type = "HttpPostNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("body", PortType.INPUT, DataType.ANY)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -554,6 +549,7 @@ class HttpPostNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpPutNode(BaseNode):
     """
     HTTP PUT request node for updating resources.
@@ -595,9 +591,6 @@ class HttpPutNode(BaseNode):
         self.node_type = "HttpPutNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("body", PortType.INPUT, DataType.ANY)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -711,6 +704,7 @@ class HttpPutNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpPatchNode(BaseNode):
     """
     HTTP PATCH request node for partial updates.
@@ -752,9 +746,6 @@ class HttpPatchNode(BaseNode):
         self.node_type = "HttpPatchNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("body", PortType.INPUT, DataType.ANY)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -868,6 +859,7 @@ class HttpPatchNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpDeleteNode(BaseNode):
     """
     HTTP DELETE request node for deleting resources.
@@ -905,9 +897,6 @@ class HttpDeleteNode(BaseNode):
         self.node_type = "HttpDeleteNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
         self.add_input_port("timeout", PortType.INPUT, DataType.FLOAT)

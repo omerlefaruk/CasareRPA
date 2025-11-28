@@ -121,12 +121,12 @@ class TestVariableNodes:
     @pytest.mark.asyncio
     async def test_increment_node_basic(self, execution_context) -> None:
         """Test IncrementNode increments counter."""
-        from casare_rpa.nodes.variable_nodes import IncrementNode
+        from casare_rpa.nodes.variable_nodes import IncrementVariableNode
 
         # Initialize counter
         execution_context.variables["counter"] = 0
 
-        node = IncrementNode(node_id="test_increment")
+        node = IncrementVariableNode(node_id="test_increment")
         node.config["variable_name"] = "counter"
         node.config["increment_by"] = 1
 
@@ -138,11 +138,11 @@ class TestVariableNodes:
     @pytest.mark.asyncio
     async def test_increment_node_custom_step(self, execution_context) -> None:
         """Test IncrementNode with custom increment value."""
-        from casare_rpa.nodes.variable_nodes import IncrementNode
+        from casare_rpa.nodes.variable_nodes import IncrementVariableNode
 
         execution_context.variables["counter"] = 10
 
-        node = IncrementNode(node_id="test_increment_custom")
+        node = IncrementVariableNode(node_id="test_increment_custom")
         node.config["variable_name"] = "counter"
         node.config["increment_by"] = 5
 
@@ -154,11 +154,11 @@ class TestVariableNodes:
     @pytest.mark.asyncio
     async def test_increment_node_decrement(self, execution_context) -> None:
         """Test IncrementNode can decrement with negative value."""
-        from casare_rpa.nodes.variable_nodes import IncrementNode
+        from casare_rpa.nodes.variable_nodes import IncrementVariableNode
 
         execution_context.variables["counter"] = 10
 
-        node = IncrementNode(node_id="test_decrement")
+        node = IncrementVariableNode(node_id="test_decrement")
         node.config["variable_name"] = "counter"
         node.config["increment_by"] = -2
 
@@ -202,7 +202,7 @@ class TestVariableNodesIntegration:
 
     def test_increment_visual_integration(self) -> None:
         """Test IncrementNode logic-to-visual connection."""
-        from casare_rpa.nodes.variable_nodes import IncrementNode
+        from casare_rpa.nodes.variable_nodes import IncrementVariableNode
         from casare_rpa.presentation.canvas.visual_nodes.variables import (
             VisualIncrementNode,
         )
@@ -211,5 +211,5 @@ class TestVariableNodesIntegration:
         logic_class = visual_node.get_node_class()
         assert logic_class == IncrementNode
 
-        node = IncrementNode(node_id="test_increment")
+        node = IncrementVariableNode(node_id="test_increment")
         assert node.node_type == "IncrementNode"

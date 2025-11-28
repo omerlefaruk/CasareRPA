@@ -9,6 +9,7 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -30,6 +31,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class GoToURLNode(BaseNode):
     """
     Go to URL node - navigates to a specified URL.
@@ -79,14 +81,12 @@ class GoToURLNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "page", PortType.INPUT, DataType.PAGE, required=False
         )  # Optional: uses active page if not connected
         self.add_input_port(
             "url", PortType.INPUT, DataType.STRING, required=False
         )  # Optional: uses config value if not connected
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -243,6 +243,7 @@ class GoToURLNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GoBackNode(BaseNode):
     """
     Go back node - navigates back in browser history.
@@ -275,9 +276,7 @@ class GoBackNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -352,6 +351,7 @@ class GoBackNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GoForwardNode(BaseNode):
     """
     Go forward node - navigates forward in browser history.
@@ -384,9 +384,7 @@ class GoForwardNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -461,6 +459,7 @@ class GoForwardNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RefreshPageNode(BaseNode):
     """
     Refresh page node - reloads the current page.
@@ -493,9 +492,7 @@ class RefreshPageNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

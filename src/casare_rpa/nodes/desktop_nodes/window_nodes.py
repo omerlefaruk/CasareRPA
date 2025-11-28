@@ -9,6 +9,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
 
@@ -26,6 +27,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class ResizeWindowNode(Node):
     """
     Resize a Windows desktop window.
@@ -75,7 +77,6 @@ class ResizeWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
@@ -83,7 +84,6 @@ class ResizeWindowNode(Node):
         self.add_input_port("height", PortType.INPUT, DataType.INTEGER)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -165,6 +165,7 @@ class ResizeWindowNode(Node):
         raise RuntimeError(error_msg)
 
 
+@executable_node
 class MoveWindowNode(Node):
     """
     Move a Windows desktop window.
@@ -213,7 +214,6 @@ class MoveWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
@@ -221,7 +221,6 @@ class MoveWindowNode(Node):
         self.add_input_port("y", PortType.INPUT, DataType.INTEGER)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -303,6 +302,7 @@ class MoveWindowNode(Node):
         raise RuntimeError(error_msg)
 
 
+@executable_node
 class MaximizeWindowNode(Node):
     """
     Maximize a Windows desktop window.
@@ -348,13 +348,11 @@ class MaximizeWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -426,6 +424,7 @@ class MaximizeWindowNode(Node):
         raise RuntimeError(error_msg)
 
 
+@executable_node
 class MinimizeWindowNode(Node):
     """
     Minimize a Windows desktop window.
@@ -471,13 +470,11 @@ class MinimizeWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -549,6 +546,7 @@ class MinimizeWindowNode(Node):
         raise RuntimeError(error_msg)
 
 
+@executable_node
 class RestoreWindowNode(Node):
     """
     Restore a Windows desktop window.
@@ -594,13 +592,11 @@ class RestoreWindowNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -672,6 +668,7 @@ class RestoreWindowNode(Node):
         raise RuntimeError(error_msg)
 
 
+@executable_node
 class GetWindowPropertiesNode(Node):
     """
     Get properties of a Windows desktop window.
@@ -708,13 +705,11 @@ class GetWindowPropertiesNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("properties", PortType.OUTPUT, DataType.DICT)
         self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
@@ -778,6 +773,7 @@ class GetWindowPropertiesNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class SetWindowStateNode(Node):
     """
     Set the state of a Windows desktop window.
@@ -824,7 +820,6 @@ class SetWindowStateNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "window", PortType.INPUT, DataType.ANY
         )  # Desktop window object
@@ -833,7 +828,6 @@ class SetWindowStateNode(Node):
         )  # normal, maximized, minimized
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:

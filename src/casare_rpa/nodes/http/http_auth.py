@@ -14,6 +14,7 @@ from typing import Any
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -23,6 +24,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
+@executable_node
 class HttpAuthNode(BaseNode):
     """
     Configure HTTP authentication headers.
@@ -58,9 +60,6 @@ class HttpAuthNode(BaseNode):
         self.node_type = "HttpAuthNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("auth_type", PortType.INPUT, DataType.STRING)
         self.add_input_port("token", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)

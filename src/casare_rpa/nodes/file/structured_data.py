@@ -17,6 +17,7 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -55,6 +56,7 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     return target_path
 
 
+@executable_node
 class ReadCSVNode(BaseNode):
     """
     Read and parse a CSV file.
@@ -103,9 +105,7 @@ class ReadCSVNode(BaseNode):
         self.node_type = "ReadCSVNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("data", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("headers", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
@@ -207,6 +207,7 @@ class ReadCSVNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WriteCSVNode(BaseNode):
     """
     Write data to a CSV file.
@@ -234,11 +235,9 @@ class WriteCSVNode(BaseNode):
         self.node_type = "WriteCSVNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("data", PortType.INPUT, DataType.LIST)
         self.add_input_port("headers", PortType.INPUT, DataType.LIST)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -305,6 +304,7 @@ class WriteCSVNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ReadJSONFileNode(BaseNode):
     """
     Read and parse a JSON file.
@@ -327,9 +327,7 @@ class ReadJSONFileNode(BaseNode):
         self.node_type = "ReadJSONFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("data", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -376,6 +374,7 @@ class ReadJSONFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WriteJSONFileNode(BaseNode):
     """
     Write data to a JSON file.
@@ -401,10 +400,8 @@ class WriteJSONFileNode(BaseNode):
         self.node_type = "WriteJSONFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -450,6 +447,7 @@ class WriteJSONFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ZipFilesNode(BaseNode):
     """
     Create a ZIP archive from files.
@@ -475,11 +473,9 @@ class ZipFilesNode(BaseNode):
         self.node_type = "ZipFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("files", PortType.INPUT, DataType.LIST)
         self.add_input_port("base_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("zip_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -554,6 +550,7 @@ class ZipFilesNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class UnzipFilesNode(BaseNode):
     """
     Extract files from a ZIP archive.
@@ -579,10 +576,8 @@ class UnzipFilesNode(BaseNode):
         self.node_type = "UnzipFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("extract_to", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("extract_to", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
