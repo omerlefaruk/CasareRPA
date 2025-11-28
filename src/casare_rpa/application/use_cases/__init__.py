@@ -5,8 +5,16 @@ Use cases coordinate domain logic and infrastructure to implement application fe
 """
 
 from .execute_workflow import ExecuteWorkflowUseCase, ExecutionSettings
+from .validate_workflow import (
+    ValidateWorkflowUseCase,
+    ValidationResult,
+    ValidationIssue,
+)
 
 __all__ = [
     "ExecuteWorkflowUseCase",
     "ExecutionSettings",
+    "ValidateWorkflowUseCase",
+    "ValidationResult",
+    "ValidationIssue",
 ]
