@@ -17,8 +17,8 @@ from PySide6.QtCore import Qt, Signal
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ...core.validation import ValidationResult
-    from ...core.events import Event
+    from casare_rpa.domain.validation import ValidationResult
+    from casare_rpa.domain.events import Event
     from .triggers_tab import TriggersTab
 
 

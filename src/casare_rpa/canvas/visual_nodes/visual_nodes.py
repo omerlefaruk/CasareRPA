@@ -17,7 +17,7 @@ with NodeGraphQt's visual representation.
 
 import inspect
 
-from ...core.types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import Data Operation Nodes
 

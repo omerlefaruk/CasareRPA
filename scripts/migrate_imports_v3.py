@@ -118,8 +118,6 @@ class ImportRewriter(ast.NodeTransformer):
             absolute_module = node.module or ""
         if not ImportMapper.is_deprecated_module(absolute_module):
             return node
-        if not ImportMapper.needs_migration(absolute_module):
-            return node
         grouped: Dict[str, List[ast.alias]] = {}
         for alias in node.names:
             new_module, new_name = ImportMapper.map_name(absolute_module, alias.name)

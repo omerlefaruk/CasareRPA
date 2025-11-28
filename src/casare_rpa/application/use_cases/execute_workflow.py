@@ -21,9 +21,9 @@ from loguru import logger
 
 from ...domain.entities.workflow import WorkflowSchema
 from ...domain.services.execution_orchestrator import ExecutionOrchestrator
-from ...core.execution_context import ExecutionContext
-from ...core.events import EventBus, Event
-from ...core.types import EventType, NodeId, NodeStatus
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.domain.events import EventBus, Event
+from casare_rpa.domain.value_objects.types import EventType, NodeId, NodeStatus
 from ...utils.performance.performance_metrics import get_metrics
 
 
@@ -85,7 +85,8 @@ class ExecuteWorkflowUseCase:
 
         # Get global event bus if not provided
         if event_bus is None:
-            from ...core.events import get_event_bus
+            from casare_rpa.domain.events import get_event_bus
+
             event_bus = get_event_bus()
 
         self.event_bus = event_bus
@@ -177,7 +178,11 @@ class ExecuteWorkflowUseCase:
         Returns:
             Progress percentage (0-100)
         """
-        total = len(self._subgraph_nodes) if self._subgraph_nodes else len(self.workflow.nodes)
+        total = (
+            len(self._subgraph_nodes)
+            if self._subgraph_nodes
+            else len(self.workflow.nodes)
+        )
         if total == 0:
             return 0.0
         return (len(self.executed_nodes) / total) * 100
@@ -243,6 +248,7 @@ class ExecuteWorkflowUseCase:
 
         # Record start time
         import time
+
         start_time = time.time()
 
         # Record metrics
@@ -292,9 +298,7 @@ class ExecuteWorkflowUseCase:
             else:
                 node.status = NodeStatus.ERROR
                 error_msg = (
-                    result.get("error", "Unknown error")
-                    if result
-                    else "No result"
+                    result.get("error", "Unknown error") if result else "No result"
                 )
                 self._emit_event(
                     EventType.NODE_ERROR,
@@ -468,9 +472,7 @@ class ExecuteWorkflowUseCase:
             # Cleanup context resources
             if self.context:
                 try:
-                    await asyncio.wait_for(
-                        self.context.cleanup(), timeout=30.0
-                    )
+                    await asyncio.wait_for(self.context.cleanup(), timeout=30.0)
                 except asyncio.TimeoutError:
                     logger.error("Context cleanup timed out after 30 seconds")
                 except Exception as cleanup_error:
@@ -498,9 +500,7 @@ class ExecuteWorkflowUseCase:
 
             # Skip nodes not in subgraph (Run-To-Node filtering)
             if not self._should_execute_node(current_node_id):
-                logger.debug(
-                    f"Skipping node {current_node_id} (not in subgraph)"
-                )
+                logger.debug(f"Skipping node {current_node_id} (not in subgraph)")
                 continue
 
             # Get node instance
@@ -537,9 +537,7 @@ class ExecuteWorkflowUseCase:
                 break
 
             # Get next nodes based on execution result
-            next_node_ids = self.orchestrator.get_next_nodes(
-                current_node_id, result
-            )
+            next_node_ids = self.orchestrator.get_next_nodes(current_node_id, result)
 
             # Add next nodes to queue
             nodes_to_execute.extend(next_node_ids)

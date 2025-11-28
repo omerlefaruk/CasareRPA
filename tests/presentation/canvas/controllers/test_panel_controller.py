@@ -12,25 +12,36 @@ Tests panel management including:
 
 import pytest
 from unittest.mock import Mock
+from PySide6.QtWidgets import QMainWindow
 
 from casare_rpa.presentation.canvas.controllers.panel_controller import PanelController
 
 
 @pytest.fixture
-def mock_main_window() -> None:
-    """Create a mock MainWindow with panels."""
-    mock = Mock()
-    mock._bottom_panel = Mock()
-    mock._bottom_panel.setVisible = Mock()
-    mock._properties_panel = Mock()
-    mock._properties_panel.setVisible = Mock()
-    mock._variable_inspector_dock = Mock()
-    mock._variable_inspector_dock.setVisible = Mock()
-    return mock
+def mock_main_window(qtbot):
+    """Create a real QMainWindow with mocked panel methods."""
+    main_window = QMainWindow()
+    qtbot.addWidget(main_window)
+
+    main_window._bottom_panel = Mock()
+    main_window._bottom_panel.setVisible = Mock()
+    main_window._properties_panel = Mock()
+    main_window._properties_panel.setVisible = Mock()
+    main_window._variable_inspector_dock = Mock()
+    main_window._variable_inspector_dock.setVisible = Mock()
+
+    # Mock getter methods
+    main_window.get_bottom_panel = Mock(return_value=main_window._bottom_panel)
+    main_window.get_properties_panel = Mock(return_value=main_window._properties_panel)
+    main_window.get_variable_inspector_dock = Mock(
+        return_value=main_window._variable_inspector_dock
+    )
+
+    return main_window
 
 
 @pytest.fixture
-def panel_controller(mock_main_window) -> None:
+def panel_controller(mock_main_window):
     """Create a PanelController instance."""
     controller = PanelController(mock_main_window)
     controller.initialize()
@@ -48,7 +59,7 @@ class TestPanelControllerInitialization:
     def test_cleanup(self, panel_controller) -> None:
         """Test cleanup."""
         panel_controller.cleanup()
-        assert not panel_controller.is_initialized()
+        assert not panel_controller.is_initialized
 
 
 class TestBottomPanel:

@@ -90,7 +90,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """ExecutionContext is created when execution starts."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         assert use_case.context is None
@@ -116,7 +118,9 @@ class TestAsyncExecutionPath:
     ) -> None:
         """ExecutionContext receives initial variables."""
         variables = {"key": "value", "count": 42}
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow,
                 event_bus=mock_event_bus,
@@ -144,7 +148,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Context cleanup is called after successful execution."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -167,7 +173,9 @@ class TestAsyncExecutionPath:
     ) -> None:
         """Context cleanup is called even on execution exception."""
         # This test verifies finally block behavior
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         cleanup_called = False
@@ -195,7 +203,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Cleanup timeout is enforced."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         async def slow_cleanup() -> None:
@@ -219,7 +229,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Start and end times are recorded."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -245,7 +257,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Current node ID is cleared after execution completes."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -268,7 +282,9 @@ class TestAsyncExecutionPath:
     ) -> None:
         """Node timeout setting is accessible during execution."""
         settings = ExecutionSettings(node_timeout=5.0)
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow, event_bus=mock_event_bus, settings=settings
             )
@@ -281,7 +297,9 @@ class TestAsyncExecutionPath:
     ) -> None:
         """Continue-on-error setting affects execution behavior."""
         settings = ExecutionSettings(continue_on_error=True)
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow, event_bus=mock_event_bus, settings=settings
             )
@@ -294,7 +312,9 @@ class TestAsyncExecutionPath:
     ) -> None:
         """Project context is passed to ExecutionContext."""
         mock_project_context = MagicMock()
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow,
                 event_bus=mock_event_bus,
@@ -321,7 +341,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Stop flag prevents further execution."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         assert use_case._stop_requested is False
@@ -336,7 +358,9 @@ class TestAsyncExecutionPath:
         workflow = WorkflowSchema(WorkflowMetadata(name="No Start"))
         workflow.add_node({"node_id": "action", "type": "ActionNode", "config": {}})
 
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -355,7 +379,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Executed nodes set is cleared before execution starts."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         # Manually add a node (simulating prior execution)
@@ -381,7 +407,9 @@ class TestAsyncExecutionPath:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Workflow name is passed to ExecutionContext."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -413,7 +441,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """WORKFLOW_STARTED event is emitted at execution start."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -438,7 +468,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """WORKFLOW_ERROR event is emitted on execution failure."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -460,7 +492,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Event data includes workflow name."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -489,7 +523,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Event bus receives multiple events during execution."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -512,7 +548,7 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema
     ) -> None:
         """Execution handles missing event bus gracefully."""
-        with patch("casare_rpa.core.events.get_event_bus") as mock_get_bus:
+        with patch("casare_rpa.domain.events.get_event_bus") as mock_get_bus:
             mock_bus = MagicMock()
             mock_get_bus.return_value = mock_bus
             use_case = ExecuteWorkflowUseCase(simple_workflow)
@@ -538,7 +574,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """WORKFLOW_STOPPED event can be emitted if stop is called."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         use_case._stop_requested = True
@@ -560,7 +598,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Event data is properly populated."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         with patch(
@@ -587,7 +627,9 @@ class TestEventBusIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Progress information may be included in events."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         # Simulate node execution
@@ -610,7 +652,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """ExecutionOrchestrator is created and attached."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         assert use_case.orchestrator is not None
@@ -620,7 +664,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator correctly identifies StartNode."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         start_id = use_case.orchestrator.find_start_node()
@@ -630,7 +676,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator provides next nodes from current node."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         next_nodes = use_case.orchestrator.get_next_nodes("start")
@@ -640,7 +688,9 @@ class TestOrchestratorIntegration:
         self, branching_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator recognizes control flow nodes."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 branching_workflow, event_bus=mock_event_bus
             )
@@ -652,7 +702,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator calculates reachable nodes."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         path = use_case.orchestrator.calculate_execution_path("start")
@@ -664,7 +716,9 @@ class TestOrchestratorIntegration:
     ) -> None:
         """Run-To-Node target affects execution subgraph."""
         settings = ExecutionSettings(target_node_id="action")
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow, event_bus=mock_event_bus, settings=settings
             )
@@ -677,7 +731,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator can determine if node is reachable."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         assert use_case.orchestrator.is_reachable("start", "action") is True
@@ -688,7 +744,9 @@ class TestOrchestratorIntegration:
     ) -> None:
         """_should_execute_node filters by subgraph."""
         settings = ExecutionSettings(target_node_id="action")
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 simple_workflow, event_bus=mock_event_bus, settings=settings
             )
@@ -703,7 +761,9 @@ class TestOrchestratorIntegration:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """All nodes execute when no target is set."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
 
         assert use_case._should_execute_node("start") is True
@@ -714,7 +774,9 @@ class TestOrchestratorIntegration:
         self, branching_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Orchestrator handles multiple execution paths."""
-        with patch("casare_rpa.core.events.get_event_bus", return_value=mock_event_bus):
+        with patch(
+            "casare_rpa.domain.events.get_event_bus", return_value=mock_event_bus
+        ):
             use_case = ExecuteWorkflowUseCase(
                 branching_workflow, event_bus=mock_event_bus
             )

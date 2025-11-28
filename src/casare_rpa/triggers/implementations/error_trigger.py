@@ -51,7 +51,7 @@ class ErrorTrigger(BaseTrigger):
     async def start(self) -> bool:
         """Start the error trigger."""
         try:
-            from ...core.events import get_event_bus, EventType
+            from casare_rpa.domain.events import get_event_bus, EventType
 
             event_bus = get_event_bus()
 
@@ -76,7 +76,7 @@ class ErrorTrigger(BaseTrigger):
     async def stop(self) -> bool:
         """Stop the error trigger."""
         try:
-            from ...core.events import get_event_bus, EventType
+            from casare_rpa.domain.events import get_event_bus, EventType
 
             if self._event_handler:
                 event_bus = get_event_bus()

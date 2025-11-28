@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Set, Tuple
 from loguru import logger
 
-from ...core.types import NodeId
+from casare_rpa.domain.value_objects.types import NodeId
 
 
 @dataclass

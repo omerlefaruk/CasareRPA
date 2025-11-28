@@ -23,7 +23,7 @@ import casare_rpa.nodes.database.database_utils as utils_module
 sql_module.AIOSQLITE_AVAILABLE = False
 utils_module.AIOSQLITE_AVAILABLE = False
 
-from casare_rpa.core.execution_context import ExecutionContext
+from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.database import (
     DatabaseConnection,
     DatabaseConnectNode,

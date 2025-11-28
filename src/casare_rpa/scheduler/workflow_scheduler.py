@@ -463,7 +463,7 @@ class WorkflowSchedulerService:
             # Import runner
             from ..runner.workflow_runner import WorkflowRunner
             from ..utils.workflow_loader import load_workflow_from_file
-            from ..core.events import EventBus
+            from casare_rpa.domain.events import EventBus
 
             # Load workflow
             workflow = load_workflow_from_file(workflow_path)

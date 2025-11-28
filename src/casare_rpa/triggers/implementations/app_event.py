@@ -202,7 +202,7 @@ class AppEventTrigger(BaseTrigger):
         event_types = config.get("event_types", ["workflow_completed"])
 
         try:
-            from ...core.events import get_event_bus, EventType
+            from casare_rpa.domain.events import get_event_bus, EventType
 
             event_bus = get_event_bus()
 
@@ -217,15 +217,21 @@ class AppEventTrigger(BaseTrigger):
                 "node_error": EventType.NODE_ERROR,
             }
 
+            def make_handler(et_str: str):
+                """Create event handler for event type."""
+
+                def handler(e):
+                    asyncio.create_task(self._on_rpa_event(et_str, e))
+
+                return handler
+
             for event_type_str in event_types:
                 event_type = event_map.get(event_type_str)
                 if event_type:
-                    handler = lambda e, et=event_type_str: asyncio.create_task(
-                        self._on_rpa_event(et, e)
-                    )
+                    handler = make_handler(event_type_str)
                     event_bus.subscribe(event_type, handler)
                     self._event_subscriptions.append(
-                        lambda: event_bus.unsubscribe(event_type, handler)
+                        lambda et=event_type, h=handler: event_bus.unsubscribe(et, h)
                     )
 
             return True

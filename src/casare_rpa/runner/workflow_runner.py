@@ -14,11 +14,12 @@ from typing import Any, Dict, List, Optional, Set
 from datetime import datetime
 from loguru import logger
 
-from ..core.base_node import BaseNode
-from ..core.workflow_schema import WorkflowSchema, NodeConnection
-from ..core.execution_context import ExecutionContext
-from ..core.types import NodeId, NodeStatus, EventType
-from ..core.events import EventBus, Event
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.entities.node_connection import NodeConnection
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.domain.value_objects.types import NodeId, NodeStatus, EventType
+from casare_rpa.domain.events import EventBus, Event
 from ..application.use_cases.execute_workflow import (
     ExecuteWorkflowUseCase,
     ExecutionSettings,
@@ -96,7 +97,7 @@ class WorkflowRunner:
         self._project_context = project_context
 
         # Import get_event_bus to get the global instance
-        from ..core.events import get_event_bus
+        from casare_rpa.domain.events import get_event_bus
 
         self.event_bus = event_bus or get_event_bus()
 
@@ -409,9 +410,7 @@ class WorkflowRunner:
             self.breakpoints.discard(node_id)
             if node_id in self.workflow.nodes:
                 self.workflow.nodes[node_id].set_breakpoint(False)
-            logger.warning(
-                f"Breakpoint removed from {node_id}"
-            )
+            logger.warning(f"Breakpoint removed from {node_id}")
 
     def clear_all_breakpoints(self) -> None:
         """Clear all breakpoints."""
