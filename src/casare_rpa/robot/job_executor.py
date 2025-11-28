@@ -18,6 +18,7 @@ import orjson
 
 from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
 from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
+from casare_rpa.domain.value_objects.types import EventType
 
 from .checkpoint import CheckpointManager
 from .metrics import MetricsCollector, get_metrics_collector
@@ -456,7 +457,6 @@ class JobExecutor:
 
         # Subscribe to node completion events
         if hasattr(use_case, "event_bus") and use_case.event_bus:
-            from casare_rpa.domain.value_objects.types import EventType
 
             def on_node_complete(event):
                 if event.node_id and hasattr(use_case, "context") and use_case.context:

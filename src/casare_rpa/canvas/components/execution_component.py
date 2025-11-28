@@ -127,11 +127,17 @@ class ExecutionComponent(BaseComponent):
                 debug_enabled = debug_toolbar.action_debug_mode.isChecked()
                 step_enabled = debug_toolbar.action_step_mode.isChecked()
 
+                # TODO(v3.1): Implement debug mode in ExecuteWorkflowUseCase
+                # Need to add breakpoint support and variable inspection
                 if debug_enabled:
                     logger.warning("Debug mode not yet implemented in new architecture")
+                    self._main_window.show_status("Debug mode not yet available", 3000)
 
+                # TODO(v3.1): Implement step mode in ExecuteWorkflowUseCase
+                # Need to add step-by-step execution control
                 if step_enabled:
                     logger.warning("Step mode not yet implemented in new architecture")
+                    self._main_window.show_status("Step mode not yet available", 3000)
 
                 debug_toolbar.set_execution_state(True)
 
@@ -180,13 +186,14 @@ class ExecutionComponent(BaseComponent):
 
     def on_pause_workflow(self) -> None:
         """Handle workflow pause."""
-        # Note: Pause not yet implemented in new architecture
+        # TODO(v3.1): Implement pause/resume in ExecuteWorkflowUseCase
+        # Need to add execution state management and async control
         logger.warning("Pause not yet implemented in new architecture")
-        self._main_window.show_status("Pause not yet implemented", 3000)
+        self._main_window.show_status("Pause not yet available", 3000)
 
     def on_resume_workflow(self) -> None:
         """Handle workflow resume."""
-        # Note: Resume not yet implemented in new architecture
+        # TODO(v3.1): Implement pause/resume in ExecuteWorkflowUseCase
         logger.warning("Resume not yet implemented in new architecture")
         self._main_window.show_status("Resume not yet implemented", 3000)
 
