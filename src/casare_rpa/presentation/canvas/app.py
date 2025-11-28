@@ -116,6 +116,27 @@ class CasareRPAApp:
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
 
+        # Create workflow serializer
+        from .serialization.workflow_serializer import WorkflowSerializer
+        from .execution.canvas_workflow_runner import CanvasWorkflowRunner
+
+        self._serializer = WorkflowSerializer(
+            self._node_graph.graph,  # NodeGraphQt NodeGraph instance
+            self._main_window,
+        )
+
+        # Set as data provider for validation
+        self._main_window.set_workflow_data_provider(self._serializer.serialize)
+
+        # Create workflow runner
+        from casare_rpa.domain.events import get_event_bus
+
+        self._workflow_runner = CanvasWorkflowRunner(
+            self._serializer, get_event_bus(), self._main_window
+        )
+
+        logger.debug("Workflow serializer and runner initialized")
+
     def _initialize_components(self) -> None:
         """
         Initialize all application controllers in dependency order.
@@ -163,6 +184,10 @@ class CasareRPAApp:
 
         # Autosave - handles automatic saving
         self._autosave_controller = AutosaveController(self._main_window)
+
+        # Configure execution controller with workflow runner
+        self._execution_controller.set_workflow_runner(self._workflow_runner)
+        logger.debug("ExecutionController configured with workflow runner")
 
         # Initialize all phase 2 controllers
         phase_2_controllers = [

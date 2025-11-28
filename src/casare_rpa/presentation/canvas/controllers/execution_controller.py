@@ -56,6 +56,7 @@ class ExecutionController(BaseController):
         self._use_case: Optional = None
         self._workflow_task: Optional[asyncio.Task] = None
         self._event_bus = None
+        self._workflow_runner: Optional["CanvasWorkflowRunner"] = None
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -98,6 +99,18 @@ class ExecutionController(BaseController):
         except ImportError as e:
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
+
+    def set_workflow_runner(self, runner: "CanvasWorkflowRunner") -> None:
+        """
+        Set the workflow runner instance.
+
+        Called by CasareRPAApp after initialization.
+
+        Args:
+            runner: CanvasWorkflowRunner instance
+        """
+        self._workflow_runner = runner
+        logger.debug("Workflow runner configured in ExecutionController")
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -219,6 +232,22 @@ class ExecutionController(BaseController):
         if not self._check_validation_before_run():
             return
 
+        # Check if runner is configured
+        if not self._workflow_runner:
+            logger.error("WorkflowRunner not configured")
+            QMessageBox.critical(
+                self.main_window,
+                "Execution Error",
+                "Workflow runner not initialized. Please restart the application.",
+            )
+            return
+
+        # Prevent concurrent execution
+        if self._is_running:
+            logger.warning("Workflow already running")
+            self.main_window.show_status("Workflow is already running", 3000)
+            return
+
         # Reset all node visuals before starting
         self._reset_all_node_visuals()
 
@@ -233,6 +262,23 @@ class ExecutionController(BaseController):
         self._update_execution_actions(running=True)
 
         self.main_window.show_status("Workflow execution started...", 0)
+
+        # Create async task for actual execution
+        self._workflow_task = asyncio.create_task(self._run_workflow_async())
+
+    async def _run_workflow_async(self) -> None:
+        """Execute workflow asynchronously."""
+        try:
+            success = await self._workflow_runner.run_workflow()
+            # Note: completion is handled via EventBus events
+            # (WORKFLOW_COMPLETED or WORKFLOW_ERROR events trigger
+            #  on_execution_completed or on_execution_error)
+            logger.debug(f"Workflow execution completed: success={success}")
+        except asyncio.CancelledError:
+            logger.info("Workflow execution was cancelled")
+        except Exception as e:
+            logger.exception("Unexpected error during workflow execution")
+            self.on_execution_error(str(e))
 
     def run_to_node(self) -> None:
         """Run workflow up to the selected node (F4)."""
