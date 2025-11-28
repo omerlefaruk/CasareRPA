@@ -19,7 +19,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class UIStateController(BaseController):
@@ -466,7 +466,7 @@ class UIStateController(BaseController):
         Returns:
             List of dicts with 'path', 'name', 'last_opened' keys
         """
-        from ....canvas.workflow.recent_files import get_recent_files_manager
+        from ....application.workflow.recent_files import get_recent_files_manager
 
         try:
             manager = get_recent_files_manager()
@@ -482,7 +482,7 @@ class UIStateController(BaseController):
         Args:
             file_path: Path to the workflow file
         """
-        from ....canvas.workflow.recent_files import get_recent_files_manager
+        from ....application.workflow.recent_files import get_recent_files_manager
 
         try:
             manager = get_recent_files_manager()
@@ -503,7 +503,7 @@ class UIStateController(BaseController):
         Args:
             file_path: Path to remove
         """
-        from ....canvas.workflow.recent_files import get_recent_files_manager
+        from ....application.workflow.recent_files import get_recent_files_manager
 
         try:
             manager = get_recent_files_manager()
@@ -514,7 +514,7 @@ class UIStateController(BaseController):
 
     def clear_recent_files(self) -> None:
         """Clear the entire recent files list."""
-        from ....canvas.workflow.recent_files import get_recent_files_manager
+        from ....application.workflow.recent_files import get_recent_files_manager
 
         try:
             manager = get_recent_files_manager()

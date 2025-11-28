@@ -197,7 +197,7 @@ presentation/    # UI layer
 
 2. Create visual node in `src/casare_rpa/presentation/canvas/visual_nodes/{category}/`:
    ```python
-   from casare_rpa.canvas.visual_nodes.base_visual_node import VisualNode
+   from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
    class VisualMyNewNode(VisualNode):
        NODE_NAME = "My New Node"

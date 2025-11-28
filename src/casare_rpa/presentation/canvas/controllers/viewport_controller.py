@@ -16,9 +16,9 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
-    from ....canvas.graph.minimap import Minimap
-    from ....canvas.graph.node_frame import NodeFrame
+    from ..main_window import MainWindow
+    from ..graph.minimap import Minimap
+    from ..graph.node_frame import NodeFrame
 
 
 class ViewportController(BaseController):
@@ -69,7 +69,7 @@ class ViewportController(BaseController):
         Otherwise, creates an empty frame at the canvas center.
         """
         try:
-            from ....canvas.graph.node_frame import (
+            from ..graph.node_frame import (
                 group_selected_nodes,
                 create_frame,
                 NodeFrame,
@@ -124,7 +124,7 @@ class ViewportController(BaseController):
             node_graph: The NodeGraph instance to create minimap for
         """
         try:
-            from ....canvas.graph.minimap import Minimap
+            from ..graph.minimap import Minimap
 
             central_widget = self.main_window.centralWidget()
             if central_widget:

@@ -19,6 +19,10 @@ Architecture:
     - SchedulingController: Workflow scheduling and schedule management
     - TriggerController: Trigger creation, editing, deletion, and management
     - UIStateController: UI state persistence (window geometry, panels, recent files)
+    - SelectorController: Element selector/picker (browser, desktop)
+    - ProjectController: Project and scenario management
+    - PreferencesController: Settings and preferences management
+    - AutosaveController: Automatic workflow saving
 
 Usage:
     from casare_rpa.presentation.canvas.controllers import (
@@ -29,6 +33,10 @@ Usage:
         SchedulingController,
         TriggerController,
         UIStateController,
+        SelectorController,
+        ProjectController,
+        PreferencesController,
+        AutosaveController,
     )
 
     workflow_controller = WorkflowController(main_window)
@@ -47,6 +55,10 @@ from .viewport_controller import ViewportController
 from .scheduling_controller import SchedulingController
 from .trigger_controller import TriggerController
 from .ui_state_controller import UIStateController
+from .selector_controller import SelectorController
+from .project_controller import ProjectController
+from .preferences_controller import PreferencesController
+from .autosave_controller import AutosaveController
 
 __all__ = [
     # Base
@@ -63,6 +75,10 @@ __all__ = [
     "SchedulingController",
     "TriggerController",
     "UIStateController",
+    "SelectorController",
+    "ProjectController",
+    "PreferencesController",
+    "AutosaveController",
     # Event utilities
     "EventTypes",
     "Event",

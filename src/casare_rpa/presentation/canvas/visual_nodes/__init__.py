@@ -574,7 +574,7 @@ _THIS_MODULE_CLASSES = [globals()[name] for name in __all__]
 
 # Import extended nodes from old location (until migration is complete)
 try:
-    from casare_rpa.canvas.visual_nodes.extended_visual_nodes import (
+    from casare_rpa.presentation.canvas.visual_nodes.extended_visual_nodes import (
         EXTENDED_VISUAL_NODE_CLASSES,
     )
 

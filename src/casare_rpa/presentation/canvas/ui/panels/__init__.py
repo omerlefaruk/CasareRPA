@@ -9,6 +9,12 @@ from .properties_panel import PropertiesPanel, CollapsibleSection
 from .debug_panel import DebugPanel
 from .variables_panel import VariablesPanel, VARIABLE_TYPES, TYPE_DEFAULTS
 from .minimap_panel import MinimapPanel, MinimapChangeTracker
+from .bottom_panel_dock import BottomPanelDock
+from .history_tab import HistoryTab
+from .log_tab import LogTab
+from .output_tab import OutputTab
+from .triggers_tab import TriggersTab
+from .validation_tab import ValidationTab
 
 __all__ = [
     # Panels
@@ -16,6 +22,13 @@ __all__ = [
     "DebugPanel",
     "VariablesPanel",
     "MinimapPanel",
+    "BottomPanelDock",
+    # Tabs
+    "HistoryTab",
+    "LogTab",
+    "OutputTab",
+    "TriggersTab",
+    "ValidationTab",
     # Supporting Classes
     "CollapsibleSection",
     "MinimapChangeTracker",

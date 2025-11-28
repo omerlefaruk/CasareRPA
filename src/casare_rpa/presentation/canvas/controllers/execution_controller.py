@@ -6,8 +6,10 @@ Handles all execution-related operations:
 - Run to node (partial execution)
 - Run single node (isolated execution)
 - Debug mode controls
+- EventBus integration for node visual feedback
 """
 
+import asyncio
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
@@ -16,7 +18,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class ExecutionController(BaseController):
@@ -51,16 +53,163 @@ class ExecutionController(BaseController):
         super().__init__(main_window)
         self._is_running = False
         self._is_paused = False
+        self._use_case: Optional = None
+        self._workflow_task: Optional[asyncio.Task] = None
+        self._event_bus = None
 
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
+        # Setup EventBus integration for visual node feedback
+        self._setup_event_bus()
         logger.info("ExecutionController initialized")
+
+    def _setup_event_bus(self) -> None:
+        """
+        Setup EventBus integration for workflow execution events.
+
+        Extracted from: canvas/components/execution_component.py
+        Subscribes to domain events for visual node feedback.
+        """
+        try:
+            from ....domain.events import EventType, get_event_bus
+
+            self._event_bus = get_event_bus()
+
+            # Subscribe to execution events for visual feedback
+            self._event_bus.subscribe(EventType.NODE_STARTED, self._on_node_started)
+            self._event_bus.subscribe(EventType.NODE_COMPLETED, self._on_node_completed)
+            self._event_bus.subscribe(EventType.NODE_ERROR, self._on_node_error)
+            self._event_bus.subscribe(
+                EventType.WORKFLOW_COMPLETED, self._on_workflow_completed
+            )
+            self._event_bus.subscribe(EventType.WORKFLOW_ERROR, self._on_workflow_error)
+            self._event_bus.subscribe(
+                EventType.WORKFLOW_STOPPED, self._on_workflow_stopped
+            )
+
+            # Subscribe all events to log viewer if available
+            log_viewer = self.main_window.get_log_viewer()
+            if log_viewer and hasattr(log_viewer, "log_event"):
+                for event_type in EventType:
+                    self._event_bus.subscribe(event_type, log_viewer.log_event)
+
+            logger.info("EventBus integration configured for execution feedback")
+        except ImportError as e:
+            logger.warning(f"EventBus not available: {e}")
+            self._event_bus = None
 
     def cleanup(self) -> None:
         """Clean up resources."""
+        # Cancel running workflow task
+        if self._workflow_task and not self._workflow_task.done():
+            self._workflow_task.cancel()
+            self._workflow_task = None
+        self._use_case = None
         super().cleanup()
         logger.info("ExecutionController cleanup")
+
+    def _on_node_started(self, event_data: dict) -> None:
+        """
+        Handle NODE_STARTED event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        Updates visual node status to 'running'.
+        """
+        node_id = event_data.get("node_id")
+        if node_id:
+            visual_node = self._find_visual_node(node_id)
+            if visual_node and hasattr(visual_node, "set_property"):
+                visual_node.set_property("status", "running")
+                logger.debug(f"Node {node_id} visual status: running")
+
+    def _on_node_completed(self, event_data: dict) -> None:
+        """
+        Handle NODE_COMPLETED event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        Updates visual node status to 'completed'.
+        """
+        node_id = event_data.get("node_id")
+        if node_id:
+            visual_node = self._find_visual_node(node_id)
+            if visual_node and hasattr(visual_node, "set_property"):
+                visual_node.set_property("status", "completed")
+                logger.debug(f"Node {node_id} visual status: completed")
+
+    def _on_node_error(self, event_data: dict) -> None:
+        """
+        Handle NODE_ERROR event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        Updates visual node status to 'error'.
+        """
+        node_id = event_data.get("node_id")
+        error = event_data.get("error", "Unknown error")
+        if node_id:
+            visual_node = self._find_visual_node(node_id)
+            if visual_node and hasattr(visual_node, "set_property"):
+                visual_node.set_property("status", "error")
+                logger.error(f"Node {node_id} error: {error}")
+
+    def _on_workflow_completed(self, event_data: dict) -> None:
+        """
+        Handle WORKFLOW_COMPLETED event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        """
+        logger.info("Workflow execution completed (EventBus)")
+        self.on_execution_completed()
+
+    def _on_workflow_error(self, event_data: dict) -> None:
+        """
+        Handle WORKFLOW_ERROR event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        """
+        error = event_data.get("error", "Unknown error")
+        logger.error(f"Workflow error (EventBus): {error}")
+        self.on_execution_error(str(error))
+
+    def _on_workflow_stopped(self, event_data: dict) -> None:
+        """
+        Handle WORKFLOW_STOPPED event from EventBus.
+
+        Extracted from: canvas/components/execution_component.py
+        """
+        logger.info("Workflow stopped (EventBus)")
+        self._is_running = False
+        self._is_paused = False
+        self._update_execution_actions(running=False)
+
+    def _find_visual_node(self, node_id: str):
+        """
+        Find visual node by node_id in the graph.
+
+        Args:
+            node_id: Node ID to find
+
+        Returns:
+            Visual node or None
+        """
+        graph = self.main_window.get_graph()
+        if not graph:
+            return None
+
+        for visual_node in graph.all_nodes():
+            if visual_node.get_property("node_id") == node_id:
+                return visual_node
+        return None
+
+    def _reset_all_node_visuals(self) -> None:
+        """Reset all node visual states to idle."""
+        graph = self.main_window.get_graph()
+        if not graph:
+            return
+
+        for visual_node in graph.all_nodes():
+            if hasattr(visual_node, "set_property"):
+                visual_node.set_property("status", "idle")
 
     def run_workflow(self) -> None:
         """Run workflow from start to end (F3)."""
@@ -69,6 +218,9 @@ class ExecutionController(BaseController):
         # Validate before running
         if not self._check_validation_before_run():
             return
+
+        # Reset all node visuals before starting
+        self._reset_all_node_visuals()
 
         self._is_running = True
         self._is_paused = False

@@ -6,8 +6,10 @@ Handles all trigger-related operations:
 - Toggle trigger enabled state
 - Run triggers manually
 - Trigger state management
+- TriggerRunner lifecycle management
 """
 
+import asyncio
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog, QMessageBox
@@ -16,7 +18,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class TriggerController(BaseController):
@@ -46,15 +48,18 @@ class TriggerController(BaseController):
     trigger_run_requested = Signal(str)  # trigger_id
     triggers_changed = Signal()
 
-    def __init__(self, main_window: "MainWindow"):
+    def __init__(self, main_window: "MainWindow", app_instance=None):
         """
         Initialize trigger controller.
 
         Args:
             main_window: Reference to main window for accessing shared components
+            app_instance: Optional app instance for TriggerRunner (for backward compatibility)
         """
         super().__init__(main_window)
         self._triggers: List[Dict[str, Any]] = []
+        self._app_instance = app_instance
+        self._trigger_runner = None
 
     def initialize(self) -> None:
         """Initialize controller resources and connections.
@@ -64,13 +69,148 @@ class TriggerController(BaseController):
         delegate to this controller. This avoids double-handling of signals.
         """
         super().initialize()
+        # Setup TriggerRunner for actual trigger execution
+        self._setup_trigger_runner()
         logger.info("TriggerController initialized")
+
+    def _setup_trigger_runner(self) -> None:
+        """
+        Setup TriggerRunner for workflow trigger execution.
+
+        Extracted from: canvas/components/trigger_component.py
+        Creates CanvasTriggerRunner instance for managing active triggers.
+        """
+        try:
+            from ....application.execution.trigger_runner import CanvasTriggerRunner
+
+            if self._app_instance:
+                self._trigger_runner = CanvasTriggerRunner(self._app_instance)
+                logger.info("TriggerRunner initialized")
+
+                # Connect trigger workflow signal
+                if hasattr(self.main_window, "trigger_workflow_requested"):
+                    self.main_window.trigger_workflow_requested.connect(
+                        self._on_trigger_run_workflow
+                    )
+            else:
+                logger.warning(
+                    "No app instance provided - trigger execution unavailable"
+                )
+        except ImportError as e:
+            logger.warning(f"TriggerRunner not available: {e}")
+            self._trigger_runner = None
 
     def cleanup(self) -> None:
         """Clean up controller resources."""
+        # Stop triggers if running
+        if self._trigger_runner and hasattr(self._trigger_runner, "is_running"):
+            if self._trigger_runner.is_running:
+                asyncio.ensure_future(self._trigger_runner.stop_triggers())
         super().cleanup()
         self._triggers.clear()
         logger.info("TriggerController cleanup")
+
+    def start_triggers(self) -> None:
+        """
+        Start all enabled triggers for the current scenario.
+
+        Extracted from: canvas/components/trigger_component.py
+        Starts the TriggerRunner with all configured triggers.
+        """
+        if not self._trigger_runner:
+            logger.warning("TriggerRunner not available - cannot start triggers")
+            self.main_window.show_status("Trigger execution not available", 3000)
+            return
+
+        bottom_panel = self.main_window.get_bottom_panel()
+        if not bottom_panel:
+            logger.warning("No bottom panel available")
+            return
+
+        triggers = bottom_panel.get_triggers()
+        if not triggers:
+            self.main_window.show_status("No triggers configured", 3000)
+            if bottom_panel:
+                bottom_panel.set_triggers_running(False)
+            return
+
+        async def _start():
+            try:
+                count = await self._trigger_runner.start_triggers(triggers)
+                self.main_window.show_status(f"Started {count} triggers", 3000)
+                if bottom_panel:
+                    bottom_panel.set_triggers_running(count > 0)
+                logger.info(f"Started {count} triggers")
+            except Exception as e:
+                logger.error(f"Failed to start triggers: {e}")
+                self.main_window.show_status(f"Error starting triggers: {e}", 5000)
+
+        asyncio.ensure_future(_start())
+
+    def stop_triggers(self) -> None:
+        """
+        Stop all active triggers.
+
+        Extracted from: canvas/components/trigger_component.py
+        Stops the TriggerRunner and all active triggers.
+        """
+        if not self._trigger_runner:
+            logger.warning("TriggerRunner not available")
+            return
+
+        bottom_panel = self.main_window.get_bottom_panel()
+
+        async def _stop():
+            try:
+                await self._trigger_runner.stop_triggers()
+                self.main_window.show_status("Triggers stopped", 3000)
+                if bottom_panel:
+                    bottom_panel.set_triggers_running(False)
+                logger.info("Stopped all triggers")
+            except Exception as e:
+                logger.error(f"Failed to stop triggers: {e}")
+                self.main_window.show_status(f"Error stopping triggers: {e}", 5000)
+
+        asyncio.ensure_future(_stop())
+
+    def are_triggers_running(self) -> bool:
+        """
+        Check if triggers are currently running.
+
+        Extracted from: canvas/components/trigger_component.py
+
+        Returns:
+            True if TriggerRunner is active, False otherwise
+        """
+        if self._trigger_runner and hasattr(self._trigger_runner, "is_running"):
+            return self._trigger_runner.is_running
+        return False
+
+    def _on_trigger_run_workflow(self) -> None:
+        """
+        Handle workflow execution triggered by a trigger.
+
+        Extracted from: canvas/components/trigger_component.py
+        Injects trigger event data as variables and runs workflow.
+        """
+        logger.info("Workflow execution triggered by trigger")
+
+        # Get trigger event data to inject as variables
+        if self._trigger_runner and hasattr(
+            self._trigger_runner, "get_last_trigger_event"
+        ):
+            trigger_event = self._trigger_runner.get_last_trigger_event()
+            if trigger_event:
+                logger.debug(f"Trigger payload: {trigger_event.payload}")
+
+        # Signal the execution component to run the workflow
+        self.main_window.workflow_run.emit()
+
+        # Clear the event after processing
+        if self._trigger_runner and hasattr(
+            self._trigger_runner, "clear_last_trigger_event"
+        ):
+            self._trigger_runner.clear_last_trigger_event()
 
     def add_trigger(self) -> None:
         """
@@ -80,7 +220,7 @@ class TriggerController(BaseController):
         On success, adds the trigger to the workflow and emits trigger_added.
         """
         try:
-            from ....canvas.dialogs import (
+            from ..ui.dialogs import (
                 TriggerTypeSelectorDialog,
                 TriggerConfigDialog,
             )
@@ -130,7 +270,7 @@ class TriggerController(BaseController):
             trigger_config: The trigger configuration to edit
         """
         try:
-            from ....canvas.dialogs import TriggerConfigDialog
+            from ..ui.dialogs import TriggerConfigDialog
             from ....triggers.base import TriggerType
 
             trigger_type_str = trigger_config.get("type", "manual")

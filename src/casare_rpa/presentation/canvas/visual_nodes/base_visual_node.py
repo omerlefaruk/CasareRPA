@@ -14,7 +14,7 @@ from casare_rpa.domain.port_type_system import (
     PortTypeRegistry,
     get_port_type_registry,
 )
-from casare_rpa.canvas.graph.custom_node_item import CasareNodeItem
+from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
 # VSCode Dark+ color scheme for nodes
 # Node body should be slightly lighter than canvas (#1E1E1E) to be visible
@@ -88,7 +88,7 @@ class VisualNode(NodeGraphQtBaseNode):
 
     def _apply_category_colors(self) -> None:
         """Apply VSCode Dark+ category-based colors to the node."""
-        from casare_rpa.canvas.graph.node_icons import CATEGORY_COLORS
+        from casare_rpa.presentation.canvas.graph.node_icons import CATEGORY_COLORS
 
         # Get category color
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
@@ -112,7 +112,9 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns cached file path for NodeGraphQt model.icon (required for JSON serialization).
         The file is only generated once per node type thanks to path caching.
         """
-        from casare_rpa.canvas.graph.node_icons import get_cached_node_icon_path
+        from casare_rpa.presentation.canvas.graph.node_icons import (
+            get_cached_node_icon_path,
+        )
 
         # Use the node name to get the appropriate icon path
         node_name = self.NODE_NAME

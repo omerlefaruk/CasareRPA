@@ -18,7 +18,7 @@ from .base_controller import BaseController
 from ....utils.config import WORKFLOWS_DIR
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -58,6 +58,8 @@ class WorkflowController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
+        # Setup drag-drop import handlers
+        self.setup_drag_drop_import()
         logger.info("WorkflowController initialized")
 
     def cleanup(self) -> None:
@@ -85,7 +87,7 @@ class WorkflowController(BaseController):
         if not self.check_unsaved_changes():
             return
 
-        from ....canvas.dialogs.template_browser import show_template_browser
+        from ..ui.dialogs.template_browser import show_template_browser
 
         template = show_template_browser(self.main_window)
         if template:
@@ -387,6 +389,72 @@ class WorkflowController(BaseController):
                 "Invalid JSON",
                 f"The clipboard content is not valid JSON.\n\nError: {str(e)}",
             )
+
+    def setup_drag_drop_import(self) -> None:
+        """
+        Setup drag-and-drop support for importing workflow JSON files.
+
+        Allows users to drag .json workflow files directly onto the canvas
+        to import nodes at the drop position.
+
+        Extracted from: canvas/components/dragdrop_component.py
+        """
+        logger.info("Setting up drag-drop import handlers")
+
+        def on_import_file(file_path: str, position: tuple) -> None:
+            """Handle file drop on canvas."""
+            try:
+                import orjson
+                from pathlib import Path
+
+                logger.info(
+                    f"Importing dropped file: {file_path} at position {position}"
+                )
+
+                # Load workflow data
+                data = orjson.loads(Path(file_path).read_bytes())
+
+                # Signal workflow import with file path
+                self.workflow_imported.emit(file_path)
+                self.main_window.set_modified(True)
+
+                self.main_window.show_status(
+                    f"Imported {len(data.get('nodes', {}))} nodes from {Path(file_path).name}",
+                    5000,
+                )
+            except Exception as e:
+                logger.error(f"Failed to import dropped file: {e}")
+                self.main_window.show_status(f"Error importing file: {str(e)}", 5000)
+
+        def on_import_data(data: dict, position: tuple) -> None:
+            """Handle JSON data drop on canvas."""
+            try:
+                import orjson
+
+                logger.info(f"Importing dropped JSON data at position {position}")
+
+                # Convert to JSON string and signal
+                json_str = orjson.dumps(data).decode("utf-8")
+                self.workflow_imported_json.emit(json_str)
+                self.main_window.set_modified(True)
+
+                self.main_window.show_status(
+                    f"Imported {len(data.get('nodes', {}))} nodes", 5000
+                )
+            except Exception as e:
+                logger.error(f"Failed to import dropped JSON: {e}")
+                self.main_window.show_status(f"Error importing JSON: {str(e)}", 5000)
+
+        # Get node graph and set callbacks
+        graph = self.main_window.get_graph()
+        if graph and hasattr(graph, "set_import_file_callback"):
+            graph.set_import_file_callback(on_import_file)
+            graph.set_import_callback(on_import_data)
+            if hasattr(graph, "setup_drag_drop"):
+                graph.setup_drag_drop()
+            logger.info("Drag-drop import handlers configured")
+        else:
+            logger.warning("Graph does not support drag-drop import")
 
     def check_validation_before_run(self) -> bool:
         """
