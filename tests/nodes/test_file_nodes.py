@@ -66,7 +66,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading a basic text file."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         test_file = tmp_path / "test.txt"
         test_file.write_text("Hello World", encoding="utf-8")
@@ -86,7 +86,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file with UTF-16 encoding."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         test_file = tmp_path / "utf16.txt"
         test_file.write_text("Unicode: \u4e2d\u6587", encoding="utf-16")
@@ -107,7 +107,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file with Latin-1 encoding."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         test_file = tmp_path / "latin1.txt"
         test_file.write_bytes(b"Caf\xe9 au lait")
@@ -128,7 +128,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file in binary mode."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         test_file = tmp_path / "binary.bin"
         test_file.write_bytes(b"\x00\x01\x02\x03\xff")
@@ -149,7 +149,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading non-existent file returns error."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         node = ReadFileNode(
             node_id="test_missing", config={"allow_dangerous_paths": True}
@@ -166,7 +166,7 @@ class TestReadFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test file size limit enforcement."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         test_file = tmp_path / "large.txt"
         test_file.write_text("A" * 1000, encoding="utf-8")
@@ -185,7 +185,7 @@ class TestReadFileNode:
     @pytest.mark.asyncio
     async def test_read_missing_path_error(self, execution_context: Mock) -> None:
         """Test error when file_path not provided."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode
+        from casare_rpa.nodes.file import ReadFileNode
 
         node = ReadFileNode(node_id="test_no_path")
         node.set_input_value("file_path", None)
@@ -209,7 +209,7 @@ class TestWriteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing a basic text file."""
-        from casare_rpa.nodes.file_nodes import WriteFileNode
+        from casare_rpa.nodes.file import WriteFileNode
 
         test_file = tmp_path / "output.txt"
 
@@ -230,7 +230,7 @@ class TestWriteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing file with UTF-16 encoding."""
-        from casare_rpa.nodes.file_nodes import WriteFileNode
+        from casare_rpa.nodes.file import WriteFileNode
 
         test_file = tmp_path / "utf16_out.txt"
 
@@ -252,7 +252,7 @@ class TestWriteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test create_dirs creates parent directories."""
-        from casare_rpa.nodes.file_nodes import WriteFileNode
+        from casare_rpa.nodes.file import WriteFileNode
 
         test_file = tmp_path / "nested" / "deep" / "output.txt"
 
@@ -274,7 +274,7 @@ class TestWriteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing file in binary mode."""
-        from casare_rpa.nodes.file_nodes import WriteFileNode
+        from casare_rpa.nodes.file import WriteFileNode
 
         test_file = tmp_path / "binary.bin"
 
@@ -295,7 +295,7 @@ class TestWriteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test append mode adds to existing file."""
-        from casare_rpa.nodes.file_nodes import WriteFileNode
+        from casare_rpa.nodes.file import WriteFileNode
 
         test_file = tmp_path / "append.txt"
         test_file.write_text("First line\n", encoding="utf-8")
@@ -326,7 +326,7 @@ class TestAppendFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test appending to existing file."""
-        from casare_rpa.nodes.file_nodes import AppendFileNode
+        from casare_rpa.nodes.file import AppendFileNode
 
         test_file = tmp_path / "append.txt"
         test_file.write_text("Line 1\n", encoding="utf-8")
@@ -345,7 +345,7 @@ class TestAppendFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test create_if_missing creates new file."""
-        from casare_rpa.nodes.file_nodes import AppendFileNode
+        from casare_rpa.nodes.file import AppendFileNode
 
         test_file = tmp_path / "new_append.txt"
 
@@ -364,7 +364,7 @@ class TestAppendFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file missing and create_if_missing=False."""
-        from casare_rpa.nodes.file_nodes import AppendFileNode
+        from casare_rpa.nodes.file import AppendFileNode
 
         node = AppendFileNode(
             node_id="test_missing", config={"create_if_missing": False}
@@ -391,7 +391,7 @@ class TestDeleteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test deleting an existing file."""
-        from casare_rpa.nodes.file_nodes import DeleteFileNode
+        from casare_rpa.nodes.file import DeleteFileNode
 
         test_file = tmp_path / "to_delete.txt"
         test_file.write_text("Delete me", encoding="utf-8")
@@ -411,7 +411,7 @@ class TestDeleteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ignore_missing option."""
-        from casare_rpa.nodes.file_nodes import DeleteFileNode
+        from casare_rpa.nodes.file import DeleteFileNode
 
         node = DeleteFileNode(
             node_id="test_ignore",
@@ -428,7 +428,7 @@ class TestDeleteFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file missing and ignore_missing=False."""
-        from casare_rpa.nodes.file_nodes import DeleteFileNode
+        from casare_rpa.nodes.file import DeleteFileNode
 
         node = DeleteFileNode(
             node_id="test_error",
@@ -453,7 +453,7 @@ class TestCopyFileNode:
     @pytest.mark.asyncio
     async def test_copy_file(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test copying a file."""
-        from casare_rpa.nodes.file_nodes import CopyFileNode
+        from casare_rpa.nodes.file import CopyFileNode
 
         source = tmp_path / "source.txt"
         dest = tmp_path / "dest.txt"
@@ -475,7 +475,7 @@ class TestCopyFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test copy with overwrite option."""
-        from casare_rpa.nodes.file_nodes import CopyFileNode
+        from casare_rpa.nodes.file import CopyFileNode
 
         source = tmp_path / "source.txt"
         dest = tmp_path / "dest.txt"
@@ -496,7 +496,7 @@ class TestCopyFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when destination exists and overwrite=False."""
-        from casare_rpa.nodes.file_nodes import CopyFileNode
+        from casare_rpa.nodes.file import CopyFileNode
 
         source = tmp_path / "source.txt"
         dest = tmp_path / "dest.txt"
@@ -524,7 +524,7 @@ class TestMoveFileNode:
     @pytest.mark.asyncio
     async def test_move_file(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test moving a file."""
-        from casare_rpa.nodes.file_nodes import MoveFileNode
+        from casare_rpa.nodes.file import MoveFileNode
 
         source = tmp_path / "source.txt"
         dest = tmp_path / "moved.txt"
@@ -546,7 +546,7 @@ class TestMoveFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test move with overwrite option."""
-        from casare_rpa.nodes.file_nodes import MoveFileNode
+        from casare_rpa.nodes.file import MoveFileNode
 
         source = tmp_path / "source.txt"
         dest = tmp_path / "dest.txt"
@@ -576,7 +576,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with header row."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "data.csv"
         csv_file.write_text("name,age,city\nAlice,30,NYC\nBob,25,LA", encoding="utf-8")
@@ -598,7 +598,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV without header row."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "noheader.csv"
         csv_file.write_text("Alice,30,NYC\nBob,25,LA", encoding="utf-8")
@@ -618,7 +618,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with custom delimiter."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "semicolon.csv"
         csv_file.write_text("name;age;city\nAlice;30;NYC", encoding="utf-8")
@@ -637,7 +637,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with quoted fields containing delimiters."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "quoted.csv"
         csv_file.write_text(
@@ -659,7 +659,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test skipping initial rows in CSV."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "skip.csv"
         csv_file.write_text(
@@ -681,7 +681,7 @@ class TestReadCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test max_rows limit."""
-        from casare_rpa.nodes.file_nodes import ReadCSVNode
+        from casare_rpa.nodes.file import ReadCSVNode
 
         csv_file = tmp_path / "many.csv"
         csv_file.write_text(
@@ -711,7 +711,7 @@ class TestWriteCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV from dict data."""
-        from casare_rpa.nodes.file_nodes import WriteCSVNode
+        from casare_rpa.nodes.file import WriteCSVNode
 
         csv_file = tmp_path / "output.csv"
         data = [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]
@@ -733,7 +733,7 @@ class TestWriteCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV from list data."""
-        from casare_rpa.nodes.file_nodes import WriteCSVNode
+        from casare_rpa.nodes.file import WriteCSVNode
 
         csv_file = tmp_path / "list_output.csv"
         data = [["Alice", 30], ["Bob", 25]]
@@ -756,7 +756,7 @@ class TestWriteCSVNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV without header."""
-        from casare_rpa.nodes.file_nodes import WriteCSVNode
+        from casare_rpa.nodes.file import WriteCSVNode
 
         csv_file = tmp_path / "no_header.csv"
         data = [["Alice", 30], ["Bob", 25]]
@@ -787,7 +787,7 @@ class TestReadJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading JSON object."""
-        from casare_rpa.nodes.file_nodes import ReadJSONFileNode
+        from casare_rpa.nodes.file import ReadJSONFileNode
 
         json_file = tmp_path / "config.json"
         json_file.write_text('{"name": "test", "count": 42}', encoding="utf-8")
@@ -807,7 +807,7 @@ class TestReadJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading JSON array."""
-        from casare_rpa.nodes.file_nodes import ReadJSONFileNode
+        from casare_rpa.nodes.file import ReadJSONFileNode
 
         json_file = tmp_path / "list.json"
         json_file.write_text('[1, 2, 3, "four"]', encoding="utf-8")
@@ -826,7 +826,7 @@ class TestReadJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading nested JSON structure."""
-        from casare_rpa.nodes.file_nodes import ReadJSONFileNode
+        from casare_rpa.nodes.file import ReadJSONFileNode
 
         json_file = tmp_path / "nested.json"
         nested_data = {
@@ -849,7 +849,7 @@ class TestReadJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error on invalid JSON."""
-        from casare_rpa.nodes.file_nodes import ReadJSONFileNode
+        from casare_rpa.nodes.file import ReadJSONFileNode
 
         json_file = tmp_path / "invalid.json"
         json_file.write_text("{invalid json}", encoding="utf-8")
@@ -876,7 +876,7 @@ class TestWriteJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON object."""
-        from casare_rpa.nodes.file_nodes import WriteJSONFileNode
+        from casare_rpa.nodes.file import WriteJSONFileNode
 
         json_file = tmp_path / "output.json"
         data = {"name": "test", "value": 123}
@@ -896,7 +896,7 @@ class TestWriteJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON with custom indent."""
-        from casare_rpa.nodes.file_nodes import WriteJSONFileNode
+        from casare_rpa.nodes.file import WriteJSONFileNode
 
         json_file = tmp_path / "indented.json"
         data = {"key": "value"}
@@ -916,7 +916,7 @@ class TestWriteJSONFileNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON with unicode characters."""
-        from casare_rpa.nodes.file_nodes import WriteJSONFileNode
+        from casare_rpa.nodes.file import WriteJSONFileNode
 
         json_file = tmp_path / "unicode.json"
         data = {"text": "\u4e2d\u6587"}
@@ -943,7 +943,7 @@ class TestZipFilesNode:
     @pytest.mark.asyncio
     async def test_zip_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test creating ZIP archive."""
-        from casare_rpa.nodes.file_nodes import ZipFilesNode
+        from casare_rpa.nodes.file import ZipFilesNode
 
         file1 = tmp_path / "file1.txt"
         file2 = tmp_path / "file2.txt"
@@ -970,7 +970,7 @@ class TestZipFilesNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ZIP with relative paths from base_dir."""
-        from casare_rpa.nodes.file_nodes import ZipFilesNode
+        from casare_rpa.nodes.file import ZipFilesNode
 
         subdir = tmp_path / "subdir"
         subdir.mkdir()
@@ -995,7 +995,7 @@ class TestZipFilesNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ZIP with no compression (STORED)."""
-        from casare_rpa.nodes.file_nodes import ZipFilesNode
+        from casare_rpa.nodes.file import ZipFilesNode
 
         file1 = tmp_path / "file.txt"
         file1.write_text("Content", encoding="utf-8")
@@ -1027,7 +1027,7 @@ class TestUnzipFilesNode:
     @pytest.mark.asyncio
     async def test_unzip_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test extracting ZIP archive."""
-        from casare_rpa.nodes.file_nodes import UnzipFilesNode
+        from casare_rpa.nodes.file import UnzipFilesNode
 
         zip_path = tmp_path / "archive.zip"
         extract_to = tmp_path / "extracted"
@@ -1054,7 +1054,7 @@ class TestUnzipFilesNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test extracting ZIP with nested directories."""
-        from casare_rpa.nodes.file_nodes import UnzipFilesNode
+        from casare_rpa.nodes.file import UnzipFilesNode
 
         zip_path = tmp_path / "nested.zip"
         extract_to = tmp_path / "extracted"
@@ -1089,7 +1089,7 @@ class TestCreateDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test creating a directory."""
-        from casare_rpa.nodes.file_nodes import CreateDirectoryNode
+        from casare_rpa.nodes.file import CreateDirectoryNode
 
         new_dir = tmp_path / "new_folder"
 
@@ -1107,7 +1107,7 @@ class TestCreateDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test creating nested directories with parents=True."""
-        from casare_rpa.nodes.file_nodes import CreateDirectoryNode
+        from casare_rpa.nodes.file import CreateDirectoryNode
 
         nested_dir = tmp_path / "a" / "b" / "c"
 
@@ -1124,7 +1124,7 @@ class TestCreateDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test exist_ok option for existing directory."""
-        from casare_rpa.nodes.file_nodes import CreateDirectoryNode
+        from casare_rpa.nodes.file import CreateDirectoryNode
 
         existing_dir = tmp_path / "existing"
         existing_dir.mkdir()
@@ -1150,7 +1150,7 @@ class TestListDirectoryNode:
         self, execution_context: Mock, file_system_setup: Path
     ) -> None:
         """Test listing directory contents."""
-        from casare_rpa.nodes.file_nodes import ListDirectoryNode
+        from casare_rpa.nodes.file import ListDirectoryNode
 
         node = ListDirectoryNode(node_id="test_list")
         node.set_input_value("dir_path", str(file_system_setup / "input"))
@@ -1166,7 +1166,7 @@ class TestListDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test listing files only."""
-        from casare_rpa.nodes.file_nodes import ListDirectoryNode
+        from casare_rpa.nodes.file import ListDirectoryNode
 
         (tmp_path / "file.txt").write_text("content", encoding="utf-8")
         (tmp_path / "subdir").mkdir()
@@ -1185,7 +1185,7 @@ class TestListDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test listing with glob pattern."""
-        from casare_rpa.nodes.file_nodes import ListDirectoryNode
+        from casare_rpa.nodes.file import ListDirectoryNode
 
         (tmp_path / "file1.txt").write_text("a", encoding="utf-8")
         (tmp_path / "file2.txt").write_text("b", encoding="utf-8")
@@ -1206,7 +1206,7 @@ class TestListDirectoryNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test recursive directory listing."""
-        from casare_rpa.nodes.file_nodes import ListDirectoryNode
+        from casare_rpa.nodes.file import ListDirectoryNode
 
         (tmp_path / "file.txt").write_text("a", encoding="utf-8")
         subdir = tmp_path / "sub"
@@ -1237,7 +1237,7 @@ class TestListFilesNode:
     @pytest.mark.asyncio
     async def test_list_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test listing files in directory."""
-        from casare_rpa.nodes.file_nodes import ListFilesNode
+        from casare_rpa.nodes.file import ListFilesNode
 
         (tmp_path / "file1.txt").write_text("a", encoding="utf-8")
         (tmp_path / "file2.txt").write_text("b", encoding="utf-8")
@@ -1264,7 +1264,7 @@ class TestFileExistsNode:
     @pytest.mark.asyncio
     async def test_file_exists(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test checking file existence."""
-        from casare_rpa.nodes.file_nodes import FileExistsNode
+        from casare_rpa.nodes.file import FileExistsNode
 
         test_file = tmp_path / "exists.txt"
         test_file.write_text("content", encoding="utf-8")
@@ -1284,7 +1284,7 @@ class TestFileExistsNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test checking directory existence."""
-        from casare_rpa.nodes.file_nodes import FileExistsNode
+        from casare_rpa.nodes.file import FileExistsNode
 
         test_dir = tmp_path / "subdir"
         test_dir.mkdir()
@@ -1304,7 +1304,7 @@ class TestFileExistsNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test checking non-existent path."""
-        from casare_rpa.nodes.file_nodes import FileExistsNode
+        from casare_rpa.nodes.file import FileExistsNode
 
         node = FileExistsNode(node_id="test_not_exists")
         node.set_input_value("path", str(tmp_path / "nonexistent"))
@@ -1326,7 +1326,7 @@ class TestGetFileInfoNode:
     @pytest.mark.asyncio
     async def test_get_file_info(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test getting file information."""
-        from casare_rpa.nodes.file_nodes import GetFileInfoNode
+        from casare_rpa.nodes.file import GetFileInfoNode
 
         test_file = tmp_path / "info.txt"
         test_file.write_text("Test content", encoding="utf-8")
@@ -1356,7 +1356,7 @@ class TestGetFileSizeNode:
     @pytest.mark.asyncio
     async def test_get_file_size(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test getting file size."""
-        from casare_rpa.nodes.file_nodes import GetFileSizeNode
+        from casare_rpa.nodes.file import GetFileSizeNode
 
         test_file = tmp_path / "sized.txt"
         test_file.write_text("12345678901234567890", encoding="utf-8")
@@ -1374,7 +1374,7 @@ class TestGetFileSizeNode:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file not found."""
-        from casare_rpa.nodes.file_nodes import GetFileSizeNode
+        from casare_rpa.nodes.file import GetFileSizeNode
 
         node = GetFileSizeNode(node_id="test_size_missing")
         node.set_input_value("file_path", str(tmp_path / "missing.txt"))
@@ -1398,7 +1398,7 @@ class TestExecutionResultPattern:
         self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test all nodes return proper ExecutionResult structure."""
-        from casare_rpa.nodes.file_nodes import ReadFileNode, WriteFileNode
+        from casare_rpa.nodes.file import ReadFileNode, WriteFileNode
 
         # Setup
         test_file = tmp_path / "test.txt"

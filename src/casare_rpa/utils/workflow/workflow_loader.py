@@ -11,7 +11,7 @@ from loguru import logger
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 from casare_rpa.domain.entities.node_connection import NodeConnection
-from casare_rpa.core.base_node import BaseNode
+from casare_rpa.domain.entities.base_node import BaseNode
 
 
 class WorkflowValidationError(Exception):
@@ -273,7 +273,7 @@ from casare_rpa.nodes.datetime_nodes import (
 )
 
 # Database nodes
-from casare_rpa.nodes.database_nodes import (
+from casare_rpa.nodes.database import (
     DatabaseConnectNode,
     ExecuteQueryNode,
     ExecuteNonQueryNode,
@@ -323,7 +323,7 @@ from casare_rpa.nodes.data_operation_nodes import (
 )
 
 # File nodes
-from casare_rpa.nodes.file_nodes import (
+from casare_rpa.nodes.file import (
     ReadFileNode,
     WriteFileNode,
     AppendFileNode,
@@ -361,7 +361,7 @@ from casare_rpa.nodes.text_nodes import (
 )
 
 # HTTP nodes
-from casare_rpa.nodes.http_nodes import (
+from casare_rpa.nodes.http import (
     HttpRequestNode,
     HttpGetNode,
     HttpPostNode,

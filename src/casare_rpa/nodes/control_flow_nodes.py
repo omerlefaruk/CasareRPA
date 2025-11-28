@@ -7,9 +7,14 @@ This module implements conditional and loop nodes for workflow control flow.
 from typing import Optional
 from loguru import logger
 
-from ..core.base_node import BaseNode
-from ..core.execution_context import ExecutionContext
-from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.domain.value_objects.types import (
+    PortType,
+    DataType,
+    NodeStatus,
+    ExecutionResult,
+)
 from ..utils.security.safe_eval import safe_eval, is_safe_expression
 
 

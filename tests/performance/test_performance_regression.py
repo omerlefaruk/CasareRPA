@@ -194,8 +194,8 @@ class TestStartupPerformance:
         start = time.perf_counter()
 
         # Core module imports that happen during startup
-        from casare_rpa.core.base_node import BaseNode
-        from casare_rpa.core.types import NodeStatus, PortType
+        from casare_rpa.domain.entities.base_node import BaseNode
+        from casare_rpa.domain.value_objects.types import NodeStatus, PortType
         from casare_rpa.domain.entities.workflow import WorkflowSchema
         from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
 
@@ -426,8 +426,8 @@ class TestBenchmarkStartup:
             # Reimport to simulate fresh load (modules cached after first)
             from casare_rpa.domain.entities.workflow import WorkflowSchema
             from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
-            from casare_rpa.core.base_node import BaseNode
-            from casare_rpa.core.types import NodeStatus
+            from casare_rpa.domain.entities.base_node import BaseNode
+            from casare_rpa.domain.value_objects.types import NodeStatus
 
             # Create a workflow schema
             schema = WorkflowSchema()

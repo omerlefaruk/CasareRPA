@@ -8,8 +8,8 @@ import asyncio
 from typing import Any, Dict
 from loguru import logger
 
-from ...core.base_node import BaseNode as Node
-from ...core.types import NodeStatus
+from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
 
 # Default timeout for window operations (in seconds)
@@ -72,7 +72,7 @@ class ResizeWindowNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -210,7 +210,7 @@ class MoveWindowNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -345,7 +345,7 @@ class MaximizeWindowNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -468,7 +468,7 @@ class MinimizeWindowNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -591,7 +591,7 @@ class RestoreWindowNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -705,7 +705,7 @@ class GetWindowPropertiesNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -821,7 +821,7 @@ class SetWindowStateNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)

@@ -4,10 +4,11 @@ CasareRPA - Domain Entities
 Domain entities are objects with identity that persist over time.
 """
 
+from .base_node import BaseNode
 from .workflow_metadata import WorkflowMetadata
 from .node_connection import NodeConnection
 from .workflow import WorkflowSchema, VariableDefinition
-from .execution_state import ExecutionState
+from .execution_state import ExecutionState, ExecutionContext
 from .project import (
     Project,
     Scenario,
@@ -27,11 +28,13 @@ from .project import (
 )
 
 __all__ = [
+    "BaseNode",
     "WorkflowMetadata",
     "NodeConnection",
     "WorkflowSchema",
     "VariableDefinition",
     "ExecutionState",
+    "ExecutionContext",  # Alias for ExecutionState (backwards compatibility)
     # Project entities
     "Project",
     "Scenario",

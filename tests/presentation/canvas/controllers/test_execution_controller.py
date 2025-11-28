@@ -13,6 +13,7 @@ Tests workflow execution control including:
 
 import pytest
 from unittest.mock import Mock, MagicMock, patch
+from PySide6.QtWidgets import QMainWindow
 from PySide6.QtWidgets import QMessageBox
 
 from casare_rpa.presentation.canvas.controllers.execution_controller import (
@@ -21,35 +22,54 @@ from casare_rpa.presentation.canvas.controllers.execution_controller import (
 
 
 @pytest.fixture
-def mock_main_window() -> None:
-    """Create a mock MainWindow with all required attributes."""
-    mock = Mock()
-    mock._central_widget = Mock()
-    mock._central_widget.graph = Mock()
-    mock._bottom_panel = Mock()
-    mock._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
-    mock._bottom_panel.show_validation_tab = Mock()
+def mock_main_window(qtbot):
+    """Create a real QMainWindow with all required attributes."""
+    main_window = QMainWindow()
+    qtbot.addWidget(main_window)
 
-    # Mock status bar
-    mock_status = Mock()
-    mock.statusBar = Mock(return_value=mock_status)
+    main_window._central_widget = Mock()
+    main_window._central_widget.graph = Mock()
+    main_window._bottom_panel = Mock()
+    main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
+    main_window._bottom_panel.show_validation_tab = Mock()
+
+    # Mock show_status method (used by controller)
+    main_window.show_status = Mock()
+
+    # Mock workflow signals
+    main_window.workflow_run = Mock()
+    main_window.workflow_run.emit = Mock()
+    main_window.workflow_pause = Mock()
+    main_window.workflow_pause.emit = Mock()
+    main_window.workflow_resume = Mock()
+    main_window.workflow_resume.emit = Mock()
+    main_window.workflow_stop = Mock()
+    main_window.workflow_stop.emit = Mock()
+
+    # Mock get_graph method
+    mock_graph = Mock()
+    mock_graph.selected_nodes = Mock(return_value=[])
+    main_window.get_graph = Mock(return_value=mock_graph)
+
+    # Mock get_bottom_panel method
+    main_window.get_bottom_panel = Mock(return_value=main_window._bottom_panel)
 
     # Mock actions
-    mock.action_run = Mock()
-    mock.action_run.setEnabled = Mock()
-    mock.action_run_to_node = Mock()
-    mock.action_run_to_node.setEnabled = Mock()
-    mock.action_pause = Mock()
-    mock.action_pause.setEnabled = Mock()
-    mock.action_pause.setChecked = Mock()
-    mock.action_stop = Mock()
-    mock.action_stop.setEnabled = Mock()
+    main_window.action_run = Mock()
+    main_window.action_run.setEnabled = Mock()
+    main_window.action_run_to_node = Mock()
+    main_window.action_run_to_node.setEnabled = Mock()
+    main_window.action_pause = Mock()
+    main_window.action_pause.setEnabled = Mock()
+    main_window.action_pause.setChecked = Mock()
+    main_window.action_stop = Mock()
+    main_window.action_stop.setEnabled = Mock()
 
-    return mock
+    return main_window
 
 
 @pytest.fixture
-def execution_controller(mock_main_window) -> None:
+def execution_controller(mock_main_window):
     """Create an ExecutionController instance."""
     controller = ExecutionController(mock_main_window)
     controller.initialize()
@@ -66,20 +86,20 @@ class TestExecutionControllerInitialization:
         assert controller.main_window == mock_main_window
         assert controller._is_running is False
         assert controller._is_paused is False
-        assert not controller.is_initialized()
+        assert not controller.is_initialized
 
     def test_initialize_sets_state(self, mock_main_window) -> None:
         """Test initialize() sets initialized state."""
         controller = ExecutionController(mock_main_window)
         controller.initialize()
 
-        assert controller.is_initialized()
+        assert controller.is_initialized
 
     def test_cleanup_resets_state(self, execution_controller) -> None:
         """Test cleanup() resets initialized state."""
         execution_controller.cleanup()
 
-        assert not execution_controller.is_initialized()
+        assert not execution_controller.is_initialized
 
 
 class TestExecutionControllerProperties:
@@ -141,8 +161,8 @@ class TestRunWorkflow:
         """Test run workflow updates status bar."""
         execution_controller.run_workflow()
 
-        mock_main_window.statusBar().showMessage.assert_called()
-        call_args = mock_main_window.statusBar().showMessage.call_args[0]
+        mock_main_window.show_status.assert_called()
+        call_args = mock_main_window.show_status.call_args[0]
         assert "started" in call_args[0].lower()
 
 
@@ -151,7 +171,7 @@ class TestRunToNode:
 
     def test_run_to_node_no_graph(self, execution_controller, mock_main_window) -> None:
         """Test run to node when no graph available falls back to full run."""
-        mock_main_window._central_widget = None
+        mock_main_window.get_graph.return_value = None
 
         with patch.object(execution_controller, "run_workflow") as mock_run:
             execution_controller.run_to_node()
@@ -162,13 +182,13 @@ class TestRunToNode:
         self, execution_controller, mock_main_window
     ) -> None:
         """Test run to node with no selection runs full workflow."""
-        mock_main_window._central_widget.graph.selected_nodes.return_value = []
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = []
 
         with patch.object(execution_controller, "run_workflow") as mock_run:
             execution_controller.run_to_node()
 
         mock_run.assert_called_once()
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     def test_run_to_node_no_node_id_runs_full_workflow(
         self, execution_controller, mock_main_window
@@ -176,7 +196,9 @@ class TestRunToNode:
         """Test run to node with node missing ID runs full workflow."""
         mock_node = Mock()
         mock_node.get_property.return_value = None
-        mock_main_window._central_widget.graph.selected_nodes.return_value = [mock_node]
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = [
+            mock_node
+        ]
 
         with patch.object(execution_controller, "run_workflow") as mock_run:
             execution_controller.run_to_node()
@@ -188,7 +210,9 @@ class TestRunToNode:
         mock_node = Mock()
         mock_node.get_property.return_value = "test_node_id"
         mock_node.name.return_value = "Test Node"
-        mock_main_window._central_widget.graph.selected_nodes.return_value = [mock_node]
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = [
+            mock_node
+        ]
 
         signal_emitted = []
         execution_controller.run_to_node_requested.connect(
@@ -200,7 +224,7 @@ class TestRunToNode:
         assert len(signal_emitted) == 1
         assert signal_emitted[0] == "test_node_id"
         assert execution_controller.is_running is True
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     def test_run_to_node_validation_blocks(
         self, execution_controller, mock_main_window
@@ -208,7 +232,9 @@ class TestRunToNode:
         """Test run to node blocked by validation errors."""
         mock_node = Mock()
         mock_node.get_property.return_value = "test_node_id"
-        mock_main_window._central_widget.graph.selected_nodes.return_value = [mock_node]
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = [
+            mock_node
+        ]
 
         # Mock validation errors
         mock_main_window._bottom_panel.get_validation_errors_blocking.return_value = [
@@ -228,24 +254,22 @@ class TestRunSingleNode:
         self, execution_controller, mock_main_window
     ) -> None:
         """Test run single node when no graph available."""
-        mock_main_window._central_widget = None
+        mock_main_window.get_graph.return_value = None
 
         execution_controller.run_single_node()
 
-        mock_main_window.statusBar().showMessage.assert_called_with(
-            "No graph available", 3000
-        )
+        mock_main_window.show_status.assert_called_with("No graph available", 3000)
 
     def test_run_single_node_no_selection(
         self, execution_controller, mock_main_window
     ) -> None:
         """Test run single node with no selection."""
-        mock_main_window._central_widget.graph.selected_nodes.return_value = []
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = []
 
         execution_controller.run_single_node()
 
-        mock_main_window.statusBar().showMessage.assert_called()
-        call_args = mock_main_window.statusBar().showMessage.call_args[0]
+        mock_main_window.show_status.assert_called()
+        call_args = mock_main_window.show_status.call_args[0]
         assert "No node selected" in call_args[0]
 
     def test_run_single_node_no_id(
@@ -254,12 +278,14 @@ class TestRunSingleNode:
         """Test run single node when node has no ID."""
         mock_node = Mock()
         mock_node.get_property.return_value = None
-        mock_main_window._central_widget.graph.selected_nodes.return_value = [mock_node]
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = [
+            mock_node
+        ]
 
         execution_controller.run_single_node()
 
-        mock_main_window.statusBar().showMessage.assert_called()
-        call_args = mock_main_window.statusBar().showMessage.call_args[0]
+        mock_main_window.show_status.assert_called()
+        call_args = mock_main_window.show_status.call_args[0]
         assert "no ID" in call_args[0]
 
     def test_run_single_node_success(
@@ -269,7 +295,9 @@ class TestRunSingleNode:
         mock_node = Mock()
         mock_node.get_property.return_value = "single_node_id"
         mock_node.name.return_value = "Single Node"
-        mock_main_window._central_widget.graph.selected_nodes.return_value = [mock_node]
+        mock_main_window.get_graph.return_value.selected_nodes.return_value = [
+            mock_node
+        ]
 
         signal_emitted = []
         execution_controller.run_single_node_requested.connect(
@@ -280,7 +308,7 @@ class TestRunSingleNode:
 
         assert len(signal_emitted) == 1
         assert signal_emitted[0] == "single_node_id"
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
 
 class TestPauseResume:
@@ -301,7 +329,7 @@ class TestPauseResume:
 
         assert len(signal_emitted) == 1
         assert execution_controller.is_paused is True
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     def test_pause_workflow_when_not_running(self, execution_controller) -> None:
         """Test pausing when workflow not running logs warning."""
@@ -331,7 +359,7 @@ class TestPauseResume:
 
         assert len(signal_emitted) == 1
         assert execution_controller.is_paused is False
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     def test_resume_workflow_when_not_paused(self, execution_controller) -> None:
         """Test resuming when workflow not paused logs warning."""
@@ -420,7 +448,7 @@ class TestExecutionCallbacks:
         assert execution_controller.is_running is False
         assert execution_controller.is_paused is False
         mock_main_window.action_run.setEnabled.assert_called_with(True)
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     def test_on_execution_error(self, execution_controller, mock_main_window) -> None:
         """Test handling workflow execution error."""
@@ -438,7 +466,7 @@ class TestExecutionCallbacks:
         assert signal_emitted[0] == error_message
         assert execution_controller.is_running is False
         assert execution_controller.is_paused is False
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
 
 class TestPrivateMethods:

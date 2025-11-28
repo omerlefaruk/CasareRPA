@@ -1,13 +1,17 @@
 """
-CasareRPA - Event System
+CasareRPA - Domain Event System
+
 Provides event-driven communication between components.
+Implements the Observer pattern for loose coupling.
+
+This is the canonical location for event system components (v3.0).
 """
 
 from typing import Any, Callable, Dict, List, Optional
 from datetime import datetime
 from loguru import logger
 
-from .types import EventData, EventType, NodeId
+from casare_rpa.domain.value_objects.types import EventData, EventType, NodeId
 
 
 class Event:
@@ -294,3 +298,18 @@ class EventRecorder:
         for event_type in EventType:
             event_bus.subscribe(event_type, self.handle_event)
         logger.info("Event recorder subscribed to all event types")
+
+
+# Re-export EventType from value_objects for convenience
+from casare_rpa.domain.value_objects.types import EventType
+
+__all__ = [
+    "Event",
+    "EventBus",
+    "EventHandler",
+    "EventLogger",
+    "EventRecorder",
+    "EventType",
+    "get_event_bus",
+    "reset_event_bus",
+]

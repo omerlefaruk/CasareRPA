@@ -452,7 +452,7 @@ class JobExecutor:
 
         # Subscribe to node completion events
         if hasattr(runner, "event_bus") and runner.event_bus:
-            from casare_rpa.core.events import EventType
+            from casare_rpa.domain.value_objects.types import EventType
 
             def on_node_complete(event):
                 if event.node_id and hasattr(runner, "context"):

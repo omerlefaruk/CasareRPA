@@ -1380,7 +1380,7 @@ class MainWindow(QMainWindow):
 
     def validate_current_workflow(self, show_panel: bool = True) -> "ValidationResult":
         """Validate the current workflow and update the validation panel."""
-        from ..core.validation import validate_workflow, ValidationResult
+        from casare_rpa.domain.validation import validate_workflow, ValidationResult
 
         # Get workflow data from the canvas
         workflow_data = self._get_workflow_data()
