@@ -1,36 +1,46 @@
 """
-Domain Project Schema Re-export Module.
+CasareRPA - Domain Entities: Project Package
 
-Re-exports project schema components from domain.entities.project for convenience.
-This allows imports like `from casare_rpa.domain.project_schema import Project`.
-
-All implementations are in domain.entities.project - this is just a convenience alias.
+Project hierarchy and organization domain entities.
+Split from monolithic project.py for maintainability.
 """
 
-from casare_rpa.domain.entities.project import (
-    # Constants
+# Base constants and utilities
+from .base import (
     PROJECT_SCHEMA_VERSION,
     generate_project_id,
     generate_scenario_id,
-    # Enums
+)
+
+# Variable classes (uses unified Variable from domain.entities.variable)
+from .variables import (
     VariableScope,
     VariableType,
-    # Variable classes
+    ProjectVariable,  # Alias for Variable
     VariablesFile,
-    # Credential classes
+)
+
+# Credential classes
+from .credentials import (
     CredentialBinding,
     CredentialBindingsFile,
-    # Settings classes
+)
+
+# Settings classes
+from .settings import (
     ProjectSettings,
     ScenarioExecutionSettings,
-    # Main entities
-    Project,
-    Scenario,
-    # Index classes
+)
+
+# Main entities
+from .project import Project
+from .scenario import Scenario
+
+# Index classes
+from .index import (
     ProjectIndexEntry,
     ProjectsIndex,
 )
-from casare_rpa.domain.entities.variable import Variable, ProjectVariable
 
 __all__ = [
     # Constants
@@ -41,8 +51,7 @@ __all__ = [
     "VariableScope",
     "VariableType",
     # Variable classes
-    "Variable",
-    "ProjectVariable",  # Alias for Variable (backwards compatibility)
+    "ProjectVariable",
     "VariablesFile",
     # Credential classes
     "CredentialBinding",

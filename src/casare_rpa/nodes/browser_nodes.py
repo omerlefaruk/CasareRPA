@@ -17,6 +17,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes.utils import retry_operation, safe_int
 from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 
@@ -99,14 +100,6 @@ class LaunchBrowserNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         # Helper to safely parse int values with defaults
-        def safe_int(value, default: int) -> int:
-            if value is None or value == "":
-                return default
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                return default
-
         # Get retry options
         retry_count = safe_int(self.config.get("retry_count"), 0)
         retry_interval = safe_int(self.config.get("retry_interval"), 2000)
@@ -337,15 +330,6 @@ class CloseBrowserNode(BaseNode):
         """
         self.status = NodeStatus.RUNNING
 
-        # Helper to safely parse int values with defaults
-        def safe_int(value, default: int) -> int:
-            if value is None or value == "":
-                return default
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                return default
-
         try:
             # Get browser from input or context
             browser = self.get_input_value("browser")
@@ -361,45 +345,29 @@ class CloseBrowserNode(BaseNode):
 
             logger.info("Closing browser")
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
+            async def close_browser():
+                await browser.close()
+                context.browser = None
+                context.clear_pages()
+                return True
 
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for browser close"
-                        )
+            result = await retry_operation(
+                close_browser,
+                max_attempts=retry_count + 1,
+                delay_seconds=retry_interval / 1000,
+                operation_name="browser close",
+            )
 
-                    # Close browser
-                    await browser.close()
-
-                    # Clear from context
-                    context.browser = None
-                    context.clear_pages()
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(f"Browser closed successfully (attempt {attempts})")
-
-                    return {
-                        "success": True,
-                        "data": {"message": "Browser closed", "attempts": attempts},
-                        "next_nodes": ["exec_out"],
-                    }
-
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(
-                            f"Browser close failed (attempt {attempts}): {e}"
-                        )
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
-
-            raise last_error
+            if result.success:
+                self.status = NodeStatus.SUCCESS
+                logger.info(f"Browser closed successfully (attempt {result.attempts})")
+                return {
+                    "success": True,
+                    "data": {"message": "Browser closed", "attempts": result.attempts},
+                    "next_nodes": ["exec_out"],
+                }
+            else:
+                raise result.last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -484,14 +452,6 @@ class NewTabNode(BaseNode):
             url = self.config.get("url", "")
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Safely parse timeout
             timeout = safe_int(self.config.get("timeout"), 30000)
             wait_until = self.config.get("wait_until", "load")

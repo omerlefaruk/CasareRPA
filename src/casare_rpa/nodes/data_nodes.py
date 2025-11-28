@@ -19,6 +19,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes.utils.type_converters import safe_int
 from ..utils.config import DEFAULT_NODE_TIMEOUT
 from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
@@ -129,14 +130,6 @@ class ExtractTextNode(BaseNode):
             trim_whitespace = self.config.get("trim_whitespace", True)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -355,14 +348,6 @@ class GetAttributeNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -604,14 +589,6 @@ class ScreenshotNode(BaseNode):
                     timeout = DEFAULT_NODE_TIMEOUT * 1000
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)

@@ -32,6 +32,7 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
 )
+from casare_rpa.nodes.utils.type_converters import safe_int
 
 # Try to import optional database drivers
 try:
@@ -205,14 +206,6 @@ class DatabaseConnectNode(BaseNode):
             connection_string = context.resolve_value(connection_string)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value: Any, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 2000)
@@ -417,14 +410,6 @@ class ExecuteQueryNode(BaseNode):
             query = context.resolve_value(query)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value: Any, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -636,14 +621,6 @@ class ExecuteNonQueryNode(BaseNode):
             query = context.resolve_value(query)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value: Any, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -1143,14 +1120,6 @@ class ExecuteBatchNode(BaseNode):
             stop_on_error = self.config.get("stop_on_error", True)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value: Any, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
