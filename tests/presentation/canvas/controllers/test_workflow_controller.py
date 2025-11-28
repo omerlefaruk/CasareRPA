@@ -29,6 +29,23 @@ def mock_main_window(qtbot):
 
     main_window._central_widget = Mock()
     main_window._central_widget.graph = Mock()
+
+    # Mock show_status method
+    main_window.show_status = Mock()
+
+    # Mock get_graph method
+    mock_graph = Mock()
+    mock_graph.selected_nodes = Mock(return_value=[])
+    main_window.get_graph = Mock(return_value=mock_graph)
+
+    # Mock get_bottom_panel
+    main_window._bottom_panel = Mock()
+    main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
+    main_window.get_bottom_panel = Mock(return_value=main_window._bottom_panel)
+
+    # Mock workflow signals
+    main_window.workflow_new = Mock()
+    main_window.workflow_new.emit = Mock()
     main_window._bottom_panel = Mock()
     main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
     main_window._bottom_panel.trigger_validation = Mock()

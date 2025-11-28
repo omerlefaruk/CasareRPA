@@ -269,9 +269,7 @@ class TestNavigateToNode:
 class TestFindNode:
     """Tests for node search dialog."""
 
-    @patch(
-        "casare_rpa.presentation.canvas.controllers.node_controller.NodeSearchDialog"
-    )
+    @patch("casare_rpa.canvas.search.node_search.NodeSearchDialog")
     def test_find_node_success(
         self, mock_dialog_class, node_controller, mock_main_window
     ) -> None:
@@ -352,8 +350,8 @@ class TestPrivateMethods:
     def test_get_graph_no_central_widget(
         self, node_controller, mock_main_window
     ) -> None:
-        """Test _get_graph returns None when no central widget."""
-        mock_main_window._central_widget = None
+        """Test _get_graph returns None when get_graph returns None."""
+        mock_main_window.get_graph.return_value = None
 
         result = node_controller._get_graph()
 
@@ -362,9 +360,10 @@ class TestPrivateMethods:
     def test_get_graph_no_graph_attribute(
         self, node_controller, mock_main_window
     ) -> None:
-        """Test _get_graph returns None when central widget has no graph."""
-        del mock_main_window.get_graph.return_value
+        """Test _get_graph returns graph from get_graph method."""
+        expected_graph = mock_main_window.get_graph.return_value
 
         result = node_controller._get_graph()
 
-        assert result is None
+        assert result == expected_graph
+        mock_main_window.get_graph.assert_called_once()
