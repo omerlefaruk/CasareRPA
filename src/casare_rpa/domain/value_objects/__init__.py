@@ -30,6 +30,19 @@ from .types import (
     SerializedWorkflow,
 )
 from .execution_state import ExecutionState, WorkflowStatus, create_execution_state
+from .selector import (
+    SelectorStrategy,
+    SelectorAttribute,
+    SmartSelector,
+    create_smart_selector,
+)
+from .healing_event import (
+    HealingTier,
+    HealingEvent,
+    HealingMetrics,
+    create_healing_event,
+    create_healing_metrics,
+)
 
 __all__ = [
     # Enums
@@ -40,6 +53,8 @@ __all__ = [
     "NodeStatus",
     "PortType",
     "WorkflowStatus",
+    "SelectorStrategy",
+    "HealingTier",
     # Type aliases
     "Connection",
     "EventData",
@@ -60,6 +75,13 @@ __all__ = [
     # Value objects
     "Port",
     "ExecutionState",
+    "SelectorAttribute",
+    "SmartSelector",
+    "HealingEvent",
+    "HealingMetrics",
     # Factories
     "create_execution_state",
+    "create_smart_selector",
+    "create_healing_event",
+    "create_healing_metrics",
 ]
