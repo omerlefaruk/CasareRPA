@@ -1,20 +1,28 @@
 # CasareRPA Refactoring Roadmap
 
 **Last Updated**: November 28, 2025
-**Status**: Week 6 Complete - Node Coverage Expansion
-**Version**: v2.1 (migrating to v3.0)
+**Status**: v3.0 Migration Complete - Deprecated Modules Removed
+**Version**: v3.0
 
 ---
 
 ## Executive Summary
 
-This document consolidates all refactoring work from Weeks 1-3 and provides a comprehensive roadmap to v3.0. Based on exploration of the current codebase, we have made substantial progress with clean architecture implementation, but significant work remains to complete the migration.
+This document consolidates all refactoring work from Weeks 1-6 and documents the v3.0 release. The clean architecture migration is complete with all deprecated modules removed.
 
 **Key Achievements**:
-- ✅ WorkflowRunner refactoring COMPLETE (518 lines wrapper, fully decomposed)
+- ✅ v3.0 Migration COMPLETE - All deprecated modules deleted
+- ✅ WorkflowRunner replaced with ExecuteWorkflowUseCase
 - ✅ Week 4 MainWindow integration COMPLETE (69% delegation, 1,938 lines)
 - ✅ Week 5 Test Coverage COMPLETE (1,676 tests, 60%+ node coverage, 84% domain coverage)
 - ✅ Week 6 Node Coverage COMPLETE (2,242 tests, 95%+ node coverage, 566 new tests)
+
+**v3.0 Deletions Complete**:
+- ✅ `visual_nodes.py` monolith (4,285 lines) - DELETED
+- ✅ `runner/` compatibility wrapper (518 lines) - DELETED
+- ✅ `scheduler/` legacy system - DELETED
+- ✅ `recorder/` legacy system - DELETED
+- Total code removed: ~111K lines
 
 **Next Priority**: Final 5% node coverage (12 nodes) and performance optimization
 
@@ -487,31 +495,34 @@ infrastructure/
 - Zero deprecation warnings
 - Clean import paths (no core.* imports)
 
-### Breaking Changes in v3.0
+### Breaking Changes in v3.0 - COMPLETED
 
-**Removals**:
-1. `core/` compatibility layer → Use `domain/` directly
-2. `visual_nodes.py` (4,285 lines) → Use `presentation/canvas/visual_nodes/`
-3. Old `ExecutionContext` pattern → Use `ExecuteWorkflowUseCase`
-4. Direct `NodeStatus` imports → Use `domain.value_objects.types`
+**Removals (All Complete)**:
+1. ✅ `core/` compatibility layer → Use `domain/` directly
+2. ✅ `visual_nodes.py` (4,285 lines) → Use `presentation/canvas/visual_nodes/`
+3. ✅ `runner/` (518 lines) → Use `application.use_cases.ExecuteWorkflowUseCase`
+4. ✅ `scheduler/` legacy system → Use triggers system
+5. ✅ `recorder/` legacy system → Use `desktop.desktop_recorder`
+6. ✅ Old `ExecutionContext` pattern → Use `ExecuteWorkflowUseCase`
+7. ✅ Direct `NodeStatus` imports → Use `domain.value_objects.types`
 
 **Import Migrations**:
 ```python
-# v2.x (deprecated)
+# v2.x (deprecated - NO LONGER WORKS)
 from casare_rpa.core.types import NodeStatus
 from casare_rpa.core.workflow_schema import WorkflowSchema
-from casare_rpa.core import Port
+from casare_rpa.runner.workflow_runner import WorkflowRunner
 
 # v3.0 (required)
 from casare_rpa.domain.value_objects.types import NodeStatus
 from casare_rpa.domain.entities.workflow import WorkflowSchema
-from casare_rpa.domain.value_objects import Port
+from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
 ```
 
 **Migration Tools**:
-- Automated import rewriter script
-- Deprecation warning scanner
-- Test suite for v3.0 compatibility
+- Automated import rewriter script: `scripts/migrate_imports_v3.py`
+- Deprecation warning scanner: `scripts/scan_deprecations.py`
+- Test suite for v3.0 compatibility: `tests/test_v3_compatibility.py`
 
 ### Quality Gates for v3.0
 

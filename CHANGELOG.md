@@ -11,12 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **Removed `casare_rpa.core/` compatibility layer** - All imports must use `casare_rpa.domain/`
+- **Removed `runner/` compatibility wrapper** - Use `ExecuteWorkflowUseCase` from `application.use_cases.execute_workflow`
 - **Removed `visual_nodes.py` monolith** (4,285 lines) - Use categorized files in `presentation/canvas/visual_nodes/`
-- **Removed re-export wrappers**:
-  - `file_nodes.py`, `http_nodes.py`, `database_nodes.py` (use direct node imports)
-  - `core/types.py`, `core/workflow_schema.py`, `core/project_schema.py`
-- **All imports must use new paths** - See MIGRATION_GUIDE_V3.md for complete mapping
+- **Removed legacy `scheduler/`** - Use triggers system from `casare_rpa.triggers`
+- **Removed legacy `recorder/`** - Use `desktop_recorder.py` from `casare_rpa.desktop`
+
+### Removed
+
+- `visual_nodes.py` monolith (4,285 lines) - use categorized `visual_nodes/` directory
+- `runner/` compatibility wrapper (518 lines) - use `application.use_cases.ExecuteWorkflowUseCase`
+- `scheduler/` legacy system (1,051 lines) - use triggers system
+- `recorder/` legacy system (360 lines) - use `desktop.desktop_recorder`
+- Outdated documentation files (7 files)
+- Total code removed: ~111K lines of deprecated/redundant code
 
 ### Migration Tools
 
