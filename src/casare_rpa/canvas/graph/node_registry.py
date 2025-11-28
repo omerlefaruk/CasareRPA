@@ -7,7 +7,7 @@ and the NodeFactory for creating node instances.
 AUTO-DISCOVERY SYSTEM:
 When adding new nodes, you only need to:
 1. Create the CasareRPA node class in nodes/ directory
-2. Create the visual node class in visual_nodes.py with CASARE_NODE_CLASS attribute
+2. Create the visual node class in presentation/canvas/visual_nodes/ with CASARE_NODE_CLASS attribute
 3. That's it! The mapping is built automatically.
 
 The CASARE_NODE_CLASS attribute on visual nodes specifies the CasareRPA node class name.

@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `core/types.py`, `core/workflow_schema.py`, `core/project_schema.py`
 - **All imports must use new paths** - See MIGRATION_GUIDE_V3.md for complete mapping
 
+### Removed
+
+- `visual_nodes.py` monolith (4,285 lines) - use categorized `visual_nodes/` directory
+- `runner/` compatibility wrapper (518 lines) - use `application.use_cases.ExecuteWorkflowUseCase`
+- `scheduler/` legacy system - use triggers system
+- `recorder/` legacy system - use `desktop.desktop_recorder`
+- Total code removed: ~111K lines of deprecated/redundant code
+
 ### Migration Tools
 
 - **Automated migration script**: `scripts/migrate_imports_v3.py`
