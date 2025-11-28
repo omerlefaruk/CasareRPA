@@ -65,8 +65,13 @@ class CasareComboBox:
 
         def patched_hide_popup():
             """Restore original z-value when popup closes."""
-            original_hide_popup()
-            node_widget.setZValue(node_widget._original_z)
+            try:
+                original_hide_popup()
+                if hasattr(node_widget, "_original_z"):
+                    node_widget.setZValue(node_widget._original_z)
+            except RuntimeError:
+                # Widget already deleted
+                pass
 
         # Apply patches
         combo.showPopup = patched_show_popup

@@ -84,11 +84,15 @@ class LazySubscription(QObject):
         Returns:
             False to allow event propagation
         """
-        if watched == self.component:
-            if event.type() == QEvent.Type.Show:
-                self.activate()
-            elif event.type() == QEvent.Type.Hide:
-                self.deactivate()
+        try:
+            if watched == self.component:
+                if event.type() == QEvent.Type.Show:
+                    self.activate()
+                elif event.type() == QEvent.Type.Hide:
+                    self.deactivate()
+        except RuntimeError:
+            # Object deleted during event processing
+            pass
 
         # Always allow event to propagate
         return False
