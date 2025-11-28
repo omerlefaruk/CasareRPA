@@ -1146,7 +1146,7 @@ class GetServiceStatusNode(BaseNode):
 
             return {
                 "success": True,
-                "data": {"status": self.outputs.get("status", {}).get("value")},
+                "data": {"status": self.get_output_value("status")},
                 "next_nodes": ["exec_out"],
             }
 

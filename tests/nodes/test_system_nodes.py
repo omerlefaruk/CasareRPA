@@ -664,12 +664,7 @@ class TestRunPowerShellNode:
 
 
 class TestGetServiceStatusNode:
-    """Tests for GetServiceStatusNode.
-
-    Note: GetServiceStatusNode has a known issue with accessing self.outputs
-    which doesn't exist in BaseNode. Tests verify the node instantiation and
-    basic validation work correctly.
-    """
+    """Tests for GetServiceStatusNode."""
 
     @pytest.mark.asyncio
     async def test_node_instantiation(self, execution_context) -> None:
@@ -706,6 +701,78 @@ class TestGetServiceStatusNode:
 
         assert result["success"] is False
         assert "windows" in result["error"].lower()
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only")
+    @pytest.mark.asyncio
+    async def test_service_running(self, execution_context) -> None:
+        """Test getting status of running service."""
+        from casare_rpa.nodes.system_nodes import GetServiceStatusNode
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = [
+                Mock(returncode=0, stdout="STATE: 4 RUNNING", stderr=""),
+                Mock(
+                    returncode=0,
+                    stdout="GetDisplayName SUCCESS\nName = TestService",
+                    stderr="",
+                ),
+            ]
+
+            node = GetServiceStatusNode(node_id="test_svc_running")
+            node.set_input_value("service_name", "TestService")
+
+            result = await node.execute(execution_context)
+
+            assert result["success"] is True
+            assert node.get_output_value("status") == "running"
+            assert node.get_output_value("exists") is True
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only")
+    @pytest.mark.asyncio
+    async def test_service_stopped(self, execution_context) -> None:
+        """Test getting status of stopped service."""
+        from casare_rpa.nodes.system_nodes import GetServiceStatusNode
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = [
+                Mock(returncode=0, stdout="STATE: 1 STOPPED", stderr=""),
+                Mock(
+                    returncode=0,
+                    stdout="GetDisplayName SUCCESS\nName = StoppedSvc",
+                    stderr="",
+                ),
+            ]
+
+            node = GetServiceStatusNode(node_id="test_svc_stopped")
+            node.set_input_value("service_name", "StoppedService")
+
+            result = await node.execute(execution_context)
+
+            assert result["success"] is True
+            assert node.get_output_value("status") == "stopped"
+            assert node.get_output_value("exists") is True
+
+    @pytest.mark.skipif(sys.platform != "win32", reason="Windows-only")
+    @pytest.mark.asyncio
+    async def test_service_not_found(self, execution_context) -> None:
+        """Test getting status of non-existent service."""
+        from casare_rpa.nodes.system_nodes import GetServiceStatusNode
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = Mock(
+                returncode=1,
+                stdout="",
+                stderr="FAILED 1060: The specified service does not exist",
+            )
+
+            node = GetServiceStatusNode(node_id="test_svc_notfound")
+            node.set_input_value("service_name", "NonExistentService")
+
+            result = await node.execute(execution_context)
+
+            assert result["success"] is True
+            assert node.get_output_value("status") == "not_found"
+            assert node.get_output_value("exists") is False
 
 
 class TestStartServiceNode:

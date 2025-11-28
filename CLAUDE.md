@@ -2,6 +2,9 @@
 
 - In all interactions and commit messages, be extremely concise and sacrifice grammar for the sake of concision.
 
+## Estimation time
+Never mention about estimated effort: Days and complexity ratings for each phase
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview

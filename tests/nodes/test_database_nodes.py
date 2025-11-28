@@ -14,6 +14,13 @@ import sqlite3
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
+
+# Patch aiosqlite availability before importing database_nodes
+# This ensures sqlite3 sync operations work in tests
+import casare_rpa.nodes.database_nodes as db_module
+
+db_module.AIOSQLITE_AVAILABLE = False
+
 from casare_rpa.core.execution_context import ExecutionContext
 from casare_rpa.nodes.database_nodes import (
     DatabaseConnection,
@@ -80,6 +87,7 @@ class TestDatabaseConnectNode:
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
             temp_path = f.name
 
+        conn = None
         try:
             node = DatabaseConnectNode(node_id="test_connect_file")
             node.set_input_value("db_type", "sqlite")
@@ -90,11 +98,17 @@ class TestDatabaseConnectNode:
             assert result["success"] is True
             conn = node.get_output_value("connection")
             assert conn.connection_string == temp_path
-
-            # Close connection before cleanup
-            conn.connection.close()
         finally:
-            Path(temp_path).unlink(missing_ok=True)
+            # Close connection before cleanup
+            if conn and conn.connection:
+                try:
+                    conn.connection.close()
+                except Exception:
+                    pass
+            try:
+                Path(temp_path).unlink(missing_ok=True)
+            except Exception:
+                pass  # File cleanup may fail on Windows
 
     @pytest.mark.asyncio
     async def test_connect_sqlite_empty_database_uses_memory(
