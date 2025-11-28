@@ -113,9 +113,15 @@ class NodeSchema:
 
             # Type validation
             if not self._validate_type(prop, value):
-                errors.append(
-                    f"{prop.label or prop.name} must be of type {prop.type.value}"
-                )
+                # Better error messages for specific types
+                if prop.type == PropertyType.FLOAT:
+                    type_desc = "number (int or float)"
+                elif prop.type == PropertyType.INTEGER:
+                    type_desc = "integer"
+                else:
+                    type_desc = prop.type.value
+
+                errors.append(f"{prop.label or prop.name} must be of type {type_desc}")
                 continue
 
             # Range validation for numeric types
