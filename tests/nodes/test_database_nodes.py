@@ -15,14 +15,16 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock, MagicMock, patch
 
-# Patch aiosqlite availability before importing database_nodes
+# Patch aiosqlite availability before importing database nodes
 # This ensures sqlite3 sync operations work in tests
-import casare_rpa.nodes.database_nodes as db_module
+import casare_rpa.nodes.database.sql_nodes as sql_module
+import casare_rpa.nodes.database.database_utils as utils_module
 
-db_module.AIOSQLITE_AVAILABLE = False
+sql_module.AIOSQLITE_AVAILABLE = False
+utils_module.AIOSQLITE_AVAILABLE = False
 
-# Uses execution_context fixture from conftest.py - no import needed
-from casare_rpa.nodes.database_nodes import (
+from casare_rpa.core.execution_context import ExecutionContext
+from casare_rpa.nodes.database import (
     DatabaseConnection,
     DatabaseConnectNode,
     CloseDatabaseNode,
@@ -138,7 +140,7 @@ class TestDatabaseConnectNode:
         assert "Unsupported database type" in result["error"]
 
     @pytest.mark.asyncio
-    @patch("casare_rpa.nodes.database_nodes.ASYNCPG_AVAILABLE", False)
+    @patch("casare_rpa.nodes.database.sql_nodes.ASYNCPG_AVAILABLE", False)
     async def test_connect_postgresql_unavailable(self, execution_context) -> None:
         """Test PostgreSQL error when asyncpg not installed."""
         node = DatabaseConnectNode(node_id="test_pg_unavailable")
@@ -152,7 +154,7 @@ class TestDatabaseConnectNode:
         assert "asyncpg" in result["error"]
 
     @pytest.mark.asyncio
-    @patch("casare_rpa.nodes.database_nodes.AIOMYSQL_AVAILABLE", False)
+    @patch("casare_rpa.nodes.database.sql_nodes.AIOMYSQL_AVAILABLE", False)
     async def test_connect_mysql_unavailable(self, execution_context) -> None:
         """Test MySQL error when aiomysql not installed."""
         node = DatabaseConnectNode(node_id="test_mysql_unavailable")
@@ -758,8 +760,8 @@ class TestDatabaseNodesMockedDrivers:
         return create_mock_context()
 
     @pytest.mark.asyncio
-    @patch("casare_rpa.nodes.database_nodes.ASYNCPG_AVAILABLE", True)
-    @patch("casare_rpa.nodes.database_nodes.asyncpg")
+    @patch("casare_rpa.nodes.database.sql_nodes.ASYNCPG_AVAILABLE", True)
+    @patch("casare_rpa.nodes.database.sql_nodes.asyncpg")
     async def test_postgresql_connect_mocked(
         self, mock_asyncpg, execution_context
     ) -> None:
@@ -781,8 +783,8 @@ class TestDatabaseNodesMockedDrivers:
         mock_asyncpg.connect.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("casare_rpa.nodes.database_nodes.AIOMYSQL_AVAILABLE", True)
-    @patch("casare_rpa.nodes.database_nodes.aiomysql")
+    @patch("casare_rpa.nodes.database.sql_nodes.AIOMYSQL_AVAILABLE", True)
+    @patch("casare_rpa.nodes.database.sql_nodes.aiomysql")
     async def test_mysql_connect_mocked(self, mock_aiomysql, execution_context) -> None:
         """Test MySQL connection with mocked aiomysql."""
         mock_conn = AsyncMock()
