@@ -10,13 +10,13 @@ Delegates to:
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 from loguru import logger
-from playwright.async_api import Browser, BrowserContext, Page
 
 from .types import ExecutionMode, NodeId
 from ..domain.entities.execution_state import ExecutionState
 from ..infrastructure.resources.browser_resource_manager import BrowserResourceManager
 
 if TYPE_CHECKING:
+    from playwright.async_api import Browser, BrowserContext, Page
     from ..project.project_context import ProjectContext
 
 
@@ -163,15 +163,15 @@ class ExecutionContext:
     # BROWSER MANAGEMENT - Delegate to BrowserResourceManager (infrastructure)
     # ========================================================================
 
-    def set_browser(self, browser: Browser) -> None:
+    def set_browser(self, browser: "Browser") -> None:
         """Set the active browser instance."""
         self._resources.set_browser(browser)
 
-    def get_browser(self) -> Optional[Browser]:
+    def get_browser(self) -> Optional["Browser"]:
         """Get the active browser instance."""
         return self._resources.get_browser()
 
-    def add_browser_context(self, context: BrowserContext) -> None:
+    def add_browser_context(self, context: "BrowserContext") -> None:
         """
         Track a browser context for cleanup.
 
@@ -180,7 +180,7 @@ class ExecutionContext:
         """
         self._resources.add_browser_context(context)
 
-    def set_active_page(self, page: Page, name: str = "default") -> None:
+    def set_active_page(self, page: "Page", name: str = "default") -> None:
         """
         Set the active page and store it with a name.
 
@@ -190,15 +190,15 @@ class ExecutionContext:
         """
         self._resources.set_active_page(page, name)
 
-    def get_active_page(self) -> Optional[Page]:
+    def get_active_page(self) -> Optional["Page"]:
         """Get the currently active page."""
         return self._resources.get_active_page()
 
-    def get_page(self, name: str = "default") -> Optional[Page]:
+    def get_page(self, name: str = "default") -> Optional["Page"]:
         """Get a page by name."""
         return self._resources.get_page(name)
 
-    def add_page(self, page: Page, name: str) -> None:
+    def add_page(self, page: "Page", name: str) -> None:
         """
         Add a page to the context.
 
@@ -266,12 +266,12 @@ class ExecutionContext:
         return self._state.stopped
 
     @property
-    def browser(self) -> Optional[Browser]:
+    def browser(self) -> Optional["Browser"]:
         """Get browser instance."""
         return self._resources.browser
 
     @browser.setter
-    def browser(self, value: Optional[Browser]) -> None:
+    def browser(self, value: Optional["Browser"]) -> None:
         """Set browser instance."""
         if value is None:
             self._resources.browser = None
@@ -279,22 +279,22 @@ class ExecutionContext:
             self._resources.set_browser(value)
 
     @property
-    def browser_contexts(self) -> List[BrowserContext]:
+    def browser_contexts(self) -> List["BrowserContext"]:
         """Get browser contexts list."""
         return self._resources.browser_contexts
 
     @property
-    def pages(self) -> Dict[str, Page]:
+    def pages(self) -> Dict[str, "Page"]:
         """Get pages dict."""
         return self._resources.pages
 
     @property
-    def active_page(self) -> Optional[Page]:
+    def active_page(self) -> Optional["Page"]:
         """Get active page."""
         return self._resources.active_page
 
     @active_page.setter
-    def active_page(self, value: Optional[Page]) -> None:
+    def active_page(self, value: Optional["Page"]) -> None:
         """Set active page."""
         self._resources.active_page = value
 
@@ -321,9 +321,9 @@ class ExecutionContext:
         if self.desktop_context is not None:
             try:
                 # DesktopContext may have a cleanup method
-                if hasattr(self.desktop_context, 'cleanup'):
+                if hasattr(self.desktop_context, "cleanup"):
                     self.desktop_context.cleanup()
-                elif hasattr(self.desktop_context, 'close'):
+                elif hasattr(self.desktop_context, "close"):
                     self.desktop_context.close()
                 logger.debug("Desktop context cleaned up")
             except Exception as e:
@@ -382,11 +382,12 @@ class ExecutionContext:
                 await ctx.cleanup()
         """
         import warnings
+
         warnings.warn(
             "ExecutionContext sync context manager is deprecated and may leak resources. "
             "Use 'async with ExecutionContext(...)' instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         logger.warning(
             "DEPRECATED: Using sync context manager with ExecutionContext. "
@@ -423,8 +424,8 @@ class ExecutionContext:
                 # We can't await here, but we can at least log when it completes
                 cleanup_task.add_done_callback(
                     lambda t: logger.info("Scheduled cleanup task completed")
-                    if not t.exception() else
-                    logger.error(f"Scheduled cleanup task failed: {t.exception()}")
+                    if not t.exception()
+                    else logger.error(f"Scheduled cleanup task failed: {t.exception()}")
                 )
             except RuntimeError:
                 # No running loop - we can run cleanup synchronously

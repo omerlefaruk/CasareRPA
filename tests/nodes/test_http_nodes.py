@@ -27,6 +27,7 @@ import os
 
 # Uses execution_context fixture from conftest.py - no import needed
 from casare_rpa.domain.value_objects.types import NodeStatus
+from casare_rpa.core.execution_context import ExecutionContext
 
 
 # Define mock helpers locally (from conftest.py in tests/nodes/)

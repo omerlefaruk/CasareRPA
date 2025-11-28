@@ -37,7 +37,7 @@ Usage:
     bus.unsubscribe(EventType.WORKFLOW_SAVED, on_workflow_saved)
 """
 
-from typing import Callable, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Any
 from collections import defaultdict, deque
 from threading import RLock
 import time
@@ -46,6 +46,9 @@ from loguru import logger
 
 from .event import Event, EventFilter
 from .event_types import EventType, EventCategory
+
+# Slow handler threshold in seconds (100ms)
+SLOW_HANDLER_THRESHOLD_SEC = 0.1
 
 
 # Type alias for event handler functions
@@ -114,7 +117,13 @@ class EventBus:
             "events_handled": 0,
             "total_handler_time": 0.0,
             "errors": 0,
+            "cache_hits": 0,
+            "cache_misses": 0,
         }
+
+        # Filtered subscription cache: (EventType, source) -> List[EventHandler]
+        # Cache invalidated on subscribe/unsubscribe for performance optimization
+        self._filtered_cache: Dict[Tuple[EventType, str], List[EventHandler]] = {}
 
         # Thread safety
         self._lock = RLock()
@@ -151,6 +160,7 @@ class EventBus:
         with self._lock:
             if handler not in self._subscribers[event_type]:
                 self._subscribers[event_type].append(handler)
+                self._invalidate_cache(event_type)
                 logger.debug(
                     f"Subscribed to {event_type.name}: "
                     f"{handler.__name__ if hasattr(handler, '__name__') else handler}"
@@ -180,6 +190,7 @@ class EventBus:
         with self._lock:
             if handler not in self._wildcard_subscribers:
                 self._wildcard_subscribers.append(handler)
+                self._filtered_cache.clear()  # Wildcard affects all events
                 logger.debug(f"Subscribed to all events: {handler.__name__}")
 
     def subscribe_filtered(
@@ -216,6 +227,7 @@ class EventBus:
             filter_handler = (event_filter, handler)
             if filter_handler not in self._filtered_subscribers:
                 self._filtered_subscribers.append(filter_handler)
+                self._filtered_cache.clear()  # Filter may match any event
                 logger.debug(f"Subscribed with filter: {event_filter}")
 
     def unsubscribe(
@@ -240,6 +252,7 @@ class EventBus:
             if event_type in self._subscribers:
                 try:
                     self._subscribers[event_type].remove(handler)
+                    self._invalidate_cache(event_type)
                     logger.debug(f"Unsubscribed from {event_type.name}")
                     return True
                 except ValueError:
@@ -259,6 +272,7 @@ class EventBus:
         with self._lock:
             try:
                 self._wildcard_subscribers.remove(handler)
+                self._filtered_cache.clear()  # Wildcard affects all events
                 logger.debug(f"Unsubscribed from all events: {handler.__name__}")
                 return True
             except ValueError:
@@ -283,6 +297,7 @@ class EventBus:
             filter_handler = (event_filter, handler)
             try:
                 self._filtered_subscribers.remove(filter_handler)
+                self._filtered_cache.clear()  # Filter may match any event
                 logger.debug(f"Unsubscribed from filter: {event_filter}")
                 return True
             except ValueError:
@@ -296,6 +311,9 @@ class EventBus:
         1. Type-specific subscribers
         2. Filtered subscribers (if filter matches)
         3. Wildcard subscribers (all events)
+
+        Uses caching for filtered subscriber lists to improve performance
+        on repeated events with the same type and source.
 
         Args:
             event: Event to publish
@@ -319,20 +337,33 @@ class EventBus:
             # Log event
             logger.debug(f"Publishing event: {event}")
 
-            # Collect all handlers that should receive this event
-            handlers: list[EventHandler] = []
+            # Build cache key: (event_type, source)
+            source = event.source if hasattr(event, "source") and event.source else ""
+            cache_key = (event.type, source)
 
-            # 1. Type-specific subscribers
-            if event.type in self._subscribers:
-                handlers.extend(self._subscribers[event.type])
+            # Check cache for handlers
+            if cache_key in self._filtered_cache:
+                handlers = self._filtered_cache[cache_key]
+                self._metrics["cache_hits"] += 1
+            else:
+                # Build and cache handler list
+                handlers: List[EventHandler] = []
 
-            # 2. Filtered subscribers
-            for event_filter, handler in self._filtered_subscribers:
-                if event_filter.matches(event):
-                    handlers.append(handler)
+                # 1. Type-specific subscribers
+                if event.type in self._subscribers:
+                    handlers.extend(self._subscribers[event.type])
 
-            # 3. Wildcard subscribers
-            handlers.extend(self._wildcard_subscribers)
+                # 2. Filtered subscribers
+                for event_filter, handler in self._filtered_subscribers:
+                    if event_filter.matches(event):
+                        handlers.append(handler)
+
+                # 3. Wildcard subscribers
+                handlers.extend(self._wildcard_subscribers)
+
+                # Cache the handler list
+                self._filtered_cache[cache_key] = handlers
+                self._metrics["cache_misses"] += 1
 
             # Call all handlers
             for handler in handlers:
@@ -358,8 +389,10 @@ class EventBus:
             self._metrics["total_handler_time"] += elapsed
 
             # Warn if handler is slow
-            if elapsed > 0.1:  # 100ms threshold
-                handler_name = handler.__name__ if hasattr(handler, "__name__") else str(handler)
+            if elapsed > SLOW_HANDLER_THRESHOLD_SEC:
+                handler_name = (
+                    handler.__name__ if hasattr(handler, "__name__") else str(handler)
+                )
                 logger.warning(
                     f"Slow event handler: {handler_name} took {elapsed * 1000:.2f}ms "
                     f"for {event.type.name}"
@@ -367,7 +400,9 @@ class EventBus:
 
         except Exception as e:
             self._metrics["errors"] += 1
-            handler_name = handler.__name__ if hasattr(handler, "__name__") else str(handler)
+            handler_name = (
+                handler.__name__ if hasattr(handler, "__name__") else str(handler)
+            )
             logger.error(
                 f"Event handler error: {handler_name} failed processing {event.type.name}: {e}",
                 exc_info=True,
@@ -428,22 +463,32 @@ class EventBus:
 
             return events
 
-    def get_metrics(self) -> dict[str, any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get performance metrics.
 
         Returns:
-            dict: Metrics including event counts, timing, and errors
+            dict: Metrics including event counts, timing, errors, and cache stats
 
         Example:
             metrics = bus.get_metrics()
             print(f"Events published: {metrics['events_published']}")
             print(f"Average handler time: {metrics['avg_handler_time']:.4f}s")
+            print(f"Cache hit rate: {metrics['cache_hit_rate']:.2%}")
         """
         with self._lock:
             avg_handler_time = (
                 self._metrics["total_handler_time"] / self._metrics["events_handled"]
                 if self._metrics["events_handled"] > 0
+                else 0.0
+            )
+
+            total_cache_accesses = (
+                self._metrics["cache_hits"] + self._metrics["cache_misses"]
+            )
+            cache_hit_rate = (
+                self._metrics["cache_hits"] / total_cache_accesses
+                if total_cache_accesses > 0
                 else 0.0
             )
 
@@ -453,10 +498,16 @@ class EventBus:
                 "total_handler_time": self._metrics["total_handler_time"],
                 "avg_handler_time": avg_handler_time,
                 "errors": self._metrics["errors"],
-                "subscribers": sum(len(handlers) for handlers in self._subscribers.values()),
+                "subscribers": sum(
+                    len(handlers) for handlers in self._subscribers.values()
+                ),
                 "wildcard_subscribers": len(self._wildcard_subscribers),
                 "filtered_subscribers": len(self._filtered_subscribers),
                 "history_size": len(self._history),
+                "cache_size": len(self._filtered_cache),
+                "cache_hits": self._metrics["cache_hits"],
+                "cache_misses": self._metrics["cache_misses"],
+                "cache_hit_rate": cache_hit_rate,
             }
 
     def reset_metrics(self) -> None:
@@ -467,6 +518,8 @@ class EventBus:
                 "events_handled": 0,
                 "total_handler_time": 0.0,
                 "errors": 0,
+                "cache_hits": 0,
+                "cache_misses": 0,
             }
             logger.debug("Event bus metrics reset")
 
@@ -481,6 +534,19 @@ class EventBus:
             self._history_enabled = enabled
             logger.debug(f"Event history {'enabled' if enabled else 'disabled'}")
 
+    def _invalidate_cache(self, event_type: EventType) -> None:
+        """
+        Invalidate filtered subscription cache for a specific event type.
+
+        Called when subscriptions change to ensure cache consistency.
+
+        Args:
+            event_type: EventType whose cache entries should be invalidated
+        """
+        keys_to_remove = [k for k in self._filtered_cache.keys() if k[0] == event_type]
+        for key in keys_to_remove:
+            del self._filtered_cache[key]
+
     def clear_all_subscribers(self) -> None:
         """
         Clear all event subscribers.
@@ -491,6 +557,7 @@ class EventBus:
             self._subscribers.clear()
             self._wildcard_subscribers.clear()
             self._filtered_subscribers.clear()
+            self._filtered_cache.clear()
             logger.warning("All event subscribers cleared")
 
     @classmethod
@@ -512,6 +579,7 @@ class EventBus:
             f"EventBus("
             f"subscribers={metrics['subscribers']}, "
             f"events_published={metrics['events_published']}, "
+            f"cache_size={metrics['cache_size']}, "
             f"events_handled={metrics['events_handled']}"
             f")"
         )

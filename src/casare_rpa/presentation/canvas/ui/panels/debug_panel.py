@@ -3,6 +3,9 @@ Debug Panel UI Component.
 
 Provides debug output, execution logs, and breakpoint management.
 Combines functionality from LogTab and OutputTab for comprehensive debugging.
+
+Uses LazySubscription for EventBus optimization - subscriptions are only active
+when the panel is visible, reducing overhead when panel is hidden.
 """
 
 from typing import Optional, Any, Dict, List
@@ -28,6 +31,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.events import (
+    LazySubscriptionGroup,
+    EventType,
+    Event,
+)
 
 
 class DebugPanel(QDockWidget):
@@ -73,6 +82,7 @@ class DebugPanel(QDockWidget):
         self._setup_dock()
         self._setup_ui()
         self._apply_styles()
+        self._setup_lazy_subscriptions()
 
         logger.debug("DebugPanel initialized")
 
@@ -165,15 +175,23 @@ class DebugPanel(QDockWidget):
         self._log_table.setSelectionBehavior(
             QAbstractItemView.SelectionBehavior.SelectRows
         )
-        self._log_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._log_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
         self._log_table.itemDoubleClicked.connect(self._on_log_double_click)
         self._log_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Configure column sizing
         header = self._log_table.horizontalHeader()
-        header.setSectionResizeMode(self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
+        )
+        header.setSectionResizeMode(
+            self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
         layout.addWidget(self._log_table)
@@ -360,7 +378,9 @@ class DebugPanel(QDockWidget):
         if self._auto_scroll:
             self._console.moveCursor(self._console.textCursor().End)
 
-    def add_breakpoint(self, node_id: str, node_name: str, enabled: bool = True) -> None:
+    def add_breakpoint(
+        self, node_id: str, node_name: str, enabled: bool = True
+    ) -> None:
         """
         Add a breakpoint to the list.
 
@@ -380,7 +400,9 @@ class DebugPanel(QDockWidget):
         self._bp_table.setItem(row, 1, name_item)
 
         enabled_item = QTableWidgetItem("Yes" if enabled else "No")
-        enabled_item.setCheckState(Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked)
+        enabled_item.setCheckState(
+            Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked
+        )
         self._bp_table.setItem(row, 2, enabled_item)
 
     def remove_breakpoint(self, node_id: str) -> None:
@@ -463,3 +485,73 @@ class DebugPanel(QDockWidget):
         """Handle clear all breakpoints."""
         self.clear_breakpoints()
         self.clear_requested.emit()
+
+    def _setup_lazy_subscriptions(self) -> None:
+        """
+        Set up lazy EventBus subscriptions.
+
+        Subscriptions only activate when panel is visible, reducing
+        EventBus overhead when panel is hidden.
+        """
+        self._lazy_subscriptions = LazySubscriptionGroup(
+            self,
+            [
+                (EventType.NODE_EXECUTION_STARTED, self._on_node_execution_started),
+                (EventType.NODE_EXECUTION_COMPLETED, self._on_node_execution_completed),
+                (EventType.NODE_EXECUTION_FAILED, self._on_node_execution_failed),
+                (EventType.BREAKPOINT_HIT, self._on_breakpoint_hit),
+            ],
+        )
+
+    def _on_node_execution_started(self, event: Event) -> None:
+        """
+        Handle node execution started event.
+
+        Args:
+            event: Event with node_id, node_name data
+        """
+        node_id = event.get("node_id", "")
+        node_name = event.get("node_name", "")
+        self.add_log("Info", f"Executing node: {node_name}", node_id, node_name)
+        self.add_console_output(f">> Starting: {node_name}", "#569cd6")
+
+    def _on_node_execution_completed(self, event: Event) -> None:
+        """
+        Handle node execution completed event.
+
+        Args:
+            event: Event with node_id, node_name, duration_ms data
+        """
+        node_id = event.get("node_id", "")
+        node_name = event.get("node_name", "")
+        duration = event.get("duration_ms", 0)
+        self.add_log(
+            "Success", f"Completed: {node_name} ({duration}ms)", node_id, node_name
+        )
+        self.add_console_output(f"<< Completed: {node_name} ({duration}ms)", "#89d185")
+
+    def _on_node_execution_failed(self, event: Event) -> None:
+        """
+        Handle node execution failed event.
+
+        Args:
+            event: Event with node_id, node_name, error data
+        """
+        node_id = event.get("node_id", "")
+        node_name = event.get("node_name", "")
+        error = event.get("error", "Unknown error")
+        self.add_log("Error", f"Failed: {node_name} - {error}", node_id, node_name)
+        self.add_console_output(f"!! Error: {node_name} - {error}", "#f44747")
+
+    def _on_breakpoint_hit(self, event: Event) -> None:
+        """
+        Handle breakpoint hit event.
+
+        Args:
+            event: Event with node_id, node_name data
+        """
+        node_id = event.get("node_id", "")
+        node_name = event.get("node_name", "")
+        self.add_log("Warning", f"Breakpoint hit: {node_name}", node_id, node_name)
+        self.add_console_output(f"** Breakpoint: {node_name}", "#cca700")
+        self._tabs.setCurrentIndex(0)

@@ -40,6 +40,8 @@ from .event import Event, EventPriority, EventFilter
 from .event_bus import EventBus
 from .event_handler import EventHandler, event_handler
 from .qt_signal_bridge import QtSignalBridge
+from .event_batcher import EventBatcher
+from .lazy_subscription import LazySubscription, LazySubscriptionGroup
 
 __all__ = [
     "EventType",
@@ -51,4 +53,7 @@ __all__ = [
     "EventHandler",
     "event_handler",
     "QtSignalBridge",
+    "EventBatcher",
+    "LazySubscription",
+    "LazySubscriptionGroup",
 ]
