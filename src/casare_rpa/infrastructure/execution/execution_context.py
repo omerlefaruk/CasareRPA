@@ -469,3 +469,89 @@ class ExecutionContext:
             logger.error(f"Error during sync context cleanup: {e}")
 
         return False  # Don't suppress exceptions
+
+    # ========================================================================
+    # DBOS SERIALIZATION - For durable execution (Project Aether)
+    # ========================================================================
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serialize ExecutionContext to dictionary for DBOS storage.
+
+        Only serializes the domain state (variables, execution path, etc).
+        Infrastructure resources (Playwright) are NOT serialized and will be
+        recreated on recovery.
+
+        Returns:
+            Dictionary with serializable context state
+        """
+        return {
+            "workflow_name": self._state.workflow_name,
+            "mode": self._state.mode.value,
+            "variables": self._state.variables,
+            "current_node_id": self._state.current_node_id,
+            "execution_path": self._state.execution_path,
+            "errors": self._state.errors,
+            "stopped": self._state.stopped,
+            "started_at": self._state.started_at.isoformat(),
+            "completed_at": self._state.completed_at.isoformat()
+            if self._state.completed_at
+            else None,
+            # Note: browser, pages, desktop_context are NOT serialized
+            # They will be recreated lazily on recovery
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: Dict[str, Any],
+        project_context: Optional["ProjectContext"] = None,
+        pause_event: Optional[asyncio.Event] = None,
+    ) -> "ExecutionContext":
+        """
+        Deserialize ExecutionContext from dictionary.
+
+        Recreates context state after crash recovery. Infrastructure resources
+        (Playwright browser, pages) are NOT restored and will be recreated
+        lazily when needed.
+
+        Args:
+            data: Serialized context state
+            project_context: Optional project context
+            pause_event: Optional pause event
+
+        Returns:
+            ExecutionContext instance with restored state
+        """
+        from casare_rpa.domain.value_objects.types import ExecutionMode
+
+        # Create new context with basic settings
+        context = cls(
+            workflow_name=data.get("workflow_name", "Untitled"),
+            mode=ExecutionMode(data.get("mode", "normal")),
+            initial_variables=data.get("variables", {}),
+            project_context=project_context,
+            pause_event=pause_event,
+        )
+
+        # Restore execution state
+        context._state.current_node_id = data.get("current_node_id")
+        context._state.execution_path = data.get("execution_path", [])
+        context._state.errors = [tuple(e) for e in data.get("errors", [])]
+        context._state.stopped = data.get("stopped", False)
+
+        # Restore timestamps
+        started_at_str = data.get("started_at")
+        if started_at_str:
+            context._state.started_at = datetime.fromisoformat(started_at_str)
+
+        completed_at_str = data.get("completed_at")
+        if completed_at_str:
+            context._state.completed_at = datetime.fromisoformat(completed_at_str)
+
+        logger.info(
+            f"ExecutionContext restored from dict: {context.workflow_name}, "
+            f"nodes_executed={len(context._state.execution_path)}"
+        )
+
+        return context

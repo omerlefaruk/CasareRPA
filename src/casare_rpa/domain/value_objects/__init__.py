@@ -29,6 +29,7 @@ from .types import (
     SerializedNode,
     SerializedWorkflow,
 )
+from .execution_state import ExecutionState, WorkflowStatus, create_execution_state
 
 __all__ = [
     # Enums
@@ -38,6 +39,7 @@ __all__ = [
     "ExecutionMode",
     "NodeStatus",
     "PortType",
+    "WorkflowStatus",
     # Type aliases
     "Connection",
     "EventData",
@@ -57,4 +59,7 @@ __all__ = [
     "SCHEMA_VERSION",
     # Value objects
     "Port",
+    "ExecutionState",
+    # Factories
+    "create_execution_state",
 ]
