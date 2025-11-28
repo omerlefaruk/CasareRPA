@@ -15,6 +15,7 @@ import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -36,6 +37,7 @@ class HttpMethod(str, Enum):
     OPTIONS = "OPTIONS"
 
 
+@executable_node
 class HttpRequestNode(BaseNode):
     """
     HTTP Request node - makes HTTP/HTTPS requests to APIs and web services.
@@ -81,12 +83,9 @@ class HttpRequestNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("headers", PortType.INPUT, DataType.ANY)
         self.add_input_port("body", PortType.INPUT, DataType.STRING)
-
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("response_body", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("status_code", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("headers", PortType.OUTPUT, DataType.ANY)
@@ -245,6 +244,7 @@ class ValidationType(str, Enum):
     CUSTOM = "custom"
 
 
+@executable_node
 class ValidateNode(BaseNode):
     """
     Validate node - validates data against rules.
@@ -279,7 +279,6 @@ class ValidateNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("value", PortType.INPUT, DataType.ANY)
 
         self.add_output_port("valid", PortType.EXEC_OUTPUT)  # Route when valid
@@ -469,6 +468,7 @@ class TransformType(str, Enum):
     FILTER_VALUES = "filter_values"
 
 
+@executable_node
 class TransformNode(BaseNode):
     """
     Transform node - transforms data from one format to another.
@@ -502,11 +502,8 @@ class TransformNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("value", PortType.INPUT, DataType.ANY)
         self.add_input_port("param", PortType.INPUT, DataType.ANY)
-
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
@@ -665,6 +662,7 @@ class LogLevel(str, Enum):
     CRITICAL = "critical"
 
 
+@executable_node
 class LogNode(BaseNode):
     """
     Log node - explicit logging within workflows.
@@ -701,11 +699,8 @@ class LogNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("message", PortType.INPUT, DataType.STRING)
         self.add_input_port("data", PortType.INPUT, DataType.ANY)
-
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

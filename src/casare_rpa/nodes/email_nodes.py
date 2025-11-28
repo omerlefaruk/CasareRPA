@@ -21,6 +21,7 @@ import os
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -130,6 +131,7 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
     }
 
 
+@executable_node
 class SendEmailNode(BaseNode):
     """
     Send an email via SMTP.
@@ -181,7 +183,6 @@ class SendEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("smtp_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("smtp_port", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
@@ -193,7 +194,6 @@ class SendEmailNode(BaseNode):
         self.add_input_port("cc", PortType.INPUT, DataType.STRING)
         self.add_input_port("bcc", PortType.INPUT, DataType.STRING)
         self.add_input_port("attachments", PortType.INPUT, DataType.LIST)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
 
@@ -405,6 +405,7 @@ class SendEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ReadEmailsNode(BaseNode):
     """
     Read emails from an IMAP server.
@@ -450,7 +451,6 @@ class ReadEmailsNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("imap_port", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
@@ -458,7 +458,6 @@ class ReadEmailsNode(BaseNode):
         self.add_input_port("folder", PortType.INPUT, DataType.STRING)
         self.add_input_port("limit", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("search_criteria", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("emails", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -615,6 +614,7 @@ class ReadEmailsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class GetEmailContentNode(BaseNode):
     """
     Extract content from an email object.
@@ -630,9 +630,7 @@ class GetEmailContentNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("email", PortType.INPUT, DataType.DICT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("subject", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("from", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("to", PortType.OUTPUT, DataType.STRING)
@@ -677,6 +675,7 @@ class GetEmailContentNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -692,14 +691,12 @@ class SaveAttachmentNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
         self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
         self.add_input_port("save_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("saved_files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -811,6 +808,7 @@ class SaveAttachmentNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class FilterEmailsNode(BaseNode):
     """
     Filter a list of emails based on criteria.
@@ -826,12 +824,10 @@ class FilterEmailsNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("emails", PortType.INPUT, DataType.LIST)
         self.add_input_port("subject_contains", PortType.INPUT, DataType.STRING)
         self.add_input_port("from_contains", PortType.INPUT, DataType.STRING)
         self.add_input_port("has_attachments", PortType.INPUT, DataType.BOOLEAN)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("filtered", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -895,6 +891,7 @@ class FilterEmailsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -910,14 +907,12 @@ class MarkEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
         self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
         self.add_input_port("folder", PortType.INPUT, DataType.STRING)
         self.add_input_port("mark_as", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -992,6 +987,7 @@ class MarkEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -1007,13 +1003,11 @@ class DeleteEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
         self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
         self.add_input_port("folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -1077,6 +1071,7 @@ class DeleteEmailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.
@@ -1092,14 +1087,12 @@ class MoveEmailNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("imap_server", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
         self.add_input_port("email_uid", PortType.INPUT, DataType.STRING)
         self.add_input_port("source_folder", PortType.INPUT, DataType.STRING)
         self.add_input_port("target_folder", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

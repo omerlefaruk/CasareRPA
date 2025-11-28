@@ -8,6 +8,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import NodeStatus
 
 
@@ -21,6 +22,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class FindElementNode(Node):
     """
     Find a desktop UI element within a window.
@@ -57,12 +59,10 @@ class FindElementNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -138,6 +138,7 @@ class FindElementNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class ClickElementNode(Node):
     """
     Click a desktop UI element.
@@ -174,13 +175,11 @@ class ClickElementNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -241,6 +240,7 @@ class ClickElementNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class TypeTextNode(Node):
     """
     Type text into a desktop UI element.
@@ -277,14 +277,12 @@ class TypeTextNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -357,6 +355,7 @@ class TypeTextNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class GetElementTextNode(Node):
     """
     Get text content from a desktop UI element.
@@ -393,13 +392,11 @@ class GetElementTextNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
 
@@ -472,6 +469,7 @@ class GetElementTextNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class GetElementPropertyNode(Node):
     """
     Get a property value from a desktop UI element.
@@ -508,14 +506,12 @@ class GetElementPropertyNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
         self.add_input_port("property_name", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
 

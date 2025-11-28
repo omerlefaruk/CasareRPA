@@ -14,6 +14,7 @@ import string
 import uuid
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -23,6 +24,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@executable_node
 class RandomNumberNode(BaseNode):
     """
     Generate a random number within a specified range.
@@ -45,10 +47,8 @@ class RandomNumberNode(BaseNode):
         self.node_type = "RandomNumberNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("min_value", PortType.INPUT, DataType.FLOAT)
         self.add_input_port("max_value", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -93,6 +93,7 @@ class RandomNumberNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RandomChoiceNode(BaseNode):
     """
     Select a random item from a list.
@@ -116,9 +117,7 @@ class RandomChoiceNode(BaseNode):
         self.node_type = "RandomChoiceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("items", PortType.INPUT, DataType.LIST)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("index", PortType.OUTPUT, DataType.INTEGER)
 
@@ -168,6 +167,7 @@ class RandomChoiceNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RandomStringNode(BaseNode):
     """
     Generate a random string.
@@ -193,9 +193,7 @@ class RandomStringNode(BaseNode):
         self.node_type = "RandomStringNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("length", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -240,6 +238,7 @@ class RandomStringNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class RandomUUIDNode(BaseNode):
     """
     Generate a random UUID.
@@ -259,8 +258,6 @@ class RandomUUIDNode(BaseNode):
         self.node_type = "RandomUUIDNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -299,6 +296,7 @@ class RandomUUIDNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ShuffleListNode(BaseNode):
     """
     Shuffle a list randomly.
@@ -317,9 +315,7 @@ class ShuffleListNode(BaseNode):
         self.node_type = "ShuffleListNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("items", PortType.INPUT, DataType.LIST)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

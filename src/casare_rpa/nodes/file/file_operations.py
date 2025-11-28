@@ -17,6 +17,7 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -153,6 +154,7 @@ def validate_path_security(
     return resolved_path
 
 
+@executable_node
 class ReadFileNode(BaseNode):
     """
     Read content from a text or binary file.
@@ -195,9 +197,7 @@ class ReadFileNode(BaseNode):
         self.node_type = "ReadFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("content", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -278,6 +278,7 @@ class ReadFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class WriteFileNode(BaseNode):
     """
     Write content to a file, creating or overwriting.
@@ -323,10 +324,8 @@ class WriteFileNode(BaseNode):
         self.node_type = "WriteFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("content", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("bytes_written", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -403,6 +402,7 @@ class WriteFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class AppendFileNode(BaseNode):
     """
     Append content to an existing file.
@@ -428,10 +428,8 @@ class AppendFileNode(BaseNode):
         self.node_type = "AppendFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("content", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("bytes_written", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -483,6 +481,7 @@ class AppendFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class DeleteFileNode(BaseNode):
     """
     Delete a file.
@@ -505,9 +504,7 @@ class DeleteFileNode(BaseNode):
         self.node_type = "DeleteFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("deleted_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -573,6 +570,7 @@ class DeleteFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class CopyFileNode(BaseNode):
     """
     Copy a file to a new location.
@@ -598,10 +596,8 @@ class CopyFileNode(BaseNode):
         self.node_type = "CopyFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("dest_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("dest_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("bytes_copied", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -657,6 +653,7 @@ class CopyFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class MoveFileNode(BaseNode):
     """
     Move or rename a file.
@@ -681,10 +678,8 @@ class MoveFileNode(BaseNode):
         self.node_type = "MoveFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("dest_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("dest_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -740,6 +735,7 @@ class MoveFileNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class CreateDirectoryNode(BaseNode):
     """
     Create a directory.
@@ -763,9 +759,7 @@ class CreateDirectoryNode(BaseNode):
         self.node_type = "CreateDirectoryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("dir_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("dir_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -805,6 +799,7 @@ class CreateDirectoryNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ListFilesNode(BaseNode):
     """
     List files in a directory.
@@ -828,9 +823,7 @@ class ListFilesNode(BaseNode):
         self.node_type = "ListFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -882,6 +875,7 @@ class ListFilesNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ListDirectoryNode(BaseNode):
     """
     List files and directories in a folder.
@@ -908,9 +902,7 @@ class ListDirectoryNode(BaseNode):
         self.node_type = "ListDirectoryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("dir_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -972,6 +964,7 @@ class ListDirectoryNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
@@ -995,9 +988,7 @@ class FileExistsNode(BaseNode):
         self.node_type = "FileExistsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("is_file", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("is_directory", PortType.OUTPUT, DataType.BOOLEAN)
@@ -1052,6 +1043,7 @@ class FileExistsNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetFileSizeNode(BaseNode):
     """
     Get the size of a file in bytes.
@@ -1071,9 +1063,7 @@ class GetFileSizeNode(BaseNode):
         self.node_type = "GetFileSizeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -1110,6 +1100,7 @@ class GetFileSizeNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetFileInfoNode(BaseNode):
     """
     Get detailed information about a file.
@@ -1134,9 +1125,7 @@ class GetFileInfoNode(BaseNode):
         self.node_type = "GetFileInfoNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("created", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("modified", PortType.OUTPUT, DataType.STRING)

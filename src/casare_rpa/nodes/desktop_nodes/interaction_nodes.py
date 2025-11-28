@@ -9,6 +9,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
 
@@ -23,6 +24,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class SelectFromDropdownNode(Node):
     """
     Select an item from a dropdown/combobox.
@@ -59,12 +61,10 @@ class SelectFromDropdownNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)  # Dropdown element
         self.add_input_port("value", PortType.INPUT, DataType.STRING)  # Value to select
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -114,6 +114,7 @@ class SelectFromDropdownNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class CheckCheckboxNode(Node):
     """
     Check or uncheck a checkbox.
@@ -150,11 +151,9 @@ class CheckCheckboxNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("element", PortType.INPUT, DataType.ANY)  # Checkbox element
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -200,6 +199,7 @@ class CheckCheckboxNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class SelectRadioButtonNode(Node):
     """
     Select a radio button.
@@ -236,13 +236,11 @@ class SelectRadioButtonNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "element", PortType.INPUT, DataType.ANY
         )  # Radio button element
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -284,6 +282,7 @@ class SelectRadioButtonNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class SelectTabNode(Node):
     """
     Select a tab in a tab control.
@@ -320,7 +319,6 @@ class SelectTabNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "tab_control", PortType.INPUT, DataType.ANY
         )  # Tab control element
@@ -328,7 +326,6 @@ class SelectTabNode(Node):
         self.add_input_port("tab_index", PortType.INPUT, DataType.INTEGER)
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -388,6 +385,7 @@ class SelectTabNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class ExpandTreeItemNode(Node):
     """
     Expand or collapse a tree item.
@@ -424,13 +422,11 @@ class ExpandTreeItemNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "element", PortType.INPUT, DataType.ANY
         )  # Tree item element
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:
@@ -476,6 +472,7 @@ class ExpandTreeItemNode(Node):
             raise RuntimeError(error_msg)
 
 
+@executable_node
 class ScrollElementNode(Node):
     """
     Scroll an element (scrollbar, list, window, etc.).
@@ -512,13 +509,11 @@ class ScrollElementNode(Node):
         from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "element", PortType.INPUT, DataType.ANY
         )  # Element to scroll
 
         # Output ports
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context) -> Dict[str, Any]:

@@ -249,8 +249,8 @@ class SelectorValidator:
 
             logger.info(f"Found {len(elements)} elements to highlight")
 
-            # TODO: Implement visual highlighting
-            # Could draw rectangles over elements or flash them
+            # Visual highlighting via overlay rectangles or element flashing not implemented
+            # Logging element bounds as fallback for debugging
             for i, element in enumerate(elements):
                 bounds = element.get_bounding_rect()
                 logger.debug(f"Element {i+1}: {bounds}")

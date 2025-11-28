@@ -11,14 +11,14 @@ import re
 import uuid
 from unittest.mock import Mock
 
-# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class TestRandomNumberNode:
     """Tests for RandomNumberNode."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
@@ -108,7 +108,7 @@ class TestRandomChoiceNode:
     """Tests for RandomChoiceNode."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
@@ -209,7 +209,7 @@ class TestRandomStringNode:
     """Tests for RandomStringNode."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
@@ -338,7 +338,7 @@ class TestRandomUUIDNode:
     """Tests for RandomUUIDNode."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
@@ -422,7 +422,7 @@ class TestShuffleListNode:
     """Tests for ShuffleListNode."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x
@@ -506,7 +506,7 @@ class TestRandomEdgeCases:
     """Edge case tests for random nodes."""
 
     @pytest.fixture
-    def execution_context(self) -> None:
+    def execution_context(self) -> Mock:
         context = Mock(spec=ExecutionContext)
         context.variables = {}
         context.resolve_value = lambda x: x

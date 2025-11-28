@@ -7,6 +7,7 @@ This module provides nodes for setting and getting variables in the execution co
 from typing import Any, Optional
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -17,6 +18,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from loguru import logger
 
 
+@executable_node
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -54,10 +56,8 @@ class SetVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("value", PortType.INPUT, DataType.ANY)
         self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -143,6 +143,7 @@ class SetVariableNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -180,9 +181,7 @@ class GetVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -238,6 +237,7 @@ class GetVariableNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.
@@ -275,10 +275,8 @@ class IncrementVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("increment", PortType.INPUT, DataType.FLOAT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("value", PortType.OUTPUT, DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

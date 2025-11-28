@@ -15,6 +15,7 @@ Note: These nodes require PyPDF2 and optionally pdf2image for image conversion.
 from pathlib import Path
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -24,6 +25,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@executable_node
 class ReadPDFTextNode(BaseNode):
     """
     Extract text from a PDF file.
@@ -65,12 +67,10 @@ class ReadPDFTextNode(BaseNode):
         self.node_type = "ReadPDFTextNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("start_page", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("end_page", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("pages", PortType.OUTPUT, DataType.LIST)
@@ -164,6 +164,7 @@ class ReadPDFTextNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetPDFInfoNode(BaseNode):
     """
     Get metadata and information from a PDF file.
@@ -191,9 +192,7 @@ class GetPDFInfoNode(BaseNode):
         self.node_type = "GetPDFInfoNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("author", PortType.OUTPUT, DataType.STRING)
@@ -260,6 +259,7 @@ class GetPDFInfoNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class MergePDFsNode(BaseNode):
     """
     Merge multiple PDF files into one.
@@ -281,10 +281,8 @@ class MergePDFsNode(BaseNode):
         self.node_type = "MergePDFsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("input_files", PortType.INPUT, DataType.LIST)
         self.add_input_port("output_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("output_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -349,6 +347,7 @@ class MergePDFsNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class SplitPDFNode(BaseNode):
     """
     Split a PDF into separate files, one per page.
@@ -373,10 +372,8 @@ class SplitPDFNode(BaseNode):
         self.node_type = "SplitPDFNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("input_file", PortType.INPUT, DataType.STRING)
         self.add_input_port("output_dir", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("output_files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -447,6 +444,7 @@ class SplitPDFNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class ExtractPDFPagesNode(BaseNode):
     """
     Extract specific pages from a PDF.
@@ -469,11 +467,9 @@ class ExtractPDFPagesNode(BaseNode):
         self.node_type = "ExtractPDFPagesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("input_file", PortType.INPUT, DataType.STRING)
         self.add_input_port("output_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("pages", PortType.INPUT, DataType.LIST)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("output_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -543,6 +539,7 @@ class ExtractPDFPagesNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class PDFToImagesNode(BaseNode):
     """
     Convert PDF pages to images.
@@ -570,12 +567,10 @@ class PDFToImagesNode(BaseNode):
         self.node_type = "PDFToImagesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("input_file", PortType.INPUT, DataType.STRING)
         self.add_input_port("output_dir", PortType.INPUT, DataType.STRING)
         self.add_input_port("start_page", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("end_page", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("output_files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
