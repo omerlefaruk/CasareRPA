@@ -206,7 +206,10 @@ class ReadFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            # Try config first, then input port
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             errors = self.config.get("errors", "strict")
@@ -334,8 +337,10 @@ class WriteFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            content = self.get_input_value("content", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
+            content = self.config.get("content") or self.get_input_value("content")
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             create_dirs = self.config.get("create_dirs", True)
@@ -438,8 +443,10 @@ class AppendFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            content = self.get_input_value("content", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
+            content = self.config.get("content") or self.get_input_value("content")
             encoding = self.config.get("encoding", "utf-8")
             create_if_missing = self.config.get("create_if_missing", True)
 
@@ -512,7 +519,9 @@ class DeleteFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
             ignore_missing = self.config.get("ignore_missing", False)
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
@@ -606,8 +615,12 @@ class CopyFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            source_path = self.get_input_value("source_path", context)
-            dest_path = self.get_input_value("dest_path", context)
+            source_path = self.config.get("source_path") or self.get_input_value(
+                "source_path"
+            )
+            dest_path = self.config.get("dest_path") or self.get_input_value(
+                "dest_path"
+            )
             overwrite = self.config.get("overwrite", False)
             create_dirs = self.config.get("create_dirs", True)
 
@@ -687,8 +700,12 @@ class MoveFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            source_path = self.get_input_value("source_path", context)
-            dest_path = self.get_input_value("dest_path", context)
+            source_path = self.config.get("source_path") or self.get_input_value(
+                "source_path"
+            )
+            dest_path = self.config.get("dest_path") or self.get_input_value(
+                "dest_path"
+            )
             overwrite = self.config.get("overwrite", False)
             create_dirs = self.config.get("create_dirs", True)
 
@@ -767,7 +784,7 @@ class CreateDirectoryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("dir_path", context)
+            dir_path = self.config.get("dir_path") or self.get_input_value("dir_path")
             parents = self.config.get("parents", True)
             exist_ok = self.config.get("exist_ok", True)
 
@@ -831,7 +848,9 @@ class ListFilesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("directory_path", context)
+            dir_path = self.config.get("directory_path") or self.get_input_value(
+                "directory_path"
+            )
             pattern = self.config.get("pattern", "*")
             recursive = self.config.get("recursive", False)
 
@@ -911,7 +930,7 @@ class ListDirectoryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("dir_path", context)
+            dir_path = self.config.get("dir_path") or self.get_input_value("dir_path")
             pattern = self.config.get("pattern", "*")
             recursive = self.config.get("recursive", False)
             files_only = self.config.get("files_only", False)
@@ -997,7 +1016,8 @@ class FileExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("path", context)
+            # Try config first, then input port
+            file_path = self.config.get("path") or self.get_input_value("path")
             check_type = self.config.get("check_type", "any")
 
             if not file_path:
@@ -1071,7 +1091,9 @@ class GetFileSizeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -1138,7 +1160,9 @@ class GetFileInfoNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
 
             if not file_path:
                 raise ValueError("file_path is required")
