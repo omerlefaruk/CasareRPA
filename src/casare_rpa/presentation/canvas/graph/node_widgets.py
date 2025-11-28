@@ -65,8 +65,13 @@ class CasareComboBox:
 
         def patched_hide_popup():
             """Restore original z-value when popup closes."""
-            original_hide_popup()
-            node_widget.setZValue(node_widget._original_z)
+            try:
+                original_hide_popup()
+                if hasattr(node_widget, "_original_z"):
+                    node_widget.setZValue(node_widget._original_z)
+            except RuntimeError:
+                # Widget already deleted
+                pass
 
         # Apply patches
         combo.showPopup = patched_show_popup
@@ -92,11 +97,10 @@ class CasareCheckBox:
     def _get_checkmark_path(cls) -> str:
         """Get the checkmark asset path, cached for performance."""
         if cls._checkmark_path is None:
-            # Asset is in old canvas/assets directory
-            # TODO: Move to presentation/canvas/assets in future migration phase
             from pathlib import Path
 
-            canvas_dir = Path(__file__).parent.parent.parent.parent / "canvas"
+            # Asset is in presentation/canvas/assets directory
+            canvas_dir = Path(__file__).parent.parent
             asset_path = canvas_dir / "assets" / "checkmark.svg"
             cls._checkmark_path = asset_path.as_posix()
         return cls._checkmark_path
