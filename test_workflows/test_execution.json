@@ -1,0 +1,82 @@
+{
+  "name": "Test Execution Workflow",
+  "description": "Comprehensive test with visual nodes to verify execution",
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "start_1",
+      "type": "StartNode",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "properties": {}
+    },
+    {
+      "id": "assign_1",
+      "type": "AssignNode",
+      "position": {
+        "x": 300,
+        "y": 100
+      },
+      "properties": {
+        "variable_name": "test_message",
+        "value": "Hello from CasareRPA!",
+        "value_type": "String"
+      }
+    },
+    {
+      "id": "msgbox_1",
+      "type": "MessageBoxNode",
+      "position": {
+        "x": 500,
+        "y": 100
+      },
+      "properties": {
+        "title": "Test Execution",
+        "message": "{{test_message}}",
+        "icon": "Information",
+        "buttons": "OK"
+      }
+    },
+    {
+      "id": "log_1",
+      "type": "LogMessageNode",
+      "position": {
+        "x": 700,
+        "y": 100
+      },
+      "properties": {
+        "message": "Workflow executed successfully!",
+        "level": "INFO"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "source_node": "start_1",
+      "source_port": "exec_out",
+      "target_node": "assign_1",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "assign_1",
+      "source_port": "exec_out",
+      "target_node": "msgbox_1",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "msgbox_1",
+      "source_port": "exec_out",
+      "target_node": "log_1",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {
+    "test_message": {
+      "type": "String",
+      "default_value": "",
+      "scope": "workflow"
+    }
+  }
+}
