@@ -20,6 +20,7 @@ import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -39,6 +40,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -62,10 +64,8 @@ class TextSplitNode(BaseNode):
         self.node_type = "TextSplitNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("separator", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -111,6 +111,7 @@ class TextSplitNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -149,11 +150,9 @@ class TextReplaceNode(BaseNode):
         self.node_type = "TextReplaceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("old_value", PortType.INPUT, DataType.STRING)
         self.add_input_port("new_value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("replacements", PortType.OUTPUT, DataType.INTEGER)
 
@@ -217,6 +216,7 @@ class TextReplaceNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -239,9 +239,7 @@ class TextTrimNode(BaseNode):
         self.node_type = "TextTrimNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -281,6 +279,7 @@ class TextTrimNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -302,9 +301,7 @@ class TextCaseNode(BaseNode):
         self.node_type = "TextCaseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -344,6 +341,7 @@ class TextCaseNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -367,10 +365,8 @@ class TextPadNode(BaseNode):
         self.node_type = "TextPadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("length", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -413,6 +409,7 @@ class TextPadNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextSubstringNode(BaseNode):
     """
     Extract a substring from a string.
@@ -434,11 +431,9 @@ class TextSubstringNode(BaseNode):
         self.node_type = "TextSubstringNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("start", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("end", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("length", PortType.OUTPUT, DataType.INTEGER)
 
@@ -474,6 +469,7 @@ class TextSubstringNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -498,10 +494,8 @@ class TextContainsNode(BaseNode):
         self.node_type = "TextContainsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("search", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("contains", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("position", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
@@ -549,6 +543,7 @@ class TextContainsNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -571,10 +566,8 @@ class TextStartsWithNode(BaseNode):
         self.node_type = "TextStartsWithNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("prefix", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -612,6 +605,7 @@ class TextStartsWithNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -634,10 +628,8 @@ class TextEndsWithNode(BaseNode):
         self.node_type = "TextEndsWithNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("suffix", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -675,6 +667,7 @@ class TextEndsWithNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.
@@ -699,9 +692,7 @@ class TextLinesNode(BaseNode):
         self.node_type = "TextLinesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("input", PortType.INPUT, DataType.ANY)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -751,6 +742,7 @@ class TextLinesNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextReverseNode(BaseNode):
     """
     Reverse a string.
@@ -769,9 +761,7 @@ class TextReverseNode(BaseNode):
         self.node_type = "TextReverseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -798,6 +788,7 @@ class TextReverseNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextCountNode(BaseNode):
     """
     Count characters, words, or lines in text.
@@ -823,9 +814,7 @@ class TextCountNode(BaseNode):
         self.node_type = "TextCountNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("characters", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("words", PortType.OUTPUT, DataType.INTEGER)
@@ -883,6 +872,7 @@ class TextCountNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextJoinNode(BaseNode):
     """
     Join a list of strings with a separator.
@@ -904,10 +894,8 @@ class TextJoinNode(BaseNode):
         self.node_type = "TextJoinNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("items", PortType.INPUT, DataType.LIST)
         self.add_input_port("separator", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -946,6 +934,7 @@ class TextJoinNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.
@@ -983,10 +972,8 @@ class TextExtractNode(BaseNode):
         self.node_type = "TextExtractNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("match", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("groups", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)

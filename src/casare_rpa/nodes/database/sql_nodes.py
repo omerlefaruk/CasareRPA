@@ -24,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -100,6 +101,7 @@ class DatabaseConnection:
             self.connection = None
 
 
+@executable_node
 class DatabaseConnectNode(BaseNode):
     """
     Establish a database connection.
@@ -161,9 +163,6 @@ class DatabaseConnectNode(BaseNode):
         self.node_type = "DatabaseConnectNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("db_type", PortType.INPUT, DataType.STRING)
         self.add_input_port("host", PortType.INPUT, DataType.STRING)
         self.add_input_port("port", PortType.INPUT, DataType.INTEGER)
@@ -344,6 +343,7 @@ class DatabaseConnectNode(BaseNode):
         return DatabaseConnection("mysql", conn, f"mysql://{host}:{port}/{database}")
 
 
+@executable_node
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
@@ -386,9 +386,6 @@ class ExecuteQueryNode(BaseNode):
         self.node_type = "ExecuteQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("query", PortType.INPUT, DataType.STRING)
         self.add_input_port("parameters", PortType.INPUT, DataType.LIST)
@@ -567,6 +564,7 @@ class ExecuteQueryNode(BaseNode):
         return list(rows), columns
 
 
+@executable_node
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
@@ -608,9 +606,6 @@ class ExecuteNonQueryNode(BaseNode):
         self.node_type = "ExecuteNonQueryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("query", PortType.INPUT, DataType.STRING)
         self.add_input_port("parameters", PortType.INPUT, DataType.LIST)
@@ -788,6 +783,7 @@ class ExecuteNonQueryNode(BaseNode):
         return rows_affected, last_insert_id
 
 
+@executable_node
 class BeginTransactionNode(BaseNode):
     """
     Begin a database transaction.
@@ -812,9 +808,6 @@ class BeginTransactionNode(BaseNode):
         self.node_type = "BeginTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
 
         self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
@@ -868,6 +861,7 @@ class BeginTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class CommitTransactionNode(BaseNode):
     """
     Commit the current database transaction.
@@ -892,9 +886,6 @@ class CommitTransactionNode(BaseNode):
         self.node_type = "CommitTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
 
         self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
@@ -948,6 +939,7 @@ class CommitTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class RollbackTransactionNode(BaseNode):
     """
     Rollback the current database transaction.
@@ -972,9 +964,6 @@ class RollbackTransactionNode(BaseNode):
         self.node_type = "RollbackTransactionNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
 
         self.add_output_port("connection", PortType.OUTPUT, DataType.ANY)
@@ -1028,6 +1017,7 @@ class RollbackTransactionNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class CloseDatabaseNode(BaseNode):
     """
     Close a database connection.
@@ -1051,9 +1041,6 @@ class CloseDatabaseNode(BaseNode):
         self.node_type = "CloseDatabaseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
 
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -1093,6 +1080,7 @@ class CloseDatabaseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.
@@ -1134,9 +1122,6 @@ class ExecuteBatchNode(BaseNode):
         self.node_type = "ExecuteBatchNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("statements", PortType.INPUT, DataType.LIST)
 

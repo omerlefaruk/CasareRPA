@@ -19,6 +19,7 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -38,6 +39,7 @@ def safe_int(value, default: int) -> int:
         return default
 
 
+@executable_node
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -81,12 +83,10 @@ class FTPConnectNode(BaseNode):
         self.node_type = "FTPConnectNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("host", PortType.INPUT, DataType.STRING)
         self.add_input_port("port", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
         self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("connected", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("server_message", PortType.OUTPUT, DataType.STRING)
 
@@ -180,6 +180,7 @@ class FTPConnectNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -219,10 +220,8 @@ class FTPUploadNode(BaseNode):
         self.node_type = "FTPUploadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("local_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("uploaded", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("bytes_sent", PortType.OUTPUT, DataType.INTEGER)
 
@@ -322,6 +321,7 @@ class FTPUploadNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.
@@ -361,10 +361,8 @@ class FTPDownloadNode(BaseNode):
         self.node_type = "FTPDownloadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("local_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("downloaded", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("bytes_received", PortType.OUTPUT, DataType.INTEGER)
 
@@ -471,6 +469,7 @@ class FTPDownloadNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -493,9 +492,7 @@ class FTPListNode(BaseNode):
         self.node_type = "FTPListNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -542,6 +539,7 @@ class FTPListNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPDeleteNode(BaseNode):
     """
     Delete a file on FTP server.
@@ -560,9 +558,7 @@ class FTPDeleteNode(BaseNode):
         self.node_type = "FTPDeleteNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("deleted", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -601,6 +597,7 @@ class FTPDeleteNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.
@@ -622,9 +619,7 @@ class FTPMakeDirNode(BaseNode):
         self.node_type = "FTPMakeDirNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("created", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -676,6 +671,7 @@ class FTPMakeDirNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPRemoveDirNode(BaseNode):
     """
     Remove a directory on FTP server.
@@ -694,9 +690,7 @@ class FTPRemoveDirNode(BaseNode):
         self.node_type = "FTPRemoveDirNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("removed", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -735,6 +729,7 @@ class FTPRemoveDirNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPRenameNode(BaseNode):
     """
     Rename a file or directory on FTP server.
@@ -754,10 +749,8 @@ class FTPRenameNode(BaseNode):
         self.node_type = "FTPRenameNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("old_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("new_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("renamed", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -798,6 +791,7 @@ class FTPRenameNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPDisconnectNode(BaseNode):
     """
     Disconnect from FTP server.
@@ -813,8 +807,6 @@ class FTPDisconnectNode(BaseNode):
         self.node_type = "FTPDisconnectNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("disconnected", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -847,6 +839,7 @@ class FTPDisconnectNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class FTPGetSizeNode(BaseNode):
     """
     Get the size of a file on FTP server.
@@ -866,9 +859,7 @@ class FTPGetSizeNode(BaseNode):
         self.node_type = "FTPGetSizeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("remote_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 

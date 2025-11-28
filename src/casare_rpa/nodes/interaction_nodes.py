@@ -9,6 +9,7 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -21,6 +22,7 @@ from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 
+@executable_node
 class ClickElementNode(BaseNode):
     """
     Click element node - clicks on a page element.
@@ -77,10 +79,8 @@ class ClickElementNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -292,6 +292,7 @@ class ClickElementNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class TypeTextNode(BaseNode):
     """
     Type text node - types text into an input field.
@@ -349,11 +350,9 @@ class TypeTextNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -549,6 +548,7 @@ class TypeTextNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class SelectDropdownNode(BaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
@@ -602,11 +602,9 @@ class SelectDropdownNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_input_port("selector", PortType.INPUT, DataType.STRING)
         self.add_input_port("value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

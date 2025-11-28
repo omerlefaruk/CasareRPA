@@ -8,6 +8,7 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -214,6 +215,7 @@ class ForLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ForLoopEndNode(BaseNode):
     """
     End node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -236,8 +238,7 @@ class ForLoopEndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        pass  # exec_in and exec_out added by @executable_node decorator
 
     def set_paired_start(self, start_node_id: str) -> None:
         """Set the paired ForLoopStart node ID."""
@@ -396,6 +397,7 @@ class WhileLoopStartNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class WhileLoopEndNode(BaseNode):
     """
     End node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -416,8 +418,7 @@ class WhileLoopEndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        pass  # exec_in and exec_out added by @executable_node decorator
 
     def set_paired_start(self, start_node_id: str) -> None:
         """Set the paired WhileLoopStart node ID."""
@@ -450,6 +451,7 @@ class WhileLoopEndNode(BaseNode):
         }
 
 
+@executable_node
 class BreakNode(BaseNode):
     """
     Loop control node that exits from the current loop.
@@ -466,8 +468,7 @@ class BreakNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        pass  # exec_in and exec_out added by @executable_node decorator
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -497,6 +498,7 @@ class BreakNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ContinueNode(BaseNode):
     """
     Loop control node that skips to next iteration.
@@ -514,8 +516,7 @@ class ContinueNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
+        pass  # exec_in and exec_out added by @executable_node decorator
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

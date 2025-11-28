@@ -15,7 +15,7 @@ All tests verify ExecutionResult pattern compliance.
 import pytest
 from unittest.mock import Mock
 
-# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.control_flow_nodes import (
     IfNode,
     ForLoopStartNode,

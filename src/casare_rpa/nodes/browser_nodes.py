@@ -9,6 +9,7 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -20,6 +21,7 @@ from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 
 
+@executable_node
 class LaunchBrowserNode(BaseNode):
     """
     Launch browser node - creates a new browser instance.
@@ -80,9 +82,7 @@ class LaunchBrowserNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
@@ -287,6 +287,7 @@ class LaunchBrowserNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class CloseBrowserNode(BaseNode):
     """
     Close browser node - closes the browser instance.
@@ -322,9 +323,7 @@ class CloseBrowserNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port("browser", PortType.INPUT, DataType.BROWSER)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -412,6 +411,7 @@ class CloseBrowserNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class NewTabNode(BaseNode):
     """
     New tab node - creates a new browser tab/page.
@@ -454,11 +454,9 @@ class NewTabNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
         self.add_input_port(
             "browser", PortType.INPUT, DataType.BROWSER, required=False
         )  # Optional: uses context browser if not connected
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -609,6 +607,7 @@ class NewTabNode(BaseNode):
         return True, ""
 
 
+@executable_node
 class GetAllImagesNode(BaseNode):
     """
     Get all images from the current page.
@@ -642,8 +641,6 @@ class GetAllImagesNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_output_port("images", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -781,6 +778,7 @@ class GetAllImagesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DownloadFileNode(BaseNode):
     """
     Download a file from URL to local path.
@@ -820,8 +818,6 @@ class DownloadFileNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("filename", PortType.INPUT, DataType.STRING)
         self.add_output_port("path", PortType.OUTPUT, DataType.STRING)

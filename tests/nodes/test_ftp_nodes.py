@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch, MagicMock, call
 import ftplib
 from pathlib import Path
 
-# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class TestFTPNodes:

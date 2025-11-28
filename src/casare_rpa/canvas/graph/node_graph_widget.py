@@ -3,22 +3,27 @@ Node graph widget wrapper for NodeGraphQt integration.
 
 This module provides a wrapper around NodeGraphQt's NodeGraph
 to integrate it with the PySide6 application.
+
+The NodeGraphQt library has several bugs and limitations that are fixed
+via wrapper classes in node_widgets.py. All fixes are applied at module
+load time by calling apply_all_node_widget_fixes().
 """
 
 from typing import Optional
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QComboBox
-from PySide6.QtGui import QPen, QPainter, QPainterPath, QColor
-from PySide6.QtCore import Qt, QObject, QEvent, Signal
+from PySide6.QtCore import QEvent, QObject, Qt, Signal
+from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import QVBoxLayout, QWidget
+
+from loguru import logger
 from NodeGraphQt import NodeGraph
 from NodeGraphQt.qgraphics.node_base import NodeItem
 
-from loguru import logger
-
 from ..connections.auto_connect import AutoConnectManager
 from ..connections.connection_cutter import ConnectionCutter
-from .node_quick_actions import NodeQuickActions
 from .custom_pipe import CasarePipe
+from .node_quick_actions import NodeQuickActions
+from .node_widgets import apply_all_node_widget_fixes
 
 # Import connection validator for strict type checking
 try:
@@ -34,206 +39,16 @@ except ImportError:
 
 
 # ============================================================================
-# FIX: Combo box dropdown z-order issue in QGraphicsProxyWidget
+# Apply all NodeGraphQt fixes via wrapper classes
 # ============================================================================
-# When QComboBox is embedded in a QGraphicsProxyWidget, the dropdown popup
-# can get clipped by other widgets in the same node. This fix ensures the
-# popup appears as a top-level window above all graphics items.
+# This replaces the inline monkey-patches that were previously scattered
+# throughout this module. The fixes are now encapsulated in node_widgets.py:
+#   - CasareComboBox: Fixes combo dropdown z-order issue
+#   - CasareCheckBox: Adds dark blue checkbox styling
+#   - CasareLivePipe: Fixes draw_index_pointer text_pos bug
+#   - CasarePipeItemFix: Fixes draw_path viewer None crash
 
-try:
-    from NodeGraphQt.widgets.node_widgets import NodeComboBox
-
-    # Store original z-value for restoration
-    COMBO_RAISED_Z = 10000  # Very high z-value when popup is open
-
-    _original_node_combo_init = NodeComboBox.__init__
-
-    def _patched_node_combo_init(self, parent=None, name="", label="", items=None):
-        """Patched init to fix combo dropdown z-order."""
-        _original_node_combo_init(self, parent, name, label, items)
-        self._original_z = self.zValue()
-
-        # Get the combo widget and patch showPopup/hidePopup
-        combo = self.get_custom_widget()
-        if combo and isinstance(combo, QComboBox):
-            node_widget = self  # Capture reference for closures
-
-            # Store original methods
-            _original_show_popup = combo.showPopup
-            _original_hide_popup = combo.hidePopup
-
-            def patched_show_popup():
-                # Raise z-value when popup opens
-                node_widget.setZValue(COMBO_RAISED_Z)
-                _original_show_popup()
-
-            def patched_hide_popup():
-                _original_hide_popup()
-                # Restore original z-value when popup closes
-                node_widget.setZValue(node_widget._original_z)
-
-            combo.showPopup = patched_show_popup
-            combo.hidePopup = patched_hide_popup
-
-    NodeComboBox.__init__ = _patched_node_combo_init
-    logger.debug("Patched NodeComboBox for proper dropdown z-order")
-
-except Exception as e:
-    logger.warning(f"Could not patch NodeComboBox: {e}")
-
-
-# ============================================================================
-# FIX: Checkbox styling in nodes - dark blue with white checkmark
-# ============================================================================
-try:
-    from NodeGraphQt.widgets.node_widgets import NodeCheckBox
-    from pathlib import Path
-
-    # Get checkmark asset path
-    CHECKMARK_PATH = (Path(__file__).parent / "assets" / "checkmark.svg").as_posix()
-
-    _original_node_checkbox_init = NodeCheckBox.__init__
-
-    def _patched_node_checkbox_init(
-        self, parent=None, name="", label="", text="", state=False
-    ):
-        """Patched init to add dark blue styling with white checkmark."""
-        _original_node_checkbox_init(self, parent, name, label, text, state)
-
-        # Get the checkbox widget and add custom styling
-        checkbox = self.get_custom_widget()
-        if checkbox:
-            # Apply dark blue checkbox styling with white checkmark
-            checkbox_style = f"""
-                QCheckBox::indicator {{
-                    width: 18px;
-                    height: 18px;
-                    border: 2px solid #3E3E42;
-                    border-radius: 3px;
-                    background-color: #252526;
-                }}
-
-                QCheckBox::indicator:unchecked:hover {{
-                    border-color: #0063B1;
-                }}
-
-                QCheckBox::indicator:checked {{
-                    background-color: #0063B1;
-                    border-color: #0063B1;
-                    image: url({CHECKMARK_PATH});
-                }}
-
-                QCheckBox::indicator:checked:hover {{
-                    background-color: #005A9E;
-                    border-color: #005A9E;
-                }}
-            """
-            # Append to existing stylesheet
-            existing_style = checkbox.styleSheet()
-            checkbox.setStyleSheet(existing_style + checkbox_style)
-
-    NodeCheckBox.__init__ = _patched_node_checkbox_init
-    logger.debug("Patched NodeCheckBox for dark blue styling with white checkmark")
-
-except Exception as e:
-    logger.warning(f"Could not patch NodeCheckBox: {e}")
-
-
-# Import pipe classes and fix NodeGraphQt bug in draw_index_pointer
-try:
-    from NodeGraphQt.qgraphics.pipe import (
-        PipeItem,
-        LivePipeItem,
-        LayoutDirectionEnum,
-        PortTypeEnum,
-        PipeEnum,
-    )
-    from PySide6.QtGui import QColor as _QColor, QTransform as _QTransform
-
-    # Fix NodeGraphQt bug: text_pos undefined when viewer_layout_direction() returns None
-    _original_draw_index_pointer = LivePipeItem.draw_index_pointer
-
-    def _fixed_draw_index_pointer(self, start_port, cursor_pos, color=None):
-        """Fixed version - always initializes text_pos before use."""
-        if start_port is None:
-            return
-
-        text_rect = self._idx_text.boundingRect()
-        transform = _QTransform()
-        transform.translate(cursor_pos.x(), cursor_pos.y())
-
-        layout_dir = self.viewer_layout_direction()
-
-        # FIX: Always initialize text_pos with default value
-        text_pos = (
-            cursor_pos.x() - (text_rect.width() / 2),
-            cursor_pos.y() - (text_rect.height() * 1.25),
-        )
-
-        # Use == instead of 'is' for reliable comparison
-        if layout_dir == LayoutDirectionEnum.VERTICAL.value:
-            text_pos = (
-                cursor_pos.x() + (text_rect.width() / 2.5),
-                cursor_pos.y() - (text_rect.height() / 2),
-            )
-            if start_port.port_type == PortTypeEnum.OUT.value:
-                transform.rotate(180)
-        elif layout_dir == LayoutDirectionEnum.HORIZONTAL.value:
-            text_pos = (
-                cursor_pos.x() - (text_rect.width() / 2),
-                cursor_pos.y() - (text_rect.height() * 1.25),
-            )
-            if start_port.port_type == PortTypeEnum.IN.value:
-                transform.rotate(-90)
-            else:
-                transform.rotate(90)
-
-        self._idx_text.setPos(*text_pos)
-        self._idx_text.setPlainText("{}".format(start_port.name))
-        self._idx_pointer.setPolygon(transform.map(self._poly))
-
-        pen_color = _QColor(*PipeEnum.HIGHLIGHT_COLOR.value)
-        if isinstance(color, (list, tuple)):
-            pen_color = _QColor(*color)
-
-        pen = self._idx_pointer.pen()
-        pen.setColor(pen_color)
-        self._idx_pointer.setBrush(pen_color.darker(300))
-        self._idx_pointer.setPen(pen)
-
-    LivePipeItem.draw_index_pointer = _fixed_draw_index_pointer
-    logger.debug("Fixed LivePipeItem.draw_index_pointer text_pos bug")
-
-except Exception as e:
-    logger.warning(f"Could not fix draw_index_pointer: {e}")
-
-
-# ============================================================================
-# FIX: PipeItem.draw_path crashes when viewer() returns None
-# ============================================================================
-# This happens during workflow loading or undo/redo when pipes are redrawn
-# before the scene is fully set up. We patch draw_path to handle None viewer.
-
-try:
-    from NodeGraphQt.qgraphics.pipe import PipeItem
-
-    _original_pipe_draw_path = PipeItem.draw_path
-
-    def _patched_pipe_draw_path(self, start_port, end_port=None, cursor_pos=None):
-        """Patched draw_path that handles viewer() returning None."""
-        # Check if viewer is available before proceeding
-        viewer = self.viewer()
-        if viewer is None:
-            # Viewer not ready - skip drawing, will be called again later
-            return
-        # Call original method
-        return _original_pipe_draw_path(self, start_port, end_port, cursor_pos)
-
-    PipeItem.draw_path = _patched_pipe_draw_path
-    logger.debug("Patched PipeItem.draw_path for viewer None safety")
-
-except Exception as e:
-    logger.warning(f"Could not patch PipeItem.draw_path: {e}")
+apply_all_node_widget_fixes()
 
 
 class TooltipBlocker(QObject):
@@ -944,7 +759,7 @@ class NodeGraphWidget(QWidget):
                         if tab_on_node_created and hasattr(self._graph, "node_created"):
                             try:
                                 self._graph.node_created.disconnect(tab_on_node_created)
-                            except:
+                            except (RuntimeError, TypeError):
                                 pass
 
                     # If menu was cancelled and we were dragging, end the connection
@@ -1447,7 +1262,7 @@ class NodeGraphWidget(QWidget):
             # ALWAYS disconnect handler after menu closes (whether node created or cancelled)
             try:
                 self._graph.node_created.disconnect(on_node_created)
-            except:
+            except (RuntimeError, TypeError):
                 pass  # Already disconnected or never connected
 
     def _auto_connect_new_node(self, new_node, source_port_item):

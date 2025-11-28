@@ -22,6 +22,7 @@ from aiohttp import ClientTimeout, FormData
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -31,6 +32,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
+@executable_node
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
@@ -59,9 +61,6 @@ class SetHttpHeadersNode(BaseNode):
         self.node_type = "SetHttpHeadersNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("base_headers", PortType.INPUT, DataType.DICT)
         self.add_input_port("header_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("header_value", PortType.INPUT, DataType.STRING)
@@ -115,6 +114,7 @@ class SetHttpHeadersNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
@@ -140,9 +140,6 @@ class ParseJsonResponseNode(BaseNode):
         self.node_type = "ParseJsonResponseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("json_data", PortType.INPUT, DataType.ANY)
         self.add_input_port("path", PortType.INPUT, DataType.STRING)
         self.add_input_port("default", PortType.INPUT, DataType.ANY)
@@ -226,6 +223,7 @@ class ParseJsonResponseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
@@ -272,9 +270,6 @@ class HttpDownloadFileNode(BaseNode):
         self.node_type = "HttpDownloadFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("save_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("headers", PortType.INPUT, DataType.DICT)
@@ -388,6 +383,7 @@ class HttpDownloadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
@@ -434,9 +430,6 @@ class HttpUploadFileNode(BaseNode):
         self.node_type = "HttpUploadFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("field_name", PortType.INPUT, DataType.STRING)
@@ -568,6 +561,7 @@ class HttpUploadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
+@executable_node
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.
@@ -593,9 +587,6 @@ class BuildUrlNode(BaseNode):
         self.node_type = "BuildUrlNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("base_url", PortType.INPUT, DataType.STRING)
         self.add_input_port("path", PortType.INPUT, DataType.STRING)
         self.add_input_port("params", PortType.INPUT, DataType.DICT)

@@ -135,8 +135,8 @@ class ExampleWorkflowController(EventHandler):
         if not file_path.exists():
             raise FileNotFoundError(f"Workflow file not found: {file_path}")
 
-        # TODO: In real implementation, load workflow from file
-        # For now, just update state
+        # Example stub: actual file loading uses WorkflowStorage.load()
+        # This example demonstrates controller pattern only
 
         # Update state
         self._current_file = file_path
@@ -179,12 +179,14 @@ class ExampleWorkflowController(EventHandler):
 
         logger.info(f"Saving workflow to: {file_path}")
 
-        # TODO: In real implementation, save workflow to file
-        # For now, just update state
+        # Example stub: actual file saving uses WorkflowStorage.save()
+        # This example demonstrates controller pattern only
 
         # Determine event type
         is_save_as = self._current_file != file_path
-        event_type = EventType.WORKFLOW_SAVE_AS if is_save_as else EventType.WORKFLOW_SAVED
+        event_type = (
+            EventType.WORKFLOW_SAVE_AS if is_save_as else EventType.WORKFLOW_SAVED
+        )
 
         # Update state
         self._current_file = file_path

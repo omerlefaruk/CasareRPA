@@ -51,6 +51,7 @@ class DataType(Enum):
     ELEMENT = auto()  # Web element reference
     PAGE = auto()  # Playwright page object
     BROWSER = auto()  # Playwright browser instance
+    EXEC = auto()  # Execution flow marker (no data, just triggers execution)
 
 
 class ExecutionMode(Enum):

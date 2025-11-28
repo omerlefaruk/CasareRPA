@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -35,6 +36,7 @@ if AIOMYSQL_AVAILABLE:
     import aiomysql
 
 
+@executable_node
 class TableExistsNode(BaseNode):
     """
     Check if a table exists in the database.
@@ -59,9 +61,6 @@ class TableExistsNode(BaseNode):
         self.node_type = "TableExistsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("table_name", PortType.INPUT, DataType.STRING)
 
@@ -158,6 +157,7 @@ class TableExistsNode(BaseNode):
         return row is not None
 
 
+@executable_node
 class GetTableColumnsNode(BaseNode):
     """
     Get column information for a table.
@@ -185,9 +185,6 @@ class GetTableColumnsNode(BaseNode):
         self.node_type = "GetTableColumnsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("exec_in", PortType.EXEC_INPUT)
-        self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
-
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("table_name", PortType.INPUT, DataType.STRING)
 

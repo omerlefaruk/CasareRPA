@@ -10,7 +10,7 @@ from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
 from casare_rpa.domain.value_objects.types import PortType, DataType
-from casare_rpa.infrastructure.adapters.port_type_system import (
+from casare_rpa.domain.port_type_system import (
     PortTypeRegistry,
     get_port_type_registry,
 )

@@ -362,13 +362,15 @@ class ElementTreeWidget(QWidget):
             return selected_items[0].element
         return None
 
-    def expand_to_element(self, target_element: DesktopElement):
+    def expand_to_element(self, target_element: DesktopElement) -> None:
         """
-        Expand tree to show and select a specific element
+        Expand tree to show and select a specific element.
+
+        Requires walking up the tree to find the path from root to target.
+        Currently not implemented - would need parent tracking in DesktopElement.
 
         Args:
             target_element: Element to expand to
         """
-        # TODO: Implement path-based expansion
-        # This would require walking up the tree to find the path
-        pass
+        # Path-based expansion requires parent tracking in DesktopElement
+        logger.debug(f"expand_to_element called for {target_element}, not implemented")

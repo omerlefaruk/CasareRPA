@@ -13,7 +13,7 @@ from .variable_resolver import (
     extract_variable_names,
     has_variables,
 )
-from .validation import (
+from ..validation import (
     ValidationSeverity,
     ValidationIssue,
     ValidationResult,
