@@ -137,6 +137,9 @@ class ExecutionLifecycleManager:
                 pause_event=pause_event,
             )
 
+            # Transition to RUNNING before releasing lock
+            # This ensures state consistency - any concurrent is_running() checks
+            # will see RUNNING state before task actually starts executing
             self._state = ExecutionState.RUNNING
             logger.info(f"Started workflow execution session: {session_id}")
             return True
@@ -328,14 +331,18 @@ class ExecutionLifecycleManager:
                     ):
                         pid = browser._impl_obj._proc.pid
                         self._orphaned_browser_pids.add(pid)
-                        logger.debug(f"Tracking browser PID {pid} for cleanup (via Playwright internal API)")
+                        logger.debug(
+                            f"Tracking browser PID {pid} for cleanup (via Playwright internal API)"
+                        )
                     else:
                         logger.warning(
                             "Playwright internal API changed - cannot track browser PID. "
                             "Orphaned browser processes may not be cleaned up automatically."
                         )
         except Exception as e:
-            logger.warning(f"Could not track browser PID: {e}. Orphan cleanup may be incomplete.")
+            logger.warning(
+                f"Could not track browser PID: {e}. Orphan cleanup may be incomplete."
+            )
 
     async def _force_cleanup(self):
         """Force cleanup of orphaned resources."""

@@ -53,7 +53,7 @@ def executable_node(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def node_schema(*property_defs: PropertyDef):
+def node_schema(*property_defs: PropertyDef, strict: bool = False):
     """
     Decorator to attach property schema to node class.
 
@@ -83,6 +83,8 @@ def node_schema(*property_defs: PropertyDef):
 
     Args:
         *property_defs: Variable number of PropertyDef instances
+        strict: If True, raise ValueError on validation failure.
+                If False (default), log warning and continue (backward compatible).
 
     Returns:
         Decorator function that attaches schema to class
@@ -110,7 +112,16 @@ def node_schema(*property_defs: PropertyDef):
             # Validate config against schema
             valid, error = schema.validate_config(config)
             if not valid:
-                logger.warning(f"Config validation failed for {cls.__name__}: {error}")
+                if strict:
+                    # Strict mode: Raise exception on validation failure
+                    raise ValueError(
+                        f"Invalid configuration for {cls.__name__}: {error}"
+                    )
+                else:
+                    # Lenient mode: Log warning and continue (backward compatible)
+                    logger.warning(
+                        f"Config validation failed for {cls.__name__}: {error}"
+                    )
 
             # Update kwargs with merged config
             kwargs["config"] = config
