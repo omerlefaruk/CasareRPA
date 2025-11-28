@@ -681,6 +681,7 @@ __all__ = [
     "MoveFileNode",
     "CreateDirectoryNode",
     "ListDirectoryNode",
+    "ListFilesNode",
     "FileExistsNode",
     "GetFileInfoNode",
     "ReadCSVNode",
