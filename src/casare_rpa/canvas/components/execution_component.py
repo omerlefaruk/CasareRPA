@@ -14,7 +14,7 @@ from typing import Optional, TYPE_CHECKING
 from loguru import logger
 
 from .base_component import BaseComponent
-from ...core.events import EventType, get_event_bus
+from casare_rpa.domain.events import EventType, get_event_bus
 from ...runner.workflow_runner import WorkflowRunner
 from ...utils.settings_manager import get_settings_manager
 from ...project.project_manager import get_project_manager

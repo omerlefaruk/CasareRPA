@@ -14,8 +14,8 @@ from enum import Enum, auto
 from typing import List, Optional, TYPE_CHECKING
 
 
-from ...core.types import DataType
-from ...core.port_type_system import PortTypeRegistry, get_port_type_registry
+from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.domain.port_type_system import PortTypeRegistry, get_port_type_registry
 
 if TYPE_CHECKING:
     from ..visual_nodes.base_visual_node import VisualNode

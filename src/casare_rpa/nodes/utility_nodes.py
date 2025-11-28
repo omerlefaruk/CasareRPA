@@ -14,9 +14,14 @@ from enum import Enum
 import aiohttp
 from loguru import logger
 
-from ..core.base_node import BaseNode
-from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
-from ..core.execution_context import ExecutionContext
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import (
+    NodeStatus,
+    PortType,
+    DataType,
+    ExecutionResult,
+)
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class HttpMethod(str, Enum):

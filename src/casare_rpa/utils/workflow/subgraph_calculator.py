@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
-from ...core.types import NodeId
-from ...core.workflow_schema import NodeConnection
+from casare_rpa.domain.value_objects.types import NodeId
+from casare_rpa.domain.entities.node_connection import NodeConnection
 
 
 class SubgraphCalculator:

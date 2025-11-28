@@ -10,8 +10,8 @@ Provides nodes for waiting and verifying desktop element states:
 
 from typing import Any, Dict
 
-from ...core.base_node import BaseNode
-from ...core.types import DataType, NodeStatus
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 
 
 def safe_int(value, default: int) -> int:

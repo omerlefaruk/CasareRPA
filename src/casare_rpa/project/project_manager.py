@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 from loguru import logger
 
-from ..core.project_schema import (
+from casare_rpa.domain.project_schema import (
     Project,
     Scenario,
     VariablesFile,

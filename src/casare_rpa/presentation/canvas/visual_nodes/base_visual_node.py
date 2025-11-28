@@ -8,9 +8,12 @@ from typing import Optional, Dict
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtGui import QColor
 
-from casare_rpa.core.base_node import BaseNode as CasareBaseNode
+from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
 from casare_rpa.domain.value_objects.types import PortType, DataType
-from casare_rpa.core.port_type_system import PortTypeRegistry, get_port_type_registry
+from casare_rpa.infrastructure.adapters.port_type_system import (
+    PortTypeRegistry,
+    get_port_type_registry,
+)
 from casare_rpa.canvas.graph.custom_node_item import CasareNodeItem
 
 # VSCode Dark+ color scheme for nodes
@@ -109,7 +112,7 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns cached file path for NodeGraphQt model.icon (required for JSON serialization).
         The file is only generated once per node type thanks to path caching.
         """
-        from ..graph.node_icons import get_cached_node_icon_path
+        from casare_rpa.canvas.graph.node_icons import get_cached_node_icon_path
 
         # Use the node name to get the appropriate icon path
         node_name = self.NODE_NAME

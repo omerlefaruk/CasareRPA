@@ -11,9 +11,14 @@ from loguru import logger
 import asyncio
 import json
 
-from ..core.base_node import BaseNode
-from ..core.execution_context import ExecutionContext
-from ..core.types import PortType, DataType, NodeStatus, ExecutionResult
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.domain.value_objects.types import (
+    PortType,
+    DataType,
+    NodeStatus,
+    ExecutionResult,
+)
 
 
 class TryNode(BaseNode):
