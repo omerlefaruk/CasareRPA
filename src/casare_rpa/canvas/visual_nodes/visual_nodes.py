@@ -3806,7 +3806,7 @@ class VisualExecuteBatchNode(VisualNode):
 # HTTP/REST API Nodes
 
 
-class VisualHttpRequestNode(VisualNode):
+class VisualHttpRequestNodeV2(VisualNode):
     """Visual representation of HttpRequestNode."""
 
     __identifier__ = "casare_rpa.http"
