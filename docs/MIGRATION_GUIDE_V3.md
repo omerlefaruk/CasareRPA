@@ -62,7 +62,12 @@ from casare_rpa.presentation.canvas.visual_nodes.basic import VisualStartNode
 
 **Re-export wrappers** - Deleted
 
-Old wrapper modules (`*_nodes.py`) are removed in favor of package imports.
+Only the following wrapper files were deleted:
+- `file_nodes.py` (replaced by `nodes/file/`)
+- `http_nodes.py` (replaced by `nodes/http/`)
+- `database_nodes.py` (replaced by `nodes/database/`)
+
+Other `*_nodes.py` files (`browser_nodes.py`, `pdf_nodes.py`, etc.) are implementation files, not wrappers, and remain unchanged.
 
 ```python
 # v2.x (deprecated)
