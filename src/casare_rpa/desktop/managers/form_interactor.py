@@ -6,7 +6,6 @@ All operations are async-first with proper error handling.
 """
 
 import asyncio
-import time
 from typing import Union
 
 import uiautomation as auto
@@ -21,7 +20,7 @@ class FormInteractor:
 
     Provides async methods for interacting with dropdowns, checkboxes,
     radio buttons, tabs, tree items, and scrollable elements.
-    Uses asyncio.to_thread() for blocking UIAutomation calls.
+    Uses asyncio.to_thread() for blocking UIAutomation calls and asyncio.sleep() for delays.
     """
 
     def __init__(self) -> None:
@@ -47,19 +46,21 @@ class FormInteractor:
         """
         logger.debug(f"Selecting '{value}' from dropdown (by_text={by_text})")
 
-        def _select() -> bool:
-            control = element._control
-
+        def _try_expand_and_select_pattern(control: auto.Control) -> bool:
+            """Try expand pattern and selection pattern - returns True if successful."""
             try:
                 expand_pattern = control.GetExpandCollapsePattern()
                 if expand_pattern:
                     expand_state = expand_pattern.ExpandCollapseState
                     if expand_state == auto.ExpandCollapseState.Collapsed:
                         expand_pattern.Expand()
-                        time.sleep(0.2)
+                        return True
             except Exception as e:
                 logger.debug(f"Could not expand dropdown: {e}")
+            return False
 
+        def _try_selection_pattern(control: auto.Control) -> Union[bool, None]:
+            """Try selection pattern - returns True if successful, None if not applicable."""
             try:
                 selection_pattern = control.GetSelectionPattern()
                 if selection_pattern:
@@ -92,7 +93,10 @@ class FormInteractor:
                                         return True
             except Exception as e:
                 logger.debug(f"SelectionPattern failed: {e}")
+            return None
 
+        def _try_value_pattern(control: auto.Control) -> Union[bool, None]:
+            """Try value pattern - returns True if successful, None if not applicable."""
             try:
                 value_pattern = control.GetValuePattern()
                 if value_pattern and not value_pattern.IsReadOnly:
@@ -101,10 +105,11 @@ class FormInteractor:
                     return True
             except Exception as e:
                 logger.debug(f"ValuePattern failed: {e}")
+            return None
 
+        def _click_and_find_list(control: auto.Control) -> Union[auto.Control, None]:
+            """Click control and find popup list."""
             control.Click()
-            time.sleep(0.3)
-
             list_control = None
             for child in auto.GetRootControl().GetChildren():
                 if child.ControlTypeName in [
@@ -115,31 +120,54 @@ class FormInteractor:
                     if child.BoundingRectangle.width() > 0:
                         list_control = child
                         break
+            return list_control
+
+        def _select_from_list(list_control: auto.Control) -> bool:
+            """Select item from popup list."""
+            for item in list_control.GetChildren():
+                item_text = item.Name or ""
+                if by_text and (
+                    item_text == value or value.lower() in item_text.lower()
+                ):
+                    item.Click()
+                    logger.info(f"Selected '{item_text}' from dropdown list")
+                    return True
+                elif not by_text:
+                    try:
+                        idx = int(value)
+                        items = list(list_control.GetChildren())
+                        if 0 <= idx < len(items):
+                            items[idx].Click()
+                            logger.info(f"Selected item at index {idx}")
+                            return True
+                    except ValueError:
+                        pass
+            return False
+
+        try:
+            control = element._control
+
+            expanded = await asyncio.to_thread(_try_expand_and_select_pattern, control)
+            if expanded:
+                await asyncio.sleep(0.2)
+
+            result = await asyncio.to_thread(_try_selection_pattern, control)
+            if result is True:
+                return True
+
+            result = await asyncio.to_thread(_try_value_pattern, control)
+            if result is True:
+                return True
+
+            list_control = await asyncio.to_thread(_click_and_find_list, control)
+            await asyncio.sleep(0.3)
 
             if list_control:
-                for item in list_control.GetChildren():
-                    item_text = item.Name or ""
-                    if by_text and (
-                        item_text == value or value.lower() in item_text.lower()
-                    ):
-                        item.Click()
-                        logger.info(f"Selected '{item_text}' from dropdown list")
-                        return True
-                    elif not by_text:
-                        try:
-                            idx = int(value)
-                            items = list(list_control.GetChildren())
-                            if 0 <= idx < len(items):
-                                items[idx].Click()
-                                logger.info(f"Selected item at index {idx}")
-                                return True
-                        except ValueError:
-                            pass
+                if await asyncio.to_thread(_select_from_list, list_control):
+                    return True
 
             raise ValueError(f"Could not find item '{value}' in dropdown")
 
-        try:
-            return await asyncio.to_thread(_select)
         except Exception as e:
             error_msg = f"Failed to select from dropdown: {e}"
             logger.error(error_msg)
@@ -416,9 +444,8 @@ class FormInteractor:
 
         direction = direction.lower()
 
-        def _scroll() -> bool:
-            control = element._control
-
+        def _try_scroll_pattern(control: auto.Control) -> Union[bool, None]:
+            """Try scroll pattern - returns True if successful, None if not applicable."""
             try:
                 scroll_pattern = control.GetScrollPattern()
                 if scroll_pattern:
@@ -447,39 +474,55 @@ class FormInteractor:
                     return True
             except Exception as e:
                 logger.debug(f"ScrollPattern failed: {e}")
+            return None
 
+        def _set_focus(control: auto.Control) -> None:
+            """Set focus on control."""
             control.SetFocus()
-            time.sleep(0.1)
 
-            if direction in ["up", "down"]:
-                rect = control.BoundingRectangle
-                center_x = rect.left + rect.width() // 2
-                center_y = rect.top + rect.height() // 2
+        def _scroll_with_wheel(control: auto.Control) -> bool:
+            """Scroll using mouse wheel."""
+            rect = control.BoundingRectangle
+            center_x = rect.left + rect.width() // 2
+            center_y = rect.top + rect.height() // 2
 
-                wheel_delta = (
-                    3 if isinstance(amount, str) else max(1, int(float(amount) * 5))
-                )
+            wheel_delta = (
+                3 if isinstance(amount, str) else max(1, int(float(amount) * 5))
+            )
 
-                if direction == "down":
-                    auto.WheelDown(center_x, center_y, wheelTimes=wheel_delta)
-                else:
-                    auto.WheelUp(center_x, center_y, wheelTimes=wheel_delta)
-
-                logger.info(f"Scrolled {direction} using mouse wheel")
-                return True
+            if direction == "down":
+                auto.WheelDown(center_x, center_y, wheelTimes=wheel_delta)
             else:
-                key = "{Right}" if direction == "right" else "{Left}"
-                times = (
-                    5 if isinstance(amount, str) else max(1, int(float(amount) * 10))
-                )
-                for _ in range(times):
-                    control.SendKeys(key)
+                auto.WheelUp(center_x, center_y, wheelTimes=wheel_delta)
 
-                logger.info(f"Scrolled {direction} using keyboard")
-                return True
+            logger.info(f"Scrolled {direction} using mouse wheel")
+            return True
+
+        def _scroll_with_keyboard(control: auto.Control) -> bool:
+            """Scroll using keyboard."""
+            key = "{Right}" if direction == "right" else "{Left}"
+            times = 5 if isinstance(amount, str) else max(1, int(float(amount) * 10))
+            for _ in range(times):
+                control.SendKeys(key)
+
+            logger.info(f"Scrolled {direction} using keyboard")
+            return True
 
         try:
-            return await asyncio.to_thread(_scroll)
+            control = element._control
+
+            result = await asyncio.to_thread(_try_scroll_pattern, control)
+            if result is True:
+                return True
+
+            await asyncio.to_thread(_set_focus, control)
+            await asyncio.sleep(0.1)
+
+            if direction in ["up", "down"]:
+                return await asyncio.to_thread(_scroll_with_wheel, control)
+            else:
+                return await asyncio.to_thread(_scroll_with_keyboard, control)
+
         except Exception as e:
             error_msg = f"Failed to scroll element: {e}"
             logger.error(error_msg)

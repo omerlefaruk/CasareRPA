@@ -7,7 +7,6 @@ All operations are async-first with proper error handling.
 
 import asyncio
 import ctypes
-import time
 from typing import Tuple
 
 import uiautomation as auto
@@ -19,7 +18,7 @@ class MouseController:
     Controls mouse operations for desktop automation.
 
     Provides async methods for mouse movement, clicks, and drag operations.
-    Uses asyncio.to_thread() for blocking operations.
+    Uses asyncio.to_thread() for blocking operations and asyncio.sleep() for delays.
     """
 
     # Mouse event constants
@@ -51,31 +50,26 @@ class MouseController:
         """
         logger.debug(f"Moving mouse to ({x}, {y}) over {duration}s")
 
-        def _move_instant() -> bool:
-            ctypes.windll.user32.SetCursorPos(x, y)
-            return True
-
-        def _move_animated() -> bool:
-            start_x, start_y = self._get_position_sync()
-            steps = max(10, int(duration * 60))
-
-            for i in range(steps + 1):
-                progress = i / steps
-                ease = 1 - (1 - progress) ** 2
-                current_x = int(start_x + (x - start_x) * ease)
-                current_y = int(start_y + (y - start_y) * ease)
-                ctypes.windll.user32.SetCursorPos(current_x, current_y)
-                time.sleep(duration / steps)
-            return True
-
         try:
             if duration > 0:
-                result = await asyncio.to_thread(_move_animated)
+                start_x, start_y = await self.get_position()
+                steps = max(10, int(duration * 60))
+                step_delay = duration / steps
+
+                for i in range(steps + 1):
+                    progress = i / steps
+                    ease = 1 - (1 - progress) ** 2
+                    current_x = int(start_x + (x - start_x) * ease)
+                    current_y = int(start_y + (y - start_y) * ease)
+                    await asyncio.to_thread(
+                        ctypes.windll.user32.SetCursorPos, current_x, current_y
+                    )
+                    await asyncio.sleep(step_delay)
             else:
-                result = await asyncio.to_thread(_move_instant)
+                await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, x, y)
 
             logger.info(f"Moved mouse to ({x}, {y})")
-            return result
+            return True
 
         except Exception as e:
             error_msg = f"Failed to move mouse: {e}"
@@ -121,32 +115,26 @@ class MouseController:
         button = button.lower()
         click_type = click_type.lower()
 
-        def _do_click() -> bool:
-            nonlocal x, y
-
+        try:
             if x is None or y is None:
-                x, y = self._get_position_sync()
+                x, y = await self.get_position()
 
-            ctypes.windll.user32.SetCursorPos(x, y)
+            await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, x, y)
 
             clicks = {"single": 1, "double": 2, "triple": 3}[click_type]
 
-            for _ in range(clicks):
+            for i in range(clicks):
                 if button == "left":
-                    auto.Click(x, y)
+                    await asyncio.to_thread(auto.Click, x, y)
                 elif button == "right":
-                    auto.RightClick(x, y)
+                    await asyncio.to_thread(auto.RightClick, x, y)
                 elif button == "middle":
-                    auto.MiddleClick(x, y)
-                if clicks > 1:
-                    time.sleep(0.05)
+                    await asyncio.to_thread(auto.MiddleClick, x, y)
+                if i < clicks - 1:
+                    await asyncio.sleep(0.05)
 
-            return True
-
-        try:
-            result = await asyncio.to_thread(_do_click)
             logger.info(f"Clicked {button} {click_type} at ({x}, {y})")
-            return result
+            return True
 
         except Exception as e:
             error_msg = f"Failed to click mouse: {e}"
@@ -216,9 +204,9 @@ class MouseController:
 
         button = button.lower()
 
-        def _do_drag() -> bool:
-            ctypes.windll.user32.SetCursorPos(start_x, start_y)
-            time.sleep(0.1)
+        try:
+            await asyncio.to_thread(ctypes.windll.user32.SetCursorPos, start_x, start_y)
+            await asyncio.sleep(0.1)
 
             if button == "left":
                 down_flag = self.MOUSEEVENTF_LEFTDOWN
@@ -227,27 +215,31 @@ class MouseController:
                 down_flag = self.MOUSEEVENTF_RIGHTDOWN
                 up_flag = self.MOUSEEVENTF_RIGHTUP
 
-            ctypes.windll.user32.mouse_event(down_flag, 0, 0, 0, 0)
-            time.sleep(0.05)
+            await asyncio.to_thread(
+                ctypes.windll.user32.mouse_event, down_flag, 0, 0, 0, 0
+            )
+            await asyncio.sleep(0.05)
 
             steps = max(10, int(duration * 60))
+            step_delay = duration / steps
+
             for i in range(steps + 1):
                 progress = i / steps
                 ease = 1 - (1 - progress) ** 2
                 current_x = int(start_x + (end_x - start_x) * ease)
                 current_y = int(start_y + (end_y - start_y) * ease)
-                ctypes.windll.user32.SetCursorPos(current_x, current_y)
-                time.sleep(duration / steps)
+                await asyncio.to_thread(
+                    ctypes.windll.user32.SetCursorPos, current_x, current_y
+                )
+                await asyncio.sleep(step_delay)
 
-            time.sleep(0.05)
-            ctypes.windll.user32.mouse_event(up_flag, 0, 0, 0, 0)
+            await asyncio.sleep(0.05)
+            await asyncio.to_thread(
+                ctypes.windll.user32.mouse_event, up_flag, 0, 0, 0, 0
+            )
 
-            return True
-
-        try:
-            result = await asyncio.to_thread(_do_drag)
             logger.info(f"Dragged from ({start_x}, {start_y}) to ({end_x}, {end_y})")
-            return result
+            return True
 
         except Exception as e:
             error_msg = f"Failed to drag mouse: {e}"
@@ -286,21 +278,18 @@ class MouseController:
 
         direction = direction.lower()
 
-        def _do_scroll() -> bool:
-            nonlocal x, y
-
-            if x is None or y is None:
-                x, y = self._get_position_sync()
-
+        def _do_scroll(pos_x: int, pos_y: int) -> bool:
             if direction == "down":
-                auto.WheelDown(x, y, wheelTimes=amount)
+                auto.WheelDown(pos_x, pos_y, wheelTimes=amount)
             else:
-                auto.WheelUp(x, y, wheelTimes=amount)
-
+                auto.WheelUp(pos_x, pos_y, wheelTimes=amount)
             return True
 
         try:
-            result = await asyncio.to_thread(_do_scroll)
+            if x is None or y is None:
+                x, y = await self.get_position()
+
+            result = await asyncio.to_thread(_do_scroll, x, y)
             logger.info(f"Scrolled {direction} by {amount} at ({x}, {y})")
             return result
 
