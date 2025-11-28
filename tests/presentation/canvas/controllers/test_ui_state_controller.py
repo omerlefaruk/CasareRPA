@@ -62,9 +62,9 @@ def mock_main_window(qtbot):
     mock.action_toggle_minimap = Mock()
     mock.action_toggle_minimap.setChecked = Mock()
 
-    # Mock window geometry methods
-    mock.saveGeometry.return_value = QByteArray(b"geometry_data")
-    mock.saveState.return_value = QByteArray(b"state_data")
+    # Mock window geometry methods (cannot set return_value on builtin methods)
+    mock.saveGeometry = Mock(return_value=QByteArray(b"geometry_data"))
+    mock.saveState = Mock(return_value=QByteArray(b"state_data"))
     mock.restoreGeometry = Mock(return_value=True)
     mock.restoreState = Mock(return_value=True)
 
