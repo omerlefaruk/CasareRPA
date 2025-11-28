@@ -15,7 +15,10 @@ from loguru import logger
 
 from .base_component import BaseComponent
 from casare_rpa.domain.events import EventType, get_event_bus
-from ...runner.workflow_runner import WorkflowRunner
+from casare_rpa.application.use_cases.execute_workflow import (
+    ExecuteWorkflowUseCase,
+    ExecutionSettings,
+)
 from ...utils.settings_manager import get_settings_manager
 from ...project.project_manager import get_project_manager
 
@@ -37,7 +40,7 @@ class ExecutionComponent(BaseComponent):
 
     def __init__(self, main_window: "MainWindow") -> None:
         super().__init__(main_window)
-        self._workflow_runner: Optional[WorkflowRunner] = None
+        self._use_case: Optional[ExecuteWorkflowUseCase] = None
         self._workflow_task: Optional[asyncio.Task] = None
         self._event_bus = get_event_bus()
 
@@ -82,15 +85,14 @@ class ExecutionComponent(BaseComponent):
         try:
             logger.info("Starting workflow execution")
 
-            # Stop any existing workflow runner first
-            if self._workflow_runner is not None:
-                if self._workflow_runner.state in ("running", "paused"):
-                    logger.info("Stopping existing workflow runner before restart")
-                    self._workflow_runner.stop()
-                    if self._workflow_task and not self._workflow_task.done():
-                        self._workflow_task.cancel()
-                        self._workflow_task = None
-                self._workflow_runner = None
+            # Stop any existing execution first
+            if self._use_case is not None:
+                logger.info("Stopping existing execution before restart")
+                self._use_case.stop()
+                if self._workflow_task and not self._workflow_task.done():
+                    self._workflow_task.cancel()
+                    self._workflow_task = None
+                self._use_case = None
 
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
@@ -111,34 +113,38 @@ class ExecutionComponent(BaseComponent):
                 else None
             )
 
-            # Create workflow runner
-            self._workflow_runner = WorkflowRunner(
-                workflow,
-                self._event_bus,
+            # Create execution use case
+            self._use_case = ExecuteWorkflowUseCase(
+                workflow=workflow,
+                event_bus=self._event_bus,
                 initial_variables=initial_variables,
                 project_context=project_context,
             )
 
-            # Apply debug settings from toolbar
+            # Note: Debug/step modes not yet implemented in new architecture
             debug_toolbar = self._main_window.get_debug_toolbar()
             if debug_toolbar:
                 debug_enabled = debug_toolbar.action_debug_mode.isChecked()
                 step_enabled = debug_toolbar.action_step_mode.isChecked()
 
+                # TODO(v3.1): Implement debug mode in ExecuteWorkflowUseCase
+                # Need to add breakpoint support and variable inspection
                 if debug_enabled:
-                    self._workflow_runner.enable_debug_mode(True)
-                    logger.info("Debug mode enabled for execution")
+                    logger.warning("Debug mode not yet implemented in new architecture")
+                    self._main_window.show_status("Debug mode not yet available", 3000)
 
+                # TODO(v3.1): Implement step mode in ExecuteWorkflowUseCase
+                # Need to add step-by-step execution control
                 if step_enabled:
-                    self._workflow_runner.enable_step_mode(True)
-                    logger.info("Step mode enabled for execution")
+                    logger.warning("Step mode not yet implemented in new architecture")
+                    self._main_window.show_status("Step mode not yet available", 3000)
 
                 debug_toolbar.set_execution_state(True)
 
             # Run workflow asynchronously
             async def run_and_cleanup():
                 try:
-                    await self._workflow_runner.run()
+                    await self._use_case.execute()
                 finally:
                     # Update toolbar state
                     if debug_toolbar:
@@ -180,23 +186,22 @@ class ExecutionComponent(BaseComponent):
 
     def on_pause_workflow(self) -> None:
         """Handle workflow pause."""
-        if self._workflow_runner:
-            logger.info("Pausing workflow execution")
-            self._workflow_runner.pause()
-            self._main_window.show_status("Workflow paused", 3000)
+        # TODO(v3.1): Implement pause/resume in ExecuteWorkflowUseCase
+        # Need to add execution state management and async control
+        logger.warning("Pause not yet implemented in new architecture")
+        self._main_window.show_status("Pause not yet available", 3000)
 
     def on_resume_workflow(self) -> None:
         """Handle workflow resume."""
-        if self._workflow_runner:
-            logger.info("Resuming workflow execution")
-            self._workflow_runner.resume()
-            self._main_window.show_status("Workflow resumed", 3000)
+        # TODO(v3.1): Implement pause/resume in ExecuteWorkflowUseCase
+        logger.warning("Resume not yet implemented in new architecture")
+        self._main_window.show_status("Resume not yet implemented", 3000)
 
     def on_stop_workflow(self) -> None:
         """Handle workflow stop."""
-        if self._workflow_runner:
+        if self._use_case:
             logger.info("Stopping workflow execution")
-            self._workflow_runner.stop()
+            self._use_case.stop()
             if self._workflow_task and not self._workflow_task.done():
                 self._workflow_task.cancel()
             self._main_window.show_status("Workflow stopped", 3000)
@@ -287,5 +292,5 @@ class ExecutionComponent(BaseComponent):
         """Cleanup resources."""
         if self._workflow_task and not self._workflow_task.done():
             self._workflow_task.cancel()
-        self._workflow_runner = None
+        self._use_case = None
         logger.debug("ExecutionComponent cleaned up")
