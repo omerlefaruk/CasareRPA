@@ -449,6 +449,7 @@ class AppendFileNode(BaseNode):
             content = self.config.get("content") or self.get_input_value("content")
             encoding = self.config.get("encoding", "utf-8")
             create_if_missing = self.config.get("create_if_missing", True)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -457,7 +458,8 @@ class AppendFileNode(BaseNode):
             file_path = context.resolve_value(file_path)
             content = context.resolve_value(content)
 
-            path = Path(file_path)
+            # SECURITY: Validate path before any operation
+            path = validate_path_security(file_path, "append", allow_dangerous)
 
             if not path.exists() and not create_if_missing:
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -478,6 +480,12 @@ class AppendFileNode(BaseNode):
                 "data": {"file_path": str(path), "bytes_written": bytes_written},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in AppendFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -630,9 +638,11 @@ class CopyFileNode(BaseNode):
             # Resolve {{variable}} patterns in paths
             source_path = context.resolve_value(source_path)
             dest_path = context.resolve_value(dest_path)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
-            source = Path(source_path)
-            dest = Path(dest_path)
+            # SECURITY: Validate paths before any operation
+            source = validate_path_security(source_path, "read", allow_dangerous)
+            dest = validate_path_security(dest_path, "write", allow_dangerous)
 
             if not source.exists():
                 raise FileNotFoundError(f"Source file not found: {source_path}")
@@ -656,6 +666,12 @@ class CopyFileNode(BaseNode):
                 "data": {"dest_path": str(dest), "bytes_copied": bytes_copied},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in CopyFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -715,9 +731,11 @@ class MoveFileNode(BaseNode):
             # Resolve {{variable}} patterns in paths
             source_path = context.resolve_value(source_path)
             dest_path = context.resolve_value(dest_path)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
-            source = Path(source_path)
-            dest = Path(dest_path)
+            # SECURITY: Validate paths before any operation
+            source = validate_path_security(source_path, "read", allow_dangerous)
+            dest = validate_path_security(dest_path, "write", allow_dangerous)
 
             if not source.exists():
                 raise FileNotFoundError(f"Source file not found: {source_path}")
@@ -742,6 +760,12 @@ class MoveFileNode(BaseNode):
                 "data": {"dest_path": str(dest)},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in MoveFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
