@@ -1,36 +1,32 @@
 """
 File operation nodes for CasareRPA.
 
-DEPRECATED: This module has been reorganized into the `casare_rpa.nodes.file` package.
+This package provides file system and structured data operations:
 
-Migration path:
-    OLD: from casare_rpa.nodes.file_nodes import ReadFileNode, ReadCSVNode
-    NEW: from casare_rpa.nodes.file import ReadFileNode, ReadCSVNode
+File Operations (file_operations.py):
+- ReadFileNode, WriteFileNode, AppendFileNode, DeleteFileNode
+- CopyFileNode, MoveFileNode
+- CreateDirectoryNode, ListDirectoryNode, ListFilesNode
+- FileExistsNode, GetFileInfoNode, GetFileSizeNode
 
-More specific imports (v3.0+):
-    from casare_rpa.nodes.file.file_operations import ReadFileNode
-    from casare_rpa.nodes.file.structured_data import ReadCSVNode
+Structured Data (structured_data.py):
+- ReadCSVNode, WriteCSVNode
+- ReadJSONFileNode, WriteJSONFileNode
+- ZipFilesNode, UnzipFilesNode
 
-This module will be removed in v3.0.
+Security utilities:
+- PathSecurityError, validate_path_security, validate_zip_entry
+
+Usage:
+    from casare_rpa.nodes.file import ReadFileNode, ReadCSVNode
+    from casare_rpa.nodes.file.file_operations import WriteFileNode
+    from casare_rpa.nodes.file.structured_data import ZipFilesNode
 """
 
-import warnings
-
-warnings.warn(
-    "casare_rpa.nodes.file_nodes is deprecated. "
-    "Use 'from casare_rpa.nodes.file import ...' instead. "
-    "This module will be removed in v3.0.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
-# Re-export all nodes from new structure for backward compatibility
-from casare_rpa.nodes.file import (
-    # Security utilities
+# File operations
+from .file_operations import (
     PathSecurityError,
     validate_path_security,
-    validate_zip_entry,
-    # File operations
     ReadFileNode,
     WriteFileNode,
     AppendFileNode,
@@ -43,7 +39,11 @@ from casare_rpa.nodes.file import (
     FileExistsNode,
     GetFileSizeNode,
     GetFileInfoNode,
-    # Structured data
+)
+
+# Structured data operations
+from .structured_data import (
+    validate_zip_entry,
     ReadCSVNode,
     WriteCSVNode,
     ReadJSONFileNode,

@@ -1,27 +1,25 @@
 """
-Database Nodes for CasareRPA - DEPRECATED WRAPPER.
+Database Nodes Package for CasareRPA.
 
-This module is deprecated. Import from casare_rpa.nodes.database instead.
+This package provides nodes for connecting to and interacting with databases.
+Supports SQLite (built-in), PostgreSQL, MySQL/MariaDB.
 
-Example:
-    # Old (deprecated):
-    from casare_rpa.nodes.database_nodes import DatabaseConnectNode
+Modules:
+    - sql_nodes: Core database connection and query nodes
+    - database_utils: Schema inspection and metadata nodes
 
-    # New (preferred):
-    from casare_rpa.nodes.database import DatabaseConnectNode
+Usage:
+    from casare_rpa.nodes.database import (
+        DatabaseConnectNode,
+        ExecuteQueryNode,
+        ExecuteNonQueryNode,
+        TableExistsNode,
+        GetTableColumnsNode,
+    )
 """
 
-import warnings
-
-warnings.warn(
-    "casare_rpa.nodes.database_nodes is deprecated. "
-    "Import from casare_rpa.nodes.database instead.",
-    DeprecationWarning,
-    stacklevel=2,
-)
-
-# Re-export everything from new package for backward compatibility
-from .database import (
+# Re-export from sql_nodes
+from .sql_nodes import (
     # Driver availability flags
     AIOSQLITE_AVAILABLE,
     ASYNCPG_AVAILABLE,
@@ -37,16 +35,23 @@ from .database import (
     RollbackTransactionNode,
     CloseDatabaseNode,
     ExecuteBatchNode,
-    # Utility nodes
+)
+
+# Re-export from database_utils
+from .database_utils import (
     TableExistsNode,
     GetTableColumnsNode,
 )
 
+
 __all__ = [
+    # Driver availability flags
     "AIOSQLITE_AVAILABLE",
     "ASYNCPG_AVAILABLE",
     "AIOMYSQL_AVAILABLE",
+    # Connection wrapper
     "DatabaseConnection",
+    # Core SQL nodes
     "DatabaseConnectNode",
     "ExecuteQueryNode",
     "ExecuteNonQueryNode",
@@ -55,6 +60,7 @@ __all__ = [
     "RollbackTransactionNode",
     "CloseDatabaseNode",
     "ExecuteBatchNode",
+    # Utility nodes
     "TableExistsNode",
     "GetTableColumnsNode",
 ]
