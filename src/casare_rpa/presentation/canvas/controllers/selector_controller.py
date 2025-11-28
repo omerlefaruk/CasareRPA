@@ -18,7 +18,7 @@ from ..events.event import Event
 from ..events.event_types import EventType
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class SelectorController(BaseController):
@@ -49,7 +49,7 @@ class SelectorController(BaseController):
         super().initialize()
 
         # Import here to avoid circular dependency
-        from ....canvas.selectors.selector_integration import SelectorIntegration
+        from ..selectors.selector_integration import SelectorIntegration
 
         # Create selector integration
         self._selector_integration = SelectorIntegration(self.main_window)

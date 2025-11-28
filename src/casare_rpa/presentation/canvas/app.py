@@ -241,23 +241,22 @@ class CasareRPAApp:
 
         logger.debug("UI signals connected")
 
-    def _get_all_components(self) -> list:
+    def _get_all_controllers(self) -> list:
         """
-        Get all initialized components.
+        Get all initialized controllers.
 
         Returns:
-            List of all component instances
+            List of all controller instances
         """
         return [
-            self._node_registry_component,
-            self._workflow_lifecycle_component,
-            self._execution_component,
-            self._selector_component,
-            self._trigger_component,
-            self._project_component,
-            self._preferences_component,
-            self._dragdrop_component,
-            self._autosave_component,
+            self._node_controller,
+            self._workflow_controller,
+            self._execution_controller,
+            self._selector_controller,
+            self._trigger_controller,
+            self._project_controller,
+            self._preferences_controller,
+            self._autosave_controller,
         ]
 
     def _on_delete_selected(self) -> None:
@@ -409,13 +408,13 @@ class CasareRPAApp:
         return 0
 
     def cleanup(self) -> None:
-        """Cleanup all components."""
+        """Cleanup all controllers."""
         logger.info("Cleaning up application")
-        for component in self._get_all_components():
+        for controller in self._get_all_controllers():
             try:
-                component.cleanup()
+                controller.cleanup()
             except Exception as e:
-                logger.error(f"Error cleaning up {component.__class__.__name__}: {e}")
+                logger.error(f"Error cleaning up {controller.__class__.__name__}: {e}")
 
 
 def main() -> int:

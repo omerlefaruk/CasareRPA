@@ -17,7 +17,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class NodeController(BaseController):
@@ -269,7 +269,7 @@ class NodeController(BaseController):
             self.main_window.show_status("No graph available", 3000)
             return
 
-        from ....canvas.search.node_search import NodeSearchDialog
+        from ..search.node_search import NodeSearchDialog
 
         dialog = NodeSearchDialog(graph, self.main_window)
         dialog.show_search()

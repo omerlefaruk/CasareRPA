@@ -17,8 +17,8 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
-    from ....canvas.scheduling.schedule_dialog import WorkflowSchedule
+    from ..main_window import MainWindow
+    from ..ui.dialogs.schedule_dialog import WorkflowSchedule
 
 
 class SchedulingController(BaseController):
@@ -71,8 +71,8 @@ class SchedulingController(BaseController):
         Checks if workflow is saved first, prompting user to save if needed.
         """
         try:
-            from ....canvas.scheduling.schedule_dialog import ScheduleDialog
-            from ....canvas.scheduling.schedule_storage import get_schedule_storage
+            from ..ui.dialogs.schedule_dialog import ScheduleDialog
+            from ....application.scheduling import get_schedule_storage
 
             current_file = self.main_window.get_current_file()
             if not current_file:
@@ -108,8 +108,8 @@ class SchedulingController(BaseController):
     def manage_schedules(self) -> None:
         """Open dialog to view and manage all schedules."""
         try:
-            from ....canvas.scheduling.schedule_dialog import ScheduleManagerDialog
-            from ....canvas.scheduling.schedule_storage import get_schedule_storage
+            from ..ui.dialogs.schedule_dialog import ScheduleManagerDialog
+            from ....application.scheduling import get_schedule_storage
 
             storage = get_schedule_storage()
             schedules = storage.get_all_schedules()
@@ -183,7 +183,7 @@ class SchedulingController(BaseController):
             True if deletion was successful
         """
         try:
-            from ....canvas.scheduling.schedule_storage import get_schedule_storage
+            from ....application.scheduling import get_schedule_storage
 
             storage = get_schedule_storage()
             if storage.delete_schedule(schedule_id):
@@ -202,7 +202,7 @@ class SchedulingController(BaseController):
     def _load_schedules(self) -> None:
         """Load schedules from storage."""
         try:
-            from ....canvas.scheduling.schedule_storage import get_schedule_storage
+            from ....application.scheduling import get_schedule_storage
 
             storage = get_schedule_storage()
             self._active_schedules = storage.get_all_schedules()
@@ -264,7 +264,7 @@ class SchedulingController(BaseController):
             dialog: The ScheduleManagerDialog instance
         """
         try:
-            from ....canvas.scheduling.schedule_storage import get_schedule_storage
+            from ....application.scheduling import get_schedule_storage
 
             storage = get_schedule_storage()
             schedules = dialog.get_schedules()

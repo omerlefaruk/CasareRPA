@@ -18,7 +18,7 @@ from .base_controller import BaseController
 from ....utils.config import WORKFLOWS_DIR
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -87,7 +87,7 @@ class WorkflowController(BaseController):
         if not self.check_unsaved_changes():
             return
 
-        from ....canvas.dialogs.template_browser import show_template_browser
+        from ..ui.dialogs.template_browser import show_template_browser
 
         template = show_template_browser(self.main_window)
         if template:

@@ -18,7 +18,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class TriggerController(BaseController):
@@ -81,7 +81,7 @@ class TriggerController(BaseController):
         Creates CanvasTriggerRunner instance for managing active triggers.
         """
         try:
-            from ....canvas.execution.trigger_runner import CanvasTriggerRunner
+            from ....application.execution.trigger_runner import CanvasTriggerRunner
 
             if self._app_instance:
                 self._trigger_runner = CanvasTriggerRunner(self._app_instance)
@@ -220,7 +220,7 @@ class TriggerController(BaseController):
         On success, adds the trigger to the workflow and emits trigger_added.
         """
         try:
-            from ....canvas.dialogs import (
+            from ..ui.dialogs import (
                 TriggerTypeSelectorDialog,
                 TriggerConfigDialog,
             )
@@ -270,7 +270,7 @@ class TriggerController(BaseController):
             trigger_config: The trigger configuration to edit
         """
         try:
-            from ....canvas.dialogs import TriggerConfigDialog
+            from ..ui.dialogs import TriggerConfigDialog
             from ....triggers.base import TriggerType
 
             trigger_type_str = trigger_config.get("type", "manual")

@@ -18,7 +18,7 @@ from ..events.event import Event
 from ..events.event_types import EventType
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class PreferencesController(BaseController):
