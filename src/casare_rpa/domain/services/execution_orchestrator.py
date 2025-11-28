@@ -58,7 +58,13 @@ class ExecutionOrchestrator:
             Node ID of StartNode, or None if not found
         """
         for node_id, node_data in self.workflow.nodes.items():
-            node_type = node_data.get("type", "")
+            # Handle both dict (serialized) and node instance formats
+            if isinstance(node_data, dict):
+                node_type = node_data.get("node_type", "")
+            else:
+                # Node instance - check node_type attribute
+                node_type = getattr(node_data, "node_type", "")
+
             if node_type == "StartNode":
                 logger.debug(f"Found StartNode: {node_id}")
                 return node_id
@@ -67,9 +73,7 @@ class ExecutionOrchestrator:
         return None
 
     def get_next_nodes(
-        self,
-        current_node_id: NodeId,
-        execution_result: Optional[Dict[str, Any]] = None
+        self, current_node_id: NodeId, execution_result: Optional[Dict[str, Any]] = None
     ) -> List[NodeId]:
         """
         Determine next nodes to execute based on connections and result.
@@ -122,9 +126,7 @@ class ExecutionOrchestrator:
         return next_nodes
 
     def calculate_execution_path(
-        self,
-        start_node_id: NodeId,
-        target_node_id: Optional[NodeId] = None
+        self, start_node_id: NodeId, target_node_id: Optional[NodeId] = None
     ) -> Set[NodeId]:
         """
         Calculate the execution path from start to target (or all nodes).
@@ -163,9 +165,7 @@ class ExecutionOrchestrator:
         return reachable
 
     def _calculate_subgraph(
-        self,
-        start_node_id: NodeId,
-        target_node_id: NodeId
+        self, start_node_id: NodeId, target_node_id: NodeId
     ) -> Set[NodeId]:
         """
         Calculate subgraph of nodes required to reach target from start.
@@ -262,11 +262,7 @@ class ExecutionOrchestrator:
 
         return False
 
-    def should_stop_on_error(
-        self,
-        error: Exception,
-        settings: Dict[str, Any]
-    ) -> bool:
+    def should_stop_on_error(self, error: Exception, settings: Dict[str, Any]) -> bool:
         """
         Decide if error should halt execution.
 
@@ -285,9 +281,7 @@ class ExecutionOrchestrator:
         continue_on_error = settings.get("continue_on_error", False)
 
         if continue_on_error:
-            logger.warning(
-                f"Error occurred but continue_on_error is enabled: {error}"
-            )
+            logger.warning(f"Error occurred but continue_on_error is enabled: {error}")
             return False
 
         # In future, could check error severity/type
@@ -295,9 +289,7 @@ class ExecutionOrchestrator:
         return True
 
     def handle_control_flow(
-        self,
-        node_id: NodeId,
-        result: Dict[str, Any]
+        self, node_id: NodeId, result: Dict[str, Any]
     ) -> Optional[str]:
         """
         Process control flow signals (break/continue/return).
@@ -312,9 +304,7 @@ class ExecutionOrchestrator:
         control_flow = result.get("control_flow")
 
         if control_flow in ("break", "continue", "return"):
-            logger.debug(
-                f"Control flow signal from {node_id}: {control_flow}"
-            )
+            logger.debug(f"Control flow signal from {node_id}: {control_flow}")
             return control_flow
 
         return None
@@ -370,9 +360,9 @@ class ExecutionOrchestrator:
             node_id: len(deps) for node_id, deps in dependencies.items()
         }
 
-        queue: deque[NodeId] = deque([
-            node_id for node_id, degree in in_degree.items() if degree == 0
-        ])
+        queue: deque[NodeId] = deque(
+            [node_id for node_id, degree in in_degree.items() if degree == 0]
+        )
 
         sorted_count = 0
 
@@ -392,7 +382,7 @@ class ExecutionOrchestrator:
             errors.append(
                 f"Circular dependency detected: {len(self.workflow.nodes) - sorted_count} nodes in cycle"
             )
-            logger.error(f"Workflow has circular dependencies")
+            logger.error("Workflow has circular dependencies")
             return False, errors
 
         logger.debug("Workflow execution order validated: no circular dependencies")
@@ -491,7 +481,12 @@ class ExecutionOrchestrator:
         """
         node_data = self.workflow.nodes.get(node_id)
         if node_data:
-            return node_data.get("type", "")
+            # Handle both dict (serialized) and node instance formats
+            if isinstance(node_data, dict):
+                return node_data.get("node_type", "")
+            else:
+                # Node instance - check node_type attribute
+                return getattr(node_data, "node_type", "")
         return ""
 
     def is_control_flow_node(self, node_id: NodeId) -> bool:

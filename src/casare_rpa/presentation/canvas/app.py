@@ -185,10 +185,6 @@ class CasareRPAApp:
         # Autosave - handles automatic saving
         self._autosave_controller = AutosaveController(self._main_window)
 
-        # Configure execution controller with workflow runner
-        self._execution_controller.set_workflow_runner(self._workflow_runner)
-        logger.debug("ExecutionController configured with workflow runner")
-
         # Initialize all phase 2 controllers
         phase_2_controllers = [
             self._workflow_controller,
@@ -209,7 +205,21 @@ class CasareRPAApp:
                 logger.error(error_msg)
                 raise RuntimeError(error_msg) from e
 
+        # Configure execution controller with workflow runner AFTER initialization
+        self._execution_controller.set_workflow_runner(self._workflow_runner)
+        logger.info("ExecutionController configured with workflow runner")
+
         logger.info("All controllers initialized successfully")
+
+        # Inject configured controllers into MainWindow
+        # This ensures MainWindow uses the same instances that were configured above
+        self._main_window.set_controllers(
+            workflow_controller=self._workflow_controller,
+            execution_controller=self._execution_controller,
+            node_controller=self._node_controller,
+            trigger_controller=self._trigger_controller,
+        )
+        logger.info("Controllers injected into MainWindow")
 
     def _connect_components(self) -> None:
         """Connect controller signals for inter-controller communication."""

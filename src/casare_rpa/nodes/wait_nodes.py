@@ -9,7 +9,8 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -23,6 +24,15 @@ from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 
+@node_schema(
+    PropertyDef(
+        "duration",
+        PropertyType.FLOAT,
+        default=1.0,
+        label="Duration (seconds)",
+        tooltip="Wait duration in seconds",
+    )
+)
 @executable_node
 class WaitNode(BaseNode):
     """
@@ -40,11 +50,14 @@ class WaitNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            duration: Wait duration in seconds
+            duration: Wait duration in seconds (ignored when config provided)
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
+            No manual config merging needed!
         """
-        config = kwargs.get("config", {"duration": duration})
-        if "duration" not in config:
-            config["duration"] = duration
+        # Config automatically populated by @node_schema decorator
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WaitNode"

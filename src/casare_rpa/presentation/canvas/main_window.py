@@ -1121,6 +1121,25 @@ class MainWindow(QMainWindow):
         self.set_modified(True)
         logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
+        # Update the casare_node.config with the new value
+        graph = self.get_graph()
+        if graph:
+            # Find the visual node by node_id
+            for visual_node in graph.all_nodes():
+                if visual_node.get_property("node_id") == node_id:
+                    # Get the casare node and update its config
+                    casare_node = (
+                        visual_node.get_casare_node()
+                        if hasattr(visual_node, "get_casare_node")
+                        else None
+                    )
+                    if casare_node and hasattr(casare_node, "config"):
+                        casare_node.config[prop_name] = value
+                        logger.debug(
+                            f"Updated casare_node.config['{prop_name}'] = {value}"
+                        )
+                    break
+
     def ensure_normal_components_loaded(self) -> None:
         """
         Ensure NORMAL tier components are loaded.
@@ -1874,39 +1893,69 @@ class MainWindow(QMainWindow):
         return self._ui_state_controller
 
     def _init_controllers(self) -> None:
-        """Initialize all controllers for MVC architecture."""
-        logger.info("Initializing controllers...")
+        """
+        Initialize MainWindow-specific controllers.
 
-        # Create controllers
-        self._workflow_controller = WorkflowController(self)
-        self._execution_controller = ExecutionController(self)
-        self._node_controller = NodeController(self)
+        Note: Core controllers (WorkflowController, ExecutionController, NodeController,
+        TriggerController) are injected from CasareRPAApp via set_controllers()
+        after full initialization.
+        """
+        logger.info("Initializing MainWindow-specific controllers...")
+
+        # Create MainWindow-specific controllers only
         self._connection_controller = ConnectionController(self)
         self._panel_controller = PanelController(self)
         self._menu_controller = MenuController(self)
         self._event_bus_controller = EventBusController(self)
         self._viewport_controller = ViewportController(self)
         self._scheduling_controller = SchedulingController(self)
-        self._trigger_controller = TriggerController(self)
         self._ui_state_controller = UIStateController(self)
 
-        # Initialize each controller
-        self._workflow_controller.initialize()
-        self._execution_controller.initialize()
-        self._node_controller.initialize()
+        # Initialize placeholders for injected controllers (will be set by set_controllers())
+        self._workflow_controller = None
+        self._execution_controller = None
+        self._node_controller = None
+        self._trigger_controller = None
+
+        # Initialize MainWindow-specific controllers
         self._connection_controller.initialize()
         self._panel_controller.initialize()
         self._menu_controller.initialize()
         self._event_bus_controller.initialize()
         self._viewport_controller.initialize()
         self._scheduling_controller.initialize()
-        self._trigger_controller.initialize()
         self._ui_state_controller.initialize()
+
+        logger.info("MainWindow-specific controllers initialized successfully")
+
+    def set_controllers(
+        self,
+        workflow_controller,
+        execution_controller,
+        node_controller,
+        trigger_controller,
+    ) -> None:
+        """
+        Inject configured controllers from CasareRPAApp.
+
+        Controllers are already initialized and configured by CasareRPAApp
+        (e.g., ExecutionController has workflow runner set).
+
+        Args:
+            workflow_controller: Initialized WorkflowController instance
+            execution_controller: Initialized ExecutionController with workflow runner
+            node_controller: Initialized NodeController instance
+            trigger_controller: Initialized TriggerController instance
+        """
+        self._workflow_controller = workflow_controller
+        self._execution_controller = execution_controller
+        self._node_controller = node_controller
+        self._trigger_controller = trigger_controller
 
         # Connect controller signals to MainWindow
         self._connect_controller_signals()
 
-        logger.info("Controllers initialized successfully")
+        logger.info("Controllers injected and connected to MainWindow")
 
     def _connect_controller_signals(self) -> None:
         """Connect controller signals to MainWindow handlers and other controllers."""

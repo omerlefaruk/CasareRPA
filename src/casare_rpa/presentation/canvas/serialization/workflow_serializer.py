@@ -5,9 +5,13 @@ Converts NodeGraphQt visual graph to workflow JSON dict matching
 the format expected by load_workflow_from_dict().
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, TYPE_CHECKING
 from datetime import datetime
 from loguru import logger
+
+if TYPE_CHECKING:
+    from NodeGraphQt import NodeGraph
+    from casare_rpa.presentation.main_window import MainWindow
 
 
 class WorkflowSerializer:
@@ -142,6 +146,22 @@ class WorkflowSerializer:
         # Get config from CasareRPA node
         config = casare_node.config.copy() if hasattr(casare_node, "config") else {}
 
+        # Sync widget values from visual node to config
+        # NodeGraphQt stores widget values as node properties
+        for prop_name in visual_node.model.custom_properties:
+            # Skip internal properties
+            if prop_name.startswith("_") or prop_name in (
+                "node_id",
+                "name",
+                "color",
+                "pos",
+            ):
+                continue
+
+            prop_value = visual_node.get_property(prop_name)
+            if prop_value is not None:
+                config[prop_name] = prop_value
+
         # Check if node is disabled
         disabled = visual_node.get_property("_disabled")
         if disabled:
@@ -170,8 +190,17 @@ class WorkflowSerializer:
                 continue
 
             # Get output ports and their connections
-            for port_name in node.output_ports():
-                output_port = node.output(port_name)
+            for port_item in node.output_ports():
+                # output_ports() returns Port objects, not port names
+                # Get the port name from the Port object
+                if hasattr(port_item, "name"):
+                    port_name = port_item.name()
+                    output_port = port_item
+                else:
+                    # Fallback: if it's already a string (port name)
+                    port_name = str(port_item)
+                    output_port = node.output(port_name)
+
                 if not output_port:
                     continue
 
@@ -262,17 +291,36 @@ class WorkflowSerializer:
                 for item in scene.items():
                     if isinstance(item, NodeFrame):
                         try:
+                            # Use public properties/getattr with defaults to avoid
+                            # breaking if NodeFrame API changes (defensive access)
+                            title = getattr(item, "frame_title", None) or getattr(
+                                item, "_title", "Group"
+                            )
+                            color = getattr(item, "frame_color", None) or getattr(
+                                item, "_color", None
+                            )
+                            # Get rect via public rect() method or fallback to _rect
+                            rect = (
+                                item.rect()
+                                if hasattr(item, "rect")
+                                else getattr(item, "_rect", None)
+                            )
+                            # Get contained nodes via public property or fallback
+                            contained_nodes = getattr(
+                                item, "contained_nodes", None
+                            ) or getattr(item, "_nodes", [])
+
                             frame_data = {
-                                "title": item._title,
-                                "color": item._color,
+                                "title": title,
+                                "color": color,
                                 "position": [item.pos().x(), item.pos().y()],
                                 "size": [
-                                    item._rect.width(),
-                                    item._rect.height(),
+                                    rect.width() if rect else 400,
+                                    rect.height() if rect else 300,
                                 ],
                                 "node_ids": [
                                     node.get_property("node_id")
-                                    for node in item._nodes
+                                    for node in contained_nodes
                                     if hasattr(node, "_casare_node")
                                 ],
                             }
@@ -290,11 +338,36 @@ class WorkflowSerializer:
         """
         Get workflow execution settings.
 
+        Reads from main_window preferences if available, falls back to defaults.
+
         Returns:
             Settings dict
         """
-        return {
-            "stop_on_error": True,  # Default behavior
-            "timeout": 120,  # 2 minutes default
+        # Defaults
+        settings = {
+            "stop_on_error": True,
+            "timeout": 120,
             "retry_count": 0,
         }
+
+        # Try to read from main_window preferences
+        try:
+            if hasattr(self._main_window, "get_preferences"):
+                prefs = self._main_window.get_preferences()
+                if prefs and isinstance(prefs, dict):
+                    execution_prefs = prefs.get("execution", {})
+                    if "stop_on_error" in execution_prefs:
+                        settings["stop_on_error"] = bool(
+                            execution_prefs["stop_on_error"]
+                        )
+                    if "timeout" in execution_prefs:
+                        settings["timeout"] = int(execution_prefs["timeout"])
+                    if "retry_count" in execution_prefs:
+                        settings["retry_count"] = int(execution_prefs["retry_count"])
+                    logger.debug("Loaded execution settings from preferences")
+        except Exception as e:
+            logger.debug(
+                f"Could not load settings from preferences, using defaults: {e}"
+            )
+
+        return settings
