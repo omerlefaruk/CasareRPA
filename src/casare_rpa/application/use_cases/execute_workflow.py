@@ -67,6 +67,7 @@ class ExecuteWorkflowUseCase:
         settings: Optional[ExecutionSettings] = None,
         initial_variables: Optional[Dict[str, Any]] = None,
         project_context: Optional[Any] = None,
+        pause_event: Optional[asyncio.Event] = None,
     ) -> None:
         """
         Initialize execute workflow use case.
@@ -77,6 +78,7 @@ class ExecuteWorkflowUseCase:
             settings: Execution settings
             initial_variables: Optional dict of variables to initialize
             project_context: Optional project context for scoped variables
+            pause_event: Optional event for pause/resume coordination
         """
         self.workflow = workflow
         self.settings = settings or ExecutionSettings()
@@ -96,6 +98,10 @@ class ExecuteWorkflowUseCase:
 
         # Infrastructure components (created during execution)
         self.context: Optional[ExecutionContext] = None
+
+        # Pause/resume support
+        self.pause_event = pause_event or asyncio.Event()
+        self.pause_event.set()  # Initially not paused
 
         # Execution tracking
         self.executed_nodes: Set[NodeId] = set()
@@ -381,6 +387,7 @@ class ExecuteWorkflowUseCase:
             workflow_name=self.workflow.metadata.name,
             initial_variables=self._initial_variables,
             project_context=self._project_context,
+            pause_event=self.pause_event,
         )
 
         self._emit_event(
@@ -491,6 +498,13 @@ class ExecuteWorkflowUseCase:
         nodes_to_execute: List[NodeId] = [start_node_id]
 
         while nodes_to_execute and not self._stop_requested:
+            # CHECKPOINT: Wait if paused
+            await self._pause_checkpoint()
+
+            # Check stop signal after resuming from pause
+            if self._stop_requested:
+                break
+
             current_node_id = nodes_to_execute.pop(0)
 
             # Skip if already executed (except for loops)
@@ -546,6 +560,24 @@ class ExecuteWorkflowUseCase:
         """Stop workflow execution."""
         self._stop_requested = True
         logger.info("Workflow stop requested")
+
+    async def _pause_checkpoint(self) -> None:
+        """
+        Pause checkpoint - wait if pause_event is cleared.
+
+        This method should be called between nodes and optionally
+        during long-running node operations to support pause/resume.
+        """
+        if not self.pause_event.is_set():
+            logger.info("Workflow paused at checkpoint")
+            self._emit_event(
+                EventType.WORKFLOW_PAUSED, {"current_node": self.current_node_id}
+            )
+            await self.pause_event.wait()  # Block until resumed
+            logger.info("Workflow resumed from pause")
+            self._emit_event(
+                EventType.WORKFLOW_RESUMED, {"current_node": self.current_node_id}
+            )
 
     def __repr__(self) -> str:
         """String representation."""

@@ -559,12 +559,12 @@ class VisualWaitNode(VisualNode):
     def __init__(self) -> None:
         """Initialize wait node."""
         super().__init__()
-        self.add_text_input("duration", "Duration (s)", text="1.0", tab="properties")
+        # Widget auto-generated from @node_schema decorator on WaitNode
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_input("exec_in")
-        self.add_input("duration")
+        # duration is a config property, not a data port - auto-generated as widget
         self.add_output("exec_out")
 
 

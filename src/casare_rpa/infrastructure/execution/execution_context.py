@@ -8,6 +8,7 @@ Delegates to:
 - BrowserResourceManager (infrastructure) for Playwright resources
 """
 
+import asyncio
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 from loguru import logger
@@ -42,6 +43,7 @@ class ExecutionContext:
         mode: ExecutionMode = ExecutionMode.NORMAL,
         initial_variables: Optional[Dict[str, Any]] = None,
         project_context: Optional["ProjectContext"] = None,
+        pause_event: Optional[asyncio.Event] = None,
     ) -> None:
         """
         Initialize execution context.
@@ -51,6 +53,7 @@ class ExecutionContext:
             mode: Execution mode (NORMAL, DEBUG, VALIDATE)
             initial_variables: Optional dict of variables to initialize (from Variables Tab)
             project_context: Optional project context for project-scoped resources
+            pause_event: Optional event for pause/resume coordination
         """
         # Domain state (pure business logic)
         self._state = ExecutionState(
@@ -65,6 +68,10 @@ class ExecutionContext:
 
         # Desktop context (lazy-initialized, not managed by domain or infrastructure layers)
         self.desktop_context: Any = None
+
+        # Pause/resume support for mid-node operations
+        self.pause_event = pause_event or asyncio.Event()
+        self.pause_event.set()  # Initially not paused
 
     # ========================================================================
     # VARIABLE MANAGEMENT - Delegate to ExecutionState (domain)
@@ -310,6 +317,22 @@ class ExecutionContext:
     def has_project_context(self) -> bool:
         """Check if a project context is available."""
         return self._state.has_project_context
+
+    # ========================================================================
+    # PAUSE/RESUME SUPPORT
+    # ========================================================================
+
+    async def pause_checkpoint(self) -> None:
+        """
+        Pause checkpoint for mid-node operations.
+
+        Nodes can call this during long operations (e.g., page.goto, file downloads)
+        to allow pausing mid-execution. Waits if pause_event is cleared.
+        """
+        if not self.pause_event.is_set():
+            logger.debug("Paused at mid-node checkpoint")
+            await self.pause_event.wait()
+            logger.debug("Resumed from mid-node checkpoint")
 
     # ========================================================================
     # CLEANUP - Coordinate domain and infrastructure cleanup
