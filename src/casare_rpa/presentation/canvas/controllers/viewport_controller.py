@@ -17,8 +17,8 @@ from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from ....canvas.main_window import MainWindow
-    from ....canvas.graph.minimap import Minimap
-    from ....canvas.graph.node_frame import NodeFrame
+    from ..graph.minimap import Minimap
+    from ..graph.node_frame import NodeFrame
 
 
 class ViewportController(BaseController):

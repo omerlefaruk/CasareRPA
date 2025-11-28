@@ -112,7 +112,7 @@ class TestUpdateActionState:
 class TestRecentFilesMenu:
     """Tests for recent files menu."""
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_update_recent_files_menu_empty(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -131,7 +131,7 @@ class TestRecentFilesMenu:
         mock_main_window._recent_files_menu.clear.assert_called_once()
         assert len(signal_emitted) == 1
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_update_recent_files_menu_with_files(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -157,7 +157,7 @@ class TestRecentFilesMenu:
         # Should not raise error
         menu_controller.update_recent_files_menu()
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_get_recent_files(self, mock_manager_func, menu_controller) -> None:
         """Test getting recent files list."""
         mock_manager = Mock()
@@ -175,7 +175,7 @@ class TestRecentFilesMenu:
         assert len(result) == 1
         assert result[0]["name"] == "file.json"
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_add_recent_file(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -188,7 +188,7 @@ class TestRecentFilesMenu:
 
         mock_manager.add_file.assert_called_once()
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_clear_recent_files(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -208,7 +208,7 @@ class TestRecentFilesMenu:
         mock_main_window.show_status.assert_called_with("Recent files cleared", 3000)
         assert len(signal_emitted) == 1
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     @patch("PySide6.QtWidgets.QMessageBox.warning")
     def test_open_recent_file_not_exists(
         self, mock_warning, mock_manager_func, menu_controller, mock_main_window
@@ -221,7 +221,7 @@ class TestRecentFilesMenu:
         menu_controller.open_recent_file("/nonexistent/path/file.json")
         mock_warning.assert_called_once()
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_open_recent_file_exists(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -476,7 +476,7 @@ class TestPrivateMethods:
 class TestSignals:
     """Tests for signal emissions."""
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_recent_file_opened_signal(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:
@@ -527,7 +527,7 @@ class TestSignals:
 
         assert len(signal_received) == 1
 
-    @patch("casare_rpa.canvas.workflow.recent_files.get_recent_files_manager")
+    @patch("casare_rpa.application.workflow.recent_files.get_recent_files_manager")
     def test_recent_files_cleared_signal(
         self, mock_manager_func, menu_controller, mock_main_window
     ) -> None:

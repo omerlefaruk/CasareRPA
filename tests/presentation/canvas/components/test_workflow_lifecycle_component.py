@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch, AsyncMock
 import asyncio
 
-from casare_rpa.canvas.components.workflow_lifecycle_component import (
+from casare_rpa.presentation.canvas.components.workflow_lifecycle_component import (
     WorkflowLifecycleComponent,
 )
 
