@@ -12,7 +12,7 @@ import json
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
@@ -20,8 +20,8 @@ class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("json_string", DataType.STRING)
-        self.add_output_port("data", DataType.ANY)
+        self.add_input_port("json_string", PortType.INPUT, DataType.STRING)
+        self.add_output_port("data", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -42,9 +42,9 @@ class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("object", DataType.DICT)
-        self.add_input_port("property_path", DataType.STRING)
-        self.add_output_port("value", DataType.ANY)
+        self.add_input_port("object", PortType.INPUT, DataType.DICT)
+        self.add_input_port("property_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -76,11 +76,11 @@ class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_input_port("key", DataType.STRING)
-        self.add_input_port("default", DataType.ANY)
-        self.add_output_port("value", DataType.ANY)
-        self.add_output_port("found", DataType.BOOLEAN)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_input_port("key", PortType.INPUT, DataType.STRING)
+        self.add_input_port("default", PortType.INPUT, DataType.ANY)
+        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
+        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -111,10 +111,10 @@ class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_input_port("key", DataType.STRING)
-        self.add_input_port("value", DataType.ANY)
-        self.add_output_port("result", DataType.DICT)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_input_port("key", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value", PortType.INPUT, DataType.ANY)
+        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -143,10 +143,10 @@ class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_input_port("key", DataType.STRING)
-        self.add_output_port("result", DataType.DICT)
-        self.add_output_port("removed_value", DataType.ANY)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_input_port("key", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("removed_value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -176,9 +176,9 @@ class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict_1", DataType.DICT)
-        self.add_input_port("dict_2", DataType.DICT)
-        self.add_output_port("result", DataType.DICT)
+        self.add_input_port("dict_1", PortType.INPUT, DataType.DICT)
+        self.add_input_port("dict_2", PortType.INPUT, DataType.DICT)
+        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -204,9 +204,9 @@ class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_output_port("keys", DataType.LIST)
-        self.add_output_port("count", DataType.INTEGER)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_output_port("keys", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -235,9 +235,9 @@ class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_output_port("values", DataType.LIST)
-        self.add_output_port("count", DataType.INTEGER)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -266,9 +266,9 @@ class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_input_port("key", DataType.STRING)
-        self.add_output_port("has_key", DataType.BOOLEAN)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_input_port("key", PortType.INPUT, DataType.STRING)
+        self.add_output_port("has_key", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -292,13 +292,13 @@ class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("key_1", DataType.STRING)
-        self.add_input_port("value_1", DataType.ANY)
-        self.add_input_port("key_2", DataType.STRING)
-        self.add_input_port("value_2", DataType.ANY)
-        self.add_input_port("key_3", DataType.STRING)
-        self.add_input_port("value_3", DataType.ANY)
-        self.add_output_port("dict", DataType.DICT)
+        self.add_input_port("key_1", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value_1", PortType.INPUT, DataType.ANY)
+        self.add_input_port("key_2", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value_2", PortType.INPUT, DataType.ANY)
+        self.add_input_port("key_3", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value_3", PortType.INPUT, DataType.ANY)
+        self.add_output_port("dict", PortType.OUTPUT, DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -337,9 +337,9 @@ class DictToJsonNode(BaseNode):
         self.indent = self.config.get("indent", None)
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_input_port("indent", DataType.INTEGER)
-        self.add_output_port("json_string", DataType.STRING)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_input_port("indent", PortType.INPUT, DataType.INTEGER)
+        self.add_output_port("json_string", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -376,9 +376,9 @@ class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", DataType.DICT)
-        self.add_output_port("items", DataType.LIST)
-        self.add_output_port("count", DataType.INTEGER)
+        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
+        self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:

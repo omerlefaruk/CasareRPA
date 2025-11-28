@@ -353,3 +353,14 @@ class ValidationTab(QWidget):
         if self._last_result is None:
             return (0, 0)
         return (self._last_result.error_count, self._last_result.warning_count)
+
+    def get_all_errors(self) -> list:
+        """
+        Get all validation errors as a list of dictionaries.
+
+        Returns:
+            List of error dictionaries with keys: severity, code, message, location, suggestion
+        """
+        if self._last_result is None:
+            return []
+        return [issue.to_dict() for issue in self._last_result.errors]

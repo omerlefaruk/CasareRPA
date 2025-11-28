@@ -454,6 +454,16 @@ class BottomPanelDock(QDockWidget):
         """Check if there are validation errors."""
         return self._validation_tab.has_errors()
 
+    def get_validation_errors_blocking(self) -> List[Dict]:
+        """Get current validation errors synchronously.
+
+        Returns:
+            List of validation error dictionaries
+        """
+        if hasattr(self, "_validation_tab"):
+            return self._validation_tab.get_all_errors()
+        return []
+
     # ==================== History API ====================
 
     def update_history(self, history: List[Dict[str, Any]]) -> None:

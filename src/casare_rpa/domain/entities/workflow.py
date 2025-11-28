@@ -19,43 +19,10 @@ from ..value_objects.types import (
 )
 from .workflow_metadata import WorkflowMetadata
 from .node_connection import NodeConnection
+from .variable import Variable
 
-
-@dataclass
-class VariableDefinition:
-    """
-    Definition of a workflow variable.
-
-    Attributes:
-        name: Variable name (must be valid identifier)
-        type: Variable type (String, Integer, Float, Boolean, List, Dict, DataTable)
-        default_value: Default value for the variable
-        description: Optional description
-    """
-
-    name: str
-    type: str = "String"
-    default_value: Any = ""
-    description: str = ""
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Serialize to dictionary."""
-        return {
-            "name": self.name,
-            "type": self.type,
-            "default_value": self.default_value,
-            "description": self.description,
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VariableDefinition":
-        """Create from dictionary."""
-        return cls(
-            name=data.get("name", ""),
-            type=data.get("type", "String"),
-            default_value=data.get("default_value", ""),
-            description=data.get("description", ""),
-        )
+# Backward compatibility alias
+VariableDefinition = Variable
 
 
 class WorkflowSchema:
@@ -230,10 +197,10 @@ class WorkflowSchema:
         Returns:
             Complete workflow data structure
         """
-        # Serialize variables - support both VariableDefinition objects and plain dicts
+        # Serialize variables - support both Variable objects and plain dicts
         serialized_vars = {}
         for name, var in self.variables.items():
-            if isinstance(var, VariableDefinition):
+            if isinstance(var, Variable):
                 serialized_vars[name] = var.to_dict()
             elif isinstance(var, dict):
                 serialized_vars[name] = var

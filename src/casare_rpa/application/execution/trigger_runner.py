@@ -13,7 +13,7 @@ from ...triggers.base import BaseTriggerConfig, BaseTrigger, TriggerEvent, Trigg
 from ...triggers.registry import get_trigger_registry
 
 if TYPE_CHECKING:
-    from .app import CanvasApp
+    from casare_rpa.presentation.canvas.app import CasareRPAApp
 
 
 class CanvasTriggerRunner:
@@ -24,7 +24,7 @@ class CanvasTriggerRunner:
     and run the workflow when triggered.
     """
 
-    def __init__(self, app: "CanvasApp") -> None:
+    def __init__(self, app: "CasareRPAApp") -> None:
         """
         Initialize the trigger runner.
 

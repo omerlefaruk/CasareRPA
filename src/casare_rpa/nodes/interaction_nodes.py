@@ -17,6 +17,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes.utils import retry_operation, safe_int
 from ..utils.config import DEFAULT_NODE_TIMEOUT
 from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
@@ -185,15 +186,6 @@ class ClickElementNode(BaseNode):
 
             logger.debug(f"Click options: {click_options}")
 
-            # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -201,59 +193,47 @@ class ClickElementNode(BaseNode):
             screenshot_path = self.config.get("screenshot_path", "")
             highlight_before_click = self.config.get("highlight_before_click", False)
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
-
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for click: {selector}"
+            async def perform_click():
+                # Highlight element before clicking if requested
+                if highlight_before_click:
+                    try:
+                        element = await page.wait_for_selector(
+                            normalized_selector, timeout=timeout
                         )
+                        if element:
+                            await element.evaluate("""
+                                el => {
+                                    const original = el.style.outline;
+                                    el.style.outline = '3px solid #ff0000';
+                                    setTimeout(() => { el.style.outline = original; }, 300);
+                                }
+                            """)
+                            await asyncio.sleep(0.3)
+                    except Exception:
+                        pass  # Ignore highlight errors
 
-                    # Highlight element before clicking if requested
-                    if highlight_before_click:
-                        try:
-                            element = await page.wait_for_selector(
-                                normalized_selector, timeout=timeout
-                            )
-                            if element:
-                                await element.evaluate("""
-                                    el => {
-                                        const original = el.style.outline;
-                                        el.style.outline = '3px solid #ff0000';
-                                        setTimeout(() => { el.style.outline = original; }, 300);
-                                    }
-                                """)
-                                await asyncio.sleep(0.3)
-                        except Exception:
-                            pass  # Ignore highlight errors
+                # Click element
+                await page.click(normalized_selector, **click_options)
+                return True
 
-                    # Click element
-                    await page.click(normalized_selector, **click_options)
+            result = await retry_operation(
+                perform_click,
+                max_attempts=retry_count + 1,
+                delay_seconds=retry_interval / 1000,
+                operation_name=f"click {selector}",
+            )
 
-                    self.set_output_value("page", page)
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Element clicked successfully: {selector} (attempt {attempts})"
-                    )
-
-                    return {
-                        "success": True,
-                        "data": {"selector": selector, "attempts": attempts},
-                        "next_nodes": ["exec_out"],
-                    }
-
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(f"Click failed (attempt {attempts}): {e}")
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
+            if result.success:
+                self.set_output_value("page", page)
+                self.status = NodeStatus.SUCCESS
+                logger.info(
+                    f"Element clicked successfully: {selector} (attempt {result.attempts})"
+                )
+                return {
+                    "success": True,
+                    "data": {"selector": selector, "attempts": result.attempts},
+                    "next_nodes": ["exec_out"],
+                }
 
             # All attempts failed - take screenshot if requested
             if screenshot_on_fail and page:
@@ -276,7 +256,7 @@ class ClickElementNode(BaseNode):
                 except Exception as ss_error:
                     logger.warning(f"Failed to take screenshot: {ss_error}")
 
-            raise last_error
+            raise result.last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -427,15 +407,6 @@ class TypeTextNode(BaseNode):
             press_enter_after = self.config.get("press_enter_after", False)
             press_tab_after = self.config.get("press_tab_after", False)
 
-            # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -453,67 +424,52 @@ class TypeTextNode(BaseNode):
             if strict:
                 fill_options["strict"] = True
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
-
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for type text: {selector}"
-                        )
-
-                    # Type text - use fill() for immediate input, type() for character-by-character with delay
-                    # Only use one method to avoid double-typing
-                    if delay > 0 or press_sequentially:
-                        # Clear the field first if configured, then type with delay
-                        if clear_first:
-                            await page.fill(normalized_selector, "", **fill_options)
-                        type_delay = (
-                            delay if delay > 0 else 50
-                        )  # Default 50ms for press_sequentially
-                        await page.type(
-                            normalized_selector, text, delay=type_delay, timeout=timeout
-                        )
-                    else:
-                        # Use fill() for immediate input (faster)
-                        # fill() always clears the field first, so clear_first doesn't affect behavior here
-                        await page.fill(normalized_selector, text, **fill_options)
-
-                    # Press Enter after if requested
-                    if press_enter_after:
-                        await page.keyboard.press("Enter")
-
-                    # Press Tab after if requested
-                    if press_tab_after:
-                        await page.keyboard.press("Tab")
-
-                    self.set_output_value("page", page)
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Text typed successfully: {selector} (attempt {attempts})"
+            async def perform_type():
+                # Type text - use fill() for immediate input, type() for character-by-character with delay
+                if delay > 0 or press_sequentially:
+                    # Clear the field first if configured, then type with delay
+                    if clear_first:
+                        await page.fill(normalized_selector, "", **fill_options)
+                    type_delay = delay if delay > 0 else 50
+                    await page.type(
+                        normalized_selector, text, delay=type_delay, timeout=timeout
                     )
+                else:
+                    # Use fill() for immediate input (faster)
+                    await page.fill(normalized_selector, text, **fill_options)
 
-                    return {
-                        "success": True,
-                        "data": {
-                            "selector": selector,
-                            "text_length": len(text),
-                            "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
-                    }
+                # Press Enter after if requested
+                if press_enter_after:
+                    await page.keyboard.press("Enter")
 
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(f"Type text failed (attempt {attempts}): {e}")
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
+                # Press Tab after if requested
+                if press_tab_after:
+                    await page.keyboard.press("Tab")
+
+                return True
+
+            result = await retry_operation(
+                perform_type,
+                max_attempts=retry_count + 1,
+                delay_seconds=retry_interval / 1000,
+                operation_name=f"type text into {selector}",
+            )
+
+            if result.success:
+                self.set_output_value("page", page)
+                self.status = NodeStatus.SUCCESS
+                logger.info(
+                    f"Text typed successfully: {selector} (attempt {result.attempts})"
+                )
+                return {
+                    "success": True,
+                    "data": {
+                        "selector": selector,
+                        "text_length": len(text),
+                        "attempts": result.attempts,
+                    },
+                    "next_nodes": ["exec_out"],
+                }
 
             # All attempts failed - take screenshot if requested
             if screenshot_on_fail and page:
@@ -536,7 +492,7 @@ class TypeTextNode(BaseNode):
                 except Exception as ss_error:
                     logger.warning(f"Failed to take screenshot: {ss_error}")
 
-            raise last_error
+            raise result.last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR
@@ -664,14 +620,6 @@ class SelectDropdownNode(BaseNode):
             select_by = self.config.get("select_by", "value")
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 1000)
@@ -699,59 +647,45 @@ class SelectDropdownNode(BaseNode):
 
             logger.debug(f"Select options: {select_options}")
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
-
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for select: {selector}"
-                        )
-
-                    # Select option based on select_by mode
-                    if select_by == "index":
-                        await page.select_option(
-                            normalized_selector, index=int(value), **select_options
-                        )
-                    elif select_by == "label":
-                        await page.select_option(
-                            normalized_selector, label=value, **select_options
-                        )
-                    else:  # value (default)
-                        await page.select_option(
-                            normalized_selector, value=value, **select_options
-                        )
-
-                    self.set_output_value("page", page)
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Dropdown selected successfully: {selector} (attempt {attempts})"
+            async def perform_select():
+                # Select option based on select_by mode
+                if select_by == "index":
+                    await page.select_option(
+                        normalized_selector, index=int(value), **select_options
                     )
+                elif select_by == "label":
+                    await page.select_option(
+                        normalized_selector, label=value, **select_options
+                    )
+                else:  # value (default)
+                    await page.select_option(
+                        normalized_selector, value=value, **select_options
+                    )
+                return True
 
-                    return {
-                        "success": True,
-                        "data": {
-                            "selector": selector,
-                            "value": value,
-                            "select_by": select_by,
-                            "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
-                    }
+            result = await retry_operation(
+                perform_select,
+                max_attempts=retry_count + 1,
+                delay_seconds=retry_interval / 1000,
+                operation_name=f"select dropdown {selector}",
+            )
 
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(
-                            f"Select dropdown failed (attempt {attempts}): {e}"
-                        )
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
+            if result.success:
+                self.set_output_value("page", page)
+                self.status = NodeStatus.SUCCESS
+                logger.info(
+                    f"Dropdown selected successfully: {selector} (attempt {result.attempts})"
+                )
+                return {
+                    "success": True,
+                    "data": {
+                        "selector": selector,
+                        "value": value,
+                        "select_by": select_by,
+                        "attempts": result.attempts,
+                    },
+                    "next_nodes": ["exec_out"],
+                }
 
             # All attempts failed - take screenshot if requested
             if screenshot_on_fail and page:
@@ -774,7 +708,7 @@ class SelectDropdownNode(BaseNode):
                 except Exception as ss_error:
                     logger.warning(f"Failed to take screenshot: {ss_error}")
 
-            raise last_error
+            raise result.last_error
 
         except Exception as e:
             self.status = NodeStatus.ERROR

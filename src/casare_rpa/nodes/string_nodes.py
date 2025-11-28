@@ -12,7 +12,7 @@ import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
@@ -24,9 +24,9 @@ class ConcatenateNode(BaseNode):
         self.separator = self.config.get("separator", "")
 
     def _define_ports(self) -> None:
-        self.add_input_port("string_1", DataType.STRING)
-        self.add_input_port("string_2", DataType.STRING)
-        self.add_output_port("result", DataType.STRING)
+        self.add_input_port("string_1", PortType.INPUT, DataType.STRING)
+        self.add_input_port("string_2", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -47,9 +47,9 @@ class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("template", DataType.STRING)
-        self.add_input_port("variables", DataType.DICT)
-        self.add_output_port("result", DataType.STRING)
+        self.add_input_port("template", PortType.INPUT, DataType.STRING)
+        self.add_input_port("variables", PortType.INPUT, DataType.DICT)
+        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -86,13 +86,13 @@ class RegexMatchNode(BaseNode):
         super().__init__(node_id, config)
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", DataType.STRING)
-        self.add_input_port("pattern", DataType.STRING)
-        self.add_output_port("match_found", DataType.BOOLEAN)
-        self.add_output_port("first_match", DataType.STRING)
-        self.add_output_port("all_matches", DataType.LIST)
-        self.add_output_port("groups", DataType.LIST)
-        self.add_output_port("match_count", DataType.INTEGER)
+        self.add_input_port("text", PortType.INPUT, DataType.STRING)
+        self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
+        self.add_output_port("match_found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("first_match", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("all_matches", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("groups", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -155,11 +155,11 @@ class RegexReplaceNode(BaseNode):
         super().__init__(node_id, config)
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", DataType.STRING)
-        self.add_input_port("pattern", DataType.STRING)
-        self.add_input_port("replacement", DataType.STRING)
-        self.add_output_port("result", DataType.STRING)
-        self.add_output_port("count", DataType.INTEGER)
+        self.add_input_port("text", PortType.INPUT, DataType.STRING)
+        self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
+        self.add_input_port("replacement", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:

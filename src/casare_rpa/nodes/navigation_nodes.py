@@ -17,18 +17,9 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.nodes.utils.type_converters import safe_int
 from ..utils.config import DEFAULT_PAGE_LOAD_TIMEOUT
 from loguru import logger
-
-
-def safe_int(value, default: int) -> int:
-    """Safely parse int values with defaults."""
-    if value is None or value == "":
-        return default
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
 
 
 @executable_node
