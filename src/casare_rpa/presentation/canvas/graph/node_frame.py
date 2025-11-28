@@ -101,13 +101,14 @@ class FrameDeletedCmd(QUndoCommand):
 
     def redo(self):
         """Delete the frame again."""
-        if self._frame and self._frame.scene():
-            # Unregister from bounds manager
+        if self._frame:
+            # Unregister from bounds manager first
             if hasattr(self._frame, "_bounds_manager") and self._frame._bounds_manager:
                 self._frame._bounds_manager.unregister_frame(self._frame)
 
-            # Remove from scene (but keep the frame object)
-            self._scene.removeItem(self._frame)
+            # Remove from scene only if still in a scene
+            if self._frame.scene():
+                self._frame.scene().removeItem(self._frame)
             self._was_deleted = True
 
 
