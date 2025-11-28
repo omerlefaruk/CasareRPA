@@ -17,7 +17,7 @@ from loguru import logger
 import orjson
 
 from casare_rpa.utils.workflow.workflow_loader import load_workflow_from_dict
-from casare_rpa.runner.workflow_runner import WorkflowRunner
+from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
 
 from .checkpoint import CheckpointManager
 from .metrics import MetricsCollector, get_metrics_collector
@@ -312,17 +312,17 @@ class JobExecutor:
 
             job_info.status = JobStatus.RUNNING
 
-            # Create and run workflow
-            runner = WorkflowRunner(workflow)
+            # Create and run workflow with use case
+            use_case = ExecuteWorkflowUseCase(workflow=workflow)
 
             # Setup checkpoint hook if available
             if self.checkpoint_manager:
                 self.checkpoint_manager.start_job(job_id, workflow_name)
                 # Hook into node completion for checkpoints
-                self._setup_checkpoint_hook(runner, job_id)
+                self._setup_checkpoint_hook(use_case, job_id)
 
             # Execute workflow
-            success = await self._run_with_cancellation_check(runner, job_id)
+            success = await self._run_with_cancellation_check(use_case, job_id)
 
             # Check if cancelled during execution
             checker = self._cancellation_checkers.get(job_id)
@@ -334,9 +334,13 @@ class JobExecutor:
                 job_info.status = JobStatus.COMPLETED if success else JobStatus.FAILED
 
                 if not success:
-                    # Get error from runner context
-                    if hasattr(runner, "context") and runner.context.errors:
-                        error_message = str(runner.context.errors[-1])
+                    # Get error from use case context
+                    if (
+                        hasattr(use_case, "context")
+                        and use_case.context
+                        and use_case.context.errors
+                    ):
+                        error_message = str(use_case.context.errors[-1])
                     else:
                         error_message = "Workflow execution failed"
 
@@ -406,21 +410,21 @@ class JobExecutor:
 
     async def _run_with_cancellation_check(
         self,
-        runner: WorkflowRunner,
+        use_case: ExecuteWorkflowUseCase,
         job_id: str,
     ) -> bool:
         """
         Run workflow with periodic cancellation checks.
 
         Args:
-            runner: WorkflowRunner instance
+            use_case: ExecuteWorkflowUseCase instance
             job_id: Job identifier
 
         Returns:
             True if completed successfully
         """
-        # Start the workflow run
-        run_task = asyncio.create_task(runner.run())
+        # Start the workflow execution
+        run_task = asyncio.create_task(use_case.execute())
 
         checker = self._cancellation_checkers.get(job_id)
 
@@ -445,25 +449,25 @@ class JobExecutor:
 
         return run_task.result()
 
-    def _setup_checkpoint_hook(self, runner: WorkflowRunner, job_id: str):
-        """Setup checkpoint saving hook on workflow runner."""
+    def _setup_checkpoint_hook(self, use_case: ExecuteWorkflowUseCase, job_id: str):
+        """Setup checkpoint saving hook on workflow execution."""
         if not self.checkpoint_manager:
             return
 
         # Subscribe to node completion events
-        if hasattr(runner, "event_bus") and runner.event_bus:
+        if hasattr(use_case, "event_bus") and use_case.event_bus:
             from casare_rpa.domain.value_objects.types import EventType
 
             def on_node_complete(event):
-                if event.node_id and hasattr(runner, "context"):
+                if event.node_id and hasattr(use_case, "context") and use_case.context:
                     asyncio.create_task(
                         self.checkpoint_manager.save_checkpoint(
                             event.node_id,
-                            runner.context,
+                            use_case.context,
                         )
                     )
 
-            runner.event_bus.subscribe(EventType.NODE_COMPLETED, on_node_complete)
+            use_case.event_bus.subscribe(EventType.NODE_COMPLETED, on_node_complete)
 
     def get_status(self) -> Dict[str, Any]:
         """Get executor status."""
