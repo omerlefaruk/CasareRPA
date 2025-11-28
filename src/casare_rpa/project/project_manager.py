@@ -17,7 +17,7 @@ from casare_rpa.domain.project_schema import (
     VariableScope,
     ProjectsIndex,
 )
-from .project_storage import ProjectStorage
+from casare_rpa.infrastructure.persistence.project_storage import ProjectStorage
 from .scenario_storage import ScenarioStorage
 
 
