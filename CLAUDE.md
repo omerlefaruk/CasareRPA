@@ -577,7 +577,32 @@
 
                 assert result["success"] is True
           </node_test>
+
+          <parametrized_test>
+            @pytest.mark.parametrize("input_val,expected", [
+                ("https://example.com", 200),
+                ("http://test.com", 200),
+                ("invalid", False),
+            ])
+            async def test_navigation_with_multiple_inputs(input_val, expected, mock_page):
+                node = NavigateNode(url=input_val)
+                result = await node.execute(context)
+                assert result["status"] == expected
+          </parametrized_test>
         </common_patterns>
+
+        <test_discovery>
+          <command desc="List all available fixtures">pytest --fixtures tests/</command>
+          <command desc="List tests without running">pytest --collect-only tests/</command>
+          <command desc="Show test markers">pytest --markers</command>
+        </test_discovery>
+
+        <debugging>
+          <command desc="Run single test with output">pytest tests/path/test_file.py::test_name -vv -s</command>
+          <command desc="Stop on first failure">pytest tests/ -x</command>
+          <command desc="Drop into debugger on failure">pytest tests/ --pdb</command>
+          <command desc="Show local variables on failure">pytest tests/ -l</command>
+        </debugging>
       </quick_reference>
     </tdd>
   </project>
