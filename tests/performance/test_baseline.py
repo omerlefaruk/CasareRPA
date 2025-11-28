@@ -147,7 +147,7 @@ class TestMemoryBaseline:
         initial_memory = get_process_memory_mb()
 
         try:
-            from casare_rpa.canvas.graph.node_registry import NodeRegistry
+            from casare_rpa.presentation.canvas.graph.node_registry import NodeRegistry
 
             registry = NodeRegistry()
             # Trigger node discovery if available

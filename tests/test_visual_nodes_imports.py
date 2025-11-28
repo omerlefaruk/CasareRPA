@@ -27,7 +27,7 @@ class TestVisualNodesImports:
     def test_import_from_compatibility_layer(self) -> None:
         """Test importing from old canvas.visual_nodes location (compatibility)."""
         # Test basic imports from compatibility layer
-        from casare_rpa.canvas.visual_nodes import (
+        from casare_rpa.presentation.canvas.visual_nodes import (
             VisualStartNode,
             VisualEndNode,
             VisualCommentNode,
@@ -164,7 +164,7 @@ class TestVisualNodesImports:
 
     def test_compatibility_layer_has_all_exports(self) -> None:
         """Test that compatibility layer re-exports __all__ correctly."""
-        from casare_rpa.canvas.visual_nodes import __all__ as compat_all
+        from casare_rpa.presentation.canvas.visual_nodes import __all__ as compat_all
         from casare_rpa.presentation.canvas.visual_nodes import __all__ as new_all
 
         # Both should have the same __all__ list

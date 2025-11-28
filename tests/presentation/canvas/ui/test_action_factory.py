@@ -9,7 +9,7 @@ from unittest.mock import Mock, MagicMock, patch
 from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtGui import QAction, QKeySequence
 
-from casare_rpa.canvas.ui.action_factory import ActionFactory
+from casare_rpa.presentation.canvas.ui.action_factory import ActionFactory
 
 
 @pytest.fixture(scope="module")

@@ -10,12 +10,13 @@ from PySide6.QtCore import QObject
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 # Create a metaclass that combines QObject's metaclass with ABCMeta
 class QABCMeta(type(QObject), ABCMeta):
     """Metaclass that combines QObject and ABC."""
+
     pass
 
 

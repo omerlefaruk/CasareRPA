@@ -382,7 +382,7 @@ class TestRecentFilesManagement:
     def test_get_recent_files(self, ui_state_controller) -> None:
         """Test get_recent_files returns files list."""
         with patch(
-            "casare_rpa.canvas.workflow.recent_files.get_recent_files_manager"
+            "casare_rpa.application.workflow.recent_files.get_recent_files_manager"
         ) as mock_manager:
             mock_manager.return_value.get_recent_files.return_value = [
                 {"path": "/test/file.json", "name": "file.json"}
@@ -404,7 +404,7 @@ class TestRecentFilesManagement:
         )
 
         with patch(
-            "casare_rpa.canvas.workflow.recent_files.get_recent_files_manager"
+            "casare_rpa.application.workflow.recent_files.get_recent_files_manager"
         ) as mock_manager:
             mock_manager.return_value.get_recent_files.return_value = []
 
@@ -418,7 +418,7 @@ class TestRecentFilesManagement:
         test_file = tmp_path / "test.json"
 
         with patch(
-            "casare_rpa.canvas.workflow.recent_files.get_recent_files_manager"
+            "casare_rpa.application.workflow.recent_files.get_recent_files_manager"
         ) as mock_manager:
             mock_manager.return_value.get_recent_files.return_value = []
 
@@ -434,7 +434,7 @@ class TestRecentFilesManagement:
         )
 
         with patch(
-            "casare_rpa.canvas.workflow.recent_files.get_recent_files_manager"
+            "casare_rpa.application.workflow.recent_files.get_recent_files_manager"
         ) as mock_manager:
             ui_state_controller.clear_recent_files()
 
@@ -606,7 +606,7 @@ class TestSignalEmission:
         ui_state_controller.recent_files_changed.connect(lambda f: received.append(f))
 
         with patch(
-            "casare_rpa.canvas.workflow.recent_files.get_recent_files_manager"
+            "casare_rpa.application.workflow.recent_files.get_recent_files_manager"
         ) as mock_manager:
             mock_manager.return_value.get_recent_files.return_value = []
             ui_state_controller.clear_recent_files()

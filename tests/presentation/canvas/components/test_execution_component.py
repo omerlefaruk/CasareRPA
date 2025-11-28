@@ -13,7 +13,9 @@ import pytest
 from unittest.mock import Mock, patch, AsyncMock
 import asyncio
 
-from casare_rpa.canvas.components.execution_component import ExecutionComponent
+from casare_rpa.presentation.canvas.components.execution_component import (
+    ExecutionComponent,
+)
 
 
 @pytest.fixture

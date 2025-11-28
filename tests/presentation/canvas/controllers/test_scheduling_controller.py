@@ -56,7 +56,7 @@ def mock_main_window(qtbot) -> None:
 def scheduling_controller(mock_main_window) -> None:
     """Create a SchedulingController instance."""
     with patch(
-        "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+        "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
     ) as mock_storage:
         mock_storage.return_value.get_all_schedules.return_value = []
         controller = SchedulingController(mock_main_window)
@@ -70,7 +70,7 @@ class TestSchedulingControllerInitialization:
     def test_initialization(self, mock_main_window) -> None:
         """Test controller initializes correctly."""
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
         ):
             controller = SchedulingController(mock_main_window)
             assert controller.main_window == mock_main_window
@@ -80,7 +80,7 @@ class TestSchedulingControllerInitialization:
         """Test initialize method loads existing schedules."""
         mock_schedule = Mock()
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
         ) as mock_storage:
             mock_storage.return_value.get_all_schedules.return_value = [mock_schedule]
             controller = SchedulingController(mock_main_window)
@@ -196,7 +196,7 @@ class TestErrorHandling:
         main_window.show_status = Mock()
 
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage",
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage",
             side_effect=ImportError("Module not found"),
         ):
             controller = SchedulingController(main_window)
@@ -215,7 +215,7 @@ class TestDeleteSchedule:
         scheduling_controller._active_schedules = [mock_schedule]
 
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
         ) as mock_storage:
             mock_storage.return_value.delete_schedule.return_value = True
 
@@ -239,7 +239,7 @@ class TestDeleteSchedule:
     def test_delete_schedule_not_found(self, scheduling_controller) -> None:
         """Test delete_schedule returns False when deletion fails."""
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
         ) as mock_storage:
             mock_storage.return_value.delete_schedule.return_value = False
 
@@ -250,7 +250,7 @@ class TestDeleteSchedule:
     def test_delete_schedule_handles_exception(self, scheduling_controller) -> None:
         """Test delete_schedule handles exceptions gracefully."""
         with patch(
-            "casare_rpa.canvas.scheduling.schedule_storage.get_schedule_storage"
+            "casare_rpa.application.scheduling.schedule_storage.get_schedule_storage"
         ) as mock_storage:
             mock_storage.return_value.delete_schedule.side_effect = Exception(
                 "Database error"

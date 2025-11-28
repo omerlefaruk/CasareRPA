@@ -21,7 +21,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class MenuController(BaseController):
@@ -91,7 +91,7 @@ class MenuController(BaseController):
         if not menu:
             return
 
-        from ....canvas.workflow.recent_files import get_recent_files_manager
+        from ....application.workflow.recent_files import get_recent_files_manager
 
         menu.clear()
 
@@ -120,7 +120,7 @@ class MenuController(BaseController):
         """Open the hotkey manager dialog."""
         logger.info("Opening hotkey manager")
 
-        from ....canvas.toolbar.hotkey_manager import HotkeyManagerDialog
+        from ..ui.toolbars.hotkey_manager import HotkeyManagerDialog
 
         dialog = HotkeyManagerDialog(self._actions, self.main_window)
         if dialog.exec():
@@ -131,7 +131,7 @@ class MenuController(BaseController):
         """Open the preferences dialog."""
         logger.info("Opening preferences dialog")
 
-        from ....canvas.dialogs.preferences_dialog import PreferencesDialog
+        from ..ui.dialogs.preferences_dialog import PreferencesDialog
         from PySide6.QtWidgets import QDialog
 
         dialog = PreferencesDialog(self.main_window)
@@ -145,7 +145,7 @@ class MenuController(BaseController):
         """Open the performance dashboard dialog."""
         logger.info("Opening performance dashboard")
 
-        from ....canvas.execution.performance_dashboard import (
+        from ..ui.widgets.performance_dashboard import (
             PerformanceDashboardDialog,
         )
 
@@ -243,7 +243,7 @@ class MenuController(BaseController):
             )
 
             # Remove from recent files
-            from ....canvas.workflow.recent_files import get_recent_files_manager
+            from ....application.workflow.recent_files import get_recent_files_manager
 
             manager = get_recent_files_manager()
             manager.remove_file(file_path)
@@ -313,7 +313,7 @@ class MenuController(BaseController):
         logger.info("Opening desktop selector builder")
 
         try:
-            from ....canvas.selectors.desktop_selector_builder import (
+            from ..selectors.desktop_selector_builder import (
                 DesktopSelectorBuilder,
             )
 
@@ -346,7 +346,7 @@ class MenuController(BaseController):
         logger.debug(f"Adding to recent files: {file_path}")
 
         try:
-            from ....canvas.workflow.recent_files import get_recent_files_manager
+            from ....application.workflow.recent_files import get_recent_files_manager
 
             manager = get_recent_files_manager()
             path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -363,7 +363,7 @@ class MenuController(BaseController):
             List of dicts with 'path', 'name', 'last_opened' keys
         """
         try:
-            from ....canvas.workflow.recent_files import get_recent_files_manager
+            from ....application.workflow.recent_files import get_recent_files_manager
 
             manager = get_recent_files_manager()
             return manager.get_recent_files()
@@ -389,7 +389,7 @@ class MenuController(BaseController):
         logger.info("Clearing recent files")
 
         try:
-            from ....canvas.workflow.recent_files import get_recent_files_manager
+            from ....application.workflow.recent_files import get_recent_files_manager
 
             manager = get_recent_files_manager()
             manager.clear()

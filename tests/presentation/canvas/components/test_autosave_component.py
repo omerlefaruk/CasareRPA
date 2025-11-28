@@ -12,7 +12,9 @@ import pytest
 from unittest.mock import Mock, patch
 from PySide6.QtCore import QTimer
 
-from casare_rpa.canvas.components.autosave_component import AutosaveComponent
+from casare_rpa.presentation.canvas.components.autosave_component import (
+    AutosaveComponent,
+)
 
 
 @pytest.fixture

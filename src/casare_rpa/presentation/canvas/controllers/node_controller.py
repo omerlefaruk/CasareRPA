@@ -6,6 +6,7 @@ Handles all node-related operations:
 - Node enable/disable state
 - Node search and filtering
 - Property updates
+- Node registry initialization and management
 """
 
 from typing import Optional, TYPE_CHECKING
@@ -16,7 +17,7 @@ from loguru import logger
 from .base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ....canvas.main_window import MainWindow
+    from ..main_window import MainWindow
 
 
 class NodeController(BaseController):
@@ -49,7 +50,39 @@ class NodeController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
+        # Initialize node registry
+        self._initialize_node_registry()
         logger.info("NodeController initialized")
+
+    def _initialize_node_registry(self) -> None:
+        """
+        Initialize node registry and register all node types.
+
+        Extracted from: canvas/components/node_registry_component.py
+        Registers all visual node types with the graph and pre-builds node mapping cache.
+        """
+        try:
+            from ..graph.node_registry import get_node_registry, get_casare_node_mapping
+
+            # Get the graph from main window
+            graph = self._get_graph()
+            if not graph:
+                logger.warning("Graph not available for node registry initialization")
+                return
+
+            # Register all node types with the graph
+            node_registry = get_node_registry()
+            node_registry.register_all_nodes(graph)
+            logger.info("Registered all node types with graph")
+
+            # Pre-build node mapping to avoid delay on first node creation
+            get_casare_node_mapping()
+            logger.info("Pre-built node mapping cache")
+
+        except ImportError as e:
+            logger.error(f"Failed to import node registry: {e}")
+        except Exception as e:
+            logger.error(f"Failed to initialize node registry: {e}")
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -236,7 +269,7 @@ class NodeController(BaseController):
             self.main_window.show_status("No graph available", 3000)
             return
 
-        from ....canvas.search.node_search import NodeSearchDialog
+        from ..search.node_search import NodeSearchDialog
 
         dialog = NodeSearchDialog(graph, self.main_window)
         dialog.show_search()

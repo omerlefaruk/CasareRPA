@@ -111,7 +111,7 @@ class TestNodeRegistryCache:
 
     def test_visual_class_cache_hit(self):
         """Test that repeated lookups use LRU cache."""
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             get_visual_class_for_type,
             get_cache_stats,
             clear_node_type_caches,
@@ -134,7 +134,7 @@ class TestNodeRegistryCache:
 
     def test_identifier_cache_hit(self):
         """Test identifier lookup caching."""
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             get_identifier_for_type,
             get_cache_stats,
             clear_node_type_caches,
@@ -154,7 +154,7 @@ class TestNodeRegistryCache:
 
     def test_casare_class_cache_hit(self):
         """Test CasareRPA class lookup caching."""
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             get_casare_class_for_type,
             get_cache_stats,
             clear_node_type_caches,
@@ -175,7 +175,7 @@ class TestNodeRegistryCache:
 
     def test_cache_clear_resets_stats(self):
         """Test that clearing cache resets statistics."""
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             get_visual_class_for_type,
             get_cache_stats,
             clear_node_type_caches,
@@ -363,7 +363,7 @@ class TestCacheIntegration:
     def test_all_caches_independent(self):
         """Test that different caches don't interfere with each other."""
         from casare_rpa.presentation.canvas.resources import ResourceCache
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             clear_node_type_caches,
             get_cache_stats,
         )
@@ -388,7 +388,7 @@ class TestCacheIntegration:
 
     def test_high_hit_rate_scenario(self):
         """Simulate realistic usage with expected high hit rate."""
-        from casare_rpa.canvas.graph.node_registry import (
+        from casare_rpa.presentation.canvas.graph.node_registry import (
             get_visual_class_for_type,
             get_cache_stats,
             clear_node_type_caches,

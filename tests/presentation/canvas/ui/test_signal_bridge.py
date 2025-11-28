@@ -9,7 +9,7 @@ from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QApplication, QMainWindow, QStatusBar
 
-from casare_rpa.canvas.ui.signal_bridge import (
+from casare_rpa.presentation.canvas.ui.signal_bridge import (
     ControllerSignalBridge,
     BottomPanelSignalBridge,
 )
