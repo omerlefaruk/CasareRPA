@@ -7,19 +7,14 @@ and basic functionality.
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestSystemNodesIntegration:
     """Integration tests for system category nodes."""
 
-    @pytest.fixture
-    def execution_context(self) -> None:
-        """Create a mock execution context."""
-        context = Mock(spec=ExecutionContext)
-        context.resolve_value = lambda x: x
-        context.variables = {}
-        return context
+    # Uses execution_context fixture from conftest.py
 
     # =============================================================================
     # Clipboard Nodes

@@ -12,8 +12,8 @@ from unittest.mock import Mock, AsyncMock, patch, MagicMock
 import asyncio
 import json
 
-from casare_rpa.core.execution_context import ExecutionContext
-from casare_rpa.core.types import NodeStatus
+# Uses execution_context fixture from conftest.py - no import needed
+from casare_rpa.domain.value_objects.types import NodeStatus
 
 
 class TestTryNode:

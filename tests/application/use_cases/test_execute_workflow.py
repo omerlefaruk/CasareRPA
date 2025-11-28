@@ -320,7 +320,7 @@ class TestEventEmission:
         self, simple_workflow: WorkflowSchema, mock_event_bus: MagicMock
     ) -> None:
         """Event is published to event bus."""
-        from casare_rpa.core.types import EventType
+        from casare_rpa.domain.value_objects.types import EventType
 
         use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=mock_event_bus)
         use_case._emit_event(EventType.WORKFLOW_STARTED, {"test": "data"})
@@ -331,7 +331,7 @@ class TestEventEmission:
         use_case = ExecuteWorkflowUseCase(simple_workflow, event_bus=None)
         use_case.event_bus = None
         # Should not raise
-        from casare_rpa.core.types import EventType
+        from casare_rpa.domain.value_objects.types import EventType
 
         use_case._emit_event(EventType.WORKFLOW_STARTED, {})
 

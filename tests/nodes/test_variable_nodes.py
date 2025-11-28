@@ -119,9 +119,7 @@ class TestGetVariableNode:
     @pytest.fixture
     def execution_context(self) -> Mock:
         """Override fixture with pre-populated variables for get tests."""
-        from casare_rpa.core.execution_context import ExecutionContext
-
-        context = Mock(spec=ExecutionContext)
+        context = Mock()
         context.variables = {
             "existing_var": "existing_value",
             "num_var": 100,
@@ -212,9 +210,7 @@ class TestIncrementVariableNode:
     @pytest.fixture
     def execution_context(self) -> Mock:
         """Override fixture with counter variables for increment tests."""
-        from casare_rpa.core.execution_context import ExecutionContext
-
-        context = Mock(spec=ExecutionContext)
+        context = Mock()
         context.variables = {"counter": 10, "float_counter": 5.5}
         context.resolve_value = lambda x: x
         context.get_variable = lambda name, default=None: context.variables.get(

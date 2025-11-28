@@ -15,7 +15,8 @@ import sys
 import subprocess
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from tests/conftest.py - no import needed
 
 
 class TestRunPythonScriptNode:

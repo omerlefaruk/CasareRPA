@@ -17,7 +17,8 @@ type coercion, and ExecutionResult compliance.
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 from casare_rpa.nodes.data_operation_nodes import (
     ConcatenateNode,
     FormatStringNode,

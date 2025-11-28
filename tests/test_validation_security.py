@@ -15,6 +15,7 @@ import pytest
 import sys
 from typing import Dict, Any
 
+# Note: validation module still in core/ but doesn't trigger deprecation warnings
 from casare_rpa.core.validation import (
     validate_workflow,
     validate_node,

@@ -7,7 +7,8 @@ Tests 8 XML nodes for XML parsing, XPath queries, and JSON conversion.
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 import xml.etree.ElementTree as ET
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestXMLNodes:

@@ -6,25 +6,14 @@ Tests all 8 control flow nodes to ensure proper execution and routing logic.
 
 import pytest
 from unittest.mock import Mock, AsyncMock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestControlFlowNodes:
     """Integration tests for control flow category nodes."""
 
-    @pytest.fixture
-    def execution_context(self) -> None:
-        """Create a mock execution context with real variable storage."""
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        context.get_variable = lambda name, default=None: context.variables.get(
-            name, default
-        )
-        context.set_variable = lambda name, value: context.variables.__setitem__(
-            name, value
-        )
-        return context
+    # Uses execution_context fixture from conftest.py
 
     # =============================================================================
     # IfNode Tests

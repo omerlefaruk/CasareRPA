@@ -14,7 +14,9 @@ import pytest
 from unittest.mock import Mock, MagicMock, AsyncMock
 from typing import Any, Dict, Optional
 
-from casare_rpa.core.execution_context import ExecutionContext
+# ExecutionContext imported for Mock spec only - actual context mocked
+# Using local Mock definition to avoid deprecated import warning
+# The mock doesn't need the real class, just its interface
 
 
 @pytest.fixture
@@ -37,7 +39,7 @@ def execution_context() -> Mock:
             node = MyNode()
             result = await node.execute(execution_context)
     """
-    context = Mock(spec=ExecutionContext)
+    context = Mock()
     context.variables: Dict[str, Any] = {}
     context.resolve_value = lambda x: x
     context.get_variable = lambda name, default=None: context.variables.get(
@@ -74,7 +76,7 @@ def execution_context_with_variables() -> Mock:
             # Variables already available: test_var='value', test_number=42, etc.
             result = await node.execute(execution_context_with_variables)
     """
-    context = Mock(spec=ExecutionContext)
+    context = Mock()
     context.variables: Dict[str, Any] = {
         "test_var": "value",
         "test_number": 42,
@@ -104,7 +106,7 @@ def mock_execution_context() -> Mock:
     Returns:
         Mock ExecutionContext.
     """
-    context = Mock(spec=ExecutionContext)
+    context = Mock()
     context.variables: Dict[str, Any] = {}
     context.resolve_value = lambda x: x
     context.get_variable = lambda name, default=None: context.variables.get(

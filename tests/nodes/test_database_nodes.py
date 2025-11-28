@@ -21,7 +21,7 @@ import casare_rpa.nodes.database_nodes as db_module
 
 db_module.AIOSQLITE_AVAILABLE = False
 
-from casare_rpa.core.execution_context import ExecutionContext
+# Uses execution_context fixture from conftest.py - no import needed
 from casare_rpa.nodes.database_nodes import (
     DatabaseConnection,
     DatabaseConnectNode,

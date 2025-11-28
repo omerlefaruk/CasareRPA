@@ -19,69 +19,8 @@ CasareRPA is a Windows Desktop RPA (Robotic Process Automation) platform with a 
 # Run the application
 python run.py
 
-# Run all tests
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_control_flow.py -v
-
-# Run tests with coverage
-pytest --cov=casare_rpa tests/
-
 # Install dependencies (editable mode)
 pip install -e .
-
-# Install Playwright browsers (required for web automation)
-playwright install chromium
-```
-
-## Build Executables (PyInstaller)
-
-```powershell
-# Canvas (main visual editor)
-pyinstaller --noconsole --noconfirm --name "CasareRPA-Canvas" \
-  --add-data "src/casare_rpa;casare_rpa" \
-  --hidden-import=PySide6.QtSvg \
-  --hidden-import=PySide6.QtWidgets \
-  --hidden-import=PySide6.QtGui \
-  --hidden-import=PySide6.QtCore \
-  --hidden-import=loguru \
-  --hidden-import=psutil \
-  --hidden-import=qasync \
-  --hidden-import=NodeGraphQt \
-  --hidden-import=Qt \
-  --hidden-import=orjson \
-  --hidden-import=playwright \
-  --hidden-import=playwright.async_api \
-  --hidden-import=playwright.sync_api \
-  --hidden-import=uiautomation \
-  --clean run.py
-
-# Robot (headless executor)
-pyinstaller --name="CasareRPA-Robot" --windowed --paths=src \
-  --hidden-import=casare_rpa.robot \
-  --hidden-import=casare_rpa.utils \
-  --hidden-import=playwright \
-  --hidden-import=PySide6 \
-  --hidden-import=qasync \
-  --hidden-import=loguru \
-  --hidden-import=orjson \
-  --hidden-import=psutil \
-  --hidden-import=supabase \
-  --onedir --clean src/casare_rpa/robot/tray_icon.py
-
-# Orchestrator (workflow manager)
-pyinstaller --name="CasareRPA-Orchestrator" --windowed --paths=src \
-  --hidden-import=casare_rpa.orchestrator \
-  --hidden-import=casare_rpa.utils \
-  --hidden-import=PySide6 \
-  --hidden-import=qasync \
-  --hidden-import=loguru \
-  --hidden-import=orjson \
-  --hidden-import=playwright \
-  --hidden-import=supabase \
-  --onedir --clean src/casare_rpa/orchestrator/main_window.py
-```
 
 ## Architecture
 
@@ -272,8 +211,6 @@ Phases 1-8 complete. Currently adding advanced features:
 - Project management system
 - Performance optimization with connection pooling
 - Performance dashboard UI
-
-See `DEVELOPMENT_ROADMAP.md` for full details.
 
 ## Refactoring Status
 

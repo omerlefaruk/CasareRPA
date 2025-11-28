@@ -22,7 +22,7 @@ from casare_rpa.nodes.desktop_nodes.mouse_keyboard_nodes import (
     GetMousePositionNode,
     DragMouseNode,
 )
-from casare_rpa.core.types import NodeStatus
+from casare_rpa.domain.value_objects.types import NodeStatus
 
 
 # =============================================================================

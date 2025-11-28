@@ -14,7 +14,8 @@ All tests verify ExecutionResult pattern compliance.
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 from casare_rpa.nodes.control_flow_nodes import (
     IfNode,
     ForLoopStartNode,
@@ -1041,7 +1042,7 @@ class TestControlFlowEdgeCases:
     @pytest.mark.asyncio
     async def test_break_node_status(self, execution_context):
         """Test BreakNode sets correct node status."""
-        from casare_rpa.core.types import NodeStatus
+        from casare_rpa.domain.value_objects.types import NodeStatus
 
         node = BreakNode(node_id="test_break_status")
 
@@ -1053,7 +1054,7 @@ class TestControlFlowEdgeCases:
     @pytest.mark.asyncio
     async def test_continue_node_status(self, execution_context):
         """Test ContinueNode sets correct node status."""
-        from casare_rpa.core.types import NodeStatus
+        from casare_rpa.domain.value_objects.types import NodeStatus
 
         node = ContinueNode(node_id="test_continue_status")
 

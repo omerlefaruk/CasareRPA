@@ -10,7 +10,8 @@ import pytest
 import re
 import uuid
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Uses execution_context fixture from conftest.py - no import needed
 
 
 class TestRandomNumberNode:
