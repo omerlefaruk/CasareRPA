@@ -29,6 +29,7 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     ExecutionResult,
 )
+from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 def _decode_header_value(value: str) -> str:
@@ -225,14 +226,6 @@ class SendEmailNode(BaseNode):
             password = context.resolve_value(password)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 2000)
@@ -496,14 +489,6 @@ class ReadEmailsNode(BaseNode):
             search_criteria = context.resolve_value(search_criteria)
 
             # Helper to safely parse int values with defaults
-            def safe_int(value, default: int) -> int:
-                if value is None or value == "":
-                    return default
-                try:
-                    return int(value)
-                except (ValueError, TypeError):
-                    return default
-
             # Get retry options
             retry_count = safe_int(self.config.get("retry_count"), 0)
             retry_interval = safe_int(self.config.get("retry_interval"), 2000)

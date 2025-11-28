@@ -9,18 +9,9 @@ from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
 from casare_rpa.domain.decorators import executable_node
+from casare_rpa.nodes.utils.type_converters import safe_int
 from ...domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
-
-
-def safe_int(value, default: int) -> int:
-    """Safely parse int values with defaults."""
-    if value is None or value == "":
-        return default
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
 
 
 @executable_node

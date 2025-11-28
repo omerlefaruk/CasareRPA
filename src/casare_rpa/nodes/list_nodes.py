@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
@@ -20,10 +20,10 @@ class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("item_1", DataType.ANY)
-        self.add_input_port("item_2", DataType.ANY)
-        self.add_input_port("item_3", DataType.ANY)
-        self.add_output_port("list", DataType.LIST)
+        self.add_input_port("item_1", PortType.INPUT, DataType.ANY)
+        self.add_input_port("item_2", PortType.INPUT, DataType.ANY)
+        self.add_input_port("item_3", PortType.INPUT, DataType.ANY)
+        self.add_output_port("list", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -47,9 +47,9 @@ class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("index", DataType.INTEGER)
-        self.add_output_port("item", DataType.ANY)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("index", PortType.INPUT, DataType.INTEGER)
+        self.add_output_port("item", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -78,8 +78,8 @@ class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_output_port("length", DataType.INTEGER)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_output_port("length", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -100,9 +100,9 @@ class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("item", DataType.ANY)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("item", PortType.INPUT, DataType.ANY)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -127,10 +127,10 @@ class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("item", DataType.ANY)
-        self.add_output_port("contains", DataType.BOOLEAN)
-        self.add_output_port("index", DataType.INTEGER)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("item", PortType.INPUT, DataType.ANY)
+        self.add_output_port("contains", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("index", PortType.OUTPUT, DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -160,10 +160,10 @@ class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("start", DataType.INTEGER)
-        self.add_input_port("end", DataType.INTEGER)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("start", PortType.INPUT, DataType.INTEGER)
+        self.add_input_port("end", PortType.INPUT, DataType.INTEGER)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -195,9 +195,9 @@ class ListJoinNode(BaseNode):
         self.separator = self.config.get("separator", ", ")
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("separator", DataType.STRING)
-        self.add_output_port("result", DataType.STRING)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("separator", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -226,10 +226,10 @@ class ListSortNode(BaseNode):
         self.key_path = self.config.get("key_path", "")
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("reverse", DataType.BOOLEAN)
-        self.add_input_port("key_path", DataType.STRING)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("reverse", PortType.INPUT, DataType.BOOLEAN)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -269,8 +269,8 @@ class ListReverseNode(BaseNode):
     """Node that reverses a list."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -293,8 +293,8 @@ class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -335,12 +335,12 @@ class ListFilterNode(BaseNode):
         self.key_path = self.config.get("key_path", "")
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("condition", DataType.STRING)
-        self.add_input_port("value", DataType.ANY)
-        self.add_input_port("key_path", DataType.STRING)
-        self.add_output_port("result", DataType.LIST)
-        self.add_output_port("removed", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("condition", PortType.INPUT, DataType.STRING)
+        self.add_input_port("value", PortType.INPUT, DataType.ANY)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("removed", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -415,10 +415,10 @@ class ListMapNode(BaseNode):
         self.key_path = self.config.get("key_path", "")
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("transform", DataType.STRING)
-        self.add_input_port("key_path", DataType.STRING)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("transform", PortType.INPUT, DataType.STRING)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -477,11 +477,11 @@ class ListReduceNode(BaseNode):
         self.key_path = self.config.get("key_path", "")
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("operation", DataType.STRING)
-        self.add_input_port("key_path", DataType.STRING)
-        self.add_input_port("initial", DataType.ANY)
-        self.add_output_port("result", DataType.ANY)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("operation", PortType.INPUT, DataType.STRING)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        self.add_input_port("initial", PortType.INPUT, DataType.ANY)
+        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -557,9 +557,9 @@ class ListFlattenNode(BaseNode):
         self.depth = self.config.get("depth", 1)
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", DataType.LIST)
-        self.add_input_port("depth", DataType.INTEGER)
-        self.add_output_port("result", DataType.LIST)
+        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("depth", PortType.INPUT, DataType.INTEGER)
+        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:

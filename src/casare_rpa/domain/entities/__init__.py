@@ -7,24 +7,31 @@ Domain entities are objects with identity that persist over time.
 from .base_node import BaseNode
 from .workflow_metadata import WorkflowMetadata
 from .node_connection import NodeConnection
-from .workflow import WorkflowSchema, VariableDefinition
+from .variable import Variable, VariableDefinition, ProjectVariable
+from .workflow import WorkflowSchema
 from .execution_state import ExecutionState, ExecutionContext
 from .project import (
-    Project,
-    Scenario,
-    ProjectVariable,
-    VariablesFile,
-    CredentialBinding,
-    CredentialBindingsFile,
-    ProjectSettings,
-    ScenarioExecutionSettings,
-    ProjectIndexEntry,
-    ProjectsIndex,
-    VariableScope,
-    VariableType,
+    # Constants
+    PROJECT_SCHEMA_VERSION,
     generate_project_id,
     generate_scenario_id,
-    PROJECT_SCHEMA_VERSION,
+    # Enums
+    VariableScope,
+    VariableType,
+    # Variable classes
+    VariablesFile,
+    # Credential classes
+    CredentialBinding,
+    CredentialBindingsFile,
+    # Settings classes
+    ProjectSettings,
+    ScenarioExecutionSettings,
+    # Main entities
+    Project,
+    Scenario,
+    # Index classes
+    ProjectIndexEntry,
+    ProjectsIndex,
 )
 
 __all__ = [
@@ -32,13 +39,15 @@ __all__ = [
     "WorkflowMetadata",
     "NodeConnection",
     "WorkflowSchema",
-    "VariableDefinition",
+    # Unified Variable class and backward compatibility aliases
+    "Variable",
+    "VariableDefinition",  # Alias for Variable (backwards compatibility)
+    "ProjectVariable",  # Alias for Variable (backwards compatibility)
     "ExecutionState",
     "ExecutionContext",  # Alias for ExecutionState (backwards compatibility)
     # Project entities
     "Project",
     "Scenario",
-    "ProjectVariable",
     "VariablesFile",
     "CredentialBinding",
     "CredentialBindingsFile",

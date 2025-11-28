@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any
 
 from loguru import logger
 
-from .schedule_dialog import WorkflowSchedule
+from casare_rpa.presentation.canvas.ui.dialogs.schedule_dialog import WorkflowSchedule
 
 
 class ScheduleStorage:
