@@ -9,17 +9,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "casare-rpa"
-version = "0.1.0"
-description = "High-Performance Windows Desktop RPA Platform with Visual Node-Based Workflow Editor"
+version = "3.0.0"  # BREAKING: Clean architecture migration - see docs/MIGRATION_GUIDE_V3.md
+description = "High-Performance Windows Desktop RPA Platform with Visual Node-Based Workflow Editor and Clean Architecture"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "CasareRPA Team", email = "dev@casarerpa.com"}
 ]
-keywords = ["rpa", "automation", "playwright", "desktop", "workflow", "visual-programming"]
+keywords = ["rpa", "automation", "playwright", "desktop", "workflow", "visual-programming", "clean-architecture"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
@@ -100,3 +100,6 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
 asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
