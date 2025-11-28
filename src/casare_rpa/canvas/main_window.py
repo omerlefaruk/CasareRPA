@@ -30,6 +30,7 @@ from ..utils.config import (
 )
 from ..utils.hotkey_settings import get_hotkey_settings
 from .graph.minimap import Minimap
+from ..presentation.canvas.component_factory import ComponentFactory
 from loguru import logger
 
 # Import controllers for MVC architecture
@@ -121,8 +122,17 @@ class MainWindow(QMainWindow):
         # Properties panel (right dock for selected node properties)
         self._properties_panel: Optional["PropertiesPanel"] = None
 
-        # Command palette
+        # Command palette (DEFERRED tier - lazy loaded)
         self._command_palette: Optional["CommandPalette"] = None
+
+        # === 3-TIER LOADING STATE ===
+        # Track whether normal-tier components have been loaded
+        self._normal_components_loaded: bool = False
+
+        # DEFERRED tier - dialogs created on first use via ComponentFactory
+        self._preferences_dialog: Optional["QDialog"] = None
+        self._desktop_selector_builder: Optional["QDialog"] = None
+        self._performance_dashboard: Optional["QDialog"] = None
 
         # Controllers (MVC architecture)
         self._workflow_controller: Optional[WorkflowController] = None
@@ -137,30 +147,22 @@ class MainWindow(QMainWindow):
         self._trigger_controller: Optional[TriggerController] = None
         self._ui_state_controller: Optional[UIStateController] = None
 
-        # Setup window
+        # === CRITICAL TIER (immediate) ===
+        # These components are required for basic UI rendering
         self._setup_window()
         self._create_actions()
         self._create_menus()
         self._create_toolbar()
         self._create_status_bar()
-        self._create_bottom_panel()
-        self._create_variable_inspector_dock()
-        self._create_properties_panel()
-        self._create_execution_timeline_dock()
-        self._create_debug_components()
-        self._create_command_palette()
-        self._setup_validation_timer()
 
-        # Initialize controllers after UI is set up
+        # Initialize controllers after critical UI is set up
         self._init_controllers()
 
         # Set initial state
         # Window title will be updated by WorkflowController via signal
         self._update_actions()
 
-        # Restore UI state from previous session (via UIStateController)
-        if self._ui_state_controller:
-            self._ui_state_controller.restore_state()
+        logger.debug("MainWindow: Critical tier initialization complete")
 
     def _setup_window(self) -> None:
         """Configure window properties."""
@@ -810,11 +812,28 @@ class MainWindow(QMainWindow):
         self._exec_status_label.setText(text)
         self._exec_status_label.setStyleSheet(f"color: {color};")
 
-    def _create_command_palette(self) -> None:
-        """Create and populate the command palette."""
-        from .search.command_palette import CommandPalette
+    def _get_or_create_command_palette(self) -> "CommandPalette":
+        """
+        Lazy-load command palette (DEFERRED tier).
 
-        self._command_palette = CommandPalette(self)
+        Returns:
+            CommandPalette instance, created on first access.
+        """
+        if self._command_palette is None:
+            from .search.command_palette import CommandPalette
+
+            self._command_palette = ComponentFactory.get_or_create(
+                "command_palette", lambda: CommandPalette(self)
+            )
+            self._register_command_palette_actions()
+            logger.debug("Command palette lazy-loaded")
+
+        return self._command_palette
+
+    def _register_command_palette_actions(self) -> None:
+        """Register all actions with the command palette."""
+        if not self._command_palette:
+            return
 
         # Register File actions
         self._command_palette.register_action(
@@ -881,8 +900,6 @@ class MainWindow(QMainWindow):
         self._command_palette.register_action(self.action_record_workflow, "Tools")
         self._command_palette.register_action(self.action_create_frame, "Tools")
         self._command_palette.register_action(self.action_hotkey_manager, "Tools")
-
-        logger.debug("Command palette created with actions")
 
     def _setup_validation_timer(self) -> None:
         """Setup validation timer for debounced real-time validation."""
@@ -1104,6 +1121,17 @@ class MainWindow(QMainWindow):
         self.set_modified(True)
         logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
+    def ensure_normal_components_loaded(self) -> None:
+        """
+        Ensure NORMAL tier components are loaded.
+
+        Call this before accessing normal tier components if they
+        might be accessed before showEvent (e.g., during programmatic setup).
+        This is idempotent - safe to call multiple times.
+        """
+        if not self._normal_components_loaded:
+            self._load_normal_components()
+
     @property
     def bottom_panel(self) -> Optional["BottomPanelDock"]:
         """The bottom panel dock."""
@@ -1249,8 +1277,8 @@ class MainWindow(QMainWindow):
 
     @property
     def command_palette(self):
-        """The command palette."""
-        return self._command_palette
+        """The command palette (lazy-loaded on first access)."""
+        return self._get_or_create_command_palette()
 
     @property
     def recent_files_menu(self):
@@ -1501,6 +1529,53 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         self._position_minimap()
 
+    def showEvent(self, event) -> None:
+        """
+        Handle window show event.
+
+        Loads NORMAL tier components on first show to improve startup time.
+        Components are loaded via QTimer.singleShot to ensure the UI is
+        responsive before heavy initialization.
+        """
+        super().showEvent(event)
+        if not self._normal_components_loaded:
+            # Defer normal tier loading to after the window is visible
+            QTimer.singleShot(100, self._load_normal_components)
+
+    def _load_normal_components(self) -> None:
+        """
+        Load NORMAL tier components after window is shown.
+
+        These components are visible by default but can be deferred
+        to improve perceived startup time.
+        """
+        if self._normal_components_loaded:
+            return
+
+        import time
+
+        start_time = time.perf_counter()
+
+        logger.debug("MainWindow: Loading normal tier components...")
+
+        # Create panels and docks
+        self._create_bottom_panel()
+        self._create_variable_inspector_dock()
+        self._create_properties_panel()
+        self._create_execution_timeline_dock()
+        self._create_debug_components()
+        self._setup_validation_timer()
+
+        # Mark as loaded
+        self._normal_components_loaded = True
+
+        # Restore UI state from previous session (via UIStateController)
+        if self._ui_state_controller:
+            self._ui_state_controller.restore_state()
+
+        elapsed = (time.perf_counter() - start_time) * 1000
+        logger.info(f"MainWindow: Normal tier components loaded in {elapsed:.2f}ms")
+
     def set_central_widget(self, widget: QWidget) -> None:
         """Set the central widget (typically the node graph)."""
         self._central_widget = widget
@@ -1750,7 +1825,7 @@ class MainWindow(QMainWindow):
             event.ignore()
 
     def _cleanup_controllers(self) -> None:
-        """Clean up all controllers."""
+        """Clean up all controllers and cached components."""
         logger.info("Cleaning up controllers...")
 
         controllers = [
@@ -1775,6 +1850,9 @@ class MainWindow(QMainWindow):
                     logger.error(
                         f"Error cleaning up controller {controller.__class__.__name__}: {e}"
                     )
+
+        # Clear ComponentFactory cache
+        ComponentFactory.clear()
 
         logger.info("Controllers cleaned up")
 
