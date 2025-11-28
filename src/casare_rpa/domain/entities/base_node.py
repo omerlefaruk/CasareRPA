@@ -7,14 +7,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from ..domain.value_objects import Port
-from .types import (
+from casare_rpa.domain.value_objects import Port
+from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeConfig,
     NodeId,
     NodeStatus,
-    PortDefinition,
     PortType,
     SerializedNode,
 )

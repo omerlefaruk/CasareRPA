@@ -5,9 +5,9 @@ This module provides fundamental nodes that form the building blocks
 of any workflow: StartNode, EndNode, and CommentNode.
 """
 
-from ..core.base_node import BaseNode
-from ..core.types import NodeStatus, PortType, ExecutionResult
-from ..core.execution_context import ExecutionContext
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import NodeStatus, PortType, ExecutionResult
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 class StartNode(BaseNode):

@@ -17,7 +17,7 @@ with NodeGraphQt's visual representation.
 
 import inspect
 
-from ...core.types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 # Import Data Operation Nodes
 
@@ -3806,7 +3806,7 @@ class VisualExecuteBatchNode(VisualNode):
 # HTTP/REST API Nodes
 
 
-class VisualHttpRequestNode(VisualNode):
+class VisualHttpRequestNodeV2(VisualNode):
     """Visual representation of HttpRequestNode."""
 
     __identifier__ = "casare_rpa.http"

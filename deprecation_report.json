@@ -1,0 +1,56 @@
+{
+  "src\\casare_rpa\\robot\\checkpoint.py": [
+    {
+      "type": "from_import",
+      "module": "casare_rpa.core.events",
+      "names": [
+        "EventType"
+      ],
+      "lineno": 397,
+      "col_offset": 12
+    }
+  ],
+  "src\\casare_rpa\\robot\\job_executor.py": [
+    {
+      "type": "from_import",
+      "module": "casare_rpa.core.events",
+      "names": [
+        "EventType"
+      ],
+      "lineno": 455,
+      "col_offset": 12
+    }
+  ],
+  "src\\casare_rpa\\utils\\workflow\\workflow_loader.py": [
+    {
+      "type": "from_import",
+      "module": "casare_rpa.core.base_node",
+      "names": [
+        "BaseNode"
+      ],
+      "lineno": 14,
+      "col_offset": 0
+    }
+  ],
+  "src\\casare_rpa\\presentation\\canvas\\visual_nodes\\base_visual_node.py": [
+    {
+      "type": "from_import",
+      "module": "casare_rpa.core.base_node",
+      "names": [
+        "BaseNode"
+      ],
+      "lineno": 11,
+      "col_offset": 0
+    },
+    {
+      "type": "from_import",
+      "module": "casare_rpa.core.port_type_system",
+      "names": [
+        "PortTypeRegistry",
+        "get_port_type_registry"
+      ],
+      "lineno": 13,
+      "col_offset": 0
+    }
+  ]
+}

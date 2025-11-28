@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Dict, Set, Optional, Tuple, Protocol
 
-from .types import DataType
+from casare_rpa.domain.value_objects.types import DataType
 
 
 # ============================================================================
