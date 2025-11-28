@@ -21,10 +21,8 @@ Usage:
 
 from typing import Callable, List, Optional, TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from PySide6.QtWidgets import QWidget
-
 from PySide6.QtCore import QEvent, QObject
+from PySide6.QtWidgets import QWidget
 
 from loguru import logger
 

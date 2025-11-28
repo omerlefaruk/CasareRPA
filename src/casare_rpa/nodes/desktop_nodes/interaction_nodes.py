@@ -8,8 +8,8 @@ dropdowns, checkboxes, radio buttons, tabs, tree items, and scrolling.
 from typing import Any, Dict
 from loguru import logger
 
-from ...core.base_node import BaseNode as Node
-from ...core.types import NodeStatus
+from casare_rpa.domain.entities.base_node import BaseNode as Node
+from casare_rpa.domain.value_objects.types import NodeStatus
 from ...desktop import DesktopContext
 
 
@@ -56,7 +56,7 @@ class SelectFromDropdownNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -147,7 +147,7 @@ class CheckCheckboxNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -233,7 +233,7 @@ class SelectRadioButtonNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -317,7 +317,7 @@ class SelectTabNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -421,7 +421,7 @@ class ExpandTreeItemNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
@@ -509,7 +509,7 @@ class ScrollElementNode(Node):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from ...core.types import PortType, DataType
+        from casare_rpa.domain.value_objects.types import PortType, DataType
 
         # Input ports
         self.add_input_port("exec_in", PortType.EXEC_INPUT)

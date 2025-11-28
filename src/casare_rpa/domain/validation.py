@@ -1,11 +1,13 @@
 """
-CasareRPA - Workflow Validation Module
+CasareRPA - Domain Workflow Validation Module
 
 Provides comprehensive validation for workflow JSON files including:
 - Schema validation for structure integrity
 - Node validation for required fields and types
 - Connection validation for port compatibility
 - Semantic validation for workflow logic
+
+This is the canonical location for validation components (v3.0).
 """
 
 from dataclasses import dataclass, field
@@ -13,7 +15,7 @@ from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, Tuple
 from loguru import logger
 
-from .types import SCHEMA_VERSION
+from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 
 
 class ValidationSeverity(Enum):
@@ -179,7 +181,7 @@ def _get_valid_node_types() -> Set[str]:
     available node types in the system.
     """
     try:
-        from ..utils.workflow.workflow_loader import NODE_TYPE_MAP
+        from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
 
         return set(NODE_TYPE_MAP.keys())
     except ImportError:
@@ -834,3 +836,20 @@ def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     result = validate_workflow(data)
     error_messages = [f"{issue.code}: {issue.message}" for issue in result.errors]
     return result.is_valid, error_messages
+
+
+__all__ = [
+    "ValidationSeverity",
+    "ValidationIssue",
+    "ValidationResult",
+    "validate_workflow",
+    "validate_node",
+    "validate_connections",
+    "quick_validate",
+    "get_valid_node_types",
+    "_has_circular_dependency",
+    "_find_entry_points_and_reachable",
+    "_parse_connection",
+    "_is_exec_port",
+    "_is_exec_input_port",
+]

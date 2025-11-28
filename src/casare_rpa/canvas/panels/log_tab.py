@@ -25,7 +25,7 @@ from PySide6.QtGui import QColor, QBrush
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ...core.events import Event
+    from casare_rpa.domain.events import Event
 
 
 class LogTab(QWidget):
@@ -280,7 +280,7 @@ class LogTab(QWidget):
         Args:
             event: Event to log
         """
-        from ...core.events import EventType
+        from casare_rpa.domain.events import EventType
 
         # Map event types to log levels
         level_map = {

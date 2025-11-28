@@ -18,8 +18,9 @@ from PySide6.QtWidgets import QMessageBox, QApplication
 from loguru import logger
 
 from .base_component import BaseComponent
-from ...core.workflow_schema import WorkflowSchema, WorkflowMetadata
-from ...core.project_schema import Project, Scenario
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
+from casare_rpa.domain.project_schema import Project, Scenario
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow

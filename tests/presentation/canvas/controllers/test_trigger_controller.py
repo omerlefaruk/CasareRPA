@@ -22,7 +22,7 @@ from casare_rpa.presentation.canvas.controllers.trigger_controller import (
 
 
 @pytest.fixture
-def mock_main_window(qtbot) -> None:
+def mock_main_window(qtbot):
     """Create a mock MainWindow with trigger-related components."""
     main_window = QMainWindow()
     qtbot.addWidget(main_window)
@@ -50,7 +50,7 @@ def mock_main_window(qtbot) -> None:
 
 
 @pytest.fixture
-def mock_bottom_panel() -> None:
+def mock_bottom_panel():
     """Create a standalone mock bottom panel."""
     panel = Mock()
     panel.get_triggers.return_value = []
@@ -63,7 +63,7 @@ def mock_bottom_panel() -> None:
 
 
 @pytest.fixture
-def trigger_controller(mock_main_window) -> None:
+def trigger_controller(mock_main_window):
     """Create a TriggerController instance."""
     controller = TriggerController(mock_main_window)
     controller.initialize()
@@ -71,7 +71,7 @@ def trigger_controller(mock_main_window) -> None:
 
 
 @pytest.fixture
-def sample_trigger_config() -> None:
+def sample_trigger_config():
     """Create a sample trigger configuration."""
     return {
         "id": "trig_test123",
@@ -83,7 +83,7 @@ def sample_trigger_config() -> None:
 
 
 @pytest.fixture
-def sample_trigger_list() -> None:
+def sample_trigger_list():
     """Create a list of sample trigger configurations."""
     return [
         {

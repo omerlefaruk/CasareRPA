@@ -758,7 +758,9 @@ class NodeFrame(QGraphicsRectItem):
                 data_type = node.get_port_type(port.name())
                 if data_type:
                     # Import type registry to get color
-                    from ...core.port_type_system import get_port_type_registry
+                    from casare_rpa.domain.port_type_system import (
+                        get_port_type_registry,
+                    )
 
                     registry = get_port_type_registry()
                     color_tuple = registry.get_type_color(data_type)

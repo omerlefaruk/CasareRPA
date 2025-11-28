@@ -394,7 +394,7 @@ class ResumableRunner:
 
         # Subscribe to node completion events
         if hasattr(self.runner, "event_bus") and self.runner.event_bus:
-            from casare_rpa.core.events import EventType
+            from casare_rpa.domain.value_objects.types import EventType
 
             async def on_node_complete(event):
                 if event.node_id and hasattr(self.runner, "context"):

@@ -1,5 +1,6 @@
 """
-CasareRPA - Execution Context
+CasareRPA - Execution Context (Infrastructure Layer)
+
 Refactored to use domain ExecutionState + infrastructure BrowserResourceManager.
 
 Delegates to:
@@ -11,13 +12,15 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 from loguru import logger
 
-from .types import ExecutionMode, NodeId
-from ..domain.entities.execution_state import ExecutionState
-from ..infrastructure.resources.browser_resource_manager import BrowserResourceManager
+from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
+from casare_rpa.domain.entities.execution_state import ExecutionState
+from casare_rpa.infrastructure.resources.browser_resource_manager import (
+    BrowserResourceManager,
+)
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
-    from ..project.project_context import ProjectContext
+    from casare_rpa.project.project_context import ProjectContext
 
 
 class ExecutionContext:

@@ -8,11 +8,7 @@ from typing import List, Optional
 import orjson
 from loguru import logger
 
-from ..core.project_schema import (
-    Project,
-    Scenario,
-    generate_scenario_id,
-)
+from casare_rpa.domain.project_schema import Project, Scenario, generate_scenario_id
 
 
 def _sanitize_filename(name: str) -> str:
