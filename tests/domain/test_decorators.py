@@ -201,17 +201,18 @@ class TestNodeSchemaDecorator:
         # Node should still be created
         assert node.node_id == "node1"
 
-    @pytest.mark.skip(
-        reason="BUG: strict parameter not accessible - Python *args issue"
-    )
     def test_decorator_raises_in_strict_mode_for_invalid_config(self):
-        """@node_schema raises ValueError in strict mode for invalid config.
+        """@node_schema raises ValueError in strict mode for invalid config."""
 
-        NOTE: This test reveals a bug in decorator signature.
-        The 'strict' parameter after *property_defs cannot be passed as keyword argument.
-        Need to fix decorator signature to: def node_schema(*property_defs, strict=False)
-        """
-        pass
+        @node_schema(
+            PropertyDef("timeout", PropertyType.INTEGER, required=True), strict=True
+        )
+        class TestNode(MinimalNode):
+            pass
+
+        # Invalid config should raise in strict mode
+        with pytest.raises(ValueError, match="Invalid configuration"):
+            TestNode("node1", config={"timeout": "not_an_integer"})
 
     def test_decorator_validates_config_and_logs_warning_by_default(self):
         """@node_schema validates config and logs warnings (lenient mode default)."""
@@ -371,18 +372,8 @@ class TestDecoratorCombinations:
 class TestDecoratorEdgeCases:
     """Test edge cases and error conditions."""
 
-    @pytest.mark.skip(
-        reason="BUG: decorator doesn't handle config=None - raises TypeError"
-    )
     def test_schema_decorator_with_none_config(self):
-        """@node_schema handles None config gracefully.
-
-        NOTE: This test reveals a bug in the decorator.
-        When config=None, line 107 in decorators.py tries to iterate:
-            if key not in config:  # TypeError: argument of type 'NoneType' is not iterable
-
-        Fix: Check if config is None before iterating, or default to empty dict.
-        """
+        """@node_schema handles None config gracefully."""
 
         @node_schema(PropertyDef("url", PropertyType.STRING, default="http://default"))
         class TestNode(MinimalNode):
