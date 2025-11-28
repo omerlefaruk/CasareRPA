@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from loguru import logger
 from casare_rpa.infrastructure.execution.execution_context import ExecutionContext
-from casare_rpa.nodes.registry import NodeRegistry
 
 logger.add(sys.stderr, level="DEBUG")
 
@@ -19,23 +18,17 @@ def test_workflow_execution():
     """Test basic workflow execution with MessageBox."""
     logger.info("Starting workflow execution test")
 
-    # Initialize node registry
-    registry = NodeRegistry()
-    logger.info(f"Registry initialized with {len(registry._node_classes)} node types")
-
     # Create execution context
     context = ExecutionContext()
 
-    # Create simple workflow programmatically
-    from casare_rpa.nodes.flow.start_node import StartNode
-    from casare_rpa.nodes.data.assign_node import AssignNode
+    # Import nodes
+    from casare_rpa.nodes.basic_nodes import StartNode
+    from casare_rpa.nodes.data_nodes import AssignNode
+    from casare_rpa.nodes.system_nodes import MessageBoxNode
+
+    logger.info("All nodes imported successfully")
 
     try:
-        # Try to import MessageBoxNode
-        from casare_rpa.nodes.ui.message_box_node import MessageBoxNode
-
-        logger.info("MessageBoxNode imported successfully")
-
         # Create nodes
         start = StartNode(node_id="start_1")
         assign = AssignNode(node_id="assign_1")
@@ -70,11 +63,6 @@ def test_workflow_execution():
 
         logger.success("Workflow execution test completed successfully!")
 
-    except ImportError as e:
-        logger.error(f"Failed to import MessageBoxNode: {e}")
-        logger.info("Available node types:")
-        for node_type in registry._node_classes.keys():
-            logger.info(f"  - {node_type}")
     except Exception as e:
         logger.exception(f"Execution test failed: {e}")
 
