@@ -97,11 +97,10 @@ class CasareCheckBox:
     def _get_checkmark_path(cls) -> str:
         """Get the checkmark asset path, cached for performance."""
         if cls._checkmark_path is None:
-            # Asset is in old canvas/assets directory
-            # TODO: Move to presentation/canvas/assets in future migration phase
             from pathlib import Path
 
-            canvas_dir = Path(__file__).parent.parent.parent.parent / "canvas"
+            # Asset is in presentation/canvas/assets directory
+            canvas_dir = Path(__file__).parent.parent
             asset_path = canvas_dir / "assets" / "checkmark.svg"
             cls._checkmark_path = asset_path.as_posix()
         return cls._checkmark_path
