@@ -15,7 +15,8 @@ import sys
 import subprocess
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from casare_rpa.core.execution_context import ExecutionContext
+
+# Note: execution_context fixture is provided by tests/conftest.py
 
 
 # ==================== CLIPBOARD NODES ====================

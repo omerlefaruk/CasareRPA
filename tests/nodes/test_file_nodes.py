@@ -23,21 +23,8 @@ import zipfile
 import pytest
 from pathlib import Path
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
 
-
-# ============================================================================
-# Fixtures
-# ============================================================================
-
-
-@pytest.fixture
-def execution_context() -> ExecutionContext:
-    """Create mock execution context."""
-    context = Mock(spec=ExecutionContext)
-    context.variables = {}
-    context.resolve_value = lambda x: x
-    return context
+# Note: execution_context fixture is provided by tests/conftest.py
 
 
 @pytest.fixture
@@ -76,7 +63,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_text_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading a basic text file."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -96,7 +83,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_utf16_encoding(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file with UTF-16 encoding."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -117,7 +104,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_latin1_encoding(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file with Latin-1 encoding."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -138,7 +125,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_binary_mode(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading file in binary mode."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -159,7 +146,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_non_existent_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading non-existent file returns error."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -176,7 +163,7 @@ class TestReadFileNode:
 
     @pytest.mark.asyncio
     async def test_read_max_size_limit(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test file size limit enforcement."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
@@ -196,9 +183,7 @@ class TestReadFileNode:
         assert "exceeds" in result["error"].lower()
 
     @pytest.mark.asyncio
-    async def test_read_missing_path_error(
-        self, execution_context: ExecutionContext
-    ) -> None:
+    async def test_read_missing_path_error(self, execution_context: Mock) -> None:
         """Test error when file_path not provided."""
         from casare_rpa.nodes.file_nodes import ReadFileNode
 
@@ -221,7 +206,7 @@ class TestWriteFileNode:
 
     @pytest.mark.asyncio
     async def test_write_text_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing a basic text file."""
         from casare_rpa.nodes.file_nodes import WriteFileNode
@@ -242,7 +227,7 @@ class TestWriteFileNode:
 
     @pytest.mark.asyncio
     async def test_write_utf16_encoding(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing file with UTF-16 encoding."""
         from casare_rpa.nodes.file_nodes import WriteFileNode
@@ -264,7 +249,7 @@ class TestWriteFileNode:
 
     @pytest.mark.asyncio
     async def test_write_creates_parent_dirs(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test create_dirs creates parent directories."""
         from casare_rpa.nodes.file_nodes import WriteFileNode
@@ -286,7 +271,7 @@ class TestWriteFileNode:
 
     @pytest.mark.asyncio
     async def test_write_binary_mode(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing file in binary mode."""
         from casare_rpa.nodes.file_nodes import WriteFileNode
@@ -307,7 +292,7 @@ class TestWriteFileNode:
 
     @pytest.mark.asyncio
     async def test_write_append_mode(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test append mode adds to existing file."""
         from casare_rpa.nodes.file_nodes import WriteFileNode
@@ -338,7 +323,7 @@ class TestAppendFileNode:
 
     @pytest.mark.asyncio
     async def test_append_to_existing_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test appending to existing file."""
         from casare_rpa.nodes.file_nodes import AppendFileNode
@@ -357,7 +342,7 @@ class TestAppendFileNode:
 
     @pytest.mark.asyncio
     async def test_append_creates_file_if_missing(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test create_if_missing creates new file."""
         from casare_rpa.nodes.file_nodes import AppendFileNode
@@ -376,7 +361,7 @@ class TestAppendFileNode:
 
     @pytest.mark.asyncio
     async def test_append_error_file_missing(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file missing and create_if_missing=False."""
         from casare_rpa.nodes.file_nodes import AppendFileNode
@@ -403,7 +388,7 @@ class TestDeleteFileNode:
 
     @pytest.mark.asyncio
     async def test_delete_existing_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test deleting an existing file."""
         from casare_rpa.nodes.file_nodes import DeleteFileNode
@@ -423,7 +408,7 @@ class TestDeleteFileNode:
 
     @pytest.mark.asyncio
     async def test_delete_ignore_missing(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ignore_missing option."""
         from casare_rpa.nodes.file_nodes import DeleteFileNode
@@ -440,7 +425,7 @@ class TestDeleteFileNode:
 
     @pytest.mark.asyncio
     async def test_delete_error_missing(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file missing and ignore_missing=False."""
         from casare_rpa.nodes.file_nodes import DeleteFileNode
@@ -466,9 +451,7 @@ class TestCopyFileNode:
     """Tests for CopyFileNode."""
 
     @pytest.mark.asyncio
-    async def test_copy_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_copy_file(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test copying a file."""
         from casare_rpa.nodes.file_nodes import CopyFileNode
 
@@ -489,7 +472,7 @@ class TestCopyFileNode:
 
     @pytest.mark.asyncio
     async def test_copy_overwrite(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test copy with overwrite option."""
         from casare_rpa.nodes.file_nodes import CopyFileNode
@@ -510,7 +493,7 @@ class TestCopyFileNode:
 
     @pytest.mark.asyncio
     async def test_copy_no_overwrite_error(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when destination exists and overwrite=False."""
         from casare_rpa.nodes.file_nodes import CopyFileNode
@@ -539,9 +522,7 @@ class TestMoveFileNode:
     """Tests for MoveFileNode."""
 
     @pytest.mark.asyncio
-    async def test_move_file(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_move_file(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test moving a file."""
         from casare_rpa.nodes.file_nodes import MoveFileNode
 
@@ -562,7 +543,7 @@ class TestMoveFileNode:
 
     @pytest.mark.asyncio
     async def test_move_with_overwrite(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test move with overwrite option."""
         from casare_rpa.nodes.file_nodes import MoveFileNode
@@ -592,7 +573,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_with_header(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with header row."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -614,7 +595,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_without_header(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV without header row."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -634,7 +615,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_custom_delimiter(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with custom delimiter."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -653,7 +634,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_quoted_fields(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading CSV with quoted fields containing delimiters."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -675,7 +656,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_skip_rows(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test skipping initial rows in CSV."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -697,7 +678,7 @@ class TestReadCSVNode:
 
     @pytest.mark.asyncio
     async def test_read_csv_max_rows(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test max_rows limit."""
         from casare_rpa.nodes.file_nodes import ReadCSVNode
@@ -727,7 +708,7 @@ class TestWriteCSVNode:
 
     @pytest.mark.asyncio
     async def test_write_csv_dict_data(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV from dict data."""
         from casare_rpa.nodes.file_nodes import WriteCSVNode
@@ -749,7 +730,7 @@ class TestWriteCSVNode:
 
     @pytest.mark.asyncio
     async def test_write_csv_list_data(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV from list data."""
         from casare_rpa.nodes.file_nodes import WriteCSVNode
@@ -772,7 +753,7 @@ class TestWriteCSVNode:
 
     @pytest.mark.asyncio
     async def test_write_csv_no_header(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing CSV without header."""
         from casare_rpa.nodes.file_nodes import WriteCSVNode
@@ -803,7 +784,7 @@ class TestReadJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_read_json_object(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading JSON object."""
         from casare_rpa.nodes.file_nodes import ReadJSONFileNode
@@ -823,7 +804,7 @@ class TestReadJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_read_json_array(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading JSON array."""
         from casare_rpa.nodes.file_nodes import ReadJSONFileNode
@@ -842,7 +823,7 @@ class TestReadJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_read_json_nested(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test reading nested JSON structure."""
         from casare_rpa.nodes.file_nodes import ReadJSONFileNode
@@ -865,7 +846,7 @@ class TestReadJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_read_json_invalid(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error on invalid JSON."""
         from casare_rpa.nodes.file_nodes import ReadJSONFileNode
@@ -892,7 +873,7 @@ class TestWriteJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_write_json_object(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON object."""
         from casare_rpa.nodes.file_nodes import WriteJSONFileNode
@@ -912,7 +893,7 @@ class TestWriteJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_write_json_indent(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON with custom indent."""
         from casare_rpa.nodes.file_nodes import WriteJSONFileNode
@@ -932,7 +913,7 @@ class TestWriteJSONFileNode:
 
     @pytest.mark.asyncio
     async def test_write_json_unicode(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test writing JSON with unicode characters."""
         from casare_rpa.nodes.file_nodes import WriteJSONFileNode
@@ -960,9 +941,7 @@ class TestZipFilesNode:
     """Tests for ZipFilesNode."""
 
     @pytest.mark.asyncio
-    async def test_zip_files(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_zip_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test creating ZIP archive."""
         from casare_rpa.nodes.file_nodes import ZipFilesNode
 
@@ -988,7 +967,7 @@ class TestZipFilesNode:
 
     @pytest.mark.asyncio
     async def test_zip_with_base_dir(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ZIP with relative paths from base_dir."""
         from casare_rpa.nodes.file_nodes import ZipFilesNode
@@ -1013,7 +992,7 @@ class TestZipFilesNode:
 
     @pytest.mark.asyncio
     async def test_zip_compression_stored(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test ZIP with no compression (STORED)."""
         from casare_rpa.nodes.file_nodes import ZipFilesNode
@@ -1046,9 +1025,7 @@ class TestUnzipFilesNode:
     """Tests for UnzipFilesNode."""
 
     @pytest.mark.asyncio
-    async def test_unzip_files(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_unzip_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test extracting ZIP archive."""
         from casare_rpa.nodes.file_nodes import UnzipFilesNode
 
@@ -1074,7 +1051,7 @@ class TestUnzipFilesNode:
 
     @pytest.mark.asyncio
     async def test_unzip_nested_directories(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test extracting ZIP with nested directories."""
         from casare_rpa.nodes.file_nodes import UnzipFilesNode
@@ -1109,7 +1086,7 @@ class TestCreateDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_create_directory(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test creating a directory."""
         from casare_rpa.nodes.file_nodes import CreateDirectoryNode
@@ -1127,7 +1104,7 @@ class TestCreateDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_create_nested_directories(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test creating nested directories with parents=True."""
         from casare_rpa.nodes.file_nodes import CreateDirectoryNode
@@ -1144,7 +1121,7 @@ class TestCreateDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_create_existing_exist_ok(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test exist_ok option for existing directory."""
         from casare_rpa.nodes.file_nodes import CreateDirectoryNode
@@ -1170,7 +1147,7 @@ class TestListDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_list_directory(
-        self, execution_context: ExecutionContext, file_system_setup: Path
+        self, execution_context: Mock, file_system_setup: Path
     ) -> None:
         """Test listing directory contents."""
         from casare_rpa.nodes.file_nodes import ListDirectoryNode
@@ -1186,7 +1163,7 @@ class TestListDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_list_directory_files_only(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test listing files only."""
         from casare_rpa.nodes.file_nodes import ListDirectoryNode
@@ -1205,7 +1182,7 @@ class TestListDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_list_directory_glob_pattern(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test listing with glob pattern."""
         from casare_rpa.nodes.file_nodes import ListDirectoryNode
@@ -1226,7 +1203,7 @@ class TestListDirectoryNode:
 
     @pytest.mark.asyncio
     async def test_list_directory_recursive(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test recursive directory listing."""
         from casare_rpa.nodes.file_nodes import ListDirectoryNode
@@ -1258,9 +1235,7 @@ class TestListFilesNode:
     """Tests for ListFilesNode."""
 
     @pytest.mark.asyncio
-    async def test_list_files(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_list_files(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test listing files in directory."""
         from casare_rpa.nodes.file_nodes import ListFilesNode
 
@@ -1287,9 +1262,7 @@ class TestFileExistsNode:
     """Tests for FileExistsNode."""
 
     @pytest.mark.asyncio
-    async def test_file_exists(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_file_exists(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test checking file existence."""
         from casare_rpa.nodes.file_nodes import FileExistsNode
 
@@ -1308,7 +1281,7 @@ class TestFileExistsNode:
 
     @pytest.mark.asyncio
     async def test_directory_exists(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test checking directory existence."""
         from casare_rpa.nodes.file_nodes import FileExistsNode
@@ -1328,7 +1301,7 @@ class TestFileExistsNode:
 
     @pytest.mark.asyncio
     async def test_path_not_exists(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test checking non-existent path."""
         from casare_rpa.nodes.file_nodes import FileExistsNode
@@ -1351,9 +1324,7 @@ class TestGetFileInfoNode:
     """Tests for GetFileInfoNode."""
 
     @pytest.mark.asyncio
-    async def test_get_file_info(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_get_file_info(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test getting file information."""
         from casare_rpa.nodes.file_nodes import GetFileInfoNode
 
@@ -1383,9 +1354,7 @@ class TestGetFileSizeNode:
     """Tests for GetFileSizeNode."""
 
     @pytest.mark.asyncio
-    async def test_get_file_size(
-        self, execution_context: ExecutionContext, tmp_path: Path
-    ) -> None:
+    async def test_get_file_size(self, execution_context: Mock, tmp_path: Path) -> None:
         """Test getting file size."""
         from casare_rpa.nodes.file_nodes import GetFileSizeNode
 
@@ -1402,7 +1371,7 @@ class TestGetFileSizeNode:
 
     @pytest.mark.asyncio
     async def test_get_file_size_not_found(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test error when file not found."""
         from casare_rpa.nodes.file_nodes import GetFileSizeNode
@@ -1426,7 +1395,7 @@ class TestExecutionResultPattern:
 
     @pytest.mark.asyncio
     async def test_execution_result_structure(
-        self, execution_context: ExecutionContext, tmp_path: Path
+        self, execution_context: Mock, tmp_path: Path
     ) -> None:
         """Test all nodes return proper ExecutionResult structure."""
         from casare_rpa.nodes.file_nodes import ReadFileNode, WriteFileNode

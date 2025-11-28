@@ -25,6 +25,7 @@ def execution_context() -> Mock:
     Provides a minimal mock ExecutionContext with:
     - Variable storage and access methods
     - resolve_value method that returns input unchanged
+    - get_execution_summary for EndNode tests
     - No browser or desktop resources
 
     Returns:
@@ -46,6 +47,12 @@ def execution_context() -> Mock:
         name, value
     )
     context.has_variable = lambda name: name in context.variables
+    context.get_execution_summary = lambda: {
+        "workflow_name": "Test Workflow",
+        "nodes_executed": 5,
+        "errors": [],
+        "duration_ms": 1234,
+    }
     return context
 
 

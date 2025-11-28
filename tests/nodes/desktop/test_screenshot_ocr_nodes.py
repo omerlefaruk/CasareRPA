@@ -9,7 +9,7 @@ import pytest
 from unittest.mock import Mock, MagicMock
 from typing import Dict, Any
 
-from casare_rpa.core.types import NodeStatus
+from casare_rpa.domain.value_objects.types import NodeStatus
 
 
 # =============================================================================

@@ -9,19 +9,13 @@ Tests 3 basic nodes (9 tests total):
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
-from casare_rpa.core.types import NodeStatus
+from casare_rpa.domain.value_objects.types import NodeStatus
+
+# Note: execution_context fixture is provided by tests/conftest.py
 
 
 class TestStartNode:
     """Tests for StartNode - workflow entry point."""
-
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
 
     @pytest.mark.asyncio
     async def test_start_node_executes_successfully(self, execution_context) -> None:
@@ -64,19 +58,6 @@ class TestStartNode:
 class TestEndNode:
     """Tests for EndNode - workflow exit point."""
 
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        context.get_execution_summary = lambda: {
-            "workflow_name": "Test Workflow",
-            "nodes_executed": 5,
-            "errors": [],
-            "duration_ms": 1234,
-        }
-        return context
-
     @pytest.mark.asyncio
     async def test_end_node_executes_successfully(self, execution_context) -> None:
         """Test EndNode executes and returns success with summary."""
@@ -118,13 +99,6 @@ class TestEndNode:
 
 class TestCommentNode:
     """Tests for CommentNode - workflow documentation."""
-
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
 
     @pytest.mark.asyncio
     async def test_comment_node_executes_with_skipped_status(
@@ -179,18 +153,6 @@ class TestCommentNode:
 
 class TestBasicNodesIntegration:
     """Integration tests for basic nodes in workflow context."""
-
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        context.get_execution_summary = lambda: {
-            "workflow_name": "Integration Test",
-            "nodes_executed": 3,
-            "errors": [],
-        }
-        return context
 
     @pytest.mark.asyncio
     async def test_basic_workflow_flow(self, execution_context) -> None:

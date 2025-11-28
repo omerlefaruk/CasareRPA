@@ -9,25 +9,13 @@ Tests 3 variable nodes (16 tests total):
 
 import pytest
 from unittest.mock import Mock
-from casare_rpa.core.execution_context import ExecutionContext
-from casare_rpa.core.types import NodeStatus
+from casare_rpa.domain.value_objects.types import NodeStatus
+
+# Note: execution_context fixture is provided by tests/conftest.py
 
 
 class TestSetVariableNode:
     """Tests for SetVariableNode - storing values in context."""
-
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        context.get_variable = lambda name, default=None: context.variables.get(
-            name, default
-        )
-        context.set_variable = lambda name, value: context.variables.__setitem__(
-            name, value
-        )
-        return context
 
     @pytest.mark.asyncio
     async def test_set_variable_basic(self, execution_context) -> None:
@@ -130,6 +118,9 @@ class TestGetVariableNode:
 
     @pytest.fixture
     def execution_context(self) -> Mock:
+        """Override fixture with pre-populated variables for get tests."""
+        from casare_rpa.core.execution_context import ExecutionContext
+
         context = Mock(spec=ExecutionContext)
         context.variables = {
             "existing_var": "existing_value",
@@ -220,6 +211,9 @@ class TestIncrementVariableNode:
 
     @pytest.fixture
     def execution_context(self) -> Mock:
+        """Override fixture with counter variables for increment tests."""
+        from casare_rpa.core.execution_context import ExecutionContext
+
         context = Mock(spec=ExecutionContext)
         context.variables = {"counter": 10, "float_counter": 5.5}
         context.resolve_value = lambda x: x
@@ -361,18 +355,7 @@ class TestVariableNodesValidation:
 class TestVariableNodesIntegration:
     """Integration tests for variable nodes."""
 
-    @pytest.fixture
-    def execution_context(self) -> Mock:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        context.get_variable = lambda name, default=None: context.variables.get(
-            name, default
-        )
-        context.set_variable = lambda name, value: context.variables.__setitem__(
-            name, value
-        )
-        return context
+    # Uses the global execution_context fixture from conftest.py
 
     @pytest.mark.asyncio
     async def test_set_then_get_variable(self, execution_context) -> None:
