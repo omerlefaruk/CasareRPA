@@ -52,12 +52,12 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
         var_name = match.group(1)
         if var_name in variables:
             resolved = variables[var_name]
-            logger.debug(f"Resolved variable {{{{{{var_name}}}}}} -> {resolved}")
+            logger.debug(f"Resolved variable {{{{{var_name}}}}} -> {resolved}")
             return str(resolved) if resolved is not None else ""
         else:
             # Keep original if variable not found
             logger.warning(
-                f"Variable '{var_name}' not found, keeping {{{{{{var_name}}}}}}"
+                f"Variable '{var_name}' not found, keeping {{{{{var_name}}}}}"
             )
             return match.group(0)
 

@@ -15,8 +15,8 @@ from typing import Tuple, Optional
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPolygonF
 
-from ...core.types import DataType
-from ...core.port_type_system import PortShape, get_port_type_registry
+from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.domain.port_type_system import PortShape, get_port_type_registry
 
 
 # ============================================================================

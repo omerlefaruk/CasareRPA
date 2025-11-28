@@ -111,7 +111,7 @@ if TYPE_CHECKING:
         TransformNode,
         LogNode,
     )
-    from .file_nodes import (
+    from casare_rpa.nodes.file import (
         ReadFileNode,
         WriteFileNode,
         AppendFileNode,
@@ -141,7 +141,7 @@ if TYPE_CHECKING:
         DeleteEmailNode,
         MoveEmailNode,
     )
-    from .http_nodes import (
+    from casare_rpa.nodes.http import (
         HttpRequestNode as HttpRequestNodeNew,
         HttpGetNode,
         HttpPostNode,
@@ -155,7 +155,7 @@ if TYPE_CHECKING:
         HttpUploadFileNode,
         BuildUrlNode,
     )
-    from .database_nodes import (
+    from casare_rpa.nodes.database import (
         DatabaseConnectNode,
         ExecuteQueryNode,
         ExecuteNonQueryNode,

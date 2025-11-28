@@ -12,24 +12,36 @@ Tests node operations including:
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from PySide6.QtCore import QPointF
+from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QCursor
 
 from casare_rpa.presentation.canvas.controllers.node_controller import NodeController
 
 
 @pytest.fixture
-def mock_main_window() -> None:
-    """Create a mock MainWindow with all required attributes."""
-    mock = Mock()
-    mock._central_widget = Mock()
-    mock._central_widget.graph = Mock()
-    mock_status = Mock()
-    mock.statusBar = Mock(return_value=mock_status)
-    return mock
+def mock_main_window(qtbot):
+    """Create a real QMainWindow with all required attributes."""
+    main_window = QMainWindow()
+    qtbot.addWidget(main_window)
+
+    main_window._central_widget = Mock()
+    main_window._central_widget.graph = Mock()
+    # Mock show_status method
+    main_window.show_status = Mock()
+
+    # Mock get_graph method
+    mock_graph = Mock()
+    mock_graph.selected_nodes = Mock(return_value=[])
+    mock_graph.all_nodes = Mock(return_value=[])
+    mock_graph.viewer = Mock(return_value=Mock())
+    mock_graph.clear_selection = Mock()
+    main_window.get_graph = Mock(return_value=mock_graph)
+
+    return main_window
 
 
 @pytest.fixture
-def node_controller(mock_main_window) -> None:
+def node_controller(mock_main_window):
     """Create a NodeController instance."""
     controller = NodeController(mock_main_window)
     controller.initialize()
@@ -37,7 +49,7 @@ def node_controller(mock_main_window) -> None:
 
 
 @pytest.fixture
-def mock_node() -> None:
+def mock_node():
     """Create a mock visual node."""
     node = Mock()
     node.get_property = Mock(return_value="test_node_id")
@@ -60,12 +72,12 @@ class TestNodeControllerInitialization:
 
     def test_initialize_sets_state(self, node_controller) -> None:
         """Test initialize() sets initialized state."""
-        assert node_controller.is_initialized()
+        assert node_controller.is_initialized
 
     def test_cleanup_resets_state(self, node_controller) -> None:
         """Test cleanup() resets initialized state."""
         node_controller.cleanup()
-        assert not node_controller.is_initialized()
+        assert not node_controller.is_initialized
 
 
 class TestSelectNearestNode:
@@ -75,7 +87,7 @@ class TestSelectNearestNode:
         self, node_controller, mock_main_window
     ) -> None:
         """Test select nearest node when no graph available."""
-        mock_main_window._central_widget.graph = None
+        mock_main_window.get_graph.return_value = None
 
         node_controller.select_nearest_node()
 
@@ -85,22 +97,20 @@ class TestSelectNearestNode:
         self, node_controller, mock_main_window
     ) -> None:
         """Test select nearest node when no nodes in graph."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_graph.all_nodes.return_value = []
         mock_graph.viewer.return_value = Mock()
 
         node_controller.select_nearest_node()
 
-        mock_main_window.statusBar().showMessage.assert_called_with(
-            "No nodes in graph", 2000
-        )
+        mock_main_window.show_status.assert_called_with("No nodes in graph", 2000)
 
     @patch("casare_rpa.presentation.canvas.controllers.node_controller.QCursor")
     def test_select_nearest_node_success(
         self, mock_cursor, node_controller, mock_main_window, mock_node
     ) -> None:
         """Test selecting nearest node successfully."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_viewer = Mock()
         mock_graph.viewer.return_value = mock_viewer
         mock_graph.all_nodes.return_value = [mock_node]
@@ -130,7 +140,7 @@ class TestToggleDisableNode:
 
     def test_toggle_disable_no_graph(self, node_controller, mock_main_window) -> None:
         """Test toggle disable when no graph available."""
-        mock_main_window._central_widget.graph = None
+        mock_main_window.get_graph.return_value = None
 
         node_controller.toggle_disable_node()
 
@@ -138,13 +148,13 @@ class TestToggleDisableNode:
 
     def test_toggle_disable_no_nodes(self, node_controller, mock_main_window) -> None:
         """Test toggle disable when no nodes in graph."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_graph.all_nodes.return_value = []
         mock_graph.viewer.return_value = Mock()
 
         node_controller.toggle_disable_node()
 
-        mock_main_window.statusBar().showMessage.assert_called()
+        mock_main_window.show_status.assert_called()
 
     @patch("casare_rpa.presentation.canvas.controllers.node_controller.QCursor")
     def test_toggle_disable_to_disabled(
@@ -155,7 +165,7 @@ class TestToggleDisableNode:
         mock_casare_node.config = {"_disabled": False}
         mock_node.get_casare_node.return_value = mock_casare_node
 
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_viewer = Mock()
         mock_graph.viewer.return_value = mock_viewer
         mock_graph.all_nodes.return_value = [mock_node]
@@ -187,7 +197,7 @@ class TestToggleDisableNode:
         mock_casare_node.config = {"_disabled": True}
         mock_node.get_casare_node.return_value = mock_casare_node
 
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_viewer = Mock()
         mock_graph.viewer.return_value = mock_viewer
         mock_graph.all_nodes.return_value = [mock_node]
@@ -216,7 +226,7 @@ class TestNavigateToNode:
 
     def test_navigate_to_node_no_graph(self, node_controller, mock_main_window) -> None:
         """Test navigate to node when no graph available."""
-        mock_main_window._central_widget.graph = None
+        mock_main_window.get_graph.return_value = None
 
         node_controller.navigate_to_node("test_id")
 
@@ -226,7 +236,7 @@ class TestNavigateToNode:
         self, node_controller, mock_main_window
     ) -> None:
         """Test navigate to node when node doesn't exist."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_graph.all_nodes.return_value = []
 
         node_controller.navigate_to_node("nonexistent_id")
@@ -237,7 +247,7 @@ class TestNavigateToNode:
         self, node_controller, mock_main_window, mock_node
     ) -> None:
         """Test navigating to node successfully."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_viewer = Mock()
         mock_viewer.center_on = Mock()
         mock_graph.viewer.return_value = mock_viewer
@@ -259,14 +269,12 @@ class TestNavigateToNode:
 class TestFindNode:
     """Tests for node search dialog."""
 
-    @patch(
-        "casare_rpa.presentation.canvas.controllers.node_controller.NodeSearchDialog"
-    )
+    @patch("casare_rpa.canvas.search.node_search.NodeSearchDialog")
     def test_find_node_success(
         self, mock_dialog_class, node_controller, mock_main_window
     ) -> None:
         """Test opening node search dialog."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_dialog = Mock()
         mock_dialog_class.return_value = mock_dialog
 
@@ -277,13 +285,11 @@ class TestFindNode:
 
     def test_find_node_no_graph(self, node_controller, mock_main_window) -> None:
         """Test find node when no graph available."""
-        mock_main_window._central_widget.graph = None
+        mock_main_window.get_graph.return_value = None
 
         node_controller.find_node()
 
-        mock_main_window.statusBar().showMessage.assert_called_with(
-            "No graph available", 3000
-        )
+        mock_main_window.show_status.assert_called_with("No graph available", 3000)
 
 
 class TestUpdateNodeProperty:
@@ -294,7 +300,7 @@ class TestUpdateNodeProperty:
     ) -> None:
         """Test updating node property successfully."""
         mock_node.set_property = Mock()
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_graph.all_nodes.return_value = [mock_node]
 
         signal_emitted = []
@@ -312,7 +318,7 @@ class TestUpdateNodeProperty:
         self, node_controller, mock_main_window
     ) -> None:
         """Test updating property on non-existent node."""
-        mock_graph = mock_main_window._central_widget.graph
+        mock_graph = mock_main_window.get_graph.return_value
         mock_graph.all_nodes.return_value = []
 
         node_controller.update_node_property("nonexistent_id", "prop", "value")
@@ -323,7 +329,7 @@ class TestUpdateNodeProperty:
         self, node_controller, mock_main_window
     ) -> None:
         """Test updating property when no graph available."""
-        mock_main_window._central_widget.graph = None
+        mock_main_window.get_graph.return_value = None
 
         node_controller.update_node_property("node_id", "prop", "value")
 
@@ -335,7 +341,7 @@ class TestPrivateMethods:
 
     def test_get_graph_success(self, node_controller, mock_main_window) -> None:
         """Test _get_graph returns graph successfully."""
-        expected_graph = mock_main_window._central_widget.graph
+        expected_graph = mock_main_window.get_graph.return_value
 
         result = node_controller._get_graph()
 
@@ -344,8 +350,8 @@ class TestPrivateMethods:
     def test_get_graph_no_central_widget(
         self, node_controller, mock_main_window
     ) -> None:
-        """Test _get_graph returns None when no central widget."""
-        mock_main_window._central_widget = None
+        """Test _get_graph returns None when get_graph returns None."""
+        mock_main_window.get_graph.return_value = None
 
         result = node_controller._get_graph()
 
@@ -354,9 +360,10 @@ class TestPrivateMethods:
     def test_get_graph_no_graph_attribute(
         self, node_controller, mock_main_window
     ) -> None:
-        """Test _get_graph returns None when central widget has no graph."""
-        del mock_main_window._central_widget.graph
+        """Test _get_graph returns graph from get_graph method."""
+        expected_graph = mock_main_window.get_graph.return_value
 
         result = node_controller._get_graph()
 
-        assert result is None
+        assert result == expected_graph
+        mock_main_window.get_graph.assert_called_once()

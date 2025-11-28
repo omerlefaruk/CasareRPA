@@ -19,7 +19,7 @@ from casare_rpa.domain.entities.node_connection import NodeConnection
 
 
 # Patch path for get_event_bus (imported inside the module)
-EVENT_BUS_PATCH = "casare_rpa.core.events.get_event_bus"
+EVENT_BUS_PATCH = "casare_rpa.domain.events.get_event_bus"
 
 
 # ============================================================================

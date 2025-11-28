@@ -11,7 +11,12 @@ from typing import Any, Dict, List, Optional
 import orjson
 from loguru import logger
 
-from ..value_objects.types import NodeId, SerializedNode, SerializedFrame, SerializedWorkflow
+from ..value_objects.types import (
+    NodeId,
+    SerializedNode,
+    SerializedFrame,
+    SerializedWorkflow,
+)
 from .workflow_metadata import WorkflowMetadata
 from .node_connection import NodeConnection
 
@@ -27,6 +32,7 @@ class VariableDefinition:
         default_value: Default value for the variable
         description: Optional description
     """
+
     name: str
     type: str = "String"
     default_value: Any = ""
@@ -131,7 +137,11 @@ class WorkflowSchema:
         logger.debug(f"Added connection: {connection}")
 
     def remove_connection(
-        self, source_node: NodeId, source_port: str, target_node: NodeId, target_port: str
+        self,
+        source_node: NodeId,
+        source_port: str,
+        target_node: NodeId,
+        target_port: str,
     ) -> None:
         """
         Remove a connection between nodes.
@@ -197,7 +207,8 @@ class WorkflowSchema:
             Tuple of (is_valid, list of error messages)
         """
         # Import here to avoid circular dependency
-        from ...core.validation import quick_validate
+        from casare_rpa.domain.validation import quick_validate
+
         return quick_validate(self.to_dict())
 
     def validate_full(self) -> "ValidationResult":
@@ -208,7 +219,8 @@ class WorkflowSchema:
             ValidationResult with all issues and suggestions
         """
         # Import here to avoid circular dependency
-        from ...core.validation import validate_workflow, ValidationResult
+        from casare_rpa.domain.validation import validate_workflow, ValidationResult
+
         return validate_workflow(self.to_dict())
 
     def to_dict(self) -> SerializedWorkflow:
@@ -298,7 +310,9 @@ class WorkflowSchema:
             workflow.nodes[dict_key] = node_data
 
         if repaired_count > 0:
-            logger.info(f"Auto-repaired {repaired_count} node ID mismatches in workflow")
+            logger.info(
+                f"Auto-repaired {repaired_count} node ID mismatches in workflow"
+            )
 
         # Load connections
         for conn_data in data.get("connections", []):
@@ -331,7 +345,9 @@ class WorkflowSchema:
                 if not result.is_valid:
                     error_summary = result.format_summary()
                     logger.error(f"Validation failed before save:\n{error_summary}")
-                    raise ValueError(f"Cannot save invalid workflow: {result.error_count} error(s)")
+                    raise ValueError(
+                        f"Cannot save invalid workflow: {result.error_count} error(s)"
+                    )
 
             # Update modified timestamp
             self.metadata.update_modified_timestamp()
@@ -382,7 +398,10 @@ class WorkflowSchema:
 
             # Auto-migrate legacy node IDs to UUID format if needed
             from ...utils.id_generator import is_uuid_based_id
-            from ...utils.workflow_migration import migrate_workflow_ids, needs_migration
+            from ...utils.workflow_migration import (
+                migrate_workflow_ids,
+                needs_migration,
+            )
 
             if needs_migration(data):
                 logger.info(f"Migrating legacy node IDs in {file_path}")
@@ -390,7 +409,8 @@ class WorkflowSchema:
 
             # Optionally validate before creating workflow
             if validate_on_load:
-                from ...core.validation import validate_workflow
+                from casare_rpa.domain.validation import validate_workflow
+
                 result = validate_workflow(data)
 
                 if not result.is_valid:
@@ -398,9 +418,13 @@ class WorkflowSchema:
                     logger.warning(f"Workflow validation issues:\n{error_summary}")
 
                     if strict:
-                        raise ValueError(f"Workflow validation failed: {result.error_count} error(s)")
+                        raise ValueError(
+                            f"Workflow validation failed: {result.error_count} error(s)"
+                        )
                 elif result.warnings:
-                    logger.info(f"Workflow loaded with {result.warning_count} warning(s)")
+                    logger.info(
+                        f"Workflow loaded with {result.warning_count} warning(s)"
+                    )
 
             # Create workflow
             workflow = cls.from_dict(data)

@@ -8,6 +8,8 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import xml.etree.ElementTree as ET
 
+from casare_rpa.infrastructure.execution.execution_context import ExecutionContext
+
 # Uses execution_context fixture from conftest.py - no import needed
 
 

@@ -43,8 +43,8 @@ class TestImportPerformance:
         def import_core_modules() -> List[str]:
             modules_to_import = [
                 "casare_rpa",
-                "casare_rpa.core",
-                "casare_rpa.core.base_node",
+                "casare_rpa.domain",
+                "casare_rpa.domain.entities.base_node",
             ]
             imported = []
             for module_name in modules_to_import:
@@ -120,7 +120,7 @@ class TestMemoryBaseline:
         # Import core modules
         try:
             import casare_rpa
-            import casare_rpa.core
+            import casare_rpa.domain
             import casare_rpa.nodes
         except ImportError:
             pytest.skip("Core modules not available")
@@ -355,7 +355,7 @@ class TestStartupBaseline:
                 pass
 
             try:
-                import casare_rpa.core
+                import casare_rpa.domain
 
                 imported_count += 1
             except ImportError:
@@ -490,7 +490,7 @@ def run_manual_baseline_measurement() -> Dict[str, Any]:
     start_time = time.perf_counter()
     try:
         import casare_rpa
-        import casare_rpa.core
+        import casare_rpa.domain
     except ImportError:
         pass
     core_import_time = (time.perf_counter() - start_time) * 1000

@@ -14,7 +14,7 @@ Tests workflow lifecycle operations including:
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch, call
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QMainWindow
 
 from casare_rpa.presentation.canvas.controllers.workflow_controller import (
     WorkflowController,
@@ -22,36 +22,55 @@ from casare_rpa.presentation.canvas.controllers.workflow_controller import (
 
 
 @pytest.fixture
-def mock_main_window() -> None:
-    """Create a mock MainWindow with all required attributes."""
-    mock = Mock()
-    mock._central_widget = Mock()
-    mock._central_widget.graph = Mock()
-    mock._bottom_panel = Mock()
-    mock._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
-    mock._bottom_panel.trigger_validation = Mock()
-    mock._bottom_panel.show_validation_tab = Mock()
+def mock_main_window(qtbot):
+    """Create a real QMainWindow with all required attributes."""
+    main_window = QMainWindow()
+    qtbot.addWidget(main_window)
+
+    main_window._central_widget = Mock()
+    main_window._central_widget.graph = Mock()
+
+    # Mock show_status method
+    main_window.show_status = Mock()
+
+    # Mock get_graph method
+    mock_graph = Mock()
+    mock_graph.selected_nodes = Mock(return_value=[])
+    main_window.get_graph = Mock(return_value=mock_graph)
+
+    # Mock get_bottom_panel
+    main_window._bottom_panel = Mock()
+    main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
+    main_window.get_bottom_panel = Mock(return_value=main_window._bottom_panel)
+
+    # Mock workflow signals
+    main_window.workflow_new = Mock()
+    main_window.workflow_new.emit = Mock()
+    main_window._bottom_panel = Mock()
+    main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
+    main_window._bottom_panel.trigger_validation = Mock()
+    main_window._bottom_panel.show_validation_tab = Mock()
 
     # Mock status bar
     mock_status = Mock()
-    mock.statusBar = Mock(return_value=mock_status)
+    main_window.statusBar = Mock(return_value=mock_status)
 
     # Mock actions
-    mock.action_save = Mock()
-    mock.action_save.setEnabled = Mock()
+    main_window.action_save = Mock()
+    main_window.action_save.setEnabled = Mock()
 
     # Mock window title setter
-    mock.setWindowTitle = Mock()
+    main_window.setWindowTitle = Mock()
 
     # Mock workflow signals
-    mock.workflow_new_from_template = Mock()
-    mock.workflow_new_from_template.emit = Mock()
+    main_window.workflow_new_from_template = Mock()
+    main_window.workflow_new_from_template.emit = Mock()
 
-    return mock
+    return main_window
 
 
 @pytest.fixture
-def workflow_controller(mock_main_window) -> None:
+def workflow_controller(mock_main_window):
     """Create a WorkflowController instance."""
     controller = WorkflowController(mock_main_window)
     controller.initialize()
@@ -68,20 +87,20 @@ class TestWorkflowControllerInitialization:
         assert controller.main_window == mock_main_window
         assert controller._current_file is None
         assert controller._is_modified is False
-        assert not controller.is_initialized()
+        assert not controller.is_initialized
 
     def test_initialize_sets_state(self, mock_main_window) -> None:
         """Test initialize() sets initialized state."""
         controller = WorkflowController(mock_main_window)
         controller.initialize()
 
-        assert controller.is_initialized()
+        assert controller.is_initialized
 
     def test_cleanup_resets_state(self, workflow_controller) -> None:
         """Test cleanup() resets initialized state."""
         workflow_controller.cleanup()
 
-        assert not workflow_controller.is_initialized()
+        assert not workflow_controller.is_initialized
 
 
 class TestWorkflowControllerProperties:

@@ -15,6 +15,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch, PropertyMock
 from PySide6.QtCore import QByteArray
+from PySide6.QtWidgets import QMainWindow
 
 from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
     UIStateController,
@@ -22,9 +23,10 @@ from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
 
 
 @pytest.fixture
-def mock_main_window() -> None:
-    """Create a mock MainWindow with all required attributes."""
-    mock = Mock()
+def mock_main_window(qtbot):
+    """Create a real QMainWindow with all required attributes."""
+    mock = QMainWindow()
+    qtbot.addWidget(mock)
 
     # Mock panels
     mock._bottom_panel = Mock()
@@ -60,9 +62,9 @@ def mock_main_window() -> None:
     mock.action_toggle_minimap = Mock()
     mock.action_toggle_minimap.setChecked = Mock()
 
-    # Mock window geometry methods
-    mock.saveGeometry.return_value = QByteArray(b"geometry_data")
-    mock.saveState.return_value = QByteArray(b"state_data")
+    # Mock window geometry methods (cannot set return_value on builtin methods)
+    mock.saveGeometry = Mock(return_value=QByteArray(b"geometry_data"))
+    mock.saveState = Mock(return_value=QByteArray(b"state_data"))
     mock.restoreGeometry = Mock(return_value=True)
     mock.restoreState = Mock(return_value=True)
 
@@ -135,7 +137,7 @@ class TestUIStateControllerInitialization:
     def test_initialization(self, ui_state_controller, mock_main_window) -> None:
         """Test controller initializes correctly."""
         assert ui_state_controller.main_window == mock_main_window
-        assert ui_state_controller.is_initialized()
+        assert ui_state_controller.is_initialized
 
     def test_cleanup(self, ui_state_controller) -> None:
         """Test cleanup releases resources."""
@@ -144,7 +146,7 @@ class TestUIStateControllerInitialization:
         ui_state_controller._auto_save_timer = None
         ui_state_controller._initialized = False
 
-        assert not ui_state_controller.is_initialized()
+        assert not ui_state_controller.is_initialized
         assert ui_state_controller._settings is None
         assert ui_state_controller._auto_save_timer is None
 
@@ -546,11 +548,11 @@ class TestUtilityMethods:
         controller._initialized = False
         controller._settings = None
 
-        assert not controller.is_initialized()
+        assert not controller.is_initialized
 
     def test_is_initialized_after_init(self, ui_state_controller) -> None:
         """Test is_initialized returns True after init."""
-        assert ui_state_controller.is_initialized()
+        assert ui_state_controller.is_initialized
 
     def test_get_settings(self, ui_state_controller, mock_settings) -> None:
         """Test get_settings returns QSettings instance."""

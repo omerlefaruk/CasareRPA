@@ -28,7 +28,7 @@ from PySide6.QtGui import QFont
 
 from ..theme import THEME
 from ...project.project_manager import get_project_manager
-from ...core.project_schema import CredentialBinding
+from casare_rpa.domain.project_schema import CredentialBinding
 
 
 class CredentialEditorDialog(QDialog):

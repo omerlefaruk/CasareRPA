@@ -20,7 +20,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
 
 if TYPE_CHECKING:
-    from ...core.validation import ValidationResult
+    from casare_rpa.domain.validation import ValidationResult
 
 
 class ValidationTab(QWidget):

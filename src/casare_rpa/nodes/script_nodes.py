@@ -18,9 +18,14 @@ from pathlib import Path
 
 from loguru import logger
 
-from ..core.base_node import BaseNode
-from ..core.types import NodeStatus, PortType, DataType, ExecutionResult
-from ..core.execution_context import ExecutionContext
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import (
+    NodeStatus,
+    PortType,
+    DataType,
+    ExecutionResult,
+)
+from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 def safe_int(value, default: int) -> int:
@@ -189,7 +194,9 @@ print("__RESULT__:" + json.dumps(result, default=str))
             result = None
             if "__RESULT__:" in output:
                 result_line = [
-                    l for l in output.split("\n") if l.startswith("__RESULT__:")
+                    line
+                    for line in output.split("\n")
+                    if line.startswith("__RESULT__:")
                 ]
                 if result_line:
                     try:
