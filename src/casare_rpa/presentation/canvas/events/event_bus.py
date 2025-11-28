@@ -37,7 +37,7 @@ Usage:
     bus.unsubscribe(EventType.WORKFLOW_SAVED, on_workflow_saved)
 """
 
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Any
 from collections import defaultdict, deque
 from threading import RLock
 import time
@@ -46,6 +46,9 @@ from loguru import logger
 
 from .event import Event, EventFilter
 from .event_types import EventType, EventCategory
+
+# Slow handler threshold in seconds (100ms)
+SLOW_HANDLER_THRESHOLD_SEC = 0.1
 
 
 # Type alias for event handler functions
@@ -386,7 +389,7 @@ class EventBus:
             self._metrics["total_handler_time"] += elapsed
 
             # Warn if handler is slow
-            if elapsed > 0.1:  # 100ms threshold
+            if elapsed > SLOW_HANDLER_THRESHOLD_SEC:
                 handler_name = (
                     handler.__name__ if hasattr(handler, "__name__") else str(handler)
                 )
@@ -460,7 +463,7 @@ class EventBus:
 
             return events
 
-    def get_metrics(self) -> dict[str, any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get performance metrics.
 

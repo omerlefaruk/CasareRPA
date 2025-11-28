@@ -7,9 +7,10 @@ repeated file I/O and object creation. Uses LRU-style eviction.
 Performance Impact:
 - Reduces icon loading time by 80-90% on cache hits
 - Minimizes memory fragmentation from repeated pixmap creation
-- Thread-safe via class-level caches (PySide6 handles Qt objects safely)
+- Thread-safe via RLock for cache operations
 """
 
+import threading
 from typing import Dict, Tuple, Optional
 from functools import lru_cache
 from loguru import logger
@@ -35,6 +36,7 @@ class ResourceCache:
 
     _icon_cache: Dict[str, "QIcon"] = {}
     _pixmap_cache: Dict[Tuple[str, int, int], "QPixmap"] = {}
+    _lock = threading.RLock()
 
     # Cache statistics
     _icon_hits: int = 0
@@ -57,21 +59,22 @@ class ResourceCache:
         Returns:
             QIcon instance (cached or newly created)
         """
-        if path in cls._icon_cache:
-            cls._icon_hits += 1
-            return cls._icon_cache[path]
+        with cls._lock:
+            if path in cls._icon_cache:
+                cls._icon_hits += 1
+                return cls._icon_cache[path]
 
-        cls._icon_misses += 1
+            cls._icon_misses += 1
 
-        # Lazy import to avoid startup cost
-        from PySide6.QtGui import QIcon
+            # Lazy import to avoid startup cost
+            from PySide6.QtGui import QIcon
 
-        icon = QIcon(path)
-        cls._icon_cache[path] = icon
-        cls._evict_icons_if_needed()
+            icon = QIcon(path)
+            cls._icon_cache[path] = icon
+            cls._evict_icons_if_needed()
 
-        logger.debug(f"Icon cache miss: {path}")
-        return icon
+            logger.debug(f"Icon cache miss: {path}")
+            return icon
 
     @classmethod
     def get_pixmap(cls, path: str, width: int = -1, height: int = -1) -> "QPixmap":
@@ -88,31 +91,32 @@ class ResourceCache:
         """
         key = (path, width, height)
 
-        if key in cls._pixmap_cache:
-            cls._pixmap_hits += 1
-            return cls._pixmap_cache[key]
+        with cls._lock:
+            if key in cls._pixmap_cache:
+                cls._pixmap_hits += 1
+                return cls._pixmap_cache[key]
 
-        cls._pixmap_misses += 1
+            cls._pixmap_misses += 1
 
-        # Lazy import to avoid startup cost
-        from PySide6.QtGui import QPixmap
-        from PySide6.QtCore import Qt
+            # Lazy import to avoid startup cost
+            from PySide6.QtGui import QPixmap
+            from PySide6.QtCore import Qt
 
-        pixmap = QPixmap(path)
+            pixmap = QPixmap(path)
 
-        if width > 0 or height > 0:
-            # Scale maintaining aspect ratio with smooth transformation
-            target_w = width if width > 0 else pixmap.width()
-            target_h = height if height > 0 else pixmap.height()
-            pixmap = pixmap.scaled(
-                target_w, target_h, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+            if width > 0 or height > 0:
+                # Scale maintaining aspect ratio with smooth transformation
+                target_w = width if width > 0 else pixmap.width()
+                target_h = height if height > 0 else pixmap.height()
+                pixmap = pixmap.scaled(
+                    target_w, target_h, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                )
 
-        cls._pixmap_cache[key] = pixmap
-        cls._evict_pixmaps_if_needed()
+            cls._pixmap_cache[key] = pixmap
+            cls._evict_pixmaps_if_needed()
 
-        logger.debug(f"Pixmap cache miss: {path} ({width}x{height})")
-        return pixmap
+            logger.debug(f"Pixmap cache miss: {path} ({width}x{height})")
+            return pixmap
 
     @classmethod
     def _evict_icons_if_needed(cls) -> None:
@@ -141,13 +145,14 @@ class ResourceCache:
 
         Use this for testing or when memory pressure is high.
         """
-        cls._icon_cache.clear()
-        cls._pixmap_cache.clear()
-        cls._icon_hits = 0
-        cls._icon_misses = 0
-        cls._pixmap_hits = 0
-        cls._pixmap_misses = 0
-        logger.debug("ResourceCache cleared")
+        with cls._lock:
+            cls._icon_cache.clear()
+            cls._pixmap_cache.clear()
+            cls._icon_hits = 0
+            cls._icon_misses = 0
+            cls._pixmap_hits = 0
+            cls._pixmap_misses = 0
+            logger.debug("ResourceCache cleared")
 
     @classmethod
     def get_stats(cls) -> Dict[str, int]:
@@ -157,17 +162,19 @@ class ResourceCache:
         Returns:
             Dictionary with hit/miss counts and cache sizes
         """
-        return {
-            "icon_hits": cls._icon_hits,
-            "icon_misses": cls._icon_misses,
-            "icon_cache_size": len(cls._icon_cache),
-            "icon_hit_rate": cls._icon_hits / max(1, cls._icon_hits + cls._icon_misses),
-            "pixmap_hits": cls._pixmap_hits,
-            "pixmap_misses": cls._pixmap_misses,
-            "pixmap_cache_size": len(cls._pixmap_cache),
-            "pixmap_hit_rate": cls._pixmap_hits
-            / max(1, cls._pixmap_hits + cls._pixmap_misses),
-        }
+        with cls._lock:
+            return {
+                "icon_hits": cls._icon_hits,
+                "icon_misses": cls._icon_misses,
+                "icon_cache_size": len(cls._icon_cache),
+                "icon_hit_rate": cls._icon_hits
+                / max(1, cls._icon_hits + cls._icon_misses),
+                "pixmap_hits": cls._pixmap_hits,
+                "pixmap_misses": cls._pixmap_misses,
+                "pixmap_cache_size": len(cls._pixmap_cache),
+                "pixmap_hit_rate": cls._pixmap_hits
+                / max(1, cls._pixmap_hits + cls._pixmap_misses),
+            }
 
     @classmethod
     def preload_icons(cls, paths: list) -> None:

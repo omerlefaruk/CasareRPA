@@ -29,10 +29,17 @@ Usage:
 from typing import Dict, List, Set
 
 from PySide6.QtCore import QTimer
+from loguru import logger
 
 from .event_bus import EventBus
 from .event import Event
 from .event_types import EventType
+
+# Maximum pending events per type before overflow warning
+MAX_PENDING_EVENTS = 10000
+
+# Batching interval in milliseconds (60fps = 16.67ms)
+DEFAULT_BATCH_INTERVAL_MS = 16
 
 
 class EventBatcher:
@@ -63,7 +70,7 @@ class EventBatcher:
     }
     """Event types eligible for batching."""
 
-    def __init__(self, interval_ms: int = 16) -> None:
+    def __init__(self, interval_ms: int = DEFAULT_BATCH_INTERVAL_MS) -> None:
         """
         Initialize EventBatcher.
 
@@ -96,6 +103,19 @@ class EventBatcher:
 
         if event.type not in self.pending:
             self.pending[event.type] = []
+
+        # Check for overflow before adding
+        event_list = self.pending[event.type]
+        if len(event_list) >= MAX_PENDING_EVENTS:
+            logger.warning(
+                f"EventBatcher overflow: {event.type.name} has {len(event_list)} pending events. "
+                f"Forcing flush to prevent memory leak."
+            )
+            self.flush_now()
+            # Re-initialize after flush
+            if event.type not in self.pending:
+                self.pending[event.type] = []
+
         self.pending[event.type].append(event)
 
         if not self.timer.isActive():

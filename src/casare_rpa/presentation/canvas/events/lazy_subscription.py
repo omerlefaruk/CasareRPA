@@ -5,6 +5,8 @@ Provides visibility-based subscription that activates when component becomes
 visible and deactivates when hidden, reducing EventBus overhead for panels
 that are not currently in view.
 
+Uses Qt event filters for cleaner interception without handler mutation.
+
 Usage:
     from casare_rpa.presentation.canvas.events import LazySubscription, EventType
 
@@ -17,9 +19,12 @@ Usage:
             ]
 """
 
-from typing import Callable, List, Optional
-from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import QEvent
+from typing import Callable, List, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
+from PySide6.QtCore import QEvent, QObject
 
 from loguru import logger
 
@@ -27,12 +32,13 @@ from .event_bus import EventBus
 from .event_types import EventType
 
 
-class LazySubscription:
+class LazySubscription(QObject):
     """
     Subscription that activates when component becomes visible.
 
-    Wraps QWidget showEvent/hideEvent to automatically subscribe/unsubscribe
-    from EventBus, reducing subscription overhead when panels are hidden.
+    Uses Qt event filter to intercept show/hide events and automatically
+    subscribe/unsubscribe from EventBus, reducing subscription overhead
+    when panels are hidden.
 
     Attributes:
         event_type: EventType to subscribe to
@@ -45,7 +51,7 @@ class LazySubscription:
         self,
         event_type: EventType,
         handler: Callable,
-        component: QWidget,
+        component: "QWidget",
     ) -> None:
         """
         Initialize lazy subscription.
@@ -55,57 +61,39 @@ class LazySubscription:
             handler: Callback function to invoke on event
             component: QWidget whose visibility controls subscription
         """
+        super().__init__()
         self.event_type = event_type
         self.handler = handler
         self.component = component
         self.active = False
 
-        # Store original event handlers
-        self._original_show_event = component.showEvent
-        self._original_hide_event = component.hideEvent
-
-        # Wrap component's showEvent/hideEvent
-        component.showEvent = self._on_show_wrapper(component.showEvent)
-        component.hideEvent = self._on_hide_wrapper(component.hideEvent)
+        # Install event filter for clean interception
+        component.installEventFilter(self)
 
         logger.debug(
             f"LazySubscription created for {event_type.name} on "
             f"{component.__class__.__name__}"
         )
 
-    def _on_show_wrapper(self, original_show: Callable) -> Callable:
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """
-        Create wrapper for showEvent that activates subscription.
+        Qt event filter to intercept show/hide events.
 
         Args:
-            original_show: Original showEvent method
+            watched: Object being watched
+            event: Event to filter
 
         Returns:
-            Wrapped showEvent function
+            False to allow event propagation
         """
+        if watched == self.component:
+            if event.type() == QEvent.Type.Show:
+                self.activate()
+            elif event.type() == QEvent.Type.Hide:
+                self.deactivate()
 
-        def wrapper(event: QEvent) -> None:
-            self.activate()
-            return original_show(event)
-
-        return wrapper
-
-    def _on_hide_wrapper(self, original_hide: Callable) -> Callable:
-        """
-        Create wrapper for hideEvent that deactivates subscription.
-
-        Args:
-            original_hide: Original hideEvent method
-
-        Returns:
-            Wrapped hideEvent function
-        """
-
-        def wrapper(event: QEvent) -> None:
-            self.deactivate()
-            return original_hide(event)
-
-        return wrapper
+        # Always allow event to propagate
+        return False
 
     def activate(self) -> None:
         """Activate subscription (subscribe to EventBus)."""
@@ -127,17 +115,16 @@ class LazySubscription:
                 f"{self.component.__class__.__name__}"
             )
 
-    def restore_original_handlers(self) -> None:
+    def cleanup(self) -> None:
         """
-        Restore original showEvent/hideEvent handlers.
+        Remove event filter and deactivate subscription.
 
         Should be called when LazySubscription is no longer needed.
         """
         self.deactivate()
-        self.component.showEvent = self._original_show_event
-        self.component.hideEvent = self._original_hide_event
+        self.component.removeEventFilter(self)
         logger.debug(
-            f"LazySubscription handlers restored for {self.component.__class__.__name__}"
+            f"LazySubscription cleaned up for {self.component.__class__.__name__}"
         )
 
 
@@ -202,10 +189,10 @@ class LazySubscriptionGroup:
             sub.deactivate()
 
     def cleanup(self) -> None:
-        """Cleanup and restore original handlers."""
+        """Cleanup all subscriptions."""
         for sub in self._subscriptions:
             if isinstance(sub, LazySubscription):
-                sub.restore_original_handlers()
+                sub.cleanup()
             else:
                 sub.deactivate()
         self._subscriptions.clear()

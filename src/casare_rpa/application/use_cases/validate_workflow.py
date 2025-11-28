@@ -7,7 +7,7 @@ Validates workflow structure, connections, and node configurations.
 Caching Strategy:
 - SHA256 hash of workflow structure (nodes + connections)
 - Cache invalidation on any workflow modification
-- Thread-safe via dictionary operations
+- Thread-safe via threading.Lock
 
 Performance Impact:
 - Avoids re-validating unchanged workflows
@@ -17,6 +17,7 @@ Performance Impact:
 
 import hashlib
 import json
+import threading
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Set
 from loguru import logger
@@ -81,7 +82,7 @@ class ValidateWorkflowUseCase:
     Application use case for validating workflows.
 
     Uses hash-based caching to avoid re-validating unchanged workflows.
-    Thread-safe via class-level cache dictionary.
+    Thread-safe via threading.Lock for cache operations.
 
     Validation Rules:
     - Exactly one StartNode required
@@ -93,6 +94,7 @@ class ValidateWorkflowUseCase:
 
     # Class-level cache: workflow_hash -> ValidationResult
     _cache: Dict[str, ValidationResult] = {}
+    _lock = threading.Lock()
 
     # Cache statistics
     _cache_hits: int = 0
@@ -115,24 +117,26 @@ class ValidateWorkflowUseCase:
         # Compute hash for caching
         workflow_hash = self._compute_hash(workflow)
 
-        # Check cache
-        if workflow_hash in self._cache:
-            ValidateWorkflowUseCase._cache_hits += 1
-            cached_result = self._cache[workflow_hash]
-            # Return a copy with from_cache=True
-            return ValidationResult(
-                is_valid=cached_result.is_valid,
-                issues=cached_result.issues.copy(),
-                from_cache=True,
-            )
+        # Check cache with lock
+        with self._lock:
+            if workflow_hash in self._cache:
+                ValidateWorkflowUseCase._cache_hits += 1
+                cached_result = self._cache[workflow_hash]
+                # Return a copy with from_cache=True
+                return ValidationResult(
+                    is_valid=cached_result.is_valid,
+                    issues=cached_result.issues.copy(),
+                    from_cache=True,
+                )
 
-        ValidateWorkflowUseCase._cache_misses += 1
+            ValidateWorkflowUseCase._cache_misses += 1
 
-        # Perform validation
+        # Perform validation (outside lock to avoid holding it during I/O)
         result = self._validate(workflow)
 
-        # Cache the result
-        self._cache[workflow_hash] = result
+        # Cache the result with lock
+        with self._lock:
+            self._cache[workflow_hash] = result
 
         logger.debug(
             f"Workflow validation: {len(result.errors)} errors, "
@@ -323,23 +327,25 @@ class ValidateWorkflowUseCase:
             workflow: If provided, only invalidate cache for this workflow.
                      If None, clear entire cache.
         """
-        if workflow is not None:
-            workflow_hash = self._compute_hash(workflow)
-            self._cache.pop(workflow_hash, None)
-            logger.debug(
-                f"Invalidated cache for workflow (hash: {workflow_hash[:8]}...)"
-            )
-        else:
-            self._cache.clear()
-            logger.debug("Cleared entire validation cache")
+        with self._lock:
+            if workflow is not None:
+                workflow_hash = self._compute_hash(workflow)
+                self._cache.pop(workflow_hash, None)
+                logger.debug(
+                    f"Invalidated cache for workflow (hash: {workflow_hash[:8]}...)"
+                )
+            else:
+                self._cache.clear()
+                logger.debug("Cleared entire validation cache")
 
     @classmethod
     def clear_cache(cls) -> None:
         """Clear the entire validation cache."""
-        cls._cache.clear()
-        cls._cache_hits = 0
-        cls._cache_misses = 0
-        logger.debug("ValidationWorkflowUseCase cache cleared")
+        with cls._lock:
+            cls._cache.clear()
+            cls._cache_hits = 0
+            cls._cache_misses = 0
+            logger.debug("ValidationWorkflowUseCase cache cleared")
 
     @classmethod
     def get_cache_stats(cls) -> Dict[str, Any]:
@@ -349,11 +355,12 @@ class ValidateWorkflowUseCase:
         Returns:
             Dictionary with hit/miss counts and hit rate
         """
-        total = cls._cache_hits + cls._cache_misses
-        hit_rate = cls._cache_hits / max(1, total)
-        return {
-            "cache_hits": cls._cache_hits,
-            "cache_misses": cls._cache_misses,
-            "cache_size": len(cls._cache),
-            "hit_rate": hit_rate,
-        }
+        with cls._lock:
+            total = cls._cache_hits + cls._cache_misses
+            hit_rate = cls._cache_hits / max(1, total)
+            return {
+                "cache_hits": cls._cache_hits,
+                "cache_misses": cls._cache_misses,
+                "cache_size": len(cls._cache),
+                "hit_rate": hit_rate,
+            }
