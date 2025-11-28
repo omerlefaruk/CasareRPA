@@ -270,13 +270,13 @@ class QueueAdapter:
                 "healthy": True,  # TODO: Add health check
             }
         else:
-            stats = self.job_queue.get_stats()
+            stats = self.job_queue.get_queue_stats()
             return {
                 "backend": "in_memory",
-                "pending_jobs": stats["queue_depth"],
-                "total_jobs": stats["total_jobs"],
-                "completed": stats["completed_jobs"],
-                "failed": stats["failed_jobs"],
+                "pending_jobs": stats["queued"],
+                "running_jobs": stats["running"],
+                "total_tracked": stats["total_tracked"],
+                "by_priority": stats["by_priority"],
             }
 
     @staticmethod

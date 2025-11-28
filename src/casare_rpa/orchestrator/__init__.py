@@ -49,8 +49,10 @@ try:
 except ImportError:
     HAS_DISPATCHER = False
 
-# Engine
+# Engine and Configuration
 from .engine import OrchestratorEngine
+from .config import OrchestratorConfig, IN_MEMORY_CONFIG, PGQUEUER_CONFIG_TEMPLATE
+from .queue_adapter import QueueAdapter
 
 # Protocol
 from .protocol import Message, MessageType, MessageBuilder
@@ -139,8 +141,12 @@ __all__ = [
     "JobDispatcher",
     "LoadBalancingStrategy",
     "RobotPool",
-    # Engine
+    # Engine and Configuration
     "OrchestratorEngine",
+    "OrchestratorConfig",
+    "IN_MEMORY_CONFIG",
+    "PGQUEUER_CONFIG_TEMPLATE",
+    "QueueAdapter",
     # Protocol
     "Message",
     "MessageType",

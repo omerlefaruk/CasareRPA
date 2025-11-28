@@ -22,6 +22,8 @@ from .models import (
 from .services import OrchestratorService
 from .job_queue import JobQueue
 from .scheduler import JobScheduler, calculate_next_run
+from .config import OrchestratorConfig
+from .queue_adapter import QueueAdapter
 
 try:
     from .dispatcher import JobDispatcher, LoadBalancingStrategy, RobotPool
@@ -64,42 +66,99 @@ class OrchestratorEngine:
 
     def __init__(
         self,
+        config: Optional[OrchestratorConfig] = None,
         service: Optional[OrchestratorService] = None,
-        load_balancing: str = "least_loaded",
-        dispatch_interval: int = 5,
-        timeout_check_interval: int = 30,
-        default_job_timeout: int = 3600,
-        trigger_webhook_port: int = 8766,
+        # Legacy parameters (deprecated, use config instead)
+        load_balancing: Optional[str] = None,
+        dispatch_interval: Optional[int] = None,
+        timeout_check_interval: Optional[int] = None,
+        default_job_timeout: Optional[int] = None,
+        trigger_webhook_port: Optional[int] = None,
     ):
         """
         Initialize orchestrator engine.
 
         Args:
+            config: Orchestrator configuration (recommended)
             service: Data persistence service
-            load_balancing: Load balancing strategy (round_robin, least_loaded, random, affinity)
-            dispatch_interval: Seconds between dispatch attempts
-            timeout_check_interval: Seconds between timeout checks
-            default_job_timeout: Default job timeout in seconds
-            trigger_webhook_port: Port for trigger webhook server
+
+            Legacy args (deprecated, use config instead):
+                load_balancing: Load balancing strategy
+                dispatch_interval: Seconds between dispatch attempts
+                timeout_check_interval: Seconds between timeout checks
+                default_job_timeout: Default job timeout in seconds
+                trigger_webhook_port: Port for trigger webhook server
         """
+        # Use config or create from legacy parameters
+        if config is None:
+            from .config import IN_MEMORY_CONFIG
+
+            config = IN_MEMORY_CONFIG
+
+            # Override with legacy parameters if provided
+            if any(
+                [
+                    load_balancing,
+                    dispatch_interval,
+                    timeout_check_interval,
+                    default_job_timeout,
+                    trigger_webhook_port,
+                ]
+            ):
+                logger.warning(
+                    "Using legacy parameters. " "Please use OrchestratorConfig instead."
+                )
+                config = OrchestratorConfig(
+                    use_pgqueuer=False,
+                    load_balancing=load_balancing or "least_loaded",
+                    dispatch_interval=dispatch_interval or 5,
+                    timeout_check_interval=timeout_check_interval or 30,
+                    default_job_timeout=default_job_timeout or 3600,
+                    trigger_webhook_port=trigger_webhook_port or 8766,
+                )
+
+        self._config = config
         self._service = service or OrchestratorService()
 
-        # Initialize components
-        self._job_queue = JobQueue(
-            dedup_window_seconds=300,
-            default_timeout_seconds=default_job_timeout,
+        # Initialize queue adapter (supports both in-memory and PgQueuer)
+        pgqueuer_config = None
+        if config.use_pgqueuer:
+            try:
+                from casare_rpa.infrastructure.queue.config import QueueConfig
+
+                pgqueuer_config = QueueConfig(
+                    postgres_url=config.postgres_url,
+                    tenant_id=config.tenant_id,
+                )
+            except ImportError:
+                logger.error("PgQueuer not available, falling back to in-memory queue")
+                config = OrchestratorConfig(
+                    use_pgqueuer=False,
+                    load_balancing=config.load_balancing,
+                    dispatch_interval=config.dispatch_interval,
+                    timeout_check_interval=config.timeout_check_interval,
+                    default_job_timeout=config.default_job_timeout,
+                    trigger_webhook_port=config.trigger_webhook_port,
+                )
+
+        self._queue_adapter = QueueAdapter(
+            use_pgqueuer=config.use_pgqueuer,
+            pgqueuer_config=pgqueuer_config,
             on_state_change=self._on_job_state_change,
         )
+
+        # Keep reference to job_queue for backward compatibility
+        self._job_queue = self._queue_adapter.job_queue
 
         self._scheduler: Optional[JobScheduler] = None
         self._dispatcher: Optional[JobDispatcher] = None
         self._trigger_manager: Optional["TriggerManager"] = None
 
         if HAS_DISPATCHER:
-            strategy = LoadBalancingStrategy(load_balancing)
+            strategy = LoadBalancingStrategy(config.load_balancing)
             self._dispatcher = JobDispatcher(
                 strategy=strategy,
-                dispatch_interval_seconds=dispatch_interval,
+                dispatch_interval_seconds=config.dispatch_interval,
                 health_check_interval_seconds=30,
             )
             self._dispatcher.set_callbacks(
@@ -109,12 +168,14 @@ class OrchestratorEngine:
 
         # Initialize trigger manager
         if HAS_TRIGGERS:
-            self._trigger_manager = TriggerManager(webhook_port=trigger_webhook_port)
+            self._trigger_manager = TriggerManager(
+                http_port=config.trigger_webhook_port
+            )
 
-        # Configuration
-        self._dispatch_interval = dispatch_interval
-        self._timeout_check_interval = timeout_check_interval
-        self._trigger_webhook_port = trigger_webhook_port
+        # Configuration shortcuts
+        self._dispatch_interval = config.dispatch_interval
+        self._timeout_check_interval = config.timeout_check_interval
+        self._trigger_webhook_port = config.trigger_webhook_port
 
         # Event callbacks
         self._on_job_complete: Optional[Callable[[Job], None]] = None
@@ -140,6 +201,12 @@ class OrchestratorEngine:
 
         # Connect to data service
         await self._service.connect()
+
+        # Start queue adapter (initializes PgQueuer if enabled)
+        await self._queue_adapter.start()
+        logger.info(
+            f"Queue adapter started (backend: {'PgQueuer' if self._config.use_pgqueuer else 'in-memory'})"
+        )
 
         # Load existing data
         await self._load_robots()
@@ -199,6 +266,9 @@ class OrchestratorEngine:
         # Stop dispatcher
         if self._dispatcher:
             await self._dispatcher.stop()
+
+        # Stop queue adapter
+        await self._queue_adapter.stop()
 
         logger.info("OrchestratorEngine stopped")
 
@@ -386,8 +456,10 @@ class OrchestratorEngine:
         if scheduled_time and scheduled_time > datetime.utcnow():
             return await self._schedule_future_job(job, scheduled_time)
 
-        # Enqueue immediately
-        success, message = self._job_queue.enqueue(job, check_duplicate, params)
+        # Enqueue immediately (use async interface)
+        success, message = await self._queue_adapter.enqueue_async(
+            job, check_duplicate, params
+        )
 
         if not success:
             logger.warning(f"Failed to enqueue job: {message}")
@@ -438,17 +510,23 @@ class OrchestratorEngine:
         Returns:
             True if cancelled successfully
         """
-        success, message = self._job_queue.cancel(job_id, reason)
+        # Note: Cancel only supported for in-memory queue
+        # PgQueuer consumers handle cancellation directly
+        if self._job_queue:
+            success, message = self._job_queue.cancel(job_id, reason)
 
-        if success:
-            job = self._job_queue.get_job(job_id)
-            if job:
-                await self._persist_job(job)
-                # Notify robot to cancel (if running)
-                if job.robot_id:
-                    await self._notify_robot_cancel(job)
+            if success:
+                job = self._job_queue.get_job(job_id)
+                if job:
+                    await self._persist_job(job)
+                    # Notify robot to cancel (if running)
+                    if job.robot_id:
+                        await self._notify_robot_cancel(job)
 
-        return success
+            return success
+        else:
+            logger.warning("Cancel not supported with PgQueuer backend")
+            return False
 
     async def retry_job(self, job_id: str) -> Optional[Job]:
         """
@@ -497,14 +575,20 @@ class OrchestratorEngine:
         Returns:
             True if updated successfully
         """
-        success = self._job_queue.update_progress(job_id, progress, current_node)
+        # Update progress only supported for in-memory queue
+        # PgQueuer consumers manage their own progress
+        if self._job_queue:
+            success = self._job_queue.update_progress(job_id, progress, current_node)
 
-        if success:
-            job = self._job_queue.get_job(job_id)
-            if job:
-                await self._persist_job(job)
+            if success:
+                job = self._job_queue.get_job(job_id)
+                if job:
+                    await self._persist_job(job)
 
-        return success
+            return success
+        else:
+            # For PgQueuer, progress is managed by Robot consumers
+            return True
 
     async def complete_job(self, job_id: str, result: Optional[Dict] = None) -> bool:
         """
@@ -517,19 +601,24 @@ class OrchestratorEngine:
         Returns:
             True if completed successfully
         """
-        success, _ = self._job_queue.complete(job_id, result)
+        if self._job_queue:
+            success, _ = self._job_queue.complete(job_id, result)
 
-        if success:
-            job = self._job_queue.get_job(job_id)
-            if job:
-                await self._persist_job(job)
-                await self._release_robot(job)
-                if self._dispatcher:
-                    self._dispatcher.record_job_result(job, True)
-                if self._on_job_complete:
-                    self._on_job_complete(job)
+            if success:
+                job = self._job_queue.get_job(job_id)
+                if job:
+                    await self._persist_job(job)
+                    await self._release_robot(job)
+                    if self._dispatcher:
+                        self._dispatcher.record_job_result(job, True)
+                    if self._on_job_complete:
+                        self._on_job_complete(job)
 
-        return success
+            return success
+        else:
+            # For PgQueuer, completion is managed by Robot consumers
+            # Orchestrator only needs to update persistence
+            return True
 
     async def fail_job(self, job_id: str, error_message: str) -> bool:
         """
@@ -542,19 +631,23 @@ class OrchestratorEngine:
         Returns:
             True if marked successfully
         """
-        success, _ = self._job_queue.fail(job_id, error_message)
+        if self._job_queue:
+            success, _ = self._job_queue.fail(job_id, error_message)
 
-        if success:
-            job = self._job_queue.get_job(job_id)
-            if job:
-                await self._persist_job(job)
-                await self._release_robot(job)
-                if self._dispatcher:
-                    self._dispatcher.record_job_result(job, False)
-                if self._on_job_failed:
-                    self._on_job_failed(job)
+            if success:
+                job = self._job_queue.get_job(job_id)
+                if job:
+                    await self._persist_job(job)
+                    await self._release_robot(job)
+                    if self._dispatcher:
+                        self._dispatcher.record_job_result(job, False)
+                    if self._on_job_failed:
+                        self._on_job_failed(job)
 
-        return success
+            return success
+        else:
+            # For PgQueuer, failures are managed by Robot consumers
+            return True
 
     # ==================== ROBOT MANAGEMENT ====================
 
@@ -774,12 +867,15 @@ class OrchestratorEngine:
         """Periodically check for timed out jobs."""
         while self._running:
             try:
-                timed_out = self._job_queue.check_timeouts()
-                for job_id in timed_out:
-                    job = self._job_queue.get_job(job_id)
-                    if job:
-                        await self._persist_job(job)
-                        await self._release_robot(job)
+                # Timeout checking only for in-memory queue
+                # PgQueuer uses database-level timeouts
+                if self._job_queue:
+                    timed_out = self._job_queue.check_timeouts()
+                    for job_id in timed_out:
+                        job = self._job_queue.get_job(job_id)
+                        if job:
+                            await self._persist_job(job)
+                            await self._release_robot(job)
 
                 await asyncio.sleep(self._timeout_check_interval)
             except asyncio.CancelledError:
@@ -795,8 +891,10 @@ class OrchestratorEngine:
                 await asyncio.sleep(10)  # Persist every 10 seconds
 
                 # Persist running jobs (progress updates)
-                for job in self._job_queue.get_running_jobs():
-                    await self._persist_job(job)
+                # Only for in-memory queue - PgQueuer persists automatically
+                if self._job_queue:
+                    for job in self._job_queue.get_running_jobs():
+                        await self._persist_job(job)
 
             except asyncio.CancelledError:
                 break
@@ -835,7 +933,7 @@ class OrchestratorEngine:
 
     def get_queue_stats(self) -> Dict[str, Any]:
         """Get queue statistics."""
-        return self._job_queue.get_queue_stats()
+        return self._queue_adapter.get_status()
 
     def get_dispatcher_stats(self) -> Dict[str, Any]:
         """Get dispatcher statistics."""
