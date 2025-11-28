@@ -3,6 +3,9 @@ Variables Panel UI Component.
 
 Provides workflow variable management with inline editing similar to UiPath.
 Extracted from canvas/panels/variables_tab.py for reusability.
+
+Uses LazySubscription for EventBus optimization - subscriptions are only active
+when the panel is visible, reducing overhead when panel is hidden.
 """
 
 from typing import Optional, Dict, Any
@@ -25,6 +28,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
+
+from casare_rpa.presentation.canvas.events import (
+    LazySubscriptionGroup,
+    EventType,
+    Event,
+)
 
 
 # Variable type definitions
@@ -154,6 +163,7 @@ class VariablesPanel(QDockWidget):
         self._setup_dock()
         self._setup_ui()
         self._apply_styles()
+        self._setup_lazy_subscriptions()
 
         logger.debug("VariablesPanel initialized")
 
@@ -210,13 +220,13 @@ class VariablesPanel(QDockWidget):
         # Variables table
         self._table = QTableWidget()
         self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(["Name", "Type", "Default Value", "Scope"])
+        self._table.setHorizontalHeaderLabels(
+            ["Name", "Type", "Default Value", "Scope"]
+        )
 
         # Configure table
         self._table.setAlternatingRowColors(True)
-        self._table.setSelectionBehavior(
-            QAbstractItemView.SelectionBehavior.SelectRows
-        )
+        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._table.setEditTriggers(
             QAbstractItemView.EditTrigger.DoubleClicked
@@ -230,9 +240,13 @@ class VariablesPanel(QDockWidget):
         # Configure column sizing
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
+        )
         header.setSectionResizeMode(self.COL_DEFAULT, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(
+            self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents
+        )
 
         main_layout.addWidget(self._table)
 
@@ -470,3 +484,78 @@ class VariablesPanel(QDockWidget):
             self._variables[name]["default"],
         )
         self.variables_changed.emit(self._variables)
+
+    def _setup_lazy_subscriptions(self) -> None:
+        """
+        Set up lazy EventBus subscriptions.
+
+        Subscriptions only activate when panel is visible, reducing
+        EventBus overhead when panel is hidden.
+        """
+        self._lazy_subscriptions = LazySubscriptionGroup(
+            self,
+            [
+                (EventType.VARIABLE_SET, self._on_variable_set_event),
+                (EventType.VARIABLE_UPDATED, self._on_variable_updated_event),
+                (EventType.VARIABLE_DELETED, self._on_variable_deleted_event),
+                (EventType.EXECUTION_STARTED, self._on_execution_started),
+                (EventType.EXECUTION_COMPLETED, self._on_execution_completed),
+            ],
+        )
+
+    def _on_variable_set_event(self, event: Event) -> None:
+        """
+        Handle variable set event from execution.
+
+        Args:
+            event: Event with name, type, value data
+        """
+        name = event.get("name", "")
+        var_type = event.get("type", "String")
+        value = event.get("value", "")
+        scope = event.get("scope", "Workflow")
+
+        if name and name not in self._variables:
+            self.add_variable(name, var_type, value, scope)
+
+    def _on_variable_updated_event(self, event: Event) -> None:
+        """
+        Handle variable updated event from execution.
+
+        Args:
+            event: Event with name, value data
+        """
+        name = event.get("name", "")
+        value = event.get("value")
+
+        if name and name in self._variables:
+            self.update_variable_value(name, value)
+
+    def _on_variable_deleted_event(self, event: Event) -> None:
+        """
+        Handle variable deleted event.
+
+        Args:
+            event: Event with name data
+        """
+        name = event.get("name", "")
+        if name:
+            self.remove_variable(name)
+
+    def _on_execution_started(self, event: Event) -> None:
+        """
+        Handle execution started event.
+
+        Args:
+            event: Execution started event
+        """
+        self.set_runtime_mode(True)
+
+    def _on_execution_completed(self, event: Event) -> None:
+        """
+        Handle execution completed event.
+
+        Args:
+            event: Execution completed event
+        """
+        self.set_runtime_mode(False)

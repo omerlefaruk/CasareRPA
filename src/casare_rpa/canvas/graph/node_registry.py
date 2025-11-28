@@ -15,6 +15,7 @@ For desktop nodes, set CASARE_NODE_MODULE = "desktop" to look up from desktop_no
 """
 
 from typing import Dict, Type, Optional, List, Tuple, Any
+from functools import lru_cache
 from NodeGraphQt import NodeGraph
 from loguru import logger
 
@@ -201,9 +202,12 @@ def get_node_type_mapping() -> Dict[str, tuple]:
     return _node_type_mapping
 
 
+@lru_cache(maxsize=256)
 def get_visual_class_for_type(node_type: str) -> Optional[Type]:
     """
     Get the visual node class for a node type name.
+
+    Uses LRU caching for performance (256 entries).
 
     Args:
         node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
@@ -216,9 +220,12 @@ def get_visual_class_for_type(node_type: str) -> Optional[Type]:
     return entry[0] if entry else None
 
 
+@lru_cache(maxsize=256)
 def get_identifier_for_type(node_type: str) -> Optional[str]:
     """
     Get the graph.create_node() identifier for a node type.
+
+    Uses LRU caching for performance (256 entries).
 
     Args:
         node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
@@ -235,9 +242,12 @@ def get_identifier_for_type(node_type: str) -> Optional[str]:
     return entry[1] if entry else None
 
 
+@lru_cache(maxsize=256)
 def get_casare_class_for_type(node_type: str) -> Optional[Type]:
     """
     Get the CasareRPA node class for a node type name.
+
+    Uses LRU caching for performance (256 entries).
 
     Args:
         node_type: Node type name (e.g., "MessageBoxNode", "StartNode")
@@ -944,3 +954,29 @@ def get_node_factory() -> NodeFactory:
         NodeFactory instance
     """
     return _node_factory
+
+
+def clear_node_type_caches() -> None:
+    """
+    Clear all LRU caches for node type lookups.
+
+    Use this when the node registry is modified or during testing.
+    """
+    get_visual_class_for_type.cache_clear()
+    get_identifier_for_type.cache_clear()
+    get_casare_class_for_type.cache_clear()
+    logger.debug("Node type lookup caches cleared")
+
+
+def get_cache_stats() -> Dict[str, Any]:
+    """
+    Get statistics for all node type lookup caches.
+
+    Returns:
+        Dictionary with cache info for each cached function
+    """
+    return {
+        "get_visual_class_for_type": get_visual_class_for_type.cache_info()._asdict(),
+        "get_identifier_for_type": get_identifier_for_type.cache_info()._asdict(),
+        "get_casare_class_for_type": get_casare_class_for_type.cache_info()._asdict(),
+    }

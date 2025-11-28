@@ -3,10 +3,14 @@ CasareRPA - Infrastructure: Browser Resource Manager
 Manages Playwright browser instances, contexts, and pages.
 """
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from loguru import logger
-from playwright.async_api import Browser, BrowserContext, Page
+
+if TYPE_CHECKING:
+    from playwright.async_api import Browser, BrowserContext, Page
 
 
 class BrowserResourceManager:
@@ -25,12 +29,12 @@ class BrowserResourceManager:
     def __init__(self) -> None:
         """Initialize browser resource manager."""
         # Playwright resources
-        self.browser: Optional[Browser] = None
-        self.browser_contexts: List[BrowserContext] = []
-        self.pages: Dict[str, Page] = {}  # Named pages for multiple tabs
-        self.active_page: Optional[Page] = None
+        self.browser: Optional["Browser"] = None
+        self.browser_contexts: List["BrowserContext"] = []
+        self.pages: Dict[str, "Page"] = {}  # Named pages for multiple tabs
+        self.active_page: Optional["Page"] = None
 
-    def set_browser(self, browser: Browser) -> None:
+    def set_browser(self, browser: "Browser") -> None:
         """
         Set the active browser instance.
 
@@ -40,7 +44,7 @@ class BrowserResourceManager:
         self.browser = browser
         logger.debug("Browser instance set in resource manager")
 
-    def get_browser(self) -> Optional[Browser]:
+    def get_browser(self) -> Optional["Browser"]:
         """
         Get the active browser instance.
 
@@ -49,7 +53,7 @@ class BrowserResourceManager:
         """
         return self.browser
 
-    def add_browser_context(self, context: BrowserContext) -> None:
+    def add_browser_context(self, context: "BrowserContext") -> None:
         """
         Track a browser context for cleanup.
 
@@ -59,7 +63,7 @@ class BrowserResourceManager:
         self.browser_contexts.append(context)
         logger.debug(f"Browser context added (total: {len(self.browser_contexts)})")
 
-    def get_browser_contexts(self) -> List[BrowserContext]:
+    def get_browser_contexts(self) -> List["BrowserContext"]:
         """
         Get all tracked browser contexts.
 
@@ -68,7 +72,9 @@ class BrowserResourceManager:
         """
         return self.browser_contexts.copy()
 
-    def set_page(self, page: Page, name: str = "default", set_active: bool = True) -> None:
+    def set_page(
+        self, page: "Page", name: str = "default", set_active: bool = True
+    ) -> None:
         """
         Add a page and optionally set it as active.
 
@@ -82,7 +88,7 @@ class BrowserResourceManager:
             self.active_page = page
         logger.debug(f"Page set: {name} (active: {set_active})")
 
-    def add_page(self, page: Page, name: str) -> None:
+    def add_page(self, page: "Page", name: str) -> None:
         """
         Add a page to the resource manager.
 
@@ -93,7 +99,7 @@ class BrowserResourceManager:
         self.pages[name] = page
         logger.debug(f"Page added: {name}")
 
-    def get_page(self, name: str = "default") -> Optional[Page]:
+    def get_page(self, name: str = "default") -> Optional["Page"]:
         """
         Get a page by name.
 
@@ -105,7 +111,7 @@ class BrowserResourceManager:
         """
         return self.pages.get(name)
 
-    def get_active_page(self) -> Optional[Page]:
+    def get_active_page(self) -> Optional["Page"]:
         """
         Get the currently active page.
 
@@ -114,7 +120,7 @@ class BrowserResourceManager:
         """
         return self.active_page
 
-    def set_active_page(self, page: Page, name: str = "default") -> None:
+    def set_active_page(self, page: "Page", name: str = "default") -> None:
         """
         Set the active page and store it with a name.
 
