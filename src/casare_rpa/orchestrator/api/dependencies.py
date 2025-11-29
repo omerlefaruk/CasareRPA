@@ -4,71 +4,67 @@ Dependency injection for FastAPI endpoints.
 Provides shared dependencies like database connections and metrics collectors.
 """
 
+import os
 from typing import AsyncGenerator
 from functools import lru_cache
 
 from loguru import logger
+import asyncpg
+
+from casare_rpa.infrastructure.observability.metrics import (
+    get_metrics_collector as get_rpa_metrics,
+)
+from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
+from .adapters import MonitoringDataAdapter
 
 
 @lru_cache
 def get_metrics_collector():
     """
-    Get the RPAMetricsCollector singleton instance.
+    Get the monitoring data adapter (wraps RPAMetricsCollector + MetricsAggregator).
 
-    TODO: Import and return actual RPAMetricsCollector from infrastructure.
-    For now, returns a mock object for development.
+    Returns adapter that provides API-compatible interface to infrastructure metrics.
     """
-    logger.warning("Using mock metrics collector - implement actual collector")
+    logger.info("Using MonitoringDataAdapter with PR #33 infrastructure")
 
-    class MockMetricsCollector:
-        """Mock metrics collector for development."""
+    rpa_metrics = get_rpa_metrics()
+    analytics = MetricsAggregator.get_instance()
 
-        def get_fleet_summary(self):
-            return {
-                "total_robots": 0,
-                "active_robots": 0,
-                "idle_robots": 0,
-                "offline_robots": 0,
-                "active_jobs": 0,
-                "queue_depth": 0,
-            }
-
-        def get_robot_list(self, status=None):
-            return []
-
-        def get_robot_details(self, robot_id: str):
-            return None
-
-        def get_job_history(
-            self, limit=50, status=None, workflow_id=None, robot_id=None
-        ):
-            return []
-
-        def get_job_details(self, job_id: str):
-            return None
-
-        def get_analytics(self):
-            return {
-                "total_jobs": 0,
-                "success_rate": 0.0,
-                "failure_rate": 0.0,
-                "average_duration_ms": 0.0,
-                "p50_duration_ms": 0.0,
-                "p90_duration_ms": 0.0,
-                "p99_duration_ms": 0.0,
-                "slowest_workflows": [],
-                "error_distribution": [],
-            }
-
-    return MockMetricsCollector()
+    return MonitoringDataAdapter(rpa_metrics, analytics)
 
 
 async def get_db_pool() -> AsyncGenerator:
     """
-    Get database connection pool.
+    Get database connection pool for PostgreSQL.
 
-    TODO: Implement actual database connection pool.
-    For now, yields None for development.
+    Reads connection info from environment variables:
+    - DB_HOST (default: localhost)
+    - DB_PORT (default: 5432)
+    - DB_NAME (default: casare_rpa)
+    - DB_USER (default: postgres)
+    - DB_PASSWORD (required)
     """
-    logger.warning("Using mock database pool - implement actual pool")
-    yield None
+    host = os.getenv("DB_HOST", "localhost")
+    port = int(os.getenv("DB_PORT", "5432"))
+    database = os.getenv("DB_NAME", "casare_rpa")
+    user = os.getenv("DB_USER", "postgres")
+    password = os.getenv("DB_PASSWORD", "")
+
+    if not password:
+        logger.warning("DB_PASSWORD not set - database queries will fail")
+
+    try:
+        pool = await asyncpg.create_pool(
+            host=host,
+            port=port,
+            database=database,
+            user=user,
+            password=password,
+            min_size=2,
+            max_size=10,
+        )
+        logger.info(f"Database pool created: {database}@{host}:{port}")
+        yield pool
+    finally:
+        if pool:
+            await pool.close()
