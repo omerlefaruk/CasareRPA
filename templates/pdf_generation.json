@@ -1,0 +1,336 @@
+{
+  "$schema": "casare_rpa/workflow_template/1.0",
+  "id": "tmpl_pdf_gen_001",
+  "metadata": {
+    "name": "PDF Generation",
+    "description": "Generates PDF documents from templates or data. Supports HTML-to-PDF conversion, data merging, and multi-page documents.",
+    "category": "pdf_processing",
+    "version": "1.0.0",
+    "author": "CasareRPA",
+    "tags": ["pdf", "document", "generation", "report", "html"],
+    "created_at": "2024-11-28T00:00:00",
+    "modified_at": "2024-11-28T00:00:00",
+    "icon": "pdf",
+    "preview_image": "",
+    "difficulty": "intermediate",
+    "estimated_duration": "1-5 minutes",
+    "requirements": ["Playwright", "HTML template"]
+  },
+  "parameters": [
+    {
+      "name": "template_source",
+      "display_name": "Template Source",
+      "description": "Source of the HTML template",
+      "param_type": "choice",
+      "default_value": "file",
+      "required": true,
+      "constraints": {"choices": ["file", "url", "inline"]},
+      "group": "Template",
+      "order": 0
+    },
+    {
+      "name": "template_path",
+      "display_name": "Template Path/URL",
+      "description": "Path to HTML file or URL (for file/url source)",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Template",
+      "order": 1
+    },
+    {
+      "name": "template_html",
+      "display_name": "Template HTML",
+      "description": "Inline HTML content (for inline source)",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Template",
+      "order": 2
+    },
+    {
+      "name": "data",
+      "display_name": "Template Data",
+      "description": "JSON data to merge into template (uses {{variable}} syntax)",
+      "param_type": "json",
+      "default_value": {},
+      "required": false,
+      "constraints": {},
+      "group": "Data",
+      "order": 3
+    },
+    {
+      "name": "output_path",
+      "display_name": "Output PDF Path",
+      "description": "Path where the PDF will be saved",
+      "param_type": "file_path",
+      "default_value": null,
+      "required": true,
+      "constraints": {},
+      "group": "Output",
+      "order": 4
+    },
+    {
+      "name": "page_format",
+      "display_name": "Page Format",
+      "description": "Paper size for the PDF",
+      "param_type": "choice",
+      "default_value": "A4",
+      "required": false,
+      "constraints": {"choices": ["A4", "Letter", "Legal", "A3", "A5", "Tabloid"]},
+      "group": "Page Settings",
+      "order": 5
+    },
+    {
+      "name": "orientation",
+      "display_name": "Orientation",
+      "description": "Page orientation",
+      "param_type": "choice",
+      "default_value": "portrait",
+      "required": false,
+      "constraints": {"choices": ["portrait", "landscape"]},
+      "group": "Page Settings",
+      "order": 6
+    },
+    {
+      "name": "margin_top",
+      "display_name": "Top Margin",
+      "description": "Top margin (e.g., '1cm', '0.5in')",
+      "param_type": "string",
+      "default_value": "1cm",
+      "required": false,
+      "constraints": {},
+      "group": "Margins",
+      "order": 7
+    },
+    {
+      "name": "margin_bottom",
+      "display_name": "Bottom Margin",
+      "description": "Bottom margin",
+      "param_type": "string",
+      "default_value": "1cm",
+      "required": false,
+      "constraints": {},
+      "group": "Margins",
+      "order": 8
+    },
+    {
+      "name": "margin_left",
+      "display_name": "Left Margin",
+      "description": "Left margin",
+      "param_type": "string",
+      "default_value": "1cm",
+      "required": false,
+      "constraints": {},
+      "group": "Margins",
+      "order": 9
+    },
+    {
+      "name": "margin_right",
+      "display_name": "Right Margin",
+      "description": "Right margin",
+      "param_type": "string",
+      "default_value": "1cm",
+      "required": false,
+      "constraints": {},
+      "group": "Margins",
+      "order": 10
+    },
+    {
+      "name": "header_template",
+      "display_name": "Header Template",
+      "description": "HTML for page header (optional)",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Header/Footer",
+      "order": 11
+    },
+    {
+      "name": "footer_template",
+      "display_name": "Footer Template",
+      "description": "HTML for page footer (optional)",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Header/Footer",
+      "order": 12
+    },
+    {
+      "name": "print_background",
+      "display_name": "Print Background",
+      "description": "Include background colors/images",
+      "param_type": "boolean",
+      "default_value": true,
+      "required": false,
+      "constraints": {},
+      "group": "Options",
+      "order": 13
+    }
+  ],
+  "workflow_definition": {
+    "metadata": {
+      "name": "PDF Generation Workflow",
+      "description": "Generated from PDF Generation template",
+      "version": "1.0.0"
+    },
+    "nodes": {
+      "start_001": {
+        "node_id": "start_001",
+        "node_type": "StartNode",
+        "name": "Start",
+        "position": [100, 200],
+        "config": {}
+      },
+      "branch_source_001": {
+        "node_id": "branch_source_001",
+        "node_type": "SwitchNode",
+        "name": "Check Source",
+        "position": [300, 200],
+        "config": {
+          "value": "{{template_source}}"
+        }
+      },
+      "read_file_001": {
+        "node_id": "read_file_001",
+        "node_type": "ReadFileNode",
+        "name": "Read Template File",
+        "position": [500, 100],
+        "config": {
+          "file_path": "{{template_path}}"
+        }
+      },
+      "http_get_001": {
+        "node_id": "http_get_001",
+        "node_type": "HttpRequestNode",
+        "name": "Fetch Template URL",
+        "position": [500, 200],
+        "config": {
+          "url": "{{template_path}}",
+          "method": "GET"
+        }
+      },
+      "set_html_001": {
+        "node_id": "set_html_001",
+        "node_type": "SetVariableNode",
+        "name": "Use Inline HTML",
+        "position": [500, 300],
+        "config": {
+          "variable_name": "html_content",
+          "value": "{{template_html}}"
+        }
+      },
+      "merge_data_001": {
+        "node_id": "merge_data_001",
+        "node_type": "TemplateMergeNode",
+        "name": "Merge Data",
+        "position": [700, 200],
+        "config": {
+          "data": "{{data}}"
+        }
+      },
+      "browser_001": {
+        "node_id": "browser_001",
+        "node_type": "LaunchBrowserNode",
+        "name": "Launch Browser",
+        "position": [900, 200],
+        "config": {
+          "browser_type": "chromium",
+          "headless": true
+        }
+      },
+      "set_content_001": {
+        "node_id": "set_content_001",
+        "node_type": "SetContentNode",
+        "name": "Load HTML",
+        "position": [1100, 200],
+        "config": {}
+      },
+      "pdf_export_001": {
+        "node_id": "pdf_export_001",
+        "node_type": "PdfExportNode",
+        "name": "Export to PDF",
+        "position": [1300, 200],
+        "config": {
+          "path": "{{output_path}}",
+          "format": "{{page_format}}",
+          "landscape": "{{orientation}}",
+          "margin_top": "{{margin_top}}",
+          "margin_bottom": "{{margin_bottom}}",
+          "margin_left": "{{margin_left}}",
+          "margin_right": "{{margin_right}}",
+          "header_template": "{{header_template}}",
+          "footer_template": "{{footer_template}}",
+          "print_background": "{{print_background}}"
+        }
+      },
+      "close_browser_001": {
+        "node_id": "close_browser_001",
+        "node_type": "CloseBrowserNode",
+        "name": "Close Browser",
+        "position": [1500, 200],
+        "config": {}
+      },
+      "log_001": {
+        "node_id": "log_001",
+        "node_type": "LogNode",
+        "name": "Log Success",
+        "position": [1700, 200],
+        "config": {
+          "message": "PDF generated: {{output_path}}"
+        }
+      },
+      "end_001": {
+        "node_id": "end_001",
+        "node_type": "EndNode",
+        "name": "End",
+        "position": [1900, 200],
+        "config": {}
+      }
+    },
+    "connections": [
+      {"source_node": "start_001", "source_port": "exec_out", "target_node": "branch_source_001", "target_port": "exec_in"},
+      {"source_node": "branch_source_001", "source_port": "case_file", "target_node": "read_file_001", "target_port": "exec_in"},
+      {"source_node": "branch_source_001", "source_port": "case_url", "target_node": "http_get_001", "target_port": "exec_in"},
+      {"source_node": "branch_source_001", "source_port": "case_inline", "target_node": "set_html_001", "target_port": "exec_in"},
+      {"source_node": "read_file_001", "source_port": "exec_out", "target_node": "merge_data_001", "target_port": "exec_in"},
+      {"source_node": "http_get_001", "source_port": "exec_out", "target_node": "merge_data_001", "target_port": "exec_in"},
+      {"source_node": "set_html_001", "source_port": "exec_out", "target_node": "merge_data_001", "target_port": "exec_in"},
+      {"source_node": "merge_data_001", "source_port": "exec_out", "target_node": "browser_001", "target_port": "exec_in"},
+      {"source_node": "browser_001", "source_port": "exec_out", "target_node": "set_content_001", "target_port": "exec_in"},
+      {"source_node": "browser_001", "source_port": "page", "target_node": "set_content_001", "target_port": "page"},
+      {"source_node": "set_content_001", "source_port": "exec_out", "target_node": "pdf_export_001", "target_port": "exec_in"},
+      {"source_node": "pdf_export_001", "source_port": "exec_out", "target_node": "close_browser_001", "target_port": "exec_in"},
+      {"source_node": "close_browser_001", "source_port": "exec_out", "target_node": "log_001", "target_port": "exec_in"},
+      {"source_node": "log_001", "source_port": "exec_out", "target_node": "end_001", "target_port": "exec_in"}
+    ],
+    "frames": [],
+    "variables": {
+      "html_content": {
+        "type": "String",
+        "default_value": "",
+        "description": "HTML content to convert"
+      }
+    },
+    "settings": {
+      "stop_on_error": true,
+      "timeout": 120,
+      "retry_count": 0
+    }
+  },
+  "usage_stats": {
+    "total_uses": 0,
+    "last_used": null,
+    "successful_instantiations": 0,
+    "failed_instantiations": 0,
+    "average_rating": null,
+    "rating_count": 0
+  },
+  "is_builtin": true,
+  "source": "builtin",
+  "marketplace_id": null
+}

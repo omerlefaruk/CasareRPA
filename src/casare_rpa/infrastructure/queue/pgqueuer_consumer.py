@@ -1,28 +1,46 @@
 """
 CasareRPA Infrastructure Layer - PgQueuer Consumer
 
-SECURITY HARDENED VERSION
-- Atomic job claiming via UPDATE...RETURNING (no TOCTOU race condition)
-- robot_id validation before database use
-- Parameterized queries exclusively
-- Safe logging (no credential exposure)
-
 Implements a PostgreSQL-based distributed queue consumer for robot job claiming.
 Uses SKIP LOCKED for concurrent, non-blocking job acquisition.
 
 Features:
-- Atomic job claiming (SECURITY FIX #4: eliminates TOCTOU)
-- Visibility timeout management
+- Job claiming with SKIP LOCKED (no blocking, high concurrency)
+- Visibility timeout management (jobs return to queue if not completed)
 - Heartbeat/lease extension for long-running jobs
 - Job completion/failure reporting
-- Batch claiming support
+- Batch claiming support for throughput optimization
 - Automatic reconnection with exponential backoff
-- Input validation for all identifiers
 
-CWE Mitigations:
-- CWE-367: TOCTOU Race Condition - Fixed via single atomic UPDATE...RETURNING
-- CWE-89: SQL Injection - Fixed via robot_id validation and parameterized queries
-- CWE-532: Credentials in Logs - Fixed via safe logging practices
+Architecture:
+- Robots poll for jobs via claim_job() or claim_batch()
+- Jobs become invisible for visibility_timeout_seconds after claiming
+- Heartbeats extend the lease to prevent timeout during long execution
+- Jobs are marked complete/failed when finished
+
+Database Schema (expected):
+    CREATE TABLE job_queue (
+        id UUID PRIMARY KEY,
+        workflow_id VARCHAR(255) NOT NULL,
+        workflow_name VARCHAR(255) NOT NULL,
+        workflow_json TEXT NOT NULL,
+        priority INTEGER DEFAULT 1,
+        status VARCHAR(50) DEFAULT 'pending',
+        robot_id VARCHAR(255),
+        environment VARCHAR(100) DEFAULT 'default',
+        visible_after TIMESTAMPTZ DEFAULT NOW(),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        started_at TIMESTAMPTZ,
+        completed_at TIMESTAMPTZ,
+        error_message TEXT,
+        result JSONB,
+        retry_count INTEGER DEFAULT 0,
+        max_retries INTEGER DEFAULT 3,
+        variables JSONB DEFAULT '{}'
+    );
+
+    CREATE INDEX idx_job_queue_claiming ON job_queue (status, visible_after, priority DESC)
+        WHERE status = 'pending';
 """
 
 from __future__ import annotations
@@ -36,11 +54,6 @@ from typing import Any, Callable, Dict, List, Optional
 import uuid
 
 from loguru import logger
-
-from casare_rpa.infrastructure.security import (
-    validate_robot_id,
-    validate_job_id,
-)
 
 try:
     import asyncpg
@@ -104,11 +117,7 @@ class ClaimedJob:
 
 @dataclass
 class ConsumerConfig:
-    """
-    Configuration for PgQueuerConsumer.
-
-    SECURITY: robot_id is validated during construction to prevent SQL injection.
-    """
+    """Configuration for PgQueuerConsumer."""
 
     postgres_url: str
     robot_id: str
@@ -123,68 +132,77 @@ class ConsumerConfig:
     pool_max_size: int = 10
     claim_poll_interval_seconds: float = 1.0
 
-    def __post_init__(self) -> None:
-        """
-        SECURITY: Validate robot_id to prevent SQL injection (CWE-89).
-
-        This ensures robot_id cannot contain quotes, semicolons, or other
-        SQL metacharacters before it's used in database queries.
-        """
-        try:
-            self.robot_id = validate_robot_id(self.robot_id)
-        except ValueError as e:
-            logger.error(f"Invalid robot_id in ConsumerConfig: {e}")
-            raise
-
     def to_dict(self) -> Dict[str, Any]:
         """
-        Convert to dictionary for logging (masks secrets).
+        Convert config to dictionary with credential masking.
 
-        SECURITY FIX #5: Prevents credential exposure in logs.
+        SECURITY: Masks postgres_url to prevent credential leakage in logs.
         """
+        from casare_rpa.infrastructure.security.validators import sanitize_log_value
+
         return {
+            "postgres_url": sanitize_log_value(self.postgres_url),
             "robot_id": self.robot_id,
-            "postgres_url": "***" if self.postgres_url else "",
             "environment": self.environment,
             "batch_size": self.batch_size,
             "visibility_timeout_seconds": self.visibility_timeout_seconds,
             "heartbeat_interval_seconds": self.heartbeat_interval_seconds,
+            "max_reconnect_attempts": self.max_reconnect_attempts,
+            "reconnect_base_delay_seconds": self.reconnect_base_delay_seconds,
+            "reconnect_max_delay_seconds": self.reconnect_max_delay_seconds,
             "pool_min_size": self.pool_min_size,
             "pool_max_size": self.pool_max_size,
+            "claim_poll_interval_seconds": self.claim_poll_interval_seconds,
         }
 
 
 class PgQueuerConsumer:
     """
-    SECURITY HARDENED PostgreSQL-based distributed queue consumer.
-
-    Security Features:
-    - Atomic job claiming (single UPDATE...RETURNING, no TOCTOU)
-    - robot_id validation before database operations
-    - Parameterized queries exclusively
-    - Safe logging (no credential exposure)
+    PostgreSQL-based distributed queue consumer for robot job claiming.
 
     Uses SKIP LOCKED for high-concurrency, non-blocking job acquisition.
     Supports visibility timeout, heartbeats, and automatic reconnection.
+
+    Usage:
+        config = ConsumerConfig(
+            postgres_url="postgresql://user:pass@host:5432/db",
+            robot_id="robot-001",
+            environment="production"
+        )
+        consumer = PgQueuerConsumer(config)
+
+        await consumer.start()
+
+        # Claim and process jobs
+        job = await consumer.claim_job()
+        if job:
+            try:
+                result = await execute_workflow(job)
+                await consumer.complete_job(job.job_id, result)
+            except Exception as e:
+                await consumer.fail_job(job.job_id, str(e))
+
+        await consumer.stop()
     """
 
-    # SECURITY FIX #4: Atomic job claiming with single UPDATE...RETURNING
-    # This eliminates the TOCTOU (Time-of-check Time-of-use) race condition
-    # by combining SELECT and UPDATE into one atomic operation.
-    SQL_CLAIM_JOB_ATOMIC = """
+    # SQL queries as class constants for clarity and maintainability
+    # SECURITY: Atomic UPDATE with subquery to prevent TOCTOU race condition
+    # The FOR UPDATE SKIP LOCKED is inside the UPDATE's WHERE clause subquery,
+    # ensuring no time gap between SELECT and UPDATE
+    SQL_CLAIM_JOB = """
         UPDATE job_queue
         SET status = 'running',
-            robot_id = $1,
+            robot_id = $3,
             started_at = NOW(),
-            visible_after = NOW() + INTERVAL '1 second' * $2
+            visible_after = NOW() + INTERVAL '1 second' * $4
         WHERE id IN (
             SELECT id
             FROM job_queue
             WHERE status = 'pending'
               AND visible_after <= NOW()
-              AND (environment = $3 OR environment = 'default' OR $3 = 'default')
+              AND (environment = $1 OR environment = 'default' OR $1 = 'default')
             ORDER BY priority DESC, created_at ASC
-            LIMIT $4
+            LIMIT $2
             FOR UPDATE SKIP LOCKED
         )
         RETURNING id,
@@ -273,17 +291,6 @@ class PgQueuerConsumer:
         RETURNING id, status;
     """
 
-    SQL_UPDATE_PROGRESS = """
-        UPDATE job_queue
-        SET progress_percent = $2,
-            current_node = $3,
-            updated_at = NOW()
-        WHERE id = $1
-          AND status = 'running'
-          AND robot_id = $4
-        RETURNING id;
-    """
-
     SQL_GET_JOB_STATUS = """
         SELECT id, status, robot_id, visible_after
         FROM job_queue
@@ -294,20 +301,23 @@ class PgQueuerConsumer:
         """
         Initialize the consumer.
 
-        SECURITY: config.robot_id is pre-validated in ConsumerConfig.__post_init__
-
         Args:
-            config: Consumer configuration (with validated robot_id)
+            config: Consumer configuration
 
         Raises:
             ImportError: If asyncpg is not installed
-            ValueError: If robot_id is invalid
+            ValidationError: If robot_id is invalid
         """
         if not HAS_ASYNCPG:
             raise ImportError(
                 "asyncpg is required for PgQueuerConsumer. "
                 "Install with: pip install asyncpg"
             )
+
+        # SECURITY: Validate robot_id to prevent SQL injection and impersonation attacks
+        from casare_rpa.infrastructure.security.validators import validate_robot_id
+
+        validate_robot_id(config.robot_id)
 
         self._config = config
         self._pool: Optional[Pool] = None
@@ -319,8 +329,10 @@ class PgQueuerConsumer:
         self._state_callbacks: List[Callable[[ConnectionState], None]] = []
         self._lock = asyncio.Lock()
 
-        # SECURITY: Log config safely (no credential exposure)
-        logger.info(f"PgQueuerConsumer initialized: {self._config.to_dict()}")
+        logger.info(
+            f"PgQueuerConsumer initialized for robot '{config.robot_id}' "
+            f"in environment '{config.environment}'"
+        )
 
     @property
     def state(self) -> ConnectionState:
@@ -329,7 +341,7 @@ class PgQueuerConsumer:
 
     @property
     def robot_id(self) -> str:
-        """Get robot ID (validated)."""
+        """Get robot ID."""
         return self._config.robot_id
 
     @property
@@ -343,13 +355,23 @@ class PgQueuerConsumer:
         return self._state == ConnectionState.CONNECTED and self._pool is not None
 
     def add_state_callback(self, callback: Callable[[ConnectionState], None]) -> None:
-        """Add a callback for connection state changes."""
+        """
+        Add a callback for connection state changes.
+
+        Args:
+            callback: Function to call when state changes
+        """
         self._state_callbacks.append(callback)
 
     def remove_state_callback(
         self, callback: Callable[[ConnectionState], None]
     ) -> None:
-        """Remove a state change callback."""
+        """
+        Remove a state change callback.
+
+        Args:
+            callback: Callback to remove
+        """
         if callback in self._state_callbacks:
             self._state_callbacks.remove(callback)
 
@@ -427,7 +449,6 @@ class PgQueuerConsumer:
         self._set_state(ConnectionState.CONNECTING)
 
         try:
-            # SECURITY: postgres_url is never logged directly
             self._pool = await asyncpg.create_pool(
                 self._config.postgres_url,
                 min_size=self._config.pool_min_size,
@@ -475,6 +496,7 @@ class PgQueuerConsumer:
             * (2 ** (self._reconnect_attempts - 1)),
             self._config.reconnect_max_delay_seconds,
         )
+        # Add jitter (10-30% of delay)
         jitter = delay * random.uniform(0.1, 0.3)
         delay += jitter
 
@@ -505,6 +527,7 @@ class PgQueuerConsumer:
             return True
 
         if self._state in (ConnectionState.CONNECTING, ConnectionState.RECONNECTING):
+            # Already trying to connect
             await asyncio.sleep(0.5)
             return self.is_connected
 
@@ -519,11 +542,9 @@ class PgQueuerConsumer:
         """
         Execute a query with automatic retry on connection failure.
 
-        SECURITY: All queries use parameterized arguments, never string concatenation.
-
         Args:
-            query: SQL query to execute (parameterized)
-            *args: Query parameters
+            query: SQL query to execute
+            *args: Query arguments
             max_retries: Maximum retry attempts
 
         Returns:
@@ -553,15 +574,16 @@ class PgQueuerConsumer:
                 last_error = e
                 await self._reconnect()
             except PostgresError:
+                # Non-connection errors should not trigger reconnect
                 raise
 
         raise last_error or ConnectionError("Query failed after retries")
 
     async def claim_job(self) -> Optional[ClaimedJob]:
         """
-        Claim a single job from the queue using atomic operation.
+        Claim a single job from the queue.
 
-        SECURITY FIX #4: Uses single atomic UPDATE...RETURNING to eliminate TOCTOU.
+        Uses SKIP LOCKED for non-blocking concurrent access.
 
         Returns:
             ClaimedJob if one was claimed, None if queue is empty
@@ -574,10 +596,7 @@ class PgQueuerConsumer:
 
     async def claim_batch(self, limit: Optional[int] = None) -> List[ClaimedJob]:
         """
-        Claim multiple jobs from the queue atomically.
-
-        SECURITY FIX #4: Single UPDATE...RETURNING eliminates race condition.
-        The SELECT and UPDATE happen in one atomic operation with FOR UPDATE SKIP LOCKED.
+        Claim multiple jobs from the queue.
 
         Args:
             limit: Maximum jobs to claim (defaults to config.batch_size)
@@ -591,14 +610,12 @@ class PgQueuerConsumer:
         batch_size = limit or self._config.batch_size
 
         try:
-            # SECURITY: All parameters passed via $1, $2, $3, $4
-            # robot_id ($1) is pre-validated in ConsumerConfig
             rows = await self._execute_with_retry(
-                self.SQL_CLAIM_JOB_ATOMIC,
-                self._config.robot_id,  # $1 (validated)
-                self._config.visibility_timeout_seconds,  # $2
-                self._config.environment,  # $3
-                batch_size,  # $4
+                self.SQL_CLAIM_JOB,
+                self._config.environment,
+                batch_size,
+                self._config.robot_id,
+                self._config.visibility_timeout_seconds,
             )
         except Exception as e:
             logger.error(f"Failed to claim jobs: {e}")
@@ -642,26 +659,18 @@ class PgQueuerConsumer:
         """
         Extend the visibility timeout (lease) for a job.
 
-        SECURITY: Validates job_id format before database operation.
+        Should be called periodically during long-running job execution.
 
         Args:
-            job_id: Job ID to extend (UUID format, validated)
-            extension_seconds: Seconds to extend
+            job_id: Job ID to extend
+            extension_seconds: Seconds to extend (defaults to visibility_timeout_seconds)
 
         Returns:
             True if lease was extended, False if job not found or not owned
 
         Raises:
-            ValueError: If job_id is invalid format
             ConnectionError: If database connection fails
         """
-        # SECURITY: Validate job_id format
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.error(f"Invalid job_id in extend_lease: {e}")
-            raise
-
         extension = extension_seconds or self._config.visibility_timeout_seconds
 
         try:
@@ -694,26 +703,16 @@ class PgQueuerConsumer:
         """
         Mark a job as completed.
 
-        SECURITY: Validates job_id before database operation.
-
         Args:
-            job_id: Job ID to complete (validated)
+            job_id: Job ID to complete
             result: Optional result data to store
 
         Returns:
             True if job was completed, False if not found or not owned
 
         Raises:
-            ValueError: If job_id is invalid
             ConnectionError: If database connection fails
         """
-        # SECURITY: Validate job_id
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.error(f"Invalid job_id in complete_job: {e}")
-            raise
-
         import orjson
 
         result_json = orjson.dumps(result or {}).decode("utf-8")
@@ -753,26 +752,20 @@ class PgQueuerConsumer:
         """
         Mark a job as failed.
 
-        SECURITY: Validates job_id before database operation.
+        If retries remain, the job is re-queued with exponential backoff.
+        Otherwise, it's marked as permanently failed.
 
         Args:
-            job_id: Job ID to fail (validated)
+            job_id: Job ID to fail
             error_message: Error description
 
         Returns:
-            Tuple of (success, will_retry)
+            Tuple of (success, will_retry) - success indicates update worked,
+            will_retry indicates if job was re-queued for retry
 
         Raises:
-            ValueError: If job_id is invalid
             ConnectionError: If database connection fails
         """
-        # SECURITY: Validate job_id
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.error(f"Invalid job_id in fail_job: {e}")
-            raise
-
         try:
             rows = await self._execute_with_retry(
                 self.SQL_FAIL_JOB,
@@ -817,25 +810,17 @@ class PgQueuerConsumer:
         """
         Release a job back to the queue without completing or failing it.
 
-        SECURITY: Validates job_id before database operation.
+        Useful for graceful shutdown or when a job should be retried immediately.
 
         Args:
-            job_id: Job ID to release (validated)
+            job_id: Job ID to release
 
         Returns:
-            True if job was released
+            True if job was released, False if not found or not owned
 
         Raises:
-            ValueError: If job_id is invalid
             ConnectionError: If database connection fails
         """
-        # SECURITY: Validate job_id
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.error(f"Invalid job_id in release_job: {e}")
-            raise
-
         try:
             rows = await self._execute_with_retry(
                 self.SQL_RELEASE_JOB,
@@ -861,50 +846,6 @@ class PgQueuerConsumer:
             logger.error(f"Failed to release job {job_id[:8]}...: {e}")
             raise
 
-    async def update_progress(
-        self,
-        job_id: str,
-        progress_percent: int,
-        current_node: str,
-    ) -> bool:
-        """
-        Update job progress information.
-
-        SECURITY: Validates job_id before database operation.
-
-        Args:
-            job_id: Job ID to update (validated)
-            progress_percent: Progress percentage (0-100)
-            current_node: Current node identifier
-
-        Returns:
-            True if progress was updated
-
-        Raises:
-            ValueError: If job_id is invalid
-            ConnectionError: If database connection fails
-        """
-        # SECURITY: Validate job_id
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.debug(f"Invalid job_id in update_progress: {e}")
-            return False
-
-        try:
-            rows = await self._execute_with_retry(
-                self.SQL_UPDATE_PROGRESS,
-                uuid.UUID(job_id),
-                progress_percent,
-                current_node,
-                self._config.robot_id,
-            )
-            return len(rows) > 0
-
-        except Exception as e:
-            logger.debug(f"Failed to update progress for job {job_id[:8]}...: {e}")
-            return False
-
     async def _release_all_active_jobs(self) -> None:
         """Release all currently active jobs back to the queue."""
         async with self._lock:
@@ -921,6 +862,9 @@ class PgQueuerConsumer:
     async def requeue_timed_out_jobs(self) -> int:
         """
         Requeue jobs that exceeded their visibility timeout.
+
+        This is typically called by a background task to recover jobs
+        from crashed robots.
 
         Returns:
             Number of jobs requeued
@@ -948,24 +892,12 @@ class PgQueuerConsumer:
         """
         Get current status of a job.
 
-        SECURITY: Validates job_id before database operation.
-
         Args:
-            job_id: Job ID to check (validated)
+            job_id: Job ID to check
 
         Returns:
             Dict with status info, or None if not found
-
-        Raises:
-            ValueError: If job_id is invalid
         """
-        # SECURITY: Validate job_id
-        try:
-            job_id = validate_job_id(job_id)
-        except ValueError as e:
-            logger.error(f"Invalid job_id in get_job_status: {e}")
-            raise
-
         try:
             rows = await self._execute_with_retry(
                 self.SQL_GET_JOB_STATUS,
@@ -1025,8 +957,6 @@ class PgQueuerConsumer:
         """
         Get consumer statistics.
 
-        SECURITY: Returns safe data only (no credentials).
-
         Returns:
             Dict with consumer stats
         """
@@ -1036,9 +966,13 @@ class PgQueuerConsumer:
             "state": self._state.value,
             "is_connected": self.is_connected,
             "active_jobs": self.active_job_count,
-            "active_job_ids": [jid[:8] + "..." for jid in self._active_jobs.keys()],
+            "active_job_ids": list(self._active_jobs.keys()),
             "reconnect_attempts": self._reconnect_attempts,
-            "config": self._config.to_dict(),  # Uses safe to_dict() method
+            "config": {
+                "batch_size": self._config.batch_size,
+                "visibility_timeout_seconds": self._config.visibility_timeout_seconds,
+                "heartbeat_interval_seconds": self._config.heartbeat_interval_seconds,
+            },
         }
 
     async def __aenter__(self) -> "PgQueuerConsumer":

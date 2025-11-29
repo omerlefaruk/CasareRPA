@@ -1,18 +1,20 @@
 """
 DBOS Workflow Executor - Durable workflow execution with automatic checkpointing.
 
-SECURITY HARDENED VERSION
--Validates all SQL identifiers to prevent injection (CWE-89)
-- Validates workflow JSON before deserialization (CWE-502)
-- Validates workflow IDs to prevent injection
-- Uses parameterized queries exclusively
-- Logs sanitized data only
-
 Provides durable execution semantics similar to DBOS (Database Operating System):
 - Automatic checkpointing at step boundaries
 - Crash recovery with exactly-once semantics
 - Workflow idempotency via workflow_id
 - Step-level isolation for retry
+
+This is a simplified implementation that provides DBOS-like durability patterns
+without requiring the full DBOS runtime.
+
+Architecture:
+- Each workflow execution is assigned a unique workflow_id
+- Execution state is checkpointed to PostgreSQL after each step
+- On crash/restart, execution resumes from the last completed step
+- Results are cached by step for exactly-once semantics
 """
 
 import asyncio
@@ -28,11 +30,11 @@ import orjson
 
 from casare_rpa.domain.events import EventBus, Event, get_event_bus
 from casare_rpa.domain.value_objects.types import EventType
-from casare_rpa.infrastructure.security import (
-    validate_sql_identifier,
-    validate_workflow_id,
-    validate_workflow_json,
-)
+
+# Lazy imports to avoid circular dependencies
+# These are imported inside functions where needed:
+# - load_workflow_from_dict from casare_rpa.utils.workflow.workflow_loader
+# - ExecuteWorkflowUseCase, ExecutionSettings from casare_rpa.application.use_cases.execute_workflow
 
 
 class WorkflowExecutionState(Enum):
@@ -113,7 +115,7 @@ class DurableExecutionResult:
     executed_nodes: int = 0
     total_nodes: int = 0
     duration_ms: int = 0
-    recovered: bool = False
+    recovered: bool = False  # True if execution was recovered from checkpoint
 
 
 @dataclass
@@ -123,7 +125,7 @@ class DBOSExecutorConfig:
 
     Attributes:
         postgres_url: PostgreSQL connection string for checkpoint storage
-        checkpoint_table: Table name for checkpoints (VALIDATED for SQL injection)
+        checkpoint_table: Table name for checkpoints
         enable_checkpointing: Whether to enable checkpoint persistence
         checkpoint_interval: Checkpoint after every N nodes (0 = every node)
         execution_timeout_seconds: Maximum execution time per workflow
@@ -139,36 +141,46 @@ class DBOSExecutorConfig:
     node_timeout_seconds: float = 120.0
     continue_on_error: bool = False
 
-    def __post_init__(self) -> None:
+    def to_dict(self) -> Dict[str, Any]:
         """
-        SECURITY: Validate checkpoint_table name to prevent SQL injection.
+        Convert config to dictionary with credential masking.
 
-        This prevents CWE-89 (SQL Injection) by ensuring the table name
-        cannot contain quotes, semicolons, or other SQL metacharacters.
+        SECURITY: Masks postgres_url to prevent credential leakage in logs.
         """
-        try:
-            self.checkpoint_table = validate_sql_identifier(
-                self.checkpoint_table, name="checkpoint_table"
-            )
-        except ValueError as e:
-            logger.error(f"Invalid checkpoint_table configuration: {e}")
-            raise
+        from casare_rpa.infrastructure.security.validators import sanitize_log_value
+
+        return {
+            "postgres_url": sanitize_log_value(self.postgres_url)
+            if self.postgres_url
+            else None,
+            "checkpoint_table": self.checkpoint_table,
+            "enable_checkpointing": self.enable_checkpointing,
+            "checkpoint_interval": self.checkpoint_interval,
+            "execution_timeout_seconds": self.execution_timeout_seconds,
+            "node_timeout_seconds": self.node_timeout_seconds,
+            "continue_on_error": self.continue_on_error,
+        }
 
 
 class DBOSWorkflowExecutor:
     """
-    SECURITY HARDENED Durable workflow executor with DBOS-like semantics.
-
-    Security Features:
-    - SQL injection prevention via identifier validation
-    - Workflow JSON validation before deserialization
-    - Parameterized queries only
-    - Workflow ID validation
-    - Safe logging (no credential exposure)
+    Durable workflow executor with DBOS-like semantics.
 
     Provides exactly-once execution guarantees through checkpointing
     and recovery mechanisms. Workflows can survive process crashes
     and resume from their last checkpointed state.
+
+    Usage:
+        executor = DBOSWorkflowExecutor(config)
+        await executor.start()
+
+        result = await executor.execute_workflow(
+            workflow_json=workflow_json,
+            workflow_id=unique_id,
+            initial_variables={"input": "value"}
+        )
+
+        await executor.stop()
     """
 
     def __init__(
@@ -180,7 +192,7 @@ class DBOSWorkflowExecutor:
         Initialize DBOS workflow executor.
 
         Args:
-            config: Executor configuration (table names validated)
+            config: Executor configuration
             event_bus: Optional event bus for progress notifications
         """
         self.config = config or DBOSExecutorConfig()
@@ -189,11 +201,8 @@ class DBOSWorkflowExecutor:
         self._pool: Optional[asyncpg.Pool] = None
         self._running = False
 
-        # SECURITY: Use validated table name
-        self._checkpoint_table = self.config.checkpoint_table
-
         logger.info(
-            f"DBOSWorkflowExecutor initialized with table='{self._checkpoint_table}' "
+            f"DBOSWorkflowExecutor initialized "
             f"(checkpointing={'enabled' if self.config.enable_checkpointing else 'disabled'})"
         )
 
@@ -238,19 +247,21 @@ class DBOSWorkflowExecutor:
         logger.info("DBOSWorkflowExecutor stopped")
 
     async def _ensure_checkpoint_table(self) -> None:
-        """
-        Create checkpoint table if it doesn't exist.
-
-        SECURITY: Uses validated table name from config (already sanitized).
-        Table name is substituted safely as it passed validate_sql_identifier().
-        """
+        """Create checkpoint table if it doesn't exist."""
         if not self._pool:
             return
 
-        # SECURITY NOTE: self._checkpoint_table is pre-validated in __post_init__
-        # It's safe to use in string formatting as it passed SQL identifier validation
+        # SECURITY: Validate table name to prevent SQL injection
+        from casare_rpa.infrastructure.security.validators import (
+            validate_sql_identifier,
+        )
+
+        table_name = validate_sql_identifier(
+            self.config.checkpoint_table, "checkpoint_table"
+        )
+
         create_table_sql = f"""
-            CREATE TABLE IF NOT EXISTS {self._checkpoint_table} (
+            CREATE TABLE IF NOT EXISTS {table_name} (
                 workflow_id TEXT PRIMARY KEY,
                 state TEXT NOT NULL,
                 current_step INTEGER DEFAULT 0,
@@ -263,8 +274,8 @@ class DBOSWorkflowExecutor:
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             );
 
-            CREATE INDEX IF NOT EXISTS idx_{self._checkpoint_table}_state
-            ON {self._checkpoint_table}(state);
+            CREATE INDEX IF NOT EXISTS idx_{table_name}_state
+            ON {table_name}(state);
         """
 
         async with self._pool.acquire() as conn:
@@ -281,28 +292,19 @@ class DBOSWorkflowExecutor:
         """
         Execute a workflow with durable execution semantics.
 
-        SECURITY: Validates workflow_id and workflow_json before execution.
+        If a checkpoint exists for the workflow_id, execution resumes
+        from the last checkpointed state (exactly-once semantics).
 
         Args:
-            workflow_json: Serialized workflow definition (JSON string) - VALIDATED
-            workflow_id: Unique identifier for this execution - VALIDATED
+            workflow_json: Serialized workflow definition (JSON string)
+            workflow_id: Unique identifier for this execution (for idempotency)
             initial_variables: Initial execution variables
             wait_for_result: Wait for execution to complete
             on_progress: Optional callback for progress updates (progress%, node_id)
 
         Returns:
             DurableExecutionResult with execution outcome
-
-        Raises:
-            ValueError: If workflow_id or workflow_json validation fails
         """
-        # SECURITY FIX #3: Validate workflow_id before ANY database operations
-        try:
-            workflow_id = validate_workflow_id(workflow_id)
-        except ValueError as e:
-            logger.error(f"Invalid workflow_id rejected: {e}")
-            raise
-
         start_time = datetime.now(timezone.utc)
         recovered = False
 
@@ -311,9 +313,7 @@ class DBOSWorkflowExecutor:
 
         if checkpoint:
             if checkpoint.state == WorkflowExecutionState.COMPLETED:
-                logger.info(
-                    f"Workflow {workflow_id[:12]}... already completed (idempotent)"
-                )
+                logger.info(f"Workflow {workflow_id} already completed (idempotent)")
                 return DurableExecutionResult(
                     workflow_id=workflow_id,
                     success=True,
@@ -325,7 +325,7 @@ class DBOSWorkflowExecutor:
 
             if checkpoint.state == WorkflowExecutionState.FAILED:
                 logger.info(
-                    f"Workflow {workflow_id[:12]}... previously failed: {checkpoint.error}"
+                    f"Workflow {workflow_id} previously failed: {checkpoint.error}"
                 )
                 return DurableExecutionResult(
                     workflow_id=workflow_id,
@@ -338,7 +338,7 @@ class DBOSWorkflowExecutor:
 
             # Resume from checkpoint
             logger.info(
-                f"Resuming workflow {workflow_id[:12]}... from step {checkpoint.current_step} "
+                f"Resuming workflow {workflow_id} from step {checkpoint.current_step} "
                 f"({len(checkpoint.executed_nodes)} nodes completed)"
             )
             recovered = True
@@ -368,22 +368,20 @@ class DBOSWorkflowExecutor:
                 ExecutionSettings,
             )
 
-            # SECURITY FIX #3: Validate workflow JSON BEFORE deserialization
+            # Parse workflow
             if isinstance(workflow_json, str):
                 workflow_data = orjson.loads(workflow_json)
             else:
                 workflow_data = workflow_json
 
-            # CRITICAL: Validate against schema to prevent deserialization attacks (CWE-502)
-            try:
-                workflow_data = validate_workflow_json(workflow_data)
-            except (ValueError, Exception) as e:
-                logger.error(
-                    f"Workflow JSON validation failed for {workflow_id[:12]}...: {e}"
-                )
-                raise ValueError(f"Invalid workflow JSON: {e}") from e
+            # SECURITY: Validate workflow schema before deserialization
+            # Prevents malicious code injection via workflow JSON
+            from casare_rpa.infrastructure.security.workflow_schema import (
+                validate_workflow_json,
+            )
 
-            # Now safe to deserialize
+            validate_workflow_json(workflow_data)
+
             workflow = load_workflow_from_dict(workflow_data)
             total_nodes = len(workflow.nodes)
 
@@ -466,7 +464,7 @@ class DBOSWorkflowExecutor:
             )
 
             logger.info(
-                f"Workflow {workflow_id[:12]}... {'completed' if success else 'failed'} "
+                f"Workflow {workflow_id} {'completed' if success else 'failed'} "
                 f"in {duration_ms}ms ({len(use_case.executed_nodes)} nodes)"
             )
 
@@ -486,9 +484,7 @@ class DBOSWorkflowExecutor:
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
             error_msg = f"{type(e).__name__}: {str(e)}"
 
-            logger.exception(
-                f"Workflow {workflow_id[:12]}... execution failed: {error_msg}"
-            )
+            logger.exception(f"Workflow {workflow_id} execution failed: {error_msg}")
 
             # Update checkpoint with error
             checkpoint.state = WorkflowExecutionState.FAILED
@@ -517,21 +513,23 @@ class DBOSWorkflowExecutor:
             )
 
     async def _load_checkpoint(self, workflow_id: str) -> Optional[ExecutionCheckpoint]:
-        """
-        Load checkpoint from database.
-
-        SECURITY: Uses parameterized query (workflow_id as parameter).
-        Table name is pre-validated.
-        """
+        """Load checkpoint from database."""
         if not self._pool:
             return None
 
         try:
-            # SECURITY: Parameterized query - workflow_id is a parameter, not concatenated
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 row = await conn.fetchrow(
                     f"""
-                    SELECT * FROM {self._checkpoint_table}
+                    SELECT * FROM {table_name}
                     WHERE workflow_id = $1
                     """,
                     workflow_id,
@@ -553,24 +551,27 @@ class DBOSWorkflowExecutor:
                     error=row["error"],
                 )
         except Exception as e:
-            logger.error(f"Failed to load checkpoint for {workflow_id[:12]}...: {e}")
+            logger.error(f"Failed to load checkpoint for {workflow_id}: {e}")
             return None
 
     async def _save_checkpoint(self, checkpoint: ExecutionCheckpoint) -> None:
-        """
-        Save checkpoint to database.
-
-        SECURITY: Uses parameterized query. All values as parameters.
-        """
+        """Save checkpoint to database."""
         if not self._pool:
             return
 
         try:
-            # SECURITY: All checkpoint data passed as parameters ($1-$10)
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 await conn.execute(
                     f"""
-                    INSERT INTO {self._checkpoint_table}
+                    INSERT INTO {table_name}
                     (workflow_id, state, current_step, current_node_id,
                      executed_nodes, variables, step_results, error,
                      created_at, updated_at)
@@ -597,15 +598,11 @@ class DBOSWorkflowExecutor:
                     checkpoint.updated_at,
                 )
         except Exception as e:
-            logger.error(
-                f"Failed to save checkpoint for {checkpoint.workflow_id[:12]}...: {e}"
-            )
+            logger.error(f"Failed to save checkpoint for {checkpoint.workflow_id}: {e}")
 
     async def clear_checkpoint(self, workflow_id: str) -> bool:
         """
         Clear checkpoint for a completed workflow.
-
-        SECURITY: Validates workflow_id and uses parameterized query.
 
         Args:
             workflow_id: Workflow ID to clear
@@ -613,29 +610,29 @@ class DBOSWorkflowExecutor:
         Returns:
             True if checkpoint was cleared
         """
-        # SECURITY: Validate workflow_id
-        try:
-            workflow_id = validate_workflow_id(workflow_id)
-        except ValueError as e:
-            logger.error(f"Invalid workflow_id in clear_checkpoint: {e}")
-            return False
-
         if not self._pool:
             return False
 
         try:
-            # SECURITY: Parameterized query
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 result = await conn.execute(
                     f"""
-                    DELETE FROM {self._checkpoint_table}
+                    DELETE FROM {table_name}
                     WHERE workflow_id = $1
                     """,
                     workflow_id,
                 )
                 return "DELETE" in result
         except Exception as e:
-            logger.error(f"Failed to clear checkpoint for {workflow_id[:12]}...: {e}")
+            logger.error(f"Failed to clear checkpoint for {workflow_id}: {e}")
             return False
 
     def _emit_event(self, event_type: EventType, data: Dict[str, Any]) -> None:
@@ -656,11 +653,12 @@ async def start_durable_workflow(
     """
     Execute a workflow with durable execution.
 
-    SECURITY: Validates workflow_id before execution.
+    Convenience function that creates an executor, runs the workflow,
+    and returns the result.
 
     Args:
         workflow: Workflow data (dict or JSON string)
-        workflow_id: Unique execution ID (VALIDATED)
+        workflow_id: Unique execution ID
         initial_variables: Initial variables
         wait_for_result: Wait for completion
         postgres_url: Optional PostgreSQL URL for checkpointing

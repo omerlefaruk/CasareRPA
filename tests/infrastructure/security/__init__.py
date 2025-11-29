@@ -1,1 +1,1 @@
-"""Security tests for CasareRPA infrastructure."""
+"""Tests for infrastructure security layer."""

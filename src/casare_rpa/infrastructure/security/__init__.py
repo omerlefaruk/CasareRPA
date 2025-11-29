@@ -1,24 +1,217 @@
 """
-CasareRPA Security Infrastructure.
+CasareRPA Infrastructure Security Layer.
 
-Provides validation, sanitization, and security utilities to prevent
-common attack vectors in the RPA platform.
+Provides enterprise security features:
+- Secure credential management with multiple backend support
+  - HashiCorp Vault (production)
+  - Supabase Vault (managed cloud)
+  - Encrypted SQLite (development fallback)
+- Role-Based Access Control (RBAC)
+- Multi-tenancy with data isolation
+- API key management
+- Audit logging
+
+Integrates with workflow execution for transparent credential injection.
 """
 
-from .validators import (
-    validate_sql_identifier,
-    validate_robot_id,
-    validate_workflow_id,
-    validate_job_id,
-    sanitize_for_logging,
+from .vault_client import (
+    VaultClient,
+    VaultConfig,
+    VaultBackend,
+    SecretMetadata,
+    SecretValue,
+    CredentialType,
+    VaultError,
+    SecretNotFoundError,
+    VaultConnectionError,
+    VaultAuthenticationError,
+    AuditEvent,
+    AuditEventType,
 )
-from .workflow_schema import validate_workflow_json
+from .providers import (
+    HashiCorpVaultProvider,
+    SupabaseVaultProvider,
+    EncryptedSQLiteProvider,
+    create_vault_provider,
+)
+from .credential_provider import (
+    VaultCredentialProvider,
+    ResolvedCredential,
+    create_credential_resolver,
+    resolve_credentials_for_node,
+)
+from .rotation import (
+    SecretRotationManager,
+    RotationPolicy,
+    RotationFrequency,
+    RotationStatus,
+    RotationRecord,
+    RotationHook,
+    setup_rotation_for_credentials,
+)
+from .rbac import (
+    # Enums
+    SystemRole,
+    ResourceType,
+    ActionType,
+    # Exceptions
+    RBACError,
+    PermissionDeniedError,
+    RoleNotFoundError,
+    InvalidRoleConfigError,
+    # Data models
+    Permission,
+    PermissionCondition,
+    RolePermission,
+    Role,
+    UserPermissions,
+    # Services
+    PermissionRegistry,
+    RoleManager,
+    AuthorizationService,
+    # Decorators
+    require_permission,
+    # Factory functions
+    create_permission_registry,
+    create_authorization_service,
+    get_default_permissions,
+)
+from .tenancy import (
+    # Enums
+    TenantStatus,
+    SubscriptionTier,
+    SSOProvider,
+    APIKeyStatus,
+    AuditAction,
+    # Exceptions
+    TenancyError,
+    TenantNotFoundError,
+    TenantSuspendedError,
+    QuotaExceededError,
+    RateLimitExceededError,
+    InvalidAPIKeyError,
+    # Data models
+    ResourceQuotas,
+    ResourceUsage,
+    SSOConfig,
+    Tenant,
+    Workspace,
+    APIKey,
+    AuditLogEntry,
+    # Context
+    TenantContext,
+    TenantContextManager,
+    # Services
+    TenantService,
+    APIKeyService,
+    AuditService,
+    # Factory functions
+    create_tenant_context_manager,
+    create_tenant_service,
+    create_api_key_service,
+    create_audit_service,
+)
 
 __all__ = [
-    "validate_sql_identifier",
-    "validate_robot_id",
-    "validate_workflow_id",
-    "validate_job_id",
-    "sanitize_for_logging",
-    "validate_workflow_json",
+    # ==========================================================================
+    # VAULT / CREDENTIALS
+    # ==========================================================================
+    # Core client
+    "VaultClient",
+    "VaultConfig",
+    "VaultBackend",
+    # Data models
+    "SecretMetadata",
+    "SecretValue",
+    "CredentialType",
+    # Errors
+    "VaultError",
+    "SecretNotFoundError",
+    "VaultConnectionError",
+    "VaultAuthenticationError",
+    # Audit
+    "AuditEvent",
+    "AuditEventType",
+    # Providers
+    "HashiCorpVaultProvider",
+    "SupabaseVaultProvider",
+    "EncryptedSQLiteProvider",
+    "create_vault_provider",
+    # Integration
+    "VaultCredentialProvider",
+    "ResolvedCredential",
+    "create_credential_resolver",
+    "resolve_credentials_for_node",
+    # Rotation
+    "SecretRotationManager",
+    "RotationPolicy",
+    "RotationFrequency",
+    "RotationStatus",
+    "RotationRecord",
+    "RotationHook",
+    "setup_rotation_for_credentials",
+    # ==========================================================================
+    # RBAC
+    # ==========================================================================
+    # Enums
+    "SystemRole",
+    "ResourceType",
+    "ActionType",
+    # Exceptions
+    "RBACError",
+    "PermissionDeniedError",
+    "RoleNotFoundError",
+    "InvalidRoleConfigError",
+    # Data models
+    "Permission",
+    "PermissionCondition",
+    "RolePermission",
+    "Role",
+    "UserPermissions",
+    # Services
+    "PermissionRegistry",
+    "RoleManager",
+    "AuthorizationService",
+    # Decorators
+    "require_permission",
+    # Factory functions
+    "create_permission_registry",
+    "create_authorization_service",
+    "get_default_permissions",
+    # ==========================================================================
+    # MULTI-TENANCY
+    # ==========================================================================
+    # Enums
+    "TenantStatus",
+    "SubscriptionTier",
+    "SSOProvider",
+    "APIKeyStatus",
+    "AuditAction",
+    # Exceptions
+    "TenancyError",
+    "TenantNotFoundError",
+    "TenantSuspendedError",
+    "QuotaExceededError",
+    "RateLimitExceededError",
+    "InvalidAPIKeyError",
+    # Data models
+    "ResourceQuotas",
+    "ResourceUsage",
+    "SSOConfig",
+    "Tenant",
+    "Workspace",
+    "APIKey",
+    "AuditLogEntry",
+    # Context
+    "TenantContext",
+    "TenantContextManager",
+    # Services
+    "TenantService",
+    "APIKeyService",
+    "AuditService",
+    # Factory functions
+    "create_tenant_context_manager",
+    "create_tenant_service",
+    "create_api_key_service",
+    "create_audit_service",
 ]

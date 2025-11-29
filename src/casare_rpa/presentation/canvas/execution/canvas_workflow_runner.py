@@ -318,7 +318,9 @@ class CanvasWorkflowRunner:
 
         logger.info("Resuming workflow execution (UI state only)")
         self._is_paused = False
-        logger.debug("Legacy resume method - use ExecutionLifecycleManager for real functionality")
+        logger.debug(
+            "Legacy resume method - use ExecutionLifecycleManager for real functionality"
+        )
 
     @property
     def is_running(self) -> bool:
