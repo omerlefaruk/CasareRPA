@@ -396,6 +396,8 @@ class VisualNode(NodeGraphQtBaseNode):
         This provides a declarative way to define node properties once and have both
         the config and UI generated automatically.
         """
+        from loguru import logger
+
         if not self._casare_node:
             return  # No casare node yet
 
@@ -404,7 +406,16 @@ class VisualNode(NodeGraphQtBaseNode):
             self._casare_node.__class__, "__node_schema__", None
         )
         if not schema:
+            logger.debug(
+                f"[Widget Generation] {self.__class__.__name__}: No __node_schema__ found, "
+                f"using manual widget creation"
+            )
             return  # No schema, use manual widget definitions
+
+        logger.debug(
+            f"[Widget Generation] {self.__class__.__name__}: Auto-generating {len(schema.properties)} "
+            f"widgets from @node_schema decorator"
+        )
 
         # Generate widgets from schema
         for prop_def in schema.properties:
