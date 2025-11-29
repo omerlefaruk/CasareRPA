@@ -231,8 +231,17 @@ class DBOSWorkflowExecutor:
         if not self._pool:
             return
 
+        # SECURITY: Validate table name to prevent SQL injection
+        from casare_rpa.infrastructure.security.validators import (
+            validate_sql_identifier,
+        )
+
+        table_name = validate_sql_identifier(
+            self.config.checkpoint_table, "checkpoint_table"
+        )
+
         create_table_sql = f"""
-            CREATE TABLE IF NOT EXISTS {self.config.checkpoint_table} (
+            CREATE TABLE IF NOT EXISTS {table_name} (
                 workflow_id TEXT PRIMARY KEY,
                 state TEXT NOT NULL,
                 current_step INTEGER DEFAULT 0,
@@ -245,8 +254,8 @@ class DBOSWorkflowExecutor:
                 updated_at TIMESTAMPTZ DEFAULT NOW()
             );
 
-            CREATE INDEX IF NOT EXISTS idx_{self.config.checkpoint_table}_state
-            ON {self.config.checkpoint_table}(state);
+            CREATE INDEX IF NOT EXISTS idx_{table_name}_state
+            ON {table_name}(state);
         """
 
         async with self._pool.acquire() as conn:
@@ -481,10 +490,18 @@ class DBOSWorkflowExecutor:
             return None
 
         try:
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 row = await conn.fetchrow(
                     f"""
-                    SELECT * FROM {self.config.checkpoint_table}
+                    SELECT * FROM {table_name}
                     WHERE workflow_id = $1
                     """,
                     workflow_id,
@@ -515,10 +532,18 @@ class DBOSWorkflowExecutor:
             return
 
         try:
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 await conn.execute(
                     f"""
-                    INSERT INTO {self.config.checkpoint_table}
+                    INSERT INTO {table_name}
                     (workflow_id, state, current_step, current_node_id,
                      executed_nodes, variables, step_results, error,
                      created_at, updated_at)
@@ -561,10 +586,18 @@ class DBOSWorkflowExecutor:
             return False
 
         try:
+            from casare_rpa.infrastructure.security.validators import (
+                validate_sql_identifier,
+            )
+
+            table_name = validate_sql_identifier(
+                self.config.checkpoint_table, "checkpoint_table"
+            )
+
             async with self._pool.acquire() as conn:
                 result = await conn.execute(
                     f"""
-                    DELETE FROM {self.config.checkpoint_table}
+                    DELETE FROM {table_name}
                     WHERE workflow_id = $1
                     """,
                     workflow_id,

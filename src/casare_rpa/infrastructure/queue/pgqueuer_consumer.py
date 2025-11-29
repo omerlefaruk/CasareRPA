@@ -163,8 +163,16 @@ class PgQueuerConsumer:
     """
 
     # SQL queries as class constants for clarity and maintainability
+    # SECURITY: Atomic UPDATE with subquery to prevent TOCTOU race condition
+    # The FOR UPDATE SKIP LOCKED is inside the UPDATE's WHERE clause subquery,
+    # ensuring no time gap between SELECT and UPDATE
     SQL_CLAIM_JOB = """
-        WITH claimed AS (
+        UPDATE job_queue
+        SET status = 'running',
+            robot_id = $3,
+            started_at = NOW(),
+            visible_after = NOW() + INTERVAL '1 second' * $4
+        WHERE id IN (
             SELECT id
             FROM job_queue
             WHERE status = 'pending'
@@ -174,23 +182,16 @@ class PgQueuerConsumer:
             LIMIT $2
             FOR UPDATE SKIP LOCKED
         )
-        UPDATE job_queue jq
-        SET status = 'running',
-            robot_id = $3,
-            started_at = NOW(),
-            visible_after = NOW() + INTERVAL '1 second' * $4
-        FROM claimed
-        WHERE jq.id = claimed.id
-        RETURNING jq.id,
-                  jq.workflow_id,
-                  jq.workflow_name,
-                  jq.workflow_json,
-                  jq.priority,
-                  jq.environment,
-                  jq.variables,
-                  jq.created_at,
-                  jq.retry_count,
-                  jq.max_retries;
+        RETURNING id,
+                  workflow_id,
+                  workflow_name,
+                  workflow_json,
+                  priority,
+                  environment,
+                  variables,
+                  created_at,
+                  retry_count,
+                  max_retries;
     """
 
     SQL_EXTEND_LEASE = """
@@ -282,12 +283,18 @@ class PgQueuerConsumer:
 
         Raises:
             ImportError: If asyncpg is not installed
+            ValidationError: If robot_id is invalid
         """
         if not HAS_ASYNCPG:
             raise ImportError(
                 "asyncpg is required for PgQueuerConsumer. "
                 "Install with: pip install asyncpg"
             )
+
+        # SECURITY: Validate robot_id to prevent SQL injection and impersonation attacks
+        from casare_rpa.infrastructure.security.validators import validate_robot_id
+
+        validate_robot_id(config.robot_id)
 
         self._config = config
         self._pool: Optional[Pool] = None
