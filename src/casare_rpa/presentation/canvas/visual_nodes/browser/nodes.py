@@ -1,4 +1,24 @@
-"""Visual nodes for browser category."""
+"""Visual nodes for browser category.
+
+Widget Auto-Generation:
+-----------------------
+Visual nodes automatically inherit widgets from their domain node's @node_schema
+decorator via the __node_schema__ attribute (defined in casare_rpa.domain.decorators).
+
+When a VisualNode is instantiated:
+1. BaseVisualNode.__init__() checks if domain_node_class has __node_schema__
+2. If found, widgets are auto-generated from PropertyDef declarations
+3. Manual widget creation in __init__() should be AVOIDED to prevent duplicates
+
+Nodes with manual widgets:
+- GoToURLNode, GoBackNode, GoForwardNode, RefreshPageNode (navigation category)
+- ClickElementNode, TypeTextNode, SelectDropdownNode (interaction category)
+- ExtractTextNode, GetAttributeNode (data extraction category)
+- ScreenshotNode, WaitNode, WaitForElementNode, WaitForNavigationNode (utility category)
+
+These nodes still use manual widgets because their domain nodes haven't been
+migrated to @node_schema yet. Once migrated, remove manual widgets from __init__().
+"""
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
