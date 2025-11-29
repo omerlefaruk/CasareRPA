@@ -380,10 +380,8 @@ class ReadFileNode(BaseNode):
                 with open(path, "rb") as f:
                     content = f.read()
             else:
-                # Use newline and errors options for text mode
-                with open(
-                    path, "r", encoding=encoding, errors=errors, newline=newline
-                ) as f:
+                # Use encoding and errors options for text mode
+                with open(path, "r", encoding=encoding, errors=errors) as f:
                     content = f.read()
 
             self.set_output_value("content", content)
@@ -563,9 +561,7 @@ class WriteFileNode(BaseNode):
                 with open(path, mode) as f:
                     bytes_written = f.write(content)
             else:
-                with open(
-                    path, mode, encoding=encoding, errors=errors, newline=newline
-                ) as f:
+                with open(path, mode, encoding=encoding, errors=errors) as f:
                     bytes_written = f.write(str(content) if content else "")
 
             self.set_output_value("file_path", str(path))
@@ -1170,7 +1166,7 @@ class CreateDirectoryNode(BaseNode):
         self.node_type = "CreateDirectoryNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dir_path", PortType.INPUT, DataType.STRING)
+        self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
         self.add_output_port("dir_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -1320,6 +1316,7 @@ class ListFilesNode(BaseNode):
 
         except Exception as e:
             self.status = NodeStatus.ERROR
+            self.set_output_value("success", False)
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _validate_config(self) -> tuple[bool, str]:
