@@ -63,7 +63,9 @@ class MonitoringDatabase:
                 "queue_depth": queue_depth or 0,
             }
 
-    async def get_robot_list(self, status: Optional[str] = None) -> List[Dict[str, Any]]:
+    async def get_robot_list(
+        self, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Get list of all robots with optional status filter.
 
@@ -129,7 +131,9 @@ class MonitoringDatabase:
                 return None
 
             # Get today's job stats
-            today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            today_start = datetime.now().replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
             job_stats = await conn.fetchrow(
                 """
                 SELECT
@@ -147,7 +151,9 @@ class MonitoringDatabase:
                 **dict(robot),
                 "jobs_completed_today": job_stats["completed_today"] or 0,
                 "jobs_failed_today": job_stats["failed_today"] or 0,
-                "average_job_duration_seconds": float(job_stats["avg_duration_seconds"] or 0),
+                "average_job_duration_seconds": float(
+                    job_stats["avg_duration_seconds"] or 0
+                ),
             }
 
     async def get_job_history(
