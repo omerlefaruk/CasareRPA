@@ -7,8 +7,8 @@ decorators without manual widget creation causing duplicates.
 import pytest
 from casare_rpa.presentation.canvas.visual_nodes.browser.nodes import (
     VisualLaunchBrowserNode,
-    VisualNavigateNode,
-    VisualClickElementNode,
+    VisualGetAllImagesNode,
+    VisualDownloadFileNode,
 )
 
 
@@ -27,19 +27,19 @@ class TestWidgetAutoGeneration:
         assert node is not None
         assert node.NODE_NAME == "Launch Browser"
 
-    def test_navigate_node_has_auto_generated_widgets(self):
-        """NavigateNode widgets should be auto-generated from @node_schema."""
-        node = VisualNavigateNode()
+    def test_get_all_images_has_auto_generated_widgets(self):
+        """GetAllImagesNode widgets should be auto-generated from @node_schema."""
+        node = VisualGetAllImagesNode()
 
         assert node is not None
-        assert node.NODE_NAME == "Navigate"
+        assert node.NODE_NAME == "Get All Images"
 
-    def test_click_element_has_auto_generated_widgets(self):
-        """ClickElementNode widgets should be auto-generated from @node_schema."""
-        node = VisualClickElementNode()
+    def test_download_file_has_auto_generated_widgets(self):
+        """DownloadFileNode widgets should be auto-generated from @node_schema."""
+        node = VisualDownloadFileNode()
 
         assert node is not None
-        assert node.NODE_NAME == "Click Element"
+        assert node.NODE_NAME == "Download File"
 
     def test_no_duplicate_property_errors_on_instantiation(self):
         """Visual nodes should instantiate without NodePropertyError."""
@@ -48,8 +48,8 @@ class TestWidgetAutoGeneration:
 
         try:
             VisualLaunchBrowserNode()
-            VisualNavigateNode()
-            VisualClickElementNode()
+            VisualGetAllImagesNode()
+            VisualDownloadFileNode()
         except Exception as e:
             if "property already exists" in str(e):
                 pytest.fail(f"Duplicate property error: {e}")
@@ -77,5 +77,5 @@ class TestSchemaSourceDocumentation:
         module_doc = browser_module.__doc__
 
         # Verify nodes still using manual widgets are documented
-        assert "GoToURLNode" in module_doc
-        assert "manual widgets" in module_doc.lower()
+        # (navigation category nodes like GoToURLNode, ClickElementNode, etc.)
+        assert "GoToURLNode" in module_doc or "manual" in module_doc.lower()

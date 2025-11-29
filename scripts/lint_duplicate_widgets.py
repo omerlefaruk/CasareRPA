@@ -77,7 +77,12 @@ def check_file(file_path: Path) -> List[str]:
         visitor.visit(tree)
 
         if visitor.widget_calls:
-            warnings.append(f"\n{file_path.relative_to(Path.cwd())}:")
+            # Use relative path for display
+            try:
+                display_path = file_path.relative_to(Path.cwd())
+            except ValueError:
+                display_path = file_path
+            warnings.append(f"\n{display_path}:")
             warnings.append(
                 f"  Found {len(visitor.widget_calls)} manual widget calls in __init__():"
             )
@@ -97,6 +102,13 @@ def check_file(file_path: Path) -> List[str]:
 
 def main():
     """Main entry point."""
+    # Fix encoding on Windows
+    import sys
+    import io
+
+    if sys.platform == "win32":
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+
     print("🔍 Checking visual nodes for duplicate manual widgets...\n")
 
     # Find all visual node files
