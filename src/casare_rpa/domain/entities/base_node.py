@@ -177,6 +177,38 @@ class BaseNode(ABC):
             return default
         return self.output_ports[port_name].get_value()
 
+    def get_parameter(self, name: str, default: Any = None) -> Any:
+        """
+        Get parameter value from port (runtime) or config (design-time).
+
+        Unified accessor for the dual-source pattern used by many nodes.
+        Prefers port value over config value to support runtime overrides.
+
+        This is the recommended way to access node parameters that can come
+        from either port connections OR the properties panel.
+
+        Args:
+            name: Parameter name (must match both port name and config key)
+            default: Default value if parameter not found in either source
+
+        Returns:
+            Value from port if connected, otherwise from config, otherwise default
+
+        Example:
+            # Old pattern (fragile):
+            file_path = self.config.get("file_path") or self.get_input_value("file_path")
+
+            # New pattern (recommended):
+            file_path = self.get_parameter("file_path")
+        """
+        # Check port first (runtime value from connection)
+        port_value = self.get_input_value(name)
+        if port_value is not None:
+            return port_value
+
+        # Fallback to config (design-time value from properties panel)
+        return self.config.get(name, default)
+
     def serialize(self) -> SerializedNode:
         """
         Serialize node to dictionary for saving workflows.

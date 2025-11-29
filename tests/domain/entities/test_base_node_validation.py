@@ -179,3 +179,149 @@ class TestDualSourceValidation:
         # Should fail because 'mode' is missing from both
         assert is_valid is False
         assert "mode" in error
+
+
+class TestGetParameter:
+    """Test the unified get_parameter() helper method."""
+
+    def test_get_parameter_from_port(self):
+        """get_parameter() returns port value when port is connected."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={})
+        node.set_input_value("file_path", "/from/port")
+
+        result = node.get_parameter("file_path")
+
+        assert result == "/from/port"
+
+    def test_get_parameter_from_config(self):
+        """get_parameter() returns config value when port not connected."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={"file_path": "/from/config"})
+
+        result = node.get_parameter("file_path")
+
+        assert result == "/from/config"
+
+    def test_get_parameter_port_overrides_config(self):
+        """Port value takes precedence over config value."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={"file_path": "/from/config"})
+        node.set_input_value("file_path", "/from/port")
+
+        result = node.get_parameter("file_path")
+
+        # Port wins
+        assert result == "/from/port"
+
+    def test_get_parameter_returns_default_when_missing(self):
+        """get_parameter() returns default when param not in port or config."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={})
+
+        result = node.get_parameter("file_path", default="/default/path")
+
+        assert result == "/default/path"
+
+    def test_get_parameter_returns_none_when_missing_no_default(self):
+        """get_parameter() returns None when missing and no default provided."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={})
+
+        result = node.get_parameter("file_path")
+
+        assert result is None
+
+    def test_get_parameter_empty_string_from_config(self):
+        """Empty string from config is returned (not treated as None)."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={"file_path": ""})
+
+        result = node.get_parameter("file_path")
+
+        # Empty string is a valid value
+        assert result == ""
+
+    def test_get_parameter_for_nonexistent_port(self):
+        """get_parameter() works even if port doesn't exist (config-only param)."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                pass  # No ports
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode("test1", config={"some_setting": "value"})
+
+        result = node.get_parameter("some_setting")
+
+        assert result == "value"
+
+    def test_get_parameter_with_various_types(self):
+        """get_parameter() handles different data types correctly."""
+
+        class TestNode(BaseNode):
+            def _define_ports(self):
+                self.add_input_port("timeout", PortType.INPUT, DataType.INTEGER)
+                self.add_input_port("enabled", PortType.INPUT, DataType.BOOLEAN)
+
+            async def execute(self, context):
+                return {"success": True}
+
+        node = TestNode(
+            "test1",
+            config={
+                "timeout": 5000,
+                "enabled": True,
+                "ratio": 0.75,
+                "items": [1, 2, 3],
+            },
+        )
+
+        assert node.get_parameter("timeout") == 5000
+        assert node.get_parameter("enabled") is True
+        assert node.get_parameter("ratio") == 0.75
+        assert node.get_parameter("items") == [1, 2, 3]
