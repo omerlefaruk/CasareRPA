@@ -15,7 +15,8 @@ import aiohttp
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -244,35 +245,67 @@ class ValidationType(str, Enum):
     CUSTOM = "custom"
 
 
+@node_schema(
+    PropertyDef(
+        "validation_type",
+        PropertyType.CHOICE,
+        default="not_empty",
+        choices=[
+            "not_empty",
+            "is_string",
+            "is_number",
+            "is_integer",
+            "is_boolean",
+            "is_list",
+            "is_dict",
+            "matches_regex",
+            "min_length",
+            "max_length",
+            "min_value",
+            "max_value",
+            "in_list",
+            "is_email",
+            "is_url",
+            "custom",
+        ],
+        label="Validation Type",
+        tooltip="Type of validation to perform",
+    ),
+    PropertyDef(
+        "validation_param",
+        PropertyType.ANY,
+        default=None,
+        label="Validation Parameter",
+        tooltip="Parameter for validation (e.g., regex pattern, min value)",
+    ),
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        default="Validation failed",
+        label="Error Message",
+        tooltip="Custom error message on validation failure",
+    ),
+)
 @executable_node
 class ValidateNode(BaseNode):
     """
     Validate node - validates data against rules.
 
     Routes to different outputs based on validation success/failure.
+
+    Config (via @node_schema):
+        validation_type: Type of validation to perform
+        validation_param: Parameter for validation
+        error_message: Custom error message
     """
 
     def __init__(
         self,
         node_id: str,
         name: str = "Validate",
-        validation_type: str = "not_empty",
-        validation_param: Any = None,
         **kwargs,
     ) -> None:
-        """
-        Initialize validate node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            validation_type: Type of validation to perform
-            validation_param: Parameter for validation (e.g., regex pattern, min value)
-        """
         config = kwargs.get("config", {})
-        config.setdefault("validation_type", validation_type)
-        config.setdefault("validation_param", validation_param)
-        config.setdefault("error_message", "Validation failed")
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ValidateNode"
@@ -299,9 +332,9 @@ class ValidateNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            value = self.get_input_value("value")
-            validation_type = self.config.get("validation_type", "not_empty")
-            validation_param = self.config.get("validation_param")
+            value = self.get_parameter("value")
+            validation_type = self.get_parameter("validation_type", "not_empty")
+            validation_param = self.get_parameter("validation_param")
 
             is_valid, error_msg = self._validate(
                 value, validation_type, validation_param
@@ -468,34 +501,69 @@ class TransformType(str, Enum):
     FILTER_VALUES = "filter_values"
 
 
+@node_schema(
+    PropertyDef(
+        "transform_type",
+        PropertyType.CHOICE,
+        default="to_string",
+        choices=[
+            "to_string",
+            "to_integer",
+            "to_float",
+            "to_boolean",
+            "to_list",
+            "to_json",
+            "from_json",
+            "uppercase",
+            "lowercase",
+            "trim",
+            "split",
+            "join",
+            "replace",
+            "regex_extract",
+            "get_key",
+            "get_index",
+            "map_values",
+            "filter_values",
+        ],
+        label="Transform Type",
+        tooltip="Type of transformation to perform",
+    ),
+    PropertyDef(
+        "transform_param",
+        PropertyType.ANY,
+        default=None,
+        label="Transform Parameter",
+        tooltip="Parameter for transformation",
+    ),
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        default="transformed",
+        label="Variable Name",
+        tooltip="Name of variable to store result",
+    ),
+)
 @executable_node
 class TransformNode(BaseNode):
     """
     Transform node - transforms data from one format to another.
 
     Supports type conversions, string operations, and collection transformations.
+
+    Config (via @node_schema):
+        transform_type: Type of transformation to perform
+        transform_param: Parameter for transformation
+        variable_name: Variable name for result
     """
 
     def __init__(
         self,
         node_id: str,
         name: str = "Transform",
-        transform_type: str = "to_string",
-        transform_param: Any = None,
         **kwargs,
     ) -> None:
-        """
-        Initialize transform node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            transform_type: Type of transformation to perform
-            transform_param: Parameter for transformation
-        """
         config = kwargs.get("config", {})
-        config.setdefault("transform_type", transform_type)
-        config.setdefault("transform_param", transform_param)
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TransformNode"
@@ -521,9 +589,9 @@ class TransformNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            value = self.get_input_value("value")
-            transform_type = self.config.get("transform_type", "to_string")
-            transform_param = self.get_input_value("param") or self.config.get(
+            value = self.get_parameter("value")
+            transform_type = self.get_parameter("transform_type", "to_string")
+            transform_param = self.get_parameter("param") or self.get_parameter(
                 "transform_param"
             )
 
@@ -534,7 +602,7 @@ class TransformNode(BaseNode):
             self.set_output_value("error", "")
 
             # Store in context
-            variable_name = self.config.get("variable_name", "transformed")
+            variable_name = self.get_parameter("variable_name", "transformed")
             context.set_variable(variable_name, result)
 
             logger.info(f"Transform '{transform_type}' completed")
@@ -662,6 +730,37 @@ class LogLevel(str, Enum):
     CRITICAL = "critical"
 
 
+@node_schema(
+    PropertyDef(
+        "message",
+        PropertyType.STRING,
+        default="",
+        label="Message",
+        tooltip="Message to log (can include {variable} placeholders)",
+    ),
+    PropertyDef(
+        "level",
+        PropertyType.CHOICE,
+        default="critical",
+        choices=["debug", "info", "warning", "error", "critical"],
+        label="Log Level",
+        tooltip="Log level (debug, info, warning, error, critical)",
+    ),
+    PropertyDef(
+        "include_timestamp",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Timestamp",
+        tooltip="Include timestamp in log message",
+    ),
+    PropertyDef(
+        "include_node_id",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Node ID",
+        tooltip="Include node ID in log message",
+    ),
+)
 @executable_node
 class LogNode(BaseNode):
     """
@@ -669,30 +768,21 @@ class LogNode(BaseNode):
 
     Outputs messages to the log with configurable level and formatting.
     Useful for debugging and audit trails.
+
+    Config (via @node_schema):
+        message: Message to log
+        level: Log level
+        include_timestamp: Include timestamp
+        include_node_id: Include node ID
     """
 
     def __init__(
         self,
         node_id: str,
         name: str = "Log",
-        message: str = "",
-        level: str = "critical",
         **kwargs,
     ) -> None:
-        """
-        Initialize log node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            message: Message to log (can include {variable} placeholders)
-            level: Log level (debug, info, warning, error, critical)
-        """
         config = kwargs.get("config", {})
-        config.setdefault("message", message)
-        config.setdefault("level", level)
-        config.setdefault("include_timestamp", True)
-        config.setdefault("include_node_id", True)
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LogNode"
@@ -716,17 +806,15 @@ class LogNode(BaseNode):
 
         try:
             # Get message from input or config
-            message_input = self.get_input_value("message") or self.config.get(
-                "message", ""
-            )
+            message_input = self.get_parameter("message", "")
             # Ensure message is a string (could be Page object or other type from connected node)
             message = str(message_input) if message_input else ""
 
             # Get optional data to log
-            data = self.get_input_value("data")
+            data = self.get_parameter("data")
 
             # Get log level
-            level_str = self.config.get("level", "critical").lower()
+            level_str = self.get_parameter("level", "critical").lower()
             try:
                 level = LogLevel(level_str)
             except ValueError:
@@ -739,7 +827,7 @@ class LogNode(BaseNode):
                 formatted_message = message
 
             # Add node ID if configured
-            if self.config.get("include_node_id", True):
+            if self.get_parameter("include_node_id", True):
                 formatted_message = f"[{self.node_id}] {formatted_message}"
 
             # Add data if provided

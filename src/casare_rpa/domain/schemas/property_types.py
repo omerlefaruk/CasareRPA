@@ -12,9 +12,11 @@ class PropertyType(str, Enum):
 
     # Basic types
     STRING = "string"
+    TEXT = "text"  # Multi-line text area
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
+    ANY = "any"  # Accepts any type of value (for variable nodes)
 
     # Selection types
     CHOICE = "choice"  # Dropdown with predefined choices
@@ -33,6 +35,7 @@ class PropertyType(str, Enum):
     DATE = "date"  # Date picker
     TIME = "time"  # Time picker
     DATETIME = "datetime"  # DateTime picker
+    LIST = "list"  # List of values
 
     # Custom widget type
     CUSTOM = "custom"  # Fully custom widget class

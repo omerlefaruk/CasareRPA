@@ -6,6 +6,8 @@ of any workflow: StartNode, EndNode, and CommentNode.
 """
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import NodeStatus, PortType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -33,7 +35,6 @@ class StartNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports - only execution output."""
-        # Start node has no inputs, only execution output
         self.add_output_port("exec_out", PortType.EXEC_OUTPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -49,8 +50,6 @@ class StartNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Start nodes simply mark the beginning of execution
-            # No actual work to do
             self.status = NodeStatus.SUCCESS
 
             return {
@@ -70,7 +69,6 @@ class StartNode(BaseNode):
         Returns:
             Tuple of (is_valid, error_message)
         """
-        # Start node has no configuration requirements
         return True, ""
 
 
@@ -97,7 +95,6 @@ class EndNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports - only execution input."""
-        # End node has no outputs, only execution input
         self.add_input_port("exec_in", PortType.EXEC_INPUT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -113,8 +110,6 @@ class EndNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # End nodes mark the completion of execution
-            # Generate execution summary if desired
             summary = context.get_execution_summary()
 
             self.status = NodeStatus.SUCCESS
@@ -122,7 +117,7 @@ class EndNode(BaseNode):
             return {
                 "success": True,
                 "data": {"message": "Workflow completed", "summary": summary},
-                "next_nodes": [],  # No next nodes - this is the end
+                "next_nodes": [],
             }
 
         except Exception as e:
@@ -136,10 +131,19 @@ class EndNode(BaseNode):
         Returns:
             Tuple of (is_valid, error_message)
         """
-        # End node has no configuration requirements
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "comment",
+        PropertyType.TEXT,
+        default="",
+        label="Comment",
+        tooltip="Documentation or notes for this workflow section",
+        placeholder="Enter your comment here...",
+    ),
+)
 class CommentNode(BaseNode):
     """
     Comment node - documentation and annotation for workflows.
@@ -169,7 +173,6 @@ class CommentNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports - comment nodes have no ports."""
-        # Comment nodes have no ports - they're documentation only
         pass
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -188,7 +191,7 @@ class CommentNode(BaseNode):
 
         return {
             "success": True,
-            "data": {"comment": self.config.get("comment", ""), "skipped": True},
+            "data": {"comment": self.get_parameter("comment", ""), "skipped": True},
             "next_nodes": [],
         }
 
@@ -199,7 +202,6 @@ class CommentNode(BaseNode):
         Returns:
             Tuple of (is_valid, error_message)
         """
-        # Comment nodes are always valid
         return True, ""
 
     def set_comment(self, comment: str) -> None:
@@ -218,4 +220,4 @@ class CommentNode(BaseNode):
         Returns:
             The comment text
         """
-        return self.config.get("comment", "")
+        return self.get_parameter("comment", "")

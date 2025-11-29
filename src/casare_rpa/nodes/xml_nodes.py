@@ -8,9 +8,6 @@ This module provides nodes for XML parsing and manipulation:
 - XPathQueryNode: Query XML with XPath
 - GetXMLElementNode: Get element by tag name
 - GetXMLAttributeNode: Get element attribute
-- SetXMLAttributeNode: Set element attribute
-- AddXMLElementNode: Add new element
-- RemoveXMLElementNode: Remove element
 - XMLToJsonNode: Convert XML to JSON
 - JsonToXMLNode: Convert JSON to XML
 """
@@ -22,7 +19,8 @@ from pathlib import Path
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -66,7 +64,7 @@ class ParseXMLNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            xml_string = str(self.get_input_value("xml_string", context) or "")
+            xml_string = str(self.get_parameter("xml_string", "") or "")
 
             if not xml_string:
                 raise ValueError("xml_string is required")
@@ -108,6 +106,15 @@ class ParseXMLNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "encoding",
+        PropertyType.STRING,
+        default="utf-8",
+        label="Encoding",
+        tooltip="File encoding (e.g., utf-8, latin-1)",
+    ),
+)
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -140,12 +147,8 @@ class ReadXMLFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = str(self.get_input_value("file_path", context) or "")
-            encoding = self.config.get("encoding", "utf-8")
-
-            # Resolve {{variable}} patterns
-            file_path = context.resolve_value(file_path)
-            encoding = context.resolve_value(encoding)
+            file_path = str(self.get_parameter("file_path", "") or "")
+            encoding = self.get_parameter("encoding", "utf-8")
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -184,6 +187,29 @@ class ReadXMLFileNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "encoding",
+        PropertyType.STRING,
+        default="utf-8",
+        label="Encoding",
+        tooltip="File encoding for output",
+    ),
+    PropertyDef(
+        "pretty_print",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Pretty Print",
+        tooltip="Format output with indentation",
+    ),
+    PropertyDef(
+        "xml_declaration",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="XML Declaration",
+        tooltip="Include <?xml version...?> declaration",
+    ),
+)
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
@@ -218,15 +244,11 @@ class WriteXMLFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = str(self.get_input_value("file_path", context) or "")
-            xml_string = str(self.get_input_value("xml_string", context) or "")
-            encoding = self.config.get("encoding", "utf-8")
-            pretty_print = self.config.get("pretty_print", True)
-            xml_declaration = self.config.get("xml_declaration", True)
-
-            # Resolve {{variable}} patterns
-            file_path = context.resolve_value(file_path)
-            encoding = context.resolve_value(encoding)
+            file_path = str(self.get_parameter("file_path", "") or "")
+            xml_string = str(self.get_parameter("xml_string", "") or "")
+            encoding = self.get_parameter("encoding", "utf-8")
+            pretty_print = self.get_parameter("pretty_print", True)
+            xml_declaration = self.get_parameter("xml_declaration", True)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -309,11 +331,8 @@ class XPathQueryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            xml_string = self.get_input_value("xml_string", context)
-            xpath = str(self.get_input_value("xpath", context) or "")
-
-            # Resolve {{variable}} patterns
-            xpath = context.resolve_value(xpath)
+            xml_string = self.get_parameter("xml_string")
+            xpath = str(self.get_parameter("xpath", "") or "")
 
             if not xpath:
                 raise ValueError("xpath is required")
@@ -407,12 +426,9 @@ class GetXMLElementNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            xml_string = self.get_input_value("xml_string", context)
-            tag_name = str(self.get_input_value("tag_name", context) or "")
-            index = safe_int(self.get_input_value("index", context), 0)
-
-            # Resolve {{variable}} patterns
-            tag_name = context.resolve_value(tag_name)
+            xml_string = self.get_parameter("xml_string")
+            tag_name = str(self.get_parameter("tag_name", "") or "")
+            index = safe_int(self.get_parameter("index", 0), 0)
 
             if not tag_name:
                 raise ValueError("tag_name is required")
@@ -490,13 +506,9 @@ class GetXMLAttributeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            xml_string = self.get_input_value("xml_string", context)
-            xpath = str(self.get_input_value("xpath", context) or ".")
-            attribute_name = str(self.get_input_value("attribute_name", context) or "")
-
-            # Resolve {{variable}} patterns
-            xpath = context.resolve_value(xpath)
-            attribute_name = context.resolve_value(attribute_name)
+            xml_string = self.get_parameter("xml_string")
+            xpath = str(self.get_parameter("xpath", ".") or ".")
+            attribute_name = str(self.get_parameter("attribute_name", "") or "")
 
             if not attribute_name:
                 raise ValueError("attribute_name is required")
@@ -535,6 +547,22 @@ class GetXMLAttributeNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "include_attributes",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Attributes",
+        tooltip="Include element attributes in JSON output",
+    ),
+    PropertyDef(
+        "text_key",
+        PropertyType.STRING,
+        default="#text",
+        label="Text Key",
+        tooltip="Key name for element text content in JSON",
+    ),
+)
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -568,9 +596,9 @@ class XMLToJsonNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            xml_string = str(self.get_input_value("xml_string", context) or "")
-            include_attributes = self.config.get("include_attributes", True)
-            text_key = self.config.get("text_key", "#text")
+            xml_string = str(self.get_parameter("xml_string", "") or "")
+            include_attributes = self.get_parameter("include_attributes", True)
+            text_key = self.get_parameter("text_key", "#text")
 
             if not xml_string:
                 raise ValueError("xml_string is required")
@@ -624,6 +652,22 @@ class XMLToJsonNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "root_tag",
+        PropertyType.STRING,
+        default="root",
+        label="Root Tag",
+        tooltip="Name of the root XML element",
+    ),
+    PropertyDef(
+        "pretty_print",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Pretty Print",
+        tooltip="Format XML output with indentation",
+    ),
+)
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.
@@ -655,9 +699,9 @@ class JsonToXMLNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            json_data = self.get_input_value("json_data", context)
-            root_tag = self.config.get("root_tag", "root")
-            pretty_print = self.config.get("pretty_print", True)
+            json_data = self.get_parameter("json_data")
+            root_tag = self.get_parameter("root_tag", "root")
+            pretty_print = self.get_parameter("pretty_print", True)
 
             if json_data is None:
                 raise ValueError("json_data is required")

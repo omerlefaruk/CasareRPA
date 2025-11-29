@@ -12,7 +12,8 @@ import asyncio
 import json
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -111,6 +112,32 @@ class TryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "max_attempts",
+        PropertyType.INTEGER,
+        default=3,
+        min_value=1,
+        label="Max Attempts",
+        tooltip="Maximum number of retry attempts",
+    ),
+    PropertyDef(
+        "initial_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Initial Delay (seconds)",
+        tooltip="Initial delay before first retry",
+    ),
+    PropertyDef(
+        "backoff_multiplier",
+        PropertyType.FLOAT,
+        default=2.0,
+        min_value=1.0,
+        label="Backoff Multiplier",
+        tooltip="Exponential backoff multiplier for retry delays",
+    ),
+)
 class RetryNode(BaseNode):
     """
     Retry node for automatic retry with backoff.
@@ -147,9 +174,9 @@ class RetryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            max_attempts = self.config.get("max_attempts", 3)
-            initial_delay = self.config.get("initial_delay", 1.0)  # seconds
-            backoff_multiplier = self.config.get("backoff_multiplier", 2.0)
+            max_attempts = self.get_parameter("max_attempts", 3)
+            initial_delay = self.get_parameter("initial_delay", 1.0)
+            backoff_multiplier = self.get_parameter("backoff_multiplier", 2.0)
 
             retry_state_key = f"{self.node_id}_retry_state"
 
@@ -315,6 +342,16 @@ class RetryFailNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "error_message",
+        PropertyType.STRING,
+        default="Custom error",
+        label="Error Message",
+        tooltip="Error message to throw",
+        placeholder="Something went wrong",
+    ),
+)
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
@@ -346,10 +383,7 @@ class ThrowErrorNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get error message
-            error_message = self.get_input_value("error_message")
-            if error_message is None:
-                error_message = self.config.get("error_message", "Custom error")
+            error_message = self.get_parameter("error_message", "Custom error")
 
             logger.error(f"Throwing error: {error_message}")
 
@@ -368,6 +402,55 @@ class ThrowErrorNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "webhook_url",
+        PropertyType.STRING,
+        required=True,
+        label="Webhook URL",
+        tooltip="URL to send webhook notification to",
+        placeholder="https://hooks.slack.com/services/...",
+    ),
+    PropertyDef(
+        "message",
+        PropertyType.STRING,
+        default="Error notification from CasareRPA",
+        label="Message",
+        tooltip="Notification message",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="generic",
+        choices=["generic", "slack", "discord", "teams"],
+        label="Format",
+        tooltip="Webhook payload format",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=2.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retries",
+    ),
+)
 class WebhookNotifyNode(BaseNode):
     """
     Send error notifications via webhook.
@@ -378,22 +461,7 @@ class WebhookNotifyNode(BaseNode):
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize WebhookNotify node."""
-        # Default config with all options
-        default_config = {
-            "webhook_url": "",
-            "message": "Error notification from CasareRPA",
-            "format": "generic",  # generic, slack, discord, teams
-            "timeout": 30,
-            # Retry options
-            "retry_count": 0,  # Number of retry attempts
-            "retry_delay": 2.0,  # Delay between retries in seconds
-        }
-
-        if config:
-            for key, value in config.items():
-                default_config[key] = value
-
-        super().__init__(node_id, default_config)
+        super().__init__(node_id, config)
         self.name = "Webhook Notify"
         self.node_type = "WebhookNotifyNode"
 
@@ -418,18 +486,13 @@ class WebhookNotifyNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get inputs
-            webhook_url = self.get_input_value("webhook_url")
-            if webhook_url is None:
-                webhook_url = self.config.get("webhook_url", "")
-
-            message = self.get_input_value("message")
-            if message is None:
-                message = self.config.get(
-                    "message", "Error notification from CasareRPA"
-                )
-
+            webhook_url = self.get_parameter("webhook_url")
+            message = self.get_parameter("message", "Error notification from CasareRPA")
             error_details = self.get_input_value("error_details") or {}
+            format_type = self.get_parameter("format", "generic")
+            timeout_seconds = self.get_parameter("timeout", 30)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 2.0)
 
             if not webhook_url:
                 self.set_output_value("success", False)
@@ -442,12 +505,7 @@ class WebhookNotifyNode(BaseNode):
                 }
 
             # Build payload
-            payload = self._build_payload(message, error_details)
-
-            # Get retry options
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 2.0)
-            timeout_seconds = self.config.get("timeout", 30)
+            payload = self._build_payload(format_type, message, error_details)
 
             # Send webhook with retry
             import aiohttp
@@ -523,11 +581,9 @@ class WebhookNotifyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
     def _build_payload(
-        self, message: str, error_details: Dict[str, Any]
+        self, format_type: str, message: str, error_details: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Build webhook payload based on configured format."""
-        format_type = self.config.get("format", "generic")
-
         if format_type == "slack":
             return {
                 "text": message,
@@ -579,9 +635,6 @@ class WebhookNotifyNode(BaseNode):
             # Generic format
             return {
                 "message": message,
-                "timestamp": context.variables.get("_timestamp", "")
-                if hasattr(self, "context")
-                else "",
                 "details": error_details,
                 "source": "CasareRPA",
             }
@@ -694,6 +747,24 @@ class OnErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "strategy",
+        PropertyType.CHOICE,
+        default="stop",
+        choices=["stop", "continue", "retry", "restart", "fallback"],
+        label="Strategy",
+        tooltip="Error recovery strategy",
+    ),
+    PropertyDef(
+        "max_retries",
+        PropertyType.INTEGER,
+        default=3,
+        min_value=0,
+        label="Max Retries",
+        tooltip="Maximum retries for 'retry' strategy",
+    ),
+)
 class ErrorRecoveryNode(BaseNode):
     """
     Configure error recovery strategy for workflow.
@@ -733,14 +804,8 @@ class ErrorRecoveryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get strategy
-            strategy = self.get_input_value("strategy")
-            if strategy is None:
-                strategy = self.config.get("strategy", "stop")
-
-            max_retries = self.get_input_value("max_retries")
-            if max_retries is None:
-                max_retries = self.config.get("max_retries", 3)
+            strategy = self.get_parameter("strategy", "stop")
+            max_retries = self.get_parameter("max_retries", 3)
 
             # Valid strategies
             valid_strategies = ["stop", "continue", "retry", "restart", "fallback"]
@@ -769,6 +834,23 @@ class ErrorRecoveryNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "level",
+        PropertyType.CHOICE,
+        default="error",
+        choices=["debug", "info", "warning", "error", "critical"],
+        label="Log Level",
+        tooltip="Logging severity level",
+    ),
+    PropertyDef(
+        "include_stack_trace",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Include Stack Trace",
+        tooltip="Include stack trace in log output",
+    ),
+)
 class LogErrorNode(BaseNode):
     """
     Log error details with structured information.
@@ -803,13 +885,11 @@ class LogErrorNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get inputs
             error_message = self.get_input_value("error_message") or "Unknown error"
             error_type = self.get_input_value("error_type") or "Error"
             error_context = self.get_input_value("context") or {}
-
-            level = self.config.get("level", "error")
-            include_stack = self.config.get("include_stack_trace", False)
+            level = self.get_parameter("level", "error")
+            include_stack = self.get_parameter("include_stack_trace", False)
 
             # Build log entry
             from datetime import datetime
@@ -860,6 +940,23 @@ class LogErrorNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "condition",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Condition",
+        tooltip="Condition to assert (can be overridden by input port)",
+    ),
+    PropertyDef(
+        "message",
+        PropertyType.STRING,
+        default="Assertion failed",
+        label="Message",
+        tooltip="Error message if assertion fails",
+        placeholder="Expected value to be greater than 0",
+    ),
+)
 class AssertNode(BaseNode):
     """
     Assert a condition and throw error if false.
@@ -894,15 +991,8 @@ class AssertNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get condition
-            condition = self.get_input_value("condition")
-            if condition is None:
-                condition = self.config.get("condition", True)
-
-            # Get message
-            message = self.get_input_value("message")
-            if message is None:
-                message = self.config.get("message", "Assertion failed")
+            condition = self.get_parameter("condition", True)
+            message = self.get_parameter("message", "Assertion failed")
 
             # Evaluate condition (handle strings)
             if isinstance(condition, str):

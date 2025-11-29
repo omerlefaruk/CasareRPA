@@ -8,20 +8,57 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
-from casare_rpa.domain.decorators import executable_node
-from casare_rpa.domain.value_objects.types import NodeStatus
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
 from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "selector",
+        PropertyType.JSON,
+        required=False,
+        label="Selector",
+        tooltip="Element selector dictionary with 'strategy' and 'value'",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for element",
+    ),
+    PropertyDef(
+        "throw_on_not_found",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Throw on Not Found",
+        tooltip="Raise error if element is not found",
+    ),
+)
 class FindElementNode(Node):
     """
     Find a desktop UI element within a window.
 
     Uses selector to locate an element for further automation.
+
+    Config (via @node_schema):
+        selector: Element selector dictionary (can also be input port)
+        timeout: Maximum time to wait for element (default: 5.0 seconds)
+        throw_on_not_found: Raise error if not found (default: True)
+
+    Inputs:
+        window: Parent window object
+        selector: Element selector dictionary
+
+    Outputs:
+        element: Found element object
+        found: Boolean indicating if element was found
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Find Element"
 
@@ -31,24 +68,12 @@ class FindElementNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Find Element",
     ):
-        """
-        Initialize Find Element node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"timeout": 5.0, "throw_on_not_found": True}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FindElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
@@ -69,11 +94,11 @@ class FindElementNode(Node):
         """
         # Get inputs
         window = self.get_input_value("window")
-        selector = self.get_input_value("selector") or self.config.get("selector")
+        selector = self.get_parameter("selector", context)
 
         # Get configuration
-        timeout = self.config.get("timeout", 5.0)
-        throw_on_not_found = self.config.get("throw_on_not_found", True)
+        timeout = self.get_parameter("timeout", context)
+        throw_on_not_found = self.get_parameter("throw_on_not_found", context)
 
         # Validate inputs
         if not window:
@@ -130,14 +155,66 @@ class FindElementNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "selector",
+        PropertyType.JSON,
+        required=False,
+        label="Selector",
+        tooltip="Element selector dictionary (if element not provided directly)",
+    ),
+    PropertyDef(
+        "simulate",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Simulate",
+        tooltip="Use simulated click (programmatic) vs physical mouse click",
+    ),
+    PropertyDef(
+        "x_offset",
+        PropertyType.INTEGER,
+        default=0,
+        label="X Offset",
+        tooltip="Horizontal offset from element center",
+    ),
+    PropertyDef(
+        "y_offset",
+        PropertyType.INTEGER,
+        default=0,
+        label="Y Offset",
+        tooltip="Vertical offset from element center",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for element (if finding by selector)",
+    ),
+)
 class ClickElementNode(Node):
     """
     Click a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
+
+    Config (via @node_schema):
+        selector: Element selector (if element not provided)
+        simulate: Use simulated click (default: False)
+        x_offset: Horizontal offset from center (default: 0)
+        y_offset: Vertical offset from center (default: 0)
+        timeout: Wait time for element (default: 5.0 seconds)
+
+    Inputs:
+        element: Element to click (direct)
+        window: Parent window (for selector-based finding)
+        selector: Element selector (for finding)
+
+    Outputs:
+        success: Whether the click succeeded
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Click Element"
 
@@ -147,24 +224,12 @@ class ClickElementNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Click Element",
     ):
-        """
-        Initialize Click Element node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"simulate": False, "x_offset": 0, "y_offset": 0, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ClickElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
@@ -188,7 +253,7 @@ class ClickElementNode(Node):
 
         if not element:
             window = self.get_input_value("window")
-            selector = self.get_input_value("selector") or self.config.get("selector")
+            selector = self.get_parameter("selector", context)
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -196,7 +261,7 @@ class ClickElementNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get("timeout", 5.0)
+            timeout = self.get_parameter("timeout", context)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -207,9 +272,9 @@ class ClickElementNode(Node):
                 raise RuntimeError(error_msg)
 
         # Get configuration
-        simulate = self.config.get("simulate", False)
-        x_offset = self.config.get("x_offset", 0)
-        y_offset = self.config.get("y_offset", 0)
+        simulate = self.get_parameter("simulate", context)
+        x_offset = self.get_parameter("x_offset", context)
+        y_offset = self.get_parameter("y_offset", context)
 
         logger.info(f"[{self.name}] Clicking element: {element}")
         logger.debug(
@@ -232,14 +297,68 @@ class ClickElementNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "text",
+        PropertyType.STRING,
+        default="",
+        label="Text",
+        tooltip="Text to type into the element",
+    ),
+    PropertyDef(
+        "selector",
+        PropertyType.JSON,
+        required=False,
+        label="Selector",
+        tooltip="Element selector (if element not provided directly)",
+    ),
+    PropertyDef(
+        "clear_first",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Clear First",
+        tooltip="Clear existing text before typing",
+    ),
+    PropertyDef(
+        "interval",
+        PropertyType.FLOAT,
+        default=0.01,
+        min_value=0.0,
+        label="Interval (seconds)",
+        tooltip="Delay between keystrokes",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for element (if finding by selector)",
+    ),
+)
 class TypeTextNode(Node):
     """
     Type text into a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
+
+    Config (via @node_schema):
+        text: Text to type (can also be input port)
+        selector: Element selector (if element not provided)
+        clear_first: Clear existing text (default: False)
+        interval: Delay between keystrokes (default: 0.01 seconds)
+        timeout: Wait time for element (default: 5.0 seconds)
+
+    Inputs:
+        text: Text to type
+        element: Element to type into (direct)
+        window: Parent window (for selector-based finding)
+        selector: Element selector (for finding)
+
+    Outputs:
+        success: Whether the operation succeeded
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Type Text"
 
@@ -249,24 +368,12 @@ class TypeTextNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Type Text",
     ):
-        """
-        Initialize Type Text node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"clear_first": False, "interval": 0.01, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TypeTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
@@ -287,11 +394,7 @@ class TypeTextNode(Node):
             Dictionary with success status
         """
         # Get text to type
-        text = self.get_input_value("text") or self.config.get("text", "")
-
-        # Resolve {{variable}} patterns in text
-        if hasattr(context, "resolve_value") and text:
-            text = context.resolve_value(text)
+        text = self.get_parameter("text", context)
 
         if not text:
             error_msg = "Text is required. Provide text to type."
@@ -304,7 +407,7 @@ class TypeTextNode(Node):
 
         if not element:
             window = self.get_input_value("window")
-            selector = self.get_input_value("selector") or self.config.get("selector")
+            selector = self.get_parameter("selector", context)
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -312,7 +415,7 @@ class TypeTextNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get("timeout", 5.0)
+            timeout = self.get_parameter("timeout", context)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -323,8 +426,8 @@ class TypeTextNode(Node):
                 raise RuntimeError(error_msg)
 
         # Get configuration
-        clear_first = self.config.get("clear_first", False)
-        interval = self.config.get("interval", 0.01)
+        clear_first = self.get_parameter("clear_first", context)
+        interval = self.get_parameter("interval", context)
 
         logger.info(f"[{self.name}] Typing text into element: {element}")
         logger.debug(
@@ -347,14 +450,51 @@ class TypeTextNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "selector",
+        PropertyType.JSON,
+        required=False,
+        label="Selector",
+        tooltip="Element selector (if element not provided directly)",
+    ),
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        default="",
+        label="Variable Name",
+        tooltip="Store text in this context variable",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for element (if finding by selector)",
+    ),
+)
 class GetElementTextNode(Node):
     """
     Get text content from a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
+
+    Config (via @node_schema):
+        selector: Element selector (if element not provided)
+        variable_name: Store text in this variable (default: "")
+        timeout: Wait time for element (default: 5.0 seconds)
+
+    Inputs:
+        element: Element to get text from (direct)
+        window: Parent window (for selector-based finding)
+        selector: Element selector (for finding)
+
+    Outputs:
+        text: The extracted text content
+        element: The element object
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Element Text"
 
@@ -364,24 +504,12 @@ class GetElementTextNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Get Element Text",
     ):
-        """
-        Initialize Get Element Text node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"timeout": 5.0, "variable_name": ""}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetElementTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
@@ -406,7 +534,7 @@ class GetElementTextNode(Node):
 
         if not element:
             window = self.get_input_value("window")
-            selector = self.get_input_value("selector") or self.config.get("selector")
+            selector = self.get_parameter("selector", context)
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -414,7 +542,7 @@ class GetElementTextNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get("timeout", 5.0)
+            timeout = self.get_parameter("timeout", context)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)
@@ -437,10 +565,7 @@ class GetElementTextNode(Node):
             )
 
             # Store in context variable if specified
-            variable_name = self.config.get("variable_name", "")
-            # Resolve {{variable}} patterns in variable_name
-            if hasattr(context, "resolve_value") and variable_name:
-                variable_name = context.resolve_value(variable_name)
+            variable_name = self.get_parameter("variable_name", context)
             if variable_name and hasattr(context, "set_variable"):
                 context.set_variable(variable_name, text)
                 logger.debug(f"[{self.name}] Stored text in variable: {variable_name}")
@@ -461,14 +586,53 @@ class GetElementTextNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "property_name",
+        PropertyType.STRING,
+        default="Name",
+        required=True,
+        label="Property Name",
+        tooltip="Name of the property to get (e.g., Name, Value, IsEnabled)",
+    ),
+    PropertyDef(
+        "selector",
+        PropertyType.JSON,
+        required=False,
+        label="Selector",
+        tooltip="Element selector (if element not provided directly)",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for element (if finding by selector)",
+    ),
+)
 class GetElementPropertyNode(Node):
     """
     Get a property value from a desktop UI element.
 
     Can accept an element directly or find it using window + selector.
+
+    Config (via @node_schema):
+        property_name: Name of the property to get (default: "Name")
+        selector: Element selector (if element not provided)
+        timeout: Wait time for element (default: 5.0 seconds)
+
+    Inputs:
+        property_name: Property to retrieve (can override config)
+        element: Element to get property from (direct)
+        window: Parent window (for selector-based finding)
+        selector: Element selector (for finding)
+
+    Outputs:
+        value: The property value
+        element: The element object
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Element Property"
 
@@ -478,24 +642,12 @@ class GetElementPropertyNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Get Element Property",
     ):
-        """
-        Initialize Get Element Property node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"timeout": 5.0, "property_name": "Name"}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetElementPropertyNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
@@ -517,16 +669,14 @@ class GetElementPropertyNode(Node):
             Dictionary with property value and element
         """
         # Get property name
-        property_name = self.get_input_value("property_name") or self.config.get(
-            "property_name", "Name"
-        )
+        property_name = self.get_parameter("property_name", context)
 
         # Get element - directly or via window+selector
         element = self.get_input_value("element")
 
         if not element:
             window = self.get_input_value("window")
-            selector = self.get_input_value("selector") or self.config.get("selector")
+            selector = self.get_parameter("selector", context)
 
             if not window or not selector:
                 error_msg = "Must provide 'element' or both 'window' and 'selector'"
@@ -534,7 +684,7 @@ class GetElementPropertyNode(Node):
                 self.status = NodeStatus.ERROR
                 raise ValueError(error_msg)
 
-            timeout = self.config.get("timeout", 5.0)
+            timeout = self.get_parameter("timeout", context)
             logger.info(f"[{self.name}] Finding element with selector: {selector}")
 
             element = window.find_child(selector, timeout=timeout)

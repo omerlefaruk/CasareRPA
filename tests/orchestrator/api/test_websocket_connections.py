@@ -10,7 +10,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, Mock, patch
 from fastapi import WebSocket
 
-from casare_rpa.orchestrator.api.routers.websockets import (
+from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
     ConnectionManager,
     broadcast_job_update,
     broadcast_robot_status,

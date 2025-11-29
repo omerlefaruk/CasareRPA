@@ -8,7 +8,8 @@ from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -19,6 +20,16 @@ from casare_rpa.domain.value_objects.types import (
 from ..utils.security.safe_eval import safe_eval, is_safe_expression
 
 
+@node_schema(
+    PropertyDef(
+        "expression",
+        PropertyType.STRING,
+        default="",
+        label="Expression",
+        tooltip="Boolean expression to evaluate (optional if using input port)",
+        placeholder="{{variable}} > 10",
+    ),
+)
 class IfNode(BaseNode):
     """
     Conditional node that executes different paths based on condition.
@@ -53,12 +64,12 @@ class IfNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get condition value
+            # Get condition value from input port first
             condition = self.get_input_value("condition")
 
             # If no input, check config for expression
             if condition is None:
-                expression = self.config.get("expression", "")
+                expression = self.get_parameter("expression", "")
                 if expression:
                     # Safely evaluate expression with context variables
                     try:
@@ -96,6 +107,30 @@ class IfNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "start",
+        PropertyType.INTEGER,
+        default=0,
+        label="Start",
+        tooltip="Start value for range iteration",
+    ),
+    PropertyDef(
+        "end",
+        PropertyType.INTEGER,
+        default=10,
+        label="End",
+        tooltip="End value for range iteration",
+    ),
+    PropertyDef(
+        "step",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Step",
+        tooltip="Step value for range iteration",
+    ),
+)
 class ForLoopStartNode(BaseNode):
     """
     Start node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -142,14 +177,14 @@ class ForLoopStartNode(BaseNode):
 
             # If no input, create range from config/inputs
             if items is None:
-                start = int(self.config.get("start", 0))
+                start = self.get_parameter("start", 0)
                 end_input = self.get_input_value("end")
                 end = (
-                    int(end_input)
+                    end_input
                     if end_input is not None
-                    else int(self.config.get("end", 10))
+                    else self.get_parameter("end", 10)
                 )
-                step = int(self.config.get("step", 1))
+                step = self.get_parameter("step", 1)
                 items = list(range(start, end, step))
 
             # Ensure items is iterable
@@ -216,6 +251,15 @@ class ForLoopStartNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "paired_start_id",
+        PropertyType.STRING,
+        default="",
+        label="Paired Start ID",
+        tooltip="ID of the paired ForLoopStartNode (set automatically)",
+    ),
+)
 class ForLoopEndNode(BaseNode):
     """
     End node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -234,7 +278,7 @@ class ForLoopEndNode(BaseNode):
         self.name = "For Loop End"
         self.node_type = "ForLoopEndNode"
         # Paired start node ID - set when created together
-        self.paired_start_id: str = config.get("paired_start_id", "") if config else ""
+        self.paired_start_id: str = self.get_parameter("paired_start_id", "")
 
     def _define_ports(self) -> None:
         """Define node ports."""
@@ -252,7 +296,9 @@ class ForLoopEndNode(BaseNode):
         self.status = NodeStatus.SUCCESS
 
         # Get the paired ForLoopStart node ID
-        loop_start_id = self.paired_start_id or self.config.get("paired_start_id", "")
+        loop_start_id = self.paired_start_id or self.get_parameter(
+            "paired_start_id", ""
+        )
 
         if not loop_start_id:
             # Try to find it from context (fallback)
@@ -283,6 +329,24 @@ class ForLoopEndNode(BaseNode):
         }
 
 
+@node_schema(
+    PropertyDef(
+        "expression",
+        PropertyType.STRING,
+        default="",
+        label="Expression",
+        tooltip="Boolean expression to evaluate each iteration (optional if using input port)",
+        placeholder="{{counter}} < 100",
+    ),
+    PropertyDef(
+        "max_iterations",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=1,
+        label="Max Iterations",
+        tooltip="Maximum iterations to prevent infinite loops",
+    ),
+)
 class WhileLoopStartNode(BaseNode):
     """
     Start node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -321,7 +385,7 @@ class WhileLoopStartNode(BaseNode):
 
         try:
             loop_state_key = f"{self.node_id}_loop_state"
-            max_iterations = int(self.config.get("max_iterations") or 1000)
+            max_iterations = self.get_parameter("max_iterations", 1000)
 
             # Initialize or get loop state
             if loop_state_key not in context.variables:
@@ -341,12 +405,12 @@ class WhileLoopStartNode(BaseNode):
                     "next_nodes": ["completed"],
                 }
 
-            # Evaluate condition
+            # Evaluate condition from input port first
             condition = self.get_input_value("condition")
 
             # If no input, check config for expression
             if condition is None:
-                expression = self.config.get("expression", "")
+                expression = self.get_parameter("expression", "")
                 if expression:
                     try:
                         if not is_safe_expression(expression):
@@ -398,6 +462,15 @@ class WhileLoopStartNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "paired_start_id",
+        PropertyType.STRING,
+        default="",
+        label="Paired Start ID",
+        tooltip="ID of the paired WhileLoopStartNode (set automatically)",
+    ),
+)
 class WhileLoopEndNode(BaseNode):
     """
     End node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -414,7 +487,7 @@ class WhileLoopEndNode(BaseNode):
         super().__init__(node_id, config)
         self.name = "While Loop End"
         self.node_type = "WhileLoopEndNode"
-        self.paired_start_id: str = config.get("paired_start_id", "") if config else ""
+        self.paired_start_id: str = self.get_parameter("paired_start_id", "")
 
     def _define_ports(self) -> None:
         """Define node ports."""
@@ -429,7 +502,9 @@ class WhileLoopEndNode(BaseNode):
         """Execute while loop end - signals to loop back to start."""
         self.status = NodeStatus.SUCCESS
 
-        loop_start_id = self.paired_start_id or self.config.get("paired_start_id", "")
+        loop_start_id = self.paired_start_id or self.get_parameter(
+            "paired_start_id", ""
+        )
 
         if not loop_start_id:
             logger.warning("WhileLoopEndNode has no paired WhileLoopStartNode")
@@ -546,6 +621,23 @@ class ContinueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "cases",
+        PropertyType.LIST,
+        default=[],
+        label="Cases",
+        tooltip="List of case values to match (e.g., ['success', 'error', 'pending'])",
+    ),
+    PropertyDef(
+        "expression",
+        PropertyType.STRING,
+        default="",
+        label="Expression",
+        tooltip="Expression to evaluate for value (optional if using input port)",
+        placeholder="{{status}}",
+    ),
+)
 class SwitchNode(BaseNode):
     """
     Multi-way branching node based on value matching.
@@ -566,7 +658,7 @@ class SwitchNode(BaseNode):
         self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
 
         # Get cases from config (e.g., ["success", "error", "pending"])
-        cases = self.config.get("cases", [])
+        cases = self.get_parameter("cases", [])
         for case in cases:
             self.add_output_port(f"case_{case}", PortType.EXEC_OUTPUT)
 
@@ -585,12 +677,12 @@ class SwitchNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get value to match
+            # Get value to match from input port first
             value = self.get_input_value("value")
 
             # If no value input, try expression
             if value is None:
-                expression = self.config.get("expression", "")
+                expression = self.get_parameter("expression", "")
                 if expression:
                     # Safely evaluate expression with context variables
                     if not is_safe_expression(expression):
@@ -601,7 +693,7 @@ class SwitchNode(BaseNode):
             value_str = str(value) if value is not None else ""
 
             # Check each case
-            cases = self.config.get("cases", [])
+            cases = self.get_parameter("cases", [])
             for case in cases:
                 if str(case) == value_str:
                     next_port = f"case_{case}"

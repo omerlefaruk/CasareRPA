@@ -9,7 +9,7 @@ from datetime import datetime
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 
-from casare_rpa.orchestrator.api.main import app
+from casare_rpa.infrastructure.orchestrator.api.main import app
 
 
 @pytest.fixture
@@ -124,7 +124,9 @@ def mock_collector():
 @pytest.fixture
 def client(mock_collector):
     """Create test client with mocked dependencies."""
-    from casare_rpa.orchestrator.api.dependencies import get_metrics_collector
+    from casare_rpa.infrastructure.orchestrator.api.dependencies import (
+        get_metrics_collector,
+    )
 
     # Override dependency
     app.dependency_overrides[get_metrics_collector] = lambda: mock_collector

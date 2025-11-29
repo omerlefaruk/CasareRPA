@@ -27,7 +27,7 @@ from casare_rpa.infrastructure.events import (
     MonitoringEventType,
     get_monitoring_event_bus,
 )
-from casare_rpa.orchestrator.api.routers.websockets import (
+from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
     ConnectionManager,
     live_jobs_manager,
     robot_status_manager,

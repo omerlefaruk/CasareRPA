@@ -42,14 +42,17 @@ import random
 
 import pytest
 
-from casare_rpa.orchestrator.models import (
+from casare_rpa.domain.orchestrator.entities import (
     Job,
     JobStatus,
     JobPriority,
     Robot,
     RobotStatus,
 )
-from casare_rpa.orchestrator.job_queue import JobQueue, JobStateMachine
+from casare_rpa.application.orchestrator.services.job_queue_manager import (
+    JobQueue,
+    JobStateMachine,
+)
 from casare_rpa.robot.coordination import (
     RobotCoordinator,
     InMemoryCoordinationRepository,

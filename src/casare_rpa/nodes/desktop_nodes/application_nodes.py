@@ -8,21 +8,81 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode as Node
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.nodes.utils.type_converters import safe_int
-from ...domain.value_objects.types import NodeStatus
+from ...domain.value_objects.types import NodeStatus, PortType, DataType
 from ...desktop import DesktopContext
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "application_path",
+        PropertyType.STRING,
+        required=True,
+        label="Application Path",
+        tooltip="Full path to the executable",
+        placeholder="C:\\Program Files\\App\\app.exe",
+    ),
+    PropertyDef(
+        "arguments",
+        PropertyType.STRING,
+        default="",
+        label="Arguments",
+        tooltip="Command line arguments",
+    ),
+    PropertyDef(
+        "working_directory",
+        PropertyType.STRING,
+        default="",
+        label="Working Directory",
+        tooltip="Starting directory for the application",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=10.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for application window",
+    ),
+    PropertyDef(
+        "window_title_hint",
+        PropertyType.STRING,
+        default="",
+        label="Window Title Hint",
+        tooltip="Expected window title to identify the application window",
+    ),
+    PropertyDef(
+        "window_state",
+        PropertyType.CHOICE,
+        default="normal",
+        choices=["normal", "maximized", "minimized"],
+        label="Window State",
+        tooltip="Initial window state after launch",
+    ),
+)
 class LaunchApplicationNode(Node):
     """
     Launch a Windows desktop application.
 
     Launches an application and returns its main window for further automation.
+
+    Config (via @node_schema):
+        application_path: Full path to the executable (required)
+        arguments: Command line arguments (default: "")
+        working_directory: Starting directory (default: "")
+        timeout: Maximum time to wait for window (default: 10.0 seconds)
+        window_title_hint: Expected window title (default: "")
+        window_state: Initial window state - normal/maximized/minimized (default: "normal")
+
+    Outputs:
+        window: Desktop window object for automation
+        process_id: Process ID of the launched application
+        window_title: Title of the application window
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Launch Application"
 
@@ -32,37 +92,19 @@ class LaunchApplicationNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Launch Application",
     ):
-        """
-        Initialize Launch Application node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {
-                "timeout": 10.0,
-                "window_title_hint": "",
-                "window_state": "normal",
-            }
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LaunchApplicationNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
         self.add_input_port("application_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("arguments", PortType.INPUT, DataType.STRING)
         self.add_input_port("working_directory", PortType.INPUT, DataType.STRING)
 
         # Output ports
-        self.add_output_port(
-            "window", PortType.OUTPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("process_id", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("window_title", PortType.OUTPUT, DataType.STRING)
 
@@ -76,46 +118,20 @@ class LaunchApplicationNode(Node):
         Returns:
             Dictionary with window, process_id, and window_title
         """
-        # Get inputs - try input ports first, then fall back to config (for GUI widgets)
-        app_path = self.get_input_value("application_path") or self.config.get(
-            "application_path", ""
-        )
-        arguments = self.get_input_value("arguments") or self.config.get(
-            "arguments", ""
-        )
-        working_dir = (
-            self.get_input_value("working_directory")
-            or self.config.get("working_directory")
-            or None
-        )
-
-        # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value"):
-            if app_path:
-                app_path = context.resolve_value(app_path)
-            if arguments:
-                arguments = context.resolve_value(arguments)
-            if working_dir:
-                working_dir = context.resolve_value(working_dir)
+        # Get parameters using new unified method
+        app_path = self.get_parameter("application_path", context)
+        arguments = self.get_parameter("arguments", context)
+        working_dir = self.get_parameter("working_directory", context) or None
+        timeout = self.get_parameter("timeout", context)
+        window_title_hint = self.get_parameter("window_title_hint", context)
+        window_state = self.get_parameter("window_state", context)
 
         if not app_path:
             error_msg = "Application path is required. Please enter the full path to the executable."
             logger.error(f"[{self.name}] {error_msg}")
-            logger.error(
-                f"[{self.name}] Input value: {self.get_input_value('application_path')}"
-            )
-            logger.error(
-                f"[{self.name}] Config value: {self.config.get('application_path')}"
-            )
-            logger.error(f"[{self.name}] Full config: {self.config}")
             self.status = NodeStatus.ERROR
             raise ValueError(error_msg)
 
-        # Get configuration
-        timeout = self.config.get("timeout", 10.0)
-        window_title_hint = self.get_input_value(
-            "window_title_hint"
-        ) or self.config.get("window_title_hint", "")
         # If no hint provided, try to guess from app name
         if not window_title_hint:
             import os
@@ -126,13 +142,11 @@ class LaunchApplicationNode(Node):
                 "calc": "Calculator",
                 "notepad": "Untitled - Notepad",
                 "explorer": "File Explorer",
-                "chrome": "Chrome",  # Will match "Google Chrome" or any Chrome window
+                "chrome": "Chrome",
                 "firefox": "Firefox",
                 "msedge": "Edge",
             }
             window_title_hint = title_map.get(app_name, app_name)
-
-        window_state = self.config.get("window_state", "normal")
 
         logger.info(f"[{self.name}] Launching application: {app_path}")
         logger.debug(f"[{self.name}] Arguments: {arguments}")
@@ -171,17 +185,13 @@ class LaunchApplicationNode(Node):
             # Apply window state if needed
             if window_state == "maximized":
                 try:
-                    window._control.GetWindowPattern().SetWindowVisualState(
-                        1
-                    )  # Maximized
+                    window._control.GetWindowPattern().SetWindowVisualState(1)
                     logger.debug(f"[{self.name}] Maximized window")
                 except Exception as ex:
                     logger.warning(f"[{self.name}] Could not maximize window: {ex}")
             elif window_state == "minimized":
                 try:
-                    window._control.GetWindowPattern().SetWindowVisualState(
-                        2
-                    )  # Minimized
+                    window._control.GetWindowPattern().SetWindowVisualState(2)
                     logger.debug(f"[{self.name}] Minimized window")
                 except Exception as ex:
                     logger.warning(f"[{self.name}] Could not minimize window: {ex}")
@@ -222,14 +232,42 @@ class LaunchApplicationNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "force_close",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Force Close",
+        tooltip="Forcefully terminate the application if graceful close fails",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait for application to close",
+    ),
+)
 class CloseApplicationNode(Node):
     """
     Close a Windows desktop application.
 
     Closes an application gracefully or forcefully.
+
+    Config (via @node_schema):
+        force_close: Forcefully terminate if graceful close fails (default: False)
+        timeout: Maximum time to wait for close (default: 5.0 seconds)
+
+    Inputs:
+        window: Desktop window object (from Launch Application)
+        process_id: Process ID to close
+        window_title: Window title to match
+
+    Outputs:
+        success: Whether the close operation succeeded
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Close Application"
 
@@ -239,28 +277,14 @@ class CloseApplicationNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Close Application",
     ):
-        """
-        Initialize Close Application node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"force_close": False, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "CloseApplicationNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("process_id", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
 
@@ -283,8 +307,8 @@ class CloseApplicationNode(Node):
         window_title = self.get_input_value("window_title")
 
         # Get configuration
-        force_close = self.config.get("force_close", False)
-        timeout = self.config.get("timeout", 5.0)
+        force_close = self.get_parameter("force_close", context)
+        timeout = self.get_parameter("timeout", context)
 
         # Validate inputs
         if not window and not process_id and not window_title:
@@ -322,14 +346,42 @@ class CloseApplicationNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "match_partial",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Match Partial",
+        tooltip="Allow partial title matching",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=5.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Maximum time to wait to find window",
+    ),
+)
 class ActivateWindowNode(Node):
     """
     Activate (bring to foreground) a Windows desktop window.
 
     Makes a window active and brings it to the foreground.
+
+    Config (via @node_schema):
+        match_partial: Allow partial title matching (default: True)
+        timeout: Maximum time to wait for window (default: 5.0 seconds)
+
+    Inputs:
+        window: Desktop window object (from Launch Application)
+        window_title: Window title to match
+
+    Outputs:
+        success: Whether the activation succeeded
+        window: The activated window object
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Activate Window"
 
@@ -339,35 +391,19 @@ class ActivateWindowNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Activate Window",
     ):
-        """
-        Initialize Activate Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"match_partial": True, "timeout": 5.0}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ActivateWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
         # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
 
         # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port(
-            "window", PortType.OUTPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context) -> Dict[str, Any]:
         """
@@ -383,13 +419,9 @@ class ActivateWindowNode(Node):
         window = self.get_input_value("window")
         window_title = self.get_input_value("window_title")
 
-        # Resolve {{variable}} patterns
-        if hasattr(context, "resolve_value") and window_title:
-            window_title = context.resolve_value(window_title)
-
         # Get configuration
-        match_partial = self.config.get("match_partial", True)
-        timeout = self.config.get("timeout", 5.0)
+        match_partial = self.get_parameter("match_partial", context)
+        timeout = self.get_parameter("timeout", context)
 
         # Validate inputs
         if not window and not window_title:
@@ -438,14 +470,37 @@ class ActivateWindowNode(Node):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "include_invisible",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Include Invisible",
+        tooltip="Include invisible windows in the list",
+    ),
+    PropertyDef(
+        "filter_title",
+        PropertyType.STRING,
+        default="",
+        label="Filter Title",
+        tooltip="Filter windows by title (partial match)",
+    ),
+)
 class GetWindowListNode(Node):
     """
     Get a list of all open Windows desktop windows.
 
     Returns information about all currently open windows.
+
+    Config (via @node_schema):
+        include_invisible: Include invisible windows (default: False)
+        filter_title: Filter windows by title (default: "")
+
+    Outputs:
+        window_list: List of window information dictionaries
+        window_count: Number of windows found
     """
 
-    # Node metadata
     __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Window List"
 
@@ -455,25 +510,12 @@ class GetWindowListNode(Node):
         config: Dict[str, Any] = None,
         name: str = "Get Window List",
     ):
-        """
-        Initialize Get Window List node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {"include_invisible": False, "filter_title": ""}
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetWindowListNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
         # Output ports
         self.add_output_port("window_list", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("window_count", PortType.OUTPUT, DataType.INTEGER)
@@ -489,8 +531,8 @@ class GetWindowListNode(Node):
             Dictionary with window_list and window_count
         """
         # Get configuration
-        include_invisible = self.config.get("include_invisible", False)
-        filter_title = self.config.get("filter_title", "")
+        include_invisible = self.get_parameter("include_invisible", context)
+        filter_title = self.get_parameter("filter_title", context)
 
         logger.info(f"[{self.name}] Getting window list")
 

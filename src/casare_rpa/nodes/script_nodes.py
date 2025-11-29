@@ -19,7 +19,8 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -30,12 +31,29 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.utils.type_converters import safe_int
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Execution timeout in seconds (default: 60)",
+    ),
+    PropertyDef(
+        "isolated",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Isolated",
+        tooltip="Run in isolated subprocess (default: False)",
+    ),
+)
 @executable_node
 class RunPythonScriptNode(BaseNode):
     """
     Execute Python code inline.
 
-    Config:
+    Config (via @node_schema):
         timeout: Execution timeout in seconds (default: 60)
         isolated: Run in isolated subprocess (default: False)
 
@@ -68,12 +86,11 @@ class RunPythonScriptNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            code = str(self.get_input_value("code", context) or "")
-            variables = self.get_input_value("variables", context) or {}
-            timeout = safe_int(self.config.get("timeout"), 60)
-            isolated = self.config.get("isolated", False)
+            code = str(self.get_parameter("code", ""))
+            variables = self.get_parameter("variables", {})
+            timeout = self.get_parameter("timeout", 60)
+            isolated = self.get_parameter("isolated", False)
 
-            # Resolve {{variable}} patterns in code
             code = context.resolve_value(code)
 
             if not code:
@@ -83,12 +100,10 @@ class RunPythonScriptNode(BaseNode):
                 variables = {}
 
             if isolated:
-                # Run in subprocess
                 result, output, error = await self._run_isolated(
                     code, variables, timeout
                 )
             else:
-                # Run inline (faster but shares memory)
                 result, output, error = self._run_inline(code, variables)
 
             success = error == ""
@@ -118,10 +133,8 @@ class RunPythonScriptNode(BaseNode):
         import io
         from contextlib import redirect_stdout
 
-        # Capture stdout
         output_buffer = io.StringIO()
 
-        # Prepare execution namespace
         namespace = {"__builtins__": __builtins__, "result": None, **variables}
 
         error = ""
@@ -146,7 +159,6 @@ class RunPythonScriptNode(BaseNode):
         """Execute Python code in isolated subprocess."""
         import json
 
-        # Create wrapper script
         wrapper = f"""
 import sys
 import json
@@ -181,7 +193,6 @@ print("__RESULT__:" + json.dumps(result, default=str))
             output = proc.stdout
             error = proc.stderr
 
-            # Extract result
             result = None
             if "__RESULT__:" in output:
                 result_line = [
@@ -205,16 +216,57 @@ print("__RESULT__:" + json.dumps(result, default=str))
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Execution timeout in seconds (default: 60)",
+    ),
+    PropertyDef(
+        "python_path",
+        PropertyType.STRING,
+        default=sys.executable,
+        label="Python Path",
+        tooltip="Python interpreter path (default: current)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure (default: 0)",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in ms (default: 1000)",
+    ),
+    PropertyDef(
+        "retry_on_nonzero",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Retry on Non-Zero",
+        tooltip="Retry if return code is non-zero (default: False)",
+    ),
+)
 @executable_node
 class RunPythonFileNode(BaseNode):
     """
     Execute a Python file.
 
-    Config:
+    Config (via @node_schema):
         timeout: Execution timeout in seconds (default: 60)
         python_path: Python interpreter path (default: current)
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries in ms (default: 1000)
+        retry_on_nonzero: Retry if return code is non-zero (default: False)
 
     Inputs:
         file_path: Path to Python file
@@ -229,21 +281,7 @@ class RunPythonFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Run Python File", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "timeout": 60,
-            "python_path": sys.executable,
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "retry_on_nonzero": False,  # Retry if return code is non-zero
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RunPythonFileNode"
@@ -261,18 +299,15 @@ class RunPythonFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = str(self.get_input_value("file_path", context) or "")
-            args = self.get_input_value("args", context)
-            working_dir = self.get_input_value("working_dir", context)
-            timeout = safe_int(self.config.get("timeout"), 60)
-            python_path = self.config.get("python_path", sys.executable)
+            file_path = str(self.get_parameter("file_path", ""))
+            args = self.get_parameter("args")
+            working_dir = self.get_parameter("working_dir")
+            timeout = self.get_parameter("timeout", 60)
+            python_path = self.get_parameter("python_path", sys.executable)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
+            retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
 
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            retry_on_nonzero = self.config.get("retry_on_nonzero", False)
-
-            # Resolve {{variable}} patterns
             file_path = context.resolve_value(file_path)
             python_path = context.resolve_value(python_path)
             if working_dir:
@@ -285,7 +320,6 @@ class RunPythonFileNode(BaseNode):
             if not path.exists():
                 raise FileNotFoundError(f"Python file not found: {file_path}")
 
-            # Build command
             cmd = [python_path, str(path)]
 
             if args:
@@ -321,7 +355,6 @@ class RunPythonFileNode(BaseNode):
                     return_code = result.returncode
                     success = return_code == 0
 
-                    # Check if we should retry on non-zero return code
                     if not success and retry_on_nonzero and attempts < max_attempts:
                         logger.warning(
                             f"Python file returned non-zero ({return_code}), retrying..."
@@ -367,7 +400,6 @@ class RunPythonFileNode(BaseNode):
                     else:
                         break
 
-            # All attempts failed
             if isinstance(last_error, subprocess.TimeoutExpired):
                 self.set_output_value("stdout", "")
                 self.set_output_value("stderr", f"Execution timed out after {timeout}s")
@@ -428,10 +460,9 @@ class EvalExpressionNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            expression = str(self.get_input_value("expression", context) or "")
-            variables = self.get_input_value("variables", context) or {}
+            expression = str(self.get_parameter("expression", ""))
+            variables = self.get_parameter("variables", {})
 
-            # Resolve {{variable}} patterns in expression
             expression = context.resolve_value(expression)
 
             if not expression:
@@ -440,7 +471,6 @@ class EvalExpressionNode(BaseNode):
             if not isinstance(variables, dict):
                 variables = {}
 
-            # Provide safe builtins
             safe_builtins = {
                 "abs": abs,
                 "all": all,
@@ -509,15 +539,49 @@ class EvalExpressionNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Execution timeout in seconds (default: 60)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure (default: 0)",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in ms (default: 1000)",
+    ),
+    PropertyDef(
+        "retry_on_nonzero",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Retry on Non-Zero",
+        tooltip="Retry if return code is non-zero (default: False)",
+    ),
+)
 @executable_node
 class RunBatchScriptNode(BaseNode):
     """
     Execute a batch script (Windows) or shell script (Unix).
 
-    Config:
+    Config (via @node_schema):
         timeout: Execution timeout in seconds (default: 60)
         retry_count: Number of retries on failure (default: 0)
         retry_interval: Delay between retries in ms (default: 1000)
+        retry_on_nonzero: Retry if return code is non-zero (default: False)
 
     Inputs:
         script: Script content to execute
@@ -531,20 +595,7 @@ class RunBatchScriptNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Run Batch Script", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "timeout": 60,
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "retry_on_nonzero": False,  # Retry if return code is non-zero
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RunBatchScriptNode"
@@ -561,16 +612,13 @@ class RunBatchScriptNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            script = str(self.get_input_value("script", context) or "")
-            working_dir = self.get_input_value("working_dir", context)
-            timeout = safe_int(self.config.get("timeout"), 60)
+            script = str(self.get_parameter("script", ""))
+            working_dir = self.get_parameter("working_dir")
+            timeout = self.get_parameter("timeout", 60)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
+            retry_on_nonzero = self.get_parameter("retry_on_nonzero", False)
 
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            retry_on_nonzero = self.config.get("retry_on_nonzero", False)
-
-            # Resolve {{variable}} patterns
             script = context.resolve_value(script)
             if working_dir:
                 working_dir = context.resolve_value(working_dir)
@@ -578,7 +626,6 @@ class RunBatchScriptNode(BaseNode):
             if not script:
                 raise ValueError("script is required")
 
-            # Determine script extension based on platform
             if sys.platform == "win32":
                 suffix = ".bat"
             else:
@@ -599,7 +646,6 @@ class RunBatchScriptNode(BaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for batch script"
                         )
 
-                    # Create temp file for each attempt
                     with tempfile.NamedTemporaryFile(
                         mode="w", suffix=suffix, delete=False
                     ) as f:
@@ -633,7 +679,6 @@ class RunBatchScriptNode(BaseNode):
                             os.unlink(script_path)
                             script_path = None
 
-                    # Check if we should retry on non-zero return code
                     if not success and retry_on_nonzero and attempts < max_attempts:
                         logger.warning(
                             f"Batch script returned non-zero ({return_code}), retrying..."
@@ -685,7 +730,6 @@ class RunBatchScriptNode(BaseNode):
                     else:
                         break
 
-            # All attempts failed
             if isinstance(last_error, subprocess.TimeoutExpired):
                 self.set_output_value("stdout", "")
                 self.set_output_value("stderr", f"Execution timed out after {timeout}s")
@@ -712,12 +756,29 @@ class RunBatchScriptNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Execution timeout in seconds (default: 60)",
+    ),
+    PropertyDef(
+        "node_path",
+        PropertyType.STRING,
+        default="node",
+        label="Node.js Path",
+        tooltip="Path to Node.js executable (default: 'node')",
+    ),
+)
 @executable_node
 class RunJavaScriptNode(BaseNode):
     """
     Execute JavaScript code using Node.js.
 
-    Config:
+    Config (via @node_schema):
         timeout: Execution timeout in seconds (default: 60)
         node_path: Path to Node.js executable (default: 'node')
 
@@ -750,19 +811,17 @@ class RunJavaScriptNode(BaseNode):
         try:
             import json
 
-            code = str(self.get_input_value("code", context) or "")
-            input_data = self.get_input_value("input_data", context)
-            timeout = safe_int(self.config.get("timeout"), 60)
-            node_path = self.config.get("node_path", "node")
+            code = str(self.get_parameter("code", ""))
+            input_data = self.get_parameter("input_data")
+            timeout = self.get_parameter("timeout", 60)
+            node_path = self.get_parameter("node_path", "node")
 
-            # Resolve {{variable}} patterns
             code = context.resolve_value(code)
             node_path = context.resolve_value(node_path)
 
             if not code:
                 raise ValueError("code is required")
 
-            # Create wrapper script
             wrapper = f"""
 const inputData = {json.dumps(input_data)};
 

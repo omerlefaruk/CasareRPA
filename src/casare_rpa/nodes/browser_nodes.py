@@ -9,7 +9,8 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -22,6 +23,118 @@ from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 
 
+@node_schema(
+    PropertyDef(
+        "browser_type",
+        PropertyType.CHOICE,
+        default=DEFAULT_BROWSER,
+        choices=["chromium", "firefox", "webkit"],
+        label="Browser Type",
+        tooltip="Browser to launch (chromium, firefox, or webkit)",
+    ),
+    PropertyDef(
+        "headless",
+        PropertyType.BOOLEAN,
+        default=HEADLESS_MODE,
+        label="Headless Mode",
+        tooltip="Run browser without visible window",
+    ),
+    PropertyDef(
+        "slow_mo",
+        PropertyType.INTEGER,
+        default=0,
+        label="Slow Motion (ms)",
+        tooltip="Slow down operations by milliseconds (for debugging)",
+        min_value=0,
+    ),
+    PropertyDef(
+        "channel",
+        PropertyType.STRING,
+        default="",
+        label="Browser Channel",
+        tooltip="Browser channel (chrome, msedge, chrome-beta) - chromium only",
+        placeholder="chrome, msedge, etc.",
+    ),
+    PropertyDef(
+        "viewport_width",
+        PropertyType.INTEGER,
+        default=1280,
+        label="Viewport Width",
+        tooltip="Browser viewport width in pixels",
+        min_value=1,
+    ),
+    PropertyDef(
+        "viewport_height",
+        PropertyType.INTEGER,
+        default=720,
+        label="Viewport Height",
+        tooltip="Browser viewport height in pixels",
+        min_value=1,
+    ),
+    PropertyDef(
+        "user_agent",
+        PropertyType.STRING,
+        default="",
+        label="User Agent",
+        tooltip="Custom user agent string",
+        placeholder="Mozilla/5.0 ...",
+    ),
+    PropertyDef(
+        "locale",
+        PropertyType.STRING,
+        default="",
+        label="Locale",
+        tooltip="Browser locale (e.g., en-US, es-ES)",
+        placeholder="en-US",
+    ),
+    PropertyDef(
+        "timezone_id",
+        PropertyType.STRING,
+        default="",
+        label="Timezone ID",
+        tooltip="Timezone identifier (e.g., America/New_York)",
+        placeholder="America/New_York",
+    ),
+    PropertyDef(
+        "color_scheme",
+        PropertyType.CHOICE,
+        default="light",
+        choices=["light", "dark", "no-preference"],
+        label="Color Scheme",
+        tooltip="Preferred color scheme for the browser",
+    ),
+    PropertyDef(
+        "ignore_https_errors",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore HTTPS Errors",
+        tooltip="Ignore HTTPS certificate errors",
+    ),
+    PropertyDef(
+        "proxy_server",
+        PropertyType.STRING,
+        default="",
+        label="Proxy Server",
+        tooltip="Proxy server URL",
+        placeholder="http://proxy.example.com:8080",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        min_value=0,
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        min_value=0,
+    ),
+)
 @executable_node
 class LaunchBrowserNode(BaseNode):
     """
@@ -35,8 +148,6 @@ class LaunchBrowserNode(BaseNode):
         self,
         node_id: str,
         name: str = "Launch Browser",
-        browser_type: str = DEFAULT_BROWSER,
-        headless: bool = HEADLESS_MODE,
         **kwargs,
     ) -> None:
         """
@@ -45,45 +156,15 @@ class LaunchBrowserNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            browser_type: Browser to launch (chromium, firefox, webkit)
-            headless: Whether to run in headless mode
         """
-        # Default config with all Playwright options
-        default_config = {
-            "browser_type": browser_type,
-            "headless": headless,
-            # Performance options
-            "slow_mo": 0,  # Slow down operations by ms (for debugging)
-            "channel": "",  # Browser channel (chrome, msedge, chrome-beta)
-            # Viewport options
-            "viewport_width": 1280,
-            "viewport_height": 720,
-            # Browser identity options
-            "user_agent": "",  # Custom user agent string
-            "locale": "",  # Locale (e.g., "en-US")
-            "timezone_id": "",  # Timezone (e.g., "America/New_York")
-            "color_scheme": "light",  # Preferred color scheme (light/dark/no-preference)
-            # Security options
-            "ignore_https_errors": False,
-            "proxy_server": "",  # Proxy server URL
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LaunchBrowserNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("url", PortType.INPUT, DataType.STRING)
+        self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
@@ -99,10 +180,9 @@ class LaunchBrowserNode(BaseNode):
         """
         self.status = NodeStatus.RUNNING
 
-        # Helper to safely parse int values with defaults
         # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+        retry_count = self.get_parameter("retry_count", 0)
+        retry_interval = self.get_parameter("retry_interval", 2000)
 
         last_error = None
         attempts = 0
@@ -118,8 +198,8 @@ class LaunchBrowserNode(BaseNode):
 
                 from playwright.async_api import async_playwright
 
-                browser_type = self.config.get("browser_type", DEFAULT_BROWSER)
-                headless = self.config.get("headless", HEADLESS_MODE)
+                browser_type = self.get_parameter("browser_type", DEFAULT_BROWSER)
+                headless = self.get_parameter("headless", HEADLESS_MODE)
 
                 logger.info(f"Launching {browser_type} browser (headless={headless})")
 
@@ -127,18 +207,12 @@ class LaunchBrowserNode(BaseNode):
                 launch_options = {"headless": headless}
 
                 # Add slow_mo if specified (for debugging)
-                slow_mo = self.config.get("slow_mo", 0)
-                # Handle empty strings and convert to int safely
-                if slow_mo and str(slow_mo).strip():
-                    try:
-                        slow_mo_int = int(slow_mo)
-                        if slow_mo_int > 0:
-                            launch_options["slow_mo"] = slow_mo_int
-                    except (ValueError, TypeError):
-                        pass  # Ignore invalid slow_mo values
+                slow_mo = self.get_parameter("slow_mo", 0)
+                if slow_mo > 0:
+                    launch_options["slow_mo"] = slow_mo
 
                 # Add channel for chromium-based browsers
-                channel = self.config.get("channel", "")
+                channel = self.get_parameter("channel", "")
                 if channel and browser_type == "chromium":
                     launch_options["channel"] = channel
 
@@ -161,40 +235,40 @@ class LaunchBrowserNode(BaseNode):
                 # Build browser context options
                 context_options = {}
 
-                # Viewport settings - safely parse with defaults (using safe_int defined above)
-                viewport_width = safe_int(self.config.get("viewport_width"), 1280)
-                viewport_height = safe_int(self.config.get("viewport_height"), 720)
+                # Viewport settings
+                viewport_width = self.get_parameter("viewport_width", 1280)
+                viewport_height = self.get_parameter("viewport_height", 720)
                 context_options["viewport"] = {
                     "width": viewport_width,
                     "height": viewport_height,
                 }
 
                 # User agent
-                user_agent = self.config.get("user_agent", "")
+                user_agent = self.get_parameter("user_agent", "")
                 if user_agent:
                     context_options["user_agent"] = user_agent
 
                 # Locale
-                locale = self.config.get("locale", "")
+                locale = self.get_parameter("locale", "")
                 if locale:
                     context_options["locale"] = locale
 
                 # Timezone
-                timezone_id = self.config.get("timezone_id", "")
+                timezone_id = self.get_parameter("timezone_id", "")
                 if timezone_id:
                     context_options["timezone_id"] = timezone_id
 
                 # Color scheme
-                color_scheme = self.config.get("color_scheme", "light")
+                color_scheme = self.get_parameter("color_scheme", "light")
                 if color_scheme and color_scheme != "light":
                     context_options["color_scheme"] = color_scheme
 
                 # HTTPS errors
-                if self.config.get("ignore_https_errors", False):
+                if self.get_parameter("ignore_https_errors", False):
                     context_options["ignore_https_errors"] = True
 
                 # Proxy
-                proxy_server = self.config.get("proxy_server", "")
+                proxy_server = self.get_parameter("proxy_server", "")
                 if proxy_server:
                     context_options["proxy"] = {"server": proxy_server}
 
@@ -206,11 +280,7 @@ class LaunchBrowserNode(BaseNode):
                 page = await browser_context.new_page()
 
                 # Navigate to URL if provided
-                # Check input port first, then config
-                url = self.get_input_value("url")
-                if url is None:
-                    # Only use config if no input connection exists
-                    url = self.config.get("url", "")
+                url = self.get_parameter("url", "")
 
                 # Strip whitespace and normalize to empty string if None or whitespace-only
                 url = url.strip() if url else ""
@@ -274,12 +344,45 @@ class LaunchBrowserNode(BaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        browser_type = self.config.get("browser_type", "")
+        browser_type = self.get_parameter("browser_type", "")
         if browser_type not in ["chromium", "firefox", "webkit"]:
             return False, f"Invalid browser type: {browser_type}"
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30000,
+        label="Timeout (ms)",
+        tooltip="Timeout for close operation in milliseconds",
+        min_value=0,
+    ),
+    PropertyDef(
+        "force_close",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Force Close",
+        tooltip="Force close even if pages have unsaved changes",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        min_value=0,
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        min_value=0,
+    ),
+)
 @executable_node
 class CloseBrowserNode(BaseNode):
     """
@@ -296,27 +399,14 @@ class CloseBrowserNode(BaseNode):
             node_id: Unique identifier for this node
             name: Display name for the node
         """
-        # Default config with close options
-        default_config = {
-            "timeout": 30000,  # Timeout for close operation in ms
-            "force_close": False,  # Force close even if pages have unsaved changes
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "CloseBrowserNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER)
+        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -340,8 +430,8 @@ class CloseBrowserNode(BaseNode):
                 raise ValueError("No browser instance found to close")
 
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
 
             logger.info("Closing browser")
 
@@ -379,6 +469,71 @@ class CloseBrowserNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "tab_name",
+        PropertyType.STRING,
+        default="main",
+        label="Tab Name",
+        tooltip="Name to identify this tab",
+        required=True,
+    ),
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        default="",
+        label="URL",
+        tooltip="Optional URL to navigate to after creating tab",
+        placeholder="https://example.com",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30000,
+        label="Timeout (ms)",
+        tooltip="Navigation timeout in milliseconds",
+        min_value=0,
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        label="Wait Until",
+        tooltip="Navigation wait event",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        min_value=0,
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        min_value=0,
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Failure",
+        tooltip="Take screenshot when tab creation fails",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.FILE_PATH,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        placeholder="screenshots/error.png",
+    ),
+)
 @executable_node
 class NewTabNode(BaseNode):
     """
@@ -387,44 +542,22 @@ class NewTabNode(BaseNode):
     Opens a new tab in the browser and optionally sets it as active.
     """
 
-    def __init__(
-        self, node_id: str, name: str = "New Tab", tab_name: str = "main", **kwargs
-    ) -> None:
+    def __init__(self, node_id: str, name: str = "New Tab", **kwargs) -> None:
         """
         Initialize new tab node.
 
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            tab_name: Name to identify this tab
         """
-        # Default config with all options
-        default_config = {
-            "tab_name": tab_name,
-            "url": "",  # Optional URL to navigate to after creating tab
-            "timeout": 30000,  # Navigation timeout in ms
-            "wait_until": "load",  # Navigation wait event
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "NewTabNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port(
-            "browser", PortType.INPUT, DataType.BROWSER, required=False
-        )  # Optional: uses context browser if not connected
+        self.add_input_port("browser", PortType.INPUT, DataType.BROWSER, required=False)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -448,19 +581,14 @@ class NewTabNode(BaseNode):
             if browser is None:
                 raise ValueError("No browser instance found")
 
-            tab_name = self.config.get("tab_name", "main")
-            url = self.config.get("url", "")
-
-            # Helper to safely parse int values with defaults
-            # Safely parse timeout
-            timeout = safe_int(self.config.get("timeout"), 30000)
-            wait_until = self.config.get("wait_until", "load")
-
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            tab_name = self.get_parameter("tab_name", "main")
+            url = self.get_parameter("url", "")
+            timeout = self.get_parameter("timeout", 30000)
+            wait_until = self.get_parameter("wait_until", "load")
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             logger.info(f"Creating new tab: {tab_name}")
 
@@ -561,12 +689,45 @@ class NewTabNode(BaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        tab_name = self.config.get("tab_name", "")
+        tab_name = self.get_parameter("tab_name", "")
         if not tab_name:
             return False, "Tab name cannot be empty"
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "min_width",
+        PropertyType.INTEGER,
+        default=0,
+        label="Min Width (px)",
+        tooltip="Minimum image width in pixels (0 = no filter)",
+        min_value=0,
+    ),
+    PropertyDef(
+        "min_height",
+        PropertyType.INTEGER,
+        default=0,
+        label="Min Height (px)",
+        tooltip="Minimum image height in pixels (0 = no filter)",
+        min_value=0,
+    ),
+    PropertyDef(
+        "include_backgrounds",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Backgrounds",
+        tooltip="Include CSS background images",
+    ),
+    PropertyDef(
+        "file_types",
+        PropertyType.STRING,
+        default="",
+        label="File Types",
+        tooltip="Comma-separated file extensions to include (empty = all)",
+        placeholder="jpg,png,webp",
+    ),
+)
 @executable_node
 class GetAllImagesNode(BaseNode):
     """
@@ -575,27 +736,14 @@ class GetAllImagesNode(BaseNode):
     Extracts all image URLs (from <img> tags and CSS background images)
     from the current page. Can filter by minimum size and file type.
 
-    Config:
-        - min_width: Minimum image width in pixels (0 = no filter)
-        - min_height: Minimum image height in pixels (0 = no filter)
-        - include_backgrounds: Include CSS background images
-        - file_types: Comma-separated file extensions to include (empty = all)
-
     Outputs:
         - images: List of image URLs
         - count: Number of images found
     """
 
     def __init__(self, node_id: str, name: str = "Get All Images", **kwargs) -> None:
-        default_config = {
-            "min_width": 0,
-            "min_height": 0,
-            "include_backgrounds": True,
-            "file_types": "",  # e.g., "jpg,png,webp"
-        }
         config = kwargs.get("config", {})
-        merged_config = {**default_config, **config}
-        super().__init__(node_id, merged_config)
+        super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetAllImagesNode"
 
@@ -611,11 +759,10 @@ class GetAllImagesNode(BaseNode):
             if not page:
                 raise ValueError("No active page. Launch browser and navigate first.")
 
-            # Handle empty strings from UI text inputs gracefully
-            min_width = int(self.config.get("min_width") or 0)
-            min_height = int(self.config.get("min_height") or 0)
-            include_backgrounds = self.config.get("include_backgrounds", True)
-            file_types_str = self.config.get("file_types") or ""
+            min_width = self.get_parameter("min_width", 0)
+            min_height = self.get_parameter("min_height", 0)
+            include_backgrounds = self.get_parameter("include_backgrounds", True)
+            file_types_str = self.get_parameter("file_types", "")
 
             # Parse allowed file types
             allowed_types = []
@@ -738,6 +885,38 @@ class GetAllImagesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "save_path",
+        PropertyType.FILE_PATH,
+        default="",
+        label="Save Path",
+        tooltip="Local file path to save to (supports {{variables}})",
+        placeholder="C:/downloads/file.pdf",
+    ),
+    PropertyDef(
+        "use_browser",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Browser Context",
+        tooltip="Use browser context for download (for authenticated sites)",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30000,
+        label="Timeout (ms)",
+        tooltip="Download timeout in milliseconds",
+        min_value=0,
+    ),
+    PropertyDef(
+        "overwrite",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Overwrite Existing",
+        tooltip="Overwrite existing file if it exists",
+    ),
+)
 @executable_node
 class DownloadFileNode(BaseNode):
     """
@@ -746,12 +925,6 @@ class DownloadFileNode(BaseNode):
     Downloads any file (image, document, etc.) from a URL and saves it
     to a local file path. Supports both direct URL downloads and
     downloading through the browser context for authenticated sessions.
-
-    Config:
-        - save_path: Local file path to save to (supports {{variables}})
-        - use_browser: Use browser context for download (for authenticated sites)
-        - timeout: Download timeout in milliseconds
-        - overwrite: Overwrite existing file if it exists
 
     Inputs:
         - url: URL of the file to download
@@ -764,22 +937,15 @@ class DownloadFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Download File", **kwargs) -> None:
-        default_config = {
-            "save_path": "",  # Directory or full path
-            "use_browser": False,
-            "timeout": 30000,
-            "overwrite": True,
-        }
         config = kwargs.get("config", {})
-        merged_config = {**default_config, **config}
-        super().__init__(node_id, merged_config)
+        super().__init__(node_id, config)
         self.name = name
         self.node_type = "DownloadFileNode"
 
     def _define_ports(self) -> None:
         """Define input and output ports."""
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
-        self.add_input_port("filename", PortType.INPUT, DataType.STRING)
+        self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
@@ -792,7 +958,7 @@ class DownloadFileNode(BaseNode):
         from urllib.parse import urlparse, unquote
 
         try:
-            url = self.get_input_value("url")
+            url = self.get_parameter("url")
             filename_override = self.get_input_value("filename")
 
             # Resolve variables
@@ -805,13 +971,13 @@ class DownloadFileNode(BaseNode):
             if not url:
                 raise ValueError("URL is required")
 
-            save_path = self.config.get("save_path", "")
+            save_path = self.get_parameter("save_path", "")
             if hasattr(context, "resolve_value") and save_path:
                 save_path = context.resolve_value(save_path)
 
-            use_browser = self.config.get("use_browser", False)
-            timeout = int(self.config.get("timeout") or 30000)
-            overwrite = self.config.get("overwrite", True)
+            use_browser = self.get_parameter("use_browser", False)
+            timeout = self.get_parameter("timeout", 30000)
+            overwrite = self.get_parameter("overwrite", True)
 
             # Determine filename
             if filename_override:

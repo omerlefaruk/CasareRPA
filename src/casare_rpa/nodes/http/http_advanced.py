@@ -22,7 +22,8 @@ from aiohttp import ClientTimeout, FormData
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -33,29 +34,52 @@ from casare_rpa.domain.value_objects.types import (
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "header_name",
+        PropertyType.STRING,
+        default="",
+        label="Header Name",
+        tooltip="Single header name to add",
+    ),
+    PropertyDef(
+        "header_value",
+        PropertyType.STRING,
+        default="",
+        label="Header Value",
+        tooltip="Single header value to add",
+    ),
+    PropertyDef(
+        "headers_json",
+        PropertyType.JSON,
+        default={},
+        label="Headers JSON",
+        tooltip="Multiple headers as JSON object",
+    ),
+)
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
 
+    Config (via @node_schema):
+        header_name: Single header name
+        header_value: Single header value
+        headers_json: Multiple headers as dict
+
     Inputs:
-        - exec_in: Execution input
-        - base_headers: Existing headers to extend
-        - header_name: Header name to add
-        - header_value: Header value to add
-        - headers_json: Headers as JSON string
+        base_headers: Existing headers to extend
+        header_name: Header name override
+        header_value: Header value override
+        headers_json: Headers JSON override
 
     Outputs:
-        - exec_out: Execution output
-        - headers: Combined headers dict
+        headers: Combined headers dict
     """
 
     def __init__(
         self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any
     ) -> None:
         config = kwargs.get("config", {})
-        config.setdefault("header_name", "")
-        config.setdefault("header_value", "")
-        config.setdefault("headers_json", "{}")
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SetHttpHeadersNode"
@@ -64,7 +88,7 @@ class SetHttpHeadersNode(BaseNode):
         self.add_input_port("base_headers", PortType.INPUT, DataType.DICT)
         self.add_input_port("header_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("header_value", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers_json", PortType.INPUT, DataType.STRING)
+        self.add_input_port("headers_json", PortType.INPUT, DataType.DICT)
 
         self.add_output_port("headers", PortType.OUTPUT, DataType.DICT)
 
@@ -73,25 +97,22 @@ class SetHttpHeadersNode(BaseNode):
 
         try:
             base_headers = self.get_input_value("base_headers") or {}
-            header_name = self.get_input_value("header_name") or self.config.get(
-                "header_name", ""
-            )
-            header_value = self.get_input_value("header_value") or self.config.get(
-                "header_value", ""
-            )
-            headers_json = self.get_input_value("headers_json") or self.config.get(
-                "headers_json", "{}"
-            )
+            header_name = self.get_parameter("header_name", "")
+            header_value = self.get_parameter("header_value", "")
+            headers_json = self.get_parameter("headers_json", {})
 
             headers = dict(base_headers)
 
             if headers_json:
-                try:
-                    json_headers = json.loads(headers_json)
-                    if isinstance(json_headers, dict):
-                        headers.update(json_headers)
-                except json.JSONDecodeError:
-                    pass
+                if isinstance(headers_json, str):
+                    try:
+                        json_headers = json.loads(headers_json)
+                        if isinstance(json_headers, dict):
+                            headers.update(json_headers)
+                    except json.JSONDecodeError:
+                        pass
+                elif isinstance(headers_json, dict):
+                    headers.update(headers_json)
 
             if header_name and header_value:
                 headers[header_name] = header_value
@@ -115,26 +136,44 @@ class SetHttpHeadersNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "path",
+        PropertyType.STRING,
+        default="",
+        label="JSON Path",
+        tooltip="Path to extract (e.g., 'data.users[0].name')",
+        placeholder="data.items[0].name",
+    ),
+    PropertyDef(
+        "default",
+        PropertyType.STRING,
+        default="",
+        label="Default Value",
+        tooltip="Default value if path not found",
+    ),
+)
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
 
+    Config (via @node_schema):
+        path: Path to extract (dot notation)
+        default: Default value if path not found
+
     Inputs:
-        - exec_in: Execution input
-        - json_data: JSON string or dict to parse
-        - path: Path to extract (e.g., "data.users[0].name" or "results.*.id")
-        - default: Default value if path not found
+        json_data: JSON string or dict to parse
+        path: Path override
+        default: Default value override
 
     Outputs:
-        - exec_out: Execution output
-        - value: Extracted value
-        - success: True if extraction succeeded
+        value: Extracted value
+        success: True if extraction succeeded
+        error: Error message if failed
     """
 
     def __init__(self, node_id: str, name: str = "Parse JSON", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
-        config.setdefault("path", "")
-        config.setdefault("default", None)
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ParseJsonResponseNode"
@@ -182,8 +221,8 @@ class ParseJsonResponseNode(BaseNode):
 
         try:
             json_data = self.get_input_value("json_data")
-            path = self.get_input_value("path") or self.config.get("path", "")
-            default = self.get_input_value("default") or self.config.get("default")
+            path = self.get_parameter("path", "")
+            default = self.get_parameter("default")
 
             if isinstance(json_data, str):
                 try:
@@ -224,47 +263,111 @@ class ParseJsonResponseNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="URL to download from",
+        placeholder="https://example.com/file.pdf",
+    ),
+    PropertyDef(
+        "save_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="Save Path",
+        tooltip="Path to save downloaded file",
+        placeholder="C:\\Downloads\\file.pdf",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=300.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Download timeout in seconds",
+    ),
+    PropertyDef(
+        "overwrite",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Overwrite Existing",
+        tooltip="Overwrite file if it already exists",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "proxy",
+        PropertyType.STRING,
+        default="",
+        label="Proxy URL",
+        tooltip="HTTP proxy URL (optional)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=2.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+    PropertyDef(
+        "chunk_size",
+        PropertyType.INTEGER,
+        default=8192,
+        min_value=512,
+        label="Chunk Size (bytes)",
+        tooltip="Download chunk size in bytes",
+    ),
+)
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
 
+    Config (via @node_schema):
+        url: URL to download from (required)
+        save_path: Path to save file (required)
+        headers: Request headers
+        timeout: Download timeout
+        overwrite: Overwrite existing file
+        verify_ssl: Verify SSL certificates
+        proxy: Proxy URL (optional)
+        retry_count: Retry attempts
+        retry_delay: Delay between retries
+        chunk_size: Download chunk size
+
     Inputs:
-        - exec_in: Execution input
-        - url: URL to download from (required)
-        - save_path: Path to save file (required)
-        - headers: Request headers
-        - timeout: Download timeout in seconds
-        - overwrite: Overwrite existing file
+        url, save_path, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - file_path: Path to downloaded file
-        - file_size: Size of downloaded file in bytes
-        - success: True if download succeeded
+        file_path, file_size, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "HTTP Download File", **kwargs: Any
     ) -> None:
-        default_config = {
-            "url": "",
-            "save_path": "",
-            "headers": {},
-            "timeout": 300.0,
-            "overwrite": True,
-            "verify_ssl": True,
-            "proxy": "",
-            "retry_count": 0,
-            "retry_delay": 2.0,
-            "chunk_size": 8192,
-            "resume": False,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpDownloadFileNode"
@@ -284,20 +387,16 @@ class HttpDownloadFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            save_path = self.get_input_value("save_path") or self.config.get(
-                "save_path", ""
-            )
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 300.0
-            )
-            overwrite = self.config.get("overwrite", True)
-            verify_ssl = self.config.get("verify_ssl", True)
-            proxy = self.config.get("proxy", "")
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 2.0)
-            chunk_size = self.config.get("chunk_size", 8192)
+            url = self.get_parameter("url")
+            save_path = self.get_parameter("save_path")
+            headers = self.get_parameter("headers", {})
+            timeout_seconds = self.get_parameter("timeout", 300.0)
+            overwrite = self.get_parameter("overwrite", True)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            proxy = self.get_parameter("proxy", "")
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 2.0)
+            chunk_size = self.get_parameter("chunk_size", 8192)
 
             url = context.resolve_value(url)
             save_path = context.resolve_value(save_path)
@@ -384,47 +483,102 @@ class HttpDownloadFileNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Upload URL",
+        placeholder="https://example.com/upload",
+    ),
+    PropertyDef(
+        "file_path",
+        PropertyType.FILE_PATH,
+        required=True,
+        label="File Path",
+        tooltip="Path to file to upload",
+        placeholder="C:\\Documents\\file.pdf",
+    ),
+    PropertyDef(
+        "field_name",
+        PropertyType.STRING,
+        default="file",
+        label="Form Field Name",
+        tooltip="Form field name for the file",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Additional headers as JSON object",
+    ),
+    PropertyDef(
+        "extra_fields",
+        PropertyType.JSON,
+        default={},
+        label="Extra Form Fields",
+        tooltip="Extra form fields as JSON object",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=300.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Upload timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=2.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
 
+    Config (via @node_schema):
+        url: Upload URL (required)
+        file_path: Path to file (required)
+        field_name: Form field name
+        headers: Additional headers
+        extra_fields: Extra form fields
+        timeout: Upload timeout
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Upload URL (required)
-        - file_path: Path to file to upload (required)
-        - field_name: Form field name for file (default: "file")
-        - headers: Additional headers
-        - extra_fields: Extra form fields as dict
-        - timeout: Upload timeout in seconds
+        url, file_path, field_name, headers, extra_fields, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body
-        - response_json: Parsed JSON response
-        - status_code: HTTP status code
-        - success: True if upload succeeded
+        response_body, response_json, status_code, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any
     ) -> None:
-        default_config = {
-            "url": "",
-            "file_path": "",
-            "field_name": "file",
-            "headers": {},
-            "extra_fields": {},
-            "timeout": 300.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 2.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpUploadFileNode"
@@ -447,21 +601,15 @@ class HttpUploadFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            file_path = self.get_input_value("file_path") or self.config.get(
-                "file_path", ""
-            )
-            field_name = self.get_input_value("field_name") or self.config.get(
-                "field_name", "file"
-            )
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            extra_fields = self.get_input_value("extra_fields") or self.config.get(
-                "extra_fields", {}
-            )
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 300.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
+            url = self.get_parameter("url")
+            file_path = self.get_parameter("file_path")
+            field_name = self.get_parameter("field_name", "file")
+            headers = self.get_parameter("headers", {})
+            extra_fields = self.get_parameter("extra_fields", {})
+            timeout_seconds = self.get_parameter("timeout", 300.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 2.0)
 
             url = context.resolve_value(url)
             file_path = context.resolve_value(file_path)
@@ -489,9 +637,6 @@ class HttpUploadFileNode(BaseNode):
 
             timeout = ClientTimeout(total=float(timeout_seconds))
             ssl_context = None if verify_ssl else False
-
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 2.0)
 
             logger.info(f"Uploading file {file_path} to {url}")
 
@@ -562,26 +707,49 @@ class HttpUploadFileNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "base_url",
+        PropertyType.STRING,
+        required=True,
+        label="Base URL",
+        tooltip="Base URL (e.g., https://api.example.com)",
+        placeholder="https://api.example.com",
+    ),
+    PropertyDef(
+        "path",
+        PropertyType.STRING,
+        default="",
+        label="Path",
+        tooltip="Path to append to base URL",
+        placeholder="/users/123",
+    ),
+    PropertyDef(
+        "params",
+        PropertyType.JSON,
+        default={},
+        label="Query Parameters",
+        tooltip="Query parameters as JSON object",
+    ),
+)
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.
 
+    Config (via @node_schema):
+        base_url: Base URL (required)
+        path: Path to append
+        params: Query parameters
+
     Inputs:
-        - exec_in: Execution input
-        - base_url: Base URL
-        - path: Path to append
-        - params: Query parameters as dict
+        base_url, path, params
 
     Outputs:
-        - exec_out: Execution output
-        - url: Complete URL with parameters
+        url: Complete URL with parameters
     """
 
     def __init__(self, node_id: str, name: str = "Build URL", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
-        config.setdefault("base_url", "")
-        config.setdefault("path", "")
-        config.setdefault("params", {})
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "BuildUrlNode"
@@ -597,11 +765,9 @@ class BuildUrlNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            base_url = self.get_input_value("base_url") or self.config.get(
-                "base_url", ""
-            )
-            path = self.get_input_value("path") or self.config.get("path", "")
-            params = self.get_input_value("params") or self.config.get("params", {})
+            base_url = self.get_parameter("base_url")
+            path = self.get_parameter("path", "")
+            params = self.get_parameter("params", {})
 
             base_url = context.resolve_value(base_url)
             path = context.resolve_value(path)
