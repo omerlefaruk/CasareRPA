@@ -36,33 +36,47 @@ export function useWebSocket(
 
   const connect = useCallback(() => {
     const url = `${WS_BASE_URL}${endpoint}`;
-    console.log(`[WS] Connecting to ${url}`);
+    if (import.meta.env.DEV) {
+      console.log(`[WS] Connecting to ${url}`);
+    }
 
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log(`[WS] Connected to ${endpoint}`);
+      if (import.meta.env.DEV) {
+        console.log(`[WS] Connected to ${endpoint}`);
+      }
       setIsConnected(true);
       reconnectCountRef.current = 0;
       onConnect?.();
     };
 
     ws.onclose = () => {
-      console.log(`[WS] Disconnected from ${endpoint}`);
+      if (import.meta.env.DEV) {
+        console.log(`[WS] Disconnected from ${endpoint}`);
+      }
       setIsConnected(false);
       onDisconnect?.();
 
-      // Auto-reconnect
+      // Auto-reconnect with exponential backoff
       if (reconnectCountRef.current < reconnectAttempts) {
         reconnectCountRef.current++;
-        console.log(
-          `[WS] Reconnecting... (${reconnectCountRef.current}/${reconnectAttempts})`
+        // Exponential backoff: 3s, 6s, 12s, 24s, 30s (capped)
+        const delay = Math.min(
+          reconnectInterval * Math.pow(2, reconnectCountRef.current - 1),
+          30000
         );
+
+        if (import.meta.env.DEV) {
+          console.log(
+            `[WS] Reconnecting in ${delay}ms... (${reconnectCountRef.current}/${reconnectAttempts})`
+          );
+        }
 
         reconnectTimeoutRef.current = setTimeout(() => {
           connect();
-        }, reconnectInterval);
+        }, delay);
       } else {
         console.error(`[WS] Max reconnect attempts reached for ${endpoint}`);
       }
@@ -71,7 +85,9 @@ export function useWebSocket(
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log(`[WS] Message from ${endpoint}:`, data);
+        if (import.meta.env.DEV) {
+          console.log(`[WS] Message from ${endpoint}:`, data);
+        }
         setLastMessage(data);
         onMessage?.(data);
       } catch (error) {
@@ -99,14 +115,20 @@ export function useWebSocket(
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));
     } else {
-      console.warn('[WS] WebSocket not connected, cannot send message');
+      if (import.meta.env.DEV) {
+        console.warn('[WS] WebSocket not connected, cannot send message');
+      }
     }
   }, []);
 
+  // Fix memory leak: Only run effect once on mount, not when callbacks change
+  // connect/disconnect are stable via useCallback, but including them in deps
+  // causes unnecessary reconnections when their dependencies change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     connect();
     return () => disconnect();
-  }, [connect, disconnect]);
+  }, []); // Empty deps - run only once on mount
 
   return { isConnected, lastMessage, sendMessage, disconnect };
 }
