@@ -154,6 +154,104 @@ def validate_path_security(
     return resolved_path
 
 
+def validate_path_security_readonly(
+    path: str | Path,
+    operation: str = "read",
+    allow_dangerous: bool = False,
+) -> Path:
+    """Validate path for read-only operations with relaxed restrictions.
+
+    SECURITY: Read-only validation allows checking system paths but still
+    prevents path traversal and null byte attacks. Blocked paths are logged
+    but not rejected since read operations don't modify system state.
+
+    Args:
+        path: The path to validate
+        operation: The operation being performed (for logging)
+        allow_dangerous: If True, skip all validation
+
+    Returns:
+        The validated, canonicalized Path object
+
+    Raises:
+        PathSecurityError: Only for path traversal or null byte attacks
+    """
+    if allow_dangerous:
+        logger.warning(f"Path security check BYPASSED for {operation}: {path}")
+        return Path(path).resolve()
+
+    try:
+        # Resolve to absolute path (handles .. and symlinks)
+        resolved_path = Path(path).resolve()
+    except Exception as e:
+        raise PathSecurityError(f"Invalid path '{path}': {e}")
+
+    # SECURITY: Still block path traversal attempts
+    path_str = str(path)
+    if ".." in path_str:
+        raise PathSecurityError(
+            f"Path traversal detected in '{path}'. "
+            f"Paths containing '..' are not allowed."
+        )
+
+    # SECURITY: Still block null bytes
+    if "\x00" in path_str:
+        raise PathSecurityError(
+            f"Null byte detected in path '{path}'. "
+            f"This is a potential security exploit."
+        )
+
+    # SECURITY: Still block Windows device names
+    stem = resolved_path.stem.upper()
+    windows_devices = [
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    ]
+    if stem in windows_devices:
+        raise PathSecurityError(f"Access to Windows device '{stem}' is not allowed.")
+
+    # SECURITY: Log access to blocked paths for audit (but don't prevent)
+    for blocked in _BLOCKED_PATHS:
+        try:
+            blocked_resolved = blocked.resolve()
+            if (
+                resolved_path == blocked_resolved
+                or blocked_resolved in resolved_path.parents
+            ):
+                logger.warning(
+                    f"Read-only access to protected path: {resolved_path} "
+                    f"(operation: {operation})"
+                )
+                break
+        except Exception:
+            pass
+
+    # Log the operation for audit
+    logger.debug(f"File {operation} (read-only): {resolved_path}")
+
+    return resolved_path
+
+
 @executable_node
 class ReadFileNode(BaseNode):
     """
@@ -206,7 +304,10 @@ class ReadFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            # Try config first, then input port
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             errors = self.config.get("errors", "strict")
@@ -334,8 +435,10 @@ class WriteFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            content = self.get_input_value("content", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
+            content = self.config.get("content") or self.get_input_value("content")
             encoding = self.config.get("encoding", "utf-8")
             binary_mode = self.config.get("binary_mode", False)
             create_dirs = self.config.get("create_dirs", True)
@@ -438,10 +541,13 @@ class AppendFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            content = self.get_input_value("content", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
+            content = self.config.get("content") or self.get_input_value("content")
             encoding = self.config.get("encoding", "utf-8")
             create_if_missing = self.config.get("create_if_missing", True)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -450,7 +556,8 @@ class AppendFileNode(BaseNode):
             file_path = context.resolve_value(file_path)
             content = context.resolve_value(content)
 
-            path = Path(file_path)
+            # SECURITY: Validate path before any operation
+            path = validate_path_security(file_path, "append", allow_dangerous)
 
             if not path.exists() and not create_if_missing:
                 raise FileNotFoundError(f"File not found: {file_path}")
@@ -471,6 +578,12 @@ class AppendFileNode(BaseNode):
                 "data": {"file_path": str(path), "bytes_written": bytes_written},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in AppendFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -512,7 +625,9 @@ class DeleteFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
             ignore_missing = self.config.get("ignore_missing", False)
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
@@ -606,8 +721,12 @@ class CopyFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            source_path = self.get_input_value("source_path", context)
-            dest_path = self.get_input_value("dest_path", context)
+            source_path = self.config.get("source_path") or self.get_input_value(
+                "source_path"
+            )
+            dest_path = self.config.get("dest_path") or self.get_input_value(
+                "dest_path"
+            )
             overwrite = self.config.get("overwrite", False)
             create_dirs = self.config.get("create_dirs", True)
 
@@ -617,9 +736,11 @@ class CopyFileNode(BaseNode):
             # Resolve {{variable}} patterns in paths
             source_path = context.resolve_value(source_path)
             dest_path = context.resolve_value(dest_path)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
-            source = Path(source_path)
-            dest = Path(dest_path)
+            # SECURITY: Validate paths before any operation
+            source = validate_path_security(source_path, "read", allow_dangerous)
+            dest = validate_path_security(dest_path, "write", allow_dangerous)
 
             if not source.exists():
                 raise FileNotFoundError(f"Source file not found: {source_path}")
@@ -643,6 +764,12 @@ class CopyFileNode(BaseNode):
                 "data": {"dest_path": str(dest), "bytes_copied": bytes_copied},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in CopyFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -687,8 +814,12 @@ class MoveFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            source_path = self.get_input_value("source_path", context)
-            dest_path = self.get_input_value("dest_path", context)
+            source_path = self.config.get("source_path") or self.get_input_value(
+                "source_path"
+            )
+            dest_path = self.config.get("dest_path") or self.get_input_value(
+                "dest_path"
+            )
             overwrite = self.config.get("overwrite", False)
             create_dirs = self.config.get("create_dirs", True)
 
@@ -698,9 +829,11 @@ class MoveFileNode(BaseNode):
             # Resolve {{variable}} patterns in paths
             source_path = context.resolve_value(source_path)
             dest_path = context.resolve_value(dest_path)
+            allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
-            source = Path(source_path)
-            dest = Path(dest_path)
+            # SECURITY: Validate paths before any operation
+            source = validate_path_security(source_path, "read", allow_dangerous)
+            dest = validate_path_security(dest_path, "write", allow_dangerous)
 
             if not source.exists():
                 raise FileNotFoundError(f"Source file not found: {source_path}")
@@ -725,6 +858,12 @@ class MoveFileNode(BaseNode):
                 "data": {"dest_path": str(dest)},
                 "next_nodes": ["exec_out"],
             }
+
+        except PathSecurityError as e:
+            self.set_output_value("success", False)
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in MoveFileNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
 
         except Exception as e:
             self.set_output_value("success", False)
@@ -767,7 +906,7 @@ class CreateDirectoryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("dir_path", context)
+            dir_path = self.config.get("dir_path") or self.get_input_value("dir_path")
             parents = self.config.get("parents", True)
             exist_ok = self.config.get("exist_ok", True)
 
@@ -777,7 +916,10 @@ class CreateDirectoryNode(BaseNode):
             # Resolve {{variable}} patterns in dir_path
             dir_path = context.resolve_value(dir_path)
 
-            path = Path(dir_path)
+            # SECURITY: Validate path before directory creation
+            path = validate_path_security(
+                dir_path, "mkdir", self.config.get("allow_dangerous_paths", False)
+            )
             path.mkdir(parents=parents, exist_ok=exist_ok)
 
             self.set_output_value("dir_path", str(path))
@@ -831,7 +973,9 @@ class ListFilesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("directory_path", context)
+            dir_path = self.config.get("directory_path") or self.get_input_value(
+                "directory_path"
+            )
             pattern = self.config.get("pattern", "*")
             recursive = self.config.get("recursive", False)
 
@@ -842,7 +986,10 @@ class ListFilesNode(BaseNode):
             dir_path = context.resolve_value(dir_path)
             pattern = context.resolve_value(pattern)
 
-            path = Path(dir_path)
+            # SECURITY: Validate directory path (read-only)
+            path = validate_path_security_readonly(
+                dir_path, "list", self.config.get("allow_dangerous_paths", False)
+            )
             if not path.exists():
                 raise FileNotFoundError(f"Directory not found: {dir_path}")
 
@@ -911,7 +1058,7 @@ class ListDirectoryNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dir_path = self.get_input_value("dir_path", context)
+            dir_path = self.config.get("dir_path") or self.get_input_value("dir_path")
             pattern = self.config.get("pattern", "*")
             recursive = self.config.get("recursive", False)
             files_only = self.config.get("files_only", False)
@@ -924,7 +1071,10 @@ class ListDirectoryNode(BaseNode):
             dir_path = context.resolve_value(dir_path)
             pattern = context.resolve_value(pattern)
 
-            path = Path(dir_path)
+            # SECURITY: Validate directory path (read-only)
+            path = validate_path_security_readonly(
+                dir_path, "list", self.config.get("allow_dangerous_paths", False)
+            )
             if not path.exists():
                 raise FileNotFoundError(f"Directory not found: {dir_path}")
 
@@ -997,7 +1147,8 @@ class FileExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("path", context)
+            # Try config first, then input port
+            file_path = self.config.get("path") or self.get_input_value("path")
             check_type = self.config.get("check_type", "any")
 
             if not file_path:
@@ -1006,7 +1157,10 @@ class FileExistsNode(BaseNode):
             # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
-            path = Path(file_path)
+            # SECURITY: Validate path (read-only, allows system paths)
+            path = validate_path_security_readonly(
+                file_path, "check", self.config.get("allow_dangerous_paths", False)
+            )
             exists = path.exists()
             is_file = path.is_file() if exists else False
             is_directory = path.is_dir() if exists else False
@@ -1071,7 +1225,9 @@ class GetFileSizeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -1079,7 +1235,10 @@ class GetFileSizeNode(BaseNode):
             # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
-            path = Path(file_path)
+            # SECURITY: Validate path (read-only)
+            path = validate_path_security_readonly(
+                file_path, "stat", self.config.get("allow_dangerous_paths", False)
+            )
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -1138,7 +1297,9 @@ class GetFileInfoNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            file_path = self.config.get("file_path") or self.get_input_value(
+                "file_path"
+            )
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -1146,7 +1307,10 @@ class GetFileInfoNode(BaseNode):
             # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
-            path = Path(file_path)
+            # SECURITY: Validate path (read-only)
+            path = validate_path_security_readonly(
+                file_path, "stat", self.config.get("allow_dangerous_paths", False)
+            )
             if not path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 

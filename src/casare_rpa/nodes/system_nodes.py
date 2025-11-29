@@ -266,7 +266,24 @@ class MessageBoxNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Message Box", **kwargs) -> None:
+        default_config = {
+            "title": "Message",
+            "message": "",
+            "icon_type": "information",
+            "buttons": "ok",
+            "detailed_text": "",
+            "default_button": "",
+            "always_on_top": True,
+            "play_sound": False,
+            "auto_close_timeout": 0,
+        }
+
         config = kwargs.get("config", {})
+        # Merge: config values override defaults
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MessageBoxNode"
