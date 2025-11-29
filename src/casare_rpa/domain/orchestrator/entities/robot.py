@@ -97,3 +97,71 @@ class Robot:
             )
 
         self.current_jobs -= 1
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Robot":
+        """Create Robot from dictionary.
+
+        Args:
+            data: Dictionary with robot data.
+
+        Returns:
+            Robot instance.
+        """
+        # Convert string status to enum
+        status = data.get("status")
+        if isinstance(status, str):
+            status = RobotStatus(status)
+        elif isinstance(status, RobotStatus):
+            pass
+        else:
+            status = RobotStatus.OFFLINE
+
+        # Parse datetime strings
+        def parse_datetime(value):
+            if value is None or value == "":
+                return None
+            if isinstance(value, datetime):
+                return value
+            if isinstance(value, str):
+                try:
+                    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+                except (ValueError, AttributeError):
+                    return None
+            return None
+
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            status=status,
+            environment=data.get("environment", "default"),
+            max_concurrent_jobs=data.get("max_concurrent_jobs", 1),
+            current_jobs=data.get("current_jobs", 0),
+            last_seen=parse_datetime(data.get("last_seen")),
+            last_heartbeat=parse_datetime(data.get("last_heartbeat")),
+            created_at=parse_datetime(data.get("created_at")),
+            tags=data.get("tags", []),
+            metrics=data.get("metrics", {}),
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert Robot to dictionary.
+
+        Returns:
+            Dictionary representation of robot.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "status": self.status.value,
+            "environment": self.environment,
+            "max_concurrent_jobs": self.max_concurrent_jobs,
+            "current_jobs": self.current_jobs,
+            "last_seen": self.last_seen.isoformat() if self.last_seen else None,
+            "last_heartbeat": self.last_heartbeat.isoformat()
+            if self.last_heartbeat
+            else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "tags": self.tags,
+            "metrics": self.metrics,
+        }
