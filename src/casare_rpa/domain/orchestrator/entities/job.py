@@ -69,6 +69,21 @@ class Job:
         JobStatus.TIMEOUT: [],
     }
 
+    def __post_init__(self):
+        """Validate domain invariants after initialization."""
+        if not self.id or not self.id.strip():
+            raise ValueError("Job ID cannot be empty")
+        if not self.workflow_id or not self.workflow_id.strip():
+            raise ValueError("Workflow ID cannot be empty")
+        if not self.workflow_name or not self.workflow_name.strip():
+            raise ValueError("Workflow name cannot be empty")
+        if not self.robot_id or not self.robot_id.strip():
+            raise ValueError("Robot ID cannot be empty")
+        if self.progress < 0 or self.progress > 100:
+            raise ValueError(f"Progress must be 0-100, got {self.progress}")
+        if self.duration_ms < 0:
+            raise ValueError(f"Duration must be >= 0, got {self.duration_ms}")
+
     def is_terminal(self) -> bool:
         """Check if job is in a terminal state.
 

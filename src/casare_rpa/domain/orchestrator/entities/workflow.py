@@ -32,6 +32,26 @@ class Workflow:
     success_count: int = 0
     avg_duration_ms: int = 0
 
+    def __post_init__(self):
+        """Validate domain invariants after initialization."""
+        if not self.id or not self.id.strip():
+            raise ValueError("Workflow ID cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Workflow name cannot be empty")
+        if self.version < 1:
+            raise ValueError(f"Version must be >= 1, got {self.version}")
+        if self.execution_count < 0:
+            raise ValueError(
+                f"Execution count must be >= 0, got {self.execution_count}"
+            )
+        if self.success_count < 0:
+            raise ValueError(f"Success count must be >= 0, got {self.success_count}")
+        if self.success_count > self.execution_count:
+            raise ValueError(
+                f"Success count ({self.success_count}) cannot exceed "
+                f"execution count ({self.execution_count})"
+            )
+
     @property
     def success_rate(self) -> float:
         """Calculate success rate percentage.

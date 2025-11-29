@@ -32,6 +32,24 @@ class Robot:
     tags: List[str] = field(default_factory=list)
     metrics: Dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self):
+        """Validate domain invariants after initialization."""
+        if not self.id or not self.id.strip():
+            raise ValueError("Robot ID cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Robot name cannot be empty")
+        if self.max_concurrent_jobs < 0:
+            raise ValueError(
+                f"max_concurrent_jobs must be >= 0, got {self.max_concurrent_jobs}"
+            )
+        if self.current_jobs < 0:
+            raise ValueError(f"current_jobs must be >= 0, got {self.current_jobs}")
+        if self.current_jobs > self.max_concurrent_jobs:
+            raise ValueError(
+                f"current_jobs ({self.current_jobs}) cannot exceed "
+                f"max_concurrent_jobs ({self.max_concurrent_jobs})"
+            )
+
     def is_available(self) -> bool:
         """Check if robot can accept new jobs.
 

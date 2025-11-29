@@ -41,6 +41,24 @@ class Schedule:
     created_at: Optional[datetime] = None
     created_by: str = ""
 
+    def __post_init__(self):
+        """Validate domain invariants after initialization."""
+        if not self.id or not self.id.strip():
+            raise ValueError("Schedule ID cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Schedule name cannot be empty")
+        if not self.workflow_id or not self.workflow_id.strip():
+            raise ValueError("Workflow ID cannot be empty")
+        if self.run_count < 0:
+            raise ValueError(f"Run count must be >= 0, got {self.run_count}")
+        if self.success_count < 0:
+            raise ValueError(f"Success count must be >= 0, got {self.success_count}")
+        if self.success_count > self.run_count:
+            raise ValueError(
+                f"Success count ({self.success_count}) cannot exceed "
+                f"run count ({self.run_count})"
+            )
+
     @property
     def success_rate(self) -> float:
         """Calculate success rate percentage.
