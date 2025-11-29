@@ -654,22 +654,17 @@ class ScreenshotNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_input_value("page")
+            page = self.get_parameter("page")
             if page is None:
                 page = context.get_active_page()
 
             if page is None:
                 raise ValueError("No page instance found")
 
-            # Get file path from input or config
-            file_path = self.get_input_value("file_path")
-            if file_path is None:
-                file_path = self.config.get("file_path", "")
-
+            file_path = self.get_parameter("file_path", "")
             if not file_path:
                 raise ValueError("File path is required")
 
-            # Resolve {{variable}} patterns in file_path
             file_path = context.resolve_value(file_path)
 
             # Clean up and normalize file path
@@ -680,7 +675,7 @@ class ScreenshotNode(BaseNode):
             file_path = file_path.strip().strip('"').strip("'")
 
             # Get the image type for extension
-            img_type = self.config.get("type", "png")
+            img_type = self.get_parameter("type", "png")
             ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
 
             # If path is a directory (ends with separator or is existing dir), auto-generate filename
@@ -706,27 +701,16 @@ class ScreenshotNode(BaseNode):
                 os.makedirs(parent_dir, exist_ok=True)
                 logger.info(f"Created directory: {parent_dir}")
 
-            selector = self.config.get("selector")
-            full_page = self.config.get("full_page", False)
+            selector = self.get_parameter("selector")
+            full_page = self.get_parameter("full_page", False)
 
             # Resolve {{variable}} patterns in selector if present
             if selector:
                 selector = context.resolve_value(selector)
 
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-
-            # Helper to safely parse int values with defaults
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
 
             logger.info(f"Taking screenshot: {file_path}")
 
@@ -734,12 +718,11 @@ class ScreenshotNode(BaseNode):
             screenshot_options = {"path": file_path, "timeout": timeout}
 
             # Image type (png or jpeg)
-            img_type = self.config.get("type", "png")
             if img_type and img_type in ("png", "jpeg"):
                 screenshot_options["type"] = img_type
 
             # JPEG quality (0-100)
-            quality = self.config.get("quality")
+            quality = self.get_parameter("quality")
             if quality is not None and quality != "" and img_type == "jpeg":
                 try:
                     screenshot_options["quality"] = int(quality)
@@ -747,21 +730,21 @@ class ScreenshotNode(BaseNode):
                     pass
 
             # Scale (css or device)
-            scale = self.config.get("scale", "device")
+            scale = self.get_parameter("scale", "device")
             if scale and scale in ("css", "device"):
                 screenshot_options["scale"] = scale
 
             # Animations (allow or disabled)
-            animations = self.config.get("animations", "allow")
+            animations = self.get_parameter("animations", "allow")
             if animations and animations in ("allow", "disabled"):
                 screenshot_options["animations"] = animations
 
             # Omit background (PNG transparency)
-            if self.config.get("omit_background", False) and img_type == "png":
+            if self.get_parameter("omit_background", False) and img_type == "png":
                 screenshot_options["omit_background"] = True
 
             # Caret visibility (hide or initial)
-            caret = self.config.get("caret", "hide")
+            caret = self.get_parameter("caret", "hide")
             if caret and caret in ("hide", "initial"):
                 screenshot_options["caret"] = caret
 

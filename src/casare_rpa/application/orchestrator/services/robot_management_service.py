@@ -12,7 +12,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from casare_rpa.domain.orchestrator.entities import Robot, RobotStatus
-from casare_rpa.infrastructure.orchestrator.persistence import LocalStorageRepository
+from casare_rpa.domain.orchestrator.repositories import RobotRepository
 
 load_dotenv()
 
@@ -23,13 +23,14 @@ class RobotManagementService:
     Supports both cloud (Supabase) and local storage modes.
     """
 
-    def __init__(self):
+    def __init__(self, robot_repository: RobotRepository):
+        """Initialize with injected repository."""
+        self._robot_repository = robot_repository
         self._supabase_url = os.getenv("SUPABASE_URL")
         self._supabase_key = os.getenv("SUPABASE_KEY")
         self._client = None
         self._connected = False
-        self._use_local = False
-        self._local_storage = LocalStorageRepository()
+        self._use_local = True  # Default to local mode
 
         # Event callbacks
         self._on_robot_update: Optional[Callable[[Robot], None]] = None
@@ -65,7 +66,7 @@ class RobotManagementService:
     async def get_robots(self) -> List[Robot]:
         """Get all registered robots."""
         if self._use_local:
-            data = self._local_storage.get_robots()
+            return await self._robot_repository.get_all()
         else:
             try:
                 response = await asyncio.to_thread(
@@ -75,11 +76,10 @@ class RobotManagementService:
                     .execute()
                 )
                 data = response.data
+                return [Robot.from_dict(r) for r in data]
             except Exception as e:
                 logger.error(f"Failed to fetch robots: {e}")
-                data = []
-
-        return [Robot.from_dict(r) for r in data]
+                return []
 
     async def get_robot(self, robot_id: str) -> Optional[Robot]:
         """Get a specific robot by ID."""
@@ -96,15 +96,9 @@ class RobotManagementService:
 
     async def update_robot_status(self, robot_id: str, status: RobotStatus) -> bool:
         """Update robot status."""
-        data = {"status": status.value, "last_seen": datetime.utcnow().isoformat()}
-
         if self._use_local:
-            robots = self._local_storage.get_robots()
-            for r in robots:
-                if r["id"] == robot_id:
-                    r.update(data)
-                    return self._local_storage.save_robot(r)
-            return False
+            await self._robot_repository.update_status(robot_id, status)
+            return True
         else:
             try:
                 await asyncio.to_thread(

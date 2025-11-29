@@ -14,7 +14,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from casare_rpa.domain.orchestrator.entities import Job, JobStatus, JobPriority
-from casare_rpa.infrastructure.orchestrator.persistence import LocalStorageRepository
+from casare_rpa.domain.orchestrator.repositories import JobRepository
 
 load_dotenv()
 
@@ -25,13 +25,14 @@ class JobLifecycleService:
     Supports both cloud (Supabase) and local storage modes.
     """
 
-    def __init__(self):
+    def __init__(self, job_repository: JobRepository):
+        """Initialize with injected repository."""
+        self._job_repository = job_repository
         self._supabase_url = os.getenv("SUPABASE_URL")
         self._supabase_key = os.getenv("SUPABASE_KEY")
         self._client = None
         self._connected = False
-        self._use_local = False
-        self._local_storage = LocalStorageRepository()
+        self._use_local = True  # Default to local mode
 
         # Event callbacks
         self._on_job_update: Optional[Callable[[Job], None]] = None
@@ -72,9 +73,15 @@ class JobLifecycleService:
     ) -> List[Job]:
         """Get jobs with optional filtering."""
         if self._use_local:
-            data = self._local_storage.get_jobs(limit, status.value if status else None)
-            if robot_id:
-                data = [j for j in data if j.get("robot_id") == robot_id]
+            if status and robot_id:
+                jobs = await self._job_repository.get_by_robot(robot_id)
+                return [j for j in jobs if j.status == status][:limit]
+            elif status:
+                return (await self._job_repository.get_by_status(status))[:limit]
+            elif robot_id:
+                return (await self._job_repository.get_by_robot(robot_id))[:limit]
+            else:
+                return (await self._job_repository.get_all())[:limit]
         else:
             try:
                 query = self._client.table("jobs").select("*")
@@ -86,20 +93,15 @@ class JobLifecycleService:
 
                 response = await asyncio.to_thread(lambda: query.execute())
                 data = response.data
+                return [Job.from_dict(j) for j in data]
             except Exception as e:
                 logger.error(f"Failed to fetch jobs: {e}")
-                data = []
-
-        return [Job.from_dict(j) for j in data]
+                return []
 
     async def get_job(self, job_id: str) -> Optional[Job]:
         """Get a specific job by ID."""
         if self._use_local:
-            jobs = self._local_storage.get_jobs(limit=1000)
-            for j in jobs:
-                if j["id"] == job_id:
-                    return Job.from_dict(j)
-            return None
+            return await self._job_repository.get_by_id(job_id)
         else:
             try:
                 response = await asyncio.to_thread(
@@ -155,9 +157,10 @@ class JobLifecycleService:
         }
 
         if self._use_local:
-            if self._local_storage.save_job(job_data):
-                logger.info(f"Created job {job_id} for robot {robot_id}")
-                return Job.from_dict(job_data)
+            job = Job.from_dict(job_data)
+            await self._job_repository.save(job)
+            logger.info(f"Created job {job_id} for robot {robot_id}")
+            return job
         else:
             try:
                 await asyncio.to_thread(
@@ -203,11 +206,18 @@ class JobLifecycleService:
                 data["logs"] = logs
 
         if self._use_local:
-            jobs = self._local_storage.get_jobs(limit=1000)
-            for j in jobs:
-                if j["id"] == job_id:
-                    j.update(data)
-                    return self._local_storage.save_job(j)
+            job = await self._job_repository.get_by_id(job_id)
+            if job:
+                # Update job fields
+                job.status = status
+                job.progress = progress
+                job.current_node = current_node
+                if error_message:
+                    job.error_message = error_message
+                if logs:
+                    job.logs = logs
+                await self._job_repository.save(job)
+                return True
             return False
         else:
             try:

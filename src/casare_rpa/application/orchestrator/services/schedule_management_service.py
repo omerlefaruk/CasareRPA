@@ -12,7 +12,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from casare_rpa.domain.orchestrator.entities import Schedule
-from casare_rpa.infrastructure.orchestrator.persistence import LocalStorageRepository
+from casare_rpa.domain.orchestrator.repositories import ScheduleRepository
 
 load_dotenv()
 
@@ -20,13 +20,14 @@ load_dotenv()
 class ScheduleManagementService:
     """Service for managing schedules."""
 
-    def __init__(self):
+    def __init__(self, schedule_repository: ScheduleRepository):
+        """Initialize with injected repository."""
+        self._schedule_repository = schedule_repository
         self._supabase_url = os.getenv("SUPABASE_URL")
         self._supabase_key = os.getenv("SUPABASE_KEY")
         self._client = None
         self._connected = False
-        self._use_local = False
-        self._local_storage = LocalStorageRepository()
+        self._use_local = True  # Default to local mode
 
     @property
     def is_cloud_mode(self) -> bool:
@@ -57,9 +58,9 @@ class ScheduleManagementService:
     async def get_schedules(self, enabled_only: bool = False) -> List[Schedule]:
         """Get all schedules."""
         if self._use_local:
-            data = self._local_storage.get_schedules()
             if enabled_only:
-                data = [s for s in data if s.get("enabled", True)]
+                return await self._schedule_repository.get_enabled()
+            return await self._schedule_repository.get_all()
         else:
             try:
                 query = self._client.table("schedules").select("*")
@@ -106,7 +107,9 @@ class ScheduleManagementService:
         }
 
         if self._use_local:
-            return self._local_storage.save_schedule(data)
+            schedule_entity = Schedule.from_dict(data)
+            await self._schedule_repository.save(schedule_entity)
+            return True
         else:
             try:
                 await asyncio.to_thread(
@@ -128,7 +131,8 @@ class ScheduleManagementService:
     async def delete_schedule(self, schedule_id: str) -> bool:
         """Delete a schedule."""
         if self._use_local:
-            return self._local_storage.delete_schedule(schedule_id)
+            await self._schedule_repository.delete(schedule_id)
+            return True
         else:
             try:
                 await asyncio.to_thread(

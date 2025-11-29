@@ -15,7 +15,7 @@ from loguru import logger
 from dotenv import load_dotenv
 
 from casare_rpa.domain.orchestrator.entities import Workflow, WorkflowStatus
-from casare_rpa.infrastructure.orchestrator.persistence import LocalStorageRepository
+from casare_rpa.domain.orchestrator.repositories import WorkflowRepository
 
 load_dotenv()
 
@@ -23,13 +23,14 @@ load_dotenv()
 class WorkflowManagementService:
     """Service for managing workflows."""
 
-    def __init__(self):
+    def __init__(self, workflow_repository: WorkflowRepository):
+        """Initialize with injected repository."""
+        self._workflow_repository = workflow_repository
         self._supabase_url = os.getenv("SUPABASE_URL")
         self._supabase_key = os.getenv("SUPABASE_KEY")
         self._client = None
         self._connected = False
-        self._use_local = False
-        self._local_storage = LocalStorageRepository()
+        self._use_local = True  # Default to local mode
 
     @property
     def is_cloud_mode(self) -> bool:
@@ -62,9 +63,9 @@ class WorkflowManagementService:
     ) -> List[Workflow]:
         """Get all workflows."""
         if self._use_local:
-            data = self._local_storage.get_workflows()
             if status:
-                data = [w for w in data if w.get("status") == status.value]
+                return await self._workflow_repository.get_by_status(status)
+            return await self._workflow_repository.get_all()
         else:
             try:
                 query = self._client.table("workflows").select("*")
@@ -104,7 +105,9 @@ class WorkflowManagementService:
         }
 
         if self._use_local:
-            return self._local_storage.save_workflow(data)
+            workflow_entity = Workflow.from_dict(data)
+            await self._workflow_repository.save(workflow_entity)
+            return True
         else:
             try:
                 await asyncio.to_thread(
@@ -143,7 +146,8 @@ class WorkflowManagementService:
     async def delete_workflow(self, workflow_id: str) -> bool:
         """Delete a workflow."""
         if self._use_local:
-            return self._local_storage.delete_workflow(workflow_id)
+            await self._workflow_repository.delete(workflow_id)
+            return True
         else:
             try:
                 await asyncio.to_thread(
