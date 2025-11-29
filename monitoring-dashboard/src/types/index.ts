@@ -1,5 +1,7 @@
 /**
  * TypeScript type definitions for CasareRPA monitoring dashboard.
+ *
+ * Updated to match backend Python Pydantic models exactly.
  */
 
 export interface FleetMetrics {
@@ -25,10 +27,13 @@ export interface RobotCapabilities {
 export interface RobotSummary {
   robot_id: string;
   hostname: string;
-  capabilities: Record<string, any>;
+  capabilities?: Record<string, any>;  // Optional - not all robots report capabilities yet
   status: 'idle' | 'busy' | 'offline' | 'failed';
   current_job_id: string | null;
-  last_seen: string;
+  cpu_percent: number;
+  memory_mb: number;
+  last_heartbeat: string;  // Backend field name
+  last_seen?: string;  // Deprecated - use last_heartbeat
 }
 
 export interface RobotMetrics {
@@ -42,21 +47,21 @@ export interface RobotMetrics {
   jobs_completed_today: number;
   jobs_failed_today: number;
   average_job_duration_seconds: number;
-  last_heartbeat: string | null;
+  last_heartbeat: string;  // Required field from backend
 }
 
 export interface JobSummary {
   job_id: string;
   workflow_id: string;
-  workflow_name: string;
+  workflow_name: string | null;  // Optional in backend
   robot_id: string | null;
   status: 'pending' | 'claimed' | 'completed' | 'failed';
   created_at: string;
-  started_at: string | null;
+  started_at?: string | null;  // Optional - not all jobs have started_at yet
   completed_at: string | null;
   duration_ms: number | null;
-  variables: Record<string, any>;
-  result: Record<string, any> | null;
+  variables?: Record<string, any>;  // Optional - not stored in all backends
+  result?: Record<string, any> | null;  // Optional - not stored in all backends
 }
 
 export interface JobDetails {

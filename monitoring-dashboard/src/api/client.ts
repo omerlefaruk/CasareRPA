@@ -20,7 +20,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     if (import.meta.env.DEV) {
-      console.log(\);
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
     }
     return config;
   },
