@@ -1,0 +1,135 @@
+# =============================================================================
+# CasareRPA Robot Configuration - Internet Deployment
+# =============================================================================
+#
+# This configuration is for robots connecting to orchestrator over the internet
+# (robots on different networks than orchestrator).
+#
+# For LAN deployment, see robot.yaml.lan-example
+#
+# =============================================================================
+
+robot:
+  # Unique identifier for this robot
+  # Must match the robot_id used when generating API token
+  id: "robot-001"
+
+  # Human-readable name for dashboard display
+  name: "Client PC - Office 1"
+
+  # Robot capabilities/tags for job routing
+  tags:
+    - "windows"
+    - "chrome"
+    - "office-automation"
+
+orchestrator:
+  # Orchestrator URL - MUST use HTTPS for internet deployments
+  # Replace with your actual domain or public IP
+  url: "https://orchestrator.yourdomain.com"
+
+  # API authentication token (generated with tools/generate_robot_token.py)
+  # SECURITY: Keep this token secret, do not commit to version control
+  # This is the RAW token, not the hash (orchestrator stores the hash)
+  api_token: "YOUR_ROBOT_API_TOKEN_HERE"
+
+connection:
+  # Heartbeat interval (seconds) - how often to send status updates
+  heartbeat_interval: 10
+
+  # Connection timeout (seconds) - increased for internet latency
+  timeout: 30
+
+  # Retry configuration for transient network failures
+  retry_attempts: 5
+  retry_delay: 10  # seconds
+  retry_backoff_multiplier: 2  # exponential backoff
+
+  # WebSocket ping/pong interval (seconds) to keep connection alive
+  # Some networks/proxies close idle connections
+  websocket_ping_interval: 30
+
+polling:
+  # Job queue polling interval (seconds)
+  # How often to check for new jobs when idle
+  interval: 5
+
+  # Max jobs to claim at once
+  batch_size: 1
+
+  # Priority filter (optional) - only claim jobs with priority >= this value
+  # min_priority: 5
+
+execution:
+  # Working directory for workflow execution
+  work_dir: "C:/CasareRPA/robot-workdir"
+
+  # Maximum concurrent workflow executions
+  max_concurrent_jobs: 1
+
+  # Job execution timeout (seconds)
+  # Workflow will be killed if exceeds this duration
+  job_timeout: 3600  # 1 hour
+
+  # Screenshot on error (for debugging)
+  screenshot_on_error: true
+
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: "INFO"
+
+  # Log file path
+  file: "C:/CasareRPA/logs/robot-001.log"
+
+  # Log rotation
+  rotation: "10 MB"
+  retention: "7 days"
+
+  # Send logs to orchestrator (optional)
+  remote_logging: true
+
+resources:
+  # Browser automation settings
+  browser:
+    # Browser type (chromium, firefox, webkit)
+    type: "chromium"
+
+    # Headless mode (true for background execution)
+    headless: false
+
+    # Browser launch timeout (seconds)
+    timeout: 30
+
+  # Desktop automation settings (UIAutomation)
+  desktop:
+    # UIAutomation backend (uiautomation, pywinauto)
+    backend: "uiautomation"
+
+    # Element search timeout (seconds)
+    search_timeout: 10
+
+# =============================================================================
+# Network Troubleshooting
+# =============================================================================
+#
+# If robot cannot connect to orchestrator:
+#
+# 1. Test HTTPS connection:
+#    curl https://orchestrator.yourdomain.com/health
+#
+# 2. Verify API token:
+#    curl -H "X-Api-Token: YOUR_TOKEN" https://orchestrator.yourdomain.com/api/v1/metrics/robots
+#
+# 3. Check firewall:
+#    - Ensure port 443 (HTTPS) is not blocked by corporate firewall
+#    - Check if proxy configuration is needed
+#
+# 4. Test WebSocket connection:
+#    wscat -c wss://orchestrator.yourdomain.com/ws/robot-status
+#
+# 5. Common issues:
+#    - Invalid SSL certificate: Add CA cert to trust store
+#    - CGNAT/NAT: Orchestrator must have public IP or use tunneling
+#    - Corporate proxy: Configure HTTP_PROXY/HTTPS_PROXY environment variables
+#
+# =============================================================================

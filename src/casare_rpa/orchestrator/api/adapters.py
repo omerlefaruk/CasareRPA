@@ -1,0 +1,584 @@
+"""
+Data adapters for monitoring API.
+
+Maps between infrastructure layer (RPAMetricsCollector, MetricsAggregator)
+and API response models (Pydantic).
+"""
+
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
+
+from loguru import logger
+
+if TYPE_CHECKING:
+    import asyncpg
+
+from casare_rpa.infrastructure.observability.metrics import (
+    RPAMetricsCollector,
+    RobotMetrics as InfraRobotMetrics,
+    JobMetrics as InfraJobMetrics,
+)
+from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
+
+
+# Valid job statuses for filtering
+VALID_JOB_STATUSES = frozenset({"pending", "claimed", "completed", "failed"})
+
+
+class MonitoringDataAdapter:
+    """
+    Adapts infrastructure metrics to monitoring API format.
+
+    Bridges the gap between RPAMetricsCollector (real-time in-memory metrics)
+    and the REST API response models expected by the React dashboard.
+    """
+
+    def __init__(
+        self,
+        metrics_collector: RPAMetricsCollector,
+        analytics_aggregator: MetricsAggregator,
+        db_pool: Optional["asyncpg.Pool"] = None,
+    ):
+        """
+        Initialize the monitoring data adapter.
+
+        Args:
+            metrics_collector: RPAMetricsCollector for real-time metrics
+            analytics_aggregator: MetricsAggregator for self-healing stats
+            db_pool: Optional database connection pool for historical queries
+        """
+        self.metrics = metrics_collector
+        self.analytics = analytics_aggregator
+        self._db_pool = db_pool
+
+    @property
+    def has_db(self) -> bool:
+        """Check if database pool is available for historical queries."""
+        return self._db_pool is not None
+
+    def get_fleet_summary(self) -> Dict:
+        """
+        Get fleet-wide metrics summary.
+
+        Returns:
+            Dict matching FleetMetrics Pydantic model
+        """
+        all_robots = self.metrics.get_all_robot_metrics()
+        queue_depth = self.metrics.get_queue_depth()
+        active_jobs = len(self.metrics.get_active_jobs())
+
+        total_robots = len(all_robots)
+        active_robots = sum(1 for r in all_robots.values() if r.status.value == "busy")
+        idle_robots = sum(1 for r in all_robots.values() if r.status.value == "idle")
+        offline_robots = sum(
+            1 for r in all_robots.values() if r.status.value == "offline"
+        )
+
+        # Calculate today's job stats
+        job_metrics = self.metrics.get_job_metrics()
+        total_jobs_today = job_metrics.total_jobs
+        average_duration = (
+            job_metrics.total_duration_seconds / total_jobs_today
+            if total_jobs_today > 0
+            else 0.0
+        )
+
+        return {
+            "total_robots": total_robots,
+            "active_robots": active_robots,
+            "idle_robots": idle_robots,
+            "offline_robots": offline_robots,
+            "total_jobs_today": total_jobs_today,
+            "active_jobs": active_jobs,
+            "queue_depth": queue_depth,
+            "average_job_duration_seconds": average_duration,
+        }
+
+    def get_robot_list(self, status: Optional[str] = None) -> List[Dict]:
+        """
+        Get list of all robots with optional status filter.
+
+        Args:
+            status: Filter by status (idle/busy/offline/failed)
+
+        Returns:
+            List of dicts matching RobotSummary Pydantic model
+        """
+        all_robots = self.metrics.get_all_robot_metrics()
+        result = []
+
+        for robot_id, robot_metrics in all_robots.items():
+            # Filter by status if provided
+            if status and robot_metrics.status.value != status:
+                continue
+
+            # Map to API format
+            result.append(
+                {
+                    "robot_id": robot_id,
+                    "hostname": robot_id,  # TODO: Get actual hostname from metadata
+                    "status": robot_metrics.status.value,
+                    "cpu_percent": 0.0,  # TODO: Get from system metrics
+                    "memory_mb": 0.0,  # TODO: Get from system metrics
+                    "current_job_id": robot_metrics.current_job_id,
+                    "last_heartbeat": robot_metrics.last_job_at or datetime.now(),
+                }
+            )
+
+        return result
+
+    def get_robot_details(self, robot_id: str) -> Optional[Dict]:
+        """
+        Get detailed metrics for a single robot.
+
+        Args:
+            robot_id: Robot identifier
+
+        Returns:
+            Dict matching RobotMetrics Pydantic model, or None if not found
+        """
+        robot_metrics = self.metrics.get_robot_metrics(robot_id)
+        if not robot_metrics:
+            return None
+
+        return {
+            "robot_id": robot_id,
+            "hostname": robot_id,  # TODO: Get actual hostname
+            "status": robot_metrics.status.value,
+            "cpu_percent": 0.0,  # TODO: System metrics
+            "memory_mb": 0.0,  # TODO: System metrics
+            "memory_percent": 0.0,  # TODO: System metrics
+            "current_job_id": robot_metrics.current_job_id,
+            "last_heartbeat": robot_metrics.last_job_at or datetime.now(),
+            "jobs_completed_today": robot_metrics.jobs_completed,
+            "jobs_failed_today": robot_metrics.jobs_failed,
+            "average_job_duration_seconds": 0.0,  # TODO: Calculate from history
+        }
+
+    async def get_job_history(
+        self,
+        limit: int = 50,
+        status: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        robot_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get job execution history from pgqueuer_jobs table.
+
+        Args:
+            limit: Max jobs to return (1-500, default 50)
+            status: Filter by status (pending/claimed/completed/failed)
+            workflow_id: Filter by workflow ID
+            robot_id: Filter by robot ID (claimed_by column)
+
+        Returns:
+            List of dicts matching JobSummary Pydantic model
+        """
+        if not self._db_pool:
+            logger.warning("Database pool not configured - returning empty job history")
+            return []
+
+        # Validate and clamp limit
+        limit = max(1, min(500, limit))
+
+        # Validate status filter
+        if status and status not in VALID_JOB_STATUSES:
+            logger.warning(f"Invalid status filter: {status}")
+            return []
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                return await self._query_job_history(
+                    conn, limit, status, workflow_id, robot_id
+                )
+        except Exception as e:
+            logger.error(f"Database error fetching job history: {e}")
+            return []
+
+    async def _query_job_history(
+        self,
+        conn: Any,  # asyncpg.Connection
+        limit: int,
+        status: Optional[str],
+        workflow_id: Optional[str],
+        robot_id: Optional[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Execute parameterized query for job history.
+
+        Uses dynamic query building with proper parameterization.
+        Extracts workflow_id and workflow_name from payload JSONB.
+        """
+        # Build query with parameterized filters
+        query_parts = [
+            """
+            SELECT
+                id::text AS job_id,
+                payload->>'workflow_id' AS workflow_id,
+                payload->>'workflow_name' AS workflow_name,
+                claimed_by AS robot_id,
+                status,
+                created_at,
+                completed_at,
+                CASE
+                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    ELSE NULL
+                END AS duration_ms
+            FROM pgqueuer_jobs
+            WHERE 1=1
+            """
+        ]
+
+        params: List[Any] = []
+        param_idx = 1
+
+        if status:
+            query_parts.append(f"AND status = ${param_idx}")
+            params.append(status)
+            param_idx += 1
+
+        if workflow_id:
+            query_parts.append(f"AND payload->>'workflow_id' = ${param_idx}")
+            params.append(workflow_id)
+            param_idx += 1
+
+        if robot_id:
+            query_parts.append(f"AND claimed_by = ${param_idx}")
+            params.append(robot_id)
+            param_idx += 1
+
+        query_parts.append(f"ORDER BY created_at DESC LIMIT ${param_idx}")
+        params.append(limit)
+
+        query = "\n".join(query_parts)
+
+        logger.debug(f"Executing job history query with {len(params)} params")
+        rows = await conn.fetch(query, *params)
+
+        return [self._row_to_job_summary(row) for row in rows]
+
+    def _row_to_job_summary(self, row: Any) -> Dict[str, Any]:
+        """
+        Convert database row to JobSummary dict format.
+
+        Handles NULL values and type conversions.
+        """
+        return {
+            "job_id": row["job_id"],
+            "workflow_id": row["workflow_id"] or "",
+            "workflow_name": row["workflow_name"],
+            "robot_id": row["robot_id"],
+            "status": row["status"],
+            "created_at": row["created_at"],
+            "completed_at": row["completed_at"],
+            "duration_ms": row["duration_ms"],
+        }
+
+    def get_job_details(self, job_id: str) -> Optional[Dict]:
+        """
+        Get detailed execution information for a single job.
+
+        NOTE: Requires database integration for historical data.
+
+        Args:
+            job_id: Job identifier
+
+        Returns:
+            Dict matching JobDetails Pydantic model, or None if not found
+        """
+        # Check active jobs first
+        active_jobs = self.metrics.get_active_jobs()
+        if job_id in active_jobs:
+            job = active_jobs[job_id]
+            return {
+                "job_id": job_id,
+                "workflow_id": job.get("workflow_id", ""),
+                "workflow_name": job.get("workflow_name"),
+                "robot_id": job.get("robot_id"),
+                "status": "running",
+                "created_at": job.get("started_at", datetime.now()),
+                "claimed_at": job.get("started_at"),
+                "completed_at": None,
+                "duration_ms": None,
+                "error_message": None,
+                "error_type": None,
+                "retry_count": 0,
+                "node_executions": [],
+            }
+
+        # For historical jobs, need database
+        logger.warning(
+            "Historical job details require database queries - implement in next phase"
+        )
+        # TODO: Query database (pgqueuer_jobs + dbos tables)
+        return None
+
+    def get_analytics(self) -> Dict:
+        """
+        Get aggregated analytics (sync fallback using in-memory data).
+
+        For database-backed analytics with percentiles, use get_analytics_async().
+
+        Returns:
+            Dict matching AnalyticsSummary Pydantic model
+        """
+        job_metrics = self.metrics.get_job_metrics()
+
+        total_jobs = job_metrics.total_jobs
+        success_rate = job_metrics.success_rate
+        failure_rate = 100.0 - success_rate if total_jobs > 0 else 0.0
+
+        # Get data from in-memory MetricsAggregator
+        error_analysis = self.analytics.get_error_analysis(top_n=10)
+        healing_metrics = self.analytics.get_healing_metrics()
+
+        # Build slowest workflows from in-memory cache
+        workflow_metrics = self.analytics.get_workflow_metrics()
+        slowest_workflows = sorted(
+            [
+                {
+                    "workflow_id": wf.workflow_id,
+                    "workflow_name": wf.workflow_name,
+                    "average_duration_ms": wf.duration_distribution.mean_ms,
+                }
+                for wf in workflow_metrics
+                if wf.duration_distribution.total_executions > 0
+            ],
+            key=lambda x: x["average_duration_ms"],
+            reverse=True,
+        )[:10]
+
+        # Build error distribution
+        error_distribution = [
+            {"error_type": err["error_type"], "count": err["count"]}
+            for err in error_analysis.get("top_errors", [])
+        ]
+
+        # Get percentiles from in-memory data if available
+        all_durations: List[float] = []
+        for wf in workflow_metrics:
+            if wf.duration_distribution.total_executions > 0:
+                all_durations.extend(
+                    [wf.duration_distribution.mean_ms]
+                    * wf.duration_distribution.total_executions
+                )
+
+        p50_ms = 0.0
+        p90_ms = 0.0
+        p99_ms = 0.0
+
+        if all_durations:
+            from casare_rpa.infrastructure.analytics.metrics_aggregator import (
+                ExecutionDistribution,
+            )
+
+            dist = ExecutionDistribution.from_durations(all_durations)
+            p50_ms = dist.p50_ms
+            p90_ms = dist.p90_ms
+            p99_ms = dist.p99_ms
+
+        healing_success_rate = healing_metrics.get("overall_success_rate")
+
+        return {
+            "total_jobs": total_jobs,
+            "success_rate": success_rate,
+            "failure_rate": failure_rate,
+            "average_duration_ms": job_metrics.average_duration_seconds * 1000,
+            "p50_duration_ms": p50_ms,
+            "p90_duration_ms": p90_ms,
+            "p99_duration_ms": p99_ms,
+            "slowest_workflows": slowest_workflows,
+            "error_distribution": error_distribution,
+            "self_healing_success_rate": healing_success_rate
+            if healing_success_rate
+            else None,
+        }
+
+    async def get_analytics_async(
+        self,
+        days: int = 7,
+    ) -> Dict[str, Any]:
+        """
+        Get aggregated analytics with database-backed percentile calculations.
+
+        Queries pgqueuer_jobs table for accurate P50/P90/P99 duration metrics,
+        slowest workflows, and error distribution.
+
+        Args:
+            days: Number of days to analyze (default: 7)
+
+        Returns:
+            Dict matching AnalyticsSummary Pydantic model
+        """
+        if not self._db_pool:
+            logger.warning("No database pool - falling back to in-memory analytics")
+            return self.get_analytics()
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+                # Query 1: Basic counts and percentiles using PERCENTILE_CONT
+                stats_query = """
+                    SELECT
+                        COUNT(*) AS total_jobs,
+                        COUNT(*) FILTER (WHERE status = 'completed') AS successful_jobs,
+                        COUNT(*) FILTER (WHERE status = 'failed') AS failed_jobs,
+                        AVG(
+                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                        ) FILTER (
+                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                        ) AS avg_duration_ms,
+                        PERCENTILE_CONT(0.50) WITHIN GROUP (
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                        ) FILTER (
+                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                        ) AS p50_duration_ms,
+                        PERCENTILE_CONT(0.90) WITHIN GROUP (
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                        ) FILTER (
+                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                        ) AS p90_duration_ms,
+                        PERCENTILE_CONT(0.99) WITHIN GROUP (
+                            ORDER BY EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                        ) FILTER (
+                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                        ) AS p99_duration_ms
+                    FROM pgqueuer_jobs
+                    WHERE created_at >= $1
+                """
+                stats_row = await conn.fetchrow(stats_query, cutoff)
+
+                total_jobs = stats_row["total_jobs"] or 0
+                successful_jobs = stats_row["successful_jobs"] or 0
+                failed_jobs = stats_row["failed_jobs"] or 0
+
+                success_rate = (
+                    (successful_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
+                )
+                failure_rate = (
+                    (failed_jobs / total_jobs) * 100 if total_jobs > 0 else 0.0
+                )
+
+                avg_duration_ms = stats_row["avg_duration_ms"] or 0.0
+                p50_duration_ms = stats_row["p50_duration_ms"] or 0.0
+                p90_duration_ms = stats_row["p90_duration_ms"] or 0.0
+                p99_duration_ms = stats_row["p99_duration_ms"] or 0.0
+
+                # Query 2: Slowest workflows (top 10 by avg duration)
+                slowest_query = """
+                    SELECT
+                        payload->>'workflow_id' AS workflow_id,
+                        payload->>'workflow_name' AS workflow_name,
+                        AVG(
+                            EXTRACT(EPOCH FROM (completed_at - claimed_at)) * 1000
+                        ) AS average_duration_ms,
+                        COUNT(*) AS execution_count
+                    FROM pgqueuer_jobs
+                    WHERE created_at >= $1
+                      AND completed_at IS NOT NULL
+                      AND claimed_at IS NOT NULL
+                      AND status IN ('completed', 'failed')
+                    GROUP BY payload->>'workflow_id', payload->>'workflow_name'
+                    HAVING COUNT(*) >= 3
+                    ORDER BY average_duration_ms DESC
+                    LIMIT 10
+                """
+                slowest_rows = await conn.fetch(slowest_query, cutoff)
+
+                slowest_workflows = [
+                    {
+                        "workflow_id": row["workflow_id"] or "unknown",
+                        "workflow_name": row["workflow_name"]
+                        or row["workflow_id"]
+                        or "Unknown",
+                        "average_duration_ms": round(row["average_duration_ms"], 2),
+                    }
+                    for row in slowest_rows
+                ]
+
+                # Query 3: Error distribution (count by error type pattern)
+                error_query = """
+                    SELECT
+                        COALESCE(
+                            SUBSTRING(
+                                payload->>'error_message'
+                                FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
+                            ),
+                            CASE
+                                WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                                    THEN 'TimeoutError'
+                                WHEN payload->>'error_message' ILIKE '%%connection%%'
+                                    THEN 'ConnectionError'
+                                WHEN payload->>'error_message' ILIKE '%%not found%%'
+                                    THEN 'NotFoundError'
+                                WHEN payload->>'error_message' ILIKE '%%permission%%'
+                                    THEN 'PermissionError'
+                                WHEN payload->>'error_message' ILIKE '%%validation%%'
+                                    THEN 'ValidationError'
+                                ELSE 'UnknownError'
+                            END
+                        ) AS error_type,
+                        COUNT(*) AS count
+                    FROM pgqueuer_jobs
+                    WHERE created_at >= $1
+                      AND status = 'failed'
+                      AND payload->>'error_message' IS NOT NULL
+                      AND payload->>'error_message' != ''
+                    GROUP BY error_type
+                    ORDER BY count DESC
+                    LIMIT 20
+                """
+                error_rows = await conn.fetch(error_query, cutoff)
+
+                error_distribution = [
+                    {"error_type": row["error_type"], "count": row["count"]}
+                    for row in error_rows
+                ]
+
+                # Query 4: Self-healing success rate from payload metadata
+                healing_query = """
+                    SELECT
+                        COALESCE(
+                            SUM((payload->>'healing_attempts')::int), 0
+                        ) AS total_attempts,
+                        COALESCE(
+                            SUM((payload->>'healing_successes')::int), 0
+                        ) AS total_successes
+                    FROM pgqueuer_jobs
+                    WHERE created_at >= $1
+                      AND payload ? 'healing_attempts'
+                """
+                healing_row = await conn.fetchrow(healing_query, cutoff)
+
+                healing_attempts = healing_row["total_attempts"] or 0
+                healing_successes = healing_row["total_successes"] or 0
+
+                self_healing_success_rate: Optional[float] = None
+                if healing_attempts > 0:
+                    self_healing_success_rate = round(
+                        (healing_successes / healing_attempts) * 100, 2
+                    )
+
+                logger.debug(
+                    f"Analytics: {total_jobs} jobs, {success_rate:.1f}% success, "
+                    f"P50={p50_duration_ms:.0f}ms, P90={p90_duration_ms:.0f}ms"
+                )
+
+                return {
+                    "total_jobs": total_jobs,
+                    "success_rate": round(success_rate, 2),
+                    "failure_rate": round(failure_rate, 2),
+                    "average_duration_ms": round(avg_duration_ms, 2),
+                    "p50_duration_ms": round(p50_duration_ms, 2),
+                    "p90_duration_ms": round(p90_duration_ms, 2),
+                    "p99_duration_ms": round(p99_duration_ms, 2),
+                    "slowest_workflows": slowest_workflows,
+                    "error_distribution": error_distribution,
+                    "self_healing_success_rate": self_healing_success_rate,
+                }
+
+        except Exception as e:
+            logger.error(f"Database analytics query failed: {e}")
+            return self.get_analytics()
