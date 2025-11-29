@@ -113,6 +113,7 @@ async def get_jobs(
     workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
     robot_id: Optional[str] = Query(None, description="Filter by robot ID"),
     collector=Depends(get_metrics_collector),
+    db_pool=Depends(get_db_pool),
 ):
     """
     Get job execution history with filtering and pagination.
@@ -130,7 +131,10 @@ async def get_jobs(
     )
 
     try:
-        jobs = collector.get_job_history(
+        # Inject database pool into adapter for this request
+        collector.set_db_pool(db_pool)
+
+        jobs = await collector.get_job_history(
             limit=limit,
             status=status,
             workflow_id=workflow_id,
@@ -180,22 +184,31 @@ async def get_job_details(
 
 @router.get("/metrics/analytics", response_model=AnalyticsSummary)
 async def get_analytics(
+    days: int = Query(7, ge=1, le=90, description="Number of days to analyze"),
     collector=Depends(get_metrics_collector),
+    db_pool=Depends(get_db_pool),
 ):
     """
     Get aggregated analytics and statistics.
 
+    Query Parameters:
+        - days: Number of days to analyze (default: 7, max: 90)
+
     Returns:
         - Success/failure rates
         - Duration percentiles (P50/P90/P99)
-        - Top 5 slowest workflows
+        - Top 10 slowest workflows
         - Error distribution by type
         - Self-healing success rate
     """
-    logger.debug("Fetching analytics")
+    logger.debug(f"Fetching analytics (days={days})")
 
     try:
-        data = collector.get_analytics()
+        # Inject database pool for database-backed analytics
+        collector.set_db_pool(db_pool)
+
+        # Use async method for accurate percentile calculations from database
+        data = await collector.get_analytics_async(days=days)
         return AnalyticsSummary(**data)
     except Exception as e:
         logger.error(f"Failed to fetch analytics: {e}")
