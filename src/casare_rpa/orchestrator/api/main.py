@@ -10,7 +10,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
+from casare_rpa.infrastructure.events import (
+    get_monitoring_event_bus,
+    MonitoringEventType,
+)
 from .routers import metrics, websockets
+from .routers.websockets import (
+    on_job_status_changed,
+    on_robot_heartbeat,
+    on_queue_depth_changed,
+)
 from .dependencies import get_metrics_collector
 
 
@@ -23,8 +32,21 @@ async def lifespan(app: FastAPI):
     collector = get_metrics_collector()
     logger.info(f"Metrics collector initialized: {collector}")
 
+    # Subscribe WebSocket handlers to monitoring events
+    event_bus = get_monitoring_event_bus()
+    event_bus.subscribe(MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed)
+    event_bus.subscribe(MonitoringEventType.ROBOT_HEARTBEAT, on_robot_heartbeat)
+    event_bus.subscribe(MonitoringEventType.QUEUE_DEPTH_CHANGED, on_queue_depth_changed)
+    logger.info("WebSocket event handlers subscribed to monitoring event bus")
+
     yield
 
+    # Cleanup: unsubscribe handlers
+    event_bus.unsubscribe(MonitoringEventType.JOB_STATUS_CHANGED, on_job_status_changed)
+    event_bus.unsubscribe(MonitoringEventType.ROBOT_HEARTBEAT, on_robot_heartbeat)
+    event_bus.unsubscribe(
+        MonitoringEventType.QUEUE_DEPTH_CHANGED, on_queue_depth_changed
+    )
     logger.info("Shutting down CasareRPA Monitoring API")
 
 

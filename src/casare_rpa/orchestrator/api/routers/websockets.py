@@ -14,6 +14,7 @@ from loguru import logger
 import asyncio
 import orjson
 
+from casare_rpa.infrastructure.events import MonitoringEvent, MonitoringEventType
 from ..models import LiveJobUpdate, RobotStatusUpdate, QueueMetricsUpdate
 
 # WebSocket send timeout (seconds)
@@ -239,3 +240,53 @@ async def broadcast_queue_metrics(depth: int):
     )
     await queue_metrics_manager.broadcast(message.model_dump())
     logger.debug(f"Broadcasted queue metrics: depth={depth}")
+
+
+# =============================================================================
+# Event Bus Handlers (subscribe these in main.py lifespan)
+# =============================================================================
+
+
+async def on_job_status_changed(event: MonitoringEvent) -> None:
+    """
+    Handle JOB_STATUS_CHANGED events from metrics collector.
+
+    Args:
+        event: Monitoring event with job status data
+    """
+    payload = event.payload
+    job_id = payload.get("job_id")
+    status = payload.get("status")
+
+    if job_id and status:
+        await broadcast_job_update(job_id, status)
+
+
+async def on_robot_heartbeat(event: MonitoringEvent) -> None:
+    """
+    Handle ROBOT_HEARTBEAT events from robots.
+
+    Args:
+        event: Monitoring event with robot heartbeat data
+    """
+    payload = event.payload
+    robot_id = payload.get("robot_id")
+    status = payload.get("status", "idle")
+    cpu_percent = payload.get("cpu_percent", 0.0)
+    memory_mb = payload.get("memory_mb", 0.0)
+
+    if robot_id:
+        await broadcast_robot_status(robot_id, status, cpu_percent, memory_mb)
+
+
+async def on_queue_depth_changed(event: MonitoringEvent) -> None:
+    """
+    Handle QUEUE_DEPTH_CHANGED events from metrics collector.
+
+    Args:
+        event: Monitoring event with queue depth data
+    """
+    payload = event.payload
+    queue_depth = payload.get("queue_depth", 0)
+
+    await broadcast_queue_metrics(queue_depth)
