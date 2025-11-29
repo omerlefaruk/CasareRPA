@@ -1,0 +1,330 @@
+{
+  "$schema": "casare_rpa/workflow_template/1.0",
+  "id": "tmpl_api_poll_001",
+  "metadata": {
+    "name": "API Polling",
+    "description": "Periodically polls a REST API endpoint and processes the response. Supports authentication, data extraction, and conditional actions based on response.",
+    "category": "api_integration",
+    "version": "1.0.0",
+    "author": "CasareRPA",
+    "tags": ["api", "rest", "polling", "webhook", "integration", "http"],
+    "created_at": "2024-11-28T00:00:00",
+    "modified_at": "2024-11-28T00:00:00",
+    "icon": "api",
+    "preview_image": "",
+    "difficulty": "intermediate",
+    "estimated_duration": "Continuous",
+    "requirements": ["Internet connection", "API access credentials"]
+  },
+  "parameters": [
+    {
+      "name": "api_url",
+      "display_name": "API URL",
+      "description": "Full URL of the API endpoint to poll",
+      "param_type": "url",
+      "default_value": null,
+      "required": true,
+      "constraints": {},
+      "group": "API Configuration",
+      "order": 0
+    },
+    {
+      "name": "http_method",
+      "display_name": "HTTP Method",
+      "description": "HTTP method for the request",
+      "param_type": "choice",
+      "default_value": "GET",
+      "required": false,
+      "constraints": {"choices": ["GET", "POST", "PUT", "PATCH"]},
+      "group": "API Configuration",
+      "order": 1
+    },
+    {
+      "name": "headers",
+      "display_name": "Headers",
+      "description": "HTTP headers as JSON object",
+      "param_type": "json",
+      "default_value": {"Content-Type": "application/json"},
+      "required": false,
+      "constraints": {},
+      "group": "API Configuration",
+      "order": 2
+    },
+    {
+      "name": "auth_type",
+      "display_name": "Authentication Type",
+      "description": "Type of authentication",
+      "param_type": "choice",
+      "default_value": "none",
+      "required": false,
+      "constraints": {"choices": ["none", "bearer", "basic", "api_key"]},
+      "group": "Authentication",
+      "order": 3
+    },
+    {
+      "name": "auth_credential",
+      "display_name": "Auth Credential",
+      "description": "Credential reference for authentication",
+      "param_type": "credential",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Authentication",
+      "order": 4
+    },
+    {
+      "name": "request_body",
+      "display_name": "Request Body",
+      "description": "Request body for POST/PUT/PATCH requests (JSON)",
+      "param_type": "json",
+      "default_value": null,
+      "required": false,
+      "constraints": {},
+      "group": "Request",
+      "order": 5
+    },
+    {
+      "name": "poll_interval",
+      "display_name": "Poll Interval (seconds)",
+      "description": "Time between API calls in seconds",
+      "param_type": "integer",
+      "default_value": 60,
+      "required": false,
+      "constraints": {"min": 5, "max": 86400},
+      "group": "Polling",
+      "order": 6
+    },
+    {
+      "name": "max_iterations",
+      "display_name": "Max Iterations",
+      "description": "Maximum number of poll cycles (0 = unlimited)",
+      "param_type": "integer",
+      "default_value": 0,
+      "required": false,
+      "constraints": {"min": 0},
+      "group": "Polling",
+      "order": 7
+    },
+    {
+      "name": "stop_condition_path",
+      "display_name": "Stop Condition JSONPath",
+      "description": "JSONPath to check for stop condition (e.g., $.status)",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Polling",
+      "order": 8
+    },
+    {
+      "name": "stop_condition_value",
+      "display_name": "Stop Condition Value",
+      "description": "Value that triggers stop (e.g., 'completed')",
+      "param_type": "string",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Polling",
+      "order": 9
+    },
+    {
+      "name": "data_extract_path",
+      "display_name": "Data Extract JSONPath",
+      "description": "JSONPath to extract data from response (e.g., $.data.items)",
+      "param_type": "string",
+      "default_value": "$",
+      "required": false,
+      "constraints": {},
+      "group": "Data Processing",
+      "order": 10
+    },
+    {
+      "name": "output_file",
+      "display_name": "Output File",
+      "description": "File to save extracted data (optional)",
+      "param_type": "file_path",
+      "default_value": "",
+      "required": false,
+      "constraints": {},
+      "group": "Output",
+      "order": 11
+    }
+  ],
+  "workflow_definition": {
+    "metadata": {
+      "name": "API Polling Workflow",
+      "description": "Generated from API Polling template",
+      "version": "1.0.0"
+    },
+    "nodes": {
+      "start_001": {
+        "node_id": "start_001",
+        "node_type": "StartNode",
+        "name": "Start",
+        "position": [100, 200],
+        "config": {}
+      },
+      "set_counter_001": {
+        "node_id": "set_counter_001",
+        "node_type": "SetVariableNode",
+        "name": "Initialize Counter",
+        "position": [300, 200],
+        "config": {
+          "variable_name": "iteration_count",
+          "value": 0
+        }
+      },
+      "loop_001": {
+        "node_id": "loop_001",
+        "node_type": "WhileNode",
+        "name": "Poll Loop",
+        "position": [500, 200],
+        "config": {
+          "condition": "({{max_iterations}} == 0) or ({{iteration_count}} < {{max_iterations}})"
+        }
+      },
+      "http_request_001": {
+        "node_id": "http_request_001",
+        "node_type": "HttpRequestNode",
+        "name": "API Request",
+        "position": [700, 200],
+        "config": {
+          "url": "{{api_url}}",
+          "method": "{{http_method}}",
+          "headers": "{{headers}}",
+          "body": "{{request_body}}",
+          "auth_type": "{{auth_type}}",
+          "credential": "{{auth_credential}}"
+        }
+      },
+      "json_extract_001": {
+        "node_id": "json_extract_001",
+        "node_type": "JsonExtractNode",
+        "name": "Extract Data",
+        "position": [900, 200],
+        "config": {
+          "json_path": "{{data_extract_path}}"
+        }
+      },
+      "branch_stop_001": {
+        "node_id": "branch_stop_001",
+        "node_type": "BranchNode",
+        "name": "Check Stop Condition",
+        "position": [1100, 200],
+        "config": {
+          "condition": "{{stop_condition_path}} != '' and {{extracted_value}} == '{{stop_condition_value}}'"
+        }
+      },
+      "log_data_001": {
+        "node_id": "log_data_001",
+        "node_type": "LogNode",
+        "name": "Log Response",
+        "position": [1300, 300],
+        "config": {
+          "message": "Poll #{{iteration_count}}: Received data",
+          "level": "info"
+        }
+      },
+      "branch_save_001": {
+        "node_id": "branch_save_001",
+        "node_type": "BranchNode",
+        "name": "Save Output?",
+        "position": [1500, 300],
+        "config": {
+          "condition": "{{output_file}} != ''"
+        }
+      },
+      "append_file_001": {
+        "node_id": "append_file_001",
+        "node_type": "AppendFileNode",
+        "name": "Save Data",
+        "position": [1700, 200],
+        "config": {
+          "file_path": "{{output_file}}"
+        }
+      },
+      "increment_001": {
+        "node_id": "increment_001",
+        "node_type": "IncrementNode",
+        "name": "Increment Counter",
+        "position": [1900, 300],
+        "config": {
+          "variable_name": "iteration_count"
+        }
+      },
+      "wait_001": {
+        "node_id": "wait_001",
+        "node_type": "WaitNode",
+        "name": "Wait Interval",
+        "position": [2100, 300],
+        "config": {
+          "wait_time_seconds": "{{poll_interval}}"
+        }
+      },
+      "log_complete_001": {
+        "node_id": "log_complete_001",
+        "node_type": "LogNode",
+        "name": "Log Completion",
+        "position": [1300, 100],
+        "config": {
+          "message": "Polling completed: Stop condition met",
+          "level": "info"
+        }
+      },
+      "end_001": {
+        "node_id": "end_001",
+        "node_type": "EndNode",
+        "name": "End",
+        "position": [2300, 200],
+        "config": {}
+      }
+    },
+    "connections": [
+      {"source_node": "start_001", "source_port": "exec_out", "target_node": "set_counter_001", "target_port": "exec_in"},
+      {"source_node": "set_counter_001", "source_port": "exec_out", "target_node": "loop_001", "target_port": "exec_in"},
+      {"source_node": "loop_001", "source_port": "loop_body", "target_node": "http_request_001", "target_port": "exec_in"},
+      {"source_node": "http_request_001", "source_port": "exec_out", "target_node": "json_extract_001", "target_port": "exec_in"},
+      {"source_node": "http_request_001", "source_port": "response", "target_node": "json_extract_001", "target_port": "json"},
+      {"source_node": "json_extract_001", "source_port": "exec_out", "target_node": "branch_stop_001", "target_port": "exec_in"},
+      {"source_node": "branch_stop_001", "source_port": "true", "target_node": "log_complete_001", "target_port": "exec_in"},
+      {"source_node": "branch_stop_001", "source_port": "false", "target_node": "log_data_001", "target_port": "exec_in"},
+      {"source_node": "log_data_001", "source_port": "exec_out", "target_node": "branch_save_001", "target_port": "exec_in"},
+      {"source_node": "branch_save_001", "source_port": "true", "target_node": "append_file_001", "target_port": "exec_in"},
+      {"source_node": "branch_save_001", "source_port": "false", "target_node": "increment_001", "target_port": "exec_in"},
+      {"source_node": "append_file_001", "source_port": "exec_out", "target_node": "increment_001", "target_port": "exec_in"},
+      {"source_node": "increment_001", "source_port": "exec_out", "target_node": "wait_001", "target_port": "exec_in"},
+      {"source_node": "wait_001", "source_port": "exec_out", "target_node": "loop_001", "target_port": "loop_next"},
+      {"source_node": "loop_001", "source_port": "exec_out", "target_node": "end_001", "target_port": "exec_in"},
+      {"source_node": "log_complete_001", "source_port": "exec_out", "target_node": "end_001", "target_port": "exec_in"}
+    ],
+    "frames": [],
+    "variables": {
+      "iteration_count": {
+        "type": "Integer",
+        "default_value": 0,
+        "description": "Current poll iteration"
+      },
+      "last_response": {
+        "type": "Dict",
+        "default_value": {},
+        "description": "Last API response"
+      }
+    },
+    "settings": {
+      "stop_on_error": false,
+      "timeout": 0,
+      "retry_count": 3
+    }
+  },
+  "usage_stats": {
+    "total_uses": 0,
+    "last_used": null,
+    "successful_instantiations": 0,
+    "failed_instantiations": 0,
+    "average_rating": null,
+    "rating_count": 0
+  },
+  "is_builtin": true,
+  "source": "builtin",
+  "marketplace_id": null
+}
