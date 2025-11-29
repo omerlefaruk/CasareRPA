@@ -1507,7 +1507,7 @@ class FileExistsNode(BaseNode):
     Outputs:
         exists: Whether the path exists
         is_file: Whether it's a file
-        is_directory: Whether it's a directory
+        is_dir: Whether it's a directory
     """
 
     def __init__(self, node_id: str, name: str = "File Exists", **kwargs) -> None:
@@ -1521,7 +1521,7 @@ class FileExistsNode(BaseNode):
         self.add_input_port("path", PortType.INPUT, DataType.STRING)
         self.add_output_port("exists", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("is_file", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("is_directory", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("is_dir", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1552,7 +1552,7 @@ class FileExistsNode(BaseNode):
 
             self.set_output_value("exists", exists)
             self.set_output_value("is_file", is_file)
-            self.set_output_value("is_directory", is_directory)
+            self.set_output_value("is_dir", is_directory)
             self.status = NodeStatus.SUCCESS
 
             return {
@@ -1560,7 +1560,7 @@ class FileExistsNode(BaseNode):
                 "data": {
                     "exists": exists,
                     "is_file": is_file,
-                    "is_directory": is_directory,
+                    "is_dir": is_directory,
                 },
                 "next_nodes": ["exec_out"],
             }
