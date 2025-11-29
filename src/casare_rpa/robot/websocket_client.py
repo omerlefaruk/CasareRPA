@@ -13,7 +13,7 @@ from loguru import logger
 
 try:
     import websockets
-    from websockets.client import WebSocketClientProtocol
+    from websockets.asyncio.client import ClientConnection
     from websockets.exceptions import ConnectionClosed
 
     HAS_WEBSOCKETS = True
@@ -81,7 +81,7 @@ class RobotWebSocketClient:
         self._heartbeat_interval = heartbeat_interval
 
         # State
-        self._ws: Optional[WebSocketClientProtocol] = None
+        self._ws: Optional[ClientConnection] = None
         self._connected = False
         self._running = False
         self._active_jobs: Set[str] = set()

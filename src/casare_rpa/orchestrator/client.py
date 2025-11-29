@@ -13,8 +13,8 @@ from loguru import logger
 
 try:
     import websockets
-    from websockets.client import WebSocketClientProtocol
-    from websockets.exceptions import ConnectionClosed, InvalidStatusCode
+    from websockets.asyncio.client import ClientConnection
+    from websockets.exceptions import ConnectionClosed
 
     HAS_WEBSOCKETS = True
 except ImportError:
@@ -87,7 +87,7 @@ class RobotClient:
         self.max_reconnect_attempts = max_reconnect_attempts
 
         # Connection state
-        self._websocket: Optional[WebSocketClientProtocol] = None
+        self._websocket: Optional[ClientConnection] = None
         self._connected = False
         self._running = False
         self._reconnect_count = 0
@@ -187,7 +187,7 @@ class RobotClient:
 
                 return True
 
-            except (ConnectionRefusedError, OSError, InvalidStatusCode) as e:
+            except (ConnectionRefusedError, OSError) as e:
                 self._reconnect_count += 1
                 logger.warning(
                     f"Connection failed (attempt {self._reconnect_count}): {e}"
