@@ -7,7 +7,8 @@ This module provides nodes for setting and getting variables in the execution co
 from typing import Any, Optional
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -19,6 +20,31 @@ from loguru import logger
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        required=True,
+        label="Variable Name",
+        tooltip="Name of the variable to set",
+        placeholder="my_variable",
+    ),
+    PropertyDef(
+        "default_value",
+        PropertyType.ANY,
+        default=None,
+        label="Default Value",
+        tooltip="Default value if no input provided",
+    ),
+    PropertyDef(
+        "variable_type",
+        PropertyType.CHOICE,
+        default="String",
+        choices=["String", "Boolean", "Int32", "Object", "Array", "DataTable"],
+        label="Variable Type",
+        tooltip="Type to convert value to",
+    ),
+)
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -30,8 +56,6 @@ class SetVariableNode(BaseNode):
         self,
         node_id: str,
         name: str = "Set Variable",
-        variable_name: str = "",
-        default_value: Optional[Any] = None,
         **kwargs,
     ) -> None:
         """
@@ -40,16 +64,8 @@ class SetVariableNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            variable_name: Name of the variable to set
-            default_value: Default value if no input provided
         """
-        config = kwargs.get(
-            "config", {"variable_name": variable_name, "default_value": default_value}
-        )
-        if "variable_name" not in config:
-            config["variable_name"] = variable_name
-        if "default_value" not in config:
-            config["default_value"] = default_value
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SetVariableNode"
@@ -73,22 +89,14 @@ class SetVariableNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get variable name from input or config
-            variable_name = self.get_input_value("variable_name")
-            if variable_name is None:
-                variable_name = self.config.get("variable_name", "")
+            variable_name = self.get_parameter("variable_name")
+            value = self.get_parameter("value", self.get_parameter("default_value"))
+            variable_type = self.get_parameter("variable_type", "String")
 
             if not variable_name:
                 raise ValueError("Variable name is required")
 
-            # Get value from input or default
-            value = self.get_input_value("value")
-            if value is None:
-                value = self.config.get("default_value")
-
             # Apply type conversion if specified
-            variable_type = self.config.get("variable_type", "String")
-
             if value is not None and variable_type != "String":
                 try:
                     if variable_type == "Boolean":
@@ -135,15 +143,25 @@ class SetVariableNode(BaseNode):
             logger.error(f"Failed to set variable: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        variable_name = self.config.get("variable_name", "")
-        if not variable_name:
-            return False, "Variable name is required"
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        required=True,
+        label="Variable Name",
+        tooltip="Name of the variable to get",
+        placeholder="my_variable",
+    ),
+    PropertyDef(
+        "default_value",
+        PropertyType.ANY,
+        default=None,
+        label="Default Value",
+        tooltip="Default value if variable not found",
+    ),
+)
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -155,8 +173,6 @@ class GetVariableNode(BaseNode):
         self,
         node_id: str,
         name: str = "Get Variable",
-        variable_name: str = "",
-        default_value: Optional[Any] = None,
         **kwargs,
     ) -> None:
         """
@@ -165,16 +181,8 @@ class GetVariableNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            variable_name: Name of the variable to get
-            default_value: Default value if variable not found
         """
-        config = kwargs.get(
-            "config", {"variable_name": variable_name, "default_value": default_value}
-        )
-        if "variable_name" not in config:
-            config["variable_name"] = variable_name
-        if "default_value" not in config:
-            config["default_value"] = default_value
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetVariableNode"
@@ -197,10 +205,7 @@ class GetVariableNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get variable name from input or config
-            variable_name = self.get_input_value("variable_name")
-            if variable_name is None:
-                variable_name = self.config.get("variable_name", "")
+            variable_name = self.get_parameter("variable_name")
 
             if not variable_name:
                 raise ValueError("Variable name is required")
@@ -210,7 +215,7 @@ class GetVariableNode(BaseNode):
 
             # Use default if not found
             if value is None:
-                value = self.config.get("default_value")
+                value = self.get_parameter("default_value")
 
             # Output the value
             self.set_output_value("value", value)
@@ -229,15 +234,25 @@ class GetVariableNode(BaseNode):
             logger.error(f"Failed to get variable: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        variable_name = self.config.get("variable_name", "")
-        if not variable_name:
-            return False, "Variable name is required"
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        required=True,
+        label="Variable Name",
+        tooltip="Name of the variable to increment",
+        placeholder="counter",
+    ),
+    PropertyDef(
+        "increment",
+        PropertyType.FLOAT,
+        default=1.0,
+        label="Increment",
+        tooltip="Amount to increment by",
+    ),
+)
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.
@@ -249,8 +264,6 @@ class IncrementVariableNode(BaseNode):
         self,
         node_id: str,
         name: str = "Increment Variable",
-        variable_name: str = "",
-        increment: float = 1.0,
         **kwargs,
     ) -> None:
         """
@@ -259,16 +272,8 @@ class IncrementVariableNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            variable_name: Name of the variable to increment
-            increment: Amount to increment by
         """
-        config = kwargs.get(
-            "config", {"variable_name": variable_name, "increment": increment}
-        )
-        if "variable_name" not in config:
-            config["variable_name"] = variable_name
-        if "increment" not in config:
-            config["increment"] = increment
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "IncrementVariableNode"
@@ -292,18 +297,11 @@ class IncrementVariableNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get variable name from input or config
-            variable_name = self.get_input_value("variable_name")
-            if variable_name is None:
-                variable_name = self.config.get("variable_name", "")
+            variable_name = self.get_parameter("variable_name")
+            increment = self.get_parameter("increment", 1.0)
 
             if not variable_name:
                 raise ValueError("Variable name is required")
-
-            # Get increment from input or config
-            increment = self.get_input_value("increment")
-            if increment is None:
-                increment = self.config.get("increment", 1.0)
 
             # Get current value
             current_value = context.get_variable(variable_name)
@@ -339,10 +337,3 @@ class IncrementVariableNode(BaseNode):
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to increment variable: {e}")
             return {"success": False, "error": str(e), "next_nodes": []}
-
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        variable_name = self.config.get("variable_name", "")
-        if not variable_name:
-            return False, "Variable name is required"
-        return True, ""

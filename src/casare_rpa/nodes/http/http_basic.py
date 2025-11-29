@@ -21,7 +21,8 @@ from aiohttp import ClientTimeout
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -32,52 +33,141 @@ from casare_rpa.domain.value_objects.types import (
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for the HTTP request",
+        placeholder="https://api.example.com/endpoint",
+    ),
+    PropertyDef(
+        "method",
+        PropertyType.CHOICE,
+        default="GET",
+        choices=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+        label="HTTP Method",
+        tooltip="HTTP request method",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.STRING,
+        default="",
+        label="Request Body",
+        tooltip="Request body (for POST, PUT, PATCH)",
+    ),
+    PropertyDef(
+        "params",
+        PropertyType.JSON,
+        default={},
+        label="Query Parameters",
+        tooltip="URL query parameters as JSON object",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "follow_redirects",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Follow Redirects",
+        tooltip="Automatically follow HTTP redirects",
+    ),
+    PropertyDef(
+        "max_redirects",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=0,
+        label="Max Redirects",
+        tooltip="Maximum number of redirects to follow",
+    ),
+    PropertyDef(
+        "content_type",
+        PropertyType.STRING,
+        default="application/json",
+        label="Content-Type",
+        tooltip="Content-Type header for request body",
+    ),
+    PropertyDef(
+        "proxy",
+        PropertyType.STRING,
+        default="",
+        label="Proxy URL",
+        tooltip="HTTP proxy URL (optional)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+    PropertyDef(
+        "response_encoding",
+        PropertyType.STRING,
+        default="",
+        label="Response Encoding",
+        tooltip="Force specific response encoding (optional)",
+    ),
+)
 class HttpRequestNode(BaseNode):
     """
     Generic HTTP request node supporting all HTTP methods.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        method: HTTP method (default: GET)
+        headers: Request headers as dict
+        body: Request body (for POST, PUT, PATCH)
+        params: Query parameters as dict
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        follow_redirects: Follow HTTP redirects
+        max_redirects: Maximum redirects to follow
+        content_type: Content-Type header
+        proxy: Proxy URL (optional)
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+        response_encoding: Force response encoding
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - method: HTTP method (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
-        - headers: Request headers as dict
-        - body: Request body (for POST, PUT, PATCH)
-        - params: Query parameters as dict
-        - timeout: Request timeout in seconds
+        url, method, headers, body, params, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - response_json: Parsed JSON response (if applicable)
-        - status_code: HTTP status code
-        - response_headers: Response headers as dict
-        - success: True if status code is 2xx
-        - error: Error message if request failed
+        response_body, response_json, status_code, response_headers, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP Request", **kwargs: Any) -> None:
-        default_config = {
-            "method": "GET",
-            "url": "",
-            "headers": {},
-            "body": "",
-            "params": {},
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "follow_redirects": True,
-            "max_redirects": 10,
-            "content_type": "application/json",
-            "proxy": "",
-            "retry_count": 0,
-            "retry_delay": 1.0,
-            "response_encoding": "",
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpRequestNode"
@@ -101,24 +191,20 @@ class HttpRequestNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            method = (
-                self.get_input_value("method") or self.config.get("method", "GET")
-            ).upper()
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            body = self.get_input_value("body") or self.config.get("body", "")
-            params = self.get_input_value("params") or self.config.get("params", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            follow_redirects = self.config.get("follow_redirects", True)
-            max_redirects = self.config.get("max_redirects", 10)
-            content_type = self.config.get("content_type", "application/json")
-            proxy = self.config.get("proxy", "")
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
-            response_encoding = self.config.get("response_encoding", "")
+            url = self.get_parameter("url")
+            method = self.get_parameter("method", "GET").upper()
+            headers = self.get_parameter("headers", {})
+            body = self.get_parameter("body", "")
+            params = self.get_parameter("params", {})
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            follow_redirects = self.get_parameter("follow_redirects", True)
+            max_redirects = self.get_parameter("max_redirects", 10)
+            content_type = self.get_parameter("content_type", "application/json")
+            proxy = self.get_parameter("proxy", "")
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
+            response_encoding = self.get_parameter("response_encoding", "")
 
             url = context.resolve_value(url)
             if isinstance(body, str):
@@ -247,41 +333,83 @@ class HttpRequestNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for GET request",
+        placeholder="https://api.example.com/endpoint",
+    ),
+    PropertyDef(
+        "params",
+        PropertyType.JSON,
+        default={},
+        label="Query Parameters",
+        tooltip="URL query parameters as JSON object",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpGetNode(BaseNode):
     """
     HTTP GET request node with query parameter support.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        params: Query parameters as dict
+        headers: Request headers as dict
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - params: Query parameters as dict
-        - headers: Request headers as dict
-        - timeout: Request timeout in seconds
+        url, params, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - response_json: Parsed JSON response
-        - status_code: HTTP status code
-        - success: True if status code is 2xx
+        response_body, response_json, status_code, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP GET", **kwargs: Any) -> None:
-        default_config = {
-            "url": "",
-            "params": {},
-            "headers": {},
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 1.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpGetNode"
@@ -302,15 +430,13 @@ class HttpGetNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            params = self.get_input_value("params") or self.config.get("params", {})
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
+            url = self.get_parameter("url")
+            params = self.get_parameter("params", {})
+            headers = self.get_parameter("headers", {})
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
 
             url = context.resolve_value(url)
 
@@ -394,43 +520,91 @@ class HttpGetNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for POST request",
+        placeholder="https://api.example.com/endpoint",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.STRING,
+        default="",
+        label="Request Body",
+        tooltip="Request body (JSON, form data, or string)",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "content_type",
+        PropertyType.STRING,
+        default="application/json",
+        label="Content-Type",
+        tooltip="Content-Type header for request body",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpPostNode(BaseNode):
     """
     HTTP POST request node with body support.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        body: Request body
+        headers: Request headers as dict
+        content_type: Content-Type header
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - body: Request body (JSON, form data, or string)
-        - headers: Request headers as dict
-        - content_type: Content type (default: application/json)
-        - timeout: Request timeout in seconds
+        url, body, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - response_json: Parsed JSON response
-        - status_code: HTTP status code
-        - success: True if status code is 2xx
+        response_body, response_json, status_code, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP POST", **kwargs: Any) -> None:
-        default_config = {
-            "url": "",
-            "body": "",
-            "headers": {},
-            "content_type": "application/json",
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 1.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPostNode"
@@ -451,16 +625,14 @@ class HttpPostNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            body = self.get_input_value("body") or self.config.get("body", "")
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
+            url = self.get_parameter("url")
+            body = self.get_parameter("body", "")
+            headers = self.get_parameter("headers", {})
+            content_type = self.get_parameter("content_type", "application/json")
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
 
             url = context.resolve_value(url)
             if isinstance(body, str):
@@ -550,42 +722,91 @@ class HttpPostNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for PUT request",
+        placeholder="https://api.example.com/resource/id",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.STRING,
+        default="",
+        label="Request Body",
+        tooltip="Request body for updating resource",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "content_type",
+        PropertyType.STRING,
+        default="application/json",
+        label="Content-Type",
+        tooltip="Content-Type header for request body",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpPutNode(BaseNode):
     """
     HTTP PUT request node for updating resources.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        body: Request body
+        headers: Request headers as dict
+        content_type: Content-Type header
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - body: Request body
-        - headers: Request headers as dict
-        - timeout: Request timeout in seconds
+        url, body, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - response_json: Parsed JSON response
-        - status_code: HTTP status code
-        - success: True if status code is 2xx
+        response_body, response_json, status_code, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP PUT", **kwargs: Any) -> None:
-        default_config = {
-            "url": "",
-            "body": "",
-            "headers": {},
-            "content_type": "application/json",
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 1.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPutNode"
@@ -606,16 +827,14 @@ class HttpPutNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            body = self.get_input_value("body") or self.config.get("body", "")
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
+            url = self.get_parameter("url")
+            body = self.get_parameter("body", "")
+            headers = self.get_parameter("headers", {})
+            content_type = self.get_parameter("content_type", "application/json")
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
 
             url = context.resolve_value(url)
             if isinstance(body, str):
@@ -705,42 +924,91 @@ class HttpPutNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for PATCH request",
+        placeholder="https://api.example.com/resource/id",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.STRING,
+        default="",
+        label="Request Body",
+        tooltip="Request body with partial update data",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "content_type",
+        PropertyType.STRING,
+        default="application/json",
+        label="Content-Type",
+        tooltip="Content-Type header for request body",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpPatchNode(BaseNode):
     """
     HTTP PATCH request node for partial updates.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        body: Request body with partial updates
+        headers: Request headers as dict
+        content_type: Content-Type header
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - body: Request body (partial update data)
-        - headers: Request headers as dict
-        - timeout: Request timeout in seconds
+        url, body, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - response_json: Parsed JSON response
-        - status_code: HTTP status code
-        - success: True if status code is 2xx
+        response_body, response_json, status_code, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP PATCH", **kwargs: Any) -> None:
-        default_config = {
-            "url": "",
-            "body": "",
-            "headers": {},
-            "content_type": "application/json",
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 1.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpPatchNode"
@@ -761,16 +1029,14 @@ class HttpPatchNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            body = self.get_input_value("body") or self.config.get("body", "")
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            content_type = self.config.get("content_type", "application/json")
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
+            url = self.get_parameter("url")
+            body = self.get_parameter("body", "")
+            headers = self.get_parameter("headers", {})
+            content_type = self.get_parameter("content_type", "application/json")
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
 
             url = context.resolve_value(url)
             if isinstance(body, str):
@@ -860,38 +1126,75 @@ class HttpPatchNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        required=True,
+        label="URL",
+        tooltip="Target URL for DELETE request",
+        placeholder="https://api.example.com/resource/id",
+    ),
+    PropertyDef(
+        "headers",
+        PropertyType.JSON,
+        default={},
+        label="Headers",
+        tooltip="Request headers as JSON object",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Request timeout in seconds",
+    ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL",
+        tooltip="Verify SSL certificates",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_delay",
+        PropertyType.FLOAT,
+        default=1.0,
+        min_value=0.0,
+        label="Retry Delay (seconds)",
+        tooltip="Delay between retry attempts",
+    ),
+)
 class HttpDeleteNode(BaseNode):
     """
     HTTP DELETE request node for deleting resources.
 
+    Config (via @node_schema):
+        url: Target URL (required)
+        headers: Request headers as dict
+        timeout: Request timeout in seconds
+        verify_ssl: Verify SSL certificates
+        retry_count: Retry attempts on failure
+        retry_delay: Delay between retries
+
     Inputs:
-        - exec_in: Execution input
-        - url: Target URL (required)
-        - headers: Request headers as dict
-        - timeout: Request timeout in seconds
+        url, headers, timeout
 
     Outputs:
-        - exec_out: Execution output
-        - response_body: Response body as string
-        - status_code: HTTP status code
-        - success: True if status code is 2xx
+        response_body, status_code, success, error
     """
 
     def __init__(self, node_id: str, name: str = "HTTP DELETE", **kwargs: Any) -> None:
-        default_config = {
-            "url": "",
-            "headers": {},
-            "timeout": 30.0,
-            "verify_ssl": True,
-            "retry_count": 0,
-            "retry_delay": 1.0,
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpDeleteNode"
@@ -910,14 +1213,12 @@ class HttpDeleteNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            url = self.get_input_value("url") or self.config.get("url", "")
-            headers = self.get_input_value("headers") or self.config.get("headers", {})
-            timeout_seconds = self.get_input_value("timeout") or self.config.get(
-                "timeout", 30.0
-            )
-            verify_ssl = self.config.get("verify_ssl", True)
-            retry_count = self.config.get("retry_count", 0)
-            retry_delay = self.config.get("retry_delay", 1.0)
+            url = self.get_parameter("url")
+            headers = self.get_parameter("headers", {})
+            timeout_seconds = self.get_parameter("timeout", 30.0)
+            verify_ssl = self.get_parameter("verify_ssl", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_delay = self.get_parameter("retry_delay", 1.0)
 
             url = context.resolve_value(url)
 

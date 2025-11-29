@@ -8,16 +8,25 @@ Provides nodes for list/array manipulation including:
 - Reduction operations
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@executable_node
 class CreateListNode(BaseNode):
     """Node that creates a list from inputs."""
+
+    def __init__(self, node_id: str, name: str = "Create List", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "CreateListNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("item_1", PortType.INPUT, DataType.ANY)
@@ -31,7 +40,7 @@ class CreateListNode(BaseNode):
 
             for i in range(1, 4):
                 key = f"item_{i}"
-                val = self.get_input_value(key)
+                val = self.get_parameter(key)
                 if val is not None:
                     result.append(val)
 
@@ -43,8 +52,15 @@ class CreateListNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListGetItemNode(BaseNode):
     """Node that gets an item from a list by index."""
+
+    def __init__(self, node_id: str, name: str = "List Get Item", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListGetItemNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -53,8 +69,8 @@ class ListGetItemNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            idx = int(self.get_input_value("index", 0))
+            lst = self.get_parameter("list", [])
+            idx = int(self.get_parameter("index", 0))
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -74,8 +90,15 @@ class ListGetItemNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListLengthNode(BaseNode):
     """Node that returns the length of a list."""
+
+    def __init__(self, node_id: str, name: str = "List Length", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListLengthNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -83,7 +106,7 @@ class ListLengthNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
+            lst = self.get_parameter("list", [])
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
 
@@ -96,8 +119,15 @@ class ListLengthNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListAppendNode(BaseNode):
     """Node that appends an item to a list."""
+
+    def __init__(self, node_id: str, name: str = "List Append", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListAppendNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -106,8 +136,8 @@ class ListAppendNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            item = self.get_input_value("item")
+            lst = self.get_parameter("list", [])
+            item = self.get_parameter("item")
 
             if not isinstance(lst, list):
                 lst = list(lst) if isinstance(lst, tuple) else [lst]
@@ -123,8 +153,15 @@ class ListAppendNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListContainsNode(BaseNode):
     """Node that checks if a list contains an item."""
+
+    def __init__(self, node_id: str, name: str = "List Contains", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListContainsNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -134,8 +171,8 @@ class ListContainsNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            item = self.get_input_value("item")
+            lst = self.get_parameter("list", [])
+            item = self.get_parameter("item")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -156,8 +193,15 @@ class ListContainsNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListSliceNode(BaseNode):
     """Node that gets a slice of a list."""
+
+    def __init__(self, node_id: str, name: str = "List Slice", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListSliceNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -167,9 +211,9 @@ class ListSliceNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            start = self.get_input_value("start", 0)
-            end = self.get_input_value("end")
+            lst = self.get_parameter("list", [])
+            start = self.get_parameter("start", 0)
+            end = self.get_parameter("end")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -187,12 +231,24 @@ class ListSliceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "separator",
+        PropertyType.STRING,
+        default=", ",
+        label="Separator",
+        tooltip="Separator to use when joining items",
+    ),
+)
 class ListJoinNode(BaseNode):
     """Node that joins a list into a string."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Join", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.separator = self.config.get("separator", ", ")
+        self.name = name
+        self.node_type = "ListJoinNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -201,8 +257,8 @@ class ListJoinNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            separator = self.get_input_value("separator", self.separator)
+            lst = self.get_parameter("list", [])
+            separator = self.get_parameter("separator", ", ")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -217,13 +273,31 @@ class ListJoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "reverse",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Reverse",
+        tooltip="Sort in descending order",
+    ),
+    PropertyDef(
+        "key_path",
+        PropertyType.STRING,
+        default="",
+        label="Key Path",
+        tooltip="Dot-separated path to sort by (for dict items)",
+    ),
+)
 class ListSortNode(BaseNode):
     """Node that sorts a list."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Sort", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.reverse = self.config.get("reverse", False)
-        self.key_path = self.config.get("key_path", "")
+        self.name = name
+        self.node_type = "ListSortNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -233,9 +307,9 @@ class ListSortNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            reverse = self.get_input_value("reverse", self.reverse)
-            key_path = self.get_input_value("key_path", self.key_path)
+            lst = self.get_parameter("list", [])
+            reverse = self.get_parameter("reverse", False)
+            key_path = self.get_parameter("key_path", "")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -265,8 +339,15 @@ class ListSortNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListReverseNode(BaseNode):
     """Node that reverses a list."""
+
+    def __init__(self, node_id: str, name: str = "List Reverse", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListReverseNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -274,7 +355,7 @@ class ListReverseNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
+            lst = self.get_parameter("list", [])
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -289,8 +370,15 @@ class ListReverseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class ListUniqueNode(BaseNode):
     """Node that removes duplicates from a list."""
+
+    def __init__(self, node_id: str, name: str = "List Unique", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListUniqueNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -298,7 +386,7 @@ class ListUniqueNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
+            lst = self.get_parameter("list", [])
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -326,13 +414,44 @@ class ListUniqueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "condition",
+        PropertyType.CHOICE,
+        default="is_not_none",
+        choices=[
+            "equals",
+            "not_equals",
+            "contains",
+            "starts_with",
+            "ends_with",
+            "greater_than",
+            "less_than",
+            "is_not_none",
+            "is_none",
+            "is_truthy",
+            "is_falsy",
+        ],
+        label="Condition",
+        tooltip="Condition to filter by",
+    ),
+    PropertyDef(
+        "key_path",
+        PropertyType.STRING,
+        default="",
+        label="Key Path",
+        tooltip="Dot-separated path to compare (for dict items)",
+    ),
+)
 class ListFilterNode(BaseNode):
     """Node that filters a list based on a condition."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Filter", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.condition = self.config.get("condition", "is_not_none")
-        self.key_path = self.config.get("key_path", "")
+        self.name = name
+        self.node_type = "ListFilterNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -344,10 +463,10 @@ class ListFilterNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            condition = self.get_input_value("condition", self.condition)
-            compare_value = self.get_input_value("value")
-            key_path = self.get_input_value("key_path", self.key_path)
+            lst = self.get_parameter("list", [])
+            condition = self.get_parameter("condition", "is_not_none")
+            compare_value = self.get_parameter("value")
+            key_path = self.get_parameter("key_path", "")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -406,13 +525,41 @@ class ListFilterNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "transform",
+        PropertyType.CHOICE,
+        default="to_string",
+        choices=[
+            "get_property",
+            "to_string",
+            "to_int",
+            "to_float",
+            "to_upper",
+            "to_lower",
+            "trim",
+            "length",
+        ],
+        label="Transform",
+        tooltip="Transformation to apply to each item",
+    ),
+    PropertyDef(
+        "key_path",
+        PropertyType.STRING,
+        default="",
+        label="Key Path",
+        tooltip="Dot-separated path to extract (for dict items)",
+    ),
+)
 class ListMapNode(BaseNode):
     """Node that transforms each item in a list."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Map", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.transform = self.config.get("transform", "to_string")
-        self.key_path = self.config.get("key_path", "")
+        self.name = name
+        self.node_type = "ListMapNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -422,9 +569,9 @@ class ListMapNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            transform = self.get_input_value("transform", self.transform)
-            key_path = self.get_input_value("key_path", self.key_path)
+            lst = self.get_parameter("list", [])
+            transform = self.get_parameter("transform", "to_string")
+            key_path = self.get_parameter("key_path", "")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -468,13 +615,42 @@ class ListMapNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "operation",
+        PropertyType.CHOICE,
+        default="sum",
+        choices=[
+            "sum",
+            "product",
+            "min",
+            "max",
+            "avg",
+            "count",
+            "first",
+            "last",
+            "join",
+        ],
+        label="Operation",
+        tooltip="Reduction operation to perform",
+    ),
+    PropertyDef(
+        "key_path",
+        PropertyType.STRING,
+        default="",
+        label="Key Path",
+        tooltip="Dot-separated path to values (for dict items)",
+    ),
+)
 class ListReduceNode(BaseNode):
     """Node that reduces a list to a single value."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Reduce", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.operation = self.config.get("operation", "sum")
-        self.key_path = self.config.get("key_path", "")
+        self.name = name
+        self.node_type = "ListReduceNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -485,10 +661,10 @@ class ListReduceNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            operation = self.get_input_value("operation", self.operation)
-            key_path = self.get_input_value("key_path", self.key_path)
-            initial = self.get_input_value("initial")
+            lst = self.get_parameter("list", [])
+            operation = self.get_parameter("operation", "sum")
+            key_path = self.get_parameter("key_path", "")
+            initial = self.get_parameter("initial")
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -549,12 +725,25 @@ class ListReduceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "depth",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Depth",
+        tooltip="How many levels to flatten",
+    ),
+)
 class ListFlattenNode(BaseNode):
     """Node that flattens a nested list."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "List Flatten", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.depth = self.config.get("depth", 1)
+        self.name = name
+        self.node_type = "ListFlattenNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
@@ -563,8 +752,8 @@ class ListFlattenNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_input_value("list", [])
-            depth = int(self.get_input_value("depth", self.depth))
+            lst = self.get_parameter("list", [])
+            depth = int(self.get_parameter("depth", 1))
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")

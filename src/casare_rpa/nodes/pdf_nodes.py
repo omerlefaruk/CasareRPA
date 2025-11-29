@@ -15,7 +15,8 @@ Note: These nodes require PyPDF2 and optionally pdf2image for image conversion.
 from pathlib import Path
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -26,6 +27,36 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "page_separator",
+        PropertyType.STRING,
+        default="\n\n",
+        label="Page Separator",
+        tooltip="Separator string between pages in extracted text",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="PDF Password",
+        tooltip="Password for encrypted PDFs (optional)",
+    ),
+    PropertyDef(
+        "extract_tables",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Extract Tables",
+        tooltip="Attempt to extract tables (experimental)",
+    ),
+    PropertyDef(
+        "preserve_layout",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Preserve Layout",
+        tooltip="Try to preserve text layout (experimental)",
+    ),
+)
 class ReadPDFTextNode(BaseNode):
     """
     Extract text from a PDF file.
@@ -51,17 +82,7 @@ class ReadPDFTextNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Read PDF Text", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "page_separator": "\n\n",
-            "password": "",
-            "extract_tables": False,
-            "preserve_layout": False,
-        }
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadPDFTextNode"
@@ -81,23 +102,14 @@ class ReadPDFTextNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = str(self.get_input_value("file_path", context) or "")
-            start_page = self.get_input_value("start_page", context)
-            end_page = self.get_input_value("end_page", context)
-            page_separator = self.config.get("page_separator", "\n\n")
-
-            # Get password from input or config
-            password = self.get_input_value("password", context)
-            if password is None:
-                password = self.config.get("password", "")
+            file_path = str(self.get_parameter("file_path", "") or "")
+            start_page = self.get_parameter("start_page")
+            end_page = self.get_parameter("end_page")
+            page_separator = self.get_parameter("page_separator", "\n\n")
+            password = self.get_parameter("password", "")
 
             if not file_path:
                 raise ValueError("file_path is required")
-
-            # Resolve {{variable}} patterns in file_path and password
-            file_path = context.resolve_value(file_path)
-            if password:
-                password = context.resolve_value(password)
 
             path = Path(file_path)
             if not path.exists():
@@ -208,13 +220,10 @@ class GetPDFInfoNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = str(self.get_input_value("file_path", context) or "")
+            file_path = str(self.get_parameter("file_path", "") or "")
 
             if not file_path:
                 raise ValueError("file_path is required")
-
-            # Resolve {{variable}} patterns in file_path
-            file_path = context.resolve_value(file_path)
 
             path = Path(file_path)
             if not path.exists():
@@ -291,16 +300,13 @@ class MergePDFsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            input_files = self.get_input_value("input_files", context) or []
-            output_path = str(self.get_input_value("output_path", context) or "")
+            input_files = self.get_parameter("input_files", [])
+            output_path = str(self.get_parameter("output_path", "") or "")
 
             if not input_files:
                 raise ValueError("input_files list is required")
             if not output_path:
                 raise ValueError("output_path is required")
-
-            # Resolve {{variable}} patterns in output_path
-            output_path = context.resolve_value(output_path)
 
             try:
                 from PyPDF2 import PdfReader, PdfWriter
@@ -348,6 +354,15 @@ class MergePDFsNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "filename_pattern",
+        PropertyType.STRING,
+        default="page_{n}.pdf",
+        label="Filename Pattern",
+        tooltip="Pattern for output files (use {n} for page number)",
+    ),
+)
 class SplitPDFNode(BaseNode):
     """
     Split a PDF into separate files, one per page.
@@ -382,18 +397,14 @@ class SplitPDFNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            input_file = str(self.get_input_value("input_file", context) or "")
-            output_dir = str(self.get_input_value("output_dir", context) or "")
-            filename_pattern = self.config.get("filename_pattern", "page_{n}.pdf")
+            input_file = str(self.get_parameter("input_file", "") or "")
+            output_dir = str(self.get_parameter("output_dir", "") or "")
+            filename_pattern = self.get_parameter("filename_pattern", "page_{n}.pdf")
 
             if not input_file:
                 raise ValueError("input_file is required")
             if not output_dir:
                 raise ValueError("output_dir is required")
-
-            # Resolve {{variable}} patterns in paths
-            input_file = context.resolve_value(input_file)
-            output_dir = context.resolve_value(output_dir)
 
             input_path = Path(input_file)
             if not input_path.exists():
@@ -478,9 +489,9 @@ class ExtractPDFPagesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            input_file = str(self.get_input_value("input_file", context) or "")
-            output_path = str(self.get_input_value("output_path", context) or "")
-            pages = self.get_input_value("pages", context) or []
+            input_file = str(self.get_parameter("input_file", "") or "")
+            output_path = str(self.get_parameter("output_path", "") or "")
+            pages = self.get_parameter("pages", [])
 
             if not input_file:
                 raise ValueError("input_file is required")
@@ -488,10 +499,6 @@ class ExtractPDFPagesNode(BaseNode):
                 raise ValueError("output_path is required")
             if not pages:
                 raise ValueError("pages list is required")
-
-            # Resolve {{variable}} patterns in paths
-            input_file = context.resolve_value(input_file)
-            output_path = context.resolve_value(output_path)
 
             input_path = Path(input_file)
             if not input_path.exists():
@@ -540,6 +547,25 @@ class ExtractPDFPagesNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "dpi",
+        PropertyType.INTEGER,
+        default=200,
+        min_value=72,
+        max_value=600,
+        label="DPI Resolution",
+        tooltip="Resolution in dots per inch",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="png",
+        choices=["png", "jpg", "jpeg", "bmp", "tiff"],
+        label="Image Format",
+        tooltip="Output image format",
+    ),
+)
 class PDFToImagesNode(BaseNode):
     """
     Convert PDF pages to images.
@@ -579,21 +605,17 @@ class PDFToImagesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            input_file = str(self.get_input_value("input_file", context) or "")
-            output_dir = str(self.get_input_value("output_dir", context) or "")
-            start_page = self.get_input_value("start_page", context)
-            end_page = self.get_input_value("end_page", context)
-            dpi = self.config.get("dpi", 200)
-            img_format = self.config.get("format", "png")
+            input_file = str(self.get_parameter("input_file", "") or "")
+            output_dir = str(self.get_parameter("output_dir", "") or "")
+            start_page = self.get_parameter("start_page")
+            end_page = self.get_parameter("end_page")
+            dpi = self.get_parameter("dpi", 200)
+            img_format = self.get_parameter("format", "png")
 
             if not input_file:
                 raise ValueError("input_file is required")
             if not output_dir:
                 raise ValueError("output_dir is required")
-
-            # Resolve {{variable}} patterns in paths
-            input_file = context.resolve_value(input_file)
-            output_dir = context.resolve_value(output_dir)
 
             input_path = Path(input_file)
             if not input_path.exists():

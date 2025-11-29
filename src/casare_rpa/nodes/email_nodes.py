@@ -21,7 +21,8 @@ import os
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     PortType,
@@ -133,6 +134,151 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "smtp_server",
+        PropertyType.STRING,
+        default="smtp.gmail.com",
+        label="SMTP Server",
+        tooltip="SMTP server hostname",
+    ),
+    PropertyDef(
+        "smtp_port",
+        PropertyType.INTEGER,
+        default=587,
+        label="SMTP Port",
+        tooltip="SMTP server port (587 for TLS, 465 for SSL)",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "from_email",
+        PropertyType.STRING,
+        default="",
+        label="From Email",
+        tooltip="Sender email address",
+    ),
+    PropertyDef(
+        "to_email",
+        PropertyType.STRING,
+        default="",
+        label="To Email",
+        tooltip="Recipient email address(es), comma-separated",
+    ),
+    PropertyDef(
+        "subject",
+        PropertyType.STRING,
+        default="",
+        label="Subject",
+        tooltip="Email subject line",
+    ),
+    PropertyDef(
+        "body",
+        PropertyType.STRING,
+        default="",
+        label="Body",
+        tooltip="Email message body",
+    ),
+    PropertyDef(
+        "cc",
+        PropertyType.STRING,
+        default="",
+        label="CC",
+        tooltip="CC recipients, comma-separated",
+    ),
+    PropertyDef(
+        "bcc",
+        PropertyType.STRING,
+        default="",
+        label="BCC",
+        tooltip="BCC recipients, comma-separated",
+    ),
+    PropertyDef(
+        "use_tls",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Use TLS",
+        tooltip="Use TLS encryption",
+    ),
+    PropertyDef(
+        "use_ssl",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use SSL",
+        tooltip="Use SSL encryption",
+    ),
+    PropertyDef(
+        "is_html",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="HTML Body",
+        tooltip="Body contains HTML content",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30,
+        label="Timeout (seconds)",
+        tooltip="SMTP connection timeout",
+    ),
+    PropertyDef(
+        "reply_to",
+        PropertyType.STRING,
+        default="",
+        label="Reply-To",
+        tooltip="Reply-To email address",
+    ),
+    PropertyDef(
+        "priority",
+        PropertyType.CHOICE,
+        default="normal",
+        choices=["high", "normal", "low"],
+        label="Priority",
+        tooltip="Email priority level",
+    ),
+    PropertyDef(
+        "read_receipt",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Request Read Receipt",
+        tooltip="Request read receipt notification",
+    ),
+    PropertyDef(
+        "sender_name",
+        PropertyType.STRING,
+        default="",
+        label="Sender Name",
+        tooltip="Display name for sender",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class SendEmailNode(BaseNode):
     """
     Send an email via SMTP.
@@ -146,38 +292,7 @@ class SendEmailNode(BaseNode):
 
     def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
         """Initialize SendEmail node."""
-        # Default config with all SMTP options
-        default_config = {
-            "smtp_server": "smtp.gmail.com",
-            "smtp_port": 587,
-            "username": "",
-            "password": "",
-            "from_email": "",
-            "to_email": "",
-            "subject": "",
-            "body": "",
-            "cc": "",
-            "bcc": "",
-            "use_tls": True,
-            "use_ssl": False,
-            "is_html": False,
-            # Advanced options
-            "timeout": 30,  # SMTP connection timeout in seconds
-            "reply_to": "",  # Reply-To address
-            "priority": "normal",  # high, normal, low
-            "read_receipt": False,  # Request read receipt
-            "sender_name": "",  # Display name for sender
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = config or kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = "Send Email"
         self.node_type = "SendEmailNode"
@@ -204,43 +319,30 @@ class SendEmailNode(BaseNode):
 
         try:
             # Get connection settings
-            smtp_server = self.get_input_value("smtp_server") or self.config.get(
-                "smtp_server", "smtp.gmail.com"
-            )
-            smtp_port = self.get_input_value("smtp_port") or self.config.get(
-                "smtp_port", 587
-            )
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            use_tls = self.config.get("use_tls", True)
-            use_ssl = self.config.get("use_ssl", False)
-            timeout = self.config.get("timeout", 30)
+            smtp_server = self.get_parameter("smtp_server", "smtp.gmail.com")
+            smtp_port = self.get_parameter("smtp_port", 587)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            use_tls = self.get_parameter("use_tls", True)
+            use_ssl = self.get_parameter("use_ssl", False)
+            timeout = self.get_parameter("timeout", 30)
 
             # Resolve {{variable}} patterns in connection parameters
             smtp_server = context.resolve_value(smtp_server)
             username = context.resolve_value(username)
             password = context.resolve_value(password)
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 2000)
 
             # Get email content
-            from_email = self.get_input_value("from_email") or self.config.get(
-                "from_email", username
-            )
-            to_email = self.get_input_value("to_email") or self.config.get(
-                "to_email", ""
-            )
-            subject = self.get_input_value("subject") or self.config.get("subject", "")
-            body = self.get_input_value("body") or self.config.get("body", "")
-            cc = self.get_input_value("cc") or self.config.get("cc", "")
-            bcc = self.get_input_value("bcc") or self.config.get("bcc", "")
+            from_email = self.get_parameter("from_email", username)
+            to_email = self.get_parameter("to_email", "")
+            subject = self.get_parameter("subject", "")
+            body = self.get_parameter("body", "")
+            cc = self.get_parameter("cc", "")
+            bcc = self.get_parameter("bcc", "")
 
             # Resolve {{variable}} patterns in email content
             from_email = context.resolve_value(from_email)
@@ -250,13 +352,13 @@ class SendEmailNode(BaseNode):
             cc = context.resolve_value(cc)
             bcc = context.resolve_value(bcc)
             attachments = self.get_input_value("attachments") or []
-            is_html = self.config.get("is_html", False)
+            is_html = self.get_parameter("is_html", False)
 
             # Advanced options
-            reply_to = self.config.get("reply_to", "")
-            priority = self.config.get("priority", "normal")
-            read_receipt = self.config.get("read_receipt", False)
-            sender_name = self.config.get("sender_name", "")
+            reply_to = self.get_parameter("reply_to", "")
+            priority = self.get_parameter("priority", "normal")
+            read_receipt = self.get_parameter("read_receipt", False)
+            sender_name = self.get_parameter("sender_name", "")
 
             if not to_email:
                 self.set_output_value("success", False)
@@ -399,6 +501,109 @@ class SendEmailNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "imap_server",
+        PropertyType.STRING,
+        default="imap.gmail.com",
+        label="IMAP Server",
+        tooltip="IMAP server hostname",
+    ),
+    PropertyDef(
+        "imap_port",
+        PropertyType.INTEGER,
+        default=993,
+        label="IMAP Port",
+        tooltip="IMAP server port (usually 993 for SSL)",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "folder",
+        PropertyType.STRING,
+        default="INBOX",
+        label="Folder",
+        tooltip="Mailbox folder to read from",
+    ),
+    PropertyDef(
+        "limit",
+        PropertyType.INTEGER,
+        default=10,
+        min_value=0,
+        label="Limit",
+        tooltip="Maximum number of emails to retrieve",
+    ),
+    PropertyDef(
+        "search_criteria",
+        PropertyType.STRING,
+        default="ALL",
+        label="Search Criteria",
+        tooltip="IMAP search criteria (e.g., ALL, UNSEEN, FROM 'sender@example.com')",
+    ),
+    PropertyDef(
+        "use_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Use SSL",
+        tooltip="Use SSL encryption",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30,
+        label="Timeout (seconds)",
+        tooltip="IMAP connection timeout",
+    ),
+    PropertyDef(
+        "mark_as_read",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Mark as Read",
+        tooltip="Mark emails as read after fetching",
+    ),
+    PropertyDef(
+        "include_body",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Body",
+        tooltip="Include email body content",
+    ),
+    PropertyDef(
+        "newest_first",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Newest First",
+        tooltip="Return newest emails first",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class ReadEmailsNode(BaseNode):
     """
     Read emails from an IMAP server.
@@ -412,32 +617,7 @@ class ReadEmailsNode(BaseNode):
 
     def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
         """Initialize ReadEmails node."""
-        # Default config with all IMAP options
-        default_config = {
-            "imap_server": "imap.gmail.com",
-            "imap_port": 993,
-            "username": "",
-            "password": "",
-            "folder": "INBOX",
-            "limit": 10,
-            "search_criteria": "ALL",
-            "use_ssl": True,
-            # Advanced options
-            "timeout": 30,  # IMAP connection timeout
-            "mark_as_read": False,  # Mark emails as read after fetching
-            "include_body": True,  # Include email body content
-            "newest_first": True,  # Return newest emails first
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = config or kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = "Read Emails"
         self.node_type = "ReadEmailsNode"
@@ -460,26 +640,14 @@ class ReadEmailsNode(BaseNode):
 
         try:
             # Get connection settings
-            imap_server = self.get_input_value("imap_server") or self.config.get(
-                "imap_server", "imap.gmail.com"
-            )
-            imap_port = self.get_input_value("imap_port") or self.config.get(
-                "imap_port", 993
-            )
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            folder = self.get_input_value("folder") or self.config.get(
-                "folder", "INBOX"
-            )
-            limit = self.get_input_value("limit") or self.config.get("limit", 10)
-            search_criteria = self.get_input_value(
-                "search_criteria"
-            ) or self.config.get("search_criteria", "ALL")
-            use_ssl = self.config.get("use_ssl", True)
+            imap_server = self.get_parameter("imap_server", "imap.gmail.com")
+            imap_port = self.get_parameter("imap_port", 993)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            folder = self.get_parameter("folder", "INBOX")
+            limit = self.get_parameter("limit", 10)
+            search_criteria = self.get_parameter("search_criteria", "ALL")
+            use_ssl = self.get_parameter("use_ssl", True)
 
             # Resolve {{variable}} patterns in connection parameters
             imap_server = context.resolve_value(imap_server)
@@ -488,10 +656,9 @@ class ReadEmailsNode(BaseNode):
             folder = context.resolve_value(folder)
             search_criteria = context.resolve_value(search_criteria)
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 2000)
 
             if not username or not password:
                 self.set_output_value("emails", [])
@@ -661,6 +828,50 @@ class GetEmailContentNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "imap_server",
+        PropertyType.STRING,
+        default="imap.gmail.com",
+        label="IMAP Server",
+        tooltip="IMAP server hostname",
+    ),
+    PropertyDef(
+        "imap_port",
+        PropertyType.INTEGER,
+        default=993,
+        label="IMAP Port",
+        tooltip="IMAP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "folder",
+        PropertyType.STRING,
+        default="INBOX",
+        label="Folder",
+        tooltip="Mailbox folder",
+    ),
+    PropertyDef(
+        "save_path",
+        PropertyType.STRING,
+        default=".",
+        label="Save Path",
+        tooltip="Directory path to save attachments",
+    ),
+)
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -690,23 +901,13 @@ class SaveAttachmentNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get(
-                "imap_server", "imap.gmail.com"
-            )
-            imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            email_uid = self.get_input_value("email_uid") or ""
-            save_path = self.get_input_value("save_path") or self.config.get(
-                "save_path", "."
-            )
-            folder = self.get_input_value("folder") or self.config.get(
-                "folder", "INBOX"
-            )
+            imap_server = self.get_parameter("imap_server", "imap.gmail.com")
+            imap_port = self.get_parameter("imap_port", 993)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            email_uid = self.get_parameter("email_uid", "")
+            save_path = self.get_parameter("save_path", ".")
+            folder = self.get_parameter("folder", "INBOX")
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -877,6 +1078,51 @@ class FilterEmailsNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "imap_server",
+        PropertyType.STRING,
+        default="imap.gmail.com",
+        label="IMAP Server",
+        tooltip="IMAP server hostname",
+    ),
+    PropertyDef(
+        "imap_port",
+        PropertyType.INTEGER,
+        default=993,
+        label="IMAP Port",
+        tooltip="IMAP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "folder",
+        PropertyType.STRING,
+        default="INBOX",
+        label="Folder",
+        tooltip="Mailbox folder",
+    ),
+    PropertyDef(
+        "mark_as",
+        PropertyType.CHOICE,
+        default="read",
+        choices=["read", "unread", "flagged", "unflagged"],
+        label="Mark As",
+        tooltip="Flag to set on the email",
+    ),
+)
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -905,23 +1151,13 @@ class MarkEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get(
-                "imap_server", "imap.gmail.com"
-            )
-            imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            email_uid = self.get_input_value("email_uid") or ""
-            folder = self.get_input_value("folder") or self.config.get(
-                "folder", "INBOX"
-            )
-            mark_as = self.get_input_value("mark_as") or self.config.get(
-                "mark_as", "read"
-            )
+            imap_server = self.get_parameter("imap_server", "imap.gmail.com")
+            imap_port = self.get_parameter("imap_port", 993)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            email_uid = self.get_parameter("email_uid", "")
+            folder = self.get_parameter("folder", "INBOX")
+            mark_as = self.get_parameter("mark_as", "read")
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -973,6 +1209,50 @@ class MarkEmailNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "imap_server",
+        PropertyType.STRING,
+        default="imap.gmail.com",
+        label="IMAP Server",
+        tooltip="IMAP server hostname",
+    ),
+    PropertyDef(
+        "imap_port",
+        PropertyType.INTEGER,
+        default=993,
+        label="IMAP Port",
+        tooltip="IMAP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "folder",
+        PropertyType.STRING,
+        default="INBOX",
+        label="Folder",
+        tooltip="Mailbox folder",
+    ),
+    PropertyDef(
+        "permanent",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Permanent Delete",
+        tooltip="Permanently delete (expunge) instead of just marking deleted",
+    ),
+)
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -1000,21 +1280,13 @@ class DeleteEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get(
-                "imap_server", "imap.gmail.com"
-            )
-            imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            email_uid = self.get_input_value("email_uid") or ""
-            folder = self.get_input_value("folder") or self.config.get(
-                "folder", "INBOX"
-            )
-            permanent = self.config.get("permanent", False)
+            imap_server = self.get_parameter("imap_server", "imap.gmail.com")
+            imap_port = self.get_parameter("imap_port", 993)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            email_uid = self.get_parameter("email_uid", "")
+            folder = self.get_parameter("folder", "INBOX")
+            permanent = self.get_parameter("permanent", False)
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)
@@ -1057,6 +1329,50 @@ class DeleteEmailNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "imap_server",
+        PropertyType.STRING,
+        default="imap.gmail.com",
+        label="IMAP Server",
+        tooltip="IMAP server hostname",
+    ),
+    PropertyDef(
+        "imap_port",
+        PropertyType.INTEGER,
+        default=993,
+        label="IMAP Port",
+        tooltip="IMAP server port",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Email account username",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Email account password",
+    ),
+    PropertyDef(
+        "source_folder",
+        PropertyType.STRING,
+        default="INBOX",
+        label="Source Folder",
+        tooltip="Source mailbox folder",
+    ),
+    PropertyDef(
+        "target_folder",
+        PropertyType.STRING,
+        default="",
+        label="Target Folder",
+        tooltip="Target mailbox folder",
+    ),
+)
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.
@@ -1085,23 +1401,13 @@ class MoveEmailNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            imap_server = self.get_input_value("imap_server") or self.config.get(
-                "imap_server", "imap.gmail.com"
-            )
-            imap_port = self.config.get("imap_port", 993)
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            email_uid = self.get_input_value("email_uid") or ""
-            source_folder = self.get_input_value("source_folder") or self.config.get(
-                "source_folder", "INBOX"
-            )
-            target_folder = self.get_input_value("target_folder") or self.config.get(
-                "target_folder", ""
-            )
+            imap_server = self.get_parameter("imap_server", "imap.gmail.com")
+            imap_port = self.get_parameter("imap_port", 993)
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            email_uid = self.get_parameter("email_uid", "")
+            source_folder = self.get_parameter("source_folder", "INBOX")
+            target_folder = self.get_parameter("target_folder", "")
 
             # Resolve {{variable}} patterns
             imap_server = context.resolve_value(imap_server)

@@ -24,7 +24,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -32,7 +33,6 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
 )
-from casare_rpa.nodes.utils.type_converters import safe_int
 
 # Try to import optional database drivers
 try:
@@ -103,6 +103,119 @@ class DatabaseConnection:
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "db_type",
+        PropertyType.CHOICE,
+        default="sqlite",
+        choices=["sqlite", "postgresql", "mysql"],
+        label="Database Type",
+        tooltip="Type of database to connect to",
+    ),
+    PropertyDef(
+        "host",
+        PropertyType.STRING,
+        default="localhost",
+        label="Host",
+        tooltip="Database server host (PostgreSQL/MySQL)",
+    ),
+    PropertyDef(
+        "port",
+        PropertyType.INTEGER,
+        default=5432,
+        label="Port",
+        tooltip="Database server port",
+    ),
+    PropertyDef(
+        "database",
+        PropertyType.STRING,
+        default="",
+        label="Database",
+        tooltip="Database name or SQLite file path",
+        placeholder=":memory: or /path/to/database.db",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Database username (PostgreSQL/MySQL)",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Database password (PostgreSQL/MySQL)",
+    ),
+    PropertyDef(
+        "connection_string",
+        PropertyType.STRING,
+        default="",
+        label="Connection String",
+        tooltip="Full connection string (overrides individual parameters)",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.FLOAT,
+        default=30.0,
+        min_value=0.1,
+        label="Timeout (seconds)",
+        tooltip="Connection timeout in seconds",
+    ),
+    PropertyDef(
+        "ssl",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use SSL",
+        tooltip="Use SSL for connection (PostgreSQL/MySQL)",
+    ),
+    PropertyDef(
+        "ssl_ca",
+        PropertyType.STRING,
+        default="",
+        label="SSL CA Certificate",
+        tooltip="Path to CA certificate for SSL",
+    ),
+    PropertyDef(
+        "pool_size",
+        PropertyType.INTEGER,
+        default=5,
+        min_value=1,
+        label="Pool Size",
+        tooltip="Connection pool size (PostgreSQL/MySQL)",
+    ),
+    PropertyDef(
+        "auto_commit",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Auto Commit",
+        tooltip="Enable auto-commit mode",
+    ),
+    PropertyDef(
+        "charset",
+        PropertyType.STRING,
+        default="utf8mb4",
+        label="Character Set",
+        tooltip="Character set (MySQL)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on connection failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class DatabaseConnectNode(BaseNode):
     """
     Establish a database connection.
@@ -112,53 +225,34 @@ class DatabaseConnectNode(BaseNode):
         - PostgreSQL: Via asyncpg (if installed)
         - MySQL: Via aiomysql (if installed)
 
+    Config (via @node_schema):
+        db_type: Database type (sqlite, postgresql, mysql)
+        host: Database host
+        port: Database port
+        database: Database name or file path
+        username: Database username
+        password: Database password
+        connection_string: Full connection string (optional)
+        timeout: Connection timeout
+        ssl: Use SSL connection
+        ssl_ca: SSL CA certificate path
+        pool_size: Connection pool size
+        auto_commit: Auto-commit mode
+        charset: Character set (MySQL)
+        retry_count: Number of retries on failure
+        retry_interval: Delay between retries (ms)
+
     Inputs:
-        - exec_in: Execution input
-        - db_type: Database type (sqlite, postgresql, mysql)
-        - host: Database host (for PostgreSQL/MySQL)
-        - port: Database port
-        - database: Database name or file path (for SQLite)
-        - username: Database username
-        - password: Database password
-        - connection_string: Full connection string (optional)
+        db_type, host, port, database, username, password, connection_string
 
     Outputs:
-        - exec_out: Execution output
-        - connection: Database connection object
-        - success: True if connection succeeded
-        - error: Error message if connection failed
+        connection, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "Database Connect", **kwargs: Any
     ) -> None:
-        # Default config with all database connection options
-        default_config = {
-            "db_type": "sqlite",
-            "host": "localhost",
-            "port": 5432,
-            "database": "",
-            "username": "",
-            "password": "",
-            "connection_string": "",
-            "timeout": 30.0,
-            # Advanced options
-            "ssl": False,  # Use SSL for connection
-            "ssl_ca": "",  # Path to CA certificate
-            "pool_size": 5,  # Connection pool size (PostgreSQL/MySQL)
-            "auto_commit": True,  # Auto-commit mode
-            "charset": "utf8mb4",  # Character set (MySQL)
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "DatabaseConnectNode"
@@ -180,23 +274,15 @@ class DatabaseConnectNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            db_type = (
-                self.get_input_value("db_type") or self.config.get("db_type", "sqlite")
-            ).lower()
-            host = self.get_input_value("host") or self.config.get("host", "localhost")
-            port = self.get_input_value("port") or self.config.get("port", 5432)
-            database = self.get_input_value("database") or self.config.get(
-                "database", ""
-            )
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            connection_string = self.get_input_value(
-                "connection_string"
-            ) or self.config.get("connection_string", "")
+            db_type = self.get_parameter("db_type", "sqlite").lower()
+            host = self.get_parameter("host", "localhost")
+            port = self.get_parameter("port", 5432)
+            database = self.get_parameter("database", "")
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            connection_string = self.get_parameter("connection_string", "")
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 2000)
 
             # Resolve {{variable}} patterns in connection parameters
             host = context.resolve_value(host)
@@ -204,11 +290,6 @@ class DatabaseConnectNode(BaseNode):
             username = context.resolve_value(username)
             password = context.resolve_value(password)
             connection_string = context.resolve_value(connection_string)
-
-            # Helper to safely parse int values with defaults
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
 
             logger.info(f"Connecting to {db_type} database")
 
@@ -337,43 +418,60 @@ class DatabaseConnectNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "query",
+        PropertyType.STRING,
+        default="",
+        label="SQL Query",
+        tooltip="SELECT query to execute",
+        placeholder="SELECT * FROM users WHERE id = ?",
+    ),
+    PropertyDef(
+        "parameters",
+        PropertyType.LIST,
+        default=[],
+        label="Query Parameters",
+        tooltip="Parameterized query values (for safe queries)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
 
+    Config (via @node_schema):
+        query: SQL SELECT query
+        parameters: Query parameters for parameterized queries
+        retry_count: Number of retries on failure
+        retry_interval: Delay between retries (ms)
+
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection
-        - query: SQL SELECT query
-        - parameters: Query parameters (for parameterized queries)
+        connection, query, parameters
 
     Outputs:
-        - exec_out: Execution output
-        - results: List of rows as dictionaries
-        - row_count: Number of rows returned
-        - columns: List of column names
-        - success: True if query succeeded
-        - error: Error message if query failed
+        results, row_count, columns, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "Execute Query", **kwargs: Any
     ) -> None:
-        # Default config with all query options
-        default_config = {
-            "query": "",
-            "parameters": [],
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteQueryNode"
@@ -396,10 +494,10 @@ class ExecuteQueryNode(BaseNode):
             connection: Optional[DatabaseConnection] = self.get_input_value(
                 "connection"
             )
-            query = self.get_input_value("query") or self.config.get("query", "")
-            parameters = self.get_input_value("parameters") or self.config.get(
-                "parameters", []
-            )
+            query = self.get_parameter("query", "")
+            parameters = self.get_parameter("parameters", [])
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -408,11 +506,6 @@ class ExecuteQueryNode(BaseNode):
 
             # Resolve {{variable}} patterns in query
             query = context.resolve_value(query)
-
-            # Helper to safely parse int values with defaults
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.debug(f"Executing query: {query[:100]}...")
 
@@ -550,42 +643,60 @@ class ExecuteQueryNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "query",
+        PropertyType.STRING,
+        default="",
+        label="SQL Statement",
+        tooltip="INSERT, UPDATE, DELETE, or DDL statement",
+        placeholder="INSERT INTO users (name) VALUES (?)",
+    ),
+    PropertyDef(
+        "parameters",
+        PropertyType.LIST,
+        default=[],
+        label="Query Parameters",
+        tooltip="Parameterized query values (for safe queries)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of retry attempts on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
 
+    Config (via @node_schema):
+        query: SQL statement
+        parameters: Query parameters for parameterized queries
+        retry_count: Number of retries on failure
+        retry_interval: Delay between retries (ms)
+
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection
-        - query: SQL statement
-        - parameters: Query parameters (for parameterized queries)
+        connection, query, parameters
 
     Outputs:
-        - exec_out: Execution output
-        - rows_affected: Number of rows affected
-        - last_insert_id: ID of last inserted row (if applicable)
-        - success: True if execution succeeded
-        - error: Error message if execution failed
+        rows_affected, last_insert_id, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "Execute Non-Query", **kwargs: Any
     ) -> None:
-        # Default config with all non-query options
-        default_config = {
-            "query": "",
-            "parameters": [],
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteNonQueryNode"
@@ -607,10 +718,10 @@ class ExecuteNonQueryNode(BaseNode):
             connection: Optional[DatabaseConnection] = self.get_input_value(
                 "connection"
             )
-            query = self.get_input_value("query") or self.config.get("query", "")
-            parameters = self.get_input_value("parameters") or self.config.get(
-                "parameters", []
-            )
+            query = self.get_parameter("query", "")
+            parameters = self.get_parameter("parameters", [])
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
 
             if not connection:
                 raise ValueError("Database connection is required")
@@ -619,11 +730,6 @@ class ExecuteNonQueryNode(BaseNode):
 
             # Resolve {{variable}} patterns in query
             query = context.resolve_value(query)
-
-            # Helper to safely parse int values with defaults
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
 
             logger.debug(f"Executing statement: {query[:100]}...")
 
@@ -766,14 +872,12 @@ class BeginTransactionNode(BaseNode):
     Begin a database transaction.
 
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection
+        connection: Database connection
 
     Outputs:
-        - exec_out: Execution output
-        - connection: Connection with active transaction
-        - success: True if transaction started
-        - error: Error message if failed
+        connection: Connection with active transaction
+        success: True if transaction started
+        error: Error message if failed
     """
 
     def __init__(
@@ -844,14 +948,12 @@ class CommitTransactionNode(BaseNode):
     Commit the current database transaction.
 
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection with active transaction
+        connection: Database connection with active transaction
 
     Outputs:
-        - exec_out: Execution output
-        - connection: Connection (transaction ended)
-        - success: True if commit succeeded
-        - error: Error message if failed
+        connection: Connection (transaction ended)
+        success: True if commit succeeded
+        error: Error message if failed
     """
 
     def __init__(
@@ -922,14 +1024,12 @@ class RollbackTransactionNode(BaseNode):
     Rollback the current database transaction.
 
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection with active transaction
+        connection: Database connection with active transaction
 
     Outputs:
-        - exec_out: Execution output
-        - connection: Connection (transaction ended)
-        - success: True if rollback succeeded
-        - error: Error message if failed
+        connection: Connection (transaction ended)
+        success: True if rollback succeeded
+        error: Error message if failed
     """
 
     def __init__(
@@ -1000,13 +1100,11 @@ class CloseDatabaseNode(BaseNode):
     Close a database connection.
 
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection to close
+        connection: Database connection to close
 
     Outputs:
-        - exec_out: Execution output
-        - success: True if connection closed
-        - error: Error message if failed
+        success: True if connection closed
+        error: Error message if failed
     """
 
     def __init__(
@@ -1058,42 +1156,59 @@ class CloseDatabaseNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "statements",
+        PropertyType.LIST,
+        default=[],
+        label="SQL Statements",
+        tooltip="List of SQL statements to execute as a batch",
+    ),
+    PropertyDef(
+        "stop_on_error",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Stop on Error",
+        tooltip="Stop batch execution on first error",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count (per statement)",
+        tooltip="Number of retry attempts per statement on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retry attempts in milliseconds",
+    ),
+)
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.
 
+    Config (via @node_schema):
+        statements: List of SQL statements
+        stop_on_error: Stop on first error
+        retry_count: Number of retries per statement
+        retry_interval: Delay between retries (ms)
+
     Inputs:
-        - exec_in: Execution input
-        - connection: Database connection
-        - statements: List of SQL statements
-        - stop_on_error: Stop execution on first error
+        connection, statements
 
     Outputs:
-        - exec_out: Execution output
-        - results: List of results for each statement
-        - total_rows_affected: Total rows affected
-        - success: True if all statements succeeded
-        - error: Error message if any statement failed
+        results, total_rows_affected, success, error
     """
 
     def __init__(
         self, node_id: str, name: str = "Execute Batch", **kwargs: Any
     ) -> None:
-        # Default config with all batch options
-        default_config = {
-            "statements": [],
-            "stop_on_error": True,
-            # Retry options (per-statement)
-            "retry_count": 0,  # Number of retries per statement on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExecuteBatchNode"
@@ -1114,15 +1229,10 @@ class ExecuteBatchNode(BaseNode):
             connection: Optional[DatabaseConnection] = self.get_input_value(
                 "connection"
             )
-            statements = self.get_input_value("statements") or self.config.get(
-                "statements", []
-            )
-            stop_on_error = self.config.get("stop_on_error", True)
-
-            # Helper to safely parse int values with defaults
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            statements = self.get_parameter("statements", [])
+            stop_on_error = self.get_parameter("stop_on_error", True)
+            retry_count = self.get_parameter("retry_count", 0)
+            retry_interval = self.get_parameter("retry_interval", 1000)
 
             if not connection:
                 raise ValueError("Database connection is required")

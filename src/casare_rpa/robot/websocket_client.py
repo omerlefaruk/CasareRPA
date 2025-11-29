@@ -21,7 +21,7 @@ except ImportError:
     HAS_WEBSOCKETS = False
     logger.warning("websockets not installed. WebSocket client disabled.")
 
-from casare_rpa.orchestrator.protocol import (
+from casare_rpa.domain.orchestrator.protocols.robot_protocol import (
     Message,
     MessageType,
     MessageBuilder,

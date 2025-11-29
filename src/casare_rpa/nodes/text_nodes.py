@@ -20,7 +20,8 @@ import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -32,6 +33,15 @@ from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "max_split",
+        PropertyType.INTEGER,
+        default=-1,
+        label="Max Split",
+        tooltip="Maximum number of splits (-1 for unlimited)",
+    ),
+)
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -66,7 +76,7 @@ class TextSplitNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             separator = self.get_input_value("separator", context)
-            max_split = safe_int(self.config.get("max_split"), -1)
+            max_split = safe_int(self.get_parameter("max_split", -1), -1)
 
             # Resolve {{variable}} patterns in separator
             if separator is not None:
@@ -103,6 +113,43 @@ class TextSplitNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "count",
+        PropertyType.INTEGER,
+        default=-1,
+        label="Max Replacements",
+        tooltip="Maximum number of replacements (-1 for all)",
+    ),
+    PropertyDef(
+        "use_regex",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Regex",
+        tooltip="Use regex for matching",
+    ),
+    PropertyDef(
+        "ignore_case",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore Case",
+        tooltip="Case-insensitive matching",
+    ),
+    PropertyDef(
+        "multiline",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Multiline",
+        tooltip="^ and $ match line boundaries",
+    ),
+    PropertyDef(
+        "dotall",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Dot All",
+        tooltip=". matches newlines",
+    ),
+)
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -125,17 +172,7 @@ class TextReplaceNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Text Replace", **kwargs) -> None:
-        default_config = {
-            "count": -1,
-            "use_regex": False,
-            "ignore_case": False,
-            "multiline": False,
-            "dotall": False,
-        }
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TextReplaceNode"
@@ -159,17 +196,17 @@ class TextReplaceNode(BaseNode):
             old_value = context.resolve_value(old_value)
             new_value = context.resolve_value(new_value)
 
-            count = safe_int(self.config.get("count"), -1)
-            use_regex = self.config.get("use_regex", False)
+            count = safe_int(self.get_parameter("count", -1), -1)
+            use_regex = self.get_parameter("use_regex", False)
 
             if use_regex:
                 # Build regex flags
                 flags = 0
-                if self.config.get("ignore_case", False):
+                if self.get_parameter("ignore_case", False):
                     flags |= re.IGNORECASE
-                if self.config.get("multiline", False):
+                if self.get_parameter("multiline", False):
                     flags |= re.MULTILINE
-                if self.config.get("dotall", False):
+                if self.get_parameter("dotall", False):
                     flags |= re.DOTALL
 
                 if count >= 0:
@@ -208,6 +245,23 @@ class TextReplaceNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "mode",
+        PropertyType.CHOICE,
+        default="both",
+        choices=["both", "left", "right"],
+        label="Trim Mode",
+        tooltip="Trim from both sides, left only, or right only",
+    ),
+    PropertyDef(
+        "characters",
+        PropertyType.STRING,
+        default="",
+        label="Characters to Trim",
+        tooltip="Characters to trim (default: whitespace)",
+    ),
+)
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -238,19 +292,22 @@ class TextTrimNode(BaseNode):
 
         try:
             text = str(self.get_input_value("text", context) or "")
-            mode = self.config.get("mode", "both")
-            chars = self.config.get("characters")
+            mode = self.get_parameter("mode", "both")
+            chars = self.get_parameter("characters", "")
 
             # Resolve {{variable}} patterns in characters
-            if chars is not None:
+            if chars:
                 chars = context.resolve_value(chars)
+                chars_arg = chars
+            else:
+                chars_arg = None
 
             if mode == "left":
-                result = text.lstrip(chars)
+                result = text.lstrip(chars_arg)
             elif mode == "right":
-                result = text.rstrip(chars)
+                result = text.rstrip(chars_arg)
             else:
-                result = text.strip(chars)
+                result = text.strip(chars_arg)
 
             self.set_output_value("result", result)
             self.status = NodeStatus.SUCCESS
@@ -271,6 +328,16 @@ class TextTrimNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "case",
+        PropertyType.CHOICE,
+        default="lower",
+        choices=["upper", "lower", "title", "capitalize", "swapcase"],
+        label="Case Transform",
+        tooltip="Case transformation to apply",
+    ),
+)
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -300,7 +367,7 @@ class TextCaseNode(BaseNode):
 
         try:
             text = str(self.get_input_value("text", context) or "")
-            case = self.config.get("case", "lower")
+            case = self.get_parameter("case", "lower")
 
             if case == "upper":
                 result = text.upper()
@@ -333,6 +400,23 @@ class TextCaseNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "mode",
+        PropertyType.CHOICE,
+        default="left",
+        choices=["left", "right", "center"],
+        label="Pad Mode",
+        tooltip="Pad left, right, or center",
+    ),
+    PropertyDef(
+        "fill_char",
+        PropertyType.STRING,
+        default=" ",
+        label="Fill Character",
+        tooltip="Character to use for padding",
+    ),
+)
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -366,8 +450,8 @@ class TextPadNode(BaseNode):
         try:
             text = str(self.get_input_value("text", context) or "")
             length = safe_int(self.get_input_value("length", context), 0)
-            mode = self.config.get("mode", "left")
-            fill_char = self.config.get("fill_char", " ")
+            mode = self.get_parameter("mode", "left")
+            fill_char = self.get_parameter("fill_char", " ")
 
             # Resolve {{variable}} patterns in fill_char
             fill_char = context.resolve_value(fill_char)
@@ -461,6 +545,15 @@ class TextSubstringNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "case_sensitive",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Case Sensitive",
+        tooltip="Case-sensitive search",
+    ),
+)
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -501,7 +594,7 @@ class TextContainsNode(BaseNode):
             # Resolve {{variable}} patterns in search
             search = context.resolve_value(search)
 
-            case_sensitive = self.config.get("case_sensitive", True)
+            case_sensitive = self.get_parameter("case_sensitive", True)
 
             if not case_sensitive:
                 text_search = text.lower()
@@ -535,6 +628,15 @@ class TextContainsNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "case_sensitive",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Case Sensitive",
+        tooltip="Case-sensitive check",
+    ),
+)
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -571,7 +673,7 @@ class TextStartsWithNode(BaseNode):
             # Resolve {{variable}} patterns in prefix
             prefix = context.resolve_value(prefix)
 
-            case_sensitive = self.config.get("case_sensitive", True)
+            case_sensitive = self.get_parameter("case_sensitive", True)
 
             if not case_sensitive:
                 result = text.lower().startswith(prefix.lower())
@@ -597,6 +699,15 @@ class TextStartsWithNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "case_sensitive",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Case Sensitive",
+        tooltip="Case-sensitive check",
+    ),
+)
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -633,7 +744,7 @@ class TextEndsWithNode(BaseNode):
             # Resolve {{variable}} patterns in suffix
             suffix = context.resolve_value(suffix)
 
-            case_sensitive = self.config.get("case_sensitive", True)
+            case_sensitive = self.get_parameter("case_sensitive", True)
 
             if not case_sensitive:
                 result = text.lower().endswith(suffix.lower())
@@ -659,6 +770,30 @@ class TextEndsWithNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "mode",
+        PropertyType.CHOICE,
+        default="split",
+        choices=["split", "join"],
+        label="Mode",
+        tooltip="Split text into lines or join lines into text",
+    ),
+    PropertyDef(
+        "line_separator",
+        PropertyType.STRING,
+        default="\n",
+        label="Line Separator",
+        tooltip="Line separator for join mode",
+    ),
+    PropertyDef(
+        "keep_ends",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Keep Line Endings",
+        tooltip="Keep line endings when splitting",
+    ),
+)
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.
@@ -692,9 +827,9 @@ class TextLinesNode(BaseNode):
 
         try:
             input_val = self.get_input_value("input", context)
-            mode = self.config.get("mode", "split")
-            separator = self.config.get("line_separator", "\n")
-            keep_ends = self.config.get("keep_ends", False)
+            mode = self.get_parameter("mode", "split")
+            separator = self.get_parameter("line_separator", "\n")
+            keep_ends = self.get_parameter("keep_ends", False)
 
             # Resolve {{variable}} patterns in separator
             separator = context.resolve_value(separator)
@@ -780,6 +915,23 @@ class TextReverseNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "mode",
+        PropertyType.CHOICE,
+        default="characters",
+        choices=["characters", "words", "lines"],
+        label="Count Mode",
+        tooltip="Count characters, words, or lines",
+    ),
+    PropertyDef(
+        "exclude_whitespace",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Exclude Whitespace",
+        tooltip="Exclude whitespace from character count",
+    ),
+)
 class TextCountNode(BaseNode):
     """
     Count characters, words, or lines in text.
@@ -816,8 +968,8 @@ class TextCountNode(BaseNode):
 
         try:
             text = str(self.get_input_value("text", context) or "")
-            mode = self.config.get("mode", "characters")
-            exclude_whitespace = self.config.get("exclude_whitespace", False)
+            mode = self.get_parameter("mode", "characters")
+            exclude_whitespace = self.get_parameter("exclude_whitespace", False)
 
             # Calculate all counts
             if exclude_whitespace:
@@ -864,6 +1016,15 @@ class TextCountNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "separator",
+        PropertyType.STRING,
+        default="",
+        label="Separator",
+        tooltip="Separator to use when joining",
+    ),
+)
 class TextJoinNode(BaseNode):
     """
     Join a list of strings with a separator.
@@ -897,7 +1058,7 @@ class TextJoinNode(BaseNode):
             separator = self.get_input_value("separator", context)
 
             if separator is None:
-                separator = self.config.get("separator", "")
+                separator = self.get_parameter("separator", "")
 
             # Resolve {{variable}} patterns in separator
             separator = context.resolve_value(separator)
@@ -926,6 +1087,36 @@ class TextJoinNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "all_matches",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="All Matches",
+        tooltip="Return all matches instead of just first",
+    ),
+    PropertyDef(
+        "ignore_case",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore Case",
+        tooltip="Case-insensitive matching",
+    ),
+    PropertyDef(
+        "multiline",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Multiline",
+        tooltip="^ and $ match line boundaries",
+    ),
+    PropertyDef(
+        "dotall",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Dot All",
+        tooltip=". matches newlines",
+    ),
+)
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.
@@ -948,16 +1139,7 @@ class TextExtractNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Text Extract", **kwargs) -> None:
-        default_config = {
-            "all_matches": False,
-            "ignore_case": False,
-            "multiline": False,
-            "dotall": False,
-        }
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TextExtractNode"
@@ -980,18 +1162,18 @@ class TextExtractNode(BaseNode):
             # Resolve {{variable}} patterns in pattern
             pattern = context.resolve_value(pattern)
 
-            all_matches = self.config.get("all_matches", False)
+            all_matches = self.get_parameter("all_matches", False)
 
             if not pattern:
                 raise ValueError("pattern is required")
 
             # Build regex flags
             flags = 0
-            if self.config.get("ignore_case", False):
+            if self.get_parameter("ignore_case", False):
                 flags |= re.IGNORECASE
-            if self.config.get("multiline", False):
+            if self.get_parameter("multiline", False):
                 flags |= re.MULTILINE
-            if self.config.get("dotall", False):
+            if self.get_parameter("dotall", False):
                 flags |= re.DOTALL
 
             if all_matches:

@@ -8,8 +8,10 @@ This module provides nodes for FTP/SFTP operations:
 - FTPListNode: List directory contents
 - FTPDeleteNode: Delete file on FTP
 - FTPMakeDirNode: Create directory on FTP
+- FTPRemoveDirNode: Remove directory on FTP
+- FTPRenameNode: Rename file or directory on FTP
 - FTPDisconnectNode: Disconnect from FTP
-- SFTPConnectNode: Connect to SFTP server
+- FTPGetSizeNode: Get file size on FTP
 """
 
 import asyncio
@@ -19,7 +21,8 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -31,6 +34,46 @@ from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "passive",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Passive Mode",
+        tooltip="Use passive mode for FTP connection",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Connection timeout in seconds",
+    ),
+    PropertyDef(
+        "use_tls",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use TLS/FTPS",
+        tooltip="Use FTPS (FTP over TLS)",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of connection retries on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+    ),
+)
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -54,21 +97,7 @@ class FTPConnectNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Connect", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "passive": True,
-            "timeout": 30,
-            "use_tls": False,
-            "retry_count": 0,  # Number of connection retries
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPConnectNode"
@@ -85,22 +114,15 @@ class FTPConnectNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            host = str(self.get_input_value("host", context) or "")
-            port = safe_int(self.get_input_value("port", context), 21)
-            username = str(self.get_input_value("username", context) or "anonymous")
-            password = str(self.get_input_value("password", context) or "")
-            passive = self.config.get("passive", True)
-            timeout = safe_int(self.config.get("timeout"), 30)
-            use_tls = self.config.get("use_tls", False)
-
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
-
-            # Resolve {{variable}} patterns
-            host = context.resolve_value(host)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
+            host = str(self.get_parameter("host", "") or "")
+            port = safe_int(self.get_parameter("port", 21), 21)
+            username = str(self.get_parameter("username", "anonymous") or "anonymous")
+            password = str(self.get_parameter("password", "") or "")
+            passive = self.get_parameter("passive", True)
+            timeout = safe_int(self.get_parameter("timeout", 30), 30)
+            use_tls = self.get_parameter("use_tls", False)
+            retry_count = safe_int(self.get_parameter("retry_count", 0), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval", 2000), 2000)
 
             if not host:
                 raise ValueError("host is required")
@@ -172,6 +194,38 @@ class FTPConnectNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "binary_mode",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Binary Mode",
+        tooltip="Transfer in binary mode (recommended for most files)",
+    ),
+    PropertyDef(
+        "create_dirs",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Create Directories",
+        tooltip="Create remote directories if they don't exist",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of upload retries on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+    ),
+)
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -192,20 +246,7 @@ class FTPUploadNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Upload", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "binary_mode": True,
-            "create_dirs": False,
-            "retry_count": 0,  # Number of upload retries
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPUploadNode"
@@ -220,18 +261,12 @@ class FTPUploadNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            local_path = str(self.get_input_value("local_path", context) or "")
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-            binary_mode = self.config.get("binary_mode", True)
-            create_dirs = self.config.get("create_dirs", False)
-
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
-
-            # Resolve {{variable}} patterns
-            local_path = context.resolve_value(local_path)
-            remote_path = context.resolve_value(remote_path)
+            local_path = str(self.get_parameter("local_path", "") or "")
+            remote_path = str(self.get_parameter("remote_path", "") or "")
+            binary_mode = self.get_parameter("binary_mode", True)
+            create_dirs = self.get_parameter("create_dirs", False)
+            retry_count = safe_int(self.get_parameter("retry_count", 0), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval", 2000), 2000)
 
             if not local_path:
                 raise ValueError("local_path is required")
@@ -313,6 +348,38 @@ class FTPUploadNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "binary_mode",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Binary Mode",
+        tooltip="Transfer in binary mode (recommended for most files)",
+    ),
+    PropertyDef(
+        "overwrite",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Overwrite Existing",
+        tooltip="Overwrite local file if it already exists",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Retry Count",
+        tooltip="Number of download retries on failure",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        min_value=0,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+    ),
+)
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.
@@ -333,20 +400,7 @@ class FTPDownloadNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "FTP Download", **kwargs) -> None:
-        # Default config with all options
-        default_config = {
-            "binary_mode": True,
-            "overwrite": False,
-            "retry_count": 0,  # Number of download retries
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "FTPDownloadNode"
@@ -361,18 +415,12 @@ class FTPDownloadNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-            local_path = str(self.get_input_value("local_path", context) or "")
-            binary_mode = self.config.get("binary_mode", True)
-            overwrite = self.config.get("overwrite", False)
-
-            # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 2000)
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
-            local_path = context.resolve_value(local_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
+            local_path = str(self.get_parameter("local_path", "") or "")
+            binary_mode = self.get_parameter("binary_mode", True)
+            overwrite = self.get_parameter("overwrite", False)
+            retry_count = safe_int(self.get_parameter("retry_count", 0), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval", 2000), 2000)
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -461,6 +509,15 @@ class FTPDownloadNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "detailed",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Detailed Info",
+        tooltip="Get detailed file information instead of just names",
+    ),
+)
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -491,11 +548,8 @@ class FTPListNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-            detailed = self.config.get("detailed", False)
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
+            detailed = self.get_parameter("detailed", False)
 
             ftp = context.get_variable("_ftp_connection")
             if ftp is None:
@@ -556,10 +610,7 @@ class FTPDeleteNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -589,6 +640,15 @@ class FTPDeleteNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "parents",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Create Parents",
+        tooltip="Create parent directories if they don't exist",
+    ),
+)
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.
@@ -617,11 +677,8 @@ class FTPMakeDirNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-            parents = self.config.get("parents", False)
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
+            parents = self.get_parameter("parents", False)
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -688,10 +745,7 @@ class FTPRemoveDirNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
 
             if not remote_path:
                 raise ValueError("remote_path is required")
@@ -748,12 +802,8 @@ class FTPRenameNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            old_path = str(self.get_input_value("old_path", context) or "")
-            new_path = str(self.get_input_value("new_path", context) or "")
-
-            # Resolve {{variable}} patterns
-            old_path = context.resolve_value(old_path)
-            new_path = context.resolve_value(new_path)
+            old_path = str(self.get_parameter("old_path", "") or "")
+            new_path = str(self.get_parameter("new_path", "") or "")
 
             if not old_path or not new_path:
                 raise ValueError("old_path and new_path are required")
@@ -858,10 +908,7 @@ class FTPGetSizeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            remote_path = str(self.get_input_value("remote_path", context) or "")
-
-            # Resolve {{variable}} patterns
-            remote_path = context.resolve_value(remote_path)
+            remote_path = str(self.get_parameter("remote_path", "") or "")
 
             if not remote_path:
                 raise ValueError("remote_path is required")
