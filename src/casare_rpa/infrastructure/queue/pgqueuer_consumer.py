@@ -132,6 +132,29 @@ class ConsumerConfig:
     pool_max_size: int = 10
     claim_poll_interval_seconds: float = 1.0
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert config to dictionary with credential masking.
+
+        SECURITY: Masks postgres_url to prevent credential leakage in logs.
+        """
+        from casare_rpa.infrastructure.security.validators import sanitize_log_value
+
+        return {
+            "postgres_url": sanitize_log_value(self.postgres_url),
+            "robot_id": self.robot_id,
+            "environment": self.environment,
+            "batch_size": self.batch_size,
+            "visibility_timeout_seconds": self.visibility_timeout_seconds,
+            "heartbeat_interval_seconds": self.heartbeat_interval_seconds,
+            "max_reconnect_attempts": self.max_reconnect_attempts,
+            "reconnect_base_delay_seconds": self.reconnect_base_delay_seconds,
+            "reconnect_max_delay_seconds": self.reconnect_max_delay_seconds,
+            "pool_min_size": self.pool_min_size,
+            "pool_max_size": self.pool_max_size,
+            "claim_poll_interval_seconds": self.claim_poll_interval_seconds,
+        }
+
 
 class PgQueuerConsumer:
     """

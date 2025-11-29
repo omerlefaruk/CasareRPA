@@ -141,6 +141,26 @@ class DBOSExecutorConfig:
     node_timeout_seconds: float = 120.0
     continue_on_error: bool = False
 
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert config to dictionary with credential masking.
+
+        SECURITY: Masks postgres_url to prevent credential leakage in logs.
+        """
+        from casare_rpa.infrastructure.security.validators import sanitize_log_value
+
+        return {
+            "postgres_url": sanitize_log_value(self.postgres_url)
+            if self.postgres_url
+            else None,
+            "checkpoint_table": self.checkpoint_table,
+            "enable_checkpointing": self.enable_checkpointing,
+            "checkpoint_interval": self.checkpoint_interval,
+            "execution_timeout_seconds": self.execution_timeout_seconds,
+            "node_timeout_seconds": self.node_timeout_seconds,
+            "continue_on_error": self.continue_on_error,
+        }
+
 
 class DBOSWorkflowExecutor:
     """
