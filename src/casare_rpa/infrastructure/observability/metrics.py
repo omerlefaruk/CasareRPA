@@ -26,6 +26,10 @@ from casare_rpa.infrastructure.observability.telemetry import (
     get_meter,
     OTEL_AVAILABLE,
 )
+from casare_rpa.infrastructure.events import (
+    get_monitoring_event_bus,
+    MonitoringEventType,
+)
 
 if OTEL_AVAILABLE:
     from opentelemetry.metrics import Observation
@@ -148,12 +152,18 @@ class RPAMetricsCollector:
         """Get the singleton instance."""
         return cls()
 
-    def __init__(self) -> None:
-        """Initialize the metrics collector."""
+    def __init__(self, emit_events: bool = True) -> None:
+        """
+        Initialize the metrics collector.
+
+        Args:
+            emit_events: Whether to emit monitoring events (set False for testing)
+        """
         if hasattr(self, "_initialized") and self._initialized:
             return
 
         self._lock = Lock()
+        self._emit_events = emit_events
 
         # Job tracking
         self._active_jobs: Dict[str, Dict[str, Any]] = {}
@@ -263,6 +273,38 @@ class RPAMetricsCollector:
 
         logger.debug("RPA metrics instruments initialized")
 
+    def _emit_monitoring_event(
+        self,
+        event_type: MonitoringEventType,
+        payload: Dict[str, Any],
+    ) -> None:
+        """
+        Emit a monitoring event (fire-and-forget).
+
+        Args:
+            event_type: Type of monitoring event
+            payload: Event payload data
+        """
+        if not self._emit_events:
+            return
+
+        try:
+            import asyncio
+
+            event_bus = get_monitoring_event_bus()
+
+            # Fire-and-forget: create task but don't await
+            # This prevents blocking the metrics collector
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(event_bus.publish(event_type, payload))
+            except RuntimeError:
+                # No event loop running - silently skip
+                logger.debug("No event loop - skipping monitoring event emission")
+        except Exception as e:
+            # Never let event emission break metrics collection
+            logger.warning(f"Failed to emit monitoring event: {e}")
+
     # =========================================================================
     # Job Metrics
     # =========================================================================
@@ -294,6 +336,17 @@ class RPAMetricsCollector:
         TelemetryProvider.get_instance().update_queue_depth(self._queue_depth)
         logger.debug(f"Job enqueued: {job_id}, queue depth: {self._queue_depth}")
 
+        # Emit queue depth changed event
+        self._emit_monitoring_event(
+            MonitoringEventType.QUEUE_DEPTH_CHANGED,
+            {
+                "queue_depth": self._queue_depth,
+                "job_id": job_id,
+                "workflow_name": workflow_name,
+                "priority": priority,
+            },
+        )
+
     def record_job_start(
         self,
         job_id: str,
@@ -306,6 +359,7 @@ class RPAMetricsCollector:
             job_id: Unique job identifier
             robot_id: ID of the robot executing the job
         """
+        workflow_name = None
         with self._lock:
             if job_id in self._active_jobs:
                 job = self._active_jobs[job_id]
@@ -313,6 +367,7 @@ class RPAMetricsCollector:
                 job["started_at"] = now
                 job["robot_id"] = robot_id
                 job["status"] = JobStatus.RUNNING
+                workflow_name = job["workflow_name"]
 
                 # Calculate queue wait time
                 queue_wait = now - job["enqueued_at"]
@@ -335,6 +390,18 @@ class RPAMetricsCollector:
 
         TelemetryProvider.get_instance().update_queue_depth(self._queue_depth)
 
+        # Emit job status changed event
+        self._emit_monitoring_event(
+            MonitoringEventType.JOB_STATUS_CHANGED,
+            {
+                "job_id": job_id,
+                "workflow_name": workflow_name,
+                "status": JobStatus.RUNNING.value,
+                "robot_id": robot_id,
+                "queue_depth": self._queue_depth,
+            },
+        )
+
     def record_job_complete(
         self,
         job_id: str,
@@ -353,6 +420,8 @@ class RPAMetricsCollector:
             nodes_executed: Number of nodes executed
             error_message: Error message if failed
         """
+        robot_id = None
+        workflow_name = "unknown"
         with self._lock:
             job = self._active_jobs.pop(job_id, None)
             robot_id = job.get("robot_id") if job else None
@@ -388,6 +457,22 @@ class RPAMetricsCollector:
             job_id=job_id,
             success=success,
             robot_id=robot_id,
+        )
+
+        # Emit job status changed event
+        final_status = JobStatus.COMPLETED if success else JobStatus.FAILED
+        self._emit_monitoring_event(
+            MonitoringEventType.JOB_STATUS_CHANGED,
+            {
+                "job_id": job_id,
+                "workflow_name": workflow_name,
+                "status": final_status.value,
+                "robot_id": robot_id,
+                "duration_seconds": duration_seconds,
+                "nodes_executed": nodes_executed,
+                "success": success,
+                "error_message": error_message,
+            },
         )
 
     def record_job_retry(
@@ -489,6 +574,22 @@ class RPAMetricsCollector:
 
         # Update global utilization metrics
         self._update_global_utilization()
+
+        # Emit robot heartbeat event
+        self._emit_monitoring_event(
+            MonitoringEventType.ROBOT_HEARTBEAT,
+            {
+                "robot_id": robot_id,
+                "status": status.value,
+                "current_job_id": job_id,
+                "jobs_completed": robot.jobs_completed,
+                "jobs_failed": robot.jobs_failed,
+                "utilization_percent": robot.utilization_percent,
+                # TODO: Get actual CPU/memory from system metrics
+                "cpu_percent": 0.0,
+                "memory_mb": 0.0,
+            },
+        )
 
     def _update_global_utilization(self) -> None:
         """Calculate and update global robot utilization."""
