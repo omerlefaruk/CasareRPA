@@ -24,8 +24,13 @@ import qasync
 from loguru import logger
 from pathlib import Path
 
-from casare_rpa.orchestrator.cloud_service import CloudService
-from casare_rpa.orchestrator.theme import get_main_stylesheet, THEME
+from casare_rpa.infrastructure.orchestrator.communication.cloud_service import (
+    CloudService,
+)
+from casare_rpa.presentation.orchestrator.theming.theme import (
+    get_main_stylesheet,
+    THEME,
+)
 
 
 class OrchestratorWindow(QMainWindow):
