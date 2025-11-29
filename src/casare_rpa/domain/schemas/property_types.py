@@ -16,6 +16,7 @@ class PropertyType(str, Enum):
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
+    ANY = "any"  # Accepts any type of value (for variable nodes)
 
     # Selection types
     CHOICE = "choice"  # Dropdown with predefined choices
