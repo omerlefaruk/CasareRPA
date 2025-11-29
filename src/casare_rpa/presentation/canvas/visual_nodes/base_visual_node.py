@@ -14,6 +14,7 @@ from casare_rpa.domain.port_type_system import (
     PortTypeRegistry,
     get_port_type_registry,
 )
+from casare_rpa.domain.schemas import PropertyType, NodeSchema
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
 # VSCode Dark+ color scheme for nodes
@@ -79,6 +80,9 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Setup ports for this node type
         self.setup_ports()
+
+        # Auto-create widgets from schema if available
+        self._auto_create_widgets_from_schema()
 
         # Configure port colors after ports are created
         self._configure_port_colors()
@@ -381,6 +385,154 @@ class VisualNode(NodeGraphQtBaseNode):
             # Silently fail during initialization - node will be created later if needed
             # This handles cases where factory isn't ready yet (e.g., during testing)
             pass
+
+    def _auto_create_widgets_from_schema(self) -> None:
+        """
+        Auto-generate widgets from linked CasareNode schema.
+
+        If the CasareNode class has a __node_schema__ attribute (from @node_schema decorator),
+        this method automatically creates widgets matching the schema properties.
+
+        This provides a declarative way to define node properties once and have both
+        the config and UI generated automatically.
+        """
+        if not self._casare_node:
+            return  # No casare node yet
+
+        # Get schema from casare node class
+        schema: Optional[NodeSchema] = getattr(
+            self._casare_node.__class__, "__node_schema__", None
+        )
+        if not schema:
+            return  # No schema, use manual widget definitions
+
+        # Generate widgets from schema
+        for prop_def in schema.properties:
+            # Custom widget class override
+            if prop_def.widget_class:
+                # Custom widgets need special handling - skip for now
+                # Subclasses can override this method to handle custom widgets
+                continue
+
+            # Standard widget types
+            if prop_def.type == PropertyType.STRING:
+                self.add_text_input(
+                    prop_def.name,
+                    prop_def.label or prop_def.name,
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder_text=prop_def.placeholder,
+                    tab=prop_def.tab,
+                    tooltip=prop_def.tooltip,
+                )
+
+            elif prop_def.type == PropertyType.INTEGER:
+                # Use int input if available, otherwise text input with validation
+                try:
+                    self.add_int_input(
+                        prop_def.name,
+                        prop_def.label or prop_def.name,
+                        value=int(prop_def.default)
+                        if prop_def.default is not None
+                        else 0,
+                        tab=prop_def.tab,
+                    )
+                except AttributeError:
+                    # Fallback to text input if add_int_input doesn't exist
+                    self.add_text_input(
+                        prop_def.name,
+                        prop_def.label or prop_def.name,
+                        text=str(prop_def.default)
+                        if prop_def.default is not None
+                        else "0",
+                        tab=prop_def.tab,
+                        tooltip=prop_def.tooltip,
+                    )
+
+            elif prop_def.type == PropertyType.FLOAT:
+                # Use float input if available, otherwise text input
+                try:
+                    self.add_float_input(
+                        prop_def.name,
+                        prop_def.label or prop_def.name,
+                        value=float(prop_def.default)
+                        if prop_def.default is not None
+                        else 0.0,
+                        tab=prop_def.tab,
+                    )
+                except AttributeError:
+                    self.add_text_input(
+                        prop_def.name,
+                        prop_def.label or prop_def.name,
+                        text=str(prop_def.default)
+                        if prop_def.default is not None
+                        else "0.0",
+                        tab=prop_def.tab,
+                        tooltip=prop_def.tooltip,
+                    )
+
+            elif prop_def.type == PropertyType.BOOLEAN:
+                self.add_checkbox(
+                    prop_def.name,
+                    prop_def.label or prop_def.name,
+                    state=bool(prop_def.default)
+                    if prop_def.default is not None
+                    else False,
+                    tab=prop_def.tab,
+                )
+
+            elif prop_def.type == PropertyType.CHOICE:
+                if prop_def.choices:
+                    self.add_combo_menu(
+                        prop_def.name,
+                        prop_def.label or prop_def.name,
+                        items=prop_def.choices,
+                        tab=prop_def.tab,
+                    )
+                    # Set default value
+                    if (
+                        prop_def.default is not None
+                        and prop_def.default in prop_def.choices
+                    ):
+                        self.set_property(prop_def.name, prop_def.default)
+
+            elif prop_def.type == PropertyType.FILE_PATH:
+                # File path uses text input with file browser button
+                self.add_text_input(
+                    prop_def.name,
+                    prop_def.label or prop_def.name,
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder_text=prop_def.placeholder or "Select file...",
+                    tab=prop_def.tab,
+                    tooltip=prop_def.tooltip,
+                )
+
+            elif prop_def.type == PropertyType.DIRECTORY_PATH:
+                # Directory path uses text input
+                self.add_text_input(
+                    prop_def.name,
+                    prop_def.label or prop_def.name,
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder_text=prop_def.placeholder or "Select directory...",
+                    tab=prop_def.tab,
+                    tooltip=prop_def.tooltip,
+                )
+
+            elif prop_def.type in (
+                PropertyType.CODE,
+                PropertyType.JSON,
+                PropertyType.SELECTOR,
+            ):
+                # These types use multi-line text input
+                self.add_text_input(
+                    prop_def.name,
+                    prop_def.label or prop_def.name,
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder_text=prop_def.placeholder,
+                    tab=prop_def.tab,
+                    tooltip=prop_def.tooltip,
+                )
+
+            # Other types (DATE, TIME, COLOR, etc.) can be added later with specialized widgets
 
     def ensure_casare_node(self) -> Optional[CasareBaseNode]:
         """

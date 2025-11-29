@@ -319,32 +319,31 @@ class PropertiesPanel(QDockWidget):
         Args:
             node: Node to display properties for
         """
-        # Get node properties
-        if not hasattr(node, "model") or not hasattr(node.model, "properties"):
-            return
-
-        properties = node.model.properties
-
-        # Basic properties section
-        if properties:
-            basic_section = CollapsibleSection("Properties")
-
-            for prop_name, prop_value in properties.items():
-                # Skip internal properties
-                if prop_name.startswith("_"):
-                    continue
-
-                widget = self._create_property_widget(prop_name, prop_value, node)
-                if widget:
-                    basic_section.add_property_row(prop_name, widget)
-                    self._property_widgets[prop_name] = widget
-
-            self._properties_layout.addWidget(basic_section)
-
-        # Node-specific inputs section
+        # Get casare_node config (source of truth for execution)
         casare_node = (
             node.get_casare_node() if hasattr(node, "get_casare_node") else None
         )
+
+        if casare_node and hasattr(casare_node, "config"):
+            config = casare_node.config
+
+            # Config properties section
+            if config:
+                config_section = CollapsibleSection("Configuration")
+
+                for prop_name, prop_value in config.items():
+                    # Skip internal properties
+                    if prop_name.startswith("_"):
+                        continue
+
+                    widget = self._create_property_widget(prop_name, prop_value, node)
+                    if widget:
+                        config_section.add_property_row(prop_name, widget)
+                        self._property_widgets[prop_name] = widget
+
+                self._properties_layout.addWidget(config_section)
+
+        # Node-specific inputs section (port default values)
         if casare_node and hasattr(casare_node, "input_ports"):
             inputs_section = CollapsibleSection("Inputs")
 
