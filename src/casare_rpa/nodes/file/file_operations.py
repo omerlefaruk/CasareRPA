@@ -17,7 +17,8 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -1114,16 +1115,43 @@ class ListDirectoryNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "path",
+        PropertyType.STRING,
+        required=True,
+        label="Path",
+        tooltip="File or directory path to check",
+        placeholder="C:\\path\\to\\file.txt",
+    ),
+    PropertyDef(
+        "check_type",
+        PropertyType.CHOICE,
+        default="any",
+        choices=["file", "directory", "any"],
+        label="Check Type",
+        tooltip="Type of path to check: file only, directory only, or any",
+    ),
+    PropertyDef(
+        "allow_dangerous_paths",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Paths",
+        tooltip="Allow access to system directories (use with caution)",
+    ),
+)
 @executable_node
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
 
-    Config:
+    Config (via @node_schema):
+        path: Path to check (required)
         check_type: "file", "directory", or "any" (default: any)
+        allow_dangerous_paths: Allow system paths (default: False)
 
     Inputs:
-        path: Path to check
+        path: Path to check (overrides config if connected)
 
     Outputs:
         exists: Whether the path exists
@@ -1132,6 +1160,7 @@ class FileExistsNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "File Exists", **kwargs) -> None:
+        # Config auto-merged by @node_schema decorator
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -1147,9 +1176,9 @@ class FileExistsNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Try config first, then input port
-            file_path = self.config.get("path") or self.get_input_value("path")
-            check_type = self.config.get("check_type", "any")
+            # NEW: Unified parameter accessor (port OR config)
+            file_path = self.get_parameter("path")
+            check_type = self.get_parameter("check_type", "any")
 
             if not file_path:
                 raise ValueError("path is required")
@@ -1158,9 +1187,8 @@ class FileExistsNode(BaseNode):
             file_path = context.resolve_value(file_path)
 
             # SECURITY: Validate path (read-only, allows system paths)
-            path = validate_path_security_readonly(
-                file_path, "check", self.config.get("allow_dangerous_paths", False)
-            )
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
+            path = validate_path_security_readonly(file_path, "check", allow_dangerous)
             exists = path.exists()
             is_file = path.is_file() if exists else False
             is_directory = path.is_dir() if exists else False
