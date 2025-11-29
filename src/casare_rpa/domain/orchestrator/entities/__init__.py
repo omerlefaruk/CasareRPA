@@ -4,6 +4,7 @@ from .robot import Robot, RobotStatus
 from .job import Job, JobStatus, JobPriority
 from .workflow import Workflow, WorkflowStatus
 from .schedule import Schedule, ScheduleFrequency
+from .dashboard_metrics import DashboardMetrics, JobHistoryEntry
 
 __all__ = [
     "Robot",
@@ -15,4 +16,6 @@ __all__ = [
     "WorkflowStatus",
     "Schedule",
     "ScheduleFrequency",
+    "DashboardMetrics",
+    "JobHistoryEntry",
 ]

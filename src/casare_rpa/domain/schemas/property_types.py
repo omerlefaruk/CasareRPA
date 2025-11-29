@@ -33,6 +33,7 @@ class PropertyType(str, Enum):
     DATE = "date"  # Date picker
     TIME = "time"  # Time picker
     DATETIME = "datetime"  # DateTime picker
+    LIST = "list"  # List of values
 
     # Custom widget type
     CUSTOM = "custom"  # Fully custom widget class
