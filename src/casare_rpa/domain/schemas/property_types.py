@@ -12,6 +12,7 @@ class PropertyType(str, Enum):
 
     # Basic types
     STRING = "string"
+    TEXT = "text"  # Multi-line text area
     INTEGER = "integer"
     FLOAT = "float"
     BOOLEAN = "boolean"
