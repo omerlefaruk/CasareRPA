@@ -254,19 +254,73 @@ def validate_path_security_readonly(
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        tooltip="Path to the file to read",
+        placeholder="C:\\path\\to\\file.txt",
+    ),
+    PropertyDef(
+        "encoding",
+        PropertyType.STRING,
+        default="utf-8",
+        label="Encoding",
+        tooltip="Text encoding (utf-8, ascii, latin-1, etc.)",
+    ),
+    PropertyDef(
+        "binary_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Binary Mode",
+        tooltip="Read as binary data (returns bytes instead of string)",
+    ),
+    PropertyDef(
+        "errors",
+        PropertyType.CHOICE,
+        default="strict",
+        choices=[
+            "strict",
+            "ignore",
+            "replace",
+            "backslashreplace",
+            "xmlcharrefreplace",
+        ],
+        label="Error Handling",
+        tooltip="How to handle encoding errors",
+    ),
+    PropertyDef(
+        "max_size",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Max Size (bytes)",
+        tooltip="Maximum file size to read (0 = unlimited)",
+    ),
+    PropertyDef(
+        "allow_dangerous_paths",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Paths",
+        tooltip="Allow access to system directories",
+    ),
+)
 class ReadFileNode(BaseNode):
     """
     Read content from a text or binary file.
 
-    Config:
+    Config (via @node_schema):
+        file_path: Path to the file to read (required)
         encoding: Text encoding (default: utf-8)
         binary_mode: Read as binary (default: False)
-        errors: Error handling mode (strict, ignore, replace, etc.)
-        max_size: Maximum file size to read in bytes (0 = unlimited)
-        newline: Newline handling mode (None, '', '\n', '\r', '\r\n')
+        errors: Error handling mode (default: strict)
+        max_size: Maximum file size in bytes (0 = unlimited)
+        allow_dangerous_paths: Allow system paths (default: False)
 
     Inputs:
-        file_path: Path to the file to read
+        file_path: Path override (if connected)
 
     Outputs:
         content: File contents (string or bytes)
@@ -275,22 +329,8 @@ class ReadFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Read File", **kwargs) -> None:
-        # Default config with all file read options
-        default_config = {
-            "encoding": "utf-8",
-            "binary_mode": False,
-            "errors": "strict",  # strict, ignore, replace, backslashreplace, xmlcharrefreplace
-            "max_size": 0,  # 0 = unlimited, otherwise max bytes to read
-            "newline": None,  # None = universal newlines, '' = no translation, or specific
-            "allow_dangerous_paths": False,
-        }
-
+        # Config auto-merged by @node_schema decorator
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadFileNode"
@@ -305,16 +345,13 @@ class ReadFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Try config first, then input port
-            file_path = self.config.get("file_path") or self.get_input_value(
-                "file_path"
-            )
-            encoding = self.config.get("encoding", "utf-8")
-            binary_mode = self.config.get("binary_mode", False)
-            errors = self.config.get("errors", "strict")
-            max_size = self.config.get("max_size", 0)
-            newline = self.config.get("newline", None)
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            # NEW: Unified parameter accessor
+            file_path = self.get_parameter("file_path")
+            encoding = self.get_parameter("encoding", "utf-8")
+            binary_mode = self.get_parameter("binary_mode", False)
+            errors = self.get_parameter("errors", "strict")
+            max_size = self.get_parameter("max_size", 0)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
@@ -380,22 +417,90 @@ class ReadFileNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        tooltip="Path to write to",
+        placeholder="C:\\path\\to\\file.txt",
+    ),
+    PropertyDef(
+        "content",
+        PropertyType.STRING,
+        required=True,
+        label="Content",
+        tooltip="Content to write to file",
+    ),
+    PropertyDef(
+        "encoding",
+        PropertyType.STRING,
+        default="utf-8",
+        label="Encoding",
+        tooltip="Text encoding",
+    ),
+    PropertyDef(
+        "binary_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Binary Mode",
+        tooltip="Write as binary data",
+    ),
+    PropertyDef(
+        "create_dirs",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Create Directories",
+        tooltip="Create parent directories if needed",
+    ),
+    PropertyDef(
+        "errors",
+        PropertyType.CHOICE,
+        default="strict",
+        choices=[
+            "strict",
+            "ignore",
+            "replace",
+            "backslashreplace",
+            "xmlcharrefreplace",
+        ],
+        label="Error Handling",
+        tooltip="How to handle encoding errors",
+    ),
+    PropertyDef(
+        "append_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Append Mode",
+        tooltip="Append to file instead of overwrite",
+    ),
+    PropertyDef(
+        "allow_dangerous_paths",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Paths",
+        tooltip="Allow access to system directories",
+    ),
+)
 @executable_node
 class WriteFileNode(BaseNode):
     """
     Write content to a file, creating or overwriting.
 
-    Config:
+    Config (via @node_schema):
+        file_path: Path to write to (required)
+        content: Content to write (required)
         encoding: Text encoding (default: utf-8)
         binary_mode: Write as binary (default: False)
-        create_dirs: Create parent directories if needed (default: True)
-        errors: Error handling mode (strict, ignore, replace, etc.)
-        newline: Newline handling mode (None, '', '\n', '\r', '\r\n')
-        append_mode: Append to file instead of overwrite (default: False)
+        create_dirs: Create parent directories (default: True)
+        errors: Error handling mode (default: strict)
+        append_mode: Append instead of overwrite (default: False)
+        allow_dangerous_paths: Allow system paths (default: False)
 
     Inputs:
-        file_path: Path to write to
-        content: Content to write
+        file_path: Path override (if connected)
+        content: Content override (if connected)
 
     Outputs:
         file_path: Path that was written
@@ -404,23 +509,8 @@ class WriteFileNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Write File", **kwargs) -> None:
-        # Default config with all file write options
-        default_config = {
-            "encoding": "utf-8",
-            "binary_mode": False,
-            "create_dirs": True,
-            "errors": "strict",  # strict, ignore, replace, backslashreplace, xmlcharrefreplace
-            "newline": None,  # None = universal, '' = no translation, or specific
-            "append_mode": False,  # Append instead of overwrite
-            "allow_dangerous_paths": False,
-        }
-
+        # Config auto-merged by @node_schema decorator
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WriteFileNode"
@@ -436,17 +526,15 @@ class WriteFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.config.get("file_path") or self.get_input_value(
-                "file_path"
-            )
-            content = self.config.get("content") or self.get_input_value("content")
-            encoding = self.config.get("encoding", "utf-8")
-            binary_mode = self.config.get("binary_mode", False)
-            create_dirs = self.config.get("create_dirs", True)
-            errors = self.config.get("errors", "strict")
-            newline = self.config.get("newline", None)
-            append_mode = self.config.get("append_mode", False)
-            allow_dangerous = self.config.get("allow_dangerous_paths", False)
+            # NEW: Unified parameter accessor
+            file_path = self.get_parameter("file_path")
+            content = self.get_parameter("content")
+            encoding = self.get_parameter("encoding", "utf-8")
+            binary_mode = self.get_parameter("binary_mode", False)
+            create_dirs = self.get_parameter("create_dirs", True)
+            errors = self.get_parameter("errors", "strict")
+            append_mode = self.get_parameter("append_mode", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
 
             if not file_path:
                 raise ValueError("file_path is required")
