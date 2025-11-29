@@ -101,7 +101,7 @@ def node_schema(*property_defs: PropertyDef, strict: bool = False):
 
         def wrapped_init(self, node_id: str, *args, **kwargs):
             """Wrapped __init__ that merges defaults and validates config."""
-            config = kwargs.get("config", {})
+            config = kwargs.get("config") or {}
 
             # Merge with defaults from schema
             default_config = schema.get_default_config()
