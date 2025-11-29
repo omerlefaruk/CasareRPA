@@ -9,7 +9,8 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -22,6 +23,134 @@ from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "browser_type",
+        PropertyType.CHOICE,
+        default=DEFAULT_BROWSER,
+        choices=["chromium", "firefox", "webkit"],
+        label="Browser Type",
+        tooltip="Which browser engine to use",
+    ),
+    PropertyDef(
+        "headless",
+        PropertyType.BOOLEAN,
+        default=HEADLESS_MODE,
+        label="Headless Mode",
+        tooltip="Run browser without GUI",
+    ),
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        default="",
+        label="Initial URL",
+        tooltip="URL to navigate to after launch (optional)",
+        tab="properties",
+    ),
+    # Performance options
+    PropertyDef(
+        "slow_mo",
+        PropertyType.INTEGER,
+        default=0,
+        label="Slow Motion (ms)",
+        tooltip="Slow down operations for debugging",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "channel",
+        PropertyType.STRING,
+        default="",
+        label="Browser Channel",
+        tooltip="chrome, msedge, chrome-beta (optional)",
+        tab="advanced",
+    ),
+    # Viewport options
+    PropertyDef(
+        "viewport_width",
+        PropertyType.INTEGER,
+        default=1280,
+        label="Viewport Width",
+        tooltip="Browser window width",
+        tab="viewport",
+    ),
+    PropertyDef(
+        "viewport_height",
+        PropertyType.INTEGER,
+        default=720,
+        label="Viewport Height",
+        tooltip="Browser window height",
+        tab="viewport",
+    ),
+    # Browser identity options
+    PropertyDef(
+        "user_agent",
+        PropertyType.STRING,
+        default="",
+        label="User Agent",
+        tooltip="Custom user agent string (optional)",
+        tab="identity",
+    ),
+    PropertyDef(
+        "locale",
+        PropertyType.STRING,
+        default="",
+        label="Locale",
+        tooltip="e.g., 'en-US' (optional)",
+        tab="identity",
+    ),
+    PropertyDef(
+        "timezone_id",
+        PropertyType.STRING,
+        default="",
+        label="Timezone",
+        tooltip="e.g., 'America/New_York' (optional)",
+        tab="identity",
+    ),
+    PropertyDef(
+        "color_scheme",
+        PropertyType.CHOICE,
+        default="light",
+        choices=["light", "dark", "no-preference"],
+        label="Color Scheme",
+        tooltip="Preferred color scheme",
+        tab="identity",
+    ),
+    # Security options
+    PropertyDef(
+        "ignore_https_errors",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore HTTPS Errors",
+        tooltip="Accept invalid/self-signed certificates",
+        tab="security",
+    ),
+    PropertyDef(
+        "proxy_server",
+        PropertyType.STRING,
+        default="",
+        label="Proxy Server",
+        tooltip="Proxy server URL (optional)",
+        tab="security",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=2000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries",
+        tab="retry",
+    ),
+)
 @executable_node
 class LaunchBrowserNode(BaseNode):
     """
@@ -35,8 +164,6 @@ class LaunchBrowserNode(BaseNode):
         self,
         node_id: str,
         name: str = "Launch Browser",
-        browser_type: str = DEFAULT_BROWSER,
-        headless: bool = HEADLESS_MODE,
         **kwargs,
     ) -> None:
         """
@@ -45,38 +172,8 @@ class LaunchBrowserNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            browser_type: Browser to launch (chromium, firefox, webkit)
-            headless: Whether to run in headless mode
         """
-        # Default config with all Playwright options
-        default_config = {
-            "browser_type": browser_type,
-            "headless": headless,
-            # Performance options
-            "slow_mo": 0,  # Slow down operations by ms (for debugging)
-            "channel": "",  # Browser channel (chrome, msedge, chrome-beta)
-            # Viewport options
-            "viewport_width": 1280,
-            "viewport_height": 720,
-            # Browser identity options
-            "user_agent": "",  # Custom user agent string
-            "locale": "",  # Locale (e.g., "en-US")
-            "timezone_id": "",  # Timezone (e.g., "America/New_York")
-            "color_scheme": "light",  # Preferred color scheme (light/dark/no-preference)
-            # Security options
-            "ignore_https_errors": False,
-            "proxy_server": "",  # Proxy server URL
-            # Retry options
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 2000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "LaunchBrowserNode"
