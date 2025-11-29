@@ -9,7 +9,8 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -22,6 +23,81 @@ from ..utils.config import DEFAULT_PAGE_LOAD_TIMEOUT
 from loguru import logger
 
 
+@node_schema(
+    PropertyDef(
+        "url",
+        PropertyType.STRING,
+        default="",
+        label="URL",
+        tooltip="URL to navigate to (e.g., https://example.com)",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_PAGE_LOAD_TIMEOUT,
+        label="Timeout (ms)",
+        tooltip="Navigation timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        label="Wait Until",
+        tooltip="Event to wait for before considering navigation complete",
+        tab="properties",
+    ),
+    PropertyDef(
+        "referer",
+        PropertyType.STRING,
+        default="",
+        label="Referer",
+        tooltip="Optional referer header URL",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "ignore_https_errors",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore HTTPS Errors",
+        tooltip="Ignore HTTPS certificate errors",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on navigation failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when navigation fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class GoToURLNode(BaseNode):
     """
@@ -34,8 +110,6 @@ class GoToURLNode(BaseNode):
         self,
         node_id: str,
         name: str = "Go To URL",
-        url: str = "",
-        timeout: int = DEFAULT_PAGE_LOAD_TIMEOUT,
         **kwargs,
     ) -> None:
         """
@@ -44,28 +118,11 @@ class GoToURLNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            url: URL to navigate to
-            timeout: Page load timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright options
-        default_config = {
-            "url": url,
-            "timeout": timeout,
-            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
-            "referer": "",  # Optional referer header
-            "retry_count": 0,  # Number of retries on navigation failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-            "ignore_https_errors": False,  # Ignore HTTPS certificate errors
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoToURLNode"
@@ -114,7 +171,7 @@ class GoToURLNode(BaseNode):
             logger.info(f"Node config: {self.config}")
 
             if url is None:
-                url = self.config.get("url", "")
+                url = self.get_parameter("url", "")
                 logger.info(f"URL from config: '{url}'")
 
             # Resolve {{variable}} patterns in url
@@ -130,15 +187,15 @@ class GoToURLNode(BaseNode):
             if not url.startswith(("http://", "https://", "file://")):
                 url = f"https://{url}"
 
-            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
-            wait_until = self.config.get("wait_until", "load")
-            referer = self.config.get("referer", "")
+            timeout = self.get_parameter("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.get_parameter("wait_until", "load")
+            referer = self.get_parameter("referer", "")
 
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             # Resolve {{variable}} patterns in referer and screenshot_path
             referer = context.resolve_value(referer)
@@ -234,6 +291,41 @@ class GoToURLNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_PAGE_LOAD_TIMEOUT,
+        label="Timeout (ms)",
+        tooltip="Navigation timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        label="Wait Until",
+        tooltip="Event to wait for before considering navigation complete",
+        tab="properties",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+)
 @executable_node
 class GoBackNode(BaseNode):
     """
@@ -247,20 +339,11 @@ class GoBackNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with Playwright options
-        default_config = {
-            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
-            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoBackNode"
@@ -290,10 +373,10 @@ class GoBackNode(BaseNode):
             if page is None:
                 raise ValueError("No page instance found")
 
-            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
-            wait_until = self.config.get("wait_until", "load")
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            timeout = self.get_parameter("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.get_parameter("wait_until", "load")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
 
             logger.info(f"Navigating back (wait_until={wait_until})")
 
@@ -342,6 +425,41 @@ class GoBackNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_PAGE_LOAD_TIMEOUT,
+        label="Timeout (ms)",
+        tooltip="Navigation timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        label="Wait Until",
+        tooltip="Event to wait for before considering navigation complete",
+        tab="properties",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+)
 @executable_node
 class GoForwardNode(BaseNode):
     """
@@ -355,20 +473,11 @@ class GoForwardNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with Playwright options
-        default_config = {
-            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
-            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GoForwardNode"
@@ -398,10 +507,10 @@ class GoForwardNode(BaseNode):
             if page is None:
                 raise ValueError("No page instance found")
 
-            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
-            wait_until = self.config.get("wait_until", "load")
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            timeout = self.get_parameter("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.get_parameter("wait_until", "load")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
 
             logger.info(f"Navigating forward (wait_until={wait_until})")
 
@@ -450,6 +559,41 @@ class GoForwardNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_PAGE_LOAD_TIMEOUT,
+        label="Timeout (ms)",
+        tooltip="Refresh timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle", "commit"],
+        label="Wait Until",
+        tooltip="Event to wait for before considering refresh complete",
+        tab="properties",
+    ),
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+)
 @executable_node
 class RefreshPageNode(BaseNode):
     """
@@ -463,20 +607,11 @@ class RefreshPageNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with Playwright options
-        default_config = {
-            "timeout": DEFAULT_PAGE_LOAD_TIMEOUT,
-            "wait_until": "load",  # load, domcontentloaded, networkidle, commit
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "RefreshPageNode"
@@ -506,10 +641,10 @@ class RefreshPageNode(BaseNode):
             if page is None:
                 raise ValueError("No page instance found")
 
-            timeout = self.config.get("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
-            wait_until = self.config.get("wait_until", "load")
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            timeout = self.get_parameter("timeout", DEFAULT_PAGE_LOAD_TIMEOUT)
+            wait_until = self.get_parameter("wait_until", "load")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
 
             logger.info(f"Refreshing page (wait_until={wait_until})")
 

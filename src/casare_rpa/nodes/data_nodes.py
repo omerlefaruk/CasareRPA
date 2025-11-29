@@ -11,7 +11,8 @@ from pathlib import Path
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -25,6 +26,91 @@ from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        default="extracted_text",
+        label="Variable Name",
+        tooltip="Name of variable to store the extracted text",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "use_inner_text",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Inner Text",
+        tooltip="Use innerText (visible text) instead of textContent (all text)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tooltip="Require exactly one matching element",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "trim_whitespace",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Trim Whitespace",
+        tooltip="Trim leading/trailing whitespace from result",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when extraction fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class ExtractTextNode(BaseNode):
     """
@@ -37,9 +123,6 @@ class ExtractTextNode(BaseNode):
         self,
         node_id: str,
         name: str = "Extract Text",
-        selector: str = "",
-        variable_name: str = "extracted_text",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
         """
@@ -48,30 +131,11 @@ class ExtractTextNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the element
-            variable_name: Name of variable to store result
-            timeout: Timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright text extraction options
-        default_config = {
-            "selector": selector,
-            "variable_name": variable_name,
-            "timeout": timeout,
-            "use_inner_text": False,  # True = innerText (visible text), False = textContent (all text)
-            "strict": False,  # Require exactly one matching element
-            "trim_whitespace": True,  # Trim leading/trailing whitespace from result
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ExtractTextNode"
@@ -105,7 +169,7 @@ class ExtractTextNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -116,25 +180,20 @@ class ExtractTextNode(BaseNode):
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
-            variable_name = self.config.get("variable_name", "extracted_text")
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-            use_inner_text = self.config.get("use_inner_text", False)
-            trim_whitespace = self.config.get("trim_whitespace", True)
+            # Get parameters
+            variable_name = self.get_parameter("variable_name", "extracted_text")
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
+            use_inner_text = self.get_parameter("use_inner_text", False)
+            trim_whitespace = self.get_parameter("trim_whitespace", True)
+            strict = self.get_parameter("strict", False)
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             logger.info(
                 f"Extracting text from element: {normalized_selector} (use_inner_text={use_inner_text})"
@@ -156,7 +215,7 @@ class ExtractTextNode(BaseNode):
                     locator = page.locator(normalized_selector)
 
                     # Apply strict mode if configured
-                    if self.config.get("strict", False):
+                    if strict:
                         locator = locator.first  # Ensures exactly one element
 
                     # Extract text using appropriate method
@@ -234,6 +293,83 @@ class ExtractTextNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "attribute",
+        PropertyType.STRING,
+        default="",
+        label="Attribute",
+        tooltip="Attribute name to retrieve (e.g., href, src, class)",
+        tab="properties",
+    ),
+    PropertyDef(
+        "variable_name",
+        PropertyType.STRING,
+        default="attribute_value",
+        label="Variable Name",
+        tooltip="Name of variable to store the attribute value",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tooltip="Require exactly one matching element",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when retrieval fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class GetAttributeNode(BaseNode):
     """
@@ -246,10 +382,6 @@ class GetAttributeNode(BaseNode):
         self,
         node_id: str,
         name: str = "Get Attribute",
-        selector: str = "",
-        attribute: str = "",
-        variable_name: str = "attribute_value",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
         """
@@ -258,30 +390,11 @@ class GetAttributeNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the element
-            attribute: Attribute name to retrieve
-            variable_name: Name of variable to store result
-            timeout: Timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright get_attribute options
-        default_config = {
-            "selector": selector,
-            "attribute": attribute,
-            "variable_name": variable_name,
-            "timeout": timeout,
-            "strict": False,  # Require exactly one matching element
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "GetAttributeNode"
@@ -316,7 +429,7 @@ class GetAttributeNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -324,7 +437,7 @@ class GetAttributeNode(BaseNode):
             # Get attribute from input or config
             attribute = self.get_input_value("attribute")
             if attribute is None:
-                attribute = self.config.get("attribute", "")
+                attribute = self.get_parameter("attribute", "")
 
             if not attribute:
                 raise ValueError("Attribute name is required")
@@ -336,23 +449,17 @@ class GetAttributeNode(BaseNode):
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
-            variable_name = self.config.get("variable_name", "attribute_value")
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
+            # Get parameters
+            variable_name = self.get_parameter("variable_name", "attribute_value")
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             logger.info(
                 f"Getting attribute '{attribute}' from element: {normalized_selector}"
@@ -374,7 +481,7 @@ class GetAttributeNode(BaseNode):
                     locator = page.locator(normalized_selector)
 
                     # Apply strict mode if configured
-                    if self.config.get("strict", False):
+                    if self.get_parameter("strict", False):
                         locator = locator.first  # Ensures exactly one element
 
                     # Get attribute with timeout
@@ -445,6 +552,112 @@ class GetAttributeNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        default="",
+        label="File Path",
+        tooltip="Path where screenshot will be saved",
+        tab="properties",
+    ),
+    PropertyDef(
+        "full_page",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Full Page",
+        tooltip="Capture full scrollable page",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    # Element options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="Optional selector for element screenshot (leave empty for page)",
+        tab="properties",
+    ),
+    # Image options
+    PropertyDef(
+        "type",
+        PropertyType.CHOICE,
+        default="png",
+        choices=["png", "jpeg"],
+        label="Image Type",
+        tooltip="Screenshot image format",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "quality",
+        PropertyType.INTEGER,
+        default=80,
+        label="JPEG Quality",
+        tooltip="JPEG quality 0-100 (ignored for PNG)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "scale",
+        PropertyType.CHOICE,
+        default="device",
+        choices=["css", "device"],
+        label="Scale",
+        tooltip="Image scale factor",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "animations",
+        PropertyType.CHOICE,
+        default="allow",
+        choices=["allow", "disabled"],
+        label="Animations",
+        tooltip="Whether to allow or disable CSS animations",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "omit_background",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Omit Background",
+        tooltip="Make background transparent (PNG only)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "caret",
+        PropertyType.CHOICE,
+        default="hide",
+        choices=["hide", "initial"],
+        label="Caret",
+        tooltip="Whether to hide text caret",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+)
 @executable_node
 class ScreenshotNode(BaseNode):
     """
@@ -457,10 +670,6 @@ class ScreenshotNode(BaseNode):
         self,
         node_id: str,
         name: str = "Screenshot",
-        file_path: str = "",
-        selector: Optional[str] = None,
-        full_page: bool = False,
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
         """
@@ -469,33 +678,11 @@ class ScreenshotNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            file_path: Path where screenshot will be saved
-            selector: Optional selector for element screenshot
-            full_page: Whether to capture full scrollable page
-            timeout: Timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright screenshot options
-        default_config = {
-            "file_path": file_path,
-            "selector": selector,
-            "full_page": full_page,
-            "timeout": timeout,
-            "type": "png",  # png or jpeg
-            "quality": None,  # JPEG quality 0-100 (ignored for PNG)
-            "scale": "device",  # css or device
-            "animations": "allow",  # allow or disabled
-            "omit_background": False,  # Make background transparent (PNG only)
-            "caret": "hide",  # hide or initial - whether to hide text caret
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ScreenshotNode"
@@ -529,7 +716,7 @@ class ScreenshotNode(BaseNode):
             # Get file path from input or config
             file_path = self.get_input_value("file_path")
             if file_path is None:
-                file_path = self.config.get("file_path", "")
+                file_path = self.get_parameter("file_path", "")
 
             if not file_path:
                 raise ValueError("File path is required")
@@ -545,7 +732,7 @@ class ScreenshotNode(BaseNode):
             file_path = file_path.strip().strip('"').strip("'")
 
             # Get the image type for extension
-            img_type = self.config.get("type", "png")
+            img_type = self.get_parameter("type", "png")
             ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
 
             # If path is a directory (ends with separator or is existing dir), auto-generate filename
@@ -571,62 +758,49 @@ class ScreenshotNode(BaseNode):
                 os.makedirs(parent_dir, exist_ok=True)
                 logger.info(f"Created directory: {parent_dir}")
 
-            selector = self.config.get("selector")
-            full_page = self.config.get("full_page", False)
+            # Get parameters
+            selector = self.get_parameter("selector", "")
+            full_page = self.get_parameter("full_page", False)
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
 
             # Resolve {{variable}} patterns in selector if present
             if selector:
                 selector = context.resolve_value(selector)
 
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
 
             logger.info(f"Taking screenshot: {file_path}")
 
             # Build screenshot options
             screenshot_options = {"path": file_path, "timeout": timeout}
-
-            # Image type (png or jpeg)
-            img_type = self.config.get("type", "png")
             if img_type and img_type in ("png", "jpeg"):
                 screenshot_options["type"] = img_type
 
             # JPEG quality (0-100)
-            quality = self.config.get("quality")
-            if quality is not None and quality != "" and img_type == "jpeg":
-                try:
-                    screenshot_options["quality"] = int(quality)
-                except (ValueError, TypeError):
-                    pass
+            quality = self.get_parameter("quality", 80)
+            if quality is not None and img_type == "jpeg":
+                screenshot_options["quality"] = safe_int(quality, 80)
 
             # Scale (css or device)
-            scale = self.config.get("scale", "device")
+            scale = self.get_parameter("scale", "device")
             if scale and scale in ("css", "device"):
                 screenshot_options["scale"] = scale
 
             # Animations (allow or disabled)
-            animations = self.config.get("animations", "allow")
+            animations = self.get_parameter("animations", "allow")
             if animations and animations in ("allow", "disabled"):
                 screenshot_options["animations"] = animations
 
             # Omit background (PNG transparency)
-            if self.config.get("omit_background", False) and img_type == "png":
+            if self.get_parameter("omit_background", False) and img_type == "png":
                 screenshot_options["omit_background"] = True
 
             # Caret visibility (hide or initial)
-            caret = self.config.get("caret", "hide")
+            caret = self.get_parameter("caret", "hide")
             if caret and caret in ("hide", "initial"):
                 screenshot_options["caret"] = caret
 

@@ -9,7 +9,8 @@ import asyncio
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -23,6 +24,133 @@ from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "button",
+        PropertyType.CHOICE,
+        default="left",
+        choices=["left", "right", "middle"],
+        label="Button",
+        tooltip="Mouse button to use for click",
+        tab="properties",
+    ),
+    # Click behavior
+    PropertyDef(
+        "click_count",
+        PropertyType.INTEGER,
+        default=1,
+        label="Click Count",
+        tooltip="Number of clicks (2 for double-click)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "delay",
+        PropertyType.INTEGER,
+        default=0,
+        label="Delay (ms)",
+        tooltip="Delay between mousedown and mouseup in milliseconds",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "force",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Force Click",
+        tooltip="Bypass actionability checks",
+        tab="advanced",
+    ),
+    # Position offset
+    PropertyDef(
+        "position_x",
+        PropertyType.STRING,
+        default="",
+        label="Position X",
+        tooltip="Click position X offset (leave empty for center)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "position_y",
+        PropertyType.STRING,
+        default="",
+        label="Position Y",
+        tooltip="Click position Y offset (leave empty for center)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "no_wait_after",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="No Wait After",
+        tooltip="Skip waiting for navigations after click",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "trial",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Trial Mode",
+        tooltip="Perform actionability checks without clicking",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "highlight_before_click",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Highlight Before Click",
+        tooltip="Briefly highlight element before clicking",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when click fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class ClickElementNode(BaseNode):
     """
@@ -35,8 +163,6 @@ class ClickElementNode(BaseNode):
         self,
         node_id: str,
         name: str = "Click Element",
-        selector: str = "",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,  # Convert to milliseconds
         **kwargs,
     ) -> None:
         """
@@ -45,35 +171,11 @@ class ClickElementNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the element
-            timeout: Timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright click options
-        default_config = {
-            "selector": selector,
-            "timeout": timeout,
-            "button": "left",  # left, right, middle
-            "click_count": 1,  # Number of clicks (2 for double-click)
-            "delay": 0,  # Delay between mousedown and mouseup in ms
-            "force": False,  # Bypass actionability checks
-            "position_x": None,  # Click position X offset
-            "position_y": None,  # Click position Y offset
-            "modifiers": [],  # Modifier keys: 'Alt', 'Control', 'Meta', 'Shift'
-            "no_wait_after": False,  # Skip waiting for navigations after click
-            "trial": False,  # Perform actionability checks without clicking
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-            "highlight_before_click": False,  # Highlight element before clicking
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ClickElementNode"
@@ -107,7 +209,7 @@ class ClickElementNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -119,14 +221,9 @@ class ClickElementNode(BaseNode):
             normalized_selector = normalize_selector(selector)
 
             # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
 
             logger.info(f"Clicking element: {normalized_selector}")
 
@@ -134,64 +231,49 @@ class ClickElementNode(BaseNode):
             click_options = {"timeout": timeout}
 
             # Button type (left, right, middle)
-            button = self.config.get("button", "left")
+            button = self.get_parameter("button", "left")
             if button and button != "left":
                 click_options["button"] = button
 
             # Click count (for double-click)
-            click_count = self.config.get("click_count", 1)
-            if click_count and str(click_count).strip():
-                try:
-                    click_count_int = int(click_count)
-                    if click_count_int > 1:
-                        click_options["click_count"] = click_count_int
-                except (ValueError, TypeError):
-                    pass
+            click_count = safe_int(self.get_parameter("click_count"), 1)
+            if click_count > 1:
+                click_options["click_count"] = click_count
 
             # Delay between mousedown and mouseup
-            delay = self.config.get("delay", 0)
-            if delay and str(delay).strip():
-                try:
-                    delay_int = int(delay)
-                    if delay_int > 0:
-                        click_options["delay"] = delay_int
-                except (ValueError, TypeError):
-                    pass
+            delay = safe_int(self.get_parameter("delay"), 0)
+            if delay > 0:
+                click_options["delay"] = delay
 
             # Force click (bypass actionability checks)
-            if self.config.get("force", False):
+            if self.get_parameter("force", False):
                 click_options["force"] = True
 
             # Position offset
-            pos_x = self.config.get("position_x")
-            pos_y = self.config.get("position_y")
-            if pos_x is not None and pos_y is not None:
+            pos_x = self.get_parameter("position_x", "")
+            pos_y = self.get_parameter("position_y", "")
+            if pos_x and pos_y:
                 try:
                     click_options["position"] = {"x": float(pos_x), "y": float(pos_y)}
                 except (ValueError, TypeError):
                     pass  # Ignore invalid position values
 
-            # Modifiers (Alt, Control, Meta, Shift)
-            modifiers = self.config.get("modifiers", [])
-            if modifiers:
-                click_options["modifiers"] = modifiers
-
             # No wait after (skip waiting for navigations)
-            if self.config.get("no_wait_after", False):
+            if self.get_parameter("no_wait_after", False):
                 click_options["no_wait_after"] = True
 
             # Trial mode (actionability checks only)
-            if self.config.get("trial", False):
+            if self.get_parameter("trial", False):
                 click_options["trial"] = True
 
             logger.debug(f"Click options: {click_options}")
 
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
-            highlight_before_click = self.config.get("highlight_before_click", False)
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
+            highlight_before_click = self.get_parameter("highlight_before_click", False)
 
             async def perform_click():
                 # Highlight element before clicking if requested
@@ -272,6 +354,131 @@ class ClickElementNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the input element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "text",
+        PropertyType.STRING,
+        default="",
+        label="Text",
+        tooltip="Text to type into the element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Element wait timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "clear_first",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Clear First",
+        tooltip="Clear field before typing",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "delay",
+        PropertyType.INTEGER,
+        default=0,
+        label="Delay (ms)",
+        tooltip="Delay between keystrokes in milliseconds",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "press_sequentially",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Press Sequentially",
+        tooltip="Type character-by-character (overrides delay)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "force",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Force",
+        tooltip="Bypass actionability checks",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "no_wait_after",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="No Wait After",
+        tooltip="Skip waiting for navigations",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tooltip="Require exactly one matching element",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "press_enter_after",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Press Enter After",
+        tooltip="Press Enter key after typing",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "press_tab_after",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Press Tab After",
+        tooltip="Press Tab key after typing",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when typing fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class TypeTextNode(BaseNode):
     """
@@ -284,9 +491,6 @@ class TypeTextNode(BaseNode):
         self,
         node_id: str,
         name: str = "Type Text",
-        selector: str = "",
-        text: str = "",
-        delay: int = 0,
         **kwargs,
     ) -> None:
         """
@@ -295,35 +499,11 @@ class TypeTextNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the input element
-            text: Text to type
-            delay: Delay between keystrokes in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright options
-        default_config = {
-            "selector": selector,
-            "text": text,
-            "delay": delay,
-            "timeout": DEFAULT_NODE_TIMEOUT * 1000,  # Element wait timeout
-            "clear_first": True,  # Clear field before typing
-            "press_sequentially": False,  # Use type() for character-by-character (overrides delay)
-            "force": False,  # Bypass actionability checks
-            "no_wait_after": False,  # Skip waiting for navigations
-            "strict": False,  # Require exactly one matching element
-            "press_enter_after": False,  # Press Enter after typing
-            "press_tab_after": False,  # Press Tab after typing
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "TypeTextNode"
@@ -358,7 +538,7 @@ class TypeTextNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -372,7 +552,7 @@ class TypeTextNode(BaseNode):
             # Get text from input or config
             text = self.get_input_value("text")
             if text is None:
-                text = self.config.get("text", "")
+                text = self.get_parameter("text", "")
 
             if text is None:
                 text = ""
@@ -380,38 +560,24 @@ class TypeTextNode(BaseNode):
             # Resolve {{variable}} patterns in text
             text = context.resolve_value(text)
 
-            # Safely parse delay with default
-            delay_val = self.config.get("delay")
-            if delay_val is None or delay_val == "":
-                delay = 0
-            else:
-                try:
-                    delay = int(delay_val)
-                except (ValueError, TypeError):
-                    delay = 0
-
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-            clear_first = self.config.get("clear_first", True)
-            press_sequentially = self.config.get("press_sequentially", False)
-            force = self.config.get("force", False)
-            no_wait_after = self.config.get("no_wait_after", False)
-            strict = self.config.get("strict", False)
-            press_enter_after = self.config.get("press_enter_after", False)
-            press_tab_after = self.config.get("press_tab_after", False)
+            # Get parameters
+            delay = safe_int(self.get_parameter("delay"), 0)
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
+            clear_first = self.get_parameter("clear_first", True)
+            press_sequentially = self.get_parameter("press_sequentially", False)
+            force = self.get_parameter("force", False)
+            no_wait_after = self.get_parameter("no_wait_after", False)
+            strict = self.get_parameter("strict", False)
+            press_enter_after = self.get_parameter("press_enter_after", False)
+            press_tab_after = self.get_parameter("press_tab_after", False)
 
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             logger.info(f"Typing text into element: {normalized_selector}")
 
@@ -504,6 +670,100 @@ class TypeTextNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the select element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "value",
+        PropertyType.STRING,
+        default="",
+        label="Value",
+        tooltip="Value, label, or index to select",
+        tab="properties",
+    ),
+    PropertyDef(
+        "select_by",
+        PropertyType.CHOICE,
+        default="value",
+        choices=["value", "label", "index"],
+        label="Select By",
+        tooltip="How to match the option",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "force",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Force",
+        tooltip="Bypass actionability checks",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "no_wait_after",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="No Wait After",
+        tooltip="Skip waiting for navigations after selection",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tooltip="Require exactly one matching element",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries on failure",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when selection fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class SelectDropdownNode(BaseNode):
     """
@@ -516,9 +776,6 @@ class SelectDropdownNode(BaseNode):
         self,
         node_id: str,
         name: str = "Select Dropdown",
-        selector: str = "",
-        value: str = "",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
         """
@@ -527,31 +784,11 @@ class SelectDropdownNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the select element
-            value: Value or label to select
-            timeout: Timeout in milliseconds
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright select_option options
-        default_config = {
-            "selector": selector,
-            "value": value,
-            "timeout": timeout,
-            "force": False,  # Bypass actionability checks
-            "no_wait_after": False,  # Skip waiting for navigations after selection
-            "strict": False,  # Require exactly one matching element
-            "select_by": "value",  # value, label, or index
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, val in default_config.items():
-            if key not in config:
-                config[key] = val
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "SelectDropdownNode"
@@ -586,7 +823,7 @@ class SelectDropdownNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -600,7 +837,7 @@ class SelectDropdownNode(BaseNode):
             # Get value from input or config
             value = self.get_input_value("value")
             if value is None:
-                value = self.config.get("value", "")
+                value = self.get_parameter("value", "")
 
             if not value:
                 raise ValueError("Value is required")
@@ -608,23 +845,17 @@ class SelectDropdownNode(BaseNode):
             # Resolve {{variable}} patterns in value
             value = context.resolve_value(value)
 
-            # Get Playwright options from config - safely parse timeout
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-            select_by = self.config.get("select_by", "value")
+            # Get parameters
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
+            select_by = self.get_parameter("select_by", "value")
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             logger.info(
                 f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})"
@@ -634,15 +865,15 @@ class SelectDropdownNode(BaseNode):
             select_options = {"timeout": timeout}
 
             # Force option (bypass actionability checks)
-            if self.config.get("force", False):
+            if self.get_parameter("force", False):
                 select_options["force"] = True
 
             # No wait after (skip waiting for navigations)
-            if self.config.get("no_wait_after", False):
+            if self.get_parameter("no_wait_after", False):
                 select_options["no_wait_after"] = True
 
             # Strict mode (require exactly one element)
-            if self.config.get("strict", False):
+            if self.get_parameter("strict", False):
                 select_options["strict"] = True
 
             logger.debug(f"Select options: {select_options}")

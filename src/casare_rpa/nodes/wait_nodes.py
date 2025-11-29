@@ -118,6 +118,92 @@ class WaitNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "selector",
+        PropertyType.STRING,
+        default="",
+        label="Selector",
+        tooltip="CSS or XPath selector for the element",
+        tab="properties",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "state",
+        PropertyType.CHOICE,
+        default="visible",
+        choices=["visible", "hidden", "attached", "detached"],
+        label="State",
+        tooltip="Element state to wait for",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tooltip="Require exactly one matching element",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "poll_interval",
+        PropertyType.INTEGER,
+        default=100,
+        label="Poll Interval (ms)",
+        tooltip="Polling interval in milliseconds",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "highlight_on_find",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Highlight on Find",
+        tooltip="Briefly highlight element when found",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries after timeout",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when wait fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class WaitForElementNode(BaseNode):
     """
@@ -130,9 +216,6 @@ class WaitForElementNode(BaseNode):
         self,
         node_id: str,
         name: str = "Wait For Element",
-        selector: str = "",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
-        state: str = "visible",
         **kwargs,
     ) -> None:
         """
@@ -141,30 +224,11 @@ class WaitForElementNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            selector: CSS or XPath selector for the element
-            timeout: Timeout in milliseconds
-            state: Element state to wait for (visible, hidden, attached, detached)
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright wait_for_selector options
-        default_config = {
-            "selector": selector,
-            "timeout": timeout,
-            "state": state,
-            "strict": False,  # Require exactly one matching element
-            "poll_interval": 100,  # Polling interval in ms (custom, for retry logic)
-            "retry_count": 0,  # Number of retries after timeout (0 = no retry)
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-            "highlight_on_find": False,  # Briefly highlight element when found
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WaitForElementNode"
@@ -199,7 +263,7 @@ class WaitForElementNode(BaseNode):
             # Get selector from input or config
             selector = self.get_input_value("selector")
             if selector is None:
-                selector = self.config.get("selector", "")
+                selector = self.get_parameter("selector", "")
 
             if not selector:
                 raise ValueError("Selector is required")
@@ -210,25 +274,19 @@ class WaitForElementNode(BaseNode):
             # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
             normalized_selector = normalize_selector(selector)
 
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-            state = self.config.get("state", "visible")
+            # Get parameters
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
+            state = self.get_parameter("state", "visible")
+            strict = self.get_parameter("strict", False)
+            highlight_on_find = self.get_parameter("highlight_on_find", False)
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
-            highlight_on_find = self.config.get("highlight_on_find", False)
-            strict = self.config.get("strict", False)
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             # Resolve {{variable}} patterns in screenshot_path if provided
             if screenshot_path:
@@ -352,6 +410,76 @@ class WaitForElementNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    # Basic options
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=DEFAULT_NODE_TIMEOUT * 1000,
+        label="Timeout (ms)",
+        tooltip="Timeout in milliseconds",
+        tab="properties",
+    ),
+    PropertyDef(
+        "wait_until",
+        PropertyType.CHOICE,
+        default="load",
+        choices=["load", "domcontentloaded", "networkidle"],
+        label="Wait Until",
+        tooltip="Event to wait for before considering navigation complete",
+        tab="properties",
+    ),
+    # Advanced options
+    PropertyDef(
+        "url_pattern",
+        PropertyType.STRING,
+        default="",
+        label="URL Pattern",
+        tooltip="Optional URL pattern to wait for (glob or regex)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "url_use_regex",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Regex",
+        tooltip="Treat URL pattern as regex instead of glob",
+        tab="advanced",
+    ),
+    # Retry options
+    PropertyDef(
+        "retry_count",
+        PropertyType.INTEGER,
+        default=0,
+        label="Retry Count",
+        tooltip="Number of retries after timeout",
+        tab="retry",
+    ),
+    PropertyDef(
+        "retry_interval",
+        PropertyType.INTEGER,
+        default=1000,
+        label="Retry Interval (ms)",
+        tooltip="Delay between retries in milliseconds",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_on_fail",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Screenshot on Fail",
+        tooltip="Take screenshot when wait fails",
+        tab="retry",
+    ),
+    PropertyDef(
+        "screenshot_path",
+        PropertyType.STRING,
+        default="",
+        label="Screenshot Path",
+        tooltip="Path for failure screenshot (auto-generated if empty)",
+        tab="retry",
+    ),
+)
 @executable_node
 class WaitForNavigationNode(BaseNode):
     """
@@ -364,8 +492,6 @@ class WaitForNavigationNode(BaseNode):
         self,
         node_id: str,
         name: str = "Wait For Navigation",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
-        wait_until: str = "load",
         **kwargs,
     ) -> None:
         """
@@ -374,27 +500,11 @@ class WaitForNavigationNode(BaseNode):
         Args:
             node_id: Unique identifier for this node
             name: Display name for the node
-            timeout: Timeout in milliseconds
-            wait_until: Event to wait for (load, domcontentloaded, networkidle, commit)
+
+        Note:
+            The @node_schema decorator automatically handles default_config.
         """
-        # Default config with all Playwright wait_for_load_state options
-        default_config = {
-            "timeout": timeout,
-            "wait_until": wait_until,
-            "url_pattern": "",  # Optional URL pattern to wait for (glob or regex)
-            "url_use_regex": False,  # Treat url_pattern as regex instead of glob
-            "retry_count": 0,  # Number of retries after timeout (0 = no retry)
-            "retry_interval": 1000,  # Delay between retries in ms
-            "screenshot_on_fail": False,  # Take screenshot on failure
-            "screenshot_path": "",  # Path for failure screenshot
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "WaitForNavigationNode"
@@ -424,23 +534,17 @@ class WaitForNavigationNode(BaseNode):
             if page is None:
                 raise ValueError("No page instance found")
 
-            # Safely parse timeout with default
-            timeout_val = self.config.get("timeout")
-            if timeout_val is None or timeout_val == "":
-                timeout = DEFAULT_NODE_TIMEOUT * 1000
-            else:
-                try:
-                    timeout = int(timeout_val)
-                except (ValueError, TypeError):
-                    timeout = DEFAULT_NODE_TIMEOUT * 1000
-            wait_until = self.config.get("wait_until", "load")
+            # Get parameters
+            timeout = safe_int(
+                self.get_parameter("timeout"), DEFAULT_NODE_TIMEOUT * 1000
+            )
+            wait_until = self.get_parameter("wait_until", "load")
 
-            # Helper to safely parse int values with defaults
             # Get retry options
-            retry_count = safe_int(self.config.get("retry_count"), 0)
-            retry_interval = safe_int(self.config.get("retry_interval"), 1000)
-            screenshot_on_fail = self.config.get("screenshot_on_fail", False)
-            screenshot_path = self.config.get("screenshot_path", "")
+            retry_count = safe_int(self.get_parameter("retry_count"), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval"), 1000)
+            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
+            screenshot_path = self.get_parameter("screenshot_path", "")
 
             # Resolve {{variable}} patterns in screenshot_path if provided
             if screenshot_path:
