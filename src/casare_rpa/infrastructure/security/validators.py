@@ -80,10 +80,13 @@ def validate_sql_identifier(value: str, name: str = "identifier") -> str:
             f"contain only lowercase letters, digits, and underscores (max 63 chars)"
         )
 
-    # Check for SQL keywords
+    # Check for SQL keywords (as whole words to avoid false positives like "or" in "workflow")
+    import re
+
     value_upper = value.upper()
     for keyword in SQL_KEYWORDS:
-        if keyword in value_upper:
+        # Match whole words only (not partial matches)
+        if re.search(rf"\b{re.escape(keyword)}\b", value_upper):
             raise ValidationError(
                 f"Invalid {name}: '{value}' contains SQL keyword '{keyword}'"
             )
