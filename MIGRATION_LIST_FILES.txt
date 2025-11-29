@@ -1,0 +1,117 @@
+@node_schema(
+    PropertyDef(
+        "directory_path",
+        PropertyType.STRING,
+        required=True,
+        label="Directory Path",
+        tooltip="Directory to list files from",
+        placeholder="C:\\path\\to\\directory",
+    ),
+    PropertyDef(
+        "pattern",
+        PropertyType.STRING,
+        default="*",
+        label="Pattern",
+        tooltip="Glob pattern to filter files (e.g., *.txt, *.pdf)",
+    ),
+    PropertyDef(
+        "recursive",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Recursive",
+        tooltip="Search subdirectories recursively",
+    ),
+    PropertyDef(
+        "allow_dangerous_paths",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Paths",
+        tooltip="Allow access to system directories",
+    ),
+)
+@executable_node
+class ListFilesNode(BaseNode):
+    """
+    List files in a directory.
+
+    Config (via @node_schema):
+        directory_path: Directory to list (required)
+        pattern: Glob pattern to filter (default: *)
+        recursive: Search recursively (default: False)
+        allow_dangerous_paths: Allow system paths (default: False)
+
+    Inputs:
+        directory_path: Path override (if connected)
+
+    Outputs:
+        files: List of file paths
+        count: Number of files found
+    """
+
+    def __init__(self, node_id: str, name: str = "List Files", **kwargs) -> None:
+        # Config auto-merged by @node_schema decorator
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "ListFilesNode"
+
+    def _define_ports(self) -> None:
+        self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
+        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
+        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # NEW: Unified parameter accessor
+            dir_path = self.get_parameter("directory_path")
+            pattern = self.get_parameter("pattern", "*")
+            recursive = self.get_parameter("recursive", False)
+            allow_dangerous = self.get_parameter("allow_dangerous_paths", False)
+
+            if not dir_path:
+                raise ValueError("directory_path is required")
+
+            # Resolve {{variable}} patterns in dir_path and pattern
+            dir_path = context.resolve_value(dir_path)
+            pattern = context.resolve_value(pattern)
+
+            # SECURITY: Validate directory path (read-only)
+            path = validate_path_security_readonly(dir_path, "list", allow_dangerous)
+
+            if not path.exists():
+                raise FileNotFoundError(f"Directory not found: {dir_path}")
+
+            if not path.is_dir():
+                raise NotADirectoryError(f"Not a directory: {dir_path}")
+
+            if recursive:
+                matches = list(path.rglob(pattern))
+            else:
+                matches = list(path.glob(pattern))
+
+            # Filter to only files (not directories)
+            files = [str(item) for item in matches if item.is_file()]
+
+            self.set_output_value("files", files)
+            self.set_output_value("count", len(files))
+            self.status = NodeStatus.SUCCESS
+
+            return {
+                "success": True,
+                "data": {"count": len(files), "files": files[:10]},
+                "next_nodes": ["exec_out"],
+            }
+
+        except PathSecurityError as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Security violation in ListFilesNode: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": str(e), "next_nodes": []}
+
+    def _validate_config(self) -> tuple[bool, str]:
+        return True, ""
