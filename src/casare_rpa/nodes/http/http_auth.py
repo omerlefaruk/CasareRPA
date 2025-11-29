@@ -14,7 +14,8 @@ from typing import Any
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -25,6 +26,44 @@ from casare_rpa.domain.value_objects.types import (
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "auth_type",
+        PropertyType.CHOICE,
+        default="Bearer",
+        choices=["Bearer", "Basic", "ApiKey"],
+        label="Authentication Type",
+        tooltip="Type of authentication (Bearer, Basic, or API Key)",
+    ),
+    PropertyDef(
+        "token",
+        PropertyType.STRING,
+        default="",
+        label="Token / API Key",
+        tooltip="Bearer token or API key",
+    ),
+    PropertyDef(
+        "username",
+        PropertyType.STRING,
+        default="",
+        label="Username",
+        tooltip="Username for Basic authentication",
+    ),
+    PropertyDef(
+        "password",
+        PropertyType.STRING,
+        default="",
+        label="Password",
+        tooltip="Password for Basic authentication",
+    ),
+    PropertyDef(
+        "api_key_name",
+        PropertyType.STRING,
+        default="X-API-Key",
+        label="API Key Header Name",
+        tooltip="Header name for API key authentication",
+    ),
+)
 class HttpAuthNode(BaseNode):
     """
     Configure HTTP authentication headers.
@@ -32,29 +71,24 @@ class HttpAuthNode(BaseNode):
     Supports:
         - Bearer token authentication
         - Basic authentication (username/password)
-        - API Key authentication (header or query param)
+        - API Key authentication (custom header)
+
+    Config (via @node_schema):
+        auth_type: Type of authentication (Bearer, Basic, ApiKey)
+        token: Bearer token or API key
+        username: Username for Basic auth
+        password: Password for Basic auth
+        api_key_name: Header name for API key (default: X-API-Key)
 
     Inputs:
-        - exec_in: Execution input
-        - auth_type: Type of authentication (Bearer, Basic, ApiKey)
-        - token: Bearer token or API key
-        - username: Username for Basic auth
-        - password: Password for Basic auth
-        - api_key_name: Header name for API key (default: X-API-Key)
-        - base_headers: Existing headers to extend
+        auth_type, token, username, password, api_key_name, base_headers
 
     Outputs:
-        - exec_out: Execution output
-        - headers: Headers with authentication
+        headers: Headers with authentication configured
     """
 
     def __init__(self, node_id: str, name: str = "HTTP Auth", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
-        config.setdefault("auth_type", "Bearer")
-        config.setdefault("token", "")
-        config.setdefault("username", "")
-        config.setdefault("password", "")
-        config.setdefault("api_key_name", "X-API-Key")
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "HttpAuthNode"
@@ -73,19 +107,11 @@ class HttpAuthNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            auth_type = self.get_input_value("auth_type") or self.config.get(
-                "auth_type", "Bearer"
-            )
-            token = self.get_input_value("token") or self.config.get("token", "")
-            username = self.get_input_value("username") or self.config.get(
-                "username", ""
-            )
-            password = self.get_input_value("password") or self.config.get(
-                "password", ""
-            )
-            api_key_name = self.get_input_value("api_key_name") or self.config.get(
-                "api_key_name", "X-API-Key"
-            )
+            auth_type = self.get_parameter("auth_type", "Bearer")
+            token = self.get_parameter("token", "")
+            username = self.get_parameter("username", "")
+            password = self.get_parameter("password", "")
+            api_key_name = self.get_parameter("api_key_name", "X-API-Key")
             base_headers = self.get_input_value("base_headers") or {}
 
             token = context.resolve_value(token)
