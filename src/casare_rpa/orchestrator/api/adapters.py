@@ -39,22 +39,21 @@ class MonitoringDataAdapter:
         analytics_aggregator: MetricsAggregator,
         db_pool: Optional["asyncpg.Pool"] = None,
     ):
+        """
+        Initialize the monitoring data adapter.
+
+        Args:
+            metrics_collector: RPAMetricsCollector for real-time metrics
+            analytics_aggregator: MetricsAggregator for self-healing stats
+            db_pool: Optional database connection pool for historical queries
+        """
         self.metrics = metrics_collector
         self.analytics = analytics_aggregator
         self._db_pool = db_pool
 
-    def set_db_pool(self, pool: "asyncpg.Pool") -> None:
-        """
-        Set database pool for job history queries.
-
-        Args:
-            pool: asyncpg connection pool
-        """
-        self._db_pool = pool
-
     @property
     def has_db(self) -> bool:
-        """Check if database pool is available."""
+        """Check if database pool is available for historical queries."""
         return self._db_pool is not None
 
     def get_fleet_summary(self) -> Dict:
@@ -75,13 +74,24 @@ class MonitoringDataAdapter:
             1 for r in all_robots.values() if r.status.value == "offline"
         )
 
+        # Calculate today's job stats
+        job_metrics = self.metrics.get_job_metrics()
+        total_jobs_today = job_metrics.total_jobs
+        average_duration = (
+            job_metrics.total_duration_seconds / total_jobs_today
+            if total_jobs_today > 0
+            else 0.0
+        )
+
         return {
             "total_robots": total_robots,
             "active_robots": active_robots,
             "idle_robots": idle_robots,
             "offline_robots": offline_robots,
+            "total_jobs_today": total_jobs_today,
             "active_jobs": active_jobs,
             "queue_depth": queue_depth,
+            "average_job_duration_seconds": average_duration,
         }
 
     def get_robot_list(self, status: Optional[str] = None) -> List[Dict]:

@@ -334,16 +334,22 @@ async def get_db_connection(
         )
 
 
-@lru_cache
-def get_metrics_collector():
+def get_metrics_collector(request: Optional[Request] = None):
     """
-    Get the monitoring data adapter (wraps RPAMetricsCollector + MetricsAggregator).
+    Get the monitoring data adapter with optional database pool injection.
 
     Returns adapter that provides API-compatible interface to infrastructure metrics.
-    """
-    logger.info("Using MonitoringDataAdapter with PR #33 infrastructure")
+    Database pool is injected from app state if available.
 
+    Args:
+        request: FastAPI request object (optional, for DB pool injection)
+    """
     rpa_metrics = get_rpa_metrics()
     analytics = MetricsAggregator.get_instance()
 
-    return MonitoringDataAdapter(rpa_metrics, analytics)
+    # Inject database pool if request provided and pool available
+    db_pool = None
+    if request is not None:
+        db_pool = getattr(request.app.state, "db_pool", None)
+
+    return MonitoringDataAdapter(rpa_metrics, analytics, db_pool=db_pool)

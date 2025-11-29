@@ -17,8 +17,12 @@ class FleetMetrics(BaseModel):
     active_robots: int = Field(..., description="Robots currently executing jobs")
     idle_robots: int = Field(..., description="Robots available for work")
     offline_robots: int = Field(..., description="Robots not responding to heartbeat")
+    total_jobs_today: int = Field(..., description="Total jobs executed today")
     active_jobs: int = Field(..., description="Jobs currently being executed")
     queue_depth: int = Field(..., description="Pending jobs in queue")
+    average_job_duration_seconds: float = Field(
+        ..., description="Average job duration across fleet"
+    )
 
 
 # Robot Models

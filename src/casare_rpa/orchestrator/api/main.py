@@ -9,9 +9,12 @@ import os
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from casare_rpa.infrastructure.events import (
     get_monitoring_event_bus,
@@ -121,6 +124,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down CasareRPA Monitoring API")
 
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 # Create FastAPI application
 app = FastAPI(
     title="CasareRPA Monitoring API",
@@ -128,6 +134,10 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware for browser access
 app.add_middleware(
@@ -138,7 +148,7 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST"],  # Only needed methods for monitoring API
-    allow_headers=["Content-Type", "Authorization"],  # Restrict to required headers
+    allow_headers=["Content-Type", "Authorization", "X-Api-Token"],  # Robot auth
 )
 
 # Include routers
