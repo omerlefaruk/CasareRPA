@@ -44,8 +44,8 @@ app.add_middleware(
         "http://localhost:8000",  # Production (served by FastAPI)
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],  # Only needed methods for monitoring API
+    allow_headers=["Content-Type", "Authorization"],  # Restrict to required headers
 )
 
 # Include routers

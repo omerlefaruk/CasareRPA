@@ -16,6 +16,9 @@ import orjson
 
 from ..models import LiveJobUpdate, RobotStatusUpdate, QueueMetricsUpdate
 
+# WebSocket send timeout (seconds)
+WS_SEND_TIMEOUT = 1.0
+
 
 router = APIRouter()
 
@@ -42,12 +45,23 @@ class ConnectionManager:
         )
 
     async def broadcast(self, message: dict):
-        """Broadcast message to all connected clients."""
+        """
+        Broadcast message to all connected clients with timeout protection.
+
+        Prevents slow clients from blocking the entire broadcast.
+        """
         disconnected = set()
 
         for connection in self.active_connections:
             try:
-                await connection.send_text(orjson.dumps(message).decode())
+                # Add timeout to prevent slow clients from blocking broadcast
+                await asyncio.wait_for(
+                    connection.send_text(orjson.dumps(message).decode()),
+                    timeout=WS_SEND_TIMEOUT,
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Client send timeout, disconnecting")
+                disconnected.add(connection)
             except Exception as e:
                 logger.error(f"Failed to send to client: {e}")
                 disconnected.add(connection)

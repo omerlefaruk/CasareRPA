@@ -5,7 +5,7 @@ Provides fleet, robot, job, and analytics data for the React dashboard.
 """
 
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from loguru import logger
 
 from ..models import (
@@ -71,7 +71,11 @@ async def get_robots(
 
 @router.get("/metrics/robots/{robot_id}", response_model=RobotMetrics)
 async def get_robot_details(
-    robot_id: str,
+    robot_id: str = Path(
+        ...,
+        pattern="^[a-zA-Z0-9_-]{1,64}$",
+        description="Robot ID (alphanumeric, underscore, hyphen, max 64 chars)",
+    ),
     collector=Depends(get_metrics_collector),
 ):
     """
@@ -94,7 +98,7 @@ async def get_robot_details(
 
         return RobotMetrics(**robot)
     except HTTPException:
-        raise
+        raise  # Re-raise HTTPException for 404
     except Exception as e:
         logger.error(f"Failed to fetch robot details: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch robot details")
@@ -140,7 +144,11 @@ async def get_jobs(
 
 @router.get("/metrics/jobs/{job_id}", response_model=JobDetails)
 async def get_job_details(
-    job_id: str,
+    job_id: str = Path(
+        ...,
+        pattern="^[a-zA-Z0-9_-]{1,64}$",
+        description="Job ID (alphanumeric, underscore, hyphen, max 64 chars)",
+    ),
     collector=Depends(get_metrics_collector),
 ):
     """

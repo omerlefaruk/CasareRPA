@@ -27,7 +27,7 @@ class RobotSummary(BaseModel):
 
     robot_id: str
     hostname: str
-    status: str = Field(..., description="idle | busy | offline")
+    status: str = Field(..., description="idle | busy | offline | failed")
     cpu_percent: float
     memory_mb: float
     current_job_id: Optional[str] = None
