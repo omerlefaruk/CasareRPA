@@ -92,13 +92,23 @@ class BaseNode(ABC):
         """
         Validate node configuration and inputs.
 
+        Checks both port values (runtime connections) and config values (design-time properties)
+        for required parameters. This supports the dual-source pattern used by many nodes where
+        values can come from either port connections OR the properties panel.
+
         Returns:
             Tuple of (is_valid, error_message)
         """
-        # Check required input ports have values
+        # Check required input ports have values (from port OR config)
         for port in self.input_ports.values():
-            if port.required and port.value is None:
-                return False, f"Required input port '{port.name}' has no value"
+            if port.required:
+                # Check both sources: port.value (runtime) and config (design-time)
+                port_value = port.value
+                config_value = self.config.get(port.name)
+
+                # Pass if value exists in EITHER source
+                if port_value is None and config_value is None:
+                    return False, f"Required input port '{port.name}' has no value"
 
         # Validate configuration
         validation_result = self._validate_config()
