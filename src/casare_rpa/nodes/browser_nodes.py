@@ -664,6 +664,40 @@ class NewTabNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "min_width",
+        PropertyType.INTEGER,
+        default=0,
+        label="Minimum Width",
+        tooltip="Minimum image width in pixels (0 = no filter)",
+        tab="filters",
+    ),
+    PropertyDef(
+        "min_height",
+        PropertyType.INTEGER,
+        default=0,
+        label="Minimum Height",
+        tooltip="Minimum image height in pixels (0 = no filter)",
+        tab="filters",
+    ),
+    PropertyDef(
+        "include_backgrounds",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Backgrounds",
+        tooltip="Include CSS background images in addition to <img> tags",
+        tab="options",
+    ),
+    PropertyDef(
+        "file_types",
+        PropertyType.STRING,
+        default="",
+        label="File Types",
+        tooltip="Comma-separated file extensions (e.g., 'jpg,png,webp'). Leave empty for all types.",
+        tab="filters",
+    ),
+)
 @executable_node
 class GetAllImagesNode(BaseNode):
     """
@@ -709,10 +743,10 @@ class GetAllImagesNode(BaseNode):
                 raise ValueError("No active page. Launch browser and navigate first.")
 
             # Handle empty strings from UI text inputs gracefully
-            min_width = int(self.config.get("min_width") or 0)
-            min_height = int(self.config.get("min_height") or 0)
-            include_backgrounds = self.config.get("include_backgrounds", True)
-            file_types_str = self.config.get("file_types") or ""
+            min_width = int(self.get_parameter("min_width") or 0)
+            min_height = int(self.get_parameter("min_height") or 0)
+            include_backgrounds = self.get_parameter("include_backgrounds", True)
+            file_types_str = self.get_parameter("file_types") or ""
 
             # Parse allowed file types
             allowed_types = []
@@ -835,6 +869,40 @@ class GetAllImagesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@node_schema(
+    PropertyDef(
+        "save_path",
+        PropertyType.STRING,
+        default="",
+        label="Save Path",
+        tooltip="Directory or full file path to save to. Supports {{variables}}. Leave empty for Downloads folder.",
+        tab="properties",
+    ),
+    PropertyDef(
+        "use_browser",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Browser Context",
+        tooltip="Download through browser context (required for authenticated sites)",
+        tab="options",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=30000,
+        label="Timeout (ms)",
+        tooltip="Download timeout in milliseconds",
+        tab="options",
+    ),
+    PropertyDef(
+        "overwrite",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Overwrite Existing",
+        tooltip="Overwrite file if it already exists. If False, adds number suffix.",
+        tab="options",
+    ),
+)
 @executable_node
 class DownloadFileNode(BaseNode):
     """
@@ -902,13 +970,13 @@ class DownloadFileNode(BaseNode):
             if not url:
                 raise ValueError("URL is required")
 
-            save_path = self.config.get("save_path", "")
+            save_path = self.get_parameter("save_path", "")
             if hasattr(context, "resolve_value") and save_path:
                 save_path = context.resolve_value(save_path)
 
-            use_browser = self.config.get("use_browser", False)
-            timeout = int(self.config.get("timeout") or 30000)
-            overwrite = self.config.get("overwrite", True)
+            use_browser = self.get_parameter("use_browser", False)
+            timeout = int(self.get_parameter("timeout") or 30000)
+            overwrite = self.get_parameter("overwrite", True)
 
             # Determine filename
             if filename_override:
