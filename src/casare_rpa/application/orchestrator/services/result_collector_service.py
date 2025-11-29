@@ -13,7 +13,7 @@ import statistics
 
 from loguru import logger
 
-from .models import Job, JobStatus
+from casare_rpa.domain.orchestrator.entities import Job, JobStatus
 
 
 @dataclass

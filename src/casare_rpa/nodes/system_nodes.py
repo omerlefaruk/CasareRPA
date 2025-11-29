@@ -14,7 +14,8 @@ import sys
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -22,7 +23,6 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 class SecurityError(Exception):
@@ -245,11 +245,79 @@ class ClipboardClearNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "title",
+        PropertyType.STRING,
+        default="Message",
+        label="Title",
+        tooltip="Dialog title",
+    ),
+    PropertyDef(
+        "message",
+        PropertyType.STRING,
+        default="",
+        label="Message",
+        tooltip="Message to display",
+    ),
+    PropertyDef(
+        "detailed_text",
+        PropertyType.STRING,
+        default="",
+        label="Detailed Text",
+        tooltip="Expandable details section",
+    ),
+    PropertyDef(
+        "icon_type",
+        PropertyType.CHOICE,
+        default="information",
+        choices=["information", "warning", "error", "question"],
+        label="Icon Type",
+        tooltip="Dialog icon type",
+    ),
+    PropertyDef(
+        "buttons",
+        PropertyType.CHOICE,
+        default="ok",
+        choices=["ok", "ok_cancel", "yes_no", "yes_no_cancel"],
+        label="Buttons",
+        tooltip="Button configuration",
+    ),
+    PropertyDef(
+        "default_button",
+        PropertyType.STRING,
+        default="",
+        label="Default Button",
+        tooltip="Which button is focused by default",
+    ),
+    PropertyDef(
+        "always_on_top",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Always On Top",
+        tooltip="Keep dialog above other windows",
+    ),
+    PropertyDef(
+        "play_sound",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Play Sound",
+        tooltip="Play system sound when dialog appears",
+    ),
+    PropertyDef(
+        "auto_close_timeout",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Auto-Close Timeout (seconds)",
+        tooltip="Auto-dismiss after X seconds, 0 to disable",
+    ),
+)
 class MessageBoxNode(BaseNode):
     """
     Display a message box dialog.
 
-    Config:
+    Config (via @node_schema):
         title: Dialog title (default: 'Message')
         message: Message to display (default: '')
         detailed_text: Expandable details section (default: '')
@@ -266,24 +334,7 @@ class MessageBoxNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Message Box", **kwargs) -> None:
-        default_config = {
-            "title": "Message",
-            "message": "",
-            "icon_type": "information",
-            "buttons": "ok",
-            "detailed_text": "",
-            "default_button": "",
-            "always_on_top": True,
-            "play_sound": False,
-            "auto_close_timeout": 0,
-        }
-
         config = kwargs.get("config", {})
-        # Merge: config values override defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "MessageBoxNode"
@@ -297,26 +348,19 @@ class MessageBoxNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get values from config (set by visual node widgets)
-            title = str(self.config.get("title", "Message"))
-            icon_type = self.config.get("icon_type", "information")
-            buttons = self.config.get("buttons", "ok")
-            default_button = self.config.get("default_button", "")
-            always_on_top = self.config.get("always_on_top", True)
-            play_sound = self.config.get("play_sound", False)
-            detailed_text = str(self.config.get("detailed_text", ""))
-
-            # Parse auto_close_timeout safely
-            timeout_val = self.config.get("auto_close_timeout", 0)
-            try:
-                auto_close_timeout = int(timeout_val) if timeout_val else 0
-            except (ValueError, TypeError):
-                auto_close_timeout = 0
+            title = self.get_parameter("title", "Message")
+            icon_type = self.get_parameter("icon_type", "information")
+            buttons = self.get_parameter("buttons", "ok")
+            default_button = self.get_parameter("default_button", "")
+            always_on_top = self.get_parameter("always_on_top", True)
+            play_sound = self.get_parameter("play_sound", False)
+            detailed_text = self.get_parameter("detailed_text", "")
+            auto_close_timeout = self.get_parameter("auto_close_timeout", 0)
 
             # Get message from input port first, fallback to config
             message = self.get_input_value("message")
             if message is None:
-                message = str(self.config.get("message", ""))
+                message = self.get_parameter("message", "")
 
             # Resolve {{variable}} patterns in title, message, and detailed_text
             title = context.resolve_value(title)
@@ -509,16 +553,22 @@ class MessageBoxNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "password_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Password Mode",
+        tooltip="Hide input characters",
+    ),
+)
 class InputDialogNode(BaseNode):
     """
     Display an input dialog to get user input.
 
-    Config:
+    Config (via @node_schema):
         password_mode: Hide input (default: False)
 
     Inputs:
@@ -551,7 +601,7 @@ class InputDialogNode(BaseNode):
             title = str(self.get_input_value("title", context) or "Input")
             prompt = str(self.get_input_value("prompt", context) or "Enter value:")
             default_value = str(self.get_input_value("default_value", context) or "")
-            password_mode = self.config.get("password_mode", False)
+            password_mode = self.get_parameter("password_mode", False)
 
             # Resolve {{variable}} patterns
             title = context.resolve_value(title)
@@ -601,16 +651,31 @@ class InputDialogNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "duration",
+        PropertyType.INTEGER,
+        default=3000,
+        min_value=100,
+        label="Duration (milliseconds)",
+        tooltip="Duration to show tooltip",
+    ),
+    PropertyDef(
+        "position",
+        PropertyType.CHOICE,
+        default="bottom_right",
+        choices=["bottom_right", "bottom_left", "top_right", "top_left"],
+        label="Position",
+        tooltip="Screen position for tooltip",
+    ),
+)
 class TooltipNode(BaseNode):
     """
     Display a tooltip/notification.
 
-    Config:
+    Config (via @node_schema):
         duration: Duration in milliseconds (default: 3000)
         position: 'bottom_right', 'bottom_left', 'top_right', 'top_left' (default: bottom_right)
 
@@ -639,7 +704,7 @@ class TooltipNode(BaseNode):
         try:
             title = str(self.get_input_value("title", context) or "Notification")
             message = str(self.get_input_value("message", context) or "")
-            duration = safe_int(self.config.get("duration"), 3000)
+            duration = self.get_parameter("duration", 3000)
 
             # Resolve {{variable}} patterns
             title = context.resolve_value(title)
@@ -682,23 +747,59 @@ class TooltipNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 # ==================== TERMINAL / CMD OPERATIONS ====================
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "shell",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Use Shell",
+        tooltip="Use shell execution (less secure)",
+    ),
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Command timeout in seconds",
+    ),
+    PropertyDef(
+        "working_dir",
+        PropertyType.STRING,
+        default="",
+        label="Working Directory",
+        tooltip="Working directory for command execution",
+    ),
+    PropertyDef(
+        "capture_output",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Capture Output",
+        tooltip="Capture stdout and stderr",
+    ),
+    PropertyDef(
+        "allow_dangerous",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Commands",
+        tooltip="Allow blocked commands and dangerous characters (NOT RECOMMENDED)",
+    ),
+)
 class RunCommandNode(BaseNode):
     """
     Run a terminal/CMD command.
 
-    Config:
-        shell: Use shell execution (default: True)
+    Config (via @node_schema):
+        shell: Use shell execution (default: False for security)
         timeout: Command timeout in seconds (default: 60)
         working_dir: Working directory (default: current)
         capture_output: Capture stdout/stderr (default: True)
+        allow_dangerous: Allow dangerous commands (default: False)
 
     Inputs:
         command: Command to execute
@@ -710,20 +811,6 @@ class RunCommandNode(BaseNode):
         return_code: Process return code
         success: Whether command succeeded (return_code == 0)
     """
-
-    def __init__(self, node_id: str, name: str = "Run Command", **kwargs) -> None:
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "RunCommandNode"
-
-    def _define_ports(self) -> None:
-        self.add_input_port("command", PortType.INPUT, DataType.STRING)
-        self.add_input_port("args", PortType.INPUT, DataType.ANY)
-        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     # SECURITY: Dangerous shell metacharacters that enable command injection
     DANGEROUS_CHARS = [
@@ -766,6 +853,20 @@ class RunCommandNode(BaseNode):
         "reboot",  # System control
     ]
 
+    def __init__(self, node_id: str, name: str = "Run Command", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "RunCommandNode"
+
+    def _define_ports(self) -> None:
+        self.add_input_port("command", PortType.INPUT, DataType.STRING)
+        self.add_input_port("args", PortType.INPUT, DataType.ANY)
+        self.add_output_port("stdout", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("stderr", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("return_code", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
         import shlex
@@ -773,13 +874,11 @@ class RunCommandNode(BaseNode):
         try:
             command = str(self.get_input_value("command", context) or "")
             args = self.get_input_value("args", context)
-            # SECURITY: Default to shell=False to prevent command injection
-            shell = self.config.get("shell", False)
-            timeout = safe_int(self.config.get("timeout"), 60)
-            working_dir = self.config.get("working_dir")
-            capture_output = self.config.get("capture_output", True)
-            # SECURITY: Allow bypassing security checks only if explicitly enabled
-            allow_dangerous = self.config.get("allow_dangerous", False)
+            shell = self.get_parameter("shell", False)
+            timeout = self.get_parameter("timeout", 60)
+            working_dir = self.get_parameter("working_dir", "")
+            capture_output = self.get_parameter("capture_output", True)
+            allow_dangerous = self.get_parameter("allow_dangerous", False)
 
             # Resolve {{variable}} patterns
             command = context.resolve_value(command)
@@ -857,7 +956,7 @@ class RunCommandNode(BaseNode):
                 capture_output=capture_output,
                 text=True,
                 timeout=timeout,
-                cwd=working_dir,
+                cwd=working_dir if working_dir else None,
             )
 
             stdout = result.stdout if capture_output else ""
@@ -878,8 +977,9 @@ class RunCommandNode(BaseNode):
             }
 
         except subprocess.TimeoutExpired as e:
+            timeout_val = self.get_parameter("timeout", 60)
             self.set_output_value("stdout", "")
-            self.set_output_value("stderr", f"Command timed out after {timeout}s")
+            self.set_output_value("stderr", f"Command timed out after {timeout_val}s")
             self.set_output_value("return_code", -1)
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
@@ -893,16 +993,45 @@ class RunCommandNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "timeout",
+        PropertyType.INTEGER,
+        default=60,
+        min_value=1,
+        label="Timeout (seconds)",
+        tooltip="Command timeout in seconds",
+    ),
+    PropertyDef(
+        "execution_policy",
+        PropertyType.CHOICE,
+        default="RemoteSigned",
+        choices=["RemoteSigned", "Bypass", "Unrestricted", "AllSigned", "Restricted"],
+        label="Execution Policy",
+        tooltip="PowerShell execution policy",
+    ),
+    PropertyDef(
+        "allow_dangerous",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Dangerous Commands",
+        tooltip="Allow dangerous PowerShell patterns (NOT RECOMMENDED)",
+    ),
+    PropertyDef(
+        "constrained_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Constrained Language Mode",
+        tooltip="Use PowerShell Constrained Language Mode for additional security",
+    ),
+)
 class RunPowerShellNode(BaseNode):
     """
     Run a PowerShell script or command.
 
-    Config:
+    Config (via @node_schema):
         timeout: Command timeout in seconds (default: 60)
         execution_policy: 'Bypass', 'Unrestricted', etc. (default: RemoteSigned for security)
         allow_dangerous: Allow dangerous commands (default: False)
@@ -981,11 +1110,10 @@ class RunPowerShellNode(BaseNode):
 
         try:
             script = str(self.get_input_value("script", context) or "")
-            timeout = safe_int(self.config.get("timeout"), 60)
-            # SECURITY: Default to RemoteSigned instead of Bypass
-            execution_policy = self.config.get("execution_policy", "RemoteSigned")
-            allow_dangerous = self.config.get("allow_dangerous", False)
-            constrained_mode = self.config.get("constrained_mode", False)
+            timeout = self.get_parameter("timeout", 60)
+            execution_policy = self.get_parameter("execution_policy", "RemoteSigned")
+            allow_dangerous = self.get_parameter("allow_dangerous", False)
+            constrained_mode = self.get_parameter("constrained_mode", False)
 
             # Resolve {{variable}} patterns in script
             script = context.resolve_value(script)
@@ -1053,9 +1181,6 @@ class RunPowerShellNode(BaseNode):
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
-
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
 
 
 # ==================== WINDOWS SERVICES ====================
@@ -1161,9 +1286,6 @@ class GetServiceStatusNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
 class StartServiceNode(BaseNode):
@@ -1229,9 +1351,6 @@ class StartServiceNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
 class StopServiceNode(BaseNode):
@@ -1295,16 +1414,23 @@ class StopServiceNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "wait_time",
+        PropertyType.INTEGER,
+        default=2,
+        min_value=0,
+        label="Wait Time (seconds)",
+        tooltip="Seconds to wait between stop and start",
+    ),
+)
 class RestartServiceNode(BaseNode):
     """
     Restart a Windows service.
 
-    Config:
+    Config (via @node_schema):
         wait_time: Seconds to wait between stop and start (default: 2)
 
     Inputs:
@@ -1333,7 +1459,7 @@ class RestartServiceNode(BaseNode):
 
         try:
             service_name = str(self.get_input_value("service_name", context) or "")
-            wait_time = safe_int(self.config.get("wait_time"), 2)
+            wait_time = self.get_parameter("wait_time", 2)
 
             # Resolve {{variable}} patterns
             service_name = context.resolve_value(service_name)
@@ -1374,16 +1500,23 @@ class RestartServiceNode(BaseNode):
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
 
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""
-
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "state_filter",
+        PropertyType.CHOICE,
+        default="all",
+        choices=["all", "running", "stopped"],
+        label="State Filter",
+        tooltip="Filter services by state",
+    ),
+)
 class ListServicesNode(BaseNode):
     """
     List all Windows services.
 
-    Config:
+    Config (via @node_schema):
         state_filter: 'all', 'running', 'stopped' (default: all)
 
     Outputs:
@@ -1405,7 +1538,7 @@ class ListServicesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            state_filter = self.config.get("state_filter", "all")
+            state_filter = self.get_parameter("state_filter", "all")
 
             if sys.platform != "win32":
                 raise RuntimeError("Windows Services only available on Windows")
@@ -1465,6 +1598,3 @@ class ListServicesNode(BaseNode):
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             return {"success": False, "error": str(e), "next_nodes": []}
-
-    def _validate_config(self) -> tuple[bool, str]:
-        return True, ""

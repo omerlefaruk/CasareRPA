@@ -8,6 +8,7 @@ This module provides nodes for date and time operations:
 - DateTimeAddNode: Add/subtract time intervals
 - DateTimeDiffNode: Calculate difference between dates
 - DateTimeCompareNode: Compare two dates
+- GetTimestampNode: Get current Unix timestamp
 """
 
 from datetime import datetime, timedelta
@@ -19,7 +20,8 @@ except ImportError:
 
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -31,6 +33,24 @@ from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "timezone",
+        PropertyType.STRING,
+        default="",
+        label="Timezone",
+        placeholder="e.g., America/New_York, UTC",
+        tooltip="Timezone name (default: local)",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.STRING,
+        default="",
+        label="Format",
+        placeholder="e.g., %Y-%m-%d %H:%M:%S",
+        tooltip="Output format string (default: ISO format)",
+    ),
+)
 class GetCurrentDateTimeNode(BaseNode):
     """
     Get the current date and time.
@@ -69,12 +89,8 @@ class GetCurrentDateTimeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            tz_name = self.config.get("timezone", "")
-            fmt = self.config.get("format", "")
-
-            # Resolve {{variable}} patterns
-            tz_name = context.resolve_value(tz_name)
-            fmt = context.resolve_value(fmt)
+            tz_name = self.get_parameter("timezone", "")
+            fmt = self.get_parameter("format", "")
 
             if tz_name and ZoneInfo:
                 try:
@@ -126,6 +142,16 @@ class GetCurrentDateTimeNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "format",
+        PropertyType.STRING,
+        default="%Y-%m-%d %H:%M:%S",
+        label="Format",
+        placeholder="%Y-%m-%d %H:%M:%S",
+        tooltip="strftime format string",
+    ),
+)
 class FormatDateTimeNode(BaseNode):
     """
     Format a datetime to a string.
@@ -156,14 +182,9 @@ class FormatDateTimeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dt_input = self.get_input_value("datetime", context)
-            input_format = self.get_input_value("input_format", context)
-            output_format = self.config.get("format", "%Y-%m-%d %H:%M:%S")
-
-            # Resolve {{variable}} patterns
-            if input_format:
-                input_format = context.resolve_value(input_format)
-            output_format = context.resolve_value(output_format)
+            dt_input = self.get_parameter("datetime")
+            input_format = self.get_parameter("input_format")
+            output_format = self.get_parameter("format", "%Y-%m-%d %H:%M:%S")
 
             # Parse input
             if isinstance(dt_input, datetime):
@@ -212,6 +233,16 @@ class FormatDateTimeNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "format",
+        PropertyType.STRING,
+        default="",
+        label="Format",
+        placeholder="e.g., %Y-%m-%d %H:%M:%S",
+        tooltip="Expected format string (optional, will try auto-detect)",
+    ),
+)
 class ParseDateTimeNode(BaseNode):
     """
     Parse a datetime string into components.
@@ -251,14 +282,8 @@ class ParseDateTimeNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dt_string = self.get_input_value("datetime_string", context)
-            fmt = self.config.get("format", "")
-
-            # Resolve {{variable}} patterns
-            if dt_string:
-                dt_string = context.resolve_value(dt_string)
-            if fmt:
-                fmt = context.resolve_value(fmt)
+            dt_string = self.get_parameter("datetime_string")
+            fmt = self.get_parameter("format", "")
 
             if not dt_string:
                 raise ValueError("datetime_string is required")
@@ -359,14 +384,14 @@ class DateTimeAddNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            dt_input = self.get_input_value("datetime", context)
-            years = safe_int(self.get_input_value("years", context), 0)
-            months = safe_int(self.get_input_value("months", context), 0)
-            weeks = safe_int(self.get_input_value("weeks", context), 0)
-            days = safe_int(self.get_input_value("days", context), 0)
-            hours = safe_int(self.get_input_value("hours", context), 0)
-            minutes = safe_int(self.get_input_value("minutes", context), 0)
-            seconds = safe_int(self.get_input_value("seconds", context), 0)
+            dt_input = self.get_parameter("datetime")
+            years = safe_int(self.get_parameter("years", 0), 0)
+            months = safe_int(self.get_parameter("months", 0), 0)
+            weeks = safe_int(self.get_parameter("weeks", 0), 0)
+            days = safe_int(self.get_parameter("days", 0), 0)
+            hours = safe_int(self.get_parameter("hours", 0), 0)
+            minutes = safe_int(self.get_parameter("minutes", 0), 0)
+            seconds = safe_int(self.get_parameter("seconds", 0), 0)
 
             # Parse input datetime
             if dt_input is None:
@@ -460,8 +485,8 @@ class DateTimeDiffNode(BaseNode):
                 else:
                     raise ValueError(f"Cannot parse datetime from: {type(val)}")
 
-            dt1 = parse_dt(self.get_input_value("datetime_1", context))
-            dt2 = parse_dt(self.get_input_value("datetime_2", context))
+            dt1 = parse_dt(self.get_parameter("datetime_1"))
+            dt2 = parse_dt(self.get_parameter("datetime_2"))
 
             delta = dt2 - dt1
             total_seconds = delta.total_seconds()
@@ -553,8 +578,8 @@ class DateTimeCompareNode(BaseNode):
                 else:
                     raise ValueError(f"Cannot parse datetime from: {type(val)}")
 
-            dt1 = parse_dt(self.get_input_value("datetime_1", context))
-            dt2 = parse_dt(self.get_input_value("datetime_2", context))
+            dt1 = parse_dt(self.get_parameter("datetime_1"))
+            dt2 = parse_dt(self.get_parameter("datetime_2"))
 
             is_before = dt1 < dt2
             is_after = dt1 > dt2
@@ -588,6 +613,15 @@ class DateTimeCompareNode(BaseNode):
 
 
 @executable_node
+@node_schema(
+    PropertyDef(
+        "milliseconds",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Milliseconds",
+        tooltip="Return milliseconds instead of seconds",
+    ),
+)
 class GetTimestampNode(BaseNode):
     """
     Get current Unix timestamp.
@@ -612,7 +646,7 @@ class GetTimestampNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            milliseconds = self.config.get("milliseconds", False)
+            milliseconds = self.get_parameter("milliseconds", False)
 
             ts = datetime.now().timestamp()
             if milliseconds:

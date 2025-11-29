@@ -12,8 +12,8 @@ import random
 
 from loguru import logger
 
-from .models import Job, Robot, RobotStatus
-from .job_queue import JobQueue
+from casare_rpa.domain.orchestrator.entities import Job, Robot, RobotStatus
+from .job_queue_manager import JobQueue
 
 
 class LoadBalancingStrategy(Enum):

@@ -14,7 +14,8 @@ import string
 import uuid
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -24,12 +25,21 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@node_schema(
+    PropertyDef(
+        "integer_only",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Integer Only",
+        tooltip="Generate integers only (default: False)",
+    )
+)
 @executable_node
 class RandomNumberNode(BaseNode):
     """
     Generate a random number within a specified range.
 
-    Config:
+    Config (via @node_schema):
         integer_only: Generate integers only (default: False)
 
     Inputs:
@@ -55,15 +65,9 @@ class RandomNumberNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            min_val = self.get_input_value("min_value", context)
-            max_val = self.get_input_value("max_value", context)
-            integer_only = self.config.get("integer_only", False)
-
-            # Defaults
-            if min_val is None:
-                min_val = 0
-            if max_val is None:
-                max_val = 100
+            min_val = self.get_parameter("min_value", 0)
+            max_val = self.get_parameter("max_value", 100)
+            integer_only = self.get_parameter("integer_only", False)
 
             min_val = float(min_val)
             max_val = float(max_val)
@@ -93,12 +97,29 @@ class RandomNumberNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "count",
+        PropertyType.INTEGER,
+        default=1,
+        min_value=1,
+        label="Count",
+        tooltip="Number of items to select (default: 1)",
+    ),
+    PropertyDef(
+        "allow_duplicates",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Allow Duplicates",
+        tooltip="Allow same item multiple times (default: False)",
+    ),
+)
 @executable_node
 class RandomChoiceNode(BaseNode):
     """
     Select a random item from a list.
 
-    Config:
+    Config (via @node_schema):
         count: Number of items to select (default: 1)
         allow_duplicates: Allow same item multiple times (default: False)
 
@@ -125,9 +146,9 @@ class RandomChoiceNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            items = self.get_input_value("items", context) or []
-            count = self.config.get("count", 1)
-            allow_duplicates = self.config.get("allow_duplicates", False)
+            items = self.get_parameter("items", [])
+            count = self.get_parameter("count", 1)
+            allow_duplicates = self.get_parameter("allow_duplicates", False)
 
             if not items:
                 raise ValueError("items list cannot be empty")
@@ -167,12 +188,49 @@ class RandomChoiceNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "include_uppercase",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Uppercase",
+        tooltip="Include A-Z (default: True)",
+    ),
+    PropertyDef(
+        "include_lowercase",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Lowercase",
+        tooltip="Include a-z (default: True)",
+    ),
+    PropertyDef(
+        "include_digits",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Include Digits",
+        tooltip="Include 0-9 (default: True)",
+    ),
+    PropertyDef(
+        "include_special",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Include Special",
+        tooltip="Include special characters (default: False)",
+    ),
+    PropertyDef(
+        "custom_chars",
+        PropertyType.STRING,
+        default="",
+        label="Custom Characters",
+        tooltip="Custom character set to use (overrides above)",
+    ),
+)
 @executable_node
 class RandomStringNode(BaseNode):
     """
     Generate a random string.
 
-    Config:
+    Config (via @node_schema):
         include_uppercase: Include A-Z (default: True)
         include_lowercase: Include a-z (default: True)
         include_digits: Include 0-9 (default: True)
@@ -200,20 +258,20 @@ class RandomStringNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            length = int(self.get_input_value("length", context) or 8)
-            custom_chars = self.config.get("custom_chars", "")
+            length = int(self.get_parameter("length", 8))
+            custom_chars = self.get_parameter("custom_chars", "")
 
             if custom_chars:
                 chars = custom_chars
             else:
                 chars = ""
-                if self.config.get("include_uppercase", True):
+                if self.get_parameter("include_uppercase", True):
                     chars += string.ascii_uppercase
-                if self.config.get("include_lowercase", True):
+                if self.get_parameter("include_lowercase", True):
                     chars += string.ascii_lowercase
-                if self.config.get("include_digits", True):
+                if self.get_parameter("include_digits", True):
                     chars += string.digits
-                if self.config.get("include_special", False):
+                if self.get_parameter("include_special", False):
                     chars += string.punctuation
 
             if not chars:
@@ -238,12 +296,30 @@ class RandomStringNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "version",
+        PropertyType.INTEGER,
+        default=4,
+        choices=[1, 4],
+        label="UUID Version",
+        tooltip="UUID version (4 for random, 1 for time-based) (default: 4)",
+    ),
+    PropertyDef(
+        "format",
+        PropertyType.CHOICE,
+        default="standard",
+        choices=["standard", "hex", "urn"],
+        label="Output Format",
+        tooltip="Output format - 'standard', 'hex', 'urn' (default: standard)",
+    ),
+)
 @executable_node
 class RandomUUIDNode(BaseNode):
     """
     Generate a random UUID.
 
-    Config:
+    Config (via @node_schema):
         version: UUID version (4 for random, 1 for time-based) (default: 4)
         format: Output format - 'standard', 'hex', 'urn' (default: standard)
 
@@ -264,8 +340,8 @@ class RandomUUIDNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            version = self.config.get("version", 4)
-            fmt = self.config.get("format", "standard")
+            version = self.get_parameter("version", 4)
+            fmt = self.get_parameter("format", "standard")
 
             if version == 1:
                 uid = uuid.uuid1()
@@ -322,7 +398,7 @@ class ShuffleListNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            items = self.get_input_value("items", context) or []
+            items = self.get_parameter("items", [])
 
             if not isinstance(items, list):
                 items = list(items)

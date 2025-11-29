@@ -11,7 +11,7 @@ import random
 
 from loguru import logger
 
-from .models import Robot, RobotStatus, Job
+from casare_rpa.domain.orchestrator.entities import Robot, RobotStatus, Job
 
 
 class DistributionStrategy(Enum):

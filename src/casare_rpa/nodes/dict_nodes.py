@@ -7,17 +7,26 @@ Provides nodes for dictionary/object manipulation including:
 - Dictionary merging and key/value operations
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import json
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@executable_node
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
+
+    def __init__(self, node_id: str, name: str = "JSON Parse", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "JsonParseNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("json_string", PortType.INPUT, DataType.STRING)
@@ -25,7 +34,7 @@ class JsonParseNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            json_str = self.get_input_value("json_string", "")
+            json_str = self.get_parameter("json_string", "")
             if not json_str:
                 raise ValueError("Empty JSON string")
 
@@ -38,8 +47,15 @@ class JsonParseNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
+
+    def __init__(self, node_id: str, name: str = "Get Property", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "GetPropertyNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("object", PortType.INPUT, DataType.DICT)
@@ -48,8 +64,8 @@ class GetPropertyNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            obj = self.get_input_value("object", {})
-            path = self.get_input_value("property_path", "")
+            obj = self.get_parameter("object", {})
+            path = self.get_parameter("property_path", "")
 
             if not isinstance(obj, dict):
                 raise ValueError("Input is not a dictionary")
@@ -72,8 +88,15 @@ class GetPropertyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
+
+    def __init__(self, node_id: str, name: str = "Dict Get", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictGetNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -84,9 +107,9 @@ class DictGetNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
-            key = self.get_input_value("key", "")
-            default = self.get_input_value("default")
+            d = self.get_parameter("dict", {})
+            key = self.get_parameter("key", "")
+            default = self.get_parameter("default")
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -107,8 +130,15 @@ class DictGetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
+
+    def __init__(self, node_id: str, name: str = "Dict Set", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictSetNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -118,9 +148,9 @@ class DictSetNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
-            key = self.get_input_value("key", "")
-            value = self.get_input_value("value")
+            d = self.get_parameter("dict", {})
+            key = self.get_parameter("key", "")
+            value = self.get_parameter("value")
 
             if not isinstance(d, dict):
                 d = {}
@@ -139,8 +169,15 @@ class DictSetNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
+
+    def __init__(self, node_id: str, name: str = "Dict Remove", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictRemoveNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -150,8 +187,8 @@ class DictRemoveNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
-            key = self.get_input_value("key", "")
+            d = self.get_parameter("dict", {})
+            key = self.get_parameter("key", "")
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -172,8 +209,15 @@ class DictRemoveNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
+
+    def __init__(self, node_id: str, name: str = "Dict Merge", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictMergeNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict_1", PortType.INPUT, DataType.DICT)
@@ -182,8 +226,8 @@ class DictMergeNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d1 = self.get_input_value("dict_1", {})
-            d2 = self.get_input_value("dict_2", {})
+            d1 = self.get_parameter("dict_1", {})
+            d2 = self.get_parameter("dict_2", {})
 
             if not isinstance(d1, dict):
                 d1 = {}
@@ -200,8 +244,15 @@ class DictMergeNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
+
+    def __init__(self, node_id: str, name: str = "Dict Keys", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictKeysNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -210,7 +261,7 @@ class DictKeysNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
+            d = self.get_parameter("dict", {})
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -231,8 +282,15 @@ class DictKeysNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
+
+    def __init__(self, node_id: str, name: str = "Dict Values", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictValuesNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -241,7 +299,7 @@ class DictValuesNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
+            d = self.get_parameter("dict", {})
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -262,8 +320,15 @@ class DictValuesNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
+
+    def __init__(self, node_id: str, name: str = "Dict Has Key", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictHasKeyNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -272,8 +337,8 @@ class DictHasKeyNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
-            key = self.get_input_value("key", "")
+            d = self.get_parameter("dict", {})
+            key = self.get_parameter("key", "")
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -288,8 +353,15 @@ class DictHasKeyNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
+
+    def __init__(self, node_id: str, name: str = "Create Dict", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "CreateDictNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("key_1", PortType.INPUT, DataType.STRING)
@@ -305,8 +377,8 @@ class CreateDictNode(BaseNode):
             result: Dict[str, Any] = {}
 
             for i in range(1, 4):
-                key = self.get_input_value(f"key_{i}")
-                value = self.get_input_value(f"value_{i}")
+                key = self.get_parameter(f"key_{i}")
+                value = self.get_parameter(f"value_{i}")
                 if key is not None and key != "":
                     result[key] = value
 
@@ -318,23 +390,39 @@ class CreateDictNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "indent",
+        PropertyType.INTEGER,
+        default=None,
+        min_value=0,
+        label="Indent",
+        tooltip="Number of spaces for indentation (None = compact)",
+    ),
+    PropertyDef(
+        "sort_keys",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Sort Keys",
+        tooltip="Sort dictionary keys alphabetically",
+    ),
+    PropertyDef(
+        "ensure_ascii",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Ensure ASCII",
+        tooltip="Escape non-ASCII characters",
+    ),
+)
 class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
-        default_config = {
-            "indent": None,
-            "sort_keys": False,
-            "ensure_ascii": True,
-            "separators": None,
-        }
-        if config is None:
-            config = {}
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
+    def __init__(self, node_id: str, name: str = "Dict to JSON", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.indent = self.config.get("indent", None)
+        self.name = name
+        self.node_type = "DictToJsonNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -343,14 +431,14 @@ class DictToJsonNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
-            indent = self.get_input_value("indent", self.indent)
+            d = self.get_parameter("dict", {})
+            indent = self.get_parameter("indent")
 
             if indent is not None:
                 indent = int(indent)
 
-            sort_keys = self.config.get("sort_keys", False)
-            ensure_ascii = self.config.get("ensure_ascii", True)
+            sort_keys = self.get_parameter("sort_keys", False)
+            ensure_ascii = self.get_parameter("ensure_ascii", True)
 
             json_string = json.dumps(
                 d,
@@ -372,8 +460,15 @@ class DictToJsonNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""
+
+    def __init__(self, node_id: str, name: str = "Dict Items", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "DictItemsNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
@@ -382,7 +477,7 @@ class DictItemsNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            d = self.get_input_value("dict", {})
+            d = self.get_parameter("dict", {})
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")

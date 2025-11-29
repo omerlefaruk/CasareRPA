@@ -10,7 +10,7 @@ import uuid
 
 from loguru import logger
 
-from .models import (
+from casare_rpa.domain.orchestrator.entities import (
     Job,
     JobStatus,
     JobPriority,
@@ -19,19 +19,25 @@ from .models import (
     Schedule,
     ScheduleFrequency,
 )
-from .services import OrchestratorService
-from .job_queue import JobQueue
-from .scheduler import JobScheduler, calculate_next_run
+from .services.job_lifecycle_service import JobLifecycleService
+from .services.job_queue_manager import JobQueue
+from .services.scheduling_coordinator import JobScheduler, calculate_next_run
 
 try:
-    from .dispatcher import JobDispatcher, LoadBalancingStrategy, RobotPool
+    from .services.dispatcher_service import (
+        JobDispatcher,
+        LoadBalancingStrategy,
+        RobotPool,
+    )
 
     HAS_DISPATCHER = True
 except ImportError:
     HAS_DISPATCHER = False
 
 try:
-    from .server import OrchestratorServer
+    from casare_rpa.infrastructure.orchestrator.communication.websocket_server import (
+        OrchestratorServer,
+    )
 
     HAS_SERVER = True
 except ImportError:
@@ -39,8 +45,8 @@ except ImportError:
     logger.warning("websockets not installed. Server features disabled.")
 
 try:
-    from ..triggers.manager import TriggerManager
-    from ..triggers.base import TriggerEvent
+    from casare_rpa.triggers.manager import TriggerManager
+    from casare_rpa.triggers.base import TriggerEvent
 
     HAS_TRIGGERS = True
 except ImportError:

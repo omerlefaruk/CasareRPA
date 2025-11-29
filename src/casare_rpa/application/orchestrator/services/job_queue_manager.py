@@ -13,7 +13,7 @@ import threading
 
 from loguru import logger
 
-from .models import Job, JobStatus, JobPriority, Robot
+from casare_rpa.domain.orchestrator.entities import Job, JobStatus, JobPriority, Robot
 
 
 class JobStateError(Exception):

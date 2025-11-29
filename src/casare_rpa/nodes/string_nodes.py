@@ -7,21 +7,35 @@ Provides nodes for string manipulation including:
 - Regular expression matching and replacement
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 import re
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "separator",
+        PropertyType.STRING,
+        default="",
+        label="Separator",
+        tooltip="Separator to insert between strings",
+    ),
+)
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, node_id: str, name: str = "Concatenate", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
-        self.separator = self.config.get("separator", "")
+        self.name = name
+        self.node_type = "ConcatenateNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("string_1", PortType.INPUT, DataType.STRING)
@@ -30,10 +44,11 @@ class ConcatenateNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            s1 = str(self.get_input_value("string_1", ""))
-            s2 = str(self.get_input_value("string_2", ""))
+            s1 = str(self.get_parameter("string_1", ""))
+            s2 = str(self.get_parameter("string_2", ""))
+            separator = self.get_parameter("separator", "")
 
-            result = f"{s1}{self.separator}{s2}"
+            result = f"{s1}{separator}{s2}"
 
             self.set_output_value("result", result)
             return {"success": True, "data": {"result": result}, "next_nodes": []}
@@ -43,8 +58,15 @@ class ConcatenateNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
+
+    def __init__(self, node_id: str, name: str = "Format String", **kwargs) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "FormatStringNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("template", PortType.INPUT, DataType.STRING)
@@ -53,8 +75,8 @@ class FormatStringNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            template = self.get_input_value("template", "")
-            variables = self.get_input_value("variables", {})
+            template = self.get_parameter("template", "")
+            variables = self.get_parameter("variables", {})
 
             if not isinstance(variables, dict):
                 raise ValueError("Variables input must be a dictionary")
@@ -69,21 +91,38 @@ class FormatStringNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "ignore_case",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore Case",
+        tooltip="Perform case-insensitive matching",
+    ),
+    PropertyDef(
+        "multiline",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Multiline",
+        tooltip="^ and $ match start/end of lines",
+    ),
+    PropertyDef(
+        "dotall",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Dot All",
+        tooltip=". matches newline characters",
+    ),
+)
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
-        default_config = {
-            "ignore_case": False,
-            "multiline": False,
-            "dotall": False,
-        }
-        if config is None:
-            config = {}
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
+    def __init__(self, node_id: str, name: str = "Regex Match", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "RegexMatchNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
@@ -96,15 +135,15 @@ class RegexMatchNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = self.get_input_value("text", "")
-            pattern = self.get_input_value("pattern", "")
+            text = self.get_parameter("text", "")
+            pattern = self.get_parameter("pattern", "")
 
             flags = 0
-            if self.config.get("ignore_case", False):
+            if self.get_parameter("ignore_case", False):
                 flags |= re.IGNORECASE
-            if self.config.get("multiline", False):
+            if self.get_parameter("multiline", False):
                 flags |= re.MULTILINE
-            if self.config.get("dotall", False):
+            if self.get_parameter("dotall", False):
                 flags |= re.DOTALL
 
             matches = list(re.finditer(pattern, text, flags=flags))
@@ -137,22 +176,46 @@ class RegexMatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+@node_schema(
+    PropertyDef(
+        "ignore_case",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Ignore Case",
+        tooltip="Perform case-insensitive replacement",
+    ),
+    PropertyDef(
+        "multiline",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Multiline",
+        tooltip="^ and $ match start/end of lines",
+    ),
+    PropertyDef(
+        "dotall",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Dot All",
+        tooltip=". matches newline characters",
+    ),
+    PropertyDef(
+        "max_count",
+        PropertyType.INTEGER,
+        default=0,
+        min_value=0,
+        label="Max Count",
+        tooltip="Maximum number of replacements (0 = unlimited)",
+    ),
+)
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
 
-    def __init__(self, node_id: str, config: Optional[Dict[str, Any]] = None):
-        default_config = {
-            "ignore_case": False,
-            "multiline": False,
-            "dotall": False,
-            "max_count": 0,
-        }
-        if config is None:
-            config = {}
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
+    def __init__(self, node_id: str, name: str = "Regex Replace", **kwargs) -> None:
+        config = kwargs.get("config", {})
         super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "RegexReplaceNode"
 
     def _define_ports(self) -> None:
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
@@ -163,19 +226,19 @@ class RegexReplaceNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = self.get_input_value("text", "")
-            pattern = self.get_input_value("pattern", "")
-            replacement = self.get_input_value("replacement", "")
+            text = self.get_parameter("text", "")
+            pattern = self.get_parameter("pattern", "")
+            replacement = self.get_parameter("replacement", "")
 
             flags = 0
-            if self.config.get("ignore_case", False):
+            if self.get_parameter("ignore_case", False):
                 flags |= re.IGNORECASE
-            if self.config.get("multiline", False):
+            if self.get_parameter("multiline", False):
                 flags |= re.MULTILINE
-            if self.config.get("dotall", False):
+            if self.get_parameter("dotall", False):
                 flags |= re.DOTALL
 
-            max_count = int(self.config.get("max_count", 0))
+            max_count = int(self.get_parameter("max_count", 0))
             if max_count > 0:
                 result, count = re.subn(
                     pattern, replacement, text, count=max_count, flags=flags

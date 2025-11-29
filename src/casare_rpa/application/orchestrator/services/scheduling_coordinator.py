@@ -23,7 +23,7 @@ except ImportError:
     HAS_APSCHEDULER = False
     logger.warning("APScheduler not installed. Scheduling features disabled.")
 
-from .models import Schedule, ScheduleFrequency
+from casare_rpa.domain.orchestrator.entities import Schedule, ScheduleFrequency
 
 
 class ScheduleExecutionError(Exception):
