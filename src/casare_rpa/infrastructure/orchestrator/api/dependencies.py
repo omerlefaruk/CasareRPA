@@ -42,7 +42,7 @@ class DatabaseConfig:
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "5432")),
             database=os.getenv("DB_NAME", "casare_rpa"),
-            user=os.getenv("DB_USER", "postgres"),
+            user=os.getenv("DB_USER", "casare_user"),
             password=os.getenv("DB_PASSWORD", ""),
             min_size=int(os.getenv("DB_POOL_MIN_SIZE", "2")),
             max_size=int(os.getenv("DB_POOL_MAX_SIZE", "10")),
