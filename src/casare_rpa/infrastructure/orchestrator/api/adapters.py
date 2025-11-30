@@ -5,6 +5,7 @@ Maps between infrastructure layer (RPAMetricsCollector, MetricsAggregator)
 and API response models (Pydantic).
 """
 
+import json
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Any, TYPE_CHECKING
 
@@ -56,9 +57,54 @@ class MonitoringDataAdapter:
         """Check if database pool is available for historical queries."""
         return self._db_pool is not None
 
+    async def get_fleet_summary_async(self) -> Dict:
+        """
+        Get fleet-wide metrics summary from database.
+
+        Returns:
+            Dict matching FleetMetrics Pydantic model
+        """
+        if not self._db_pool:
+            return self.get_fleet_summary()
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                # Query robots from database (consider robots seen in last 5 mins as active)
+                robots_query = """
+                    SELECT
+                        COUNT(*) AS total,
+                        COUNT(*) FILTER (WHERE status = 'busy') AS busy,
+                        COUNT(*) FILTER (WHERE status = 'idle' AND last_seen > NOW() - INTERVAL '5 minutes') AS idle,
+                        COUNT(*) FILTER (WHERE status = 'offline' OR last_seen <= NOW() - INTERVAL '5 minutes') AS offline
+                    FROM robots
+                """
+                robot_stats = await conn.fetchrow(robots_query)
+
+                # Query queue depth
+                queue_query = "SELECT COUNT(*) FROM job_queue WHERE status = 'pending'"
+                queue_depth = await conn.fetchval(queue_query) or 0
+
+                # Query active jobs
+                active_query = "SELECT COUNT(*) FROM job_queue WHERE status = 'claimed'"
+                active_jobs = await conn.fetchval(active_query) or 0
+
+                return {
+                    "total_robots": robot_stats["total"] or 0,
+                    "active_robots": robot_stats["busy"] or 0,
+                    "idle_robots": robot_stats["idle"] or 0,
+                    "offline_robots": robot_stats["offline"] or 0,
+                    "total_jobs_today": 0,  # TODO: Query from jobs table
+                    "active_jobs": active_jobs,
+                    "queue_depth": queue_depth,
+                    "average_job_duration_seconds": 0.0,
+                }
+        except Exception as e:
+            logger.error(f"Database error in get_fleet_summary_async: {e}")
+            return self.get_fleet_summary()
+
     def get_fleet_summary(self) -> Dict:
         """
-        Get fleet-wide metrics summary.
+        Get fleet-wide metrics summary (in-memory fallback).
 
         Returns:
             Dict matching FleetMetrics Pydantic model
@@ -94,9 +140,74 @@ class MonitoringDataAdapter:
             "average_job_duration_seconds": average_duration,
         }
 
+    async def get_robot_list_async(self, status: Optional[str] = None) -> List[Dict]:
+        """
+        Get list of all robots from database with optional status filter.
+
+        Args:
+            status: Filter by status (idle/busy/offline/failed)
+
+        Returns:
+            List of dicts matching RobotSummary Pydantic model
+        """
+        if not self._db_pool:
+            return self.get_robot_list(status)
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                # Build query with optional status filter
+                if status:
+                    query = """
+                        SELECT robot_id, hostname, status, current_job_id, last_seen, metrics
+                        FROM robots
+                        WHERE status = $1
+                        ORDER BY last_seen DESC
+                    """
+                    rows = await conn.fetch(query, status)
+                else:
+                    query = """
+                        SELECT robot_id, hostname, status, current_job_id, last_seen, metrics
+                        FROM robots
+                        ORDER BY last_seen DESC
+                    """
+                    rows = await conn.fetch(query)
+
+                result = []
+                for row in rows:
+                    # Handle metrics - may be dict, JSON string, or None
+                    raw_metrics = row["metrics"]
+                    if raw_metrics is None:
+                        metrics = {}
+                    elif isinstance(raw_metrics, str):
+                        try:
+                            metrics = json.loads(raw_metrics)
+                        except json.JSONDecodeError:
+                            metrics = {}
+                    else:
+                        metrics = raw_metrics
+
+                    result.append(
+                        {
+                            "robot_id": row["robot_id"],
+                            "hostname": row["hostname"] or row["robot_id"],
+                            "status": row["status"],
+                            "cpu_percent": metrics.get("cpu_percent", 0.0),
+                            "memory_mb": metrics.get("memory_mb", 0.0),
+                            "current_job_id": str(row["current_job_id"])
+                            if row["current_job_id"]
+                            else None,
+                            "last_heartbeat": row["last_seen"],
+                        }
+                    )
+                return result
+
+        except Exception as e:
+            logger.error(f"Database error in get_robot_list_async: {e}")
+            return self.get_robot_list(status)
+
     def get_robot_list(self, status: Optional[str] = None) -> List[Dict]:
         """
-        Get list of all robots with optional status filter.
+        Get list of all robots with optional status filter (in-memory fallback).
 
         Args:
             status: Filter by status (idle/busy/offline/failed)

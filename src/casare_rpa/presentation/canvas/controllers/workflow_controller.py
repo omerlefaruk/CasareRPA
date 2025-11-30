@@ -16,6 +16,7 @@ from loguru import logger
 
 from .base_controller import BaseController
 from ....utils.config import WORKFLOWS_DIR
+from ....application.services import OrchestratorClient
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -54,6 +55,7 @@ class WorkflowController(BaseController):
         super().__init__(main_window)
         self._current_file: Optional[Path] = None
         self._is_modified = False
+        self._orchestrator_client: Optional[OrchestratorClient] = None
 
     def initialize(self) -> None:
         """Initialize controller."""
@@ -65,7 +67,37 @@ class WorkflowController(BaseController):
     def cleanup(self) -> None:
         """Clean up resources."""
         super().cleanup()
+        # Close orchestrator client if exists
+        if self._orchestrator_client:
+            import asyncio
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self._orchestrator_client.close())
+                else:
+                    loop.run_until_complete(self._orchestrator_client.close())
+            except Exception as e:
+                logger.warning("Failed to close orchestrator client cleanly: {}", e)
+            self._orchestrator_client = None
         logger.info("WorkflowController cleanup")
+
+    def _get_orchestrator_client(self) -> OrchestratorClient:
+        """
+        Get or create orchestrator client for API calls.
+
+        Returns:
+            OrchestratorClient instance with connection pooling
+        """
+        import os
+
+        if self._orchestrator_client is None:
+            orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:8000")
+            self._orchestrator_client = OrchestratorClient(
+                orchestrator_url=orchestrator_url
+            )
+            logger.debug("Created OrchestratorClient for API calls")
+        return self._orchestrator_client
 
     def new_workflow(self) -> None:
         """Create a new empty workflow."""
@@ -117,10 +149,10 @@ class WorkflowController(BaseController):
 
             self.main_window.show_status(f"Opened: {Path(file_path).name}", 3000)
 
-            # Schedule validation after opening
+            # Schedule validation after opening (delay to allow graph to fully load)
             from PySide6.QtCore import QTimer
 
-            QTimer.singleShot(100, self._validate_after_open)
+            QTimer.singleShot(500, self._validate_after_open)
 
     def import_workflow(self) -> None:
         """Import nodes from another workflow."""
@@ -317,7 +349,8 @@ class WorkflowController(BaseController):
         """Validate workflow after opening and show panel if issues found."""
         bottom_panel = self.main_window.get_bottom_panel()
         if bottom_panel:
-            bottom_panel.trigger_validation()
+            # Emit signal to trigger validation via main_window handler
+            bottom_panel.validation_requested.emit()
 
             # Show validation tab if there are errors
             validation_errors = bottom_panel.get_validation_errors_blocking()
@@ -360,6 +393,21 @@ class WorkflowController(BaseController):
 
         if not text:
             self.main_window.show_status("Clipboard is empty", 3000)
+            return
+
+        # Security: Limit clipboard size to prevent DoS (10MB)
+        MAX_CLIPBOARD_SIZE = 10 * 1024 * 1024  # 10MB
+        if len(text) > MAX_CLIPBOARD_SIZE:
+            QMessageBox.warning(
+                self.main_window,
+                "Clipboard Too Large",
+                f"Clipboard content is too large ({len(text) / (1024 * 1024):.1f} MB).\n"
+                f"Maximum allowed size: 10 MB.\n\n"
+                "This prevents memory exhaustion from malicious clipboard data.",
+            )
+            logger.warning(
+                f"Rejected clipboard paste: size={len(text)} bytes (limit={MAX_CLIPBOARD_SIZE})"
+            )
             return
 
         # Try to parse as JSON
@@ -492,3 +540,207 @@ class WorkflowController(BaseController):
                     return reply == QMessageBox.StandardButton.Yes
 
         return True
+
+    # =========================
+    # Remote Execution Methods
+    # =========================
+
+    async def run_local(self) -> None:
+        """
+        Execute workflow locally in Canvas (current behavior).
+
+        This is the existing local execution - no changes needed.
+        The execution controller handles this via execute_workflow().
+        """
+        logger.info("Run Local selected - delegating to execution controller")
+        # Note: Main window's execution controller handles local execution
+        # This method is here for API consistency with other execution modes
+
+    async def run_on_robot(self) -> None:
+        """
+        Submit workflow to LAN robot via Orchestrator API.
+
+        Flow:
+        1. Serialize current workflow
+        2. Submit via OrchestratorClient with execution_mode=lan
+        3. Orchestrator queues job for LAN robots
+        4. Show confirmation with job_id
+        """
+        logger.info("Run on Robot selected - submitting to Orchestrator")
+
+        # Check if workflow has been saved
+        if not self._current_file:
+            reply = QMessageBox.question(
+                self.main_window,
+                "Save Workflow?",
+                "Workflow must be saved before submitting to robot.\n\n" "Save now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.save_workflow()
+                if not self._current_file:  # Save was cancelled
+                    return
+            else:
+                return
+
+        # Serialize workflow using the data provider
+        workflow_json = self.main_window._get_workflow_data()
+        if not workflow_json:
+            self.main_window.show_status("No workflow to submit", 3000)
+            return
+
+        # Convert nodes dict to list (API expects list format)
+        if isinstance(workflow_json.get("nodes"), dict):
+            workflow_json["nodes"] = list(workflow_json["nodes"].values())
+
+        self.main_window.show_status("Submitting workflow to robot...", 3000)
+
+        # Submit via OrchestratorClient (Application layer)
+        client = self._get_orchestrator_client()
+        result = await client.submit_workflow(
+            workflow_name=self._current_file.stem if self._current_file else "Untitled",
+            workflow_json=workflow_json,
+            execution_mode="lan",
+            trigger_type="manual",
+            priority=10,
+            metadata={
+                "submitted_from": "canvas",
+                "canvas_file": str(self._current_file) if self._current_file else None,
+            },
+        )
+
+        if result.success:
+            job_id = result.job_id or "unknown"
+            workflow_id = result.workflow_id or "unknown"
+
+            self.main_window.show_status(
+                f"Workflow submitted to robot! Job ID: {job_id[:8]}...",
+                5000,
+            )
+
+            # Show success dialog
+            QMessageBox.information(
+                self.main_window,
+                "Workflow Submitted",
+                f"Workflow submitted to LAN robot successfully!\n\n"
+                f"Workflow ID: {workflow_id}\n"
+                f"Job ID: {job_id}\n\n"
+                f"Monitor execution in the Monitoring Dashboard.",
+            )
+        else:
+            self.main_window.show_status(f"Submission failed: {result.message}", 5000)
+
+            # Distinguish connection errors from API errors
+            if "connect" in (result.error or "").lower():
+                QMessageBox.critical(
+                    self.main_window,
+                    "Connection Error",
+                    f"Could not connect to Orchestrator.\n\n"
+                    f"Error: {result.error}\n\n"
+                    f"Ensure Orchestrator API is running:\n"
+                    f"uvicorn casare_rpa.infrastructure.orchestrator.api.main:app",
+                )
+            else:
+                QMessageBox.critical(
+                    self.main_window,
+                    "Submission Failed",
+                    f"Failed to submit workflow to robot.\n\n"
+                    f"{result.message}\n"
+                    f"Error: {result.error[:200] if result.error else 'Unknown'}",
+                )
+
+    async def submit_for_internet_robots(self) -> None:
+        """
+        Submit workflow for internet robots (client PCs).
+
+        Flow:
+        1. Serialize current workflow
+        2. Submit via OrchestratorClient with execution_mode=internet
+        3. Orchestrator queues job for internet robots
+        4. Show confirmation with workflow_id
+        """
+        logger.info(
+            "Submit for Internet Robots selected - queuing for remote execution"
+        )
+
+        # Check if workflow has been saved
+        if not self._current_file:
+            reply = QMessageBox.question(
+                self.main_window,
+                "Save Workflow?",
+                "Workflow must be saved before submitting.\n\n" "Save now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.save_workflow()
+                if not self._current_file:  # Save was cancelled
+                    return
+            else:
+                return
+
+        # Serialize workflow using the data provider
+        workflow_json = self.main_window._get_workflow_data()
+        if not workflow_json:
+            self.main_window.show_status("No workflow to submit", 3000)
+            return
+
+        # Convert nodes dict to list (API expects list format)
+        if isinstance(workflow_json.get("nodes"), dict):
+            workflow_json["nodes"] = list(workflow_json["nodes"].values())
+
+        self.main_window.show_status("Submitting workflow for internet robots...", 3000)
+
+        # Submit via OrchestratorClient (Application layer)
+        client = self._get_orchestrator_client()
+        result = await client.submit_workflow(
+            workflow_name=self._current_file.stem if self._current_file else "Untitled",
+            workflow_json=workflow_json,
+            execution_mode="internet",
+            trigger_type="manual",
+            priority=10,
+            metadata={
+                "submitted_from": "canvas",
+                "canvas_file": str(self._current_file) if self._current_file else None,
+            },
+        )
+
+        if result.success:
+            job_id = result.job_id or "unknown"
+            workflow_id = result.workflow_id or "unknown"
+
+            self.main_window.show_status(
+                f"Workflow queued! Job ID: {job_id[:8]}...",
+                5000,
+            )
+
+            # Show success dialog
+            QMessageBox.information(
+                self.main_window,
+                "Workflow Queued",
+                f"Workflow queued for internet robots successfully!\n\n"
+                f"Workflow ID: {workflow_id}\n"
+                f"Job ID: {job_id}\n\n"
+                f"The first available internet robot will claim and execute this job.\n\n"
+                f"Monitor execution in the Monitoring Dashboard.",
+            )
+        else:
+            self.main_window.show_status(f"Submission failed: {result.message}", 5000)
+
+            # Distinguish connection errors from API errors
+            if "connect" in (result.error or "").lower():
+                QMessageBox.critical(
+                    self.main_window,
+                    "Connection Error",
+                    f"Could not connect to Orchestrator.\n\n"
+                    f"Error: {result.error}\n\n"
+                    f"Ensure Orchestrator API is running:\n"
+                    f"uvicorn casare_rpa.infrastructure.orchestrator.api.main:app",
+                )
+            else:
+                QMessageBox.critical(
+                    self.main_window,
+                    "Submission Failed",
+                    f"Failed to queue workflow.\n\n"
+                    f"{result.message}\n"
+                    f"Error: {result.error[:200] if result.error else 'Unknown'}",
+                )

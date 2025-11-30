@@ -38,18 +38,16 @@ def mock_main_window(qtbot):
     mock_graph.selected_nodes = Mock(return_value=[])
     main_window.get_graph = Mock(return_value=mock_graph)
 
-    # Mock get_bottom_panel
+    # Mock get_bottom_panel (single instance used throughout)
     main_window._bottom_panel = Mock()
     main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
+    main_window._bottom_panel.trigger_validation = Mock()
+    main_window._bottom_panel.show_validation_tab = Mock()
     main_window.get_bottom_panel = Mock(return_value=main_window._bottom_panel)
 
     # Mock workflow signals
     main_window.workflow_new = Mock()
     main_window.workflow_new.emit = Mock()
-    main_window._bottom_panel = Mock()
-    main_window._bottom_panel.get_validation_errors_blocking = Mock(return_value=[])
-    main_window._bottom_panel.trigger_validation = Mock()
-    main_window._bottom_panel.show_validation_tab = Mock()
 
     # Mock status bar
     mock_status = Mock()
@@ -694,3 +692,323 @@ class TestPrivateMethods:
         workflow_controller.set_modified(False)
 
         mock_main_window.action_save.setEnabled.assert_called_with(False)
+
+
+# ============================================================================
+# Remote Execution Tests
+# ============================================================================
+
+
+class TestOrchestratorClient:
+    """Tests for OrchestratorClient integration."""
+
+    def test_orchestrator_client_initially_none(self, workflow_controller) -> None:
+        """Test orchestrator client is None on initialization."""
+        assert workflow_controller._orchestrator_client is None
+
+    def test_get_orchestrator_client_creates_client(self, workflow_controller) -> None:
+        """Test _get_orchestrator_client creates a new client."""
+        client = workflow_controller._get_orchestrator_client()
+
+        assert client is not None
+        assert workflow_controller._orchestrator_client is client
+
+    def test_get_orchestrator_client_reuses_client(self, workflow_controller) -> None:
+        """Test _get_orchestrator_client reuses existing client."""
+        client1 = workflow_controller._get_orchestrator_client()
+        client2 = workflow_controller._get_orchestrator_client()
+
+        assert client1 is client2
+
+
+class TestRunOnRobot:
+    """Tests for run_on_robot remote execution."""
+
+    @pytest.mark.asyncio
+    async def test_run_on_robot_requires_saved_workflow(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test run_on_robot prompts to save unsaved workflow."""
+        workflow_controller._current_file = None
+
+        with patch.object(
+            QMessageBox, "question", return_value=QMessageBox.StandardButton.No
+        ) as mock_question:
+            await workflow_controller.run_on_robot()
+
+        mock_question.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_on_robot_no_graph(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test run_on_robot handles missing graph."""
+        test_file = tmp_path / "test.json"
+        workflow_controller.set_current_file(test_file)
+
+        mock_main_window.get_graph.return_value = None
+
+        await workflow_controller.run_on_robot()
+
+        mock_main_window.show_status.assert_called_with("No workflow to submit", 3000)
+
+    @pytest.mark.asyncio
+    async def test_run_on_robot_success(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test run_on_robot successful submission."""
+        from unittest.mock import AsyncMock
+        from casare_rpa.application.services import WorkflowSubmissionResult
+
+        test_file = tmp_path / "test_workflow.json"
+        workflow_controller.set_current_file(test_file)
+
+        # Mock graph serialization
+        mock_graph = Mock()
+        mock_graph.serialize_to_json.return_value = {"nodes": [], "connections": []}
+        mock_main_window.get_graph.return_value = mock_graph
+
+        # Create mock orchestrator client
+        mock_client = Mock()
+        mock_client.submit_workflow = AsyncMock(
+            return_value=WorkflowSubmissionResult(
+                success=True,
+                workflow_id="wf-123",
+                job_id="job-456",
+                message="Workflow submitted",
+            )
+        )
+
+        with patch.object(
+            workflow_controller, "_get_orchestrator_client", return_value=mock_client
+        ):
+            with patch.object(QMessageBox, "information") as mock_info:
+                await workflow_controller.run_on_robot()
+
+        mock_info.assert_called_once()
+        # Verify the dialog contained success info
+        call_args = mock_info.call_args
+        assert "wf-123" in call_args[0][2]  # Message contains workflow ID
+
+    @pytest.mark.asyncio
+    async def test_run_on_robot_api_error(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test run_on_robot handles API error."""
+        from unittest.mock import AsyncMock
+        from casare_rpa.application.services import WorkflowSubmissionResult
+
+        test_file = tmp_path / "test_workflow.json"
+        workflow_controller.set_current_file(test_file)
+
+        # Mock graph serialization
+        mock_graph = Mock()
+        mock_graph.serialize_to_json.return_value = {"nodes": [], "connections": []}
+        mock_main_window.get_graph.return_value = mock_graph
+
+        # Create mock orchestrator client with error
+        mock_client = Mock()
+        mock_client.submit_workflow = AsyncMock(
+            return_value=WorkflowSubmissionResult(
+                success=False,
+                message="Submission failed with status 500",
+                error="Internal Server Error",
+            )
+        )
+
+        with patch.object(
+            workflow_controller, "_get_orchestrator_client", return_value=mock_client
+        ):
+            with patch.object(QMessageBox, "critical") as mock_critical:
+                await workflow_controller.run_on_robot()
+
+        mock_critical.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_run_on_robot_connection_error(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test run_on_robot handles connection error."""
+        from unittest.mock import AsyncMock
+        from casare_rpa.application.services import WorkflowSubmissionResult
+
+        test_file = tmp_path / "test_workflow.json"
+        workflow_controller.set_current_file(test_file)
+
+        # Mock graph serialization
+        mock_graph = Mock()
+        mock_graph.serialize_to_json.return_value = {"nodes": [], "connections": []}
+        mock_main_window.get_graph.return_value = mock_graph
+
+        # Create mock orchestrator client with connection error
+        mock_client = Mock()
+        mock_client.submit_workflow = AsyncMock(
+            return_value=WorkflowSubmissionResult(
+                success=False,
+                message="Could not connect to Orchestrator",
+                error="Connection refused - could not connect",
+            )
+        )
+
+        with patch.object(
+            workflow_controller, "_get_orchestrator_client", return_value=mock_client
+        ):
+            with patch.object(QMessageBox, "critical") as mock_critical:
+                await workflow_controller.run_on_robot()
+
+        mock_critical.assert_called_once()
+        # Verify the dialog mentioned connection error
+        call_args = mock_critical.call_args
+        assert "Connection" in call_args[0][1]
+
+
+class TestSubmitForInternetRobots:
+    """Tests for submit_for_internet_robots remote execution."""
+
+    @pytest.mark.asyncio
+    async def test_submit_for_internet_requires_saved_workflow(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test submit_for_internet_robots prompts to save unsaved workflow."""
+        workflow_controller._current_file = None
+
+        with patch.object(
+            QMessageBox, "question", return_value=QMessageBox.StandardButton.No
+        ) as mock_question:
+            await workflow_controller.submit_for_internet_robots()
+
+        mock_question.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_submit_for_internet_success(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test submit_for_internet_robots successful submission."""
+        from unittest.mock import AsyncMock
+        from casare_rpa.application.services import WorkflowSubmissionResult
+
+        test_file = tmp_path / "test_workflow.json"
+        workflow_controller.set_current_file(test_file)
+
+        # Mock graph serialization
+        mock_graph = Mock()
+        mock_graph.serialize_to_json.return_value = {"nodes": [], "connections": []}
+        mock_main_window.get_graph.return_value = mock_graph
+
+        # Create mock orchestrator client
+        mock_client = Mock()
+        mock_client.submit_workflow = AsyncMock(
+            return_value=WorkflowSubmissionResult(
+                success=True,
+                workflow_id="wf-789",
+                job_id="job-012",
+                message="Workflow queued",
+            )
+        )
+
+        with patch.object(
+            workflow_controller, "_get_orchestrator_client", return_value=mock_client
+        ):
+            with patch.object(QMessageBox, "information") as mock_info:
+                await workflow_controller.submit_for_internet_robots()
+
+        mock_info.assert_called_once()
+        # Verify "internet" mode mentioned
+        call_args = mock_info.call_args
+        assert "internet" in call_args[0][2].lower()
+
+    @pytest.mark.asyncio
+    async def test_submit_for_internet_api_error(
+        self, workflow_controller, mock_main_window, tmp_path
+    ) -> None:
+        """Test submit_for_internet_robots handles API error."""
+        from unittest.mock import AsyncMock
+        from casare_rpa.application.services import WorkflowSubmissionResult
+
+        test_file = tmp_path / "test_workflow.json"
+        workflow_controller.set_current_file(test_file)
+
+        # Mock graph serialization
+        mock_graph = Mock()
+        mock_graph.serialize_to_json.return_value = {"nodes": [], "connections": []}
+        mock_main_window.get_graph.return_value = mock_graph
+
+        # Create mock orchestrator client with error
+        mock_client = Mock()
+        mock_client.submit_workflow = AsyncMock(
+            return_value=WorkflowSubmissionResult(
+                success=False,
+                message="Submission failed with status 400",
+                error="Bad Request",
+            )
+        )
+
+        with patch.object(
+            workflow_controller, "_get_orchestrator_client", return_value=mock_client
+        ):
+            with patch.object(QMessageBox, "critical") as mock_critical:
+                await workflow_controller.submit_for_internet_robots()
+
+        mock_critical.assert_called_once()
+
+
+class TestCheckValidationBeforeRun:
+    """Tests for check_validation_before_run method."""
+
+    def test_check_validation_no_errors(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test check returns True when no validation errors."""
+        mock_main_window._bottom_panel.get_validation_errors_blocking.return_value = []
+
+        result = workflow_controller.check_validation_before_run()
+
+        assert result is True
+
+    def test_check_validation_with_warnings_only(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test check returns True when only warnings present."""
+        mock_warning = Mock()
+        mock_warning.severity = "warning"
+        mock_main_window._bottom_panel.get_validation_errors_blocking.return_value = [
+            mock_warning
+        ]
+
+        result = workflow_controller.check_validation_before_run()
+
+        assert result is True
+
+    def test_check_validation_with_errors_user_proceeds(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test check prompts user when errors exist and user proceeds."""
+        mock_error = Mock()
+        mock_error.severity = "error"
+        mock_main_window._bottom_panel.get_validation_errors_blocking.return_value = [
+            mock_error
+        ]
+
+        with patch.object(
+            QMessageBox, "warning", return_value=QMessageBox.StandardButton.Yes
+        ):
+            result = workflow_controller.check_validation_before_run()
+
+        assert result is True
+
+    def test_check_validation_with_errors_user_cancels(
+        self, workflow_controller, mock_main_window
+    ) -> None:
+        """Test check prompts user when errors exist and user cancels."""
+        mock_error = Mock()
+        mock_error.severity = "error"
+        mock_main_window._bottom_panel.get_validation_errors_blocking.return_value = [
+            mock_error
+        ]
+
+        with patch.object(
+            QMessageBox, "warning", return_value=QMessageBox.StandardButton.No
+        ):
+            result = workflow_controller.check_validation_before_run()
+
+        assert result is False
