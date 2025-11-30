@@ -21,7 +21,7 @@ from casare_rpa.infrastructure.resources.browser_resource_manager import (
 
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
-    from casare_rpa.project.project_context import ProjectContext
+    from casare_rpa.domain.services.project_context import ProjectContext
 
 
 class ExecutionContext:
