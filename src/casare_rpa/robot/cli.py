@@ -29,7 +29,7 @@ from rich.panel import Panel
 from rich import box
 
 # Import config directly to avoid circular imports via __init__.py
-from casare_rpa.robot.config import RobotConfig, get_persistent_robot_id
+from casare_rpa.robot.config import RobotConfig, get_robot_id
 
 
 app = typer.Typer(
@@ -426,7 +426,7 @@ def status(
     """
     import orjson
 
-    target_robot_id = robot_id or get_persistent_robot_id()
+    target_robot_id = robot_id or get_robot_id()
 
     # Check for PID file
     pid_file = Path.home() / ".casare_rpa" / f"robot_{target_robot_id}.pid"

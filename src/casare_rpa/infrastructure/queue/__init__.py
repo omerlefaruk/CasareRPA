@@ -1,13 +1,15 @@
 """
 CasareRPA Infrastructure Layer - Queue Adapters
 
-Provides PostgreSQL-based distributed queue implementations using the pgqueuer pattern
-for high-throughput job processing with guaranteed delivery.
+Provides distributed queue implementations for job processing:
+- PgQueuer: PostgreSQL-based queue for production (high-throughput, persistence)
+- MemoryQueue: In-memory fallback for development/testing (no persistence)
 
 Components:
 - PgQueuerConsumer: Robot-side job claiming with SKIP LOCKED
 - PgQueuerProducer: Orchestrator-side job enqueuing (TODO)
 - DLQManager: Dead Letter Queue with exponential backoff retry
+- MemoryQueue: In-memory queue fallback for local development
 """
 
 from .pgqueuer_consumer import (
@@ -28,6 +30,15 @@ from .dlq_manager import (
     JITTER_FACTOR,
 )
 
+from .memory_queue import (
+    MemoryQueue,
+    MemoryJob,
+    JobStatus,
+    get_memory_queue,
+    initialize_memory_queue,
+    shutdown_memory_queue,
+)
+
 __all__ = [
     # Consumer
     "PgQueuerConsumer",
@@ -43,4 +54,11 @@ __all__ = [
     "RetryResult",
     "RETRY_SCHEDULE",
     "JITTER_FACTOR",
+    # Memory Queue (fallback)
+    "MemoryQueue",
+    "MemoryJob",
+    "JobStatus",
+    "get_memory_queue",
+    "initialize_memory_queue",
+    "shutdown_memory_queue",
 ]
