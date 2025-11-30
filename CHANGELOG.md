@@ -72,6 +72,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Robot Execution Improvements (2025-11-30)
+
+#### Fixed
+- Robot execution reliability improvements
+- Auto-install Playwright browsers on first run
+- API query improvements for jobs table (total_jobs_today, avg duration)
+
+### Enterprise Integration (2025-11-29)
+
+#### Added
+- Complete Canvas + Orchestrator API + React Dashboard integration
+- PostgreSQL setup scripts and configuration
+- Comprehensive test suites for queue and API routers
+
+#### Fixed
+- Architecture violation fix: Presentation → Application → Infrastructure flow
+- Deployment security issues addressed
+
+### Security Hardening (2025-11-29)
+
+#### Added
+- SQL injection prevention with input validation
+- Workflow JSON schema validation before deserialization
+- Atomic job claiming (race condition fix)
+- Credential masking in logs
+- 45 security tests
+
+#### Fixed
+- All 5 critical security vulnerabilities from audit
+
+---
+
 ### Week 6: Node Coverage Completion (2025-11-28) - COMPLETE
 
 Comprehensive node coverage expansion with 566 new tests, achieving 95%+ node coverage.
@@ -393,9 +425,10 @@ All existing code continues to work unchanged. Deprecation warnings guide develo
 
 ## Version History
 
-- **3.0.0 (Upcoming)**: Clean Architecture Migration - Breaking changes, deprecated imports removed
-- **Week 6**: Node Coverage Completion - 95%+ node coverage, 2,242 tests
-- **Week 5**: Test Coverage Expansion - 1,676 tests, domain/application layer tests
+- **3.0.0**: Clean Architecture Migration - Breaking changes, deprecated imports removed
+- **Enterprise Integration**: Orchestrator + React Dashboard + Security hardening
+- **Week 6**: Node Coverage Completion - 95%+ node coverage, 3,480+ tests
+- **Week 5**: Test Coverage Expansion - domain/application layer tests
 - **Week 4**: MainWindow Consolidation - 23% size reduction, 12 controllers
 - **Week 2**: CI/CD Foundation & Refactoring Initiative
 - **Week 1**: Trigger System, Project Management, Performance Optimization
@@ -418,5 +451,5 @@ When adding entries to the changelog:
 
 - This changelog tracks all significant changes to the project
 - For detailed commit history, see the Git log
-- For planning and roadmaps, see `DEVELOPMENT_ROADMAP.md`
-- For metrics tracking, see `docs/WEEK2_METRICS.md`
+- For architecture details, see `docs/ARCHITECTURE.md`
+- For roadmap, see `docs/ROADMAP_COMPLETE.md`

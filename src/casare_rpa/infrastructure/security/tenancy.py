@@ -23,6 +23,14 @@ from uuid import UUID, uuid4
 from loguru import logger
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 
+from casare_rpa.infrastructure.security.merkle_audit import (
+    MerkleAuditService,
+    AuditEntry as MerkleAuditEntry,
+    AuditAction as MerkleAuditAction,
+    ResourceType as MerkleResourceType,
+    get_audit_service as get_merkle_audit_service,
+)
+
 
 # =============================================================================
 # ENUMS
@@ -1173,13 +1181,28 @@ class APIKeyService:
 
 
 class AuditService:
-    """Service for audit logging."""
+    """
+    Service for audit logging.
 
-    def __init__(self, context_manager: TenantContextManager) -> None:
+    Supports optional Merkle tree integration for tamper-proof compliance logging.
+    When merkle_enabled=True, all audit entries are also written to the
+    hash-chained Merkle audit log for cryptographic verification.
+    """
+
+    def __init__(
+        self,
+        context_manager: TenantContextManager,
+        merkle_enabled: bool = False,
+    ) -> None:
         self._context_manager = context_manager
         self._logs: List[AuditLogEntry] = []
         self._max_buffer = 10000
         self._lock = asyncio.Lock()
+        self._merkle_enabled = merkle_enabled
+        self._merkle_service: Optional[MerkleAuditService] = None
+
+        if merkle_enabled:
+            self._merkle_service = get_merkle_audit_service()
 
     async def log(
         self,
@@ -1253,7 +1276,72 @@ class AuditService:
             f"by {actor_type} in tenant {tenant_id}"
         )
 
+        # Write to Merkle audit log for tamper-proof compliance
+        if self._merkle_enabled and self._merkle_service:
+            try:
+                await self._append_to_merkle_log(entry)
+            except Exception as e:
+                logger.error(f"Failed to write to Merkle audit log: {e}")
+
         return entry
+
+    async def _append_to_merkle_log(self, entry: AuditLogEntry) -> None:
+        """Append entry to Merkle hash-chained audit log."""
+        if not self._merkle_service:
+            return
+
+        # Map tenancy action to Merkle audit action
+        merkle_action = self._map_to_merkle_action(entry.action)
+
+        # Create Merkle audit entry
+        merkle_entry = MerkleAuditEntry(
+            action=merkle_action,
+            actor_id=entry.user_id or entry.api_key_id or UUID(int=0),
+            actor_type=entry.actor_type,
+            resource_type=entry.resource_type,
+            resource_id=UUID(entry.resource_id) if entry.resource_id else None,
+            tenant_id=entry.tenant_id,
+            details={
+                "old_value": entry.old_value,
+                "new_value": entry.new_value,
+                "success": entry.success,
+                "error_message": entry.error_message,
+                **(entry.metadata or {}),
+            },
+            ip_address=entry.actor_ip,
+            user_agent=entry.user_agent,
+        )
+
+        await self._merkle_service.append_entry(merkle_entry)
+
+    def _map_to_merkle_action(self, action: AuditAction) -> MerkleAuditAction:
+        """Map tenancy AuditAction to Merkle AuditAction."""
+        # Map based on action prefix
+        action_str = action.value
+
+        if action_str.startswith("user.login"):
+            return MerkleAuditAction.USER_LOGIN
+        elif action_str.startswith("user.logout"):
+            return MerkleAuditAction.USER_LOGOUT
+        elif "created" in action_str:
+            return MerkleAuditAction.CREATE
+        elif "updated" in action_str or "changed" in action_str:
+            return MerkleAuditAction.UPDATE
+        elif "deleted" in action_str or "removed" in action_str:
+            return MerkleAuditAction.DELETE
+        elif "executed" in action_str:
+            return MerkleAuditAction.EXECUTE
+        elif "accessed" in action_str:
+            return MerkleAuditAction.ACCESS
+        elif "configured" in action_str:
+            return MerkleAuditAction.CONFIGURE
+        elif "suspended" in action_str or "revoked" in action_str:
+            return MerkleAuditAction.REVOKE
+        elif "activated" in action_str or "published" in action_str:
+            return MerkleAuditAction.APPROVE
+        else:
+            # Default fallback
+            return MerkleAuditAction.ACCESS
 
     async def query(
         self,
@@ -1348,7 +1436,17 @@ def create_api_key_service(tenant_service: TenantService) -> APIKeyService:
 
 def create_audit_service(
     context_manager: Optional[TenantContextManager] = None,
+    merkle_enabled: bool = False,
 ) -> AuditService:
-    """Create audit service."""
+    """
+    Create audit service.
+
+    Args:
+        context_manager: Optional tenant context manager
+        merkle_enabled: Enable Merkle tree hash-chained logging for compliance
+
+    Returns:
+        Configured AuditService
+    """
     ctx_manager = context_manager or create_tenant_context_manager()
-    return AuditService(ctx_manager)
+    return AuditService(ctx_manager, merkle_enabled=merkle_enabled)

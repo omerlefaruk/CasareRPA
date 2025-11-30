@@ -32,6 +32,11 @@ from casare_rpa.infrastructure.queue import (
     get_memory_queue,
     MemoryQueue,
 )
+from casare_rpa.infrastructure.orchestrator.api.auth import (
+    AuthenticatedUser,
+    get_current_user,
+    require_role,
+)
 
 
 # Database pool (initialized by main.py lifespan)
@@ -362,6 +367,7 @@ async def enqueue_job(
 @router.post("/workflows", response_model=WorkflowSubmissionResponse)
 async def submit_workflow(
     request: WorkflowSubmissionRequest,
+    user: AuthenticatedUser = Depends(require_role("developer")),
 ) -> WorkflowSubmissionResponse:
     """
     Submit a workflow from Canvas to Orchestrator.
@@ -470,6 +476,7 @@ async def upload_workflow(
     trigger_type: str = "manual",
     execution_mode: str = "lan",
     priority: int = 10,
+    user: AuthenticatedUser = Depends(require_role("developer")),
 ) -> WorkflowSubmissionResponse:
     """
     Upload workflow JSON file.
@@ -567,7 +574,10 @@ async def upload_workflow(
 
 
 @router.get("/workflows/{workflow_id}", response_model=WorkflowDetailsResponse)
-async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
+async def get_workflow(
+    workflow_id: str,
+    user: AuthenticatedUser = Depends(require_role("viewer")),
+) -> WorkflowDetailsResponse:
     """
     Get workflow details by ID.
 
@@ -619,7 +629,10 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
 
 
 @router.delete("/workflows/{workflow_id}")
-async def delete_workflow(workflow_id: str) -> Dict[str, str]:
+async def delete_workflow(
+    workflow_id: str,
+    user: AuthenticatedUser = Depends(require_role("admin")),
+) -> Dict[str, str]:
     """
     Delete workflow.
 

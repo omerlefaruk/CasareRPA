@@ -24,7 +24,7 @@ from casare_rpa.infrastructure.events import (
     get_monitoring_event_bus,
     MonitoringEventType,
 )
-from .routers import metrics, websockets, workflows, schedules
+from .routers import auth, metrics, websockets, workflows, schedules
 from .routers.websockets import (
     on_job_status_changed,
     on_robot_heartbeat,
@@ -169,6 +169,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(metrics.router, prefix="/api/v1", tags=["metrics"])
 app.include_router(websockets.router, prefix="/ws", tags=["websockets"])
 app.include_router(workflows.router, prefix="/api/v1", tags=["workflows"])
