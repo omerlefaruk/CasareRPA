@@ -18,7 +18,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from loguru import logger
 import orjson
@@ -952,19 +952,38 @@ class UnifiedResourceManager:
         limit = limits.get(resource_type, 0)
         return count < limit
 
-    def analyze_workflow_needs(self, workflow_json: str) -> Dict[str, bool]:
+    def analyze_workflow_needs(
+        self, workflow_json: Union[str, Dict[str, Any]]
+    ) -> Dict[str, bool]:
         """
         Analyze workflow to determine required resources.
 
         Args:
-            workflow_json: Workflow definition as JSON
+            workflow_json: Workflow definition as JSON string or dict
 
         Returns:
             Dict with needs_browser, needs_database, needs_http
         """
         try:
-            workflow = orjson.loads(workflow_json)
-            nodes = workflow.get("nodes", [])
+            # Handle both string (from API) and dict (JSONB auto-converted)
+            if isinstance(workflow_json, str):
+                workflow = orjson.loads(workflow_json)
+            else:
+                workflow = workflow_json
+
+            # Handle both dict-format (keyed by node_id) and list-format nodes
+            nodes_data = workflow.get("nodes", {})
+            if nodes_data is None:
+                nodes_data = {}
+            if isinstance(nodes_data, dict):
+                nodes = list(nodes_data.values())
+            elif isinstance(nodes_data, list):
+                nodes = nodes_data
+            else:
+                logger.warning(
+                    f"Unexpected nodes format: {type(nodes_data)}, using empty list"
+                )
+                nodes = []
 
             needs_browser = False
             needs_database = False
@@ -993,7 +1012,8 @@ class UnifiedResourceManager:
             }
 
             for node in nodes:
-                node_type = node.get("type", "")
+                # Support both "node_type" (our format) and "type" (legacy)
+                node_type = node.get("node_type") or node.get("type", "")
                 if node_type in browser_node_types:
                     needs_browser = True
                 if node_type in db_node_types:
@@ -1017,7 +1037,7 @@ class UnifiedResourceManager:
     async def acquire_resources_for_job(
         self,
         job_id: str,
-        workflow_json: str,
+        workflow_json: Union[str, Dict],
         lease_duration: Optional[timedelta] = None,
     ) -> JobResources:
         """
@@ -1028,7 +1048,7 @@ class UnifiedResourceManager:
 
         Args:
             job_id: Job identifier
-            workflow_json: Workflow definition
+            workflow_json: Workflow definition (string or dict)
             lease_duration: Custom lease duration (defaults to manager's lease_ttl)
 
         Returns:
