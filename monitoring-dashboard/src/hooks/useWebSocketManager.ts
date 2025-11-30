@@ -28,8 +28,21 @@ import {
 // ============================================================================
 
 // In production, VITE_WS_BASE_URL must be set. In development, fall back to localhost.
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ||
-  (import.meta.env.PROD ? '' : 'ws://localhost:8000');
+const getWebSocketBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_WS_BASE_URL;
+  if (envUrl) return envUrl;
+
+  if (import.meta.env.PROD) {
+    // In production, derive WebSocket URL from current location
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}`;
+  }
+
+  // Development fallback
+  return 'ws://localhost:8000';
+};
+
+const WS_BASE_URL = getWebSocketBaseUrl();
 
 // Batching configuration
 const BATCH_INTERVAL_MS = 100;

@@ -27,6 +27,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.hasError) {
+      const isDev = import.meta.env.DEV;
+
       return (
         <div style={{
           padding: '40px',
@@ -38,28 +40,42 @@ export class ErrorBoundary extends Component<Props, State> {
           <h1 style={{ color: '#ef4444', marginBottom: '20px' }}>
             Something went wrong
           </h1>
-          <pre style={{
-            backgroundColor: '#0f0f12',
-            padding: '20px',
-            borderRadius: '8px',
-            overflow: 'auto',
-            fontSize: '14px',
-            lineHeight: 1.5,
-          }}>
-            <strong>Error:</strong> {this.state.error?.message}
-            {'\n\n'}
-            <strong>Stack:</strong>
-            {'\n'}
-            {this.state.error?.stack}
-            {this.state.errorInfo && (
-              <>
-                {'\n\n'}
-                <strong>Component Stack:</strong>
-                {'\n'}
-                {this.state.errorInfo.componentStack}
-              </>
-            )}
-          </pre>
+          {isDev ? (
+            // Development: Show full error details for debugging
+            <pre style={{
+              backgroundColor: '#0f0f12',
+              padding: '20px',
+              borderRadius: '8px',
+              overflow: 'auto',
+              fontSize: '14px',
+              lineHeight: 1.5,
+            }}>
+              <strong>Error:</strong> {this.state.error?.message}
+              {'\n\n'}
+              <strong>Stack:</strong>
+              {'\n'}
+              {this.state.error?.stack}
+              {this.state.errorInfo && (
+                <>
+                  {'\n\n'}
+                  <strong>Component Stack:</strong>
+                  {'\n'}
+                  {this.state.errorInfo.componentStack}
+                </>
+              )}
+            </pre>
+          ) : (
+            // Production: Generic message without exposing implementation details
+            <p style={{
+              backgroundColor: '#0f0f12',
+              padding: '20px',
+              borderRadius: '8px',
+              fontSize: '16px',
+              color: '#9ca3af',
+            }}>
+              An unexpected error occurred. Please refresh the page or contact support if the problem persists.
+            </p>
+          )}
           <button
             onClick={() => window.location.reload()}
             style={{
