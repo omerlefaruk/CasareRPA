@@ -12,12 +12,24 @@ import {
   type RobotStatus,
   type ActivityEvent,
 } from '@/store/metricsStore';
+import {
+  RobotStatusSchema,
+  RobotBatchSchema,
+  FleetMetricsSchema,
+  QueueDepthSchema,
+  RobotEventSchema,
+  ScheduleEventSchema,
+  JobEventSchema,
+  safeParseMessage,
+} from '@/schemas/websocket';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
+// In production, VITE_WS_BASE_URL must be set. In development, fall back to localhost.
+const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ||
+  (import.meta.env.PROD ? '' : 'ws://localhost:8000');
 
 // Batching configuration
 const BATCH_INTERVAL_MS = 100;
@@ -25,6 +37,7 @@ const BATCH_INTERVAL_MS = 100;
 // Reconnect configuration (exponential backoff)
 const INITIAL_RECONNECT_DELAY_MS = 1000;
 const MAX_RECONNECT_DELAY_MS = 30000;
+const MAX_RECONNECT_ATTEMPTS = 10;
 
 // WebSocket endpoints
 const WS_ENDPOINTS = {
@@ -149,33 +162,32 @@ export function useWebSocketManager(): WebSocketManagerResult {
   const handleRobotStatusMessage = useCallback((data: unknown) => {
     if (!data || typeof data !== 'object') return;
 
-    const message = data as Record<string, unknown>;
-
-    // Handle single robot status update
-    if (message.robot_id && message.status) {
-      batchBuffer.current.robotStatuses.push(message as unknown as RobotStatus);
+    // Try to parse as single robot status (with Zod validation)
+    const singleStatus = safeParseMessage(RobotStatusSchema, data);
+    if (singleStatus) {
+      batchBuffer.current.robotStatuses.push(singleStatus as RobotStatus);
       return;
     }
 
-    // Handle batch of robot statuses
-    if (Array.isArray(message.robots)) {
-      for (const robot of message.robots) {
-        if (robot.robot_id && robot.status) {
-          batchBuffer.current.robotStatuses.push(robot as RobotStatus);
-        }
+    // Try to parse as batch of robot statuses
+    const batchStatus = safeParseMessage(RobotBatchSchema, data);
+    if (batchStatus) {
+      for (const robot of batchStatus.robots) {
+        batchBuffer.current.robotStatuses.push(robot as RobotStatus);
       }
       return;
     }
 
-    // Handle robot online/offline events
-    if (message.type === 'robot_online' || message.type === 'robot_offline') {
+    // Try to parse as robot event
+    const robotEvent = safeParseMessage(RobotEventSchema, data);
+    if (robotEvent) {
       const event: ActivityEvent = {
         id: crypto.randomUUID(),
-        type: message.type as 'robot_online' | 'robot_offline',
-        timestamp: (message.timestamp as string) || new Date().toISOString(),
-        title: message.type === 'robot_online' ? 'Robot Online' : 'Robot Offline',
-        details: `Robot ${message.robot_id} is now ${message.type === 'robot_online' ? 'online' : 'offline'}`,
-        robotId: message.robot_id as string,
+        type: robotEvent.type,
+        timestamp: robotEvent.timestamp || new Date().toISOString(),
+        title: robotEvent.type === 'robot_online' ? 'Robot Online' : 'Robot Offline',
+        details: `Robot ${robotEvent.robot_id} is now ${robotEvent.type === 'robot_online' ? 'online' : 'offline'}`,
+        robotId: robotEvent.robot_id,
       };
       batchBuffer.current.activityEvents.push(event);
     }
@@ -184,29 +196,30 @@ export function useWebSocketManager(): WebSocketManagerResult {
   const handleQueueMetricsMessage = useCallback((data: unknown) => {
     if (!data || typeof data !== 'object') return;
 
-    const message = data as Record<string, unknown>;
-
-    // Handle fleet metrics update
-    if (typeof message.total_robots === 'number') {
-      batchBuffer.current.fleetMetrics = message as unknown as FleetMetrics;
+    // Try to parse as fleet metrics (with Zod validation)
+    const fleetMetrics = safeParseMessage(FleetMetricsSchema, data);
+    if (fleetMetrics) {
+      batchBuffer.current.fleetMetrics = fleetMetrics as FleetMetrics;
       return;
     }
 
-    // Handle queue depth update
-    if (typeof message.queue_depth === 'number') {
-      batchBuffer.current.queueDepth = message.queue_depth;
+    // Try to parse as queue depth update
+    const queueDepth = safeParseMessage(QueueDepthSchema, data);
+    if (queueDepth) {
+      batchBuffer.current.queueDepth = queueDepth.queue_depth;
       return;
     }
 
-    // Handle schedule triggered events
-    if (message.type === 'schedule_triggered') {
+    // Try to parse as schedule triggered event
+    const scheduleEvent = safeParseMessage(ScheduleEventSchema, data);
+    if (scheduleEvent) {
       const event: ActivityEvent = {
         id: crypto.randomUUID(),
         type: 'schedule_triggered',
-        timestamp: (message.timestamp as string) || new Date().toISOString(),
+        timestamp: scheduleEvent.timestamp || new Date().toISOString(),
         title: 'Schedule Triggered',
-        details: message.schedule_name as string,
-        jobId: message.job_id as string,
+        details: scheduleEvent.schedule_name,
+        jobId: scheduleEvent.job_id,
       };
       batchBuffer.current.activityEvents.push(event);
     }
@@ -215,19 +228,17 @@ export function useWebSocketManager(): WebSocketManagerResult {
   const handleLiveJobsMessage = useCallback((data: unknown) => {
     if (!data || typeof data !== 'object') return;
 
-    const message = data as Record<string, unknown>;
-    const messageType = message.type as string;
-
-    // Map job events to activity events
-    if (messageType === 'job_started' || messageType === 'job_completed' || messageType === 'job_failed') {
+    // Try to parse as job event (with Zod validation)
+    const jobEvent = safeParseMessage(JobEventSchema, data);
+    if (jobEvent) {
       const event: ActivityEvent = {
         id: crypto.randomUUID(),
-        type: messageType as 'job_started' | 'job_completed' | 'job_failed',
-        timestamp: (message.timestamp as string) || new Date().toISOString(),
-        title: formatJobEventTitle(messageType),
-        details: message.workflow_name as string | undefined,
-        robotId: message.robot_id as string | undefined,
-        jobId: message.job_id as string,
+        type: jobEvent.type,
+        timestamp: jobEvent.timestamp || new Date().toISOString(),
+        title: formatJobEventTitle(jobEvent.type),
+        details: jobEvent.workflow_name,
+        robotId: jobEvent.robot_id,
+        jobId: jobEvent.job_id,
       };
       batchBuffer.current.activityEvents.push(event);
     }
@@ -293,6 +304,12 @@ export function useWebSocketManager(): WebSocketManagerResult {
       clearTimeout(state.reconnectTimeout);
     }
 
+    // Stop reconnecting after max attempts
+    if (state.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      console.warn(`[WSManager] Max reconnect attempts (${MAX_RECONNECT_ATTEMPTS}) reached for ${endpoint}. Use reconnect() to retry.`);
+      return;
+    }
+
     // Calculate delay with exponential backoff
     const delay = Math.min(
       INITIAL_RECONNECT_DELAY_MS * Math.pow(2, state.reconnectAttempts),
@@ -300,7 +317,7 @@ export function useWebSocketManager(): WebSocketManagerResult {
     );
 
     if (import.meta.env.DEV) {
-      console.log(`[WSManager] Reconnecting ${endpoint} in ${delay}ms (attempt ${state.reconnectAttempts + 1})`);
+      console.log(`[WSManager] Reconnecting ${endpoint} in ${delay}ms (attempt ${state.reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
     }
 
     state.reconnectTimeout = setTimeout(() => {
