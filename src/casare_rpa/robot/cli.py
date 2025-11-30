@@ -22,6 +22,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# Suppress Qt DPI awareness warning (Playwright sets it first)
+os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.window=false")
+
 import typer
 from dotenv import load_dotenv
 from loguru import logger
@@ -75,6 +78,60 @@ def _get_postgres_url() -> str:
         console.print("[yellow]Warning: DB_PASSWORD not set in environment[/yellow]")
 
     return f"postgresql://{user}:{password}@{host}:{port}/{name}"
+
+
+def _ensure_playwright_browsers() -> bool:
+    """
+    Check if Playwright browsers are installed, auto-install if missing.
+
+    Returns:
+        True if browsers are available, False if installation failed.
+    """
+    import subprocess
+
+    try:
+        from playwright.sync_api import sync_playwright
+
+        # Try to launch browser to check if binaries exist
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            browser.close()
+        return True
+
+    except Exception as e:
+        error_msg = str(e)
+        if "Executable doesn't exist" in error_msg or "playwright install" in error_msg:
+            console.print(
+                "[yellow]Playwright browsers not found. Installing automatically...[/yellow]"
+            )
+            try:
+                # Run playwright install chromium
+                result = subprocess.run(
+                    [sys.executable, "-m", "playwright", "install", "chromium"],
+                    capture_output=True,
+                    text=True,
+                    timeout=300,  # 5 minute timeout for download
+                )
+                if result.returncode == 0:
+                    console.print(
+                        "[green]Playwright browsers installed successfully![/green]"
+                    )
+                    return True
+                else:
+                    console.print(
+                        f"[red]Failed to install browsers: {result.stderr}[/red]"
+                    )
+                    return False
+            except subprocess.TimeoutExpired:
+                console.print("[red]Browser installation timed out[/red]")
+                return False
+            except Exception as install_error:
+                console.print(f"[red]Failed to install browsers: {install_error}[/red]")
+                return False
+        else:
+            # Some other Playwright error
+            logger.warning(f"Playwright check failed: {e}")
+            return True  # Continue anyway, might work for non-browser workflows
 
 
 def _write_pid_file(robot_id: str) -> Path:
@@ -274,6 +331,10 @@ def start(
         console.print("  DB_PASSWORD=your_password")
         console.print("\nOr set PGQUEUER_DB_URL directly.")
         raise typer.Exit(code=1)
+
+    # Check and auto-install Playwright browsers if needed
+    console.print("[dim]Checking Playwright browsers...[/dim]")
+    _ensure_playwright_browsers()
 
     # Generate robot ID if not provided
     import socket
