@@ -114,9 +114,18 @@ def calculate_next_run(
 # =========================
 # In-Memory Storage (Temporary)
 # =========================
-# TODO: Replace with database storage
+# WARNING: This is temporary in-memory storage.
+# - Data is lost on restart
+# - Not suitable for distributed deployments
+# - Replace with database storage (PostgreSQL) for production
+#
+# Thread Safety: Uses asyncio.Lock for safe concurrent access.
 
-_schedules: dict = {}  # schedule_id -> schedule_data
+import asyncio
+from typing import Dict, Any
+
+_schedules: Dict[str, Dict[str, Any]] = {}  # schedule_id -> schedule_data
+_schedules_lock = asyncio.Lock()  # Async lock for thread-safe access
 
 
 # =========================
@@ -167,8 +176,9 @@ async def create_schedule(
             "metadata": request.metadata,
         }
 
-        # Store in memory (TODO: store in database)
-        _schedules[schedule_id] = schedule_data
+        # Thread-safe storage with async lock
+        async with _schedules_lock:
+            _schedules[schedule_id] = schedule_data
 
         # TODO: Register with APScheduler
         logger.info(
@@ -207,9 +217,11 @@ async def list_schedules(
         List of schedules
     """
     try:
-        schedules = list(_schedules.values())
+        # Thread-safe read with async lock
+        async with _schedules_lock:
+            schedules = list(_schedules.values())
 
-        # Apply filters
+        # Apply filters (on local copy, no lock needed)
         if workflow_id:
             schedules = [s for s in schedules if s["workflow_id"] == workflow_id]
 
@@ -245,7 +257,8 @@ async def get_schedule(
     Returns:
         ScheduleResponse
     """
-    schedule_data = _schedules.get(schedule_id)
+    async with _schedules_lock:
+        schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
         raise HTTPException(
@@ -269,17 +282,18 @@ async def enable_schedule(
     Returns:
         Updated ScheduleResponse
     """
-    schedule_data = _schedules.get(schedule_id)
+    async with _schedules_lock:
+        schedule_data = _schedules.get(schedule_id)
 
-    if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        if not schedule_data:
+            raise HTTPException(
+                status_code=404, detail=f"Schedule not found: {schedule_id}"
+            )
 
-    # Update schedule
-    schedule_data["enabled"] = True
-    schedule_data["next_run"] = calculate_next_run(schedule_data["cron_expression"])
-    schedule_data["updated_at"] = datetime.now(timezone.utc)
+        # Update schedule (while holding lock)
+        schedule_data["enabled"] = True
+        schedule_data["next_run"] = calculate_next_run(schedule_data["cron_expression"])
+        schedule_data["updated_at"] = datetime.now(timezone.utc)
 
     # TODO: Re-register with APScheduler
     logger.info("Schedule enabled: {}", schedule_id)
@@ -301,17 +315,18 @@ async def disable_schedule(
     Returns:
         Updated ScheduleResponse
     """
-    schedule_data = _schedules.get(schedule_id)
+    async with _schedules_lock:
+        schedule_data = _schedules.get(schedule_id)
 
-    if not schedule_data:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+        if not schedule_data:
+            raise HTTPException(
+                status_code=404, detail=f"Schedule not found: {schedule_id}"
+            )
 
-    # Update schedule
-    schedule_data["enabled"] = False
-    schedule_data["next_run"] = None
-    schedule_data["updated_at"] = datetime.now(timezone.utc)
+        # Update schedule (while holding lock)
+        schedule_data["enabled"] = False
+        schedule_data["next_run"] = None
+        schedule_data["updated_at"] = datetime.now(timezone.utc)
 
     # TODO: Unregister from APScheduler
     logger.info("Schedule disabled: {}", schedule_id)
@@ -333,13 +348,14 @@ async def delete_schedule(
     Returns:
         Success message
     """
-    if schedule_id not in _schedules:
-        raise HTTPException(
-            status_code=404, detail=f"Schedule not found: {schedule_id}"
-        )
+    async with _schedules_lock:
+        if schedule_id not in _schedules:
+            raise HTTPException(
+                status_code=404, detail=f"Schedule not found: {schedule_id}"
+            )
 
-    # Remove from storage
-    del _schedules[schedule_id]
+        # Remove from storage (while holding lock)
+        del _schedules[schedule_id]
 
     # TODO: Unregister from APScheduler
     logger.info("Schedule deleted: {}", schedule_id)
@@ -364,7 +380,8 @@ async def trigger_schedule_now(
     Returns:
         Job ID of triggered execution
     """
-    schedule_data = _schedules.get(schedule_id)
+    async with _schedules_lock:
+        schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
         raise HTTPException(

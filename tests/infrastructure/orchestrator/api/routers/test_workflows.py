@@ -549,10 +549,12 @@ class TestUploadWorkflowEndpoint:
         """Test successful file upload."""
         import orjson
 
-        # Create mock file
+        # Create mock file with required security attributes
         file_content = orjson.dumps({"workflow_json": sample_workflow_json})
         mock_file = MagicMock()
         mock_file.filename = "test_workflow.json"
+        mock_file.content_type = "application/json"
+        mock_file.size = len(file_content)
         mock_file.read = AsyncMock(return_value=file_content)
 
         with patch.dict(
@@ -587,9 +589,12 @@ class TestUploadWorkflowEndpoint:
     @pytest.mark.asyncio
     async def test_upload_invalid_json(self) -> None:
         """Test rejection of invalid JSON content."""
+        invalid_content = b"not valid json {"
         mock_file = MagicMock()
         mock_file.filename = "test.json"
-        mock_file.read = AsyncMock(return_value=b"not valid json {")
+        mock_file.content_type = "application/json"
+        mock_file.size = len(invalid_content)
+        mock_file.read = AsyncMock(return_value=invalid_content)
 
         with pytest.raises(HTTPException) as exc_info:
             await upload_workflow(file=mock_file)
