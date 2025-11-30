@@ -4,6 +4,7 @@ REST API endpoints for metrics and monitoring.
 Provides fleet, robot, job, and analytics data for the React dashboard.
 """
 
+from datetime import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, Request
 from loguru import logger
@@ -17,6 +18,8 @@ from ..models import (
     JobSummary,
     JobDetails,
     AnalyticsSummary,
+    ActivityEvent,
+    ActivityResponse,
 )
 from ..dependencies import get_metrics_collector
 
@@ -243,3 +246,54 @@ async def get_analytics(
     except Exception as e:
         logger.error(f"Failed to fetch analytics: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch analytics")
+
+
+@router.get("/metrics/activity", response_model=ActivityResponse)
+@limiter.limit("60/minute")
+async def get_activity(
+    request: Request,
+    limit: int = Query(
+        default=50, ge=1, le=200, description="Number of events to return"
+    ),
+    since: Optional[datetime] = Query(
+        default=None, description="Only return events after this timestamp"
+    ),
+    event_type: Optional[str] = Query(
+        default=None,
+        description="Filter by event type: job_started, job_completed, job_failed, robot_online, robot_offline, schedule_triggered",
+    ),
+):
+    """
+    Fetch historical activity events for the dashboard.
+
+    Combines:
+    - Recent job status changes (started, completed, failed)
+    - Robot status changes (online, offline)
+    - Schedule triggers
+
+    Returns events sorted by timestamp descending.
+
+    Query Parameters:
+        - limit: Max number of events (default: 50, max: 200)
+        - since: Only return events after this timestamp (ISO format)
+        - event_type: Filter by specific event type
+
+    Rate Limit: 60 requests/minute per IP
+    """
+    logger.debug(
+        f"Fetching activity events (limit={limit}, since={since}, event_type={event_type})"
+    )
+
+    collector = get_metrics_collector(request)
+
+    try:
+        data = await collector.get_activity_events_async(
+            limit=limit,
+            since=since,
+            event_type=event_type,
+        )
+        events = [ActivityEvent(**event) for event in data["events"]]
+        return ActivityResponse(events=events, total=data["total"])
+    except Exception as e:
+        logger.error(f"Failed to fetch activity events: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch activity events")

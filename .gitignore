@@ -8,6 +8,11 @@
 *.key
 credentials.json
 secrets.json
+*.pgpass
+*.pgpass.conf
+pgpass.conf
+%APPDATA%/
+**/pgpass*
 
 # Python
 __pycache__/
@@ -89,3 +94,4 @@ dist/
 dist2/
 installer/output/
 *.exe
+nul

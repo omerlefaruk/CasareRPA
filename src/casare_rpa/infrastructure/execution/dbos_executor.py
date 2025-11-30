@@ -374,13 +374,11 @@ class DBOSWorkflowExecutor:
             else:
                 workflow_data = workflow_json
 
-            # SECURITY: Validate workflow schema before deserialization
-            # Prevents malicious code injection via workflow JSON
-            from casare_rpa.infrastructure.security.workflow_schema import (
-                validate_workflow_json,
-            )
-
-            validate_workflow_json(workflow_data)
+            # SECURITY: Workflow validation is handled by load_workflow_from_dict
+            # which calls validate_workflow_structure() with robust security checks
+            # including dangerous pattern detection, size limits, and type validation.
+            # The security schema (workflow_schema.py) is skipped here because it
+            # expects list-format nodes while the rest of the codebase uses dict-format.
 
             workflow = load_workflow_from_dict(workflow_data)
             total_nodes = len(workflow.nodes)

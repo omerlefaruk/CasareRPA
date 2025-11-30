@@ -625,6 +625,20 @@ class PgQueuerConsumer:
         now = datetime.now(timezone.utc)
 
         for row in rows:
+            # Parse variables - handle both dict (JSONB auto-converted) and string
+            raw_variables = row["variables"]
+            if raw_variables is None:
+                variables = {}
+            elif isinstance(raw_variables, str):
+                import orjson
+
+                try:
+                    variables = orjson.loads(raw_variables)
+                except Exception:
+                    variables = {}
+            else:
+                variables = raw_variables
+
             job = ClaimedJob(
                 job_id=str(row["id"]),
                 workflow_id=row["workflow_id"],
@@ -632,7 +646,7 @@ class PgQueuerConsumer:
                 workflow_json=row["workflow_json"],
                 priority=row["priority"],
                 environment=row["environment"],
-                variables=row["variables"] or {},
+                variables=variables,
                 created_at=row["created_at"],
                 claimed_at=now,
                 retry_count=row["retry_count"],

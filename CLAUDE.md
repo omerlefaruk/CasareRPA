@@ -3,7 +3,46 @@
     <rules>
       1. Be EXTREMELY concise. Sacrifice grammar.
       2. NO estimated effort/time/complexity ratings.
+      3. REUSE > CREATION. Extend existing patterns.
+      4. ALWAYS use .brain/ for context and plans.
     </rules>
+
+    <brain location=".brain/">
+      <file name="activeContext.md">Current session state. Update after major tasks.</file>
+      <file name="systemPatterns.md">Architecture patterns. Update when discovering new ones.</file>
+      <file name="projectRules.md">Coding standards. Source of truth.</file>
+      <file name="plans/{feature}.md">Feature plans. ALWAYS create here.</file>
+    </brain>
+
+    <workflow>
+      PLAN → IMPLEMENT → TEST → REVIEW → QA → APPROVAL → DOCS
+                ↑                    │
+                └── (if ISSUES) ─────┘
+    </workflow>
+
+    <agents>
+      <!-- Core (mandatory chain) -->
+      <agent name="explore">Codebase search. Use first.</agent>
+      <agent name="architect">Implementation. After: quality → reviewer</agent>
+      <agent name="quality">Tests + perf. After: reviewer</agent>
+      <agent name="reviewer">Code review gate. MANDATORY. Output: APPROVED | ISSUES</agent>
+
+      <!-- Specialist -->
+      <agent name="security">Security audits</agent>
+      <agent name="docs">Documentation</agent>
+      <agent name="refactor">Code cleanup. After: quality → reviewer</agent>
+      <agent name="ui">Canvas UI</agent>
+      <agent name="integrations">External APIs</agent>
+      <agent name="researcher">Research, migrations</agent>
+      <agent name="pm">Product scope</agent>
+    </agents>
+
+    <agent_flow>
+      implementation: architect → quality → reviewer (loop if ISSUES)
+      refactoring: refactor → quality → reviewer (loop if ISSUES)
+      research: explore | researcher
+    </agent_flow>
+
     <cmds>
       <run>python run.py</run>
       <install>pip install -e .</install>

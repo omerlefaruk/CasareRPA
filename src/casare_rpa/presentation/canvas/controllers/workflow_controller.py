@@ -589,9 +589,8 @@ class WorkflowController(BaseController):
             self.main_window.show_status("No workflow to submit", 3000)
             return
 
-        # Convert nodes dict to list (API expects list format)
-        if isinstance(workflow_json.get("nodes"), dict):
-            workflow_json["nodes"] = list(workflow_json["nodes"].values())
+        # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
+        # keyed by node_id. API accepts both dict and list formats.
 
         self.main_window.show_status("Submitting workflow to robot...", 3000)
 
@@ -684,9 +683,8 @@ class WorkflowController(BaseController):
             self.main_window.show_status("No workflow to submit", 3000)
             return
 
-        # Convert nodes dict to list (API expects list format)
-        if isinstance(workflow_json.get("nodes"), dict):
-            workflow_json["nodes"] = list(workflow_json["nodes"].values())
+        # Note: Keep nodes as dict - Robot's workflow_loader expects dict format
+        # keyed by node_id. API accepts both dict and list formats.
 
         self.main_window.show_status("Submitting workflow for internet robots...", 3000)
 

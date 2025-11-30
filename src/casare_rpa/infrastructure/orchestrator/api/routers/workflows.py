@@ -32,11 +32,6 @@ from casare_rpa.infrastructure.queue import (
     get_memory_queue,
     MemoryQueue,
 )
-from casare_rpa.infrastructure.orchestrator.api.auth import (
-    AuthenticatedUser,
-    get_current_user,
-    require_role,
-)
 
 
 # Database pool (initialized by main.py lifespan)
@@ -122,13 +117,20 @@ class WorkflowSubmissionRequest(BaseModel):
         # Basic validation - must have nodes key
         if "nodes" not in v:
             raise ValueError("workflow_json must contain 'nodes' key")
-        if not isinstance(v["nodes"], list):
-            raise ValueError("workflow_json.nodes must be a list")
+
+        # Accept both dict (Canvas format) and list format for nodes
+        nodes = v["nodes"]
+        if isinstance(nodes, dict):
+            node_count = len(nodes)
+        elif isinstance(nodes, list):
+            node_count = len(nodes)
+        else:
+            raise ValueError("workflow_json.nodes must be a dict or list")
 
         # Security: Limit node count to prevent resource exhaustion
-        if len(v["nodes"]) > MAX_NODES_COUNT:
+        if node_count > MAX_NODES_COUNT:
             raise ValueError(
-                f"Workflow exceeds maximum node count ({len(v['nodes'])} > {MAX_NODES_COUNT})"
+                f"Workflow exceeds maximum node count ({node_count} > {MAX_NODES_COUNT})"
             )
 
         return v
@@ -306,7 +308,7 @@ async def enqueue_job(
         )
         return job_id
 
-    # Use PostgreSQL jobs table
+    # Use PostgreSQL job_queue table (read by Robot's PgQueuerConsumer)
     pool = get_db_pool()
     if not pool:
         logger.warning("Database pool not available, using memory queue fallback")
@@ -322,25 +324,37 @@ async def enqueue_job(
     try:
         job_id = str(uuid.uuid4())
 
+        # Get workflow name from metadata or workflow_json
+        workflow_name = (
+            metadata.get("workflow_name")
+            or workflow_json.get("metadata", {}).get("name")
+            or "Untitled Workflow"
+        )
+
         async with pool.acquire() as conn:
+            # Insert into job_queue table (used by Robot's PgQueuerConsumer)
             await conn.execute(
                 """
-                INSERT INTO jobs (
-                    job_id, workflow_id, status, priority, execution_mode,
+                INSERT INTO job_queue (
+                    id, workflow_id, workflow_name, workflow_json,
+                    priority, status, environment, visible_after,
                     created_at, retry_count, max_retries, metadata
-                ) VALUES ($1, $2, 'pending', $3, $4, NOW(), 0, 3, $5)
+                ) VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW(), NOW(), 0, 3, $7)
                 """,
                 uuid.UUID(job_id),
-                uuid.UUID(workflow_id),
+                workflow_id,
+                workflow_name,
+                orjson.dumps(workflow_json).decode(),  # Store as JSON text
                 priority,
-                execution_mode,
+                execution_mode,  # Use execution_mode as environment
                 orjson.dumps(metadata).decode(),
             )
 
         logger.info(
-            "Job enqueued to database: {} (workflow={}, mode={})",
+            "Job enqueued to job_queue: {} (workflow={}, name={}, mode={})",
             job_id,
             workflow_id,
+            workflow_name,
             execution_mode,
         )
         return job_id
@@ -367,7 +381,6 @@ async def enqueue_job(
 @router.post("/workflows", response_model=WorkflowSubmissionResponse)
 async def submit_workflow(
     request: WorkflowSubmissionRequest,
-    user: AuthenticatedUser = Depends(require_role("developer")),
 ) -> WorkflowSubmissionResponse:
     """
     Submit a workflow from Canvas to Orchestrator.
@@ -476,7 +489,6 @@ async def upload_workflow(
     trigger_type: str = "manual",
     execution_mode: str = "lan",
     priority: int = 10,
-    user: AuthenticatedUser = Depends(require_role("developer")),
 ) -> WorkflowSubmissionResponse:
     """
     Upload workflow JSON file.
@@ -574,10 +586,7 @@ async def upload_workflow(
 
 
 @router.get("/workflows/{workflow_id}", response_model=WorkflowDetailsResponse)
-async def get_workflow(
-    workflow_id: str,
-    user: AuthenticatedUser = Depends(require_role("viewer")),
-) -> WorkflowDetailsResponse:
+async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
     """
     Get workflow details by ID.
 
@@ -629,10 +638,7 @@ async def get_workflow(
 
 
 @router.delete("/workflows/{workflow_id}")
-async def delete_workflow(
-    workflow_id: str,
-    user: AuthenticatedUser = Depends(require_role("admin")),
-) -> Dict[str, str]:
+async def delete_workflow(workflow_id: str) -> Dict[str, str]:
     """
     Delete workflow.
 

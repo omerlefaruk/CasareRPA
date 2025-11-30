@@ -6,10 +6,19 @@ job execution tracking, and analytics.
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+# Try project root first, then current directory
+project_root = Path(__file__).resolve().parents[5]  # Navigate up to CasareRPA root
+env_path = project_root / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"[API] Loaded .env from: {env_path}")
+else:
+    load_dotenv()  # Fallback to current directory
+    print("[API] Using .env from current directory (fallback)")
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -101,6 +110,15 @@ async def lifespan(app: FastAPI):
 
     # Initialize database connection pool
     await _init_database_pool(app)
+
+    # Set database pool for routers that need direct DB access
+    if app.state.db_pool:
+        from .routers.workflows import set_db_pool as set_workflows_db_pool
+        from .routers.schedules import set_db_pool as set_schedules_db_pool
+
+        set_workflows_db_pool(app.state.db_pool)
+        set_schedules_db_pool(app.state.db_pool)
+        logger.info("Database pool set for workflows and schedules routers")
 
     # Initialize metrics collectors (get_rpa_metrics initializes the singleton)
     from casare_rpa.infrastructure.observability.metrics import (

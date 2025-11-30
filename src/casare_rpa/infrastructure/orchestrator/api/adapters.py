@@ -709,3 +709,280 @@ class MonitoringDataAdapter:
         except Exception as e:
             logger.error(f"Database analytics query failed: {e}")
             return self.get_analytics()
+
+    async def get_activity_events_async(
+        self,
+        limit: int = 50,
+        since: Optional[datetime] = None,
+        event_type: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get historical activity events for the dashboard.
+
+        Combines job status changes and robot status changes into a unified
+        activity feed sorted by timestamp descending.
+
+        Args:
+            limit: Max events to return (1-200, default 50)
+            since: Only return events after this timestamp
+            event_type: Filter by event type (job_started, job_completed, etc.)
+
+        Returns:
+            Dict matching ActivityResponse Pydantic model with events and total
+        """
+        if not self._db_pool:
+            logger.warning("No database pool - returning empty activity feed")
+            return {"events": [], "total": 0}
+
+        limit = max(1, min(200, limit))
+
+        valid_event_types = frozenset(
+            {
+                "job_started",
+                "job_completed",
+                "job_failed",
+                "robot_online",
+                "robot_offline",
+                "schedule_triggered",
+            }
+        )
+
+        if event_type and event_type not in valid_event_types:
+            logger.warning(f"Invalid event_type filter: {event_type}")
+            return {"events": [], "total": 0}
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                events: List[Dict[str, Any]] = []
+
+                # Query job events
+                job_events = await self._query_job_activity_events(
+                    conn, limit, since, event_type
+                )
+                events.extend(job_events)
+
+                # Query robot status change events
+                robot_events = await self._query_robot_activity_events(
+                    conn, limit, since, event_type
+                )
+                events.extend(robot_events)
+
+                # Sort combined events by timestamp descending
+                events.sort(key=lambda e: e["timestamp"], reverse=True)
+
+                # Apply limit after combining
+                total = len(events)
+                events = events[:limit]
+
+                logger.debug(f"Activity feed: {len(events)} events (total: {total})")
+
+                return {"events": events, "total": total}
+
+        except Exception as e:
+            logger.error(f"Failed to fetch activity events: {e}")
+            return {"events": [], "total": 0}
+
+    async def _query_job_activity_events(
+        self,
+        conn: Any,
+        limit: int,
+        since: Optional[datetime],
+        event_type: Optional[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Query job-related activity events from pgqueuer_jobs.
+
+        Generates events for job status transitions (started, completed, failed).
+        """
+        # Map event_type filter to status conditions
+        status_filter: Optional[str] = None
+        if event_type == "job_started":
+            status_filter = "claimed"
+        elif event_type == "job_completed":
+            status_filter = "completed"
+        elif event_type == "job_failed":
+            status_filter = "failed"
+        elif event_type in ("robot_online", "robot_offline", "schedule_triggered"):
+            # These are not job events
+            return []
+
+        query_parts = [
+            """
+            SELECT
+                id::text AS job_id,
+                payload->>'workflow_id' AS workflow_id,
+                payload->>'workflow_name' AS workflow_name,
+                claimed_by AS robot_id,
+                status,
+                created_at,
+                claimed_at,
+                completed_at
+            FROM pgqueuer_jobs
+            WHERE status IN ('claimed', 'completed', 'failed')
+            """
+        ]
+
+        params: List[Any] = []
+        param_idx = 1
+
+        if status_filter:
+            query_parts.append(f"AND status = ${param_idx}")
+            params.append(status_filter)
+            param_idx += 1
+
+        if since:
+            query_parts.append(f"AND created_at >= ${param_idx}")
+            params.append(since)
+            param_idx += 1
+
+        query_parts.append(f"ORDER BY created_at DESC LIMIT ${param_idx}")
+        params.append(limit * 2)  # Fetch extra to account for merging
+
+        query = "\n".join(query_parts)
+        rows = await conn.fetch(query, *params)
+
+        events: List[Dict[str, Any]] = []
+
+        for row in rows:
+            job_id = row["job_id"]
+            workflow_name = (
+                row["workflow_name"] or row["workflow_id"] or "Unknown Workflow"
+            )
+            robot_id = row["robot_id"]
+            status = row["status"]
+
+            if status == "claimed" and row["claimed_at"]:
+                events.append(
+                    {
+                        "id": f"job_started_{job_id}",
+                        "type": "job_started",
+                        "timestamp": row["claimed_at"],
+                        "title": f"Job started: {workflow_name}",
+                        "details": f"Claimed by robot {robot_id}" if robot_id else None,
+                        "robot_id": robot_id,
+                        "job_id": job_id,
+                    }
+                )
+            elif status == "completed" and row["completed_at"]:
+                duration_ms = None
+                if row["claimed_at"] and row["completed_at"]:
+                    delta = row["completed_at"] - row["claimed_at"]
+                    duration_ms = int(delta.total_seconds() * 1000)
+                duration_str = f" in {duration_ms}ms" if duration_ms else ""
+                events.append(
+                    {
+                        "id": f"job_completed_{job_id}",
+                        "type": "job_completed",
+                        "timestamp": row["completed_at"],
+                        "title": f"Job completed: {workflow_name}",
+                        "details": f"Executed by {robot_id}{duration_str}"
+                        if robot_id
+                        else None,
+                        "robot_id": robot_id,
+                        "job_id": job_id,
+                    }
+                )
+            elif status == "failed" and row["completed_at"]:
+                events.append(
+                    {
+                        "id": f"job_failed_{job_id}",
+                        "type": "job_failed",
+                        "timestamp": row["completed_at"],
+                        "title": f"Job failed: {workflow_name}",
+                        "details": f"Failed on robot {robot_id}" if robot_id else None,
+                        "robot_id": robot_id,
+                        "job_id": job_id,
+                    }
+                )
+
+        return events
+
+    async def _query_robot_activity_events(
+        self,
+        conn: Any,
+        limit: int,
+        since: Optional[datetime],
+        event_type: Optional[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Query robot status change events from robots table.
+
+        Detects online/offline transitions based on status changes.
+        """
+        if event_type and event_type not in ("robot_online", "robot_offline"):
+            return []
+
+        # Check if robots table has status_changed_at column
+        # Fall back to using last_seen for status inference
+        query_parts = [
+            """
+            SELECT
+                robot_id,
+                hostname,
+                status,
+                last_seen,
+                COALESCE(
+                    (metrics->>'status_changed_at')::timestamptz,
+                    last_seen
+                ) AS status_changed_at
+            FROM robots
+            WHERE status IN ('idle', 'busy', 'offline')
+            """
+        ]
+
+        params: List[Any] = []
+        param_idx = 1
+
+        if event_type == "robot_online":
+            query_parts.append("AND status IN ('idle', 'busy')")
+        elif event_type == "robot_offline":
+            query_parts.append("AND status = 'offline'")
+
+        if since:
+            query_parts.append(f"AND last_seen >= ${param_idx}")
+            params.append(since)
+            param_idx += 1
+
+        query_parts.append(f"ORDER BY last_seen DESC LIMIT ${param_idx}")
+        params.append(limit)
+
+        query = "\n".join(query_parts)
+        rows = await conn.fetch(query, *params)
+
+        events: List[Dict[str, Any]] = []
+
+        for row in rows:
+            robot_id = row["robot_id"]
+            hostname = row["hostname"] or robot_id
+            status = row["status"]
+            timestamp = row["status_changed_at"] or row["last_seen"]
+
+            if status == "offline":
+                events.append(
+                    {
+                        "id": f"robot_offline_{robot_id}_{int(timestamp.timestamp())}",
+                        "type": "robot_offline",
+                        "timestamp": timestamp,
+                        "title": f"Robot offline: {hostname}",
+                        "details": f"Robot {robot_id} stopped responding",
+                        "robot_id": robot_id,
+                        "job_id": None,
+                    }
+                )
+            elif status in ("idle", "busy"):
+                # For online events, we only include if recently seen
+                now = datetime.now(timezone.utc)
+                if (now - timestamp).total_seconds() < 300:  # Last 5 minutes
+                    events.append(
+                        {
+                            "id": f"robot_online_{robot_id}_{int(timestamp.timestamp())}",
+                            "type": "robot_online",
+                            "timestamp": timestamp,
+                            "title": f"Robot online: {hostname}",
+                            "details": f"Robot {robot_id} is now {status}",
+                            "robot_id": robot_id,
+                            "job_id": None,
+                        }
+                    )
+
+        return events
