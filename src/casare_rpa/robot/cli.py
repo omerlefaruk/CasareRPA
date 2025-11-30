@@ -4,12 +4,13 @@ CasareRPA Robot CLI
 Command-line interface for managing the Robot Agent.
 
 Commands:
-    start   - Start the robot agent with configuration
+    start   - Start the robot agent with PostgreSQL backend
     stop    - Gracefully stop a running robot by ID
     status  - Show robot status and current jobs
 
 Usage:
-    python -m casare_rpa.robot.cli start --config config/robot.yaml
+    python -m casare_rpa.robot.cli start
+    python -m casare_rpa.robot.cli start --verbose
     python -m casare_rpa.robot.cli stop --robot-id worker-01
     python -m casare_rpa.robot.cli status
 """
@@ -22,19 +23,20 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from dotenv import load_dotenv
 from loguru import logger
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich import box
 
-# Import config directly to avoid circular imports via __init__.py
-from casare_rpa.robot.config import RobotConfig, get_persistent_robot_id
+# Load environment variables
+load_dotenv()
 
 
 app = typer.Typer(
     name="robot",
-    help="CasareRPA Robot Agent CLI - Manage distributed workflow execution",
+    help="CasareRPA Robot Agent CLI - Distributed workflow execution with PostgreSQL",
     add_completion=False,
 )
 
@@ -43,19 +45,40 @@ console = Console()
 
 # Global state for signal handling
 _shutdown_event: Optional[asyncio.Event] = None
-_agent = None  # Type: Optional[RobotAgent], but avoid import at module level
+_agent = None
+
+
+def _get_postgres_url() -> str:
+    """
+    Build PostgreSQL connection URL from environment variables.
+
+    Returns:
+        PostgreSQL connection string.
+    """
+    # Check for direct URL first
+    url = (
+        os.getenv("PGQUEUER_DB_URL")
+        or os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+    )
+    if url:
+        return url
+
+    # Build from individual components
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "5432")
+    name = os.getenv("DB_NAME", "casare_rpa")
+    user = os.getenv("DB_USER", "casare_user")
+    password = os.getenv("DB_PASSWORD", "")
+
+    if not password:
+        console.print("[yellow]Warning: DB_PASSWORD not set in environment[/yellow]")
+
+    return f"postgresql://{user}:{password}@{host}:{port}/{name}"
 
 
 def _write_pid_file(robot_id: str) -> Path:
-    """
-    Write PID file for the running robot.
-
-    Args:
-        robot_id: Robot identifier.
-
-    Returns:
-        Path to the PID file.
-    """
+    """Write PID file for the running robot."""
     pid_dir = Path.home() / ".casare_rpa"
     pid_dir.mkdir(parents=True, exist_ok=True)
     pid_file = pid_dir / f"robot_{robot_id}.pid"
@@ -64,12 +87,7 @@ def _write_pid_file(robot_id: str) -> Path:
 
 
 def _remove_pid_file(robot_id: str) -> None:
-    """
-    Remove PID file for the robot.
-
-    Args:
-        robot_id: Robot identifier.
-    """
+    """Remove PID file for the robot."""
     pid_file = Path.home() / ".casare_rpa" / f"robot_{robot_id}.pid"
     try:
         if pid_file.exists():
@@ -79,13 +97,7 @@ def _remove_pid_file(robot_id: str) -> None:
 
 
 def _write_status_file(robot_id: str, status_data: dict) -> None:
-    """
-    Write status file for the robot.
-
-    Args:
-        robot_id: Robot identifier.
-        status_data: Status dictionary to write.
-    """
+    """Write status file for the robot."""
     import orjson
 
     status_dir = Path.home() / ".casare_rpa"
@@ -98,17 +110,11 @@ def _write_status_file(robot_id: str, status_data: dict) -> None:
 
 
 def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
-    """
-    Setup signal handlers for graceful shutdown.
-
-    Args:
-        loop: The asyncio event loop.
-    """
+    """Setup signal handlers for graceful shutdown."""
     global _shutdown_event
     _shutdown_event = asyncio.Event()
 
     def signal_handler(signum: int, frame) -> None:
-        """Handle shutdown signals."""
         sig_name = signal.Signals(signum).name
         logger.info(f"Received {sig_name}, initiating graceful shutdown...")
         console.print(f"\n[yellow]Received {sig_name}, shutting down...[/yellow]")
@@ -116,13 +122,9 @@ def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
         if _shutdown_event:
             loop.call_soon_threadsafe(_shutdown_event.set)
 
-    # Register signal handlers
-    # SIGTERM for graceful termination (docker stop, systemd, etc.)
     signal.signal(signal.SIGTERM, signal_handler)
-    # SIGINT for Ctrl+C
     signal.signal(signal.SIGINT, signal_handler)
 
-    # On Windows, also handle SIGBREAK (Ctrl+Break)
     if sys.platform == "win32":
         try:
             signal.signal(signal.SIGBREAK, signal_handler)
@@ -130,75 +132,59 @@ def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
             pass
 
 
-async def _run_agent(config: RobotConfig) -> int:
+async def _run_agent(
+    postgres_url: str,
+    robot_id: Optional[str] = None,
+    robot_name: Optional[str] = None,
+    environment: str = "default",
+    max_concurrent_jobs: int = 3,
+    poll_interval: float = 1.0,
+) -> int:
     """
-    Run the robot agent with graceful shutdown support.
+    Run the distributed robot agent.
 
     Args:
-        config: Robot configuration.
+        postgres_url: PostgreSQL connection string
+        robot_id: Optional robot ID override
+        robot_name: Optional robot name override
+        environment: Environment/pool for job filtering
+        max_concurrent_jobs: Maximum concurrent job executions
+        poll_interval: Seconds between job polls
 
     Returns:
         Exit code (0 for success, 1 for error).
     """
     global _agent, _shutdown_event
 
-    # Lazy import to avoid circular dependencies
-    from .agent import RobotAgent
+    from .distributed_agent import DistributedRobotAgent, DistributedRobotConfig
 
-    _agent = RobotAgent(config)
+    # Create configuration
+    config = DistributedRobotConfig(
+        robot_id=robot_id,
+        robot_name=robot_name,
+        postgres_url=postgres_url,
+        environment=environment,
+        max_concurrent_jobs=max_concurrent_jobs,
+        poll_interval_seconds=poll_interval,
+        enable_realtime=False,  # Disable Supabase Realtime
+    )
+
+    _agent = DistributedRobotAgent(config)
 
     # Write PID file
     pid_file = _write_pid_file(config.robot_id)
     logger.debug(f"PID file written: {pid_file}")
 
     try:
-        # Start the agent in a task
-        agent_task = asyncio.create_task(_agent.start())
+        # Start the agent
+        await _agent.start()
 
-        # Periodically update status file
-        async def status_updater():
-            while True:
-                await asyncio.sleep(5)
-                try:
-                    status = _agent.get_status()
-                    _write_status_file(config.robot_id, status)
-                except Exception as e:
-                    logger.debug(f"Status update failed: {e}")
-
-        status_task = asyncio.create_task(status_updater())
-
-        # Wait for either agent completion or shutdown signal
+        # Wait for shutdown signal
         if _shutdown_event:
-            shutdown_task = asyncio.create_task(_shutdown_event.wait())
-
-            done, pending = await asyncio.wait(
-                [agent_task, shutdown_task],
-                return_when=asyncio.FIRST_COMPLETED,
-            )
-
-            # Cancel status updater
-            status_task.cancel()
-            try:
-                await status_task
-            except asyncio.CancelledError:
-                pass
-
-            # Cancel pending tasks
-            for task in pending:
-                task.cancel()
-                try:
-                    await task
-                except asyncio.CancelledError:
-                    pass
-
-            # If shutdown was triggered, stop the agent gracefully
-            if shutdown_task in done:
-                console.print("[yellow]Graceful shutdown in progress...[/yellow]")
-                await _agent.stop()
-                console.print("[green]Robot agent stopped successfully.[/green]")
-                return 0
-        else:
-            await agent_task
+            await _shutdown_event.wait()
+            console.print("[yellow]Graceful shutdown in progress...[/yellow]")
+            await _agent.stop()
+            console.print("[green]Robot agent stopped successfully.[/green]")
 
         return 0
 
@@ -218,18 +204,35 @@ async def _run_agent(config: RobotConfig) -> int:
 
 @app.command()
 def start(
-    config: Optional[Path] = typer.Option(
-        None,
-        "--config",
-        "-c",
-        help="Path to YAML configuration file",
-        exists=False,
-    ),
     robot_id: Optional[str] = typer.Option(
         None,
         "--robot-id",
         "-r",
-        help="Override robot ID from config",
+        help="Robot ID (auto-generated if not specified)",
+    ),
+    robot_name: Optional[str] = typer.Option(
+        None,
+        "--name",
+        "-n",
+        help="Human-readable robot name",
+    ),
+    environment: str = typer.Option(
+        "default",
+        "--env",
+        "-e",
+        help="Environment/pool for job filtering (e.g., 'production', 'staging')",
+    ),
+    max_jobs: int = typer.Option(
+        3,
+        "--max-jobs",
+        "-j",
+        help="Maximum concurrent jobs",
+    ),
+    poll_interval: float = typer.Option(
+        1.0,
+        "--poll-interval",
+        "-p",
+        help="Seconds between job polls",
     ),
     verbose: bool = typer.Option(
         False,
@@ -239,54 +242,55 @@ def start(
     ),
 ) -> None:
     """
-    Start the robot agent.
+    Start the robot agent with PostgreSQL backend.
 
-    Loads configuration from the specified YAML file and starts the robot
-    agent. The agent will poll for jobs and execute workflows.
+    The agent connects to PostgreSQL via PgQueuer for job queue management.
+    Configure database connection via environment variables:
+
+    - PGQUEUER_DB_URL: Full PostgreSQL URL
+    - Or individual: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 
     Supports graceful shutdown via SIGTERM or SIGINT (Ctrl+C).
     """
     # Configure logging
     logger.remove()
-    if verbose:
-        logger.add(
-            sys.stderr,
-            level="DEBUG",
-            format="<green>{time:HH:mm:ss}</green> | <level>{level:<8}</level> | {message}",
-        )
-    else:
-        logger.add(
-            sys.stderr,
-            level="INFO",
-            format="<green>{time:HH:mm:ss}</green> | <level>{level:<8}</level> | {message}",
-        )
+    log_level = "DEBUG" if verbose else "INFO"
+    logger.add(
+        sys.stderr,
+        level=log_level,
+        format="<green>{time:HH:mm:ss}</green> | <level>{level:<8}</level> | {message}",
+    )
 
-    # Load configuration
-    try:
-        if config:
-            console.print(f"Loading configuration from: {config}")
-            robot_config = RobotConfig.from_yaml(config)
-        else:
-            console.print("Using default configuration (no config file specified)")
-            robot_config = RobotConfig.load()
-    except FileNotFoundError as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(code=1)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] Failed to load config: {e}")
+    # Get PostgreSQL URL
+    postgres_url = _get_postgres_url()
+
+    if not postgres_url or "://:@" in postgres_url:
+        console.print("[red]Error: Database connection not configured.[/red]")
+        console.print("\nSet environment variables in .env file:")
+        console.print("  DB_HOST=localhost")
+        console.print("  DB_PORT=5432")
+        console.print("  DB_NAME=casare_rpa")
+        console.print("  DB_USER=casare_user")
+        console.print("  DB_PASSWORD=your_password")
+        console.print("\nOr set PGQUEUER_DB_URL directly.")
         raise typer.Exit(code=1)
 
-    # Override robot ID if specified
-    if robot_id:
-        robot_config.robot_id = robot_id
+    # Generate robot ID if not provided
+    import socket
+    import uuid
+
+    actual_robot_id = robot_id or f"robot-{socket.gethostname()}-{uuid.uuid4().hex[:8]}"
+    actual_robot_name = robot_name or f"Robot-{socket.gethostname()}"
 
     # Display startup info
     console.print(
         Panel(
-            f"[bold]Robot ID:[/bold] {robot_config.robot_id}\n"
-            f"[bold]Name:[/bold] {robot_config.robot_name}\n"
-            f"[bold]Max Concurrent Jobs:[/bold] {robot_config.execution.max_concurrent_jobs}\n"
-            f"[bold]Poll Interval:[/bold] {robot_config.polling.poll_interval_seconds}s",
+            f"[bold]Robot ID:[/bold] {actual_robot_id}\n"
+            f"[bold]Name:[/bold] {actual_robot_name}\n"
+            f"[bold]Environment:[/bold] {environment}\n"
+            f"[bold]Max Concurrent Jobs:[/bold] {max_jobs}\n"
+            f"[bold]Poll Interval:[/bold] {poll_interval}s\n"
+            f"[bold]Database:[/bold] PostgreSQL (PgQueuer)",
             title="CasareRPA Robot Agent",
             border_style="blue",
         )
@@ -301,7 +305,16 @@ def start(
     console.print("[dim]Press Ctrl+C to stop[/dim]\n")
 
     try:
-        exit_code = loop.run_until_complete(_run_agent(robot_config))
+        exit_code = loop.run_until_complete(
+            _run_agent(
+                postgres_url=postgres_url,
+                robot_id=actual_robot_id,
+                robot_name=actual_robot_name,
+                environment=environment,
+                max_concurrent_jobs=max_jobs,
+                poll_interval=poll_interval,
+            )
+        )
     finally:
         loop.close()
 
@@ -328,23 +341,15 @@ def stop(
 
     Sends a shutdown signal to the specified robot. The robot will complete
     any currently running jobs before shutting down, unless --force is used.
-
-    Note: This command requires the robot to have a PID file in the standard
-    location (~/.casare_rpa/robot_{robot_id}.pid).
     """
     console.print(f"[yellow]Requesting shutdown for robot: {robot_id}[/yellow]")
 
-    # Try to find the robot process
     pid_file = Path.home() / ".casare_rpa" / f"robot_{robot_id}.pid"
 
     if not pid_file.exists():
         console.print(
             f"[red]Error:[/red] No PID file found for robot '{robot_id}'.\n"
             f"Expected: {pid_file}"
-        )
-        console.print(
-            "\n[dim]The robot may not be running, or was started without "
-            "creating a PID file.[/dim]"
         )
         raise typer.Exit(code=1)
 
@@ -354,12 +359,10 @@ def stop(
         console.print(f"[red]Error:[/red] Invalid PID file: {e}")
         raise typer.Exit(code=1)
 
-    # Send signal to the process
     try:
         if force:
             console.print(f"[yellow]Sending SIGKILL to process {pid}...[/yellow]")
             if sys.platform == "win32":
-                # Windows doesn't have SIGKILL, use terminate
                 import psutil
 
                 try:
@@ -379,18 +382,11 @@ def stop(
             f"[green]Shutdown signal sent to robot '{robot_id}' (PID: {pid})[/green]"
         )
 
-        if not force:
-            console.print(
-                "[dim]The robot will complete current jobs before stopping. "
-                "Use --force to terminate immediately.[/dim]"
-            )
-
     except ProcessLookupError:
         console.print(
             f"[yellow]Warning:[/yellow] Process {pid} not found. "
             "Robot may have already stopped."
         )
-        # Clean up stale PID file
         try:
             pid_file.unlink()
         except OSError:
@@ -409,7 +405,7 @@ def status(
         None,
         "--robot-id",
         "-r",
-        help="Show status for specific robot (default: current machine)",
+        help="Show status for specific robot",
     ),
     json_output: bool = typer.Option(
         False,
@@ -425,29 +421,25 @@ def status(
     running jobs, and resource metrics.
     """
     import orjson
+    import socket
 
-    target_robot_id = robot_id or get_persistent_robot_id()
+    target_robot_id = robot_id or f"robot-{socket.gethostname()}"
 
-    # Check for PID file
     pid_file = Path.home() / ".casare_rpa" / f"robot_{target_robot_id}.pid"
-
-    # Try to get status from a running agent
     status_file = Path.home() / ".casare_rpa" / f"robot_{target_robot_id}_status.json"
 
     status_data = {
         "robot_id": target_robot_id,
         "running": False,
         "pid": None,
-        "connection": {"status": "unknown"},
-        "jobs": {"running": 0, "pending": 0, "completed": 0},
-        "metrics": {},
+        "backend": "PostgreSQL (PgQueuer)",
+        "jobs": {"running": 0, "completed": 0, "failed": 0},
     }
 
     # Check if process is running
     if pid_file.exists():
         try:
             pid = int(pid_file.read_text().strip())
-            # Check if process exists
             import psutil
 
             try:
@@ -460,10 +452,8 @@ def status(
                         "memory_mb": round(
                             process.memory_info().rss / (1024 * 1024), 2
                         ),
-                        "create_time": process.create_time(),
                     }
             except psutil.NoSuchProcess:
-                # Process not found, clean up stale PID file
                 try:
                     pid_file.unlink()
                 except OSError:
@@ -479,7 +469,6 @@ def status(
         except (OSError, orjson.JSONDecodeError):
             pass
 
-    # Output
     if json_output:
         console.print(orjson.dumps(status_data, option=orjson.OPT_INDENT_2).decode())
         return
@@ -493,53 +482,13 @@ def status(
         Panel(
             f"[bold]Robot ID:[/bold] {status_data['robot_id']}\n"
             f"[bold]Status:[/bold] {running_status}\n"
-            f"[bold]PID:[/bold] {status_data.get('pid', 'N/A')}",
+            f"[bold]PID:[/bold] {status_data.get('pid', 'N/A')}\n"
+            f"[bold]Backend:[/bold] {status_data.get('backend', 'PostgreSQL')}",
             title="Robot Status",
             border_style="blue",
         )
     )
 
-    # Connection info
-    conn = status_data.get("connection", {})
-    conn_status = conn.get("status", "unknown")
-    conn_color = (
-        "green"
-        if conn_status == "connected"
-        else "red"
-        if conn_status == "disconnected"
-        else "yellow"
-    )
-
-    console.print(
-        f"\n[bold]Connection:[/bold] [{conn_color}]{conn_status}[/{conn_color}]"
-    )
-
-    # Jobs table
-    job_executor = status_data.get("job_executor", {})
-    running_jobs = job_executor.get("running_jobs", [])
-
-    console.print("\n[bold]Jobs:[/bold]")
-    if running_jobs:
-        table = Table(box=box.ROUNDED)
-        table.add_column("Job ID", style="cyan")
-        table.add_column("Status", style="green")
-        table.add_column("Started", style="dim")
-
-        for job in running_jobs:
-            job_id = job.get("job_id", "unknown")
-            if len(job_id) > 12:
-                job_id = job_id[:12] + "..."
-            table.add_row(
-                job_id,
-                job.get("status", "unknown"),
-                job.get("started_at", "N/A"),
-            )
-
-        console.print(table)
-    else:
-        console.print("  [dim]No jobs currently running[/dim]")
-
-    # Metrics
     if status_data.get("process"):
         proc = status_data["process"]
         console.print("\n[bold]Resource Usage:[/bold]")

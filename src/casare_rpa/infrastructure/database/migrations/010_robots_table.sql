@@ -33,7 +33,13 @@ CREATE TABLE IF NOT EXISTS robots (
     registered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     -- Last heartbeat timestamp for liveness detection
-    last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- Resource metrics as JSONB (CPU, memory, disk, etc.)
+    metrics JSONB DEFAULT '{}'::jsonb,
+
+    -- Environment/pool for job filtering
+    environment TEXT DEFAULT 'default'
 );
 
 -- Index for efficient status filtering (finding idle robots for job assignment)

@@ -397,6 +397,26 @@ class MainWindow(QMainWindow):
         self.action_stop.setEnabled(False)
         self.action_stop.triggered.connect(self._on_stop_workflow)
 
+        # Remote execution actions (Orchestrator integration)
+        self.action_run_local = QAction("▶ Run Local", self)
+        self.action_run_local.setShortcut(QKeySequence("F8"))
+        self.action_run_local.setStatusTip("Execute workflow locally in Canvas (F8)")
+        self.action_run_local.triggered.connect(self._on_run_local)
+
+        self.action_run_on_robot = QAction("🤖 Run on Robot", self)
+        self.action_run_on_robot.setShortcut(QKeySequence("Ctrl+F5"))
+        self.action_run_on_robot.setStatusTip(
+            "Submit workflow to LAN robot via Orchestrator (Ctrl+F5)"
+        )
+        self.action_run_on_robot.triggered.connect(self._on_run_on_robot)
+
+        self.action_submit = QAction("☁ Submit", self)
+        self.action_submit.setShortcut(QKeySequence("Ctrl+Shift+F5"))
+        self.action_submit.setStatusTip(
+            "Submit workflow for internet robots (client PCs) (Ctrl+Shift+F5)"
+        )
+        self.action_submit.triggered.connect(self._on_submit)
+
         # Schedule actions
         self.action_schedule = QAction("&Schedule Workflow...", self)
         self.action_schedule.setShortcut(QKeySequence("Ctrl+Shift+H"))
@@ -577,9 +597,17 @@ class MainWindow(QMainWindow):
         workflow_menu = menubar.addMenu("&Workflow")
         workflow_menu.addAction(self.action_validate)
         workflow_menu.addSeparator()
-        workflow_menu.addAction(self.action_run)
-        workflow_menu.addAction(self.action_run_to_node)
-        workflow_menu.addAction(self.action_run_single_node)
+
+        # Execute submenu with three execution modes
+        execute_menu = workflow_menu.addMenu("&Execute")
+        execute_menu.addAction(self.action_run_local)
+        execute_menu.addAction(self.action_run_on_robot)
+        execute_menu.addAction(self.action_submit)
+        execute_menu.addSeparator()
+        execute_menu.addAction(self.action_run)
+        execute_menu.addAction(self.action_run_to_node)
+        execute_menu.addAction(self.action_run_single_node)
+
         workflow_menu.addSeparator()
         workflow_menu.addAction(self.action_pause)
         workflow_menu.addAction(self.action_stop)
@@ -653,6 +681,13 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_run_single_node)
         toolbar.addAction(self.action_pause)
         toolbar.addAction(self.action_stop)
+
+        toolbar.addSeparator()
+
+        # === Remote Execution (Orchestrator Integration) ===
+        toolbar.addAction(self.action_run_local)
+        toolbar.addAction(self.action_run_on_robot)
+        toolbar.addAction(self.action_submit)
 
         toolbar.addSeparator()
 
@@ -1686,6 +1721,24 @@ class MainWindow(QMainWindow):
     def _on_run_single_node(self) -> None:
         """Handle run single selected node request (F5) - delegate to ExecutionController."""
         self._execution_controller.run_single_node()
+
+    def _on_run_local(self) -> None:
+        """Handle run local request (F8) - execute workflow locally in Canvas."""
+        import asyncio
+
+        asyncio.create_task(self._workflow_controller.run_local())
+
+    def _on_run_on_robot(self) -> None:
+        """Handle run on robot request (Ctrl+F5) - submit to LAN robot via Orchestrator."""
+        import asyncio
+
+        asyncio.create_task(self._workflow_controller.run_on_robot())
+
+    def _on_submit(self) -> None:
+        """Handle submit request (Ctrl+Shift+F5) - submit for internet robots."""
+        import asyncio
+
+        asyncio.create_task(self._workflow_controller.submit_for_internet_robots())
 
     def _on_pause_workflow(self, checked: bool) -> None:
         """Handle pause/resume workflow request - delegate to ExecutionController."""
