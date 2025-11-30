@@ -153,3 +153,28 @@ class QueueMetricsUpdate(BaseModel):
 
     depth: int
     timestamp: datetime
+
+
+# Activity Feed Models
+class ActivityEvent(BaseModel):
+    """Single activity event for the dashboard feed."""
+
+    id: str = Field(..., description="Unique event identifier")
+    type: str = Field(
+        ...,
+        description="Event type: job_started, job_completed, job_failed, robot_online, robot_offline, schedule_triggered",
+    )
+    timestamp: datetime = Field(..., description="When the event occurred")
+    title: str = Field(..., description="Human-readable event title")
+    details: Optional[str] = Field(None, description="Additional event details")
+    robot_id: Optional[str] = Field(None, description="Associated robot ID")
+    job_id: Optional[str] = Field(None, description="Associated job ID")
+
+
+class ActivityResponse(BaseModel):
+    """Response for activity feed endpoint."""
+
+    events: List[ActivityEvent] = Field(
+        default_factory=list, description="List of activity events"
+    )
+    total: int = Field(..., description="Total number of events matching filters")

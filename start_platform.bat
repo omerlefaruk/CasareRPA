@@ -2,14 +2,16 @@
 REM ===================================================================
 REM CasareRPA Enterprise Platform - Windows Startup Script
 REM ===================================================================
-REM Starts all platform components in separate command windows
+REM Starts all platform components in Windows Terminal tabs
 REM
 REM Components:
 REM   1. Orchestrator API (FastAPI) - Port 8000
 REM   2. Monitoring Dashboard (React/Vite) - Port 5173
-REM   3. Robot Agent (optional - run manually if needed)
+REM   3. Canvas Designer (optional)
+REM   4. Robot Agent (optional)
 REM
 REM Prerequisites:
+REM   - Windows Terminal installed (wt.exe)
 REM   - Python 3.12+ with casare_rpa installed
 REM   - Node.js 18+ with monitoring-dashboard dependencies installed
 REM   - PostgreSQL 15+ running (or set USE_MEMORY_QUEUE=true)
@@ -20,6 +22,13 @@ echo ========================================
 echo  CasareRPA Enterprise Platform
 echo ========================================
 echo.
+
+REM Check if Windows Terminal is available
+where wt >nul 2>&1
+if errorlevel 1 (
+    echo [WARN] Windows Terminal not found. Falling back to separate windows.
+    goto :legacy_start
+)
 
 REM Check if Python is available
 python --version >nul 2>&1
@@ -37,28 +46,41 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/2] Starting Orchestrator API (port 8000)...
-start "CasareRPA Orchestrator API" cmd /k "python -m uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port 8000"
-
-REM Wait 3 seconds for API to start
-timeout /t 3 /nobreak >nul
-
-echo [2/2] Starting Monitoring Dashboard (port 5173)...
-cd monitoring-dashboard
-if not exist node_modules (
-    echo [WARN] node_modules not found. Run 'npm install' first in monitoring-dashboard/
-    echo [INFO] Attempting to install dependencies...
+REM Check node_modules for dashboard
+if not exist "monitoring-dashboard\node_modules" (
+    echo [WARN] node_modules not found. Installing dependencies...
+    cd monitoring-dashboard
     call npm install
+    cd ..
     if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies
-        cd ..
+        echo [ERROR] Failed to install dashboard dependencies
         pause
         exit /b 1
     )
 )
 
-start "CasareRPA Monitoring Dashboard" cmd /k "npm run dev"
-cd ..
+echo Starting platform with Windows Terminal tabs...
+echo.
+
+REM Ask which components to start
+set /p START_CANVAS="Include Canvas Designer? (y/n): "
+set /p START_ROBOT="Include Robot Agent? (y/n): "
+
+REM Build Windows Terminal command with tabs
+set WT_CMD=wt -w 0 new-tab --title "Orchestrator API" -d "%CD%" cmd /k "python -m uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port 8000"
+
+set WT_CMD=%WT_CMD% ; new-tab --title "Dashboard" -d "%CD%\monitoring-dashboard" cmd /k "npm run dev"
+
+if /i "%START_CANVAS%"=="y" (
+    set WT_CMD=%WT_CMD% ; new-tab --title "Canvas" -d "%CD%" cmd /k "python run.py"
+)
+
+if /i "%START_ROBOT%"=="y" (
+    set WT_CMD=%WT_CMD% ; new-tab --title "Robot" -d "%CD%" cmd /k "python -m casare_rpa.robot.cli start"
+)
+
+REM Launch Windows Terminal with all tabs
+%WT_CMD%
 
 echo.
 echo ========================================
@@ -66,37 +88,62 @@ echo  Platform Started Successfully!
 echo ========================================
 echo.
 echo Orchestrator API:       http://localhost:8000
-echo   - Health Check:       http://localhost:8000/health
 echo   - API Docs:           http://localhost:8000/docs
 echo.
 echo Monitoring Dashboard:   http://localhost:5173
-echo   - Real-time updates via WebSocket
 echo.
-echo Canvas Designer:        Run 'python run.py' separately
-echo Robot Agent:            Run 'python -m casare_rpa.robot.cli start' separately
+if /i "%START_CANVAS%"=="y" echo Canvas Designer:        Started in tab
+if /i "%START_ROBOT%"=="y" echo Robot Agent:            Started in tab
 echo.
-echo ========================================
-echo  Optional: Start Canvas Designer
-echo ========================================
+echo All components running in Windows Terminal tabs.
 echo.
-set /p START_CANVAS="Start Canvas Designer now? (y/n): "
-if /i "%START_CANVAS%"=="y" (
-    echo Starting Canvas Designer...
-    start "CasareRPA Canvas Designer" cmd /k "python run.py"
-) else (
-    echo Skipped Canvas Designer. Run 'python run.py' when ready.
+pause
+exit /b 0
+
+:legacy_start
+REM Fallback to separate windows if Windows Terminal not available
+echo Using legacy mode (separate windows)...
+echo.
+
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Python not found!
+    pause
+    exit /b 1
 )
 
-echo.
-echo Press any key to show Robot Agent start command...
-pause >nul
+node --version >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Node.js not found!
+    pause
+    exit /b 1
+)
+
+echo [1/2] Starting Orchestrator API (port 8000)...
+start "CasareRPA Orchestrator API" cmd /k "python -m uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port 8000"
+
+timeout /t 3 /nobreak >nul
+
+echo [2/2] Starting Monitoring Dashboard (port 5173)...
+cd monitoring-dashboard
+if not exist node_modules (
+    echo [INFO] Installing dependencies...
+    call npm install
+)
+start "CasareRPA Monitoring Dashboard" cmd /k "npm run dev"
+cd ..
+
 echo.
 echo ========================================
-echo  To Start Robot Agent:
+echo  Platform Started!
 echo ========================================
 echo.
-echo   python -m casare_rpa.robot.cli start
+echo Orchestrator API:       http://localhost:8000
+echo Monitoring Dashboard:   http://localhost:5173
 echo.
-echo   (Run this in a separate terminal when ready)
+set /p START_CANVAS="Start Canvas Designer? (y/n): "
+if /i "%START_CANVAS%"=="y" (
+    start "CasareRPA Canvas" cmd /k "python run.py"
+)
 echo.
 pause
