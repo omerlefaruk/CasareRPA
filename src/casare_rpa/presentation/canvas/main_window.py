@@ -1320,11 +1320,6 @@ class MainWindow(QMainWindow):
         return getattr(self, "_workflow_runner", None)
 
     @property
-    def project_manager(self):
-        """The project manager."""
-        return getattr(self, "_project_manager", None)
-
-    @property
     def node_registry(self):
         """The node registry."""
         return getattr(self, "_node_registry", None)
@@ -1370,9 +1365,6 @@ class MainWindow(QMainWindow):
 
     def get_workflow_runner(self):
         return self.workflow_runner
-
-    def get_project_manager(self):
-        return self.project_manager
 
     def get_node_registry(self):
         return self.node_registry

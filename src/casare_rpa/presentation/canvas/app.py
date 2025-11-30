@@ -24,7 +24,6 @@ from .controllers import (
     NodeController,
     SelectorController,
     TriggerController,
-    ProjectController,
     PreferencesController,
     AutosaveController,
 )
@@ -51,7 +50,6 @@ class CasareRPAApp:
     - NodeRegistryComponent: Node type registration (no dependencies)
     - SelectorComponent: Element selector integration
     - TriggerComponent: Trigger management
-    - ProjectComponent: Project/scenario management
     - PreferencesComponent: Settings management
     - DragDropComponent: Drag-drop functionality
     - AutosaveComponent: Automatic saving
@@ -176,9 +174,6 @@ class CasareRPAApp:
         # Trigger - handles trigger management
         self._trigger_controller = TriggerController(self._main_window, self)
 
-        # Project - handles project/scenario management
-        self._project_controller = ProjectController(self._main_window)
-
         # Preferences - handles settings
         self._preferences_controller = PreferencesController(self._main_window)
 
@@ -191,7 +186,6 @@ class CasareRPAApp:
             self._execution_controller,
             self._selector_controller,
             self._trigger_controller,
-            self._project_controller,
             self._preferences_controller,
             self._autosave_controller,
         ]
@@ -289,7 +283,6 @@ class CasareRPAApp:
             self._execution_controller,
             self._selector_controller,
             self._trigger_controller,
-            self._project_controller,
             self._preferences_controller,
             self._autosave_controller,
         ]
@@ -399,10 +392,6 @@ class CasareRPAApp:
     def get_trigger_controller(self) -> TriggerController:
         """Get the trigger controller."""
         return self._trigger_controller
-
-    def get_project_controller(self) -> ProjectController:
-        """Get the project controller."""
-        return self._project_controller
 
     def get_preferences_controller(self) -> PreferencesController:
         """Get the preferences controller."""

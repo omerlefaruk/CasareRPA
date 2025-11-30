@@ -20,7 +20,6 @@ Architecture:
     - TriggerController: Trigger creation, editing, deletion, and management
     - UIStateController: UI state persistence (window geometry, panels, recent files)
     - SelectorController: Element selector/picker (browser, desktop)
-    - ProjectController: Project and scenario management
     - PreferencesController: Settings and preferences management
     - AutosaveController: Automatic workflow saving
 
@@ -34,7 +33,6 @@ Usage:
         TriggerController,
         UIStateController,
         SelectorController,
-        ProjectController,
         PreferencesController,
         AutosaveController,
     )
@@ -56,7 +54,6 @@ from .scheduling_controller import SchedulingController
 from .trigger_controller import TriggerController
 from .ui_state_controller import UIStateController
 from .selector_controller import SelectorController
-from .project_controller import ProjectController
 from .preferences_controller import PreferencesController
 from .autosave_controller import AutosaveController
 
@@ -76,7 +73,6 @@ __all__ = [
     "TriggerController",
     "UIStateController",
     "SelectorController",
-    "ProjectController",
     "PreferencesController",
     "AutosaveController",
     # Event utilities
