@@ -20,7 +20,7 @@ from casare_rpa.infrastructure.events import (
     get_monitoring_event_bus,
     MonitoringEventType,
 )
-from .routers import metrics, websockets
+from .routers import metrics, websockets, workflows, schedules
 from .routers.websockets import (
     on_job_status_changed,
     on_robot_heartbeat,
@@ -147,13 +147,20 @@ app.add_middleware(
         "http://localhost:8000",  # Production (served by FastAPI)
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],  # Only needed methods for monitoring API
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+    ],  # Extended for workflow/schedule management
     allow_headers=["Content-Type", "Authorization", "X-Api-Token"],  # Robot auth
 )
 
 # Include routers
 app.include_router(metrics.router, prefix="/api/v1", tags=["metrics"])
 app.include_router(websockets.router, prefix="/ws", tags=["websockets"])
+app.include_router(workflows.router, prefix="/api/v1", tags=["workflows"])
+app.include_router(schedules.router, prefix="/api/v1", tags=["schedules"])
 
 
 @app.get("/health")

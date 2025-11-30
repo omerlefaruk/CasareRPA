@@ -492,3 +492,299 @@ class WorkflowController(BaseController):
                     return reply == QMessageBox.StandardButton.Yes
 
         return True
+
+    # =========================
+    # Remote Execution Methods
+    # =========================
+
+    async def run_local(self) -> None:
+        """
+        Execute workflow locally in Canvas (current behavior).
+
+        This is the existing local execution - no changes needed.
+        The execution controller handles this via execute_workflow().
+        """
+        logger.info("Run Local selected - delegating to execution controller")
+        # Note: Main window's execution controller handles local execution
+        # This method is here for API consistency with other execution modes
+
+    async def run_on_robot(self) -> None:
+        """
+        Submit workflow to LAN robot via Orchestrator API.
+
+        Flow:
+        1. Serialize current workflow
+        2. POST to /api/v1/workflows with execution_mode=lan
+        3. Orchestrator queues job for LAN robots
+        4. Show confirmation with job_id
+        """
+        import aiohttp
+        import os
+        import orjson
+
+        logger.info("Run on Robot selected - submitting to Orchestrator")
+
+        # Check if workflow has been saved
+        if not self._current_file:
+            reply = QMessageBox.question(
+                self.main_window,
+                "Save Workflow?",
+                "Workflow must be saved before submitting to robot.\n\n" "Save now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.save_workflow()
+                if not self._current_file:  # Save was cancelled
+                    return
+            else:
+                return
+
+        # Get orchestrator URL from environment
+        orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:8000")
+
+        try:
+            # Get graph and serialize workflow
+            graph = self.main_window.get_graph()
+            if not graph:
+                self.main_window.show_status("No workflow to submit", 3000)
+                return
+
+            # Serialize workflow (use existing serialization method)
+            workflow_json = graph.serialize_to_json()  # Returns dict
+
+            # Prepare submission
+            payload = {
+                "workflow_name": self._current_file.stem
+                if self._current_file
+                else "Untitled",
+                "workflow_json": workflow_json,
+                "trigger_type": "manual",
+                "execution_mode": "lan",
+                "priority": 10,
+                "metadata": {
+                    "submitted_from": "canvas",
+                    "canvas_file": str(self._current_file)
+                    if self._current_file
+                    else None,
+                },
+            }
+
+            self.main_window.show_status("Submitting workflow to robot...", 3000)
+
+            # Submit to orchestrator
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{orchestrator_url}/api/v1/workflows",
+                    json=payload,
+                ) as resp:
+                    if resp.status == 200:
+                        result = await resp.json()
+                        job_id = result.get("job_id", "unknown")
+                        workflow_id = result.get("workflow_id", "unknown")
+
+                        logger.info(
+                            "Workflow submitted successfully: workflow={}, job={}",
+                            workflow_id,
+                            job_id,
+                        )
+
+                        self.main_window.show_status(
+                            f"Workflow submitted to robot! Job ID: {job_id[:8]}...",
+                            5000,
+                        )
+
+                        # Show success dialog
+                        QMessageBox.information(
+                            self.main_window,
+                            "Workflow Submitted",
+                            f"Workflow submitted to LAN robot successfully!\n\n"
+                            f"Workflow ID: {workflow_id}\n"
+                            f"Job ID: {job_id}\n\n"
+                            f"Monitor execution in the Monitoring Dashboard.",
+                        )
+                    else:
+                        error_text = await resp.text()
+                        logger.error(
+                            "Workflow submission failed: {} - {}",
+                            resp.status,
+                            error_text,
+                        )
+                        self.main_window.show_status(
+                            f"Submission failed: {resp.status}", 5000
+                        )
+
+                        QMessageBox.critical(
+                            self.main_window,
+                            "Submission Failed",
+                            f"Failed to submit workflow to robot.\n\n"
+                            f"Status: {resp.status}\n"
+                            f"Error: {error_text[:200]}",
+                        )
+
+        except aiohttp.ClientError as e:
+            logger.error("Connection error submitting workflow: {}", e)
+            self.main_window.show_status(
+                "Connection error - is Orchestrator running?", 5000
+            )
+
+            QMessageBox.critical(
+                self.main_window,
+                "Connection Error",
+                f"Could not connect to Orchestrator at {orchestrator_url}\n\n"
+                f"Error: {str(e)}\n\n"
+                f"Ensure Orchestrator API is running:\n"
+                f"uvicorn casare_rpa.infrastructure.orchestrator.api.main:app",
+            )
+
+        except Exception as e:
+            logger.error("Unexpected error submitting workflow: {}", e)
+            self.main_window.show_status(f"Error: {str(e)}", 5000)
+
+            QMessageBox.critical(
+                self.main_window,
+                "Error",
+                f"Unexpected error submitting workflow:\n\n{str(e)}",
+            )
+
+    async def submit_for_internet_robots(self) -> None:
+        """
+        Submit workflow for internet robots (client PCs).
+
+        Flow:
+        1. Serialize current workflow
+        2. POST to /api/v1/workflows with execution_mode=internet
+        3. Orchestrator queues job for internet robots
+        4. Show confirmation with workflow_id
+        """
+        import aiohttp
+        import os
+        import orjson
+
+        logger.info(
+            "Submit for Internet Robots selected - queuing for remote execution"
+        )
+
+        # Check if workflow has been saved
+        if not self._current_file:
+            reply = QMessageBox.question(
+                self.main_window,
+                "Save Workflow?",
+                "Workflow must be saved before submitting.\n\n" "Save now?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.save_workflow()
+                if not self._current_file:  # Save was cancelled
+                    return
+            else:
+                return
+
+        # Get orchestrator URL from environment
+        orchestrator_url = os.getenv("ORCHESTRATOR_URL", "http://localhost:8000")
+
+        try:
+            # Get graph and serialize workflow
+            graph = self.main_window.get_graph()
+            if not graph:
+                self.main_window.show_status("No workflow to submit", 3000)
+                return
+
+            # Serialize workflow
+            workflow_json = graph.serialize_to_json()
+
+            # Prepare submission
+            payload = {
+                "workflow_name": self._current_file.stem
+                if self._current_file
+                else "Untitled",
+                "workflow_json": workflow_json,
+                "trigger_type": "manual",
+                "execution_mode": "internet",
+                "priority": 10,
+                "metadata": {
+                    "submitted_from": "canvas",
+                    "canvas_file": str(self._current_file)
+                    if self._current_file
+                    else None,
+                },
+            }
+
+            self.main_window.show_status(
+                "Submitting workflow for internet robots...", 3000
+            )
+
+            # Submit to orchestrator
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{orchestrator_url}/api/v1/workflows",
+                    json=payload,
+                ) as resp:
+                    if resp.status == 200:
+                        result = await resp.json()
+                        job_id = result.get("job_id", "unknown")
+                        workflow_id = result.get("workflow_id", "unknown")
+
+                        logger.info(
+                            "Workflow queued for internet robots: workflow={}, job={}",
+                            workflow_id,
+                            job_id,
+                        )
+
+                        self.main_window.show_status(
+                            f"Workflow queued! Job ID: {job_id[:8]}...",
+                            5000,
+                        )
+
+                        # Show success dialog
+                        QMessageBox.information(
+                            self.main_window,
+                            "Workflow Queued",
+                            f"Workflow queued for internet robots successfully!\n\n"
+                            f"Workflow ID: {workflow_id}\n"
+                            f"Job ID: {job_id}\n\n"
+                            f"The first available internet robot will claim and execute this job.\n\n"
+                            f"Monitor execution in the Monitoring Dashboard.",
+                        )
+                    else:
+                        error_text = await resp.text()
+                        logger.error(
+                            "Workflow submission failed: {} - {}",
+                            resp.status,
+                            error_text,
+                        )
+                        self.main_window.show_status(
+                            f"Submission failed: {resp.status}", 5000
+                        )
+
+                        QMessageBox.critical(
+                            self.main_window,
+                            "Submission Failed",
+                            f"Failed to queue workflow.\n\n"
+                            f"Status: {resp.status}\n"
+                            f"Error: {error_text[:200]}",
+                        )
+
+        except aiohttp.ClientError as e:
+            logger.error("Connection error submitting workflow: {}", e)
+            self.main_window.show_status(
+                "Connection error - is Orchestrator running?", 5000
+            )
+
+            QMessageBox.critical(
+                self.main_window,
+                "Connection Error",
+                f"Could not connect to Orchestrator at {orchestrator_url}\n\n"
+                f"Error: {str(e)}\n\n"
+                f"Ensure Orchestrator API is running:\n"
+                f"uvicorn casare_rpa.infrastructure.orchestrator.api.main:app",
+            )
+
+        except Exception as e:
+            logger.error("Unexpected error submitting workflow: {}", e)
+            self.main_window.show_status(f"Error: {str(e)}", 5000)
+
+            QMessageBox.critical(
+                self.main_window,
+                "Error",
+                f"Unexpected error submitting workflow:\n\n{str(e)}",
+            )
