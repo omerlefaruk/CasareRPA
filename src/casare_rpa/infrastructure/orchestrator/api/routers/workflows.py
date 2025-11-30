@@ -22,8 +22,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 import orjson
 
@@ -31,6 +32,21 @@ from casare_rpa.infrastructure.queue import (
     get_memory_queue,
     MemoryQueue,
 )
+
+
+# Database pool (initialized by main.py lifespan)
+_db_pool: Optional[asyncpg.Pool] = None
+
+
+def set_db_pool(pool: asyncpg.Pool) -> None:
+    """Set the database pool for workflow operations."""
+    global _db_pool
+    _db_pool = pool
+
+
+def get_db_pool() -> Optional[asyncpg.Pool]:
+    """Get the database pool."""
+    return _db_pool
 
 
 router = APIRouter()
@@ -79,21 +95,24 @@ class WorkflowSubmissionRequest(BaseModel):
     )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    @validator("trigger_type")
+    @field_validator("trigger_type")
+    @classmethod
     def validate_trigger_type(cls, v):
         allowed = ["manual", "scheduled", "webhook"]
         if v not in allowed:
             raise ValueError(f"trigger_type must be one of {allowed}")
         return v
 
-    @validator("execution_mode")
+    @field_validator("execution_mode")
+    @classmethod
     def validate_execution_mode(cls, v):
         allowed = ["lan", "internet"]
         if v not in allowed:
             raise ValueError(f"execution_mode must be one of {allowed}")
         return v
 
-    @validator("workflow_json")
+    @field_validator("workflow_json")
+    @classmethod
     def validate_workflow_json(cls, v):
         # Basic validation - must have nodes key
         if "nodes" not in v:
@@ -197,11 +216,37 @@ async def store_workflow_database(
     Returns:
         True if successful, False otherwise
     """
+    pool = get_db_pool()
+    if not pool:
+        logger.warning(
+            "Database pool not available for workflow: {} - using filesystem only",
+            workflow_id,
+        )
+        return False
+
     try:
-        # TODO: Implement database storage
-        # This will be implemented once we have the workflow repository
-        # For now, just log and return True
-        logger.info("Workflow storage to database (TODO): {}", workflow_id)
+        async with pool.acquire() as conn:
+            # Use UPSERT to handle both insert and update
+            await conn.execute(
+                """
+                INSERT INTO workflows (
+                    workflow_id, workflow_name, workflow_json, description,
+                    version, created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, 1, NOW(), NOW())
+                ON CONFLICT (workflow_id) DO UPDATE SET
+                    workflow_name = EXCLUDED.workflow_name,
+                    workflow_json = EXCLUDED.workflow_json,
+                    description = EXCLUDED.description,
+                    version = workflows.version + 1,
+                    updated_at = NOW()
+                """,
+                uuid.UUID(workflow_id),
+                workflow_name,
+                orjson.dumps(workflow_json).decode(),  # JSONB needs string
+                description or "",
+            )
+
+        logger.info("Workflow stored to database: {}", workflow_id)
         return True
 
     except Exception as e:
@@ -217,7 +262,7 @@ async def enqueue_job(
     metadata: Dict[str, Any],
 ) -> str:
     """
-    Enqueue job to queue (PgQueuer or MemoryQueue fallback).
+    Enqueue job to queue (PostgreSQL jobs table or MemoryQueue fallback).
 
     Args:
         workflow_id: Workflow identifier
@@ -254,17 +299,59 @@ async def enqueue_job(
             workflow_id,
             execution_mode,
         )
+        return job_id
 
-    else:
-        # TODO: Use PgQueuer for production
-        # This will be implemented once PgQueuer producer is ready
-        job_id = str(uuid.uuid4())
-        logger.warning(
-            "PgQueuer not yet implemented, using placeholder job_id: {}",
-            job_id,
+    # Use PostgreSQL jobs table
+    pool = get_db_pool()
+    if not pool:
+        logger.warning("Database pool not available, using memory queue fallback")
+        queue = get_memory_queue()
+        return await queue.enqueue(
+            workflow_id=workflow_id,
+            workflow_json=workflow_json,
+            priority=priority,
+            execution_mode=execution_mode,
+            metadata=metadata,
         )
 
-    return job_id
+    try:
+        job_id = str(uuid.uuid4())
+
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO jobs (
+                    job_id, workflow_id, status, priority, execution_mode,
+                    created_at, retry_count, max_retries, metadata
+                ) VALUES ($1, $2, 'pending', $3, $4, NOW(), 0, 3, $5)
+                """,
+                uuid.UUID(job_id),
+                uuid.UUID(workflow_id),
+                priority,
+                execution_mode,
+                orjson.dumps(metadata).decode(),
+            )
+
+        logger.info(
+            "Job enqueued to database: {} (workflow={}, mode={})",
+            job_id,
+            workflow_id,
+            execution_mode,
+        )
+        return job_id
+
+    except Exception as e:
+        logger.error(
+            "Failed to enqueue job to database: {} - falling back to memory queue", e
+        )
+        queue = get_memory_queue()
+        return await queue.enqueue(
+            workflow_id=workflow_id,
+            workflow_json=workflow_json,
+            priority=priority,
+            execution_mode=execution_mode,
+            metadata=metadata,
+        )
 
 
 # =========================

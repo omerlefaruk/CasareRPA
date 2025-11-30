@@ -395,6 +395,21 @@ class WorkflowController(BaseController):
             self.main_window.show_status("Clipboard is empty", 3000)
             return
 
+        # Security: Limit clipboard size to prevent DoS (10MB)
+        MAX_CLIPBOARD_SIZE = 10 * 1024 * 1024  # 10MB
+        if len(text) > MAX_CLIPBOARD_SIZE:
+            QMessageBox.warning(
+                self.main_window,
+                "Clipboard Too Large",
+                f"Clipboard content is too large ({len(text) / (1024 * 1024):.1f} MB).\n"
+                f"Maximum allowed size: 10 MB.\n\n"
+                "This prevents memory exhaustion from malicious clipboard data.",
+            )
+            logger.warning(
+                f"Rejected clipboard paste: size={len(text)} bytes (limit={MAX_CLIPBOARD_SIZE})"
+            )
+            return
+
         # Try to parse as JSON
         try:
             data = orjson.loads(text)
@@ -574,6 +589,10 @@ class WorkflowController(BaseController):
             self.main_window.show_status("No workflow to submit", 3000)
             return
 
+        # Convert nodes dict to list (API expects list format)
+        if isinstance(workflow_json.get("nodes"), dict):
+            workflow_json["nodes"] = list(workflow_json["nodes"].values())
+
         self.main_window.show_status("Submitting workflow to robot...", 3000)
 
         # Submit via OrchestratorClient (Application layer)
@@ -664,6 +683,10 @@ class WorkflowController(BaseController):
         if not workflow_json:
             self.main_window.show_status("No workflow to submit", 3000)
             return
+
+        # Convert nodes dict to list (API expects list format)
+        if isinstance(workflow_json.get("nodes"), dict):
+            workflow_json["nodes"] = list(workflow_json["nodes"].values())
 
         self.main_window.show_status("Submitting workflow for internet robots...", 3000)
 
