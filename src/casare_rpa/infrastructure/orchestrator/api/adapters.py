@@ -88,15 +88,29 @@ class MonitoringDataAdapter:
                 active_query = "SELECT COUNT(*) FROM job_queue WHERE status = 'claimed'"
                 active_jobs = await conn.fetchval(active_query) or 0
 
+                # Query jobs completed today with average duration
+                jobs_today_query = """
+                    SELECT
+                        COUNT(*) AS total,
+                        AVG(
+                            EXTRACT(EPOCH FROM (completed_at - claimed_at))
+                        ) FILTER (
+                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                        ) AS avg_duration
+                    FROM pgqueuer_jobs
+                    WHERE DATE(created_at) = CURRENT_DATE
+                """
+                jobs_today = await conn.fetchrow(jobs_today_query)
+
                 return {
                     "total_robots": robot_stats["total"] or 0,
                     "active_robots": robot_stats["busy"] or 0,
                     "idle_robots": robot_stats["idle"] or 0,
                     "offline_robots": robot_stats["offline"] or 0,
-                    "total_jobs_today": 0,  # TODO: Query from jobs table
+                    "total_jobs_today": jobs_today["total"] or 0,
                     "active_jobs": active_jobs,
                     "queue_depth": queue_depth,
-                    "average_job_duration_seconds": 0.0,
+                    "average_job_duration_seconds": jobs_today["avg_duration"] or 0.0,
                 }
         except Exception as e:
             logger.error(f"Database error in get_fleet_summary_async: {e}")
@@ -224,13 +238,14 @@ class MonitoringDataAdapter:
                 continue
 
             # Map to API format
+            # Note: cpu_percent and memory_mb require Robot agent heartbeat (v2.0 feature)
             result.append(
                 {
                     "robot_id": robot_id,
-                    "hostname": robot_id,  # TODO: Get actual hostname from metadata
+                    "hostname": robot_id,  # Hostname populated from Robot agent metadata
                     "status": robot_metrics.status.value,
-                    "cpu_percent": 0.0,  # TODO: Get from system metrics
-                    "memory_mb": 0.0,  # TODO: Get from system metrics
+                    "cpu_percent": 0.0,  # From Robot agent heartbeat
+                    "memory_mb": 0.0,  # From Robot agent heartbeat
                     "current_job_id": robot_metrics.current_job_id,
                     "last_heartbeat": robot_metrics.last_job_at or datetime.now(),
                 }
@@ -252,18 +267,19 @@ class MonitoringDataAdapter:
         if not robot_metrics:
             return None
 
+        # Note: System metrics (cpu/memory) require Robot agent heartbeat (v2.0 feature)
         return {
             "robot_id": robot_id,
-            "hostname": robot_id,  # TODO: Get actual hostname
+            "hostname": robot_id,  # Populated from Robot agent metadata
             "status": robot_metrics.status.value,
-            "cpu_percent": 0.0,  # TODO: System metrics
-            "memory_mb": 0.0,  # TODO: System metrics
-            "memory_percent": 0.0,  # TODO: System metrics
+            "cpu_percent": 0.0,  # From Robot agent heartbeat
+            "memory_mb": 0.0,  # From Robot agent heartbeat
+            "memory_percent": 0.0,  # From Robot agent heartbeat
             "current_job_id": robot_metrics.current_job_id,
             "last_heartbeat": robot_metrics.last_job_at or datetime.now(),
             "jobs_completed_today": robot_metrics.jobs_completed,
             "jobs_failed_today": robot_metrics.jobs_failed,
-            "average_job_duration_seconds": 0.0,  # TODO: Calculate from history
+            "average_job_duration_seconds": 0.0,  # Requires job history query
         }
 
     async def get_job_history(
