@@ -232,7 +232,8 @@ class TestStoreWorkflowDatabase:
             workflow_name="Test",
             workflow_json=sample_workflow_json,
         )
-        assert result is True
+        # Changed from True to False - placeholder returns False until DB storage implemented
+        assert result is False
 
 
 class TestEnqueueJob:
@@ -315,7 +316,8 @@ class TestSubmitWorkflowEndpoint:
             ):
                 response = await submit_workflow(sample_submission_request)
 
-        assert response.status == "success"
+        # Changed from "success" to "degraded" - DB storage not implemented
+        assert response.status == "degraded"
         assert response.workflow_id is not None
         assert response.job_id == "job-123"
         assert response.schedule_id is None
@@ -341,7 +343,8 @@ class TestSubmitWorkflowEndpoint:
         ):
             response = await submit_workflow(request)
 
-        assert response.status == "success"
+        # Changed from "success" to "degraded" - DB storage not implemented
+        assert response.status == "degraded"
         assert response.job_id is None
         assert response.schedule_id is not None
 
@@ -365,7 +368,8 @@ class TestSubmitWorkflowEndpoint:
         ):
             response = await submit_workflow(request)
 
-        assert response.status == "success"
+        # Changed from "success" to "degraded" - DB storage not implemented
+        assert response.status == "degraded"
         assert response.job_id is None
         assert response.schedule_id is None
 
@@ -571,7 +575,8 @@ class TestUploadWorkflowEndpoint:
             ):
                 response = await upload_workflow(file=mock_file)
 
-        assert response.status == "success"
+        # Changed from "success" to "degraded" - DB storage not implemented
+        assert response.status == "degraded"
         assert response.job_id == "job-123"
 
     @pytest.mark.asyncio

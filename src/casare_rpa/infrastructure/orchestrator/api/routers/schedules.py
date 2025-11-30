@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 from croniter import croniter
 
@@ -44,7 +44,8 @@ class ScheduleRequest(BaseModel):
     execution_mode: str = Field(default="lan", description="lan or internet")
     metadata: dict = Field(default_factory=dict)
 
-    @validator("cron_expression")
+    @field_validator("cron_expression")
+    @classmethod
     def validate_cron(cls, v):
         """Validate cron expression."""
         try:
@@ -53,7 +54,8 @@ class ScheduleRequest(BaseModel):
         except (ValueError, KeyError) as e:
             raise ValueError(f"Invalid cron expression: {str(e)}")
 
-    @validator("execution_mode")
+    @field_validator("execution_mode")
+    @classmethod
     def validate_execution_mode(cls, v):
         allowed = ["lan", "internet"]
         if v not in allowed:
@@ -121,6 +123,14 @@ from typing import Dict, Any
 
 _schedules: Dict[str, Dict[str, Any]] = {}  # schedule_id -> schedule_data
 _schedules_lock = asyncio.Lock()  # Async lock for thread-safe access
+
+
+# Log prominent warning on module import
+logger.warning(
+    "⚠️  SCHEDULES USING IN-MEMORY STORAGE - Not suitable for production! "
+    "All schedules will be LOST on restart. "
+    "Replace with PostgreSQL storage for production deployments."
+)
 
 
 # =========================
