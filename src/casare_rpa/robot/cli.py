@@ -22,7 +22,9 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# Suppress Qt DPI awareness warning (Playwright sets it first)
+# Suppress Qt DPI awareness warning - must be set before Qt imports.
+# When Playwright launches browsers, it sets DPI awareness context which conflicts
+# with Qt's attempt to set it later, causing a harmless but noisy warning.
 os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.window=false")
 
 import typer
@@ -91,7 +93,13 @@ def _ensure_playwright_browsers() -> bool:
 
     try:
         from playwright.sync_api import sync_playwright
+    except ImportError:
+        console.print(
+            "[red]Playwright module not installed. Run: pip install playwright[/red]"
+        )
+        return False
 
+    try:
         # Try to launch browser to check if binaries exist
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -118,9 +126,15 @@ def _ensure_playwright_browsers() -> bool:
                     )
                     return True
                 else:
-                    console.print(
-                        f"[red]Failed to install browsers: {result.stderr}[/red]"
+                    # Truncate long stderr for cleaner output
+                    stderr = result.stderr
+                    stderr_preview = (
+                        stderr[:200] + "..." if len(stderr) > 200 else stderr
                     )
+                    console.print(
+                        f"[red]Failed to install browsers: {stderr_preview}[/red]"
+                    )
+                    logger.error(f"Full Playwright install error: {stderr}")
                     return False
             except subprocess.TimeoutExpired:
                 console.print("[red]Browser installation timed out[/red]")
