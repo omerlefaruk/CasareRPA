@@ -998,9 +998,9 @@ class DistributedRobotAgent:
                             f"Released job {job.job_id[:8]} due to state affinity"
                         )
                 else:
-                    # No jobs available, exponential backoff
+                    # No jobs available, exponential backoff (max 2s for responsiveness)
                     await asyncio.sleep(backoff_delay)
-                    backoff_delay = min(backoff_delay * 1.5, 10.0)
+                    backoff_delay = min(backoff_delay * 1.5, 2.0)
 
             except asyncio.CancelledError:
                 break
@@ -1074,14 +1074,13 @@ class DistributedRobotAgent:
                 raise asyncio.CancelledError("Job cancelled by user")
 
             # Execute with DBOS
+            # Note: on_progress returns coroutine directly - executor wraps in create_task
             result = await self._executor.execute_workflow(
                 workflow_json=job.workflow_json,
                 workflow_id=job_id,
                 initial_variables=job.variables,
                 wait_for_result=True,
-                on_progress=lambda p, n: asyncio.create_task(
-                    self._on_job_progress(job_id, p, n)
-                ),
+                on_progress=lambda p, n: self._on_job_progress(job_id, p, n),
             )
 
             # Report result to queue
