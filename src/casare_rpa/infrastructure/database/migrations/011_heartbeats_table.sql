@@ -36,18 +36,18 @@ CREATE TABLE IF NOT EXISTS robot_heartbeats (
     cpu_percent FLOAT CHECK (cpu_percent >= 0),
 
     -- Heartbeat timestamp
-    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "timestamp" TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Composite index for querying recent heartbeats by robot (most common query pattern)
 -- DESC on timestamp for efficient "latest heartbeat" queries
-CREATE INDEX IF NOT EXISTS idx_heartbeats_robot ON robot_heartbeats(robot_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_heartbeats_robot ON robot_heartbeats(robot_id, "timestamp" DESC);
 
 -- Index for job-based queries (find all heartbeats for a specific job)
 CREATE INDEX IF NOT EXISTS idx_heartbeats_job ON robot_heartbeats(job_id) WHERE job_id IS NOT NULL;
 
 -- Index for timestamp-based cleanup (removing old heartbeats)
-CREATE INDEX IF NOT EXISTS idx_heartbeats_timestamp ON robot_heartbeats(timestamp);
+CREATE INDEX IF NOT EXISTS idx_heartbeats_timestamp ON robot_heartbeats("timestamp");
 
 -- Add comments for documentation
 COMMENT ON TABLE robot_heartbeats IS 'Periodic status updates from robots including progress and resource usage';
@@ -69,7 +69,7 @@ RETURNS TABLE (
     current_node TEXT,
     memory_mb FLOAT,
     cpu_percent FLOAT,
-    timestamp TIMESTAMPTZ
+    "timestamp" TIMESTAMPTZ
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -80,10 +80,10 @@ BEGIN
         h.current_node,
         h.memory_mb,
         h.cpu_percent,
-        h.timestamp
+        h."timestamp"
     FROM robot_heartbeats h
     WHERE h.robot_id = p_robot_id
-    ORDER BY h.timestamp DESC
+    ORDER BY h."timestamp" DESC
     LIMIT 1;
 END;
 $$ LANGUAGE plpgsql STABLE;
@@ -101,7 +101,7 @@ DECLARE
     deleted_count INTEGER;
 BEGIN
     DELETE FROM robot_heartbeats
-    WHERE timestamp < NOW() - (retention_hours || ' hours')::INTERVAL;
+    WHERE "timestamp" < NOW() - (retention_hours || ' hours')::INTERVAL;
 
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
     RETURN deleted_count;

@@ -111,6 +111,10 @@ class NodeSchema:
             if value is None:
                 continue
 
+            # Coerce string values to proper types (widgets often return strings)
+            value = self._coerce_value(prop, value)
+            config[prop.name] = value  # Update config with coerced value
+
             # Type validation
             if not self._validate_type(prop, value):
                 # Better error messages for specific types
@@ -194,6 +198,40 @@ class NodeSchema:
             return True  # Unknown types pass validation
 
         return validator(value)
+
+    def _coerce_value(self, prop: PropertyDef, value: Any) -> Any:
+        """
+        Coerce string values to proper types.
+
+        Widgets often return string values even for numeric/boolean types.
+        This method converts them to the expected type.
+
+        Args:
+            prop: Property definition
+            value: Value to coerce
+
+        Returns:
+            Coerced value, or original if coercion not needed/possible
+        """
+        if not isinstance(value, str):
+            return value
+
+        # Handle empty strings
+        if value == "":
+            return prop.default
+
+        try:
+            if prop.type == PropertyType.INTEGER:
+                return int(value)
+            elif prop.type == PropertyType.FLOAT:
+                return float(value)
+            elif prop.type == PropertyType.BOOLEAN:
+                return value.lower() in ("true", "1", "yes", "on")
+        except (ValueError, AttributeError):
+            # Return original value if coercion fails
+            pass
+
+        return value
 
     def get_property(self, name: str) -> Optional[PropertyDef]:
         """

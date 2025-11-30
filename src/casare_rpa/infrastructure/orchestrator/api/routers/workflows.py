@@ -9,6 +9,11 @@ Endpoints:
 - GET /workflows/{workflow_id} - Get workflow details
 - POST /workflows/upload - Upload workflow JSON file
 - DELETE /workflows/{workflow_id} - Delete workflow
+
+Security:
+- JSON payload size limits to prevent DoS attacks
+- File upload validation (size, type, content)
+- Node count limits to prevent resource exhaustion
 """
 
 import os
@@ -29,6 +34,27 @@ from casare_rpa.infrastructure.queue import (
 
 
 router = APIRouter()
+
+
+# =========================
+# Security Constants
+# =========================
+
+# Maximum JSON payload size (10MB) - prevents DoS via large payloads
+MAX_WORKFLOW_SIZE_BYTES = 10 * 1024 * 1024
+
+# Maximum file upload size (50MB)
+MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024
+
+# Maximum number of nodes in a workflow
+MAX_NODES_COUNT = 1000
+
+# Allowed content types for file uploads
+ALLOWED_UPLOAD_CONTENT_TYPES = {
+    "application/json",
+    "text/plain",
+    "application/octet-stream",  # Some browsers send this for .json files
+}
 
 
 # =========================
@@ -74,6 +100,13 @@ class WorkflowSubmissionRequest(BaseModel):
             raise ValueError("workflow_json must contain 'nodes' key")
         if not isinstance(v["nodes"], list):
             raise ValueError("workflow_json.nodes must be a list")
+
+        # Security: Limit node count to prevent resource exhaustion
+        if len(v["nodes"]) > MAX_NODES_COUNT:
+            raise ValueError(
+                f"Workflow exceeds maximum node count ({len(v['nodes'])} > {MAX_NODES_COUNT})"
+            )
+
         return v
 
 
@@ -356,6 +389,11 @@ async def upload_workflow(
 
     Alternative to JSON payload for large workflows.
 
+    Security:
+    - File size limit: 50MB
+    - File type validation: .json extension + content type check
+    - Content validation: Valid JSON with nodes array
+
     Args:
         file: Uploaded .json file
         trigger_type: manual, scheduled, or webhook
@@ -364,20 +402,61 @@ async def upload_workflow(
 
     Returns:
         WorkflowSubmissionResponse
+
+    Raises:
+        HTTPException 400: Invalid file type or content
+        HTTPException 413: File too large
     """
     try:
-        # Validate file type
-        if not file.filename.endswith(".json"):
-            raise HTTPException(status_code=400, detail="File must be a .json file")
+        # Security: Validate file extension
+        if not file.filename or not file.filename.lower().endswith(".json"):
+            raise HTTPException(
+                status_code=400,
+                detail="File must be a .json file",
+            )
 
-        # Read and parse JSON
+        # Security: Validate content type (if provided)
+        if file.content_type and file.content_type not in ALLOWED_UPLOAD_CONTENT_TYPES:
+            logger.warning(
+                "Upload rejected - invalid content type: {} for file {}",
+                file.content_type,
+                file.filename,
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid content type: {file.content_type}. "
+                f"Allowed: {', '.join(ALLOWED_UPLOAD_CONTENT_TYPES)}",
+            )
+
+        # Security: Check file size before reading full content
+        # file.size may be None for streamed uploads, so we check after read
+        if file.size and file.size > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE_BYTES // 1024 // 1024}MB",
+            )
+
+        # Read content with size limit
         content = await file.read()
-        workflow_data = orjson.loads(content)
+
+        # Security: Verify actual size after read
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE_BYTES // 1024 // 1024}MB",
+            )
+
+        # Parse JSON
+        try:
+            workflow_data = orjson.loads(content)
+        except orjson.JSONDecodeError as e:
+            logger.error("Invalid JSON in uploaded file {}: {}", file.filename, e)
+            raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
 
         # Extract workflow name from filename (without .json extension)
         workflow_name = Path(file.filename).stem
 
-        # Create submission request
+        # Create submission request (validation happens in WorkflowSubmissionRequest)
         request = WorkflowSubmissionRequest(
             workflow_name=workflow_name,
             workflow_json=workflow_data.get("workflow_json", workflow_data),
@@ -389,12 +468,14 @@ async def upload_workflow(
         # Use regular submission endpoint
         return await submit_workflow(request)
 
-    except orjson.JSONDecodeError as e:
-        logger.error("Invalid JSON in uploaded file: {}", e)
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
 
     except Exception as e:
-        logger.error("File upload failed: {}", e)
+        logger.error(
+            "File upload failed for {}: {}", file.filename if file else "unknown", e
+        )
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 

@@ -44,7 +44,8 @@ async def get_fleet_metrics(
     logger.debug("Fetching fleet metrics")
 
     try:
-        data = collector.get_fleet_summary()
+        # Use async method to query database
+        data = await collector.get_fleet_summary_async()
         return FleetMetrics(**data)
     except Exception as e:
         logger.error(f"Failed to fetch fleet metrics: {e}")
@@ -73,7 +74,8 @@ async def get_robots(
     logger.debug(f"Fetching robots list (status={status})")
 
     try:
-        robots = collector.get_robot_list(status=status)
+        # Use async method to query database
+        robots = await collector.get_robot_list_async(status=status)
         return [RobotSummary(**robot) for robot in robots]
     except Exception as e:
         logger.error(f"Failed to fetch robots: {e}")
