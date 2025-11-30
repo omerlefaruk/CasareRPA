@@ -126,9 +126,9 @@ All documentation uses Mermaid.js diagrams. Key diagram types:
 
 | Item | Version |
 |------|---------|
-| Documentation | 1.0.0 |
-| CasareRPA | 3.0.0-dev |
-| Last Updated | 2024-01 |
+| Documentation | 3.0.0 |
+| CasareRPA | 3.0.0 |
+| Last Updated | 2025-11-30 |
 
 ---
 

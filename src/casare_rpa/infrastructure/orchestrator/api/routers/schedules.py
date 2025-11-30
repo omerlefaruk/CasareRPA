@@ -22,6 +22,11 @@ from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 from croniter import croniter
 
+from casare_rpa.infrastructure.orchestrator.api.auth import (
+    AuthenticatedUser,
+    require_role,
+)
+
 
 router = APIRouter()
 
@@ -139,7 +144,10 @@ logger.warning(
 
 
 @router.post("/schedules", response_model=ScheduleResponse)
-async def create_schedule(request: ScheduleRequest) -> ScheduleResponse:
+async def create_schedule(
+    request: ScheduleRequest,
+    user: AuthenticatedUser = Depends(require_role("developer")),
+) -> ScheduleResponse:
     """
     Create a new workflow schedule.
 
@@ -205,6 +213,7 @@ async def list_schedules(
     workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
     enabled: Optional[bool] = Query(None, description="Filter by enabled status"),
     limit: int = Query(100, ge=1, le=1000),
+    user: AuthenticatedUser = Depends(require_role("viewer")),
 ) -> List[ScheduleResponse]:
     """
     List all schedules with optional filtering.
@@ -245,7 +254,10 @@ async def list_schedules(
 
 
 @router.get("/schedules/{schedule_id}", response_model=ScheduleResponse)
-async def get_schedule(schedule_id: str) -> ScheduleResponse:
+async def get_schedule(
+    schedule_id: str,
+    user: AuthenticatedUser = Depends(require_role("viewer")),
+) -> ScheduleResponse:
     """
     Get schedule details by ID.
 
@@ -267,7 +279,10 @@ async def get_schedule(schedule_id: str) -> ScheduleResponse:
 
 
 @router.put("/schedules/{schedule_id}/enable")
-async def enable_schedule(schedule_id: str) -> ScheduleResponse:
+async def enable_schedule(
+    schedule_id: str,
+    user: AuthenticatedUser = Depends(require_role("operator")),
+) -> ScheduleResponse:
     """
     Enable a schedule.
 
@@ -297,7 +312,10 @@ async def enable_schedule(schedule_id: str) -> ScheduleResponse:
 
 
 @router.put("/schedules/{schedule_id}/disable")
-async def disable_schedule(schedule_id: str) -> ScheduleResponse:
+async def disable_schedule(
+    schedule_id: str,
+    user: AuthenticatedUser = Depends(require_role("operator")),
+) -> ScheduleResponse:
     """
     Disable a schedule.
 
@@ -327,7 +345,10 @@ async def disable_schedule(schedule_id: str) -> ScheduleResponse:
 
 
 @router.delete("/schedules/{schedule_id}")
-async def delete_schedule(schedule_id: str) -> dict:
+async def delete_schedule(
+    schedule_id: str,
+    user: AuthenticatedUser = Depends(require_role("admin")),
+) -> dict:
     """
     Delete a schedule.
 
@@ -356,7 +377,10 @@ async def delete_schedule(schedule_id: str) -> dict:
 
 
 @router.put("/schedules/{schedule_id}/trigger")
-async def trigger_schedule_now(schedule_id: str) -> dict:
+async def trigger_schedule_now(
+    schedule_id: str,
+    user: AuthenticatedUser = Depends(require_role("operator")),
+) -> dict:
     """
     Trigger a schedule execution immediately (manual override).
 
