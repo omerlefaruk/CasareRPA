@@ -19,11 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
 from loguru import logger
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 try:

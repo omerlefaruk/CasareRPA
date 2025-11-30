@@ -9,11 +9,6 @@ Endpoints:
 - GET /workflows/{workflow_id} - Get workflow details
 - POST /workflows/upload - Upload workflow JSON file
 - DELETE /workflows/{workflow_id} - Delete workflow
-
-Security:
-- JSON payload size limits to prevent DoS attacks
-- File upload validation (size, type, content)
-- Node count limits to prevent resource exhaustion
 """
 
 import os
@@ -22,9 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from loguru import logger
 import orjson
 
@@ -39,43 +33,7 @@ from casare_rpa.infrastructure.orchestrator.api.auth import (
 )
 
 
-# Database pool (initialized by main.py lifespan)
-_db_pool: Optional[asyncpg.Pool] = None
-
-
-def set_db_pool(pool: asyncpg.Pool) -> None:
-    """Set the database pool for workflow operations."""
-    global _db_pool
-    _db_pool = pool
-
-
-def get_db_pool() -> Optional[asyncpg.Pool]:
-    """Get the database pool."""
-    return _db_pool
-
-
 router = APIRouter()
-
-
-# =========================
-# Security Constants
-# =========================
-
-# Maximum JSON payload size (10MB) - prevents DoS via large payloads
-MAX_WORKFLOW_SIZE_BYTES = 10 * 1024 * 1024
-
-# Maximum file upload size (50MB)
-MAX_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024
-
-# Maximum number of nodes in a workflow
-MAX_NODES_COUNT = 1000
-
-# Allowed content types for file uploads
-ALLOWED_UPLOAD_CONTENT_TYPES = {
-    "application/json",
-    "text/plain",
-    "application/octet-stream",  # Some browsers send this for .json files
-}
 
 
 # =========================
@@ -100,37 +58,27 @@ class WorkflowSubmissionRequest(BaseModel):
     )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("trigger_type")
-    @classmethod
+    @validator("trigger_type")
     def validate_trigger_type(cls, v):
         allowed = ["manual", "scheduled", "webhook"]
         if v not in allowed:
             raise ValueError(f"trigger_type must be one of {allowed}")
         return v
 
-    @field_validator("execution_mode")
-    @classmethod
+    @validator("execution_mode")
     def validate_execution_mode(cls, v):
         allowed = ["lan", "internet"]
         if v not in allowed:
             raise ValueError(f"execution_mode must be one of {allowed}")
         return v
 
-    @field_validator("workflow_json")
-    @classmethod
+    @validator("workflow_json")
     def validate_workflow_json(cls, v):
         # Basic validation - must have nodes key
         if "nodes" not in v:
             raise ValueError("workflow_json must contain 'nodes' key")
         if not isinstance(v["nodes"], list):
             raise ValueError("workflow_json.nodes must be a list")
-
-        # Security: Limit node count to prevent resource exhaustion
-        if len(v["nodes"]) > MAX_NODES_COUNT:
-            raise ValueError(
-                f"Workflow exceeds maximum node count ({len(v['nodes'])} > {MAX_NODES_COUNT})"
-            )
-
         return v
 
 
@@ -221,37 +169,11 @@ async def store_workflow_database(
     Returns:
         True if successful, False otherwise
     """
-    pool = get_db_pool()
-    if not pool:
-        logger.warning(
-            "Database pool not available for workflow: {} - using filesystem only",
-            workflow_id,
-        )
-        return False
-
     try:
-        async with pool.acquire() as conn:
-            # Use UPSERT to handle both insert and update
-            await conn.execute(
-                """
-                INSERT INTO workflows (
-                    workflow_id, workflow_name, workflow_json, description,
-                    version, created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, 1, NOW(), NOW())
-                ON CONFLICT (workflow_id) DO UPDATE SET
-                    workflow_name = EXCLUDED.workflow_name,
-                    workflow_json = EXCLUDED.workflow_json,
-                    description = EXCLUDED.description,
-                    version = workflows.version + 1,
-                    updated_at = NOW()
-                """,
-                uuid.UUID(workflow_id),
-                workflow_name,
-                orjson.dumps(workflow_json).decode(),  # JSONB needs string
-                description or "",
-            )
-
-        logger.info("Workflow stored to database: {}", workflow_id)
+        # TODO: Implement database storage
+        # This will be implemented once we have the workflow repository
+        # For now, just log and return True
+        logger.info("Workflow storage to database (TODO): {}", workflow_id)
         return True
 
     except Exception as e:
@@ -267,7 +189,7 @@ async def enqueue_job(
     metadata: Dict[str, Any],
 ) -> str:
     """
-    Enqueue job to queue (PostgreSQL jobs table or MemoryQueue fallback).
+    Enqueue job to queue (PgQueuer or MemoryQueue fallback).
 
     Args:
         workflow_id: Workflow identifier
@@ -304,59 +226,17 @@ async def enqueue_job(
             workflow_id,
             execution_mode,
         )
-        return job_id
 
-    # Use PostgreSQL jobs table
-    pool = get_db_pool()
-    if not pool:
-        logger.warning("Database pool not available, using memory queue fallback")
-        queue = get_memory_queue()
-        return await queue.enqueue(
-            workflow_id=workflow_id,
-            workflow_json=workflow_json,
-            priority=priority,
-            execution_mode=execution_mode,
-            metadata=metadata,
-        )
-
-    try:
+    else:
+        # TODO: Use PgQueuer for production
+        # This will be implemented once PgQueuer producer is ready
         job_id = str(uuid.uuid4())
-
-        async with pool.acquire() as conn:
-            await conn.execute(
-                """
-                INSERT INTO jobs (
-                    job_id, workflow_id, status, priority, execution_mode,
-                    created_at, retry_count, max_retries, metadata
-                ) VALUES ($1, $2, 'pending', $3, $4, NOW(), 0, 3, $5)
-                """,
-                uuid.UUID(job_id),
-                uuid.UUID(workflow_id),
-                priority,
-                execution_mode,
-                orjson.dumps(metadata).decode(),
-            )
-
-        logger.info(
-            "Job enqueued to database: {} (workflow={}, mode={})",
+        logger.warning(
+            "PgQueuer not yet implemented, using placeholder job_id: {}",
             job_id,
-            workflow_id,
-            execution_mode,
         )
-        return job_id
 
-    except Exception as e:
-        logger.error(
-            "Failed to enqueue job to database: {} - falling back to memory queue", e
-        )
-        queue = get_memory_queue()
-        return await queue.enqueue(
-            workflow_id=workflow_id,
-            workflow_json=workflow_json,
-            priority=priority,
-            execution_mode=execution_mode,
-            metadata=metadata,
-        )
+    return job_id
 
 
 # =========================
@@ -483,11 +363,6 @@ async def upload_workflow(
 
     Alternative to JSON payload for large workflows.
 
-    Security:
-    - File size limit: 50MB
-    - File type validation: .json extension + content type check
-    - Content validation: Valid JSON with nodes array
-
     Args:
         file: Uploaded .json file
         trigger_type: manual, scheduled, or webhook
@@ -496,61 +371,20 @@ async def upload_workflow(
 
     Returns:
         WorkflowSubmissionResponse
-
-    Raises:
-        HTTPException 400: Invalid file type or content
-        HTTPException 413: File too large
     """
     try:
-        # Security: Validate file extension
-        if not file.filename or not file.filename.lower().endswith(".json"):
-            raise HTTPException(
-                status_code=400,
-                detail="File must be a .json file",
-            )
+        # Validate file type
+        if not file.filename.endswith(".json"):
+            raise HTTPException(status_code=400, detail="File must be a .json file")
 
-        # Security: Validate content type (if provided)
-        if file.content_type and file.content_type not in ALLOWED_UPLOAD_CONTENT_TYPES:
-            logger.warning(
-                "Upload rejected - invalid content type: {} for file {}",
-                file.content_type,
-                file.filename,
-            )
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid content type: {file.content_type}. "
-                f"Allowed: {', '.join(ALLOWED_UPLOAD_CONTENT_TYPES)}",
-            )
-
-        # Security: Check file size before reading full content
-        # file.size may be None for streamed uploads, so we check after read
-        if file.size and file.size > MAX_UPLOAD_SIZE_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE_BYTES // 1024 // 1024}MB",
-            )
-
-        # Read content with size limit
+        # Read and parse JSON
         content = await file.read()
-
-        # Security: Verify actual size after read
-        if len(content) > MAX_UPLOAD_SIZE_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size: {MAX_UPLOAD_SIZE_BYTES // 1024 // 1024}MB",
-            )
-
-        # Parse JSON
-        try:
-            workflow_data = orjson.loads(content)
-        except orjson.JSONDecodeError as e:
-            logger.error("Invalid JSON in uploaded file {}: {}", file.filename, e)
-            raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
+        workflow_data = orjson.loads(content)
 
         # Extract workflow name from filename (without .json extension)
         workflow_name = Path(file.filename).stem
 
-        # Create submission request (validation happens in WorkflowSubmissionRequest)
+        # Create submission request
         request = WorkflowSubmissionRequest(
             workflow_name=workflow_name,
             workflow_json=workflow_data.get("workflow_json", workflow_data),
@@ -562,14 +396,12 @@ async def upload_workflow(
         # Use regular submission endpoint
         return await submit_workflow(request)
 
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
-        raise
+    except orjson.JSONDecodeError as e:
+        logger.error("Invalid JSON in uploaded file: {}", e)
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
 
     except Exception as e:
-        logger.error(
-            "File upload failed for {}: {}", file.filename if file else "unknown", e
-        )
+        logger.error("File upload failed: {}", e)
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 

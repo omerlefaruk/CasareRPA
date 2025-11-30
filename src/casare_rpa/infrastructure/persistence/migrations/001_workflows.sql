@@ -197,5 +197,4 @@ GROUP BY execution_mode;
 -- Grant permissions to casare_user (assuming the user exists)
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO casare_user;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO casare_user;
-GRANT SELECT ON workflow_stats TO casare_user;
-GRANT SELECT ON queue_stats TO casare_user;
+GRANT SELECT ON ALL VIEWS IN SCHEMA public TO casare_user;

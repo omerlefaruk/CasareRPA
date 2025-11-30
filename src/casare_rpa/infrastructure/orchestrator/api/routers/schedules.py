@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from loguru import logger
 from croniter import croniter
 
@@ -49,8 +49,7 @@ class ScheduleRequest(BaseModel):
     execution_mode: str = Field(default="lan", description="lan or internet")
     metadata: dict = Field(default_factory=dict)
 
-    @field_validator("cron_expression")
-    @classmethod
+    @validator("cron_expression")
     def validate_cron(cls, v):
         """Validate cron expression."""
         try:
@@ -59,8 +58,7 @@ class ScheduleRequest(BaseModel):
         except (ValueError, KeyError) as e:
             raise ValueError(f"Invalid cron expression: {str(e)}")
 
-    @field_validator("execution_mode")
-    @classmethod
+    @validator("execution_mode")
     def validate_execution_mode(cls, v):
         allowed = ["lan", "internet"]
         if v not in allowed:
@@ -116,26 +114,9 @@ def calculate_next_run(
 # =========================
 # In-Memory Storage (Temporary)
 # =========================
-# WARNING: This is temporary in-memory storage.
-# - Data is lost on restart
-# - Not suitable for distributed deployments
-# - Replace with database storage (PostgreSQL) for production
-#
-# Thread Safety: Uses asyncio.Lock for safe concurrent access.
+# TODO: Replace with database storage
 
-import asyncio
-from typing import Dict, Any
-
-_schedules: Dict[str, Dict[str, Any]] = {}  # schedule_id -> schedule_data
-_schedules_lock = asyncio.Lock()  # Async lock for thread-safe access
-
-
-# Log prominent warning on module import
-logger.warning(
-    "⚠️  SCHEDULES USING IN-MEMORY STORAGE - Not suitable for production! "
-    "All schedules will be LOST on restart. "
-    "Replace with PostgreSQL storage for production deployments."
-)
+_schedules: dict = {}  # schedule_id -> schedule_data
 
 
 # =========================
@@ -186,9 +167,8 @@ async def create_schedule(
             "metadata": request.metadata,
         }
 
-        # Thread-safe storage with async lock
-        async with _schedules_lock:
-            _schedules[schedule_id] = schedule_data
+        # Store in memory (TODO: store in database)
+        _schedules[schedule_id] = schedule_data
 
         # TODO: Register with APScheduler
         logger.info(
@@ -227,11 +207,9 @@ async def list_schedules(
         List of schedules
     """
     try:
-        # Thread-safe read with async lock
-        async with _schedules_lock:
-            schedules = list(_schedules.values())
+        schedules = list(_schedules.values())
 
-        # Apply filters (on local copy, no lock needed)
+        # Apply filters
         if workflow_id:
             schedules = [s for s in schedules if s["workflow_id"] == workflow_id]
 
@@ -267,8 +245,7 @@ async def get_schedule(
     Returns:
         ScheduleResponse
     """
-    async with _schedules_lock:
-        schedule_data = _schedules.get(schedule_id)
+    schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
         raise HTTPException(
@@ -292,18 +269,17 @@ async def enable_schedule(
     Returns:
         Updated ScheduleResponse
     """
-    async with _schedules_lock:
-        schedule_data = _schedules.get(schedule_id)
+    schedule_data = _schedules.get(schedule_id)
 
-        if not schedule_data:
-            raise HTTPException(
-                status_code=404, detail=f"Schedule not found: {schedule_id}"
-            )
+    if not schedule_data:
+        raise HTTPException(
+            status_code=404, detail=f"Schedule not found: {schedule_id}"
+        )
 
-        # Update schedule (while holding lock)
-        schedule_data["enabled"] = True
-        schedule_data["next_run"] = calculate_next_run(schedule_data["cron_expression"])
-        schedule_data["updated_at"] = datetime.now(timezone.utc)
+    # Update schedule
+    schedule_data["enabled"] = True
+    schedule_data["next_run"] = calculate_next_run(schedule_data["cron_expression"])
+    schedule_data["updated_at"] = datetime.now(timezone.utc)
 
     # TODO: Re-register with APScheduler
     logger.info("Schedule enabled: {}", schedule_id)
@@ -325,18 +301,17 @@ async def disable_schedule(
     Returns:
         Updated ScheduleResponse
     """
-    async with _schedules_lock:
-        schedule_data = _schedules.get(schedule_id)
+    schedule_data = _schedules.get(schedule_id)
 
-        if not schedule_data:
-            raise HTTPException(
-                status_code=404, detail=f"Schedule not found: {schedule_id}"
-            )
+    if not schedule_data:
+        raise HTTPException(
+            status_code=404, detail=f"Schedule not found: {schedule_id}"
+        )
 
-        # Update schedule (while holding lock)
-        schedule_data["enabled"] = False
-        schedule_data["next_run"] = None
-        schedule_data["updated_at"] = datetime.now(timezone.utc)
+    # Update schedule
+    schedule_data["enabled"] = False
+    schedule_data["next_run"] = None
+    schedule_data["updated_at"] = datetime.now(timezone.utc)
 
     # TODO: Unregister from APScheduler
     logger.info("Schedule disabled: {}", schedule_id)
@@ -358,14 +333,13 @@ async def delete_schedule(
     Returns:
         Success message
     """
-    async with _schedules_lock:
-        if schedule_id not in _schedules:
-            raise HTTPException(
-                status_code=404, detail=f"Schedule not found: {schedule_id}"
-            )
+    if schedule_id not in _schedules:
+        raise HTTPException(
+            status_code=404, detail=f"Schedule not found: {schedule_id}"
+        )
 
-        # Remove from storage (while holding lock)
-        del _schedules[schedule_id]
+    # Remove from storage
+    del _schedules[schedule_id]
 
     # TODO: Unregister from APScheduler
     logger.info("Schedule deleted: {}", schedule_id)
@@ -390,8 +364,7 @@ async def trigger_schedule_now(
     Returns:
         Job ID of triggered execution
     """
-    async with _schedules_lock:
-        schedule_data = _schedules.get(schedule_id)
+    schedule_data = _schedules.get(schedule_id)
 
     if not schedule_data:
         raise HTTPException(
