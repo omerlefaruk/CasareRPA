@@ -953,7 +953,7 @@ class UnifiedResourceManager:
         return count < limit
 
     def analyze_workflow_needs(
-        self, workflow_json: Union[str, Dict]
+        self, workflow_json: Union[str, Dict[str, Any]]
     ) -> Dict[str, bool]:
         """
         Analyze workflow to determine required resources.
@@ -973,10 +973,17 @@ class UnifiedResourceManager:
 
             # Handle both dict-format (keyed by node_id) and list-format nodes
             nodes_data = workflow.get("nodes", {})
+            if nodes_data is None:
+                nodes_data = {}
             if isinstance(nodes_data, dict):
                 nodes = list(nodes_data.values())
-            else:
+            elif isinstance(nodes_data, list):
                 nodes = nodes_data
+            else:
+                logger.warning(
+                    f"Unexpected nodes format: {type(nodes_data)}, using empty list"
+                )
+                nodes = []
 
             needs_browser = False
             needs_database = False
