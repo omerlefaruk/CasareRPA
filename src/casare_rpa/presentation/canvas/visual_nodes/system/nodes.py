@@ -81,7 +81,10 @@ class VisualClipboardClearNode(VisualNode):
 
 
 class VisualMessageBoxNode(VisualNode):
-    """Visual representation of MessageBoxNode."""
+    """Visual representation of MessageBoxNode.
+
+    Widgets auto-generated from MessageBoxNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Message Box"
@@ -89,56 +92,24 @@ class VisualMessageBoxNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        # Basic properties
-        self.add_text_input("title", "Title", text="Message", tab="properties")
-        self.add_text_input("message", "Message", text="Hello!", tab="properties")
-        self.add_combo_menu(
-            "icon_type",
-            "Icon",
-            items=["information", "warning", "error", "question"],
-            tab="properties",
-        )
-        self.add_combo_menu(
-            "buttons",
-            "Buttons",
-            items=["ok", "ok_cancel", "yes_no", "yes_no_cancel"],
-            tab="properties",
-        )
-        # Advanced options
-        self.add_text_input(
-            "detailed_text",
-            "Detailed Text",
-            placeholder_text="Expandable details...",
-            tab="advanced",
-        )
-        self.add_combo_menu(
-            "default_button",
-            "Default Button",
-            items=["", "ok", "cancel", "yes", "no"],
-            tab="advanced",
-        )
-        self.add_checkbox("always_on_top", "Always On Top", state=True, tab="advanced")
-        self.add_checkbox("play_sound", "Play Sound", state=False, tab="advanced")
-        self.add_text_input(
-            "auto_close_timeout",
-            "Auto-Close (sec)",
-            placeholder_text="0 = disabled",
-            tab="advanced",
-        )
+        # Widgets auto-generated from @node_schema on MessageBoxNode
 
     def get_node_class(self) -> type:
         return MessageBoxNode
 
     def setup_ports(self) -> None:
-        self.add_input("exec_in")
-        self.add_input("message")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("accepted")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("message", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
+        self.add_typed_output("accepted", DataType.BOOLEAN)
 
 
 class VisualInputDialogNode(VisualNode):
-    """Visual representation of InputDialogNode."""
+    """Visual representation of InputDialogNode.
+
+    Widgets auto-generated from InputDialogNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Input Dialog"
@@ -146,11 +117,7 @@ class VisualInputDialogNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("title", "Title", text="Input", tab="properties")
-        self.add_text_input("default_value", "Default", text="", tab="properties")
-        self.add_checkbox(
-            "password_mode", "Password Mode", state=False, tab="properties"
-        )
+        # Widgets auto-generated from @node_schema on InputDialogNode
 
     def get_node_class(self) -> type:
         return InputDialogNode
@@ -164,7 +131,10 @@ class VisualInputDialogNode(VisualNode):
 
 
 class VisualTooltipNode(VisualNode):
-    """Visual representation of TooltipNode."""
+    """Visual representation of TooltipNode.
+
+    Widgets auto-generated from TooltipNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Tooltip"
@@ -172,8 +142,7 @@ class VisualTooltipNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("title", "Title", text="Notification", tab="properties")
-        self.add_text_input("duration", "Duration (s)", text="5", tab="properties")
+        # Widgets auto-generated from @node_schema on TooltipNode
 
     def get_node_class(self) -> type:
         return TooltipNode
@@ -191,7 +160,10 @@ class VisualTooltipNode(VisualNode):
 
 
 class VisualRunCommandNode(VisualNode):
-    """Visual representation of RunCommandNode."""
+    """Visual representation of RunCommandNode.
+
+    Widgets auto-generated from RunCommandNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Run Command"
@@ -199,8 +171,7 @@ class VisualRunCommandNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-        self.add_checkbox("shell", "Use Shell", state=True, tab="properties")
+        # Widgets auto-generated from @node_schema on RunCommandNode
 
     def get_node_class(self) -> type:
         return RunCommandNode
@@ -208,7 +179,7 @@ class VisualRunCommandNode(VisualNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("command", DataType.STRING)
-        self.add_typed_input("working_dir", DataType.STRING)
+        self.add_typed_input("args", DataType.ANY)
         self.add_exec_output("exec_out")
         self.add_typed_output("stdout", DataType.STRING)
         self.add_typed_output("stderr", DataType.STRING)
@@ -217,7 +188,10 @@ class VisualRunCommandNode(VisualNode):
 
 
 class VisualRunPowerShellNode(VisualNode):
-    """Visual representation of RunPowerShellNode."""
+    """Visual representation of RunPowerShellNode.
+
+    Widgets auto-generated from RunPowerShellNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Run PowerShell"
@@ -225,7 +199,7 @@ class VisualRunPowerShellNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
+        # Widgets auto-generated from @node_schema on RunPowerShellNode
 
     def get_node_class(self) -> type:
         return RunPowerShellNode
@@ -234,8 +208,8 @@ class VisualRunPowerShellNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("script", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("output", DataType.STRING)
-        self.add_typed_output("error", DataType.STRING)
+        self.add_typed_output("stdout", DataType.STRING)
+        self.add_typed_output("stderr", DataType.STRING)
         self.add_typed_output("return_code", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
 
@@ -271,10 +245,6 @@ class VisualStartServiceNode(VisualNode):
     NODE_NAME = "Start Service"
     NODE_CATEGORY = "system"
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-
     def get_node_class(self) -> type:
         return StartServiceNode
 
@@ -283,7 +253,7 @@ class VisualStartServiceNode(VisualNode):
         self.add_typed_input("service_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
-        self.add_typed_output("status", DataType.STRING)
+        self.add_typed_output("message", DataType.STRING)
 
 
 class VisualStopServiceNode(VisualNode):
@@ -293,10 +263,6 @@ class VisualStopServiceNode(VisualNode):
     NODE_NAME = "Stop Service"
     NODE_CATEGORY = "system"
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="30", tab="properties")
-
     def get_node_class(self) -> type:
         return StopServiceNode
 
@@ -305,11 +271,14 @@ class VisualStopServiceNode(VisualNode):
         self.add_typed_input("service_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
-        self.add_typed_output("status", DataType.STRING)
+        self.add_typed_output("message", DataType.STRING)
 
 
 class VisualRestartServiceNode(VisualNode):
-    """Visual representation of RestartServiceNode."""
+    """Visual representation of RestartServiceNode.
+
+    Widgets auto-generated from RestartServiceNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Restart Service"
@@ -317,7 +286,7 @@ class VisualRestartServiceNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="60", tab="properties")
+        # Widgets auto-generated from @node_schema on RestartServiceNode
 
     def get_node_class(self) -> type:
         return RestartServiceNode
@@ -327,11 +296,14 @@ class VisualRestartServiceNode(VisualNode):
         self.add_typed_input("service_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
-        self.add_typed_output("status", DataType.STRING)
+        self.add_typed_output("message", DataType.STRING)
 
 
 class VisualListServicesNode(VisualNode):
-    """Visual representation of ListServicesNode."""
+    """Visual representation of ListServicesNode.
+
+    Widgets auto-generated from ListServicesNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "List Services"
@@ -339,12 +311,7 @@ class VisualListServicesNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
-        self.add_combo_menu(
-            "filter_status",
-            "Filter",
-            items=["all", "running", "stopped"],
-            tab="properties",
-        )
+        # Widgets auto-generated from @node_schema on ListServicesNode
 
     def get_node_class(self) -> type:
         return ListServicesNode

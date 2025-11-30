@@ -355,7 +355,8 @@ class MessageBoxNode(BaseNode):
             always_on_top = self.get_parameter("always_on_top", True)
             play_sound = self.get_parameter("play_sound", False)
             detailed_text = self.get_parameter("detailed_text", "")
-            auto_close_timeout = self.get_parameter("auto_close_timeout", 0)
+            # Ensure auto_close_timeout is int (widgets may return strings)
+            auto_close_timeout = int(self.get_parameter("auto_close_timeout", 0) or 0)
 
             # Get message from input port first, fallback to config
             message = self.get_input_value("message")
