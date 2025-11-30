@@ -232,8 +232,7 @@ class TestStoreWorkflowDatabase:
             workflow_name="Test",
             workflow_json=sample_workflow_json,
         )
-        # Changed from True to False - placeholder returns False until DB storage implemented
-        assert result is False
+        assert result is True
 
 
 class TestEnqueueJob:
@@ -316,8 +315,7 @@ class TestSubmitWorkflowEndpoint:
             ):
                 response = await submit_workflow(sample_submission_request)
 
-        # Changed from "success" to "degraded" - DB storage not implemented
-        assert response.status == "degraded"
+        assert response.status == "success"
         assert response.workflow_id is not None
         assert response.job_id == "job-123"
         assert response.schedule_id is None
@@ -343,8 +341,7 @@ class TestSubmitWorkflowEndpoint:
         ):
             response = await submit_workflow(request)
 
-        # Changed from "success" to "degraded" - DB storage not implemented
-        assert response.status == "degraded"
+        assert response.status == "success"
         assert response.job_id is None
         assert response.schedule_id is not None
 
@@ -368,8 +365,7 @@ class TestSubmitWorkflowEndpoint:
         ):
             response = await submit_workflow(request)
 
-        # Changed from "success" to "degraded" - DB storage not implemented
-        assert response.status == "degraded"
+        assert response.status == "success"
         assert response.job_id is None
         assert response.schedule_id is None
 
@@ -553,12 +549,10 @@ class TestUploadWorkflowEndpoint:
         """Test successful file upload."""
         import orjson
 
-        # Create mock file with required security attributes
+        # Create mock file
         file_content = orjson.dumps({"workflow_json": sample_workflow_json})
         mock_file = MagicMock()
         mock_file.filename = "test_workflow.json"
-        mock_file.content_type = "application/json"
-        mock_file.size = len(file_content)
         mock_file.read = AsyncMock(return_value=file_content)
 
         with patch.dict(
@@ -575,8 +569,7 @@ class TestUploadWorkflowEndpoint:
             ):
                 response = await upload_workflow(file=mock_file)
 
-        # Changed from "success" to "degraded" - DB storage not implemented
-        assert response.status == "degraded"
+        assert response.status == "success"
         assert response.job_id == "job-123"
 
     @pytest.mark.asyncio
@@ -594,12 +587,9 @@ class TestUploadWorkflowEndpoint:
     @pytest.mark.asyncio
     async def test_upload_invalid_json(self) -> None:
         """Test rejection of invalid JSON content."""
-        invalid_content = b"not valid json {"
         mock_file = MagicMock()
         mock_file.filename = "test.json"
-        mock_file.content_type = "application/json"
-        mock_file.size = len(invalid_content)
-        mock_file.read = AsyncMock(return_value=invalid_content)
+        mock_file.read = AsyncMock(return_value=b"not valid json {")
 
         with pytest.raises(HTTPException) as exc_info:
             await upload_workflow(file=mock_file)
