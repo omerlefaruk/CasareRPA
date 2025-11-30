@@ -98,7 +98,16 @@ class ExecutionState:
 
         # Add runtime variables (highest priority)
         if runtime_vars:
-            merged.update(runtime_vars)
+            # Handle case where runtime_vars might be a string (e.g., from JSON)
+            if isinstance(runtime_vars, str):
+                import orjson
+
+                try:
+                    runtime_vars = orjson.loads(runtime_vars)
+                except Exception:
+                    runtime_vars = {}
+            if isinstance(runtime_vars, dict):
+                merged.update(runtime_vars)
 
         return merged
 

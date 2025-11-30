@@ -11,11 +11,15 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.11",
+    "@tanstack/react-virtual": "^3.13.12",
     "axios": "^1.13.2",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.23.24",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
-    "recharts": "^3.5.1"
+    "recharts": "^3.5.1",
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

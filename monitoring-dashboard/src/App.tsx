@@ -1,43 +1,35 @@
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
 import FleetOverview from './pages/FleetOverview'
 import WorkflowExecution from './pages/WorkflowExecution'
 import RobotDetail from './pages/RobotDetail'
+import Schedules from './pages/Schedules'
 import Analytics from './pages/Analytics'
-import './App.css'
 
+/**
+ * App - Root component with routing configuration.
+ *
+ * Routes:
+ * - / : Dashboard (unified home)
+ * - /fleet : FleetOverview (robot management)
+ * - /robots/:robotId : RobotDetail (single robot view)
+ * - /jobs : WorkflowExecution (job queue)
+ * - /schedules : Schedules (schedule management)
+ * - /analytics : Analytics (metrics and reports)
+ *
+ * Note: DashboardLayout is applied within each page component
+ * to allow page-specific customization of title, subtitle, etc.
+ */
 function App() {
-  const location = useLocation()
-
-  const isActive = (path: string) => {
-    return location.pathname === path ? 'nav-link active' : 'nav-link'
-  }
-
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>CasareRPA Monitoring Dashboard</h1>
-        <nav className="app-nav">
-          <Link to="/" className={isActive('/')}>
-            Fleet Overview
-          </Link>
-          <Link to="/workflows" className={isActive('/workflows')}>
-            Workflow Execution
-          </Link>
-          <Link to="/analytics" className={isActive('/analytics')}>
-            Analytics
-          </Link>
-        </nav>
-      </header>
-
-      <main className="app-main">
-        <Routes>
-          <Route path="/" element={<FleetOverview />} />
-          <Route path="/workflows" element={<WorkflowExecution />} />
-          <Route path="/robots/:robotId" element={<RobotDetail />} />
-          <Route path="/analytics" element={<Analytics />} />
-        </Routes>
-      </main>
-    </div>
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/fleet" element={<FleetOverview />} />
+      <Route path="/robots/:robotId" element={<RobotDetail />} />
+      <Route path="/jobs" element={<WorkflowExecution />} />
+      <Route path="/schedules" element={<Schedules />} />
+      <Route path="/analytics" element={<Analytics />} />
+    </Routes>
   )
 }
 

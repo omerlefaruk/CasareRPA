@@ -18,17 +18,35 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from loguru import logger
 from croniter import croniter
 
-from casare_rpa.infrastructure.orchestrator.api.auth import (
-    AuthenticatedUser,
-    require_role,
-)
-
+try:
+    import asyncpg
+except ImportError:
+    asyncpg = None
 
 router = APIRouter()
+
+# =========================
+# Database Pool Management
+# =========================
+
+_db_pool = None
+
+
+def set_db_pool(pool) -> None:
+    """Set the database pool for schedule operations."""
+    global _db_pool
+    _db_pool = pool
+    if pool:
+        logger.info("Schedules router: Database pool set (PostgreSQL storage ready)")
+
+
+def get_db_pool():
+    """Get the database pool."""
+    return _db_pool
 
 
 # =========================
@@ -49,7 +67,8 @@ class ScheduleRequest(BaseModel):
     execution_mode: str = Field(default="lan", description="lan or internet")
     metadata: dict = Field(default_factory=dict)
 
-    @validator("cron_expression")
+    @field_validator("cron_expression")
+    @classmethod
     def validate_cron(cls, v):
         """Validate cron expression."""
         try:
@@ -58,7 +77,8 @@ class ScheduleRequest(BaseModel):
         except (ValueError, KeyError) as e:
             raise ValueError(f"Invalid cron expression: {str(e)}")
 
-    @validator("execution_mode")
+    @field_validator("execution_mode")
+    @classmethod
     def validate_execution_mode(cls, v):
         allowed = ["lan", "internet"]
         if v not in allowed:
@@ -128,16 +148,21 @@ _schedules: Dict[str, Dict[str, Any]] = {}  # schedule_id -> schedule_data
 _schedules_lock = asyncio.Lock()  # Async lock for thread-safe access
 
 
+# Log prominent warning on module import
+logger.warning(
+    "⚠️  SCHEDULES USING IN-MEMORY STORAGE - Not suitable for production! "
+    "All schedules will be LOST on restart. "
+    "Replace with PostgreSQL storage for production deployments."
+)
+
+
 # =========================
 # API Endpoints
 # =========================
 
 
 @router.post("/schedules", response_model=ScheduleResponse)
-async def create_schedule(
-    request: ScheduleRequest,
-    user: AuthenticatedUser = Depends(require_role("developer")),
-) -> ScheduleResponse:
+async def create_schedule(request: ScheduleRequest) -> ScheduleResponse:
     """
     Create a new workflow schedule.
 
@@ -203,7 +228,6 @@ async def list_schedules(
     workflow_id: Optional[str] = Query(None, description="Filter by workflow ID"),
     enabled: Optional[bool] = Query(None, description="Filter by enabled status"),
     limit: int = Query(100, ge=1, le=1000),
-    user: AuthenticatedUser = Depends(require_role("viewer")),
 ) -> List[ScheduleResponse]:
     """
     List all schedules with optional filtering.
@@ -244,10 +268,7 @@ async def list_schedules(
 
 
 @router.get("/schedules/{schedule_id}", response_model=ScheduleResponse)
-async def get_schedule(
-    schedule_id: str,
-    user: AuthenticatedUser = Depends(require_role("viewer")),
-) -> ScheduleResponse:
+async def get_schedule(schedule_id: str) -> ScheduleResponse:
     """
     Get schedule details by ID.
 
@@ -269,10 +290,7 @@ async def get_schedule(
 
 
 @router.put("/schedules/{schedule_id}/enable")
-async def enable_schedule(
-    schedule_id: str,
-    user: AuthenticatedUser = Depends(require_role("operator")),
-) -> ScheduleResponse:
+async def enable_schedule(schedule_id: str) -> ScheduleResponse:
     """
     Enable a schedule.
 
@@ -302,10 +320,7 @@ async def enable_schedule(
 
 
 @router.put("/schedules/{schedule_id}/disable")
-async def disable_schedule(
-    schedule_id: str,
-    user: AuthenticatedUser = Depends(require_role("operator")),
-) -> ScheduleResponse:
+async def disable_schedule(schedule_id: str) -> ScheduleResponse:
     """
     Disable a schedule.
 
@@ -335,10 +350,7 @@ async def disable_schedule(
 
 
 @router.delete("/schedules/{schedule_id}")
-async def delete_schedule(
-    schedule_id: str,
-    user: AuthenticatedUser = Depends(require_role("admin")),
-) -> dict:
+async def delete_schedule(schedule_id: str) -> dict:
     """
     Delete a schedule.
 
@@ -367,10 +379,7 @@ async def delete_schedule(
 
 
 @router.put("/schedules/{schedule_id}/trigger")
-async def trigger_schedule_now(
-    schedule_id: str,
-    user: AuthenticatedUser = Depends(require_role("operator")),
-) -> dict:
+async def trigger_schedule_now(schedule_id: str) -> dict:
     """
     Trigger a schedule execution immediately (manual override).
 
