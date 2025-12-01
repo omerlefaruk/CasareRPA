@@ -6,6 +6,7 @@ routes events to job creation, and handles HTTP server for webhooks.
 """
 
 import asyncio
+import os
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 import uuid
@@ -25,6 +26,20 @@ from .registry import get_trigger_registry
 JobCreatorCallback = Callable[[TriggerEvent], Any]
 
 
+def _get_default_webhook_host() -> str:
+    """
+    Determine default host for webhook server based on environment.
+
+    If CASARE_WEBHOOK_URL is set to a tunnel URL (casare.net),
+    bind to 0.0.0.0 to allow tunnel connections. Otherwise, use
+    127.0.0.1 for security.
+    """
+    webhook_url = os.getenv("CASARE_WEBHOOK_URL", "")
+    if "casare.net" in webhook_url or webhook_url.startswith("https://"):
+        return "0.0.0.0"  # Allow tunnel/external connections
+    return "127.0.0.1"  # Local only (secure default)
+
+
 class TriggerManager:
     """
     Central coordinator for all workflow triggers.
@@ -35,6 +50,10 @@ class TriggerManager:
     - Manage HTTP server for webhook triggers
     - Persist trigger configurations
     - Provide API for UI/external access
+
+    Environment Variables:
+        CASARE_WEBHOOK_URL: If set to tunnel URL (e.g., https://webhooks.casare.net),
+                           the webhook server binds to 0.0.0.0 to accept tunnel connections.
 
     Usage:
         manager = TriggerManager(on_trigger_event=job_creator_callback)
@@ -59,7 +78,7 @@ class TriggerManager:
         self,
         on_trigger_event: Optional[JobCreatorCallback] = None,
         http_port: int = 8766,
-        http_host: str = "127.0.0.1",
+        http_host: Optional[str] = None,
     ) -> None:
         """
         Initialize the trigger manager.
@@ -67,12 +86,12 @@ class TriggerManager:
         Args:
             on_trigger_event: Callback invoked when a trigger fires
             http_port: Port for webhook HTTP server
-            http_host: Host to bind HTTP server to (default: 127.0.0.1 for security).
-                       Use "0.0.0.0" to accept connections from any interface (less secure).
+            http_host: Host to bind HTTP server to. If None, auto-detects based on
+                       CASARE_WEBHOOK_URL (0.0.0.0 for tunnel, 127.0.0.1 for local).
         """
         self._on_trigger_event = on_trigger_event
         self._http_port = http_port
-        self._http_host = http_host
+        self._http_host = http_host or _get_default_webhook_host()
 
         # Trigger storage
         self._triggers: Dict[str, BaseTrigger] = {}
@@ -92,7 +111,47 @@ class TriggerManager:
         # Registry reference
         self._registry = get_trigger_registry()
 
-        logger.debug(f"TriggerManager initialized (http_port={http_port})")
+        # Public webhook base URL (for UI display)
+        self._webhook_base_url = os.getenv(
+            "CASARE_WEBHOOK_URL", f"http://localhost:{http_port}"
+        )
+
+        logger.debug(
+            f"TriggerManager initialized (http_port={http_port}, "
+            f"host={self._http_host}, base_url={self._webhook_base_url})"
+        )
+
+    @property
+    def webhook_base_url(self) -> str:
+        """Get the public webhook base URL for external services to call."""
+        return self._webhook_base_url
+
+    def get_webhook_url(self, trigger_id: str) -> str:
+        """
+        Get the full webhook URL for a trigger.
+
+        Args:
+            trigger_id: The trigger ID
+
+        Returns:
+            Full URL like https://webhooks.casare.net/hooks/{trigger_id}
+        """
+        return f"{self._webhook_base_url}/hooks/{trigger_id}"
+
+    def get_webhook_url_by_path(self, path: str) -> str:
+        """
+        Get the full webhook URL for a custom path.
+
+        Args:
+            path: Custom path (e.g., "/my-webhook" or "my-webhook")
+
+        Returns:
+            Full URL like https://webhooks.casare.net/webhooks/my-webhook
+        """
+        # Normalize path
+        if not path.startswith("/"):
+            path = "/" + path
+        return f"{self._webhook_base_url}/webhooks{path}"
 
     async def start(self) -> None:
         """Start the trigger manager and all enabled triggers."""

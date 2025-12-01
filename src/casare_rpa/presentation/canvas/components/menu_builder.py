@@ -115,12 +115,14 @@ class MenuBuilder:
         return automation_menu
 
     def _create_help_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Help menu (5 items)."""
+        """Create Help menu (6 items)."""
         help_menu = menubar.addMenu("&Help")
         help_menu.addAction(mw.action_documentation)
         help_menu.addAction(mw.action_keyboard_shortcuts)
         help_menu.addSeparator()
+        help_menu.addAction(mw.action_credential_manager)
         help_menu.addAction(mw.action_preferences)
+        help_menu.addSeparator()
         help_menu.addAction(mw.action_check_updates)
         help_menu.addAction(mw.action_about)
         return help_menu

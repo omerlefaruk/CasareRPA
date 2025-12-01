@@ -17,6 +17,7 @@ from .form_trigger import FormTrigger
 from .chat_trigger import ChatTrigger
 from .rss_trigger import RSSFeedTrigger
 from .sse_trigger import SSETrigger
+from .telegram_trigger import TelegramTrigger
 
 __all__ = [
     "WebhookTrigger",
@@ -30,4 +31,5 @@ __all__ = [
     "ChatTrigger",
     "RSSFeedTrigger",
     "SSETrigger",
+    "TelegramTrigger",
 ]

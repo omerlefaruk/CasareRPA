@@ -320,6 +320,33 @@ from .triggers import (
     VisualSSETriggerNode,
 )
 
+# AI/ML (6 nodes)
+from .ai_ml import (
+    VisualLLMCompletionNode,
+    VisualLLMChatNode,
+    VisualLLMExtractDataNode,
+    VisualLLMSummarizeNode,
+    VisualLLMClassifyNode,
+    VisualLLMTranslateNode,
+)
+
+# Document AI (5 nodes)
+from .document import (
+    VisualClassifyDocumentNode,
+    VisualExtractFormNode,
+    VisualExtractInvoiceNode,
+    VisualExtractTableNode,
+    VisualValidateExtractionNode,
+)
+
+# Messaging (4 nodes)
+from .messaging import (
+    VisualTelegramSendMessageNode,
+    VisualTelegramSendPhotoNode,
+    VisualTelegramSendDocumentNode,
+    VisualTelegramSendLocationNode,
+)
+
 __all__ = [
     # basic
     "VisualStartNode",
@@ -582,6 +609,24 @@ __all__ = [
     "VisualChatTriggerNode",
     "VisualRSSFeedTriggerNode",
     "VisualSSETriggerNode",
+    # ai_ml
+    "VisualLLMCompletionNode",
+    "VisualLLMChatNode",
+    "VisualLLMExtractDataNode",
+    "VisualLLMSummarizeNode",
+    "VisualLLMClassifyNode",
+    "VisualLLMTranslateNode",
+    # document
+    "VisualClassifyDocumentNode",
+    "VisualExtractFormNode",
+    "VisualExtractInvoiceNode",
+    "VisualExtractTableNode",
+    "VisualValidateExtractionNode",
+    # messaging
+    "VisualTelegramSendMessageNode",
+    "VisualTelegramSendPhotoNode",
+    "VisualTelegramSendDocumentNode",
+    "VisualTelegramSendLocationNode",
 ]
 
 # =============================================================================

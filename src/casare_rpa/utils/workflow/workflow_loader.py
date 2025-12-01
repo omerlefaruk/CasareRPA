@@ -552,6 +552,16 @@ from casare_rpa.nodes.trigger_nodes import (
     SSETriggerNode,
 )
 
+# LLM nodes (AI/ML)
+from casare_rpa.nodes.llm import (
+    LLMCompletionNode,
+    LLMChatNode,
+    LLMExtractDataNode,
+    LLMSummarizeNode,
+    LLMClassifyNode,
+    LLMTranslateNode,
+)
+
 # Map node types to classes
 NODE_TYPE_MAP = {
     # Basic nodes
@@ -834,6 +844,13 @@ NODE_TYPE_MAP = {
     "ChatTriggerNode": ChatTriggerNode,
     "RSSFeedTriggerNode": RSSFeedTriggerNode,
     "SSETriggerNode": SSETriggerNode,
+    # LLM nodes (AI/ML)
+    "LLMCompletionNode": LLMCompletionNode,
+    "LLMChatNode": LLMChatNode,
+    "LLMExtractDataNode": LLMExtractDataNode,
+    "LLMSummarizeNode": LLMSummarizeNode,
+    "LLMClassifyNode": LLMClassifyNode,
+    "LLMTranslateNode": LLMTranslateNode,
 }
 
 

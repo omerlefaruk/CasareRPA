@@ -113,6 +113,7 @@ class MainWindow(QMainWindow):
         self._properties_panel: Optional["PropertiesPanel"] = None
         self._debug_panel: Optional["DebugPanel"] = None
         self._node_library_panel: Optional["NodeLibraryPanel"] = None
+        self._process_mining_panel = None  # ProcessMiningPanel
         self._command_palette: Optional["CommandPalette"] = None
 
         # 3-tier loading state
@@ -277,6 +278,9 @@ class MainWindow(QMainWindow):
 
         # Create debug panel (Call Stack, Watch, Breakpoints)
         self._debug_panel = self._dock_creator.create_debug_panel()
+
+        # Create process mining panel (AI-powered process discovery)
+        self._process_mining_panel = self._dock_creator.create_process_mining_panel()
 
         try:
             view_menu = self._find_view_menu()
@@ -1055,6 +1059,21 @@ class MainWindow(QMainWindow):
         """Open the project manager dialog."""
         if self._project_controller:
             self._project_controller.show_project_manager()
+
+    # ==================== Credential Management ====================
+
+    def _on_credential_manager(self) -> None:
+        """Open the credential manager dialog."""
+        from casare_rpa.presentation.canvas.ui.dialogs import CredentialManagerDialog
+
+        dialog = CredentialManagerDialog(self)
+        dialog.credentials_changed.connect(self._on_credentials_changed)
+        dialog.exec()
+
+    def _on_credentials_changed(self) -> None:
+        """Handle credential changes."""
+        # Notify any components that need to refresh credential lists
+        logger.info("Credentials updated")
 
     # ==================== Window Events ====================
 

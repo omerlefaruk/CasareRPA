@@ -143,6 +143,7 @@ class LLMResourceManager:
     - Tracking token usage and costs
     - Handling rate limits with backoff
     - Managing conversation histories
+    - Secure API key retrieval from encrypted store
 
     It contains NO domain logic - only infrastructure concerns.
     """
@@ -158,6 +159,20 @@ class LLMResourceManager:
         "claude-3-haiku-20240307": {"input": 0.00025, "output": 0.00125},
     }
 
+    # Model prefix to provider mapping for auto-detection
+    _MODEL_TO_PROVIDER: Dict[str, str] = {
+        "gpt-": "openai",
+        "o1-": "openai",
+        "claude-": "anthropic",
+        "gemini-": "google",
+        "mistral-": "mistral",
+        "codestral-": "mistral",
+        "llama-": "groq",
+        "mixtral-": "groq",
+        "deepseek-": "deepseek",
+        "ollama/": "ollama",
+    }
+
     def __init__(self) -> None:
         """Initialize LLM resource manager."""
         self._config: Optional[LLMConfig] = None
@@ -165,6 +180,7 @@ class LLMResourceManager:
         self._conversations: Dict[str, ConversationHistory] = {}
         self._litellm: Optional[Any] = None
         self._initialized = False
+        self._api_key_store: Optional[Any] = None
 
     def configure(self, config: LLMConfig) -> None:
         """
@@ -191,11 +207,15 @@ class LLMResourceManager:
 
             # Configure LiteLLM based on provider
             if self._config:
-                if self._config.api_key:
+                api_key = self._config.api_key or self._get_api_key_for_provider(
+                    self._config.provider
+                )
+
+                if api_key:
                     if self._config.provider == LLMProvider.OPENAI:
-                        litellm.api_key = self._config.api_key
+                        litellm.api_key = api_key
                     elif self._config.provider == LLMProvider.ANTHROPIC:
-                        litellm.anthropic_key = self._config.api_key
+                        litellm.anthropic_key = api_key
 
                 if self._config.api_base:
                     litellm.api_base = self._config.api_base
@@ -209,6 +229,71 @@ class LLMResourceManager:
                 "LiteLLM is required for LLM nodes. "
                 "Install it with: pip install litellm"
             ) from e
+
+    def _get_api_key_store(self) -> Any:
+        """Get or create the credential store instance."""
+        if self._api_key_store is None:
+            try:
+                # Try new unified credential store first
+                from casare_rpa.infrastructure.security.credential_store import (
+                    get_credential_store,
+                )
+
+                self._api_key_store = get_credential_store()
+            except ImportError:
+                try:
+                    # Fall back to legacy API key store
+                    from casare_rpa.infrastructure.security.api_key_store import (
+                        get_api_key_store,
+                    )
+
+                    self._api_key_store = get_api_key_store()
+                except ImportError:
+                    logger.warning("No credential store available")
+                    return None
+        return self._api_key_store
+
+    def _get_api_key_for_provider(self, provider: LLMProvider) -> Optional[str]:
+        """Get API key for a provider from the secure store."""
+        provider_map = {
+            LLMProvider.OPENAI: "openai",
+            LLMProvider.ANTHROPIC: "anthropic",
+            LLMProvider.AZURE: "azure",
+            LLMProvider.OLLAMA: None,  # Ollama doesn't need API key
+            LLMProvider.CUSTOM: None,
+        }
+
+        provider_name = provider_map.get(provider)
+        if not provider_name:
+            return None
+
+        store = self._get_api_key_store()
+        if store:
+            return store.get_key(provider_name)
+        return None
+
+    def _detect_provider_from_model(self, model: str) -> Optional[str]:
+        """Detect the provider from model name."""
+        model_lower = model.lower()
+        for prefix, provider in self._MODEL_TO_PROVIDER.items():
+            if model_lower.startswith(prefix):
+                return provider
+        return None
+
+    def _get_api_key_for_model(self, model: str) -> Optional[str]:
+        """Get API key based on model name auto-detection."""
+        provider = self._detect_provider_from_model(model)
+        if not provider or provider == "ollama":
+            return None
+
+        store = self._get_api_key_store()
+        if store:
+            # Try new credential store method first
+            if hasattr(store, "get_api_key_by_provider"):
+                return store.get_api_key_by_provider(provider)
+            # Fall back to legacy get_key method
+            return store.get_key(provider)
+        return None
 
     def _get_model_string(self, model: Optional[str] = None) -> str:
         """Get the full model string for LiteLLM."""
@@ -271,14 +356,22 @@ class LLMResourceManager:
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        # Get API key for this specific model (may differ from configured provider)
+        api_key = self._get_api_key_for_model(model_str)
+
         try:
-            response = await litellm.acompletion(
-                model=model_str,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
+            # Pass API key directly if we have one for this model
+            call_kwargs = {
+                "model": model_str,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
                 **kwargs,
-            )
+            }
+            if api_key:
+                call_kwargs["api_key"] = api_key
+
+            response = await litellm.acompletion(**call_kwargs)
 
             # Extract usage
             usage = response.get("usage", {})
@@ -358,14 +451,21 @@ class LLMResourceManager:
         # Add user message
         conv.add_message("user", message)
 
+        # Get API key for this specific model
+        api_key = self._get_api_key_for_model(model_str)
+
         try:
-            response = await litellm.acompletion(
-                model=model_str,
-                messages=conv.get_messages(),
-                temperature=temperature,
-                max_tokens=max_tokens,
+            call_kwargs = {
+                "model": model_str,
+                "messages": conv.get_messages(),
+                "temperature": temperature,
+                "max_tokens": max_tokens,
                 **kwargs,
-            )
+            }
+            if api_key:
+                call_kwargs["api_key"] = api_key
+
+            response = await litellm.acompletion(**call_kwargs)
 
             # Extract content and add to history
             content = response["choices"][0]["message"]["content"]

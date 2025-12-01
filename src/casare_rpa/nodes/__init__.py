@@ -247,6 +247,27 @@ if TYPE_CHECKING:
         FTPDisconnectNode,
         FTPGetSizeNode,
     )
+    from .llm import (
+        LLMCompletionNode,
+        LLMChatNode,
+        LLMExtractDataNode,
+        LLMSummarizeNode,
+        LLMClassifyNode,
+        LLMTranslateNode,
+    )
+    from .document import (
+        ClassifyDocumentNode,
+        ExtractInvoiceNode,
+        ExtractFormNode,
+        ExtractTableNode,
+        ValidateExtractionNode,
+    )
+    from .messaging.telegram import (
+        TelegramSendMessageNode,
+        TelegramSendPhotoNode,
+        TelegramSendDocumentNode,
+        TelegramSendLocationNode,
+    )
 
 
 # Lazy loading registry - maps node class names to their module paths
@@ -469,6 +490,19 @@ _NODE_REGISTRY: Dict[str, str] = {
     "FTPRenameNode": "ftp_nodes",
     "FTPDisconnectNode": "ftp_nodes",
     "FTPGetSizeNode": "ftp_nodes",
+    # LLM nodes
+    "LLMCompletionNode": "llm.llm_nodes",
+    "LLMChatNode": "llm.llm_nodes",
+    "LLMExtractDataNode": "llm.llm_nodes",
+    "LLMSummarizeNode": "llm.llm_nodes",
+    "LLMClassifyNode": "llm.llm_nodes",
+    "LLMTranslateNode": "llm.llm_nodes",
+    # Document AI nodes
+    "ClassifyDocumentNode": "document.document_nodes",
+    "ExtractInvoiceNode": "document.document_nodes",
+    "ExtractFormNode": "document.document_nodes",
+    "ExtractTableNode": "document.document_nodes",
+    "ValidateExtractionNode": "document.document_nodes",
     # Trigger nodes
     "WebhookTriggerNode": "trigger_nodes.webhook_trigger_node",
     "ScheduleTriggerNode": "trigger_nodes.schedule_trigger_node",
@@ -481,6 +515,11 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ChatTriggerNode": "trigger_nodes.chat_trigger_node",
     "RSSFeedTriggerNode": "trigger_nodes.rss_feed_trigger_node",
     "SSETriggerNode": "trigger_nodes.sse_trigger_node",
+    # Telegram messaging nodes
+    "TelegramSendMessageNode": "messaging.telegram.telegram_send",
+    "TelegramSendPhotoNode": "messaging.telegram.telegram_send",
+    "TelegramSendDocumentNode": "messaging.telegram.telegram_send",
+    "TelegramSendLocationNode": "messaging.telegram.telegram_send",
 }
 
 # Cache for loaded modules and classes
@@ -799,6 +838,19 @@ __all__ = [
     "FTPRenameNode",
     "FTPDisconnectNode",
     "FTPGetSizeNode",
+    # LLM nodes
+    "LLMCompletionNode",
+    "LLMChatNode",
+    "LLMExtractDataNode",
+    "LLMSummarizeNode",
+    "LLMClassifyNode",
+    "LLMTranslateNode",
+    # Document AI nodes
+    "ClassifyDocumentNode",
+    "ExtractInvoiceNode",
+    "ExtractFormNode",
+    "ExtractTableNode",
+    "ValidateExtractionNode",
     # Trigger nodes
     "WebhookTriggerNode",
     "ScheduleTriggerNode",
@@ -811,6 +863,11 @@ __all__ = [
     "ChatTriggerNode",
     "RSSFeedTriggerNode",
     "SSETriggerNode",
+    # Telegram messaging nodes
+    "TelegramSendMessageNode",
+    "TelegramSendPhotoNode",
+    "TelegramSendDocumentNode",
+    "TelegramSendLocationNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",
