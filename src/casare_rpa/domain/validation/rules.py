@@ -105,7 +105,11 @@ def has_circular_dependency(
     nodes: Dict[str, Any],
     connections: List[Dict[str, Any]],
 ) -> bool:
-    """Check for circular dependencies using DFS on exec connections only."""
+    """Check for circular dependencies using iterative DFS on exec connections.
+
+    Uses an iterative approach (stack-based) instead of recursion to avoid
+    RecursionError on large workflows (500+ nodes).
+    """
 
     # Build adjacency list (only exec connections for flow)
     graph: Dict[str, List[str]] = {node_id: [] for node_id in nodes}
@@ -123,27 +127,47 @@ def has_circular_dependency(
         if source in graph and is_exec_port(source_port):
             graph[source].append(target)
 
-    visited: Set[str] = set()
-    rec_stack: Set[str] = set()
+    # Iterative DFS with explicit stack for cycle detection
+    # States: 0=unvisited, 1=in recursion stack, 2=finished
+    state: Dict[str, int] = {node_id: 0 for node_id in nodes}
 
-    def has_cycle(node: str) -> bool:
-        visited.add(node)
-        rec_stack.add(node)
+    for start_node in nodes:
+        if state[start_node] != 0:
+            continue
 
-        for neighbor in graph.get(node, []):
-            if neighbor not in visited:
-                if has_cycle(neighbor):
+        # Stack entries: (node, iterator over neighbors, is_entering)
+        # is_entering=True means we just entered, False means backtracking
+        stack: list = [(start_node, iter(graph.get(start_node, [])), True)]
+
+        while stack:
+            node, neighbors_iter, is_entering = stack.pop()
+
+            if is_entering:
+                if state[node] == 1:
+                    # Back edge found - cycle detected
                     return True
-            elif neighbor in rec_stack:
-                return True
+                if state[node] == 2:
+                    # Already fully processed
+                    continue
 
-        rec_stack.discard(node)
-        return False
+                # Mark as in recursion stack
+                state[node] = 1
+                # Push backtrack marker
+                stack.append((node, neighbors_iter, False))
 
-    for node_id in nodes:
-        if node_id not in visited:
-            if has_cycle(node_id):
-                return True
+                # Process all neighbors
+                for neighbor in neighbors_iter:
+                    if neighbor in graph:
+                        if state[neighbor] == 1:
+                            # Back edge - cycle
+                            return True
+                        if state[neighbor] == 0:
+                            stack.append(
+                                (neighbor, iter(graph.get(neighbor, [])), True)
+                            )
+            else:
+                # Backtracking - mark as finished
+                state[node] = 2
 
     return False
 
