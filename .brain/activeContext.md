@@ -540,14 +540,21 @@ See: `C:\Users\Rau\.claude\plans\golden-stargazing-seal.md`
 ## Next Steps (Priority Order)
 
 ### Immediate (Ready to Implement)
-1. **AI/ML Integration Phase 1** - LLM nodes (GPT, Claude, local models)
-   - See [ai-ml-integration.md](.brain/plans/ai-ml-integration.md) for 5-phase roadmap
+1. **LLM Integration Nodes** (HIGHEST PRIORITY)
+   - See [next-priorities-research.md](.brain/plans/next-priorities-research.md) for full analysis
+   - Nodes: LLMCompletionNode, LLMChatNode, LLMExtractDataNode, LLMSummarizeNode
+   - Foundation for all AI features, addresses critical competitive gap
+   - Estimated: 2-3 weeks, ~2,800 LOC
+
+### Near-Term (Q1 2025)
+2. **Intelligent Document Processing** - LLM-based invoice/form extraction
+3. **AI-Powered Selector Healing** - Enhanced self-healing with ML/LLM
+4. **Action Recorder** - Complete desktop/browser recording for workflow generation
+5. **Execution Analytics** - Bottleneck detection, optimization suggestions
 
 ### Future Initiatives
-2. **Cloud Deployment** - Hybrid architecture with K8s control plane + Windows VM robots
-3. **Document AI** - OCR nodes using Azure Document Intelligence or Tesseract
-4. **Process Mining** - Workflow analytics and optimization suggestions
-5. **Zero Trust Security** - See Deferred Security Items in activeContext.md
+6. **Cloud Deployment** - Hybrid architecture with K8s control plane + Windows VM robots
+7. **Zero Trust Security** - See Deferred Security Items in activeContext.md
 
 ### All Completed Phases ✅
 - Phase 1: Security & Bug Fixes
