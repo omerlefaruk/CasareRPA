@@ -185,8 +185,8 @@ class ProcessModel:
         """Get the most frequently executed path."""
         if not self.variants:
             return []
-        most_common = max(self.variants.items(), key=lambda x: x[1])
         # Variant is a hash, need to track actual paths separately
+        # TODO: Track actual paths for proper variant analysis
         return list(self.nodes)  # Simplified
 
     def to_dict(self) -> Dict[str, Any]:

@@ -30,10 +30,131 @@ from PySide6.QtWidgets import (
     QFrame,
     QScrollArea,
 )
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
 from PySide6.QtGui import QColor, QBrush, QFont
 
 from loguru import logger
+
+
+class AIEnhanceWorker(QObject):
+    """Worker for background AI enhancement of process insights."""
+
+    finished = Signal(list)
+    error = Signal(str)
+
+    def __init__(
+        self,
+        insights: List[Dict[str, Any]],
+        model: str,
+        provider: str,
+        process_model: Dict[str, Any],
+    ) -> None:
+        """Initialize worker with insights data."""
+        super().__init__()
+        self.insights = insights
+        self.model = model
+        self.provider = provider
+        self.process_model = process_model
+        self._llm_manager = None
+
+    def _get_llm_manager(self):
+        """Get or create LLM resource manager."""
+        if self._llm_manager is None:
+            try:
+                from casare_rpa.infrastructure.resources.llm_resource_manager import (
+                    LLMResourceManager,
+                )
+
+                self._llm_manager = LLMResourceManager()
+            except ImportError:
+                return None
+        return self._llm_manager
+
+    def run(self) -> None:
+        """Execute the AI enhancement."""
+        try:
+            import asyncio
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(self._enhance_async())
+                self.finished.emit(result)
+            finally:
+                loop.close()
+        except Exception as e:
+            self.error.emit(str(e))
+
+    async def _enhance_async(self) -> List[Dict[str, Any]]:
+        """Async AI enhancement logic."""
+        manager = self._get_llm_manager()
+        if not manager:
+            raise RuntimeError("LLM manager not available")
+
+        from casare_rpa.infrastructure.resources.llm_resource_manager import (
+            LLMConfig,
+            LLMProvider,
+        )
+
+        # Configure with selected model
+        provider_map = {
+            "OpenAI": LLMProvider.OPENAI,
+            "Anthropic": LLMProvider.ANTHROPIC,
+            "Local (Ollama)": LLMProvider.OLLAMA,
+        }
+        llm_provider = provider_map.get(self.provider, LLMProvider.OPENAI)
+
+        manager.configure(
+            LLMConfig(
+                provider=llm_provider,
+                model=self.model,
+            )
+        )
+
+        # Build prompt with insights summary
+        insights_text = "\n".join(
+            [
+                f"- {i.get('title', '')}: {i.get('description', '')} (Impact: {i.get('impact', 'low')})"
+                for i in self.insights
+            ]
+        )
+
+        prompt = f"""Analyze these process mining insights and provide enhanced recommendations.
+
+Current Insights:
+{insights_text}
+
+Process Model Summary:
+- Activities: {len(self.process_model.get('activities', []))}
+- Edges: {sum(len(t) for t in self.process_model.get('edges', {}).values())}
+
+For each insight, provide:
+1. A more specific actionable recommendation
+2. Potential root cause analysis
+3. Estimated improvement impact
+
+Format your response as a structured list with clear sections."""
+
+        response, _ = await manager.chat(
+            message=prompt,
+            system_prompt=(
+                "You are a process optimization expert. Analyze RPA workflow "
+                "execution data and provide actionable insights for improvement. "
+                "Be specific and practical."
+            ),
+            temperature=0.3,
+            max_tokens=2000,
+        )
+
+        # Parse response and enhance insights
+        enhanced = []
+        for insight in self.insights:
+            enhanced_insight = insight.copy()
+            enhanced_insight["ai_enhanced"] = True
+            enhanced_insight["ai_analysis"] = response.content
+            enhanced.append(enhanced_insight)
+
+        return enhanced
 
 
 class ProcessMiningPanel(QDockWidget):
@@ -1169,7 +1290,7 @@ class ProcessMiningPanel(QDockWidget):
         self._enhance_btn.setEnabled(False)
 
         # Run in background thread to avoid blocking UI
-        from PySide6.QtCore import QThread, QObject, Signal as QtSignal
+        from PySide6.QtCore import QObject, Signal as QtSignal
 
         class AIEnhanceWorker(QObject):
             finished = QtSignal(list)

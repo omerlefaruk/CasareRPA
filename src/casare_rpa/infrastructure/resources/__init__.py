@@ -50,4 +50,9 @@ __all__ = [
     "TelegramConfig",
     "TelegramMessage",
     "TelegramAPIError",
+    "WhatsAppClient",
+    "WhatsAppConfig",
+    "WhatsAppMessage",
+    "WhatsAppTemplate",
+    "WhatsAppAPIError",
 ]

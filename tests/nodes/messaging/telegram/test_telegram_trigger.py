@@ -112,14 +112,16 @@ class TestTelegramTriggerLifecycle:
         """Test stopping trigger cleans up properly."""
         trigger._status = TriggerStatus.ACTIVE
         trigger._polling_task = asyncio.create_task(asyncio.sleep(100))
-        trigger._client = AsyncMock()
-        trigger._client.close = AsyncMock()
+        mock_client = AsyncMock()
+        mock_client.close = AsyncMock()
+        trigger._client = mock_client
 
         result = await trigger.stop()
 
         assert result is True
         assert trigger.status == TriggerStatus.INACTIVE
-        trigger._client.close.assert_called_once()
+        # Client is set to None after close, so check the mock directly
+        mock_client.close.assert_called_once()
 
 
 class TestTelegramTriggerUpdateProcessing:
@@ -253,9 +255,13 @@ class TestTelegramTriggerUpdateProcessing:
     def test_get_message_type(self, trigger):
         """Test message type detection."""
         assert trigger._get_message_type({"text": "hello"}) == "text"
-        assert trigger._get_message_type({"photo": []}) == "photo"
-        assert trigger._get_message_type({"document": {}}) == "document"
-        assert trigger._get_message_type({"location": {}}) == "location"
+        # Note: Empty lists/dicts are falsy, so use non-empty values
+        assert trigger._get_message_type({"photo": [{"file_id": "abc"}]}) == "photo"
+        assert trigger._get_message_type({"document": {"file_id": "abc"}}) == "document"
+        assert (
+            trigger._get_message_type({"location": {"latitude": 0, "longitude": 0}})
+            == "location"
+        )
         assert trigger._get_message_type({}) == "unknown"
 
 

@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
