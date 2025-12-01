@@ -57,7 +57,7 @@ class VisualDatabaseConnectNode(VisualNode):
         self.add_typed_input("username", DataType.STRING)
         self.add_typed_input("password", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("connection", DataType.DB_CONNECTION)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
@@ -88,7 +88,7 @@ class VisualExecuteQueryNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_typed_input("query", DataType.STRING)
         self.add_typed_input("parameters", DataType.LIST)
         self.add_exec_output("exec_out")
@@ -125,7 +125,7 @@ class VisualExecuteNonQueryNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_typed_input("query", DataType.STRING)
         self.add_typed_input("parameters", DataType.LIST)
         self.add_exec_output("exec_out")
@@ -150,9 +150,9 @@ class VisualBeginTransactionNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_exec_output("exec_out")
-        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("connection", DataType.DB_CONNECTION)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
@@ -172,9 +172,9 @@ class VisualCommitTransactionNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_exec_output("exec_out")
-        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("connection", DataType.DB_CONNECTION)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
@@ -194,9 +194,9 @@ class VisualRollbackTransactionNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_exec_output("exec_out")
-        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("connection", DataType.DB_CONNECTION)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
@@ -216,7 +216,7 @@ class VisualCloseDatabaseNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
@@ -238,7 +238,7 @@ class VisualTableExistsNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_typed_input("table_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("exists", DataType.BOOLEAN)
@@ -262,7 +262,7 @@ class VisualGetTableColumnsNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_typed_input("table_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("columns", DataType.LIST)
@@ -287,7 +287,7 @@ class VisualExecuteBatchNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("connection", DataType.DB_CONNECTION)
         self.add_typed_input("statements", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("results", DataType.LIST)

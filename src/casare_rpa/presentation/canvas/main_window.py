@@ -45,6 +45,7 @@ from .controllers import (
     SchedulingController,
     UIStateController,
     SelectorController,
+    ProjectController,
 )
 
 
@@ -83,6 +84,7 @@ class MainWindow(QMainWindow):
     workflow_stop = Signal()
     preferences_saved = Signal()
     trigger_workflow_requested = Signal()
+    save_as_scenario_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -133,6 +135,7 @@ class MainWindow(QMainWindow):
         self._scheduling_controller: Optional[SchedulingController] = None
         self._ui_state_controller: Optional[UIStateController] = None
         self._selector_controller: Optional[SelectorController] = None
+        self._project_controller: Optional[ProjectController] = None
 
         # Component managers (extracted from MainWindow)
         self._action_manager = ActionManager(self)
@@ -284,7 +287,15 @@ class MainWindow(QMainWindow):
             pass  # View menu already deleted
 
     def _find_view_menu(self):
-        """Find the View menu in the menu bar."""
+        """Get the View menu (stored reference or fallback search)."""
+        # Use stored reference if available
+        if hasattr(self, "_view_menu") and self._view_menu is not None:
+            try:
+                _ = self._view_menu.title()
+                return self._view_menu
+            except RuntimeError:
+                pass
+        # Fallback: search menu bar
         for action in self.menuBar().actions():
             if action.text() == "&View":
                 return action.menu()
@@ -691,6 +702,9 @@ class MainWindow(QMainWindow):
     def get_scheduling_controller(self):
         return self.scheduling_controller
 
+    def get_project_controller(self):
+        return self._project_controller
+
     def get_debug_toolbar(self) -> Optional["DebugToolbar"]:
         return self._debug_toolbar if hasattr(self, "_debug_toolbar") else None
 
@@ -796,6 +810,10 @@ class MainWindow(QMainWindow):
         if self._workflow_controller:
             self._workflow_controller.save_workflow_as()
 
+    def _on_save_as_scenario(self) -> None:
+        """Handle save as scenario action - emits signal for app.py to handle."""
+        self.save_as_scenario_requested.emit()
+
     def _on_run_workflow(self) -> None:
         if self._execution_controller:
             self._execution_controller.run_workflow()
@@ -839,26 +857,20 @@ class MainWindow(QMainWindow):
         if self._execution_controller:
             self._execution_controller.start_trigger_listening()
             # Update action states
-            if hasattr(self, "_action_factory"):
-                start_action = self._action_factory.get_action("start_listening")
-                stop_action = self._action_factory.get_action("stop_listening")
-                if start_action:
-                    start_action.setEnabled(False)
-                if stop_action:
-                    stop_action.setEnabled(True)
+            if hasattr(self, "action_start_listening"):
+                self.action_start_listening.setEnabled(False)
+            if hasattr(self, "action_stop_listening"):
+                self.action_stop_listening.setEnabled(True)
 
     def _on_stop_listening(self) -> None:
         """Stop listening for trigger events (Shift+F9)."""
         if self._execution_controller:
             self._execution_controller.stop_trigger_listening()
             # Update action states
-            if hasattr(self, "_action_factory"):
-                start_action = self._action_factory.get_action("start_listening")
-                stop_action = self._action_factory.get_action("stop_listening")
-                if start_action:
-                    start_action.setEnabled(True)
-                if stop_action:
-                    stop_action.setEnabled(False)
+            if hasattr(self, "action_start_listening"):
+                self.action_start_listening.setEnabled(True)
+            if hasattr(self, "action_stop_listening"):
+                self.action_stop_listening.setEnabled(False)
 
     def _on_debug_workflow(self) -> None:
         if self._execution_controller:
@@ -1037,6 +1049,13 @@ class MainWindow(QMainWindow):
         if self._scheduling_controller:
             self._scheduling_controller.run_scheduled_workflow(schedule)
 
+    # ==================== Project Management ====================
+
+    def _on_project_manager(self) -> None:
+        """Open the project manager dialog."""
+        if self._project_controller:
+            self._project_controller.show_project_manager()
+
     # ==================== Window Events ====================
 
     def closeEvent(self, event) -> None:
@@ -1062,6 +1081,7 @@ class MainWindow(QMainWindow):
             self._viewport_controller,
             self._scheduling_controller,
             self._ui_state_controller,
+            self._project_controller,
         ]
 
         for controller in controllers:
@@ -1101,6 +1121,7 @@ class MainWindow(QMainWindow):
         self._viewport_controller = ViewportController(self)
         self._scheduling_controller = SchedulingController(self)
         self._ui_state_controller = UIStateController(self)
+        self._project_controller = ProjectController(self)
 
         self._workflow_controller = None
         self._execution_controller = None
@@ -1113,6 +1134,7 @@ class MainWindow(QMainWindow):
         self._viewport_controller.initialize()
         self._scheduling_controller.initialize()
         self._ui_state_controller.initialize()
+        self._project_controller.initialize()
 
         logger.info("MainWindow-specific controllers initialized successfully")
 

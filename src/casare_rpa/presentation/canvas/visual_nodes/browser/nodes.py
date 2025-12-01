@@ -41,8 +41,8 @@ class VisualLaunchBrowserNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("url", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("browser", DataType.OBJECT)
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("browser", DataType.BROWSER)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualCloseBrowserNode(VisualNode):
@@ -55,7 +55,7 @@ class VisualCloseBrowserNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("browser", DataType.OBJECT)
+        self.add_typed_input("browser", DataType.BROWSER)
         self.add_exec_output("exec_out")
 
 
@@ -69,9 +69,9 @@ class VisualNewTabNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("browser", DataType.OBJECT)
+        self.add_typed_input("browser", DataType.BROWSER)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualGetAllImagesNode(VisualNode):
@@ -135,10 +135,10 @@ class VisualGoToURLNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("url", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualGoBackNode(VisualNode):
@@ -156,9 +156,9 @@ class VisualGoBackNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualGoForwardNode(VisualNode):
@@ -176,9 +176,9 @@ class VisualGoForwardNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualRefreshPageNode(VisualNode):
@@ -196,9 +196,9 @@ class VisualRefreshPageNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 # Interaction Nodes
@@ -219,10 +219,10 @@ class VisualClickElementNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualTypeTextNode(VisualNode):
@@ -240,11 +240,11 @@ class VisualTypeTextNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_typed_input("text", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 class VisualSelectDropdownNode(VisualNode):
@@ -262,11 +262,11 @@ class VisualSelectDropdownNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_typed_input("value", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 # Data Extraction Nodes
@@ -287,10 +287,10 @@ class VisualExtractTextNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
         self.add_typed_output("text", DataType.STRING)
 
 
@@ -309,11 +309,11 @@ class VisualGetAttributeNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_typed_input("attribute", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
         self.add_typed_output("value", DataType.STRING)
 
 
@@ -332,10 +332,10 @@ class VisualScreenshotNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("file_path", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 # Wait Nodes
@@ -375,10 +375,10 @@ class VisualWaitForElementNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_typed_input("selector", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
         self.add_typed_output("found", DataType.BOOLEAN)
 
 
@@ -397,9 +397,9 @@ class VisualWaitForNavigationNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("page", DataType.OBJECT)
+        self.add_typed_input("page", DataType.PAGE)
         self.add_exec_output("exec_out")
-        self.add_typed_output("page", DataType.OBJECT)
+        self.add_typed_output("page", DataType.PAGE)
 
 
 # Variable Nodes

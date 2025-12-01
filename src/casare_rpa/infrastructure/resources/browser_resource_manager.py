@@ -152,13 +152,25 @@ class BrowserResourceManager:
         self.active_page = None
         logger.debug("All pages cleared")
 
-    async def cleanup(self) -> None:
+    async def cleanup(self, skip_browser: bool = False) -> None:
         """
         Clean up all Playwright resources (close browser, pages, contexts).
 
         Should be called when execution completes or fails.
         This is an async operation that properly closes all Playwright resources.
+
+        Args:
+            skip_browser: If True, keep the browser open (for "do not close" option)
         """
+        if skip_browser:
+            logger.info("Browser cleanup skipped - keeping browser open")
+            # Clear references but don't close resources
+            self.pages.clear()
+            self.active_page = None
+            self.browser_contexts.clear()
+            self.browser = None
+            return
+
         # Close all pages
         for name, page in list(self.pages.items()):
             try:

@@ -5,7 +5,7 @@ Handles job result collection, storage, and analytics.
 
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Callable
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -213,7 +213,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.COMPLETED,
             started_at=job.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             duration_ms=duration_ms or job.duration_ms,
             progress=100,
             result_data=result_data or {},
@@ -252,7 +252,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.FAILED,
             started_at=job.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message=error_message,
@@ -284,7 +284,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.CANCELLED,
             started_at=job.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message=reason,
@@ -312,7 +312,7 @@ class ResultCollector:
             robot_name=job.robot_name,
             status=JobStatus.TIMEOUT,
             started_at=job.started_at,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             duration_ms=job.duration_ms,
             progress=job.progress,
             error_message="Job execution timed out",
@@ -349,7 +349,7 @@ class ResultCollector:
 
         logs.append(
             {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "level": level,
                 "message": message,
                 "node_id": node_id,
@@ -459,7 +459,10 @@ class ResultCollector:
         # Check cache (only for unfiltered stats)
         if not workflow_id and not robot_id and not since:
             if self._stats_cache and self._stats_cache_time:
-                if datetime.utcnow() - self._stats_cache_time < self._stats_cache_ttl:
+                if (
+                    datetime.now(timezone.utc) - self._stats_cache_time
+                    < self._stats_cache_ttl
+                ):
                     return self._stats_cache
 
         # Filter results
@@ -518,7 +521,7 @@ class ResultCollector:
         # Cache if unfiltered
         if not workflow_id and not robot_id and not since:
             self._stats_cache = stats
-            self._stats_cache_time = datetime.utcnow()
+            self._stats_cache_time = datetime.now(timezone.utc)
 
         return stats
 
@@ -537,7 +540,7 @@ class ResultCollector:
         Returns:
             List of hourly statistics
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         hourly_data = []
 
         for i in range(hours):

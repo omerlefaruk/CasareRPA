@@ -25,6 +25,7 @@ class LocalStorageRepository:
         self._jobs_file = self.storage_dir / "jobs.json"
         self._workflows_file = self.storage_dir / "workflows.json"
         self._schedules_file = self.storage_dir / "schedules.json"
+        self._triggers_file = self.storage_dir / "triggers.json"
 
         # Initialize files if they don't exist
         for file_path in [
@@ -32,6 +33,7 @@ class LocalStorageRepository:
             self._jobs_file,
             self._workflows_file,
             self._schedules_file,
+            self._triggers_file,
         ]:
             if not file_path.exists():
                 file_path.write_text("[]")
@@ -144,3 +146,32 @@ class LocalStorageRepository:
         """Delete a schedule."""
         schedules = [s for s in self.get_schedules() if s["id"] != schedule_id]
         return self._save_json(self._schedules_file, schedules)
+
+    # ==================== TRIGGERS ====================
+
+    def get_triggers(self) -> List[Dict[str, Any]]:
+        """Get all triggers from local storage."""
+        return self._load_json(self._triggers_file)
+
+    def save_trigger(self, trigger: Dict[str, Any]) -> bool:
+        """Save or update a trigger."""
+        triggers = self.get_triggers()
+        for i, t in enumerate(triggers):
+            if t["id"] == trigger["id"]:
+                triggers[i] = trigger
+                return self._save_json(self._triggers_file, triggers)
+        triggers.append(trigger)
+        return self._save_json(self._triggers_file, triggers)
+
+    def delete_trigger(self, trigger_id: str) -> bool:
+        """Delete a trigger."""
+        triggers = [t for t in self.get_triggers() if t["id"] != trigger_id]
+        return self._save_json(self._triggers_file, triggers)
+
+    def delete_triggers_by_scenario(self, scenario_id: str) -> int:
+        """Delete all triggers for a scenario. Returns count deleted."""
+        triggers = self.get_triggers()
+        original_count = len(triggers)
+        filtered = [t for t in triggers if t.get("scenario_id") != scenario_id]
+        self._save_json(self._triggers_file, filtered)
+        return original_count - len(filtered)

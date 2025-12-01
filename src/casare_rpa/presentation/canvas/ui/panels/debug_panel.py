@@ -555,3 +555,20 @@ class DebugPanel(QDockWidget):
         self.add_log("Warning", f"Breakpoint hit: {node_name}", node_id, node_name)
         self.add_console_output(f"** Breakpoint: {node_name}", "#cca700")
         self._tabs.setCurrentIndex(0)
+
+    def closeEvent(self, event) -> None:
+        """
+        Handle close event - cleanup subscriptions.
+
+        Args:
+            event: Close event
+        """
+        if hasattr(self, "_lazy_subscriptions"):
+            self._lazy_subscriptions.cleanup()
+        super().closeEvent(event)
+
+    def cleanup(self) -> None:
+        """Clean up resources when panel is being destroyed."""
+        if hasattr(self, "_lazy_subscriptions"):
+            self._lazy_subscriptions.cleanup()
+        logger.debug("DebugPanel cleaned up")

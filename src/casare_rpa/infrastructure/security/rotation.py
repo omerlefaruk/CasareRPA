@@ -12,7 +12,7 @@ Handles automatic and scheduled secret rotation with:
 import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from typing import Any, Callable, Dict, List, Optional, Set
 
@@ -84,7 +84,7 @@ class RotationPolicy:
 
     def calculate_next_rotation(self) -> datetime:
         """Calculate the next rotation time."""
-        base = self.last_rotated or datetime.utcnow()
+        base = self.last_rotated or datetime.now(timezone.utc)
         return base + self.get_interval()
 
 
@@ -258,7 +258,7 @@ class SecretRotationManager:
 
     async def _check_and_rotate(self) -> None:
         """Check for due rotations and execute them."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         due_rotations: List[RotationPolicy] = []
 
         for policy in self._policies.values():
@@ -291,7 +291,7 @@ class SecretRotationManager:
 
         record = RotationRecord(
             path=path,
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
             status=RotationStatus.IN_PROGRESS,
         )
 
@@ -326,11 +326,11 @@ class SecretRotationManager:
 
             # Update policy
             if policy:
-                policy.last_rotated = datetime.utcnow()
+                policy.last_rotated = datetime.now(timezone.utc)
                 policy.next_rotation = policy.calculate_next_rotation()
 
             record.status = RotationStatus.COMPLETED
-            record.completed_at = datetime.utcnow()
+            record.completed_at = datetime.now(timezone.utc)
 
             logger.info(
                 f"Rotated secret {path}: version {record.old_version} -> {record.new_version}"
@@ -338,7 +338,7 @@ class SecretRotationManager:
 
         except Exception as e:
             record.status = RotationStatus.FAILED
-            record.completed_at = datetime.utcnow()
+            record.completed_at = datetime.now(timezone.utc)
             record.error_message = str(e)
 
             logger.error(f"Failed to rotate secret {path}: {e}")
@@ -393,7 +393,7 @@ class SecretRotationManager:
 
     def get_due_rotations(self) -> List[RotationPolicy]:
         """Get policies with due rotations."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return [
             p
             for p in self._policies.values()

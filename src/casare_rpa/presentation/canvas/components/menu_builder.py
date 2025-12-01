@@ -44,7 +44,7 @@ class MenuBuilder:
         self._create_help_menu(menubar, mw)
 
     def _create_file_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create File menu (7 items)."""
+        """Create File menu (8 items)."""
         file_menu = menubar.addMenu("&File")
         file_menu.addAction(mw.action_new)
         file_menu.addAction(mw.action_open)
@@ -52,6 +52,7 @@ class MenuBuilder:
         file_menu.addSeparator()
         file_menu.addAction(mw.action_save)
         file_menu.addAction(mw.action_save_as)
+        file_menu.addAction(mw.action_save_as_scenario)
         file_menu.addSeparator()
         file_menu.addAction(mw.action_exit)
         return file_menu
@@ -84,16 +85,21 @@ class MenuBuilder:
         view_menu.addAction(mw.action_toggle_variable_inspector)
         view_menu.addAction(mw.action_toggle_bottom_panel)
         view_menu.addAction(mw.action_toggle_minimap)
+        # Store reference on MainWindow for DockCreator access
+        mw._view_menu = view_menu
         return view_menu
 
     def _create_run_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Run menu (4 items)."""
+        """Create Run menu (6 items)."""
         run_menu = menubar.addMenu("&Run")
         run_menu.addAction(mw.action_run)
         run_menu.addAction(mw.action_pause)
         run_menu.addAction(mw.action_stop)
         run_menu.addSeparator()
         run_menu.addAction(mw.action_debug)
+        run_menu.addSeparator()
+        run_menu.addAction(mw.action_start_listening)
+        run_menu.addAction(mw.action_stop_listening)
         return run_menu
 
     def _create_automation_menu(self, menubar, mw: "MainWindow") -> QMenu:

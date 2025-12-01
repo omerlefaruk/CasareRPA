@@ -1,0 +1,74 @@
+# CasareRPA Browser Robot Dockerfile
+# Based on Playwright for browser automation (Linux only)
+
+# =============================================================================
+# Stage 1: Builder
+# =============================================================================
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy as builder
+
+WORKDIR /build
+
+# Copy dependency files
+COPY pyproject.toml ./
+COPY src/ ./src/
+
+# Create virtual environment and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install the package
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir .
+
+# =============================================================================
+# Stage 2: Production
+# =============================================================================
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+
+LABEL org.opencontainers.image.title="CasareRPA Browser Robot"
+LABEL org.opencontainers.image.description="Browser automation robot for CasareRPA"
+LABEL org.opencontainers.image.version="3.0.0"
+LABEL org.opencontainers.image.vendor="CasareRPA"
+
+WORKDIR /app
+
+# Create non-root user
+RUN useradd -m -s /bin/bash robot && \
+    mkdir -p /home/robot/.cache && \
+    chown -R robot:robot /home/robot
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY src/casare_rpa/ /app/casare_rpa/
+
+# Pre-install browsers (reduces startup time)
+RUN playwright install chromium firefox webkit && \
+    chown -R robot:robot /app
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    CASARE_ENV=production \
+    CASARE_LOG_LEVEL=INFO \
+    CASARE_ROBOT_TYPE=browser \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Robot health check port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python -c "import httpx; httpx.get('http://localhost:8080/health', timeout=5)" || exit 1
+
+# Switch to non-root user
+USER robot
+
+# Volume for browser cache and screenshots
+VOLUME ["/home/robot/.cache", "/app/data"]
+
+# Run the distributed robot agent
+CMD ["python", "-m", "casare_rpa.infrastructure.execution.distributed_robot"]

@@ -6,7 +6,7 @@ Implements priority queue, state machine, deduplication, and timeout management.
 import heapq
 import hashlib
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Set, Callable, Any, Tuple
 from collections import defaultdict
 import threading
@@ -84,7 +84,7 @@ class JobStateMachine:
             )
 
         # Update timestamps based on transition
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if to_state == JobStatus.RUNNING:
             job.started_at = now
@@ -136,7 +136,7 @@ class PriorityQueueItem:
         if isinstance(created, str):
             created = datetime.fromisoformat(created.replace("Z", ""))
         elif created is None:
-            created = datetime.utcnow()
+            created = datetime.now(timezone.utc)
         return cls(priority=priority_value, created_at=created, job_id=job.id, job=job)
 
 
@@ -186,7 +186,7 @@ class JobDeduplicator:
             True if job would be duplicate
         """
         job_hash = self._compute_hash(workflow_id, robot_id, params)
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         with self._lock:
             # Clean old entries
@@ -214,13 +214,13 @@ class JobDeduplicator:
         job_hash = self._compute_hash(workflow_id, robot_id, params)
 
         with self._lock:
-            self._recent_hashes[job_hash] = datetime.utcnow()
+            self._recent_hashes[job_hash] = datetime.now(timezone.utc)
 
         return job_hash
 
     def _cleanup(self):
         """Remove expired entries."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired = [h for h, t in self._recent_hashes.items() if now - t >= self._window]
         for h in expired:
             del self._recent_hashes[h]
@@ -251,7 +251,7 @@ class JobTimeoutManager:
             else self._default_timeout
         )
         with self._lock:
-            self._job_timeouts[job_id] = (datetime.utcnow(), timeout)
+            self._job_timeouts[job_id] = (datetime.now(timezone.utc), timeout)
         logger.debug(f"Tracking timeout for job {job_id[:8]}: {timeout}")
 
     def stop_tracking(self, job_id: str):
@@ -261,7 +261,7 @@ class JobTimeoutManager:
 
     def get_timed_out_jobs(self) -> List[str]:
         """Get list of job IDs that have timed out."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         timed_out = []
 
         with self._lock:
@@ -277,7 +277,7 @@ class JobTimeoutManager:
             if job_id not in self._job_timeouts:
                 return None
             start_time, timeout = self._job_timeouts[job_id]
-            elapsed = datetime.utcnow() - start_time
+            elapsed = datetime.now(timezone.utc) - start_time
             remaining = timeout - elapsed
             return remaining if remaining.total_seconds() > 0 else timedelta(0)
 
@@ -351,7 +351,9 @@ class JobQueue:
             try:
                 old_status = job.status
                 job = JobStateMachine.transition(job, JobStatus.QUEUED)
-                job.created_at = job.created_at or datetime.utcnow().isoformat()
+                job.created_at = (
+                    job.created_at or datetime.now(timezone.utc).isoformat()
+                )
             except JobStateError as e:
                 return False, str(e)
 
@@ -363,9 +365,9 @@ class JobQueue:
             # Record for deduplication
             self._deduplicator.record(job.workflow_id, job.robot_id, params)
 
-        # Notify state change
-        if self._on_state_change:
-            self._on_state_change(job, old_status, job.status)
+            # Notify state change (inside lock to prevent race conditions)
+            if self._on_state_change:
+                self._on_state_change(job, old_status, job.status)
 
         logger.info(f"Job {job.id[:8]} enqueued with priority {job.priority}")
         return True, "Job enqueued successfully"
@@ -443,9 +445,9 @@ class JobQueue:
             self._robot_jobs[robot.id].add(job.id)
             self._timeout_manager.start_tracking(job.id)
 
-        # Notify state change
-        if self._on_state_change:
-            self._on_state_change(job, old_status, job.status)
+            # Notify state change (inside lock to prevent race conditions)
+            if self._on_state_change:
+                self._on_state_change(job, old_status, job.status)
 
         logger.info(f"Job {job.id[:8]} assigned to robot {robot.name}")
         return job
@@ -525,9 +527,9 @@ class JobQueue:
                 self._robot_jobs[robot_id].discard(job_id)
                 self._timeout_manager.stop_tracking(job_id)
 
-        # Notify state change
-        if self._on_state_change:
-            self._on_state_change(job, old_status, job.status)
+            # Notify state change (inside lock to prevent race conditions)
+            if self._on_state_change:
+                self._on_state_change(job, old_status, job.status)
 
         logger.info(f"Job {job_id[:8]} cancelled: {reason}")
         return True, "Job cancelled"
@@ -568,9 +570,9 @@ class JobQueue:
                 self._robot_jobs[robot_id].discard(job_id)
                 self._timeout_manager.stop_tracking(job_id)
 
-        # Notify state change
-        if self._on_state_change:
-            self._on_state_change(job, old_status, job.status)
+            # Notify state change (inside lock to prevent race conditions)
+            if self._on_state_change:
+                self._on_state_change(job, old_status, job.status)
 
         logger.info(f"Job {job_id[:8]} finished with status {new_status.value}")
         return True, f"Job {new_status.value}"

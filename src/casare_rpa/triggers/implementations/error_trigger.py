@@ -7,7 +7,7 @@ Useful for error handling, notifications, and retry logic.
 
 import asyncio
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional
 
 from loguru import logger
@@ -142,7 +142,7 @@ class ErrorTrigger(BaseTrigger):
             "failed_node_id": node_id,
             "stack_trace": stack_trace,
             "severity": event_severity,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         metadata = {

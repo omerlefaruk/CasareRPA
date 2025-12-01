@@ -6,12 +6,18 @@ Provides:
 - POST /auth/refresh - Refresh access token
 - POST /auth/logout - Logout (optional token revocation)
 - GET /auth/me - Get current user info
+
+Security:
+- Rate limiting on login/refresh to prevent brute force attacks
+- IP-based tracking with configurable limits
 """
 
+import time
+from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -27,6 +33,103 @@ import jwt
 
 
 router = APIRouter()
+
+
+# =============================================================================
+# RATE LIMITING
+# =============================================================================
+
+# Rate limit configuration
+LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5  # Max attempts per window
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = 300  # 5 minute window
+LOGIN_RATE_LIMIT_LOCKOUT_SECONDS = 900  # 15 minute lockout after exceeding
+
+# IP-based rate limit tracking
+# Structure: {ip: (attempt_count, window_start_time, lockout_until)}
+_login_attempts: Dict[str, Tuple[int, float, Optional[float]]] = defaultdict(
+    lambda: (0, 0.0, None)
+)
+
+
+def _get_client_ip(request: Request) -> str:
+    """Extract client IP from request, handling proxies."""
+    # Check X-Forwarded-For header (from reverse proxy)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # Take the first IP (original client)
+        return forwarded_for.split(",")[0].strip()
+
+    # Check X-Real-IP header
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+
+    # Fallback to direct client IP
+    return request.client.host if request.client else "unknown"
+
+
+def _check_rate_limit(ip: str) -> Tuple[bool, Optional[int]]:
+    """
+    Check if IP is rate limited.
+
+    Args:
+        ip: Client IP address
+
+    Returns:
+        Tuple of (is_allowed, retry_after_seconds)
+    """
+    now = time.time()
+    attempts, window_start, lockout_until = _login_attempts[ip]
+
+    # Check if in lockout
+    if lockout_until and now < lockout_until:
+        retry_after = int(lockout_until - now)
+        logger.warning(f"Rate limit lockout for {ip}: {retry_after}s remaining")
+        return False, retry_after
+
+    # Check if window has expired
+    if now - window_start > LOGIN_RATE_LIMIT_WINDOW_SECONDS:
+        # Reset the window
+        _login_attempts[ip] = (0, now, None)
+        return True, None
+
+    # Check if attempts exceeded
+    if attempts >= LOGIN_RATE_LIMIT_MAX_ATTEMPTS:
+        # Enter lockout
+        lockout_until = now + LOGIN_RATE_LIMIT_LOCKOUT_SECONDS
+        _login_attempts[ip] = (attempts, window_start, lockout_until)
+        logger.warning(
+            f"Rate limit exceeded for {ip}: entering {LOGIN_RATE_LIMIT_LOCKOUT_SECONDS}s lockout"
+        )
+        return False, LOGIN_RATE_LIMIT_LOCKOUT_SECONDS
+
+    return True, None
+
+
+def _record_login_attempt(ip: str, success: bool) -> None:
+    """
+    Record a login attempt for rate limiting.
+
+    Args:
+        ip: Client IP address
+        success: Whether the login was successful
+    """
+    now = time.time()
+    attempts, window_start, lockout_until = _login_attempts[ip]
+
+    # If successful login, reset attempts
+    if success:
+        _login_attempts[ip] = (0, now, None)
+        return
+
+    # If window expired, start new window
+    if now - window_start > LOGIN_RATE_LIMIT_WINDOW_SECONDS:
+        _login_attempts[ip] = (1, now, None)
+    else:
+        # Increment attempts
+        _login_attempts[ip] = (attempts + 1, window_start, lockout_until)
+
+    logger.debug(f"Login attempt recorded for {ip}: {_login_attempts[ip][0]} attempts")
 
 
 # =============================================================================
@@ -78,23 +181,45 @@ class LogoutResponse(BaseModel):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(request: LoginRequest) -> TokenResponse:
+async def login(request: LoginRequest, http_request: Request) -> TokenResponse:
     """
     Authenticate user and return JWT tokens.
 
     In production, this should validate against a user database.
     Currently supports dev mode for testing.
 
+    Rate limited: 5 attempts per 5 minutes, then 15 minute lockout.
+
     Args:
         request: Login credentials
+        http_request: FastAPI request for IP extraction
 
     Returns:
         Access and refresh tokens
+
+    Raises:
+        HTTPException 429: Too many login attempts
+        HTTPException 401: Invalid credentials
+        HTTPException 501: Production auth not implemented
     """
+    # Check rate limit
+    client_ip = _get_client_ip(http_request)
+    is_allowed, retry_after = _check_rate_limit(client_ip)
+
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many login attempts. Try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     # In production: validate against database
     # For now: dev mode allows any login
     if JWT_DEV_MODE:
-        logger.info(f"Dev mode login for user: {request.username}")
+        logger.info(f"Dev mode login for user: {request.username} from {client_ip}")
+
+        # Record successful login (resets rate limit)
+        _record_login_attempt(client_ip, success=True)
 
         # Dev mode: accept any credentials, assign admin role
         access_token = create_access_token(
@@ -117,10 +242,14 @@ async def login(request: LoginRequest) -> TokenResponse:
     # TODO: Implement actual user validation
     # user = await user_repository.validate_credentials(request.username, request.password)
     # if not user:
+    #     _record_login_attempt(client_ip, success=False)
     #     raise HTTPException(
     #         status_code=status.HTTP_401_UNAUTHORIZED,
     #         detail="Invalid username or password",
     #     )
+
+    # Record failed attempt (production mode not implemented)
+    _record_login_attempt(client_ip, success=False)
 
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -129,16 +258,35 @@ async def login(request: LoginRequest) -> TokenResponse:
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(request: RefreshRequest) -> TokenResponse:
+async def refresh_token(
+    request: RefreshRequest, http_request: Request
+) -> TokenResponse:
     """
     Refresh access token using refresh token.
 
+    Rate limited to prevent token refresh abuse.
+
     Args:
         request: Refresh token
+        http_request: FastAPI request for IP extraction
 
     Returns:
         New access and refresh tokens
+
+    Raises:
+        HTTPException 429: Too many refresh attempts
     """
+    # Check rate limit (shared with login)
+    client_ip = _get_client_ip(http_request)
+    is_allowed, retry_after = _check_rate_limit(client_ip)
+
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many requests. Try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     try:
         payload = decode_token(request.refresh_token)
 

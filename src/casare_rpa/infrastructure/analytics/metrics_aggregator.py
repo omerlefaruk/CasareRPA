@@ -1631,6 +1631,14 @@ class MetricsAggregator:
 
         logger.info("MetricsAggregator reset")
 
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset singleton instance (for testing)."""
+        with cls._lock:
+            if cls._instance is not None:
+                cls._instance.reset()
+                cls._instance = None
+
 
 def get_metrics_aggregator() -> MetricsAggregator:
     """Get singleton metrics aggregator instance."""

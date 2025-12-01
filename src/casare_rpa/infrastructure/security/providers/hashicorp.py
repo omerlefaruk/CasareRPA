@@ -9,7 +9,7 @@ Supports:
 - Namespace support for Vault Enterprise
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -364,7 +364,9 @@ class HashiCorpVaultProvider(VaultProvider):
             # Calculate expiration
             expires_at = None
             if lease_duration > 0:
-                expires_at = datetime.utcnow() + timedelta(seconds=lease_duration)
+                expires_at = datetime.now(timezone.utc) + timedelta(
+                    seconds=lease_duration
+                )
 
             metadata = SecretMetadata(
                 path=read_path,
@@ -462,12 +464,12 @@ class HashiCorpVaultProvider(VaultProvider):
     def _parse_vault_time(self, time_str: Optional[str]) -> datetime:
         """Parse Vault timestamp format."""
         if not time_str:
-            return datetime.utcnow()
+            return datetime.now(timezone.utc)
         try:
             # Vault uses RFC3339 format
             return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
-            return datetime.utcnow()
+            return datetime.now(timezone.utc)
 
     def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:
         """Infer credential type from data keys."""

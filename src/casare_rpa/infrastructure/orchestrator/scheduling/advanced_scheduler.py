@@ -12,7 +12,7 @@ Enterprise scheduling features including:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Set, Callable, Any, Tuple, Union
 from zoneinfo import ZoneInfo
@@ -580,7 +580,7 @@ class SlidingWindowRateLimiter:
             schedule_id: Schedule ID
         """
         with self._lock:
-            self._executions[schedule_id].append(datetime.utcnow())
+            self._executions[schedule_id].append(datetime.now(timezone.utc))
 
     def get_wait_time(self, schedule_id: str) -> int:
         """
@@ -601,7 +601,7 @@ class SlidingWindowRateLimiter:
 
             oldest = min(executions)
             wait_until = oldest + self._window
-            wait_seconds = (wait_until - datetime.utcnow()).total_seconds()
+            wait_seconds = (wait_until - datetime.now(timezone.utc)).total_seconds()
             return max(0, int(wait_seconds))
 
     def get_remaining_capacity(self, schedule_id: str) -> int:
@@ -620,7 +620,7 @@ class SlidingWindowRateLimiter:
 
     def _cleanup_old_entries(self, schedule_id: str) -> None:
         """Remove expired entries from tracking."""
-        cutoff = datetime.utcnow() - self._window
+        cutoff = datetime.now(timezone.utc) - self._window
         self._executions[schedule_id] = [
             ts for ts in self._executions[schedule_id] if ts > cutoff
         ]
@@ -672,7 +672,7 @@ class DependencyTracker:
         """
         record = self.CompletionRecord(
             schedule_id=schedule_id,
-            completed_at=datetime.utcnow(),
+            completed_at=datetime.now(timezone.utc),
             success=success,
             result=result,
         )
@@ -794,7 +794,7 @@ class DependencyTracker:
 
     def _cleanup_old(self, schedule_id: str) -> None:
         """Remove old completion records."""
-        cutoff = datetime.utcnow() - self._ttl
+        cutoff = datetime.now(timezone.utc) - self._ttl
         self._completions[schedule_id] = [
             r for r in self._completions[schedule_id] if r.completed_at > cutoff
         ]
@@ -855,7 +855,7 @@ class SLAMonitor:
             Execution tracking ID
         """
         execution_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         start_delay_ms = 0
         if scheduled_time:
@@ -896,7 +896,7 @@ class SLAMonitor:
             if not metrics:
                 return None
 
-            metrics.completed_at = datetime.utcnow()
+            metrics.completed_at = datetime.now(timezone.utc)
             metrics.success = success
             metrics.duration_ms = int(
                 (metrics.completed_at - metrics.started_at).total_seconds() * 1000
@@ -988,7 +988,7 @@ class SLAMonitor:
         Returns:
             Success rate percentage (0-100)
         """
-        cutoff = datetime.utcnow() - timedelta(hours=window_hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
 
         if not metrics:
@@ -1012,7 +1012,7 @@ class SLAMonitor:
         Returns:
             Average duration in milliseconds
         """
-        cutoff = datetime.utcnow() - timedelta(hours=window_hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
         metrics = self.get_metrics(schedule_id, since=cutoff)
 
         if not metrics:
@@ -1238,7 +1238,7 @@ class AdvancedScheduler:
         Returns:
             True if updated successfully
         """
-        schedule.updated_at = datetime.utcnow()
+        schedule.updated_at = datetime.now(timezone.utc)
         self.remove_schedule(schedule.id)
         return self.add_schedule(schedule)
 
@@ -1414,7 +1414,7 @@ class AdvancedScheduler:
             List of schedules needing catch-up
         """
         needs_catchup = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for schedule in self._schedules.values():
             if not schedule.catch_up or not schedule.catch_up.enabled:
@@ -1593,7 +1593,7 @@ class AdvancedScheduler:
             f"(catch_up={catch_up}, type={schedule.schedule_type.value})"
         )
 
-        schedule.last_run = datetime.utcnow()
+        schedule.last_run = datetime.now(timezone.utc)
         schedule.run_count += 1
 
         success = False
@@ -1723,7 +1723,7 @@ class AdvancedScheduler:
         )
 
         report = {
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "window_hours": window_hours,
             "schedules": [],
         }

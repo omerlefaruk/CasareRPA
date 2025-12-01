@@ -5,6 +5,7 @@ from .local_job_repository import LocalJobRepository
 from .local_robot_repository import LocalRobotRepository
 from .local_workflow_repository import LocalWorkflowRepository
 from .local_schedule_repository import LocalScheduleRepository
+from .local_trigger_repository import LocalTriggerRepository
 
 __all__ = [
     "LocalStorageRepository",
@@ -12,4 +13,5 @@ __all__ = [
     "LocalRobotRepository",
     "LocalWorkflowRepository",
     "LocalScheduleRepository",
+    "LocalTriggerRepository",
 ]

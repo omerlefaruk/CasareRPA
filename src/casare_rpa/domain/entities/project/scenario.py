@@ -63,11 +63,28 @@ class Scenario:
     _file_path: Optional[Path] = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
-        """Initialize timestamps if not provided."""
+        """Initialize timestamps and validate required fields."""
+        # Validation
+        self._validate_required_fields()
+
+        # Initialize timestamps
         if self.created_at is None:
             self.created_at = datetime.now()
         if self.modified_at is None:
             self.modified_at = datetime.now()
+
+    def _validate_required_fields(self) -> None:
+        """Validate required scenario fields."""
+        if not self.id or not self.id.strip():
+            raise ValueError("Scenario id cannot be empty")
+        if not self.name or not self.name.strip():
+            raise ValueError("Scenario name cannot be empty")
+        if not self.project_id or not self.project_id.strip():
+            raise ValueError("Scenario project_id cannot be empty")
+        if len(self.name) > 255:
+            raise ValueError(
+                f"Scenario name too long: {len(self.name)} chars (max 255)"
+            )
 
     @property
     def file_path(self) -> Optional[Path]:

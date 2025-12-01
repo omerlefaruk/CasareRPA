@@ -289,10 +289,10 @@ class TestNewImportsResolve:
 
     def test_http_nodes_import(self):
         """Verify HTTP nodes can be imported from new location."""
-        from casare_rpa.nodes.http import HttpGetNode, HttpPostNode
+        from casare_rpa.nodes.http import HttpRequestNode, SetHttpHeadersNode
 
-        assert HttpGetNode is not None
-        assert HttpPostNode is not None
+        assert HttpRequestNode is not None
+        assert SetHttpHeadersNode is not None
 
     def test_database_nodes_import(self):
         """Verify database nodes can be imported from new location."""
@@ -329,13 +329,15 @@ class TestNodeModuleStructure:
         """Verify HTTP module exports all expected nodes."""
         from casare_rpa.nodes import http as http_module
 
+        # HttpRequestNode supports all HTTP methods via dropdown
         expected_nodes = [
-            "HttpGetNode",
-            "HttpPostNode",
-            "HttpPutNode",
-            "HttpPatchNode",
-            "HttpDeleteNode",
             "HttpRequestNode",
+            "SetHttpHeadersNode",
+            "HttpAuthNode",
+            "ParseJsonResponseNode",
+            "HttpDownloadFileNode",
+            "HttpUploadFileNode",
+            "BuildUrlNode",
         ]
 
         missing = [name for name in expected_nodes if not hasattr(http_module, name)]

@@ -4,7 +4,7 @@ Implements cron-based scheduling using APScheduler.
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Callable, Any
 from zoneinfo import ZoneInfo
 
@@ -376,7 +376,7 @@ class JobScheduler:
         logger.info(f"Schedule '{schedule.name}' triggered")
 
         # Update last run
-        schedule.last_run = datetime.utcnow()
+        schedule.last_run = datetime.now(timezone.utc)
         schedule.run_count += 1
 
         # Call the trigger callback
@@ -496,7 +496,7 @@ def calculate_next_run(
     if not HAS_APSCHEDULER:
         return None
 
-    from_time = from_time or datetime.utcnow()
+    from_time = from_time or datetime.now(timezone.utc)
     tz = ZoneInfo(timezone) if timezone else None
 
     try:

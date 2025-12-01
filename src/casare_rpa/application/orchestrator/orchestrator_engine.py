@@ -4,7 +4,7 @@ The main orchestration logic for CasareRPA.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List, Any, Callable
 import uuid
 
@@ -135,8 +135,9 @@ class OrchestratorEngine:
         self._on_job_failed: Optional[Callable[[Job], None]] = None
 
         # WebSocket server
+        # SECURITY: Default to localhost only. Use configure_server() to enable network access.
         self._server: Optional["OrchestratorServer"] = None
-        self._server_host: str = "0.0.0.0"
+        self._server_host: str = "127.0.0.1"
         self._server_port: int = 8765
 
         # Running state
@@ -303,7 +304,7 @@ class OrchestratorEngine:
         if result.get("accepted"):
             job.status = JobStatus.RUNNING
             job.robot_id = robot_id
-            job.started_at = datetime.utcnow().isoformat()
+            job.started_at = datetime.now(timezone.utc).isoformat()
             await self._persist_job(job)
             logger.info(f"Job {job.id[:8]} dispatched to robot {robot_id}")
             return True
@@ -393,11 +394,11 @@ class OrchestratorEngine:
             status=JobStatus.PENDING,
             priority=priority,
             scheduled_time=scheduled_time,
-            created_at=datetime.utcnow().isoformat(),
+            created_at=datetime.now(timezone.utc).isoformat(),
         )
 
         # If scheduled for future, create a one-time schedule
-        if scheduled_time and scheduled_time > datetime.utcnow():
+        if scheduled_time and scheduled_time > datetime.now(timezone.utc):
             return await self._schedule_future_job(job, scheduled_time)
 
         # Enqueue immediately
@@ -600,8 +601,8 @@ class OrchestratorEngine:
             environment=environment,
             max_concurrent_jobs=max_concurrent_jobs,
             current_jobs=0,
-            last_seen=datetime.utcnow(),
-            last_heartbeat=datetime.utcnow(),
+            last_seen=datetime.now(timezone.utc),
+            last_heartbeat=datetime.now(timezone.utc),
             tags=tags or [],
         )
 
@@ -706,7 +707,7 @@ class OrchestratorEngine:
             timezone=timezone,
             enabled=enabled,
             priority=priority,
-            created_at=datetime.utcnow().isoformat(),
+            created_at=datetime.now(timezone.utc).isoformat(),
         )
 
         # Calculate next run

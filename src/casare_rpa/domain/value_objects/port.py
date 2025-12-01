@@ -4,9 +4,13 @@ CasareRPA - Port Value Object
 Port is an immutable value object representing a connection point on a node.
 """
 
+import re
 from typing import Any, Optional
 
 from .types import DataType, PortDefinition, PortType
+
+# Valid port name pattern (alphanumeric and underscores, starting with letter or underscore)
+_PORT_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 
 class Port:
@@ -29,12 +33,16 @@ class Port:
         Initialize a port.
 
         Args:
-            name: Unique port identifier within the node
+            name: Unique port identifier within the node (non-empty, alphanumeric/underscore)
             port_type: Type of port (INPUT, OUTPUT, etc.)
             data_type: Data type this port accepts/provides
             label: Display label (defaults to name)
             required: Whether this port must be connected
+
+        Raises:
+            ValueError: If name is empty, invalid format, or too long
         """
+        self._validate_name(name)
         # Immutable properties (use private attributes with @property)
         self._name = name
         self._port_type = port_type
@@ -44,6 +52,19 @@ class Port:
 
         # Mutable state (value can change during execution)
         self.value: Any = None
+
+    @staticmethod
+    def _validate_name(name: str) -> None:
+        """Validate port name."""
+        if not name:
+            raise ValueError("Port name cannot be empty")
+        if not _PORT_NAME_PATTERN.match(name):
+            raise ValueError(
+                f"Port name '{name}' is invalid. "
+                "Must start with letter/underscore, contain only alphanumeric/underscore."
+            )
+        if len(name) > 64:
+            raise ValueError(f"Port name too long: {len(name)} chars (max 64)")
 
     @property
     def name(self) -> str:
@@ -141,4 +162,6 @@ class Port:
 
     def __hash__(self) -> int:
         """Hash based on immutable properties."""
-        return hash((self.name, self.port_type, self.data_type, self.label, self.required))
+        return hash(
+            (self.name, self.port_type, self.data_type, self.label, self.required)
+        )

@@ -6,46 +6,15 @@ from casare_rpa.domain.value_objects.types import DataType
 
 
 class VisualHttpRequestNode(VisualNode):
-    """Visual representation of HttpRequestNode."""
+    """Visual representation of HttpRequestNode.
+
+    Widgets are auto-generated from HttpRequestNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Request"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize HTTP Request node."""
-        super().__init__()
-        self.add_text_input("url", "URL", text="", tab="inputs")
-        self.add_combo_menu(
-            "method",
-            "Method",
-            items=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
-            tab="config",
-        )
-        self.add_text_input("body", "Body (JSON)", text="", tab="inputs")
-        self.create_property("timeout", 30.0, widget_type=2, tab="config")
-        self.create_property("verify_ssl", True, widget_type=1, tab="config")
-        self.create_property("follow_redirects", True, widget_type=1, tab="config")
-        # Advanced options
-        self.add_text_input(
-            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
-        )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
-        self.add_text_input(
-            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
-        )
-        self.add_text_input(
-            "max_redirects", "Max Redirects", placeholder_text="10", tab="advanced"
-        )
-        self.add_combo_menu(
-            "response_encoding",
-            "Response Encoding",
-            items=["utf-8", "latin-1", "ascii", "auto"],
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -64,19 +33,15 @@ class VisualHttpRequestNode(VisualNode):
 
 
 class VisualSetHttpHeadersNode(VisualNode):
-    """Visual representation of SetHttpHeadersNode."""
+    """Visual representation of SetHttpHeadersNode.
+
+    Widgets are auto-generated from SetHttpHeadersNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Set HTTP Headers"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize Set HTTP Headers node."""
-        super().__init__()
-        self.add_text_input("header_name", "Header Name", text="", tab="inputs")
-        self.add_text_input("header_value", "Header Value", text="", tab="inputs")
-        self.add_text_input("headers_json", "Headers (JSON)", text="{}", tab="inputs")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -89,25 +54,15 @@ class VisualSetHttpHeadersNode(VisualNode):
 
 
 class VisualHttpAuthNode(VisualNode):
-    """Visual representation of HttpAuthNode."""
+    """Visual representation of HttpAuthNode.
+
+    Widgets are auto-generated from HttpAuthNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Auth"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize HTTP Auth node."""
-        super().__init__()
-        self.add_combo_menu(
-            "auth_type", "Auth Type", items=["Bearer", "Basic", "ApiKey"], tab="config"
-        )
-        self.add_text_input("token", "Token/API Key", text="", tab="inputs")
-        self.add_text_input("username", "Username", text="", tab="inputs")
-        self.add_text_input("password", "Password", text="", tab="inputs")
-        self.add_text_input(
-            "api_key_name", "API Key Header", text="X-API-Key", tab="inputs"
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -121,18 +76,15 @@ class VisualHttpAuthNode(VisualNode):
 
 
 class VisualParseJsonResponseNode(VisualNode):
-    """Visual representation of ParseJsonResponseNode."""
+    """Visual representation of ParseJsonResponseNode.
+
+    Widgets are auto-generated from ParseJsonResponseNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Parse JSON Response"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize Parse JSON Response node."""
-        super().__init__()
-        self.add_text_input("path", "JSON Path", text="", tab="inputs")
-        self.add_text_input("default", "Default Value", text="", tab="inputs")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -147,34 +99,15 @@ class VisualParseJsonResponseNode(VisualNode):
 
 
 class VisualHttpDownloadFileNode(VisualNode):
-    """Visual representation of HttpDownloadFileNode."""
+    """Visual representation of HttpDownloadFileNode.
+
+    Widgets are auto-generated from HttpDownloadFileNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Download File"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize HTTP Download File node."""
-        super().__init__()
-        self.add_text_input("url", "URL", text="", tab="inputs")
-        self.add_text_input("save_path", "Save Path", text="", tab="inputs")
-        self.create_property("timeout", 300.0, widget_type=2, tab="config")
-        self.create_property("overwrite", True, widget_type=1, tab="config")
-        self.create_property("verify_ssl", True, widget_type=1, tab="config")
-        # Advanced options
-        self.add_text_input(
-            "proxy", "Proxy URL", placeholder_text="http://proxy:port", tab="advanced"
-        )
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
-        self.add_text_input(
-            "retry_delay", "Retry Delay (s)", placeholder_text="1.0", tab="advanced"
-        )
-        self.add_text_input(
-            "chunk_size", "Chunk Size (bytes)", placeholder_text="8192", tab="advanced"
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -190,21 +123,15 @@ class VisualHttpDownloadFileNode(VisualNode):
 
 
 class VisualHttpUploadFileNode(VisualNode):
-    """Visual representation of HttpUploadFileNode."""
+    """Visual representation of HttpUploadFileNode.
+
+    Widgets are auto-generated from HttpUploadFileNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Upload File"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize HTTP Upload File node."""
-        super().__init__()
-        self.add_text_input("url", "Upload URL", text="", tab="inputs")
-        self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.add_text_input("field_name", "Field Name", text="file", tab="inputs")
-        self.create_property("timeout", 300.0, widget_type=2, tab="config")
-        self.create_property("verify_ssl", True, widget_type=1, tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -222,18 +149,15 @@ class VisualHttpUploadFileNode(VisualNode):
 
 
 class VisualBuildUrlNode(VisualNode):
-    """Visual representation of BuildUrlNode."""
+    """Visual representation of BuildUrlNode.
+
+    Widgets are auto-generated from BuildUrlNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Build URL"
     NODE_CATEGORY = "rest_api"
     CASARE_NODE_MODULE = "http_nodes"
-
-    def __init__(self) -> None:
-        """Initialize Build URL node."""
-        super().__init__()
-        self.add_text_input("base_url", "Base URL", text="", tab="inputs")
-        self.add_text_input("path", "Path", text="", tab="inputs")
 
     def setup_ports(self) -> None:
         """Setup ports."""

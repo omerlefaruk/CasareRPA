@@ -25,6 +25,14 @@ from loguru import logger
 
 @node_schema(
     PropertyDef(
+        "url",
+        PropertyType.STRING,
+        default="",
+        label="URL",
+        placeholder="https://example.com",
+        tooltip="Initial URL to navigate to after launching browser",
+    ),
+    PropertyDef(
         "browser_type",
         PropertyType.CHOICE,
         default=DEFAULT_BROWSER,
@@ -133,6 +141,13 @@ from loguru import logger
         label="Retry Interval (ms)",
         tooltip="Delay between retries in milliseconds",
         min_value=0,
+    ),
+    PropertyDef(
+        "do_not_close",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Do Not Close After Launch",
+        tooltip="Keep browser open after workflow execution completes",
     ),
 )
 @executable_node
@@ -305,6 +320,12 @@ class LaunchBrowserNode(BaseNode):
                 tab_name = "main"
                 context.add_page(page, tab_name)
                 context.set_active_page(page, tab_name)
+
+                # Store do_not_close flag in context for cleanup handling
+                do_not_close = self.get_parameter("do_not_close", False)
+                if do_not_close:
+                    context.set_variable("_browser_do_not_close", True)
+                    logger.info("Browser marked as 'do not close' after execution")
 
                 # Set outputs
                 self.set_output_value("browser", browser)
@@ -916,6 +937,13 @@ class GetAllImagesNode(BaseNode):
         label="Overwrite Existing",
         tooltip="Overwrite existing file if it exists",
     ),
+    PropertyDef(
+        "verify_ssl",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Verify SSL Certificate",
+        tooltip="Verify SSL certificate when downloading. Disable only for trusted internal sites with self-signed certificates.",
+    ),
 )
 @executable_node
 class DownloadFileNode(BaseNode):
@@ -1047,11 +1075,22 @@ class DownloadFileNode(BaseNode):
                 # Direct download using urllib (run in executor to not block)
                 import asyncio
 
+                verify_ssl = self.get_parameter("verify_ssl", True)
+
                 def download_file():
-                    # Create SSL context that doesn't verify (for flexibility)
-                    ctx = ssl.create_default_context()
-                    ctx.check_hostname = False
-                    ctx.verify_mode = ssl.CERT_NONE
+                    # Create SSL context based on verify_ssl setting
+                    if verify_ssl:
+                        ctx = ssl.create_default_context()
+                    else:
+                        # WARNING: Disabling SSL verification is insecure
+                        # Only use for trusted internal sites with self-signed certs
+                        logger.warning(
+                            f"SSL verification disabled for download from {url}. "
+                            "This is insecure and should only be used for trusted internal sites."
+                        )
+                        ctx = ssl.create_default_context()
+                        ctx.check_hostname = False
+                        ctx.verify_mode = ssl.CERT_NONE
 
                     req = urllib.request.Request(
                         url,

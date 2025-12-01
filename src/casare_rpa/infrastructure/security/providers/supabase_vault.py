@@ -8,7 +8,7 @@ accessed via Postgres functions.
 Reference: https://supabase.com/docs/guides/database/vault
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -206,8 +206,8 @@ class SupabaseVaultProvider(VaultProvider):
                     metadata = SecretMetadata(
                         path=path,
                         version=1,
-                        created_at=row["created_at"] or datetime.utcnow(),
-                        updated_at=row["updated_at"] or datetime.utcnow(),
+                        created_at=row["created_at"] or datetime.now(timezone.utc),
+                        updated_at=row["updated_at"] or datetime.now(timezone.utc),
                         credential_type=self._infer_credential_type(data),
                     )
 

@@ -232,6 +232,14 @@ class CasareRPAApp:
         self._workflow_controller.workflow_loaded.connect(self._on_workflow_load)
         self._workflow_controller.workflow_created.connect(self._on_workflow_new)
 
+        # Connect project controller scenario_opened signal to load workflow
+        project_controller = self._main_window.get_project_controller()
+        if project_controller:
+            project_controller.scenario_opened.connect(self._on_scenario_opened)
+
+        # Connect save as scenario signal
+        self._main_window.save_as_scenario_requested.connect(self._on_save_as_scenario)
+
         logger.debug("Component signals connected")
 
     def _connect_ui_signals(self) -> None:
@@ -486,6 +494,196 @@ class CasareRPAApp:
             logger.info("Graph cleared for new workflow")
         except Exception as e:
             logger.exception(f"Failed to clear graph: {e}")
+
+    def _on_scenario_opened(self, project_path: str, scenario_path: str) -> None:
+        """
+        Handle scenario open - read scenario file and load embedded workflow.
+
+        Args:
+            project_path: Path to project folder
+            scenario_path: Path to scenario JSON file
+        """
+        import orjson
+        from pathlib import Path
+        from PySide6.QtWidgets import QMessageBox
+
+        try:
+            logger.info(f"Loading scenario workflow from: {scenario_path}")
+
+            path = Path(scenario_path)
+            if not path.exists():
+                logger.error(f"Scenario file not found: {scenario_path}")
+                QMessageBox.warning(
+                    self._main_window,
+                    "Load Error",
+                    f"Scenario file not found:\n{scenario_path}",
+                )
+                return
+
+            # Read scenario JSON
+            with open(path, "rb") as f:
+                scenario_data = orjson.loads(f.read())
+
+            # Extract workflow - handle both scenario format and direct workflow format
+            # Scenario format: {"id": "...", "workflow": {...nodes, connections...}}
+            # Direct workflow format: {"nodes": {...}, "connections": [...]}
+            if "workflow" in scenario_data and isinstance(
+                scenario_data["workflow"], dict
+            ):
+                # Scenario format with embedded workflow
+                workflow = scenario_data["workflow"]
+            elif "nodes" in scenario_data:
+                # Direct workflow format - use the entire file as workflow
+                workflow = scenario_data
+            else:
+                logger.warning(f"Scenario has no workflow data: {scenario_path}")
+                QMessageBox.warning(
+                    self._main_window,
+                    "Load Warning",
+                    "Scenario has no workflow data to display.",
+                )
+                return
+
+            # Deserialize workflow onto canvas
+            success = self._deserializer.deserialize(workflow)
+
+            if success:
+                # Get name from scenario format or metadata format
+                scenario_name = (
+                    scenario_data.get("name")
+                    or scenario_data.get("metadata", {}).get("name")
+                    or path.stem
+                )
+                logger.info(f"Scenario workflow loaded: {scenario_name}")
+                self._main_window.show_status(f"Loaded scenario: {scenario_name}", 3000)
+                # Mark undo stack as clean after load
+                if hasattr(self, "_undo_stack") and self._undo_stack:
+                    self._undo_stack.setClean()
+            else:
+                logger.error("Failed to load scenario workflow")
+                QMessageBox.warning(
+                    self._main_window,
+                    "Load Error",
+                    f"Failed to load scenario workflow from:\n{scenario_path}",
+                )
+
+        except orjson.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in scenario file: {e}")
+            QMessageBox.critical(
+                self._main_window,
+                "Load Error",
+                f"Invalid JSON in scenario file:\n{e}",
+            )
+        except Exception as e:
+            logger.exception(f"Failed to load scenario: {e}")
+            QMessageBox.critical(
+                self._main_window,
+                "Load Error",
+                f"Failed to load scenario:\n{e}",
+            )
+
+    def _on_save_as_scenario(self) -> None:
+        """
+        Handle save as scenario - show dialog and save workflow in scenario format.
+
+        Scenario format wraps the workflow data in a scenario structure with
+        id, name, project_id, and the workflow itself.
+        """
+        import orjson
+        import uuid
+        from pathlib import Path
+        from datetime import datetime
+        from PySide6.QtWidgets import QFileDialog, QMessageBox, QInputDialog
+
+        try:
+            # Get scenario name from user
+            name, ok = QInputDialog.getText(
+                self._main_window,
+                "Save as Scenario",
+                "Scenario name:",
+                text="New Scenario",
+            )
+            if not ok or not name.strip():
+                return
+
+            name = name.strip()
+
+            # Get project controller to find current project
+            project_controller = self._main_window.get_project_controller()
+            current_project = (
+                project_controller.current_project if project_controller else None
+            )
+
+            # Determine default save directory
+            if current_project and current_project.path:
+                scenarios_dir = Path(current_project.path) / "scenarios"
+                scenarios_dir.mkdir(exist_ok=True)
+                default_path = scenarios_dir / f"{name}.json"
+            else:
+                default_path = Path.home() / f"{name}.json"
+
+            # Show save dialog
+            file_path, _ = QFileDialog.getSaveFileName(
+                self._main_window,
+                "Save as Scenario",
+                str(default_path),
+                "Scenario Files (*.json);;All Files (*)",
+            )
+
+            if not file_path:
+                return
+
+            logger.info(f"Saving scenario to: {file_path}")
+
+            # Serialize current workflow
+            workflow_data = self._serializer.serialize()
+
+            # Create scenario structure
+            scenario_id = f"scen_{uuid.uuid4().hex[:8]}"
+            project_id = current_project.id if current_project else ""
+            now = datetime.now()
+
+            scenario_data = {
+                "$schema_version": "1.0.0",
+                "id": scenario_id,
+                "name": name,
+                "project_id": project_id,
+                "description": "",
+                "created_at": now.isoformat(),
+                "modified_at": now.isoformat(),
+                "tags": [],
+                "workflow": workflow_data,
+                "variable_values": {},
+                "credential_bindings": {},
+                "execution_settings": {
+                    "timeout": 120,
+                    "retry_count": 0,
+                    "stop_on_error": True,
+                },
+                "triggers": [],
+            }
+
+            # Write to file
+            path = Path(file_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(path, "wb") as f:
+                f.write(orjson.dumps(scenario_data, option=orjson.OPT_INDENT_2))
+
+            logger.info(f"Scenario saved successfully: {name}")
+            self._main_window.show_status(f"Saved scenario: {name}", 3000)
+
+            # Mark undo stack as clean
+            if hasattr(self, "_undo_stack") and self._undo_stack:
+                self._undo_stack.setClean()
+
+        except Exception as e:
+            logger.exception(f"Failed to save scenario: {e}")
+            QMessageBox.critical(
+                self._main_window,
+                "Save Error",
+                f"Failed to save scenario:\n{e}",
+            )
 
     # Public API for getting controllers
     def get_workflow_controller(self) -> WorkflowController:

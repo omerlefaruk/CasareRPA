@@ -10,9 +10,79 @@ Nodes:
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
+
+
+# SQL identifier validation pattern (alphanumeric + underscore, must start with letter/underscore)
+_SQL_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+_MAX_IDENTIFIER_LENGTH = 128
+
+
+def validate_sql_identifier(
+    identifier: str, identifier_type: str = "identifier"
+) -> str:
+    """
+    Validate a SQL identifier (table name, column name, etc.) to prevent SQL injection.
+
+    Args:
+        identifier: The identifier to validate
+        identifier_type: Type of identifier for error messages (e.g., "table name")
+
+    Returns:
+        The validated identifier
+
+    Raises:
+        ValueError: If the identifier is invalid
+    """
+    if not identifier:
+        raise ValueError(f"SQL {identifier_type} cannot be empty")
+
+    if len(identifier) > _MAX_IDENTIFIER_LENGTH:
+        raise ValueError(
+            f"SQL {identifier_type} too long: {len(identifier)} chars (max {_MAX_IDENTIFIER_LENGTH})"
+        )
+
+    if not _SQL_IDENTIFIER_PATTERN.match(identifier):
+        raise ValueError(
+            f"Invalid SQL {identifier_type}: '{identifier}'. "
+            "Must contain only alphanumeric characters and underscores, "
+            "and must start with a letter or underscore."
+        )
+
+    # Additional check for SQL keywords that might cause issues
+    sql_keywords = {
+        "SELECT",
+        "INSERT",
+        "UPDATE",
+        "DELETE",
+        "DROP",
+        "CREATE",
+        "ALTER",
+        "TABLE",
+        "DATABASE",
+        "INDEX",
+        "VIEW",
+        "TRIGGER",
+        "PROCEDURE",
+        "FUNCTION",
+        "GRANT",
+        "REVOKE",
+        "UNION",
+        "WHERE",
+        "FROM",
+        "JOIN",
+    }
+    if identifier.upper() in sql_keywords:
+        logger.warning(
+            f"SQL {identifier_type} '{identifier}' is a reserved SQL keyword. "
+            "This may cause issues with some databases."
+        )
+
+    return identifier
+
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node
@@ -252,7 +322,9 @@ class GetTableColumnsNode(BaseNode):
     ) -> List[Dict[str, Any]]:
         """Get column info for SQLite table."""
         conn = connection.connection
-        query = f"PRAGMA table_info({table_name})"
+        # Validate table name to prevent SQL injection (PRAGMA doesn't support parameters)
+        validated_table = validate_sql_identifier(table_name, "table name")
+        query = f"PRAGMA table_info({validated_table})"
 
         if AIOSQLITE_AVAILABLE:
             cursor = await conn.execute(query)
@@ -307,7 +379,9 @@ class GetTableColumnsNode(BaseNode):
     ) -> List[Dict[str, Any]]:
         """Get column info for MySQL table."""
         conn = connection.connection
-        query = f"DESCRIBE {table_name}"
+        # Validate table name to prevent SQL injection (DESCRIBE doesn't support parameters)
+        validated_table = validate_sql_identifier(table_name, "table name")
+        query = f"DESCRIBE {validated_table}"
 
         async with conn.cursor(aiomysql.DictCursor) as cursor:
             await cursor.execute(query)
@@ -328,8 +402,9 @@ class GetTableColumnsNode(BaseNode):
         return columns
 
 
-# Export all utility node classes
+# Export all utility node classes and security functions
 __all__ = [
     "TableExistsNode",
     "GetTableColumnsNode",
+    "validate_sql_identifier",
 ]

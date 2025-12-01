@@ -277,15 +277,8 @@ class GoToURLNode(BaseNode):
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
-        url = self.config.get("url", "")
-        if not url:
-            # URL can come from input port, so empty config is ok
-            return True, ""
-
-        # Basic URL validation
-        if not (url.startswith("http://") or url.startswith("https://")):
-            return False, "URL must start with http:// or https://"
-
+        # URL can come from input port, so empty config is ok
+        # Protocol is auto-added in execute() if missing
         return True, ""
 
 

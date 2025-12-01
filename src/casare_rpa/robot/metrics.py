@@ -34,7 +34,7 @@ class NodeMetrics:
     success: bool
     error_type: Optional[str] = None
     retry_count: int = 0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass

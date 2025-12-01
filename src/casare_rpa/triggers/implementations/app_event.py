@@ -6,7 +6,7 @@ Trigger that fires on application events (Windows, browser, or internal RPA).
 
 import asyncio
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -163,7 +163,7 @@ class AppEventTrigger(BaseTrigger):
                     payload = {
                         "event_type": "window_focus",
                         "window_title": current_title,
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                     }
 
                     metadata = {
@@ -249,7 +249,7 @@ class AppEventTrigger(BaseTrigger):
             "data": event.data,
             "timestamp": event.timestamp.isoformat()
             if event.timestamp
-            else datetime.utcnow().isoformat(),
+            else datetime.now(timezone.utc).isoformat(),
         }
 
         metadata = {

@@ -11,7 +11,7 @@ Designed for enterprise RPA security requirements:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, auto
 from typing import Any, Dict, List, Optional, TypeVar, Generic
 import asyncio
@@ -118,8 +118,8 @@ class SecretMetadata(BaseModel):
 
     path: str = Field(..., description="Vault path for the secret")
     version: int = Field(default=1, ge=1, description="Secret version number")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = Field(
         default=None, description="Expiration time for dynamic secrets"
     )
@@ -143,14 +143,14 @@ class SecretMetadata(BaseModel):
         """Check if the secret has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     @property
     def time_until_expiry(self) -> Optional[timedelta]:
         """Get time remaining until expiration."""
         if self.expires_at is None:
             return None
-        remaining = self.expires_at - datetime.utcnow()
+        remaining = self.expires_at - datetime.now(timezone.utc)
         return remaining if remaining.total_seconds() > 0 else timedelta(0)
 
 
@@ -193,7 +193,7 @@ class AuditEvent(BaseModel):
 
     event_id: str = Field(default_factory=lambda: secrets.token_hex(16))
     event_type: AuditEventType
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     path: Optional[str] = None
     workflow_id: Optional[str] = None
     robot_id: Optional[str] = None
@@ -323,7 +323,7 @@ class CacheEntry:
     @property
     def is_expired(self) -> bool:
         """Check if cache entry has expired."""
-        age = (datetime.utcnow() - self.cached_at).total_seconds()
+        age = (datetime.now(timezone.utc) - self.cached_at).total_seconds()
         return age > self.ttl_seconds
 
 
@@ -372,7 +372,7 @@ class SecretCache:
 
             self._cache[path] = CacheEntry(
                 value=value,
-                cached_at=datetime.utcnow(),
+                cached_at=datetime.now(timezone.utc),
                 ttl_seconds=ttl or self._default_ttl,
             )
 

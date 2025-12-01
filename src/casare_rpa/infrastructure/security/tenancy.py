@@ -15,7 +15,7 @@ import hashlib
 import secrets
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Set, TypeVar
 from uuid import UUID, uuid4
@@ -373,8 +373,8 @@ class Tenant(BaseModel):
     usage: ResourceUsage = Field(default_factory=ResourceUsage)
     settings: Dict[str, Any] = Field(default_factory=dict)
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: Optional[UUID] = None
 
     @field_validator("slug")
@@ -399,7 +399,7 @@ class Tenant(BaseModel):
         """Check if subscription is valid."""
         if self.subscription_expires_at is None:
             return True
-        return datetime.utcnow() < self.subscription_expires_at
+        return datetime.now(timezone.utc) < self.subscription_expires_at
 
     def check_quota(self, resource_type: str) -> bool:
         """
@@ -457,8 +457,8 @@ class Workspace(BaseModel):
     description: Optional[str] = None
     is_default: bool = False
     settings: Dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: Optional[UUID] = None
 
 
@@ -486,7 +486,7 @@ class APIKey(BaseModel):
     last_used_at: Optional[datetime] = None
     use_count: int = 0
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     revoked_at: Optional[datetime] = None
     revoked_by: Optional[UUID] = None
 
@@ -495,7 +495,7 @@ class APIKey(BaseModel):
         """Check if API key is valid."""
         if self.status != APIKeyStatus.ACTIVE:
             return False
-        if self.expires_at and datetime.utcnow() > self.expires_at:
+        if self.expires_at and datetime.now(timezone.utc) > self.expires_at:
             return False
         return True
 
@@ -555,7 +555,7 @@ class AuditLogEntry(BaseModel):
     success: bool = True
     error_message: Optional[str] = None
 
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # =============================================================================
@@ -808,7 +808,7 @@ class TenantService:
                 if hasattr(tenant, key):
                     setattr(tenant, key, value)
 
-            tenant.updated_at = datetime.utcnow()
+            tenant.updated_at = datetime.now(timezone.utc)
             logger.info(f"Updated tenant {tenant_id}: {list(updates.keys())}")
 
             return tenant
@@ -832,10 +832,10 @@ class TenantService:
 
         async with self._lock:
             tenant.status = TenantStatus.SUSPENDED
-            tenant.updated_at = datetime.utcnow()
+            tenant.updated_at = datetime.now(timezone.utc)
             if reason:
                 tenant.settings["suspension_reason"] = reason
-                tenant.settings["suspended_at"] = datetime.utcnow().isoformat()
+                tenant.settings["suspended_at"] = datetime.now(timezone.utc).isoformat()
 
             logger.warning(f"Suspended tenant {tenant_id}: {reason}")
             return tenant
@@ -854,7 +854,7 @@ class TenantService:
 
         async with self._lock:
             tenant.status = TenantStatus.ACTIVE
-            tenant.updated_at = datetime.utcnow()
+            tenant.updated_at = datetime.now(timezone.utc)
             tenant.settings.pop("suspension_reason", None)
             tenant.settings.pop("suspended_at", None)
 
@@ -991,7 +991,7 @@ class TenantService:
         async with self._lock:
             tenant.sso_enabled = config.enabled
             tenant.sso_config = config
-            tenant.updated_at = datetime.utcnow()
+            tenant.updated_at = datetime.now(timezone.utc)
 
             logger.info(
                 f"Configured {config.provider.value} SSO for tenant {tenant_id}"
@@ -1021,7 +1021,7 @@ class TenantService:
             tenant.subscription_tier = tier
             tenant.subscription_expires_at = expires_at
             tenant.quotas = ResourceQuotas.for_tier(tier)
-            tenant.updated_at = datetime.utcnow()
+            tenant.updated_at = datetime.now(timezone.utc)
 
             logger.info(
                 f"Updated subscription for tenant {tenant_id}: tier={tier.value}"
@@ -1075,7 +1075,7 @@ class APIKeyService:
 
         expires_at = None
         if expires_in_days:
-            expires_at = datetime.utcnow() + timedelta(days=expires_in_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=expires_in_days)
 
         api_key, raw_key = APIKey.generate(
             tenant_id=tenant_id,
@@ -1132,7 +1132,7 @@ class APIKeyService:
             raise InvalidAPIKeyError("API key is not active")
 
         async with self._lock:
-            api_key.last_used_at = datetime.utcnow()
+            api_key.last_used_at = datetime.now(timezone.utc)
             api_key.use_count += 1
 
         return api_key
@@ -1158,7 +1158,7 @@ class APIKeyService:
 
         async with self._lock:
             api_key.status = APIKeyStatus.REVOKED
-            api_key.revoked_at = datetime.utcnow()
+            api_key.revoked_at = datetime.now(timezone.utc)
             api_key.revoked_by = revoked_by
 
         await self._tenant_service.decrement_usage(api_key.tenant_id, "api_key")

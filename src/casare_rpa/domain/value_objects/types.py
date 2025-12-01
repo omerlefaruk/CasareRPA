@@ -41,6 +41,7 @@ class PortType(Enum):
 class DataType(Enum):
     """Data types that can flow between nodes."""
 
+    # Primitive types
     STRING = auto()  # Text data
     INTEGER = auto()  # Integer number
     FLOAT = auto()  # Floating point number
@@ -48,10 +49,27 @@ class DataType(Enum):
     LIST = auto()  # List/Array of values
     DICT = auto()  # Dictionary/Object
     ANY = auto()  # Any type (no validation)
+    EXEC = auto()  # Execution flow marker (no data, just triggers execution)
+
+    # Browser automation types
     ELEMENT = auto()  # Web element reference
     PAGE = auto()  # Playwright page object
     BROWSER = auto()  # Playwright browser instance
-    EXEC = auto()  # Execution flow marker (no data, just triggers execution)
+
+    # Database types
+    DB_CONNECTION = auto()  # Database connection object
+
+    # Office automation types
+    WORKBOOK = auto()  # Excel workbook object
+    WORKSHEET = auto()  # Excel worksheet object
+    DOCUMENT = auto()  # Word/PDF document object
+
+    # Desktop automation types
+    WINDOW = auto()  # Desktop window handle
+    DESKTOP_ELEMENT = auto()  # Desktop UI element (UIAutomation)
+
+    # Generic object type (for custom/complex objects)
+    OBJECT = auto()  # Generic object reference
 
 
 class ExecutionMode(Enum):

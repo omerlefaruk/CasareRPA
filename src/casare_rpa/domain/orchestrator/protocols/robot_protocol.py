@@ -7,7 +7,7 @@ import json
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 
@@ -54,7 +54,9 @@ class Message:
 
     type: MessageType
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     payload: Dict[str, Any] = field(default_factory=dict)
     correlation_id: Optional[str] = None  # For request-response pairing
 
@@ -77,7 +79,7 @@ class Message:
         return cls(
             type=MessageType(data["type"]),
             id=data.get("id", str(uuid.uuid4())),
-            timestamp=data.get("timestamp", datetime.utcnow().isoformat()),
+            timestamp=data.get("timestamp", datetime.now(timezone.utc).isoformat()),
             payload=data.get("payload", {}),
             correlation_id=data.get("correlation_id"),
         )

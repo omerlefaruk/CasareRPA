@@ -645,11 +645,12 @@ class HttpUploadFileNode(BaseNode):
             logger.info(f"Uploading file {file_path} to {url}")
 
             for attempt in range(max(1, retry_count + 1)):
+                file_handle = None
                 try:
+                    # Open file with explicit handle for proper cleanup
+                    file_handle = open(file_path, "rb")
                     data = FormData()
-                    data.add_field(
-                        field_name, open(file_path, "rb"), filename=file_path.name
-                    )
+                    data.add_field(field_name, file_handle, filename=file_path.name)
                     for key, value in extra_fields.items():
                         data.add_field(key, str(value))
 
@@ -699,6 +700,10 @@ class HttpUploadFileNode(BaseNode):
                         await asyncio.sleep(retry_delay)
                     else:
                         raise
+                finally:
+                    # Always close the file handle to prevent resource leak
+                    if file_handle is not None:
+                        file_handle.close()
 
         except Exception as e:
             error_msg = f"Upload error: {str(e)}"

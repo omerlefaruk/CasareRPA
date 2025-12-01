@@ -6,7 +6,7 @@ Supports capability matching, load balancing, tag affinity, and state preference
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Protocol, Set, Tuple
 from collections import defaultdict
@@ -354,7 +354,7 @@ class StateAffinityTracker:
             robot_id: Robot that executed the workflow
         """
         with self._lock:
-            self._state_records[workflow_id][robot_id] = datetime.utcnow()
+            self._state_records[workflow_id][robot_id] = datetime.now(timezone.utc)
 
     def has_state(self, workflow_id: str, robot_id: str) -> bool:
         """
@@ -373,7 +373,7 @@ class StateAffinityTracker:
                 return False
 
             state_time = workflow_states[robot_id]
-            return datetime.utcnow() - state_time < self._state_ttl
+            return datetime.now(timezone.utc) - state_time < self._state_ttl
 
     def get_robots_with_state(self, workflow_id: str) -> List[str]:
         """
@@ -386,7 +386,7 @@ class StateAffinityTracker:
             List of robot IDs with valid state
         """
         with self._lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             workflow_states = self._state_records.get(workflow_id, {})
             return [
                 robot_id
@@ -416,7 +416,7 @@ class StateAffinityTracker:
             Number of records removed
         """
         removed = 0
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         with self._lock:
             for workflow_id in list(self._state_records.keys()):
@@ -510,7 +510,7 @@ class JobAssignmentEngine:
         Raises:
             NoCapableRobotError: If no robot can execute the job
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         zone = orchestrator_zone or self._network_zone
 
         capable_robots = self._filter_by_hard_constraints(
@@ -535,7 +535,7 @@ class JobAssignmentEngine:
 
         alternatives = [(r.robot_id, score) for r, score, _ in scored_robots[1:5]]
 
-        elapsed = (datetime.utcnow() - start_time).total_seconds() * 1000
+        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
 
         logger.info(
             f"Assigned job '{requirements.workflow_name}' to robot '{best_robot.name}' "

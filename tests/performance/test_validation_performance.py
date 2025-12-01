@@ -315,12 +315,14 @@ class TestRepeatedValidation:
 
     def test_validation_caching_behavior(self, small_workflow) -> None:
         """Test that validation doesn't improperly cache results."""
+        import copy
+
         # First validation
         result1 = validate_workflow(small_workflow)
         assert result1.is_valid is True
 
-        # Modify workflow to make it invalid
-        invalid_workflow = small_workflow.copy()
+        # Create a truly independent copy and modify it to make it invalid
+        invalid_workflow = copy.deepcopy(small_workflow)
         invalid_workflow["nodes"]["invalid"] = {
             "node_id": "different_id",  # Mismatch
             "node_type": "StartNode",
@@ -330,7 +332,7 @@ class TestRepeatedValidation:
         result2 = validate_workflow(invalid_workflow)
         assert result2.is_valid is False
 
-        # Third validation of original should still pass
+        # Third validation of original should still pass (original not modified)
         result3 = validate_workflow(small_workflow)
         assert result3.is_valid is True
 

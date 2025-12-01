@@ -610,6 +610,13 @@ class DatabasePoolManager:
                 await pool.close()
             self._pools.clear()
 
+    @classmethod
+    async def reset_instance(cls) -> None:
+        """Reset singleton instance (for testing)."""
+        if cls._instance is not None:
+            await cls._instance.close_all()
+            cls._instance = None
+
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """Get statistics for all pools."""
         return {name: pool.get_stats() for name, pool in self._pools.items()}

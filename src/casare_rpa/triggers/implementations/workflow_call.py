@@ -5,7 +5,7 @@ Trigger that allows a workflow to be called from another workflow.
 Enables sub-workflow and cross-workflow invocation patterns.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -120,8 +120,8 @@ class WorkflowCallTrigger(BaseTrigger):
             "caller_workflow_id": caller_workflow_id,
             "input_params": input_params or {},
             "call_id": call_id
-            or f"call_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}",
-            "timestamp": datetime.utcnow().isoformat(),
+            or f"call_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')}",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         # Also add input params directly to payload for easy variable access

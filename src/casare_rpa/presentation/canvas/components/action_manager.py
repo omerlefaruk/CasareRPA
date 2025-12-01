@@ -70,6 +70,14 @@ class ActionManager:
             mw._on_save_as_workflow,
         )
 
+        mw.action_save_as_scenario = self._create_action(
+            "save_as_scenario",
+            "Save as S&cenario...",
+            QKeySequence("Ctrl+Shift+S"),
+            "Save the workflow as a scenario in a project",
+            mw._on_save_as_scenario,
+        )
+
         mw.action_exit = self._create_action(
             "exit",
             "E&xit",
@@ -255,6 +263,23 @@ class ActionManager:
             mw._on_debug_workflow,
         )
 
+        mw.action_start_listening = self._create_action(
+            "start_listening",
+            "Start Listening",
+            QKeySequence("F9"),
+            "Start listening for trigger events (F9)",
+            mw._on_start_listening,
+        )
+
+        mw.action_stop_listening = self._create_action(
+            "stop_listening",
+            "Stop Listening",
+            QKeySequence("Shift+F9"),
+            "Stop listening for trigger events (Shift+F9)",
+            mw._on_stop_listening,
+            enabled=False,
+        )
+
         # === AUTOMATION ACTIONS ===
         mw.action_validate = self._create_action(
             "validate",
@@ -351,6 +376,15 @@ class ActionManager:
             QKeySequence("Ctrl+Shift+L"),
             "Save current UI layout (window positions, panel sizes)",
             mw._on_save_ui_layout,
+        )
+
+        # === PROJECT ACTIONS ===
+        mw.action_project_manager = self._create_action(
+            "project_manager",
+            "&Project Manager...",
+            QKeySequence("Ctrl+Shift+P"),
+            "Open project manager",
+            mw._on_project_manager,
         )
 
         # Apply saved hotkeys

@@ -6,7 +6,7 @@ Handles job creation, updates, cancellation, and retries.
 import os
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Callable
 from pathlib import Path
 
@@ -138,7 +138,7 @@ class JobLifecycleService:
     ) -> Optional[Job]:
         """Create a new job."""
         job_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         job_data = {
             "id": job_id,
@@ -183,7 +183,7 @@ class JobLifecycleService:
         logs: str = "",
     ) -> bool:
         """Update job status and progress."""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         data = {
             "status": status.value,
             "progress": progress,
@@ -243,7 +243,7 @@ class JobLifecycleService:
         if not job:
             return False
 
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         if job.status == JobStatus.RUNNING:
             # For running jobs, set cancel_requested flag

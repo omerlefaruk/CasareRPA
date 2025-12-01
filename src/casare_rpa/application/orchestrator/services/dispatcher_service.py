@@ -4,7 +4,7 @@ Handles robot selection, load balancing, and job assignment.
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Set, Callable, Any
 from collections import defaultdict
 from enum import Enum
@@ -228,8 +228,8 @@ class JobDispatcher:
         """Update robot heartbeat timestamp."""
         robot = self._robots.get(robot_id)
         if robot:
-            robot.last_heartbeat = datetime.utcnow()
-            robot.last_seen = datetime.utcnow()
+            robot.last_heartbeat = datetime.now(timezone.utc)
+            robot.last_seen = datetime.now(timezone.utc)
 
     def get_robot(self, robot_id: str) -> Optional[Robot]:
         """Get robot by ID."""
@@ -468,7 +468,7 @@ class JobDispatcher:
 
     async def _check_robot_health(self):
         """Check health of all robots."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for robot in list(self._robots.values()):
             if robot.status == RobotStatus.OFFLINE:

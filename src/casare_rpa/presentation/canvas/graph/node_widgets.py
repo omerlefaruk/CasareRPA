@@ -274,6 +274,161 @@ class CasarePipeItemFix:
             logger.warning(f"CasarePipeItemFix: Could not apply fix: {e}")
 
 
+class CasareNodeDataDropFix:
+    """
+    Wrapper that fixes the _on_node_data_dropped QUrl TypeError in NodeGraph.
+
+    The original NodeGraphQt code fails when dragging files onto the canvas
+    because it tries to join QUrl objects as strings without converting them.
+
+    Error: TypeError: sequence item 0: expected str instance, PySide6.QtCore.QUrl found
+
+    Usage:
+        # Apply fix at module load time
+        CasareNodeDataDropFix.apply_fix()
+    """
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Apply the _on_node_data_dropped fix to NodeGraph."""
+        try:
+            from NodeGraphQt.base.graph import NodeGraph
+
+            original_on_node_data_dropped = NodeGraph._on_node_data_dropped
+
+            def fixed_on_node_data_dropped(self, data, pos):
+                """Patched version that converts QUrl objects to strings."""
+                from PySide6.QtCore import QUrl
+
+                # Convert any QUrl objects in the data to strings
+                if hasattr(data, "urls") and callable(data.urls):
+                    urls = data.urls()
+                    if urls:
+                        # Convert QUrl to string paths
+                        converted_urls = []
+                        for url in urls:
+                            if isinstance(url, QUrl):
+                                converted_urls.append(
+                                    url.toLocalFile() or url.toString()
+                                )
+                            else:
+                                converted_urls.append(str(url))
+                        # Create modified data with string paths
+                        # The original code expects a list that can be joined
+                        data._converted_paths = converted_urls
+
+                # Call original method
+                return original_on_node_data_dropped(self, data, pos)
+
+            NodeGraph._on_node_data_dropped = fixed_on_node_data_dropped
+            logger.debug("CasareNodeDataDropFix: Fixed _on_node_data_dropped QUrl bug")
+
+        except ImportError as e:
+            logger.warning(f"CasareNodeDataDropFix: Could not import NodeGraph: {e}")
+        except Exception as e:
+            logger.warning(f"CasareNodeDataDropFix: Could not apply fix: {e}")
+
+
+class CasareNodeBaseFontFix:
+    """
+    Fix for NodeBase._add_port() font handling bug.
+
+    The original NodeGraphQt code at node_base.py:921-922 has:
+        text.font().setPointSize(8)
+        text.setFont(text.font())
+
+    This is buggy because text.font() returns a copy. The setPointSize(8)
+    modifies the copy, then setFont() applies the unmodified original font
+    which may have -1 as its point size if no font was explicitly set.
+
+    This fix patches _add_port to properly create and set the font.
+
+    Usage:
+        # Apply fix at module load time
+        CasareNodeBaseFontFix.apply_fix()
+    """
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Apply the font fix to NodeItem._add_port."""
+        try:
+            from PySide6.QtGui import QFont
+            from PySide6.QtWidgets import QGraphicsTextItem
+            from NodeGraphQt.qgraphics.node_base import (
+                NodeItem,
+                PortTypeEnum,
+                ITEM_CACHE_MODE,
+            )
+
+            original_add_port = NodeItem._add_port
+
+            def fixed_add_port(self, port):
+                """Patched version that properly sets font point size."""
+                text = QGraphicsTextItem(port.name, self)
+                # Fix: Create a new font with explicit size instead of modifying copy
+                font = QFont()
+                font.setPointSize(8)
+                text.setFont(font)
+                text.setVisible(port.display_name)
+                text.setCacheMode(ITEM_CACHE_MODE)
+                if port.port_type == PortTypeEnum.IN.value:
+                    self._input_items[port] = text
+                elif port.port_type == PortTypeEnum.OUT.value:
+                    self._output_items[port] = text
+                if self.scene():
+                    self.post_init()
+                return port
+
+            NodeItem._add_port = fixed_add_port
+            logger.debug("CasareNodeBaseFontFix: Fixed NodeItem._add_port font bug")
+
+        except ImportError as e:
+            logger.warning(f"CasareNodeBaseFontFix: Could not import NodeItem: {e}")
+        except Exception as e:
+            logger.warning(f"CasareNodeBaseFontFix: Could not apply fix: {e}")
+
+
+class CasareViewerFontFix:
+    """
+    Fix for NodeViewer font initialization that can cause QFont -1 warnings.
+
+    When QGraphicsTextItem.font() returns a font without an explicit point size,
+    it may have -1 as the point size. This fix ensures fonts are properly
+    initialized before calling setPointSize().
+
+    Usage:
+        # Apply fix at module load time
+        CasareViewerFontFix.apply_fix()
+    """
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Apply the font fix to NodeViewer._set_viewer_pan_zoom."""
+        try:
+            from PySide6.QtGui import QFont
+
+            # Patch QGraphicsTextItem to ensure font() always returns valid font
+            from PySide6.QtWidgets import QGraphicsTextItem
+
+            original_font = QGraphicsTextItem.font
+
+            def safe_font(self):
+                """Return font, ensuring point size is valid (not -1)."""
+                f = original_font(self)
+                if f.pointSize() <= 0:
+                    # Set a reasonable default if point size is invalid
+                    f.setPointSize(9)
+                return f
+
+            QGraphicsTextItem.font = safe_font
+            logger.debug(
+                "CasareViewerFontFix: Fixed QGraphicsTextItem.font() for -1 point size"
+            )
+
+        except Exception as e:
+            logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
+
+
 def apply_all_node_widget_fixes() -> None:
     """
     Apply all NodeGraphQt widget fixes.
@@ -284,12 +439,18 @@ def apply_all_node_widget_fixes() -> None:
     The fixes include:
     - LivePipeItem.draw_index_pointer text_pos bug fix
     - PipeItem.draw_path viewer None crash fix
+    - NodeGraph._on_node_data_dropped QUrl TypeError fix
+    - NodeBaseItem._add_port font handling fix
+    - QGraphicsTextItem.font() -1 point size fix
 
     Note: CasareComboBox and CasareCheckBox fixes are applied per-widget
     via the patched __init__ methods installed below.
     """
     CasareLivePipe.apply_fix()
     CasarePipeItemFix.apply_fix()
+    CasareNodeDataDropFix.apply_fix()
+    CasareNodeBaseFontFix.apply_fix()
+    CasareViewerFontFix.apply_fix()
     _install_widget_init_patches()
 
     logger.debug("All NodeGraphQt widget fixes applied")

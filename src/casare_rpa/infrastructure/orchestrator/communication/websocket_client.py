@@ -4,7 +4,7 @@ Connects to orchestrator and handles job execution.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Callable, Any, List
 import json
 import platform
@@ -91,7 +91,7 @@ class RobotClient:
         self._connected = False
         self._running = False
         self._reconnect_count = 0
-        self._start_time = datetime.utcnow()
+        self._start_time = datetime.now(timezone.utc)
 
         # Active jobs
         self._active_jobs: Dict[str, Dict[str, Any]] = {}
@@ -439,7 +439,7 @@ class RobotClient:
             "priority": payload.get("priority"),
             "timeout_seconds": payload.get("timeout_seconds"),
             "parameters": payload.get("parameters", {}),
-            "started_at": datetime.utcnow(),
+            "started_at": datetime.now(timezone.utc),
         }
 
         await self._send(
@@ -491,7 +491,7 @@ class RobotClient:
 
     async def _handle_status_request(self, msg: Message):
         """Handle status request."""
-        uptime = (datetime.utcnow() - self._start_time).total_seconds()
+        uptime = (datetime.now(timezone.utc) - self._start_time).total_seconds()
 
         system_info = {}
         if HAS_PSUTIL:
@@ -581,7 +581,8 @@ class RobotClient:
         duration_ms = 0
         if job_info:
             duration_ms = int(
-                (datetime.utcnow() - job_info["started_at"]).total_seconds() * 1000
+                (datetime.now(timezone.utc) - job_info["started_at"]).total_seconds()
+                * 1000
             )
 
         await self._send(

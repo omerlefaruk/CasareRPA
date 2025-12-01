@@ -11,12 +11,13 @@ Reference: https://theupdateframework.io/
 """
 
 import asyncio
+import base64
 import hashlib
 import json
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -24,6 +25,18 @@ from urllib.parse import urljoin
 
 import aiohttp
 from loguru import logger
+
+try:
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa, padding
+    from cryptography.exceptions import InvalidSignature
+
+    HAS_CRYPTOGRAPHY = True
+except ImportError:
+    HAS_CRYPTOGRAPHY = False
+    logger.warning(
+        "cryptography package not installed - TUF signature verification disabled"
+    )
 
 
 # =============================================================================
@@ -55,6 +68,67 @@ class DownloadProgress:
     speed_bps: float  # bytes per second
 
 
+@dataclass
+class TUFKey:
+    """TUF public key for signature verification."""
+
+    key_id: str
+    key_type: str  # "ed25519", "ecdsa-sha2-nistp256", "rsa"
+    public_key: str  # PEM or hex encoded public key
+    scheme: str = "ed25519"  # Signature scheme
+
+
+@dataclass
+class TUFRootConfig:
+    """TUF root configuration with trusted keys."""
+
+    version: int = 1
+    threshold: int = 1  # Minimum signatures required
+    keys: Dict[str, TUFKey] = field(default_factory=dict)
+    expires: Optional[datetime] = None
+
+    @classmethod
+    def from_root_json(cls, root_data: Dict[str, Any]) -> "TUFRootConfig":
+        """Parse root configuration from root.json metadata."""
+        signed = root_data.get("signed", {})
+        keys_data = signed.get("keys", {})
+        roles = signed.get("roles", {})
+
+        keys = {}
+        for key_id, key_info in keys_data.items():
+            keys[key_id] = TUFKey(
+                key_id=key_id,
+                key_type=key_info.get("keytype", "ed25519"),
+                public_key=key_info.get("keyval", {}).get("public", ""),
+                scheme=key_info.get("scheme", "ed25519"),
+            )
+
+        # Get threshold from root role
+        root_role = roles.get("root", {})
+        threshold = root_role.get("threshold", 1)
+
+        # Parse expiration
+        expires_str = signed.get("expires")
+        expires = (
+            datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
+            if expires_str
+            else None
+        )
+
+        return cls(
+            version=signed.get("version", 1),
+            threshold=threshold,
+            keys=keys,
+            expires=expires,
+        )
+
+
+class SignatureVerificationError(Exception):
+    """Raised when TUF signature verification fails."""
+
+    pass
+
+
 # =============================================================================
 # TUF UPDATER CLIENT
 # =============================================================================
@@ -82,6 +156,8 @@ class TUFUpdater:
         repo_url: str,
         local_cache_dir: Path,
         current_version: str,
+        trusted_root_path: Optional[Path] = None,
+        verify_signatures: bool = True,
     ):
         """
         Initialize the TUF updater.
@@ -90,10 +166,13 @@ class TUFUpdater:
             repo_url: Base URL of the TUF repository
             local_cache_dir: Local directory for caching metadata/targets
             current_version: Currently installed version
+            trusted_root_path: Path to trusted root.json for signature verification
+            verify_signatures: Whether to verify cryptographic signatures
         """
         self._repo_url = repo_url.rstrip("/")
         self._cache_dir = Path(local_cache_dir)
         self._current_version = current_version
+        self._verify_signatures = verify_signatures and HAS_CRYPTOGRAPHY
 
         # Create cache directories
         self._metadata_dir = self._cache_dir / "metadata"
@@ -105,11 +184,32 @@ class TUFUpdater:
         self._timestamp: Optional[Dict[str, Any]] = None
         self._snapshot: Optional[Dict[str, Any]] = None
         self._targets: Optional[Dict[str, Any]] = None
+        self._root_config: Optional[TUFRootConfig] = None
+
+        # Load trusted root if provided
+        if trusted_root_path and trusted_root_path.exists():
+            self._load_trusted_root(trusted_root_path)
+        elif self._verify_signatures:
+            logger.warning(
+                "No trusted root.json provided - signature verification will use cached root"
+            )
 
         logger.info(
             f"TUF Updater initialized: repo={self._repo_url} "
-            f"cache={self._cache_dir} version={current_version}"
+            f"cache={self._cache_dir} version={current_version} "
+            f"verify_signatures={self._verify_signatures}"
         )
+
+    def _load_trusted_root(self, root_path: Path) -> None:
+        """Load trusted root.json for signature verification."""
+        try:
+            with open(root_path) as f:
+                root_data = json.load(f)
+            self._root_config = TUFRootConfig.from_root_json(root_data)
+            logger.info(f"Loaded trusted root.json: {len(self._root_config.keys)} keys")
+        except Exception as e:
+            logger.error(f"Failed to load trusted root.json: {e}")
+            raise SignatureVerificationError(f"Failed to load trusted root: {e}")
 
     async def check_for_updates(self) -> Optional[UpdateInfo]:
         """
@@ -331,13 +431,20 @@ class TUFUpdater:
         session: aiohttp.ClientSession,
         filename: str,
     ) -> Dict[str, Any]:
-        """Fetch and parse metadata file."""
+        """Fetch, verify, and parse metadata file."""
         url = f"{self._repo_url}/metadata/{filename}"
 
         try:
             async with session.get(url) as response:
                 response.raise_for_status()
                 data = await response.json()
+
+                # Verify signatures if enabled
+                if self._verify_signatures:
+                    self._verify_metadata_signatures(data, filename)
+
+                # Check expiration
+                self._check_metadata_expiration(data, filename)
 
                 # Cache locally
                 cache_path = self._metadata_dir / filename
@@ -354,6 +461,168 @@ class TUFUpdater:
                 with open(cache_path) as f:
                     return json.load(f)
             raise
+
+    def _verify_metadata_signatures(
+        self, metadata: Dict[str, Any], filename: str
+    ) -> None:
+        """
+        Verify cryptographic signatures on TUF metadata.
+
+        Args:
+            metadata: The metadata dict containing 'signed' and 'signatures'
+            filename: Name of the metadata file for error messages
+
+        Raises:
+            SignatureVerificationError: If signature verification fails
+        """
+        if not HAS_CRYPTOGRAPHY:
+            logger.warning(
+                f"Skipping signature verification for {filename} - cryptography not available"
+            )
+            return
+
+        if not self._root_config or not self._root_config.keys:
+            logger.warning(f"No trusted keys available for {filename} verification")
+            return
+
+        signatures = metadata.get("signatures", [])
+        signed_data = metadata.get("signed", {})
+
+        if not signatures:
+            raise SignatureVerificationError(f"No signatures found in {filename}")
+
+        # Canonical JSON encoding for verification
+        canonical_signed = json.dumps(
+            signed_data, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+
+        # Count valid signatures
+        valid_signatures = 0
+
+        for sig in signatures:
+            key_id = sig.get("keyid")
+            signature_value = sig.get("sig")
+
+            if not key_id or not signature_value:
+                continue
+
+            # Find the key in our trusted keys
+            key = self._root_config.keys.get(key_id)
+            if not key:
+                logger.debug(f"Unknown key_id in signature: {key_id[:16]}...")
+                continue
+
+            try:
+                if self._verify_single_signature(
+                    canonical_signed, signature_value, key
+                ):
+                    valid_signatures += 1
+                    logger.debug(f"Valid signature from key {key_id[:16]}...")
+            except Exception as e:
+                logger.warning(
+                    f"Signature verification error for key {key_id[:16]}: {e}"
+                )
+
+        # Check threshold
+        threshold = self._root_config.threshold
+        if valid_signatures < threshold:
+            raise SignatureVerificationError(
+                f"Insufficient valid signatures for {filename}: "
+                f"got {valid_signatures}, need {threshold}"
+            )
+
+        logger.debug(
+            f"Signature verification passed for {filename}: {valid_signatures}/{threshold}"
+        )
+
+    def _verify_single_signature(
+        self, data: bytes, signature_hex: str, key: TUFKey
+    ) -> bool:
+        """
+        Verify a single signature against a key.
+
+        Args:
+            data: The canonical JSON bytes to verify
+            signature_hex: Hex-encoded signature
+            key: TUF key with public key material
+
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        if not HAS_CRYPTOGRAPHY:
+            return False
+
+        try:
+            signature_bytes = bytes.fromhex(signature_hex)
+            public_key_bytes = bytes.fromhex(key.public_key)
+
+            if key.key_type == "ed25519" or key.scheme == "ed25519":
+                # Ed25519 verification
+                public_key = ed25519.Ed25519PublicKey.from_public_bytes(
+                    public_key_bytes
+                )
+                public_key.verify(signature_bytes, data)
+                return True
+
+            elif key.key_type.startswith("ecdsa") or key.scheme.startswith("ecdsa"):
+                # ECDSA verification (typically P-256)
+                public_key = ec.EllipticCurvePublicKey.from_encoded_point(
+                    ec.SECP256R1(), b"\x04" + public_key_bytes
+                )
+                public_key.verify(signature_bytes, data, ec.ECDSA(hashes.SHA256()))
+                return True
+
+            elif key.key_type == "rsa" or key.scheme.startswith("rsassa"):
+                # RSA verification
+                public_key = serialization.load_der_public_key(public_key_bytes)
+                public_key.verify(
+                    signature_bytes,
+                    data,
+                    padding.PKCS1v15(),
+                    hashes.SHA256(),
+                )
+                return True
+
+            else:
+                logger.warning(f"Unsupported key type: {key.key_type}/{key.scheme}")
+                return False
+
+        except InvalidSignature:
+            return False
+        except Exception as e:
+            logger.debug(f"Signature verification failed: {e}")
+            return False
+
+    def _check_metadata_expiration(
+        self, metadata: Dict[str, Any], filename: str
+    ) -> None:
+        """
+        Check if metadata has expired.
+
+        Args:
+            metadata: The metadata dict
+            filename: Name of the metadata file
+
+        Raises:
+            SignatureVerificationError: If metadata has expired
+        """
+        signed = metadata.get("signed", {})
+        expires_str = signed.get("expires")
+
+        if not expires_str:
+            return
+
+        try:
+            expires = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
+            now = datetime.now(timezone.utc)
+
+            if now > expires:
+                raise SignatureVerificationError(
+                    f"Metadata {filename} has expired: {expires_str}"
+                )
+
+        except ValueError as e:
+            logger.warning(f"Could not parse expiration date in {filename}: {e}")
 
     def _find_latest_target(self) -> Optional[tuple]:
         """Find the latest version target in targets metadata."""

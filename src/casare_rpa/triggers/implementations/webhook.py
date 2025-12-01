@@ -2,7 +2,10 @@
 CasareRPA - Webhook Trigger
 
 Trigger that fires when an HTTP webhook request is received.
-Supports API key and JWT authentication.
+Supports multiple authentication methods:
+- API key
+- Bearer token
+- HMAC signature (SHA256, SHA1, SHA384, SHA512)
 """
 
 from typing import Any, Dict, Optional
@@ -20,8 +23,17 @@ class WebhookTrigger(BaseTrigger):
 
     Configuration options:
         endpoint: URL path for the webhook (e.g., "/webhooks/invoice")
-        auth_type: Authentication type (none, api_key, bearer, jwt)
+        auth_type: Authentication type:
+            - none: No authentication
+            - api_key: X-API-Key header
+            - bearer: Bearer token in Authorization header
+            - hmac_sha256: HMAC-SHA256 signature (GitHub-compatible)
+            - hmac_sha1: HMAC-SHA1 signature
+            - hmac_sha384: HMAC-SHA384 signature
+            - hmac_sha512: HMAC-SHA512 signature
         secret: Secret key for authentication
+        hmac_header: Custom header name for HMAC signature
+        hmac_provider: HMAC provider (github, stripe, slack, generic)
         methods: Allowed HTTP methods (default: ["POST"])
         payload_mapping: JSONPath mappings for extracting data from payload
         headers_filter: Required headers for the request
@@ -67,7 +79,16 @@ class WebhookTrigger(BaseTrigger):
 
         # Auth type validation
         auth_type = config.get("auth_type", "none")
-        valid_auth_types = ["none", "api_key", "bearer", "jwt"]
+        valid_auth_types = [
+            "none",
+            "api_key",
+            "bearer",
+            "jwt",
+            "hmac_sha256",
+            "hmac_sha1",
+            "hmac_sha384",
+            "hmac_sha512",
+        ]
         if auth_type not in valid_auth_types:
             return False, f"Invalid auth_type. Must be one of: {valid_auth_types}"
 
@@ -106,13 +127,33 @@ class WebhookTrigger(BaseTrigger):
                 },
                 "auth_type": {
                     "type": "string",
-                    "enum": ["none", "api_key", "bearer", "jwt"],
+                    "enum": [
+                        "none",
+                        "api_key",
+                        "bearer",
+                        "jwt",
+                        "hmac_sha256",
+                        "hmac_sha1",
+                        "hmac_sha384",
+                        "hmac_sha512",
+                    ],
                     "default": "none",
                     "description": "Authentication method",
                 },
                 "secret": {
                     "type": "string",
-                    "description": "Secret key for authentication",
+                    "description": "Secret key for authentication or HMAC signing",
+                },
+                "hmac_header": {
+                    "type": "string",
+                    "description": "Custom header name for HMAC signature",
+                    "default": "X-Webhook-Signature",
+                },
+                "hmac_provider": {
+                    "type": "string",
+                    "enum": ["github", "stripe", "slack", "generic"],
+                    "default": "generic",
+                    "description": "HMAC provider format (affects header parsing)",
                 },
                 "methods": {
                     "type": "array",
