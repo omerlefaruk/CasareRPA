@@ -444,6 +444,7 @@ class ListUniqueNode(BaseNode):
         tooltip="Dot-separated path to compare (for dict items)",
     ),
 )
+@executable_node
 class ListFilterNode(BaseNode):
     """Node that filters a list based on a condition."""
 
@@ -552,6 +553,7 @@ class ListFilterNode(BaseNode):
         tooltip="Dot-separated path to extract (for dict items)",
     ),
 )
+@executable_node
 class ListMapNode(BaseNode):
     """Node that transforms each item in a list."""
 
@@ -643,6 +645,7 @@ class ListMapNode(BaseNode):
         tooltip="Dot-separated path to values (for dict items)",
     ),
 )
+@executable_node
 class ListReduceNode(BaseNode):
     """Node that reduces a list to a single value."""
 

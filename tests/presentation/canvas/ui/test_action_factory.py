@@ -59,6 +59,10 @@ def mock_main_window(qapp):
     mw._on_open_performance_dashboard = Mock()
     mw._on_open_command_palette = Mock()
     mw._on_about = Mock()
+    # New hotkey actions (hotkey 3, 5, 6)
+    mw._on_show_output = Mock()
+    mw._on_disable_all_selected = Mock()
+    mw._on_toggle_node_library = Mock()
 
     yield mw
     mw.deleteLater()
@@ -136,6 +140,7 @@ class TestActionCreation:
             "deselect_all",
             "select_nearest",
             "toggle_disable",
+            "disable_all_selected",
             "preferences",
         ]
         for name in edit_actions:
@@ -155,6 +160,8 @@ class TestActionCreation:
             "validate",
             "toggle_minimap",
             "auto_connect",
+            "toggle_node_library",
+            "show_output",
         ]
         for name in view_actions:
             assert name in action_factory.actions, f"Missing action: {name}"
@@ -220,10 +227,18 @@ class TestActionConfiguration:
         """Test actions with string shortcuts."""
         action_factory.create_all_actions()
 
-        # Check custom shortcuts
+        # Check custom shortcuts (from action_factory defaults, not hotkeys.json)
         assert action_factory.actions["duplicate"].shortcut() == QKeySequence("Ctrl+D")
-        assert action_factory.actions["run"].shortcut() == QKeySequence("F3")
+        assert action_factory.actions["run"].shortcut() == QKeySequence("F5")
         assert action_factory.actions["delete"].shortcut() == QKeySequence("X")
+        # New hotkey shortcuts (3, 5, 6)
+        assert action_factory.actions["show_output"].shortcut() == QKeySequence("3")
+        assert action_factory.actions[
+            "disable_all_selected"
+        ].shortcut() == QKeySequence("5")
+        assert action_factory.actions["toggle_node_library"].shortcut() == QKeySequence(
+            "6"
+        )
 
     def test_action_standard_shortcuts(self, action_factory):
         """Test actions with standard key shortcuts."""
@@ -244,6 +259,7 @@ class TestActionConfiguration:
             "auto_connect",
             "pause",
             "record_workflow",
+            "toggle_node_library",
         ]
         for name in checkable_actions:
             assert action_factory.actions[

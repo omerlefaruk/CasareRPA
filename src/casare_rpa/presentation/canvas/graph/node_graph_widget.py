@@ -865,7 +865,13 @@ class NodeGraphWidget(QWidget):
                 logger.warning(f"Connection blocked: {validation.message}")
 
                 try:
-                    output_port.disconnect_from(input_port)
+                    # CRITICAL: Use push_undo=False and emit_signal=False
+                    # We're inside a signal handler from the same connection event.
+                    # Pushing to undo stack here corrupts NodeGraphQt's internal state
+                    # and prevents future connections from the same port.
+                    output_port.disconnect_from(
+                        input_port, push_undo=False, emit_signal=False
+                    )
                 except Exception as e:
                     logger.error(f"Failed to disconnect invalid connection: {e}")
 
@@ -898,7 +904,8 @@ class NodeGraphWidget(QWidget):
         Handle node creation/paste events.
 
         - Handles composite nodes (e.g., For Loop creates Start + End)
-        - Detects pasted nodes with duplicate IDs and regenerates them.
+        - Detects pasted nodes with duplicate IDs and regenerates them
+        - Syncs visual node properties to casare_node.config after paste
         This prevents self-connection errors from copy/paste operations.
         """
         from casare_rpa.utils.id_generator import generate_node_id
@@ -914,17 +921,20 @@ class NodeGraphWidget(QWidget):
         if not current_id:
             return  # New node creation handled by factory
 
+        # Get casare_node for operations
+        casare_node = (
+            node.get_casare_node() if hasattr(node, "get_casare_node") else None
+        )
+
         # Check if another node already has this ID (duplicate from paste)
+        is_paste = False
         for other_node in self._graph.all_nodes():
             if (
                 other_node is not node
                 and other_node.get_property("node_id") == current_id
             ):
+                is_paste = True
                 # Duplicate detected - regenerate ID
-                casare_node = (
-                    node.get_casare_node() if hasattr(node, "get_casare_node") else None
-                )
-
                 if casare_node:
                     # Get node type for ID generation
                     node_type = (
@@ -950,6 +960,67 @@ class NodeGraphWidget(QWidget):
                             f"Regenerated duplicate node ID: {current_id} -> {new_id}"
                         )
                 break
+
+        # CRITICAL: Always sync visual node properties to casare_node.config
+        # This ensures pasted nodes retain their configured values for:
+        # - Same-canvas paste (duplicate ID detected)
+        # - Cross-canvas paste (no duplicate, but config needs sync)
+        # - Workflow load (deserializer sets properties, need sync to config)
+        if casare_node:
+            self._sync_visual_properties_to_casare_node(node, casare_node)
+
+    def _sync_visual_properties_to_casare_node(self, visual_node, casare_node) -> None:
+        """
+        Sync visual node properties to casare_node.config after paste.
+
+        When pasting, NodeGraphQt restores visual properties but the casare_node
+        is newly created with empty config. This syncs the values.
+
+        Args:
+            visual_node: The pasted visual node with restored properties
+            casare_node: The newly created casare_node needing config sync
+        """
+        try:
+            # Get all custom properties from visual node model
+            if not hasattr(visual_node, "model"):
+                return
+
+            model = visual_node.model
+            custom_props = list(model.custom_properties.keys()) if model else []
+
+            synced_count = 0
+            for prop_name in custom_props:
+                # Skip internal/meta properties
+                if prop_name.startswith("_") or prop_name in (
+                    "node_id",
+                    "name",
+                    "color",
+                    "pos",
+                    "disabled",
+                    "selected",
+                    "visible",
+                    "width",
+                    "height",
+                ):
+                    continue
+
+                try:
+                    prop_value = visual_node.get_property(prop_name)
+                    if prop_value is not None:
+                        # Sync to casare_node config
+                        casare_node.config[prop_name] = prop_value
+                        synced_count += 1
+                except Exception:
+                    pass  # Property access failed, skip
+
+            if synced_count > 0:
+                logger.debug(
+                    f"Synced {synced_count} properties to pasted node "
+                    f"{casare_node.node_id}"
+                )
+
+        except Exception as e:
+            logger.warning(f"Failed to sync properties for pasted node: {e}")
 
     def _handle_composite_node_creation(self, composite_node) -> None:
         """
@@ -1155,8 +1226,20 @@ class NodeGraphWidget(QWidget):
         logger.debug("Drag-drop support enabled for workflow import")
 
     def _handle_drag_enter(self, event) -> None:
-        """Handle drag enter event - accept JSON files."""
+        """Handle drag enter event - accept JSON files and node library drags."""
         mime_data = event.mimeData()
+
+        # Accept node library drags
+        if mime_data.hasFormat("application/x-casare-node"):
+            event.acceptProposedAction()
+            return
+
+        # Accept casare_node: text format from node library
+        if mime_data.hasText():
+            text = mime_data.text()
+            if text.startswith("casare_node:"):
+                event.acceptProposedAction()
+                return
 
         if mime_data.hasUrls():
             for url in mime_data.urls():
@@ -1181,7 +1264,7 @@ class NodeGraphWidget(QWidget):
         self._handle_drag_enter(event)
 
     def _handle_drop(self, event) -> None:
-        """Handle drop event - import workflow file or JSON text."""
+        """Handle drop event - import workflow file, JSON text, or node library node."""
 
         mime_data = event.mimeData()
         drop_pos = event.position() if hasattr(event, "position") else event.posF()
@@ -1190,6 +1273,31 @@ class NodeGraphWidget(QWidget):
         viewer = self._graph.viewer()
         scene_pos = viewer.mapToScene(drop_pos.toPoint())
         position = (scene_pos.x(), scene_pos.y())
+
+        # Handle node library drops (application/x-casare-node)
+        if mime_data.hasFormat("application/x-casare-node"):
+            data = mime_data.data("application/x-casare-node").data().decode()
+            parts = data.split("|")
+            if len(parts) >= 1:
+                node_type = parts[0]
+                identifier = parts[1] if len(parts) > 1 else ""
+                logger.info(f"Dropped node from library: {node_type}")
+                self._create_node_at_position(node_type, identifier, position)
+                event.acceptProposedAction()
+                return
+
+        # Handle casare_node: text format from node library
+        if mime_data.hasText():
+            text = mime_data.text()
+            if text.startswith("casare_node:"):
+                parts = text.split(":")
+                if len(parts) >= 2:
+                    node_type = parts[1]
+                    identifier = parts[2] if len(parts) > 2 else ""
+                    logger.info(f"Dropped node from library (text): {node_type}")
+                    self._create_node_at_position(node_type, identifier, position)
+                    event.acceptProposedAction()
+                    return
 
         # Handle file drops
         if mime_data.hasUrls():
@@ -1221,6 +1329,51 @@ class NodeGraphWidget(QWidget):
                     logger.warning(f"Dropped text is not valid JSON: {e}")
 
         event.ignore()
+
+    def _create_node_at_position(
+        self, node_type: str, identifier: str, position: tuple
+    ) -> None:
+        """Create a node at the specified position from a drag-drop operation."""
+        try:
+            from .node_registry import get_node_registry
+
+            registry = get_node_registry()
+
+            # Find the visual node class by __name__
+            visual_class = None
+            for category in registry.get_categories():
+                for node_class in registry.get_nodes_by_category(category):
+                    if node_class.__name__ == node_type:
+                        visual_class = node_class
+                        break
+                if visual_class:
+                    break
+
+            if visual_class:
+                # Build the full node identifier for NodeGraphQt
+                # Format: "identifier.NODE_NAME" e.g., "casare.browser.Click Element"
+                node_identifier = getattr(visual_class, "__identifier__", identifier)
+                node_name = getattr(visual_class, "NODE_NAME", node_type)
+
+                full_type = (
+                    f"{node_identifier}.{node_name}" if node_identifier else node_name
+                )
+                logger.debug(f"Creating node with type: {full_type}")
+
+                # Create the node
+                node = self._graph.create_node(full_type)
+                if node:
+                    node.set_pos(position[0], position[1])
+                    logger.info(f"Created node {node_name} at {position}")
+                else:
+                    logger.warning(f"create_node returned None for: {full_type}")
+            else:
+                logger.warning(
+                    f"Could not find visual class for node type: {node_type}"
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to create node from drop: {e}", exc_info=True)
 
     def _show_connection_search(self, source_port, scene_pos):
         """

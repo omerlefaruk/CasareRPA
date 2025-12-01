@@ -57,8 +57,6 @@ def mock_main_window(qtbot):
     # Mock actions
     main_window.action_run = Mock()
     main_window.action_run.setEnabled = Mock()
-    main_window.action_run_to_node = Mock()
-    main_window.action_run_to_node.setEnabled = Mock()
     main_window.action_pause = Mock()
     main_window.action_pause.setEnabled = Mock()
     main_window.action_pause.setChecked = Mock()
@@ -511,7 +509,6 @@ class TestPrivateMethods:
         execution_controller._update_execution_actions(running=True)
 
         mock_main_window.action_run.setEnabled.assert_called_with(False)
-        mock_main_window.action_run_to_node.setEnabled.assert_called_with(False)
         mock_main_window.action_pause.setEnabled.assert_called_with(True)
         mock_main_window.action_stop.setEnabled.assert_called_with(True)
 
@@ -522,7 +519,6 @@ class TestPrivateMethods:
         execution_controller._update_execution_actions(running=False)
 
         mock_main_window.action_run.setEnabled.assert_called_with(True)
-        mock_main_window.action_run_to_node.setEnabled.assert_called_with(True)
         mock_main_window.action_pause.setEnabled.assert_called_with(False)
         mock_main_window.action_stop.setEnabled.assert_called_with(False)
         mock_main_window.action_pause.setChecked.assert_called_with(False)

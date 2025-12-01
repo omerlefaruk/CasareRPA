@@ -12,7 +12,7 @@ class VisualStartNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports for start node."""
-        self.add_output("exec_out")
+        self.add_exec_output("exec_out")
 
 
 class VisualEndNode(VisualNode):
@@ -24,7 +24,7 @@ class VisualEndNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports for end node."""
-        self.add_input("exec_in")
+        self.add_exec_input("exec_in")
 
 
 class VisualCommentNode(VisualNode):

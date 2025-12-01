@@ -57,6 +57,7 @@ from casare_rpa.domain.value_objects.types import (
         tooltip="Multiple headers as JSON object",
     ),
 )
+@executable_node
 class SetHttpHeadersNode(BaseNode):
     """
     Configure HTTP headers for subsequent requests.
@@ -242,7 +243,8 @@ class ParseJsonResponseNode(BaseNode):
                 logger.debug(f"Extracted '{path}' from JSON")
 
             except (KeyError, IndexError, TypeError) as e:
-                if default is not None:
+                # Only use default if it was explicitly provided (not empty string from schema)
+                if default is not None and default != "":
                     self.set_output_value("value", default)
                     self.set_output_value("success", True)
                     self.set_output_value("error", "")
@@ -341,6 +343,7 @@ class ParseJsonResponseNode(BaseNode):
         tooltip="Download chunk size in bytes",
     ),
 )
+@executable_node
 class HttpDownloadFileNode(BaseNode):
     """
     Download a file from a URL and save to disk.
@@ -553,6 +556,7 @@ class HttpDownloadFileNode(BaseNode):
         tooltip="Delay between retry attempts",
     ),
 )
+@executable_node
 class HttpUploadFileNode(BaseNode):
     """
     Upload a file via HTTP POST multipart/form-data.
@@ -732,6 +736,7 @@ class HttpUploadFileNode(BaseNode):
         tooltip="Query parameters as JSON object",
     ),
 )
+@executable_node
 class BuildUrlNode(BaseNode):
     """
     Build a URL with query parameters.

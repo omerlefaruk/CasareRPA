@@ -13,7 +13,8 @@ from .bottom_panel_dock import BottomPanelDock
 from .history_tab import HistoryTab
 from .log_tab import LogTab
 from .output_tab import OutputTab
-from .triggers_tab import TriggersTab
+
+# TriggersTab removed - triggers are now visual nodes
 from .validation_tab import ValidationTab
 
 __all__ = [
@@ -27,7 +28,6 @@ __all__ = [
     "HistoryTab",
     "LogTab",
     "OutputTab",
-    "TriggersTab",
     "ValidationTab",
     # Supporting Classes
     "CollapsibleSection",

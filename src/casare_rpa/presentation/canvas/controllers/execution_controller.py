@@ -48,12 +48,17 @@ class ExecutionController(BaseController):
     execution_error = Signal(str)
     run_to_node_requested = Signal(str)  # node_id
     run_single_node_requested = Signal(str)  # node_id
+    # Trigger listening signals
+    trigger_listening_started = Signal()
+    trigger_listening_stopped = Signal()
+    trigger_fired = Signal(int)  # run count
 
     def __init__(self, main_window: "MainWindow"):
         """Initialize execution controller."""
         super().__init__(main_window)
         self._is_running = False
         self._is_paused = False
+        self._is_listening = False
         self._use_case: Optional = None
         self._workflow_task: Optional[asyncio.Task] = None
         self._event_bus = None
@@ -172,8 +177,8 @@ class ExecutionController(BaseController):
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
-            if visual_node and hasattr(visual_node, "set_property"):
-                visual_node.set_property("status", "running")
+            if visual_node and hasattr(visual_node, "update_status"):
+                visual_node.update_status("running")
                 logger.debug(f"Node {node_id} visual status: running")
 
     def _on_node_completed(self, event) -> None:
@@ -181,23 +186,33 @@ class ExecutionController(BaseController):
         Handle NODE_COMPLETED event from EventBus.
 
         Extracted from: canvas/components/execution_component.py
-        Updates visual node status to 'completed'.
+        Updates visual node status to 'success' (shows green checkmark).
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
-            if visual_node and hasattr(visual_node, "set_property"):
-                visual_node.set_property("status", "completed")
-                logger.debug(f"Node {node_id} visual status: completed")
+            if visual_node and hasattr(visual_node, "update_status"):
+                visual_node.update_status("success")
+                # Update execution time if available
+                duration_ms = (
+                    event_data.get("duration_ms")
+                    if isinstance(event_data, dict)
+                    else None
+                )
+                if duration_ms is not None and hasattr(
+                    visual_node, "update_execution_time"
+                ):
+                    visual_node.update_execution_time(duration_ms / 1000.0)
+                logger.debug(f"Node {node_id} visual status: success")
 
     def _on_node_error(self, event) -> None:
         """
         Handle NODE_ERROR event from EventBus.
 
         Extracted from: canvas/components/execution_component.py
-        Updates visual node status to 'error'.
+        Updates visual node status to 'error' (shows red X icon).
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -209,8 +224,8 @@ class ExecutionController(BaseController):
         )
         if node_id:
             visual_node = self._find_visual_node(node_id)
-            if visual_node and hasattr(visual_node, "set_property"):
-                visual_node.set_property("status", "error")
+            if visual_node and hasattr(visual_node, "update_status"):
+                visual_node.update_status("error")
                 logger.error(f"Node {node_id} error: {error}")
 
     def _on_workflow_completed(self, event) -> None:
@@ -281,14 +296,17 @@ class ExecutionController(BaseController):
         return self._node_index.get(node_id)
 
     def _reset_all_node_visuals(self) -> None:
-        """Reset all node visual states to idle."""
+        """Reset all node visual states to idle (clears animations and status icons)."""
         graph = self.main_window.get_graph()
         if not graph:
             return
 
         for visual_node in graph.all_nodes():
-            if hasattr(visual_node, "set_property"):
-                visual_node.set_property("status", "idle")
+            if hasattr(visual_node, "update_status"):
+                visual_node.update_status("idle")
+            # Also clear execution time
+            if hasattr(visual_node, "update_execution_time"):
+                visual_node.update_execution_time(None)
 
     def run_workflow(self) -> None:
         """Run workflow from start to end (F3)."""
@@ -413,21 +431,46 @@ class ExecutionController(BaseController):
                 self._is_running = False
                 return
 
+            # Check if runner is configured
+            if not self._workflow_runner:
+                logger.error("WorkflowRunner not configured")
+                QMessageBox.critical(
+                    self.main_window,
+                    "Execution Error",
+                    "Workflow runner not initialized. Please restart the application.",
+                )
+                self._is_running = False
+                return
+
             # Get node name for display
             node_name = (
                 target_node.name() if hasattr(target_node, "name") else target_node_id
             )
+
+            # Reset all node visuals before starting
+            self._reset_all_node_visuals()
 
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
 
             self._is_paused = False
             self.run_to_node_requested.emit(target_node_id)
+            self.execution_started.emit()
 
             # Update UI state
             self._update_execution_actions(running=True)
 
             self.main_window.show_status(f"Running to node: {node_name}...", 0)
+
+            # Create async task using lifecycle manager with target_node_id
+            self._workflow_task = asyncio.create_task(
+                self._lifecycle_manager.start_workflow(
+                    self._workflow_runner,
+                    force_cleanup=True,
+                    target_node_id=target_node_id,
+                    single_node=False,
+                )
+            )
 
         except Exception as e:
             # Ensure flag is reset on any unexpected error during setup
@@ -463,14 +506,66 @@ class ExecutionController(BaseController):
             self.main_window.show_status("Selected node has no ID", 3000)
             return
 
-        # Get node name for display
-        node_name = (
-            target_node.name() if hasattr(target_node, "name") else target_node_id
-        )
+        # Atomic check-and-set to prevent race condition
+        if self._is_running:
+            logger.warning("Workflow already running")
+            self.main_window.show_status("Workflow is already running", 3000)
+            return
 
-        self.run_single_node_requested.emit(target_node_id)
+        # Set flag immediately to block concurrent calls
+        self._is_running = True
 
-        self.main_window.show_status(f"Running node: {node_name}...", 0)
+        try:
+            # Check if runner is configured
+            if not self._workflow_runner:
+                logger.error("WorkflowRunner not configured")
+                QMessageBox.critical(
+                    self.main_window,
+                    "Execution Error",
+                    "Workflow runner not initialized. Please restart the application.",
+                )
+                self._is_running = False
+                return
+
+            # Get node name for display
+            node_name = (
+                target_node.name() if hasattr(target_node, "name") else target_node_id
+            )
+
+            # Reset only target node visual before starting
+            if hasattr(target_node, "update_status"):
+                target_node.update_status("idle")
+            if hasattr(target_node, "update_execution_time"):
+                target_node.update_execution_time(None)
+
+            # Build node index for O(1) lookups during execution events
+            self._build_node_index()
+
+            self._is_paused = False
+            self.run_single_node_requested.emit(target_node_id)
+            self.execution_started.emit()
+
+            # Update UI state
+            self._update_execution_actions(running=True)
+
+            self.main_window.show_status(f"Running node: {node_name}...", 0)
+
+            # Create async task using lifecycle manager with single_node=True
+            self._workflow_task = asyncio.create_task(
+                self._lifecycle_manager.start_workflow(
+                    self._workflow_runner,
+                    force_cleanup=True,
+                    target_node_id=target_node_id,
+                    single_node=True,
+                )
+            )
+
+        except Exception as e:
+            # Ensure flag is reset on any unexpected error during setup
+            logger.exception("Unexpected error during run_single_node startup")
+            self._is_running = False
+            self._update_execution_actions(running=False)
+            raise
 
     def pause_workflow(self) -> None:
         """Pause running workflow."""
@@ -604,6 +699,134 @@ class ExecutionController(BaseController):
         """Check if workflow is currently paused."""
         return self._is_paused
 
+    @property
+    def is_listening(self) -> bool:
+        """Check if trigger is actively listening."""
+        return self._is_listening
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Trigger Listening Methods (F9/F10)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def start_trigger_listening(self) -> None:
+        """
+        Start listening for trigger events (F9).
+
+        For workflows with a trigger node, this activates background listening.
+        When the trigger fires (e.g., schedule interval), the workflow executes.
+        """
+        logger.info("Starting trigger listening mode")
+
+        if self._is_listening:
+            logger.warning("Already listening for triggers")
+            self.main_window.show_status("Already listening for triggers", 3000)
+            return
+
+        if self._is_running:
+            logger.warning("Cannot start listening while workflow is running")
+            self.main_window.show_status("Stop workflow first", 3000)
+            return
+
+        if not self._workflow_runner:
+            logger.error("WorkflowRunner not configured")
+            QMessageBox.critical(
+                self.main_window,
+                "Error",
+                "Workflow runner not initialized.",
+            )
+            return
+
+        # Validate before starting
+        if not self._check_validation_before_run():
+            return
+
+        # Start listening asynchronously
+        asyncio.create_task(self._start_listening_async())
+
+    async def _start_listening_async(self) -> None:
+        """Start trigger listening asynchronously."""
+        success = await self._workflow_runner.start_listening()
+
+        if success:
+            self._is_listening = True
+            self.trigger_listening_started.emit()
+            self.main_window.show_status(
+                "Trigger listening started - waiting for events...", 0
+            )
+            logger.success("Trigger listening started")
+
+            # Update trigger node visual to show listening state
+            self._update_trigger_node_visual(listening=True)
+        else:
+            QMessageBox.warning(
+                self.main_window,
+                "Trigger Error",
+                "Failed to start trigger listening.\n\n"
+                "Make sure your workflow has a trigger node (e.g., Schedule, Webhook).",
+            )
+
+    def stop_trigger_listening(self) -> None:
+        """
+        Stop listening for trigger events (F10 or Esc).
+
+        Stops the active trigger and returns to idle state.
+        """
+        logger.info("Stopping trigger listening mode")
+
+        if not self._is_listening:
+            logger.debug("Not currently listening")
+            return
+
+        # Stop listening asynchronously
+        asyncio.create_task(self._stop_listening_async())
+
+    async def _stop_listening_async(self) -> None:
+        """Stop trigger listening asynchronously."""
+        if not self._workflow_runner:
+            return
+
+        success = await self._workflow_runner.stop_listening()
+
+        if success:
+            run_count = self._workflow_runner.trigger_run_count
+            self._is_listening = False
+            self.trigger_listening_stopped.emit()
+            self.main_window.show_status(
+                f"Trigger listening stopped (fired {run_count} times)", 3000
+            )
+            logger.info(f"Trigger listening stopped (fired {run_count} times)")
+
+            # Update trigger node visual
+            self._update_trigger_node_visual(listening=False)
+
+    def toggle_trigger_listening(self) -> None:
+        """Toggle trigger listening on/off."""
+        if self._is_listening:
+            self.stop_trigger_listening()
+        else:
+            self.start_trigger_listening()
+
+    def _update_trigger_node_visual(self, listening: bool) -> None:
+        """
+        Update trigger node visual state.
+
+        Args:
+            listening: Whether trigger is actively listening
+        """
+        graph = self.main_window.get_graph()
+        if not graph:
+            return
+
+        for visual_node in graph.all_nodes():
+            # Check if this is a trigger node
+            node_type = getattr(visual_node, "type_", "")
+            if "Trigger" in node_type:
+                if hasattr(visual_node, "set_listening"):
+                    visual_node.set_listening(listening)
+                # Also update status indicator
+                if hasattr(visual_node, "update_status"):
+                    visual_node.update_status("listening" if listening else "idle")
+
     def _check_validation_before_run(self) -> bool:
         """
         Check validation before running workflow.
@@ -642,7 +865,6 @@ class ExecutionController(BaseController):
         # When running: disable run actions, enable pause/stop
         # When stopped: enable run actions, disable pause/stop
         self.main_window.action_run.setEnabled(not running)
-        self.main_window.action_run_to_node.setEnabled(not running)
         self.main_window.action_pause.setEnabled(running)
         self.main_window.action_stop.setEnabled(running)
 

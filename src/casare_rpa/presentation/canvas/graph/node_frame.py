@@ -457,14 +457,37 @@ class NodeFrame(QGraphicsRectItem):
         # Use a light, semi-transparent white that's visible on any frame color
         self.title_label.setDefaultTextColor(QColor(255, 255, 255, 200))
 
-        # Position at top-left
+        # Position at top-left and set width to match frame
         self.title_label.setPos(10, 5)
+        self._update_title_geometry()
 
     def set_title(self, title: str):
         """Update the frame title."""
         self.frame_title = title
         if self.title_label:
             self.title_label.setPlainText(title)
+
+    def _update_title_geometry(self):
+        """Update title label size and width to match frame dimensions."""
+        if not self.title_label:
+            return
+        rect = self.rect()
+
+        # Scale font size based on frame dimensions
+        # Base: 14pt for 400px width, scale proportionally
+        base_size = 14
+        base_width = 400
+        scale_factor = rect.width() / base_width
+        # Clamp font size between 12 and 48
+        font_size = max(12, min(48, int(base_size * scale_factor)))
+
+        font = QFont("Segoe UI", font_size, QFont.Weight.Bold)
+        self.title_label.setFont(font)
+
+        # Account for left margin (10px), right margin for collapse button (34px)
+        available_width = rect.width() - 44
+        if available_width > 0:
+            self.title_label.setTextWidth(available_width)
 
     def set_color(self, color: QColor):
         """Change the frame color."""
@@ -543,6 +566,7 @@ class NodeFrame(QGraphicsRectItem):
         # Resize to collapsed dimensions
         self.prepareGeometryChange()
         self.setRect(0, 0, self.COLLAPSED_WIDTH, self.COLLAPSED_HEIGHT)
+        self._update_title_geometry()
 
         # Update collapse button position
         if hasattr(self, "_collapse_button"):
@@ -576,6 +600,7 @@ class NodeFrame(QGraphicsRectItem):
         # Restore expanded rect
         self.prepareGeometryChange()
         self.setRect(self._expanded_rect)
+        self._update_title_geometry()
 
         # Update collapse button position
         if hasattr(self, "_collapse_button"):
@@ -945,6 +970,7 @@ class NodeFrame(QGraphicsRectItem):
             if new_rect.width() >= 100 and new_rect.height() >= 60:
                 self.prepareGeometryChange()
                 self.setRect(new_rect)
+                self._update_title_geometry()
 
             event.accept()
             return

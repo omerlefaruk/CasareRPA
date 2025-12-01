@@ -10,6 +10,7 @@ SECURITY: All file operations are subject to path sandboxing.
 """
 
 import csv
+import glob
 import json
 import zipfile
 from pathlib import Path
@@ -17,7 +18,8 @@ from pathlib import Path
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.decorators import executable_node
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     PortType,
@@ -56,19 +58,46 @@ def validate_zip_entry(zip_path: str, entry_name: str) -> Path:
     return target_path
 
 
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        placeholder="C:\\path\\to\\file.csv",
+    ),
+    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
+    PropertyDef("has_header", PropertyType.BOOLEAN, default=True, label="Has Header"),
+    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    PropertyDef(
+        "quotechar",
+        PropertyType.STRING,
+        default='"',
+        label="Quote Char",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "skip_rows", PropertyType.INTEGER, default=0, label="Skip Rows", tab="advanced"
+    ),
+    PropertyDef(
+        "max_rows",
+        PropertyType.INTEGER,
+        default=0,
+        label="Max Rows (0=unlimited)",
+        tab="advanced",
+    ),
+    PropertyDef(
+        "strict",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Strict Mode",
+        tab="advanced",
+    ),
+)
 @executable_node
 class ReadCSVNode(BaseNode):
     """
     Read and parse a CSV file.
-
-    Config:
-        delimiter: Field delimiter (default: ,)
-        has_header: First row is header (default: True)
-        encoding: File encoding (default: utf-8)
-        quotechar: Character for quoting fields (default: ")
-        skip_rows: Number of initial rows to skip (default: 0)
-        max_rows: Maximum rows to read, 0 = unlimited (default: 0)
-        strict: Strict mode - error on malformed rows (default: False)
 
     Inputs:
         file_path: Path to CSV file
@@ -81,25 +110,7 @@ class ReadCSVNode(BaseNode):
     """
 
     def __init__(self, node_id: str, name: str = "Read CSV", **kwargs) -> None:
-        # Default config with all CSV read options
-        default_config = {
-            "delimiter": ",",
-            "has_header": True,
-            "encoding": "utf-8",
-            "quotechar": '"',
-            "skip_rows": 0,  # Number of initial rows to skip
-            "max_rows": 0,  # Maximum rows to read, 0 = unlimited
-            "strict": False,  # Error on malformed rows
-            "doublequote": True,  # Whether to interpret "" as escaped "
-            "escapechar": None,  # Character to escape special chars
-        }
-
         config = kwargs.get("config", {})
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-
         super().__init__(node_id, config)
         self.name = name
         self.node_type = "ReadCSVNode"
@@ -115,7 +126,8 @@ class ReadCSVNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            # Use get_parameter to check both port value and config
+            file_path = self.get_parameter("file_path")
             delimiter = self.config.get("delimiter", ",")
             has_header = self.config.get("has_header", True)
             encoding = self.config.get("encoding", "utf-8")
@@ -207,15 +219,24 @@ class ReadCSVNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        placeholder="C:\\path\\to\\output.csv",
+    ),
+    PropertyDef("delimiter", PropertyType.STRING, default=",", label="Delimiter"),
+    PropertyDef(
+        "write_header", PropertyType.BOOLEAN, default=True, label="Write Header"
+    ),
+    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+)
 @executable_node
 class WriteCSVNode(BaseNode):
     """
     Write data to a CSV file.
-
-    Config:
-        delimiter: Field delimiter (default: ,)
-        write_header: Write header row (default: True)
-        encoding: File encoding (default: utf-8)
 
     Inputs:
         file_path: Path to write
@@ -239,6 +260,7 @@ class WriteCSVNode(BaseNode):
         self.add_input_port("data", PortType.INPUT, DataType.LIST)
         self.add_input_port("headers", PortType.INPUT, DataType.LIST)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -246,9 +268,10 @@ class WriteCSVNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            data = self.get_input_value("data", context) or []
-            headers = self.get_input_value("headers", context)
+            # Use get_parameter to check both port value and config
+            file_path = self.get_parameter("file_path")
+            data = self.get_parameter("data") or []
+            headers = self.get_parameter("headers")
             delimiter = self.config.get("delimiter", ",")
             write_header = self.config.get("write_header", True)
             encoding = self.config.get("encoding", "utf-8")
@@ -285,6 +308,7 @@ class WriteCSVNode(BaseNode):
                     row_count = len(data)
 
             self.set_output_value("file_path", str(path))
+            self.set_output_value("attachment_file", [str(path)])
             self.set_output_value("row_count", row_count)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -304,13 +328,20 @@ class WriteCSVNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        placeholder="C:\\path\\to\\file.json",
+    ),
+    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+)
 @executable_node
 class ReadJSONFileNode(BaseNode):
     """
     Read and parse a JSON file.
-
-    Config:
-        encoding: File encoding (default: utf-8)
 
     Inputs:
         file_path: Path to JSON file
@@ -335,7 +366,8 @@ class ReadJSONFileNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
+            # Use get_parameter to check both port value and config
+            file_path = self.get_parameter("file_path")
             encoding = self.config.get("encoding", "utf-8")
 
             if not file_path:
@@ -374,15 +406,24 @@ class ReadJSONFileNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "file_path",
+        PropertyType.STRING,
+        required=True,
+        label="File Path",
+        placeholder="C:\\path\\to\\output.json",
+    ),
+    PropertyDef("encoding", PropertyType.STRING, default="utf-8", label="Encoding"),
+    PropertyDef("indent", PropertyType.INTEGER, default=2, label="Indent"),
+    PropertyDef(
+        "ensure_ascii", PropertyType.BOOLEAN, default=False, label="Ensure ASCII"
+    ),
+)
 @executable_node
 class WriteJSONFileNode(BaseNode):
     """
     Write data to a JSON file.
-
-    Config:
-        encoding: File encoding (default: utf-8)
-        indent: Indentation level (default: 2)
-        ensure_ascii: Escape non-ASCII (default: False)
 
     Inputs:
         file_path: Path to write
@@ -403,14 +444,16 @@ class WriteJSONFileNode(BaseNode):
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("data", PortType.INPUT, DataType.ANY)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
-            file_path = self.get_input_value("file_path", context)
-            data = self.get_input_value("data", context)
+            # Use get_parameter to check both port value and config
+            file_path = self.get_parameter("file_path")
+            data = self.get_parameter("data")
             encoding = self.config.get("encoding", "utf-8")
             indent = self.config.get("indent", 2)
             ensure_ascii = self.config.get("ensure_ascii", False)
@@ -429,6 +472,7 @@ class WriteJSONFileNode(BaseNode):
                 json.dump(data, f, indent=indent, ensure_ascii=ensure_ascii)
 
             self.set_output_value("file_path", str(path))
+            self.set_output_value("attachment_file", [str(path)])
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
@@ -447,18 +491,60 @@ class WriteJSONFileNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "zip_path",
+        PropertyType.STRING,
+        required=True,
+        label="ZIP Path",
+        placeholder="C:\\output\\archive.zip",
+    ),
+    PropertyDef(
+        "source_path",
+        PropertyType.STRING,
+        default="",
+        label="Source Path",
+        placeholder="C:\\folder\\to\\zip or C:\\folder\\*.txt",
+        tooltip="Folder path (zips entire folder) or glob pattern (e.g., *.txt)",
+    ),
+    PropertyDef(
+        "base_dir",
+        PropertyType.STRING,
+        default="",
+        label="Base Directory",
+        placeholder="C:\\source\\folder",
+        tooltip="Base directory for relative paths in archive (auto-set if source_path is folder)",
+    ),
+    PropertyDef(
+        "compression",
+        PropertyType.CHOICE,
+        default="ZIP_DEFLATED",
+        choices=["ZIP_STORED", "ZIP_DEFLATED"],
+        label="Compression",
+    ),
+)
 @executable_node
 class ZipFilesNode(BaseNode):
     """
     Create a ZIP archive from files.
 
-    Config:
-        compression: ZIP_STORED or ZIP_DEFLATED (default: ZIP_DEFLATED)
+    Supports three modes of operation:
+    1. Folder mode: Set source_path to a folder path (e.g., C:\\myFolder)
+       - Recursively zips all files in the folder
+       - Preserves folder structure in archive
+
+    2. Glob mode: Set source_path to a glob pattern (e.g., C:\\folder\\*.txt)
+       - Zips all files matching the pattern
+       - Supports recursive patterns (e.g., **/*.txt)
+
+    3. File list mode: Connect a list of file paths to the 'files' input port
+       - For programmatic file selection
 
     Inputs:
         zip_path: Path for the ZIP file to create
-        files: List of file paths to include
-        base_dir: Base directory for relative paths (optional)
+        source_path: Folder path or glob pattern (auto-discovers files)
+        files: List of file paths to include (optional if source_path provided)
+        base_dir: Base directory for relative paths (auto-set if source_path is folder)
 
     Outputs:
         zip_path: Created ZIP file path
@@ -474,9 +560,11 @@ class ZipFilesNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
+        self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("files", PortType.INPUT, DataType.LIST)
         self.add_input_port("base_dir", PortType.INPUT, DataType.STRING)
         self.add_output_port("zip_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -484,21 +572,69 @@ class ZipFilesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            zip_path = self.get_input_value("zip_path", context)
-            files = self.get_input_value("files", context) or []
-            base_dir = self.get_input_value("base_dir", context)
+            # Use get_parameter to check both port value and config
+            zip_path = self.get_parameter("zip_path")
+            source_path = self.get_parameter("source_path")
+            files = self.get_parameter("files") or []
+            base_dir = self.get_parameter("base_dir")
             compression = self.config.get("compression", "ZIP_DEFLATED")
 
             if not zip_path:
                 raise ValueError("zip_path is required")
 
-            # Resolve {{variable}} patterns in zip_path and base_dir
+            # Resolve {{variable}} patterns
             zip_path = context.resolve_value(zip_path)
+            if source_path:
+                source_path = context.resolve_value(source_path)
             if base_dir:
                 base_dir = context.resolve_value(base_dir)
 
+            # Auto-discover files from source_path if files list is empty
+            if not files and source_path:
+                source = Path(source_path)
+
+                if source.is_dir():
+                    # It's a folder - recursively get all files
+                    files = [str(f) for f in source.rglob("*") if f.is_file()]
+                    # Auto-set base_dir to the folder if not specified
+                    if not base_dir:
+                        base_dir = str(source)
+                    logger.info(
+                        f"Auto-discovered {len(files)} files from folder: {source}"
+                    )
+                elif "*" in source_path or "?" in source_path:
+                    # It's a glob pattern
+                    files = [
+                        f
+                        for f in glob.glob(source_path, recursive=True)
+                        if Path(f).is_file()
+                    ]
+                    # For glob patterns, use parent of the pattern as base_dir if not specified
+                    if not base_dir:
+                        # Find the first non-glob part of the path
+                        parts = Path(source_path).parts
+                        non_glob_parts = []
+                        for part in parts:
+                            if "*" in part or "?" in part:
+                                break
+                            non_glob_parts.append(part)
+                        if non_glob_parts:
+                            base_dir = str(Path(*non_glob_parts))
+                    logger.info(
+                        f"Auto-discovered {len(files)} files from glob pattern: {source_path}"
+                    )
+                elif source.is_file():
+                    # Single file
+                    files = [str(source)]
+                    logger.info(f"Using single file: {source}")
+                else:
+                    raise ValueError(f"source_path not found: {source_path}")
+
             if not files:
-                raise ValueError("files list is required")
+                raise ValueError(
+                    "No files to zip. Provide either 'source_path' (folder or glob pattern) "
+                    "or connect a 'files' list input."
+                )
 
             zip_compression = (
                 zipfile.ZIP_DEFLATED
@@ -528,9 +664,12 @@ class ZipFilesNode(BaseNode):
                     file_count += 1
 
             self.set_output_value("zip_path", str(path))
+            self.set_output_value("attachment_file", [str(path)])
             self.set_output_value("file_count", file_count)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
+
+            logger.info(f"Created ZIP archive: {path} with {file_count} files")
 
             return {
                 "success": True,
@@ -550,13 +689,26 @@ class ZipFilesNode(BaseNode):
         return True, ""
 
 
+@node_schema(
+    PropertyDef(
+        "zip_path",
+        PropertyType.STRING,
+        required=True,
+        label="ZIP Path",
+        placeholder="C:\\input\\archive.zip",
+    ),
+    PropertyDef(
+        "extract_to",
+        PropertyType.STRING,
+        required=True,
+        label="Extract To",
+        placeholder="C:\\output\\extracted",
+    ),
+)
 @executable_node
 class UnzipFilesNode(BaseNode):
     """
     Extract files from a ZIP archive.
-
-    Config:
-        None
 
     Inputs:
         zip_path: Path to ZIP file
@@ -587,8 +739,9 @@ class UnzipFilesNode(BaseNode):
         self.status = NodeStatus.RUNNING
 
         try:
-            zip_path = self.get_input_value("zip_path", context)
-            extract_to = self.get_input_value("extract_to", context)
+            # Use get_parameter to check both port value and config
+            zip_path = self.get_parameter("zip_path")
+            extract_to = self.get_parameter("extract_to")
             allow_dangerous = self.config.get("allow_dangerous_paths", False)
 
             if not zip_path:

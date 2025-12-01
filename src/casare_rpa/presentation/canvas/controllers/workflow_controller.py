@@ -13,10 +13,12 @@ from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog
 from loguru import logger
+from pydantic import ValidationError
 
 from .base_controller import BaseController
 from ....utils.config import WORKFLOWS_DIR
 from ....application.services import OrchestratorClient
+from ....infrastructure.security.workflow_schema import validate_workflow_json
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
@@ -265,7 +267,13 @@ class WorkflowController(BaseController):
         """
         if self._current_file != file_path:
             self._current_file = file_path
-            self.current_file_changed.emit(file_path)
+            try:
+                self.current_file_changed.emit(file_path)
+            except RuntimeError as e:
+                if "deleted" in str(e).lower():
+                    # Signal source deleted during shutdown - safe to ignore
+                    return
+                raise
             self._update_window_title()
 
     def set_modified(self, modified: bool) -> None:
@@ -277,7 +285,13 @@ class WorkflowController(BaseController):
         """
         if self._is_modified != modified:
             self._is_modified = modified
-            self.modified_changed.emit(modified)
+            try:
+                self.modified_changed.emit(modified)
+            except RuntimeError as e:
+                if "deleted" in str(e).lower():
+                    # Signal source deleted during shutdown - safe to ignore
+                    return
+                raise
             self._update_window_title()
             self._update_save_action()
 
@@ -424,6 +438,24 @@ class WorkflowController(BaseController):
                 )
                 return
 
+            # SECURITY: Full schema validation to prevent code injection
+            # and resource exhaustion attacks from malicious clipboard data
+            try:
+                validate_workflow_json(data)
+                logger.debug("Clipboard workflow schema validation passed")
+            except ValidationError as e:
+                logger.error(f"Clipboard workflow schema validation failed: {e}")
+                QMessageBox.warning(
+                    self.main_window,
+                    "Invalid Workflow",
+                    f"The clipboard content failed security validation:\n\n"
+                    f"{str(e)[:500]}",
+                )
+                return
+            except Exception as e:
+                # Log but continue for backwards compatibility
+                logger.warning(f"Schema validation skipped (non-standard format): {e}")
+
             # Emit signal with the JSON string for app to handle
             self.workflow_imported_json.emit(text)
             self.main_window.show_status(
@@ -462,6 +494,25 @@ class WorkflowController(BaseController):
                 # Load workflow data
                 data = orjson.loads(Path(file_path).read_bytes())
 
+                # SECURITY: Validate dropped workflow against schema
+                try:
+                    validate_workflow_json(data)
+                    logger.debug("Dropped workflow schema validation passed")
+                except ValidationError as e:
+                    logger.error(f"Dropped workflow schema validation failed: {e}")
+                    QMessageBox.warning(
+                        self.main_window,
+                        "Invalid Workflow",
+                        f"The dropped file failed security validation:\n\n"
+                        f"{str(e)[:500]}",
+                    )
+                    return
+                except Exception as e:
+                    # Log but continue for backwards compatibility
+                    logger.warning(
+                        f"Schema validation skipped (non-standard format): {e}"
+                    )
+
                 # Signal workflow import with file path
                 self.workflow_imported.emit(file_path)
                 self.main_window.set_modified(True)
@@ -480,6 +531,25 @@ class WorkflowController(BaseController):
                 import orjson
 
                 logger.info(f"Importing dropped JSON data at position {position}")
+
+                # SECURITY: Validate dropped JSON data against schema
+                try:
+                    validate_workflow_json(data)
+                    logger.debug("Dropped JSON data schema validation passed")
+                except ValidationError as e:
+                    logger.error(f"Dropped JSON data schema validation failed: {e}")
+                    QMessageBox.warning(
+                        self.main_window,
+                        "Invalid Workflow",
+                        f"The dropped data failed security validation:\n\n"
+                        f"{str(e)[:500]}",
+                    )
+                    return
+                except Exception as e:
+                    # Log but continue for backwards compatibility
+                    logger.warning(
+                        f"Schema validation skipped (non-standard format): {e}"
+                    )
 
                 # Convert to JSON string and signal
                 json_str = orjson.dumps(data).decode("utf-8")

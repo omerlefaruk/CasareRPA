@@ -57,6 +57,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Try to preserve text layout (experimental)",
     ),
 )
+@executable_node
 class ReadPDFTextNode(BaseNode):
     """
     Extract text from a PDF file.
@@ -293,6 +294,7 @@ class MergePDFsNode(BaseNode):
         self.add_input_port("input_files", PortType.INPUT, DataType.LIST)
         self.add_input_port("output_path", PortType.INPUT, DataType.STRING)
         self.add_output_port("output_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -334,6 +336,7 @@ class MergePDFsNode(BaseNode):
                 writer.write(f)
 
             self.set_output_value("output_path", str(out_path))
+            self.set_output_value("attachment_file", [str(out_path)])
             self.set_output_value("page_count", total_pages)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -482,6 +485,7 @@ class ExtractPDFPagesNode(BaseNode):
         self.add_input_port("output_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("pages", PortType.INPUT, DataType.LIST)
         self.add_output_port("output_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("page_count", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -527,6 +531,7 @@ class ExtractPDFPagesNode(BaseNode):
                 writer.write(f)
 
             self.set_output_value("output_path", str(out_path))
+            self.set_output_value("attachment_file", [str(out_path)])
             self.set_output_value("page_count", len(writer.pages))
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -566,6 +571,7 @@ class ExtractPDFPagesNode(BaseNode):
         tooltip="Output image format",
     ),
 )
+@executable_node
 class PDFToImagesNode(BaseNode):
     """
     Convert PDF pages to images.

@@ -103,6 +103,12 @@ def node_schema(*property_defs: PropertyDef, strict: bool = False):
             """Wrapped __init__ that merges defaults and validates config."""
             config = kwargs.get("config") or {}
 
+            # Extract property values from kwargs (e.g., comment="text" -> config["comment"]="text")
+            property_names = {p.name for p in property_defs}
+            for prop_name in property_names:
+                if prop_name in kwargs and prop_name not in config:
+                    config[prop_name] = kwargs[prop_name]
+
             # Merge with defaults from schema
             default_config = schema.get_default_config()
             for key, value in default_config.items():

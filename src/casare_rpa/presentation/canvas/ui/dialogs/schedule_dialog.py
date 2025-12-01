@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, List
 
+from casare_rpa.utils.datetime_helpers import parse_datetime
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -117,17 +118,6 @@ class WorkflowSchedule:
     @classmethod
     def from_dict(cls, data: dict) -> "WorkflowSchedule":
         """Create from dictionary."""
-
-        def parse_datetime(val):
-            if val is None:
-                return None
-            if isinstance(val, datetime):
-                return val
-            try:
-                return datetime.fromisoformat(val)
-            except (ValueError, TypeError):
-                return None
-
         return cls(
             id=data.get("id", ""),
             name=data.get("name", ""),

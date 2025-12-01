@@ -23,15 +23,12 @@ class WorkflowPortSchema(BaseModel):
 class WorkflowNodeSchema(BaseModel):
     """Schema for workflow node definition."""
 
-    id: str = Field(..., min_length=1, max_length=128)
-    type: str = Field(..., min_length=1, max_length=128)
-    name: str = Field(..., min_length=1, max_length=256)
-    position: Dict[str, float] = Field(...)
-    properties: Dict[str, Any] = Field(default_factory=dict)
-    inputs: List[WorkflowPortSchema] = Field(default_factory=list, max_length=100)
-    outputs: List[WorkflowPortSchema] = Field(default_factory=list, max_length=100)
+    node_id: str = Field(..., min_length=1, max_length=128)
+    node_type: str = Field(..., min_length=1, max_length=128)
+    position: List[float] = Field(...)  # [x, y] format from serializer
+    config: Dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("type")
+    @field_validator("node_type")
     @classmethod
     def validate_node_type(cls, v: str) -> str:
         """Validate node type doesn't contain dangerous patterns."""
@@ -53,10 +50,10 @@ class WorkflowNodeSchema(BaseModel):
 
         return v
 
-    @field_validator("properties")
+    @field_validator("config")
     @classmethod
-    def validate_properties(cls, v: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate properties don't contain code execution patterns."""
+    def validate_config(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate config doesn't contain code execution patterns."""
         dangerous_patterns = [
             "__import__",
             "eval(",
@@ -67,10 +64,10 @@ class WorkflowNodeSchema(BaseModel):
         ]
 
         # Convert dict to string for pattern matching
-        props_str = str(v).lower()
+        config_str = str(v).lower()
         for pattern in dangerous_patterns:
-            if pattern in props_str:
-                raise ValueError(f"Properties contain dangerous pattern: '{pattern}'")
+            if pattern in config_str:
+                raise ValueError(f"Config contains dangerous pattern: '{pattern}'")
 
         return v
 
@@ -78,7 +75,6 @@ class WorkflowNodeSchema(BaseModel):
 class WorkflowConnectionSchema(BaseModel):
     """Schema for workflow connection definition."""
 
-    id: str = Field(..., min_length=1, max_length=128)
     source_node: str = Field(..., min_length=1, max_length=128)
     source_port: str = Field(..., min_length=1, max_length=128)
     target_node: str = Field(..., min_length=1, max_length=128)
@@ -92,6 +88,8 @@ class WorkflowMetadataSchema(BaseModel):
     description: Optional[str] = Field(None, max_length=2000)
     version: Optional[str] = Field(None, max_length=32)
     author: Optional[str] = Field(None, max_length=128)
+    created_at: Optional[str] = Field(None, max_length=64)
+    modified_at: Optional[str] = Field(None, max_length=64)
     tags: List[str] = Field(default_factory=list, max_length=50)
 
 
@@ -107,18 +105,22 @@ class WorkflowSchema(BaseModel):
     """
 
     metadata: WorkflowMetadataSchema
-    nodes: List[WorkflowNodeSchema] = Field(..., max_length=1000)
+    nodes: Dict[str, WorkflowNodeSchema] = Field(...)
     connections: List[WorkflowConnectionSchema] = Field(..., max_length=5000)
     variables: Dict[str, Any] = Field(default_factory=dict)
+    frames: List[Dict[str, Any]] = Field(default_factory=list)
+    settings: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("nodes")
     @classmethod
     def validate_nodes_not_empty(
-        cls, v: List[WorkflowNodeSchema]
-    ) -> List[WorkflowNodeSchema]:
-        """Ensure workflow has at least one node."""
+        cls, v: Dict[str, WorkflowNodeSchema]
+    ) -> Dict[str, WorkflowNodeSchema]:
+        """Ensure workflow has at least one node and not too many."""
         if not v:
             raise ValueError("Workflow must contain at least one node")
+        if len(v) > 1000:
+            raise ValueError("Workflow exceeds maximum of 1000 nodes")
         return v
 
 

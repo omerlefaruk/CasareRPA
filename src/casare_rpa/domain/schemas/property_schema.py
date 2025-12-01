@@ -172,11 +172,13 @@ class NodeSchema:
         """
         type_validators = {
             PropertyType.STRING: lambda v: isinstance(v, str),
+            PropertyType.TEXT: lambda v: isinstance(v, str),  # Multi-line text
             PropertyType.INTEGER: lambda v: isinstance(v, int)
             and not isinstance(v, bool),
             PropertyType.FLOAT: lambda v: isinstance(v, (int, float))
             and not isinstance(v, bool),
             PropertyType.BOOLEAN: lambda v: isinstance(v, bool),
+            PropertyType.ANY: lambda v: True,  # Accepts any type
             PropertyType.CHOICE: lambda v: isinstance(v, str),
             PropertyType.MULTI_CHOICE: lambda v: isinstance(v, list),
             PropertyType.FILE_PATH: lambda v: isinstance(v, str),

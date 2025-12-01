@@ -3,7 +3,14 @@
 
 **Status**: Phases 1-6 Complete, Phase 7+ In Progress
 **Goal**: Production-ready distributed RPA with durable execution, multi-robot coordination, and enterprise security
-**Last Updated**: 2025-11-30
+**Last Updated**: 2025-12-01
+
+### Recent Additions (v3.1.0)
+- ✅ **OAuth 2.0 Nodes** - Complete OAuth flow automation with PKCE support
+- ✅ **Debug Panel** - Call stack, watch expressions, breakpoints, REPL console
+- ✅ **Node Library Panel** - Searchable tree view with drag-and-drop
+- ✅ **VS Code-like Shortcuts** - Standardized keyboard shortcuts (F5, F9, F10)
+- ✅ **Toolbar Icons** - Theme-aware Qt standard icons
 
 ---
 

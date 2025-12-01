@@ -207,11 +207,12 @@ class VisualNode(NodeGraphQtBaseNode):
         Add an execution flow input port.
 
         Exec ports use None as their type marker.
+        Exec inputs accept multiple connections to support merging execution paths.
 
         Args:
             name: Port name (default: "exec_in")
         """
-        self.add_input(name)
+        self.add_input(name, multi_input=True)
         self._port_types[name] = None  # None marks exec ports
 
     def add_exec_output(self, name: str = "exec_out") -> None:

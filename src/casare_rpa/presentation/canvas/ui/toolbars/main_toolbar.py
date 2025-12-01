@@ -12,6 +12,8 @@ from PySide6.QtWidgets import QToolBar, QWidget
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+
 
 class MainToolbar(QToolBar):
     """
@@ -73,27 +75,27 @@ class MainToolbar(QToolBar):
         logger.debug("MainToolbar initialized")
 
     def _create_actions(self) -> None:
-        """Create toolbar actions."""
+        """Create toolbar actions with icons."""
         # File operations
-        self.action_new = QAction("New", self)
+        self.action_new = QAction(get_toolbar_icon("new"), "New", self)
         self.action_new.setToolTip("Create new workflow (Ctrl+N)")
         self.action_new.setShortcut(QKeySequence.StandardKey.New)
         self.action_new.triggered.connect(self._on_new)
         self.addAction(self.action_new)
 
-        self.action_open = QAction("Open", self)
+        self.action_open = QAction(get_toolbar_icon("open"), "Open", self)
         self.action_open.setToolTip("Open workflow (Ctrl+O)")
         self.action_open.setShortcut(QKeySequence.StandardKey.Open)
         self.action_open.triggered.connect(self._on_open)
         self.addAction(self.action_open)
 
-        self.action_save = QAction("Save", self)
+        self.action_save = QAction(get_toolbar_icon("save"), "Save", self)
         self.action_save.setToolTip("Save workflow (Ctrl+S)")
         self.action_save.setShortcut(QKeySequence.StandardKey.Save)
         self.action_save.triggered.connect(self._on_save)
         self.addAction(self.action_save)
 
-        self.action_save_as = QAction("Save As", self)
+        self.action_save_as = QAction(get_toolbar_icon("save_as"), "Save As", self)
         self.action_save_as.setToolTip("Save workflow as (Ctrl+Shift+S)")
         self.action_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.action_save_as.triggered.connect(self._on_save_as)
@@ -102,13 +104,13 @@ class MainToolbar(QToolBar):
         self.addSeparator()
 
         # Edit operations
-        self.action_undo = QAction("Undo", self)
+        self.action_undo = QAction(get_toolbar_icon("undo"), "Undo", self)
         self.action_undo.setToolTip("Undo (Ctrl+Z)")
         self.action_undo.setShortcut(QKeySequence.StandardKey.Undo)
         self.action_undo.triggered.connect(self._on_undo)
         self.addAction(self.action_undo)
 
-        self.action_redo = QAction("Redo", self)
+        self.action_redo = QAction(get_toolbar_icon("redo"), "Redo", self)
         self.action_redo.setToolTip("Redo (Ctrl+Y)")
         self.action_redo.setShortcut(QKeySequence.StandardKey.Redo)
         self.action_redo.triggered.connect(self._on_redo)
@@ -117,24 +119,24 @@ class MainToolbar(QToolBar):
         self.addSeparator()
 
         # Execution operations
-        self.action_run = QAction("Run", self)
+        self.action_run = QAction(get_toolbar_icon("run"), "Run", self)
         self.action_run.setToolTip("Run workflow (F5)")
-        self.action_run.setShortcut("F5")
+        self.action_run.setShortcut("F5")  # Standardized: F5 = Run/Continue
         self.action_run.triggered.connect(self._on_run)
         self.addAction(self.action_run)
 
-        self.action_pause = QAction("Pause", self)
+        self.action_pause = QAction(get_toolbar_icon("pause"), "Pause", self)
         self.action_pause.setToolTip("Pause workflow execution")
         self.action_pause.triggered.connect(self._on_pause)
         self.addAction(self.action_pause)
 
-        self.action_resume = QAction("Resume", self)
+        self.action_resume = QAction(get_toolbar_icon("resume"), "Resume", self)
         self.action_resume.setToolTip("Resume workflow execution")
         self.action_resume.triggered.connect(self._on_resume)
         self.action_resume.setVisible(False)
         self.addAction(self.action_resume)
 
-        self.action_stop = QAction("Stop", self)
+        self.action_stop = QAction(get_toolbar_icon("stop"), "Stop", self)
         self.action_stop.setToolTip("Stop workflow execution (Shift+F5)")
         self.action_stop.setShortcut("Shift+F5")
         self.action_stop.triggered.connect(self._on_stop)
@@ -244,9 +246,7 @@ class MainToolbar(QToolBar):
         logger.debug("Stop workflow requested")
         self.stop_requested.emit()
 
-    def set_execution_state(
-        self, is_running: bool, is_paused: bool = False
-    ) -> None:
+    def set_execution_state(self, is_running: bool, is_paused: bool = False) -> None:
         """
         Update toolbar based on execution state.
 

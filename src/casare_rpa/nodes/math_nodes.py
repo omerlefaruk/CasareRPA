@@ -59,6 +59,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Number of decimal places to round result (optional)",
     ),
 )
+@executable_node
 class MathOperationNode(BaseNode):
     """Node that performs math operations."""
 
@@ -169,6 +170,7 @@ class MathOperationNode(BaseNode):
         tooltip="Comparison operator to use",
     ),
 )
+@executable_node
 class ComparisonNode(BaseNode):
     """Node that compares two values."""
 

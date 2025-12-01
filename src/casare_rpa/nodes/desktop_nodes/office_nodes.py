@@ -11,6 +11,7 @@ from typing import Any, Dict
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.utils.type_converters import safe_int
 
@@ -30,6 +31,7 @@ except ImportError:
 # ============================================================================
 
 
+@executable_node
 class ExcelOpenNode(BaseNode):
     """
     Node to open an Excel workbook.
@@ -112,6 +114,7 @@ class ExcelOpenNode(BaseNode):
             raise
 
 
+@executable_node
 class ExcelReadCellNode(BaseNode):
     """
     Node to read a cell value from Excel.
@@ -187,6 +190,7 @@ class ExcelReadCellNode(BaseNode):
             raise
 
 
+@executable_node
 class ExcelWriteCellNode(BaseNode):
     """
     Node to write a value to an Excel cell.
@@ -262,6 +266,7 @@ class ExcelWriteCellNode(BaseNode):
             raise
 
 
+@executable_node
 class ExcelGetRangeNode(BaseNode):
     """
     Node to read a range of cells from Excel.
@@ -348,6 +353,7 @@ class ExcelGetRangeNode(BaseNode):
             raise
 
 
+@executable_node
 class ExcelCloseNode(BaseNode):
     """
     Node to close an Excel workbook.
@@ -417,6 +423,7 @@ class ExcelCloseNode(BaseNode):
 # ============================================================================
 
 
+@executable_node
 class WordOpenNode(BaseNode):
     """
     Node to open a Word document.
@@ -499,6 +506,7 @@ class WordOpenNode(BaseNode):
             raise
 
 
+@executable_node
 class WordGetTextNode(BaseNode):
     """
     Node to get text content from a Word document.
@@ -555,6 +563,7 @@ class WordGetTextNode(BaseNode):
             raise
 
 
+@executable_node
 class WordReplaceTextNode(BaseNode):
     """
     Node to find and replace text in a Word document.
@@ -646,6 +655,7 @@ class WordReplaceTextNode(BaseNode):
             raise
 
 
+@executable_node
 class WordCloseNode(BaseNode):
     """
     Node to close a Word document.
@@ -715,6 +725,7 @@ class WordCloseNode(BaseNode):
 # ============================================================================
 
 
+@executable_node
 class OutlookSendEmailNode(BaseNode):
     """
     Node to send an email via Outlook.
@@ -826,6 +837,7 @@ class OutlookSendEmailNode(BaseNode):
             raise
 
 
+@executable_node
 class OutlookReadEmailsNode(BaseNode):
     """
     Node to read emails from Outlook inbox.
@@ -923,6 +935,7 @@ class OutlookReadEmailsNode(BaseNode):
             raise
 
 
+@executable_node
 class OutlookGetInboxCountNode(BaseNode):
     """
     Node to get the count of emails in Outlook inbox.

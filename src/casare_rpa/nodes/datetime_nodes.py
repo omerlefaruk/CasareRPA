@@ -32,7 +32,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.utils.type_converters import safe_int
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "timezone",
@@ -51,6 +50,7 @@ from casare_rpa.nodes.utils.type_converters import safe_int
         tooltip="Output format string (default: ISO format)",
     ),
 )
+@executable_node
 class GetCurrentDateTimeNode(BaseNode):
     """
     Get the current date and time.
@@ -130,18 +130,16 @@ class GetCurrentDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"datetime": formatted},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "format",
@@ -152,6 +150,7 @@ class GetCurrentDateTimeNode(BaseNode):
         tooltip="strftime format string",
     ),
 )
+@executable_node
 class FormatDateTimeNode(BaseNode):
     """
     Format a datetime to a string.
@@ -221,18 +220,16 @@ class FormatDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "format",
@@ -243,6 +240,7 @@ class FormatDateTimeNode(BaseNode):
         tooltip="Expected format string (optional, will try auto-detect)",
     ),
 )
+@executable_node
 class ParseDateTimeNode(BaseNode):
     """
     Parse a datetime string into components.
@@ -330,13 +328,12 @@ class ParseDateTimeNode(BaseNode):
             return {
                 "success": True,
                 "data": {"iso_format": dt.isoformat()},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
@@ -421,12 +418,11 @@ class DateTimeAddNode(BaseNode):
             return {
                 "success": True,
                 "data": {"result": result_dt.isoformat()},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
@@ -522,12 +518,11 @@ class DateTimeDiffNode(BaseNode):
             return {
                 "success": True,
                 "data": {"total_seconds": total_seconds, "days": days},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
@@ -601,18 +596,16 @@ class DateTimeCompareNode(BaseNode):
             return {
                 "success": True,
                 "data": {"comparison": comparison},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "milliseconds",
@@ -622,6 +615,7 @@ class DateTimeCompareNode(BaseNode):
         tooltip="Return milliseconds instead of seconds",
     ),
 )
+@executable_node
 class GetTimestampNode(BaseNode):
     """
     Get current Unix timestamp.
@@ -658,12 +652,11 @@ class GetTimestampNode(BaseNode):
             return {
                 "success": True,
                 "data": {"timestamp": ts},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""

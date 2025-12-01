@@ -216,6 +216,7 @@ class DatabaseConnection:
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class DatabaseConnectNode(BaseNode):
     """
     Establish a database connection.
@@ -451,6 +452,7 @@ class DatabaseConnectNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class ExecuteQueryNode(BaseNode):
     """
     Execute a SELECT query and return results.
@@ -676,6 +678,7 @@ class ExecuteQueryNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class ExecuteNonQueryNode(BaseNode):
     """
     Execute INSERT, UPDATE, DELETE, or DDL statements.
@@ -1188,6 +1191,7 @@ class CloseDatabaseNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class ExecuteBatchNode(BaseNode):
     """
     Execute multiple SQL statements as a batch.

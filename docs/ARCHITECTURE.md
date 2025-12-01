@@ -4,8 +4,8 @@
 
 CasareRPA follows **Clean Architecture** principles with clear separation of concerns across multiple layers. This document describes the architectural structure, layer responsibilities, dependency rules, and migration patterns.
 
-**Version**: 3.0
-**Last Updated**: 2025-11-30
+**Version**: 3.1
+**Last Updated**: 2025-12-01
 
 ---
 

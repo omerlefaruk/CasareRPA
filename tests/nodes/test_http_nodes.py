@@ -885,7 +885,7 @@ class TestHttpNodesRetry:
             async def __aexit__(self, *args):
                 pass
 
-            def get(self, *args, **kwargs):
+            def request(self, *args, **kwargs):
                 call_count[0] += 1
                 if call_count[0] < 3:
                     raise aiohttp.ClientError("Simulated failure")

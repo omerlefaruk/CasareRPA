@@ -973,7 +973,9 @@ class UnifiedResourceManager:
 
             # Handle both dict-format (keyed by node_id) and list-format nodes
             nodes_data = workflow.get("nodes", {})
-            if isinstance(nodes_data, dict):
+            if nodes_data is None:
+                nodes = []
+            elif isinstance(nodes_data, dict):
                 nodes = list(nodes_data.values())
             else:
                 nodes = nodes_data

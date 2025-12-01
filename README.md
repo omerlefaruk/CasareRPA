@@ -24,6 +24,9 @@
 - 🔄 **Distributed Execution** - Robot agents with job queue and orchestration
 - 📊 **Monitoring Dashboard** - Real-time metrics via FastAPI + React
 - 🔒 **Enterprise Security** - Input validation, parameterized queries, secure logging
+- 🔐 **OAuth 2.0 Support** - Complete OAuth flows with PKCE, token exchange, and introspection
+- 🐛 **Advanced Debugging** - Debug panel with call stack, watch expressions, breakpoints
+- 📚 **Node Library Panel** - Searchable tree view of all nodes with drag-and-drop
 
 ---
 
@@ -176,6 +179,11 @@ pytest tests/nodes/ -v
 - [x] Robot distributed execution
 - [x] Monitoring dashboard (FastAPI + React)
 - [x] 3,480+ tests with comprehensive coverage
+- [x] **OAuth 2.0 nodes** - Authorization, token exchange, callback server, introspection
+- [x] **Debug panel** - Call stack, watch expressions, breakpoints, REPL console
+- [x] **Node library panel** - Searchable tree with drag-and-drop
+- [x] **VS Code-like shortcuts** - F5 run, F9 breakpoint, F10 step over
+- [x] **Toolbar icons** - Theme-aware Qt standard icons
 
 ### 🔄 In Progress
 - [ ] Multi-robot coordination

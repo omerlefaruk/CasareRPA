@@ -13,6 +13,8 @@ from PySide6.QtWidgets import QToolBar, QWidget
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
+
 
 class DebugToolbar(QToolBar):
     """
@@ -40,6 +42,7 @@ class DebugToolbar(QToolBar):
     step_requested = Signal()
     continue_requested = Signal()
     stop_requested = Signal()
+    toggle_breakpoint_requested = Signal()
     clear_breakpoints_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -62,9 +65,21 @@ class DebugToolbar(QToolBar):
         logger.debug("DebugToolbar initialized")
 
     def _create_actions(self) -> None:
-        """Create toolbar actions."""
+        """Create toolbar actions.
+
+        Standardized shortcuts (VS Code-like):
+        - F5: Run/Continue execution
+        - F6: Pause execution (main toolbar)
+        - F7: Stop execution (main toolbar)
+        - F9: Toggle breakpoint
+        - F10: Step over
+        - F11: Step into (future)
+        - Shift+F5: Stop execution
+        - Ctrl+F5: Debug mode toggle
+        - Ctrl+Shift+F5: Restart debug
+        """
         # Debug Mode toggle
-        self.action_debug_mode = QAction("Debug Mode", self)
+        self.action_debug_mode = QAction(get_toolbar_icon("debug"), "Debug Mode", self)
         self.action_debug_mode.setCheckable(True)
         self.action_debug_mode.setToolTip(
             "Enable debug mode to track execution history and use breakpoints (Ctrl+F5)"
@@ -75,34 +90,34 @@ class DebugToolbar(QToolBar):
 
         self.addSeparator()
 
-        # Step Mode toggle
-        self.action_step_mode = QAction("Step Mode", self)
+        # Step Mode toggle - no shortcut to avoid conflict with Pause (F6)
+        self.action_step_mode = QAction(get_toolbar_icon("step"), "Step Mode", self)
         self.action_step_mode.setCheckable(True)
         self.action_step_mode.setToolTip(
-            "Enable step mode to execute workflow one node at a time (F6)"
+            "Enable step mode to execute workflow one node at a time"
         )
-        self.action_step_mode.setShortcut("F6")
+        # Removed F6 shortcut - conflicts with Pause
         self.action_step_mode.toggled.connect(self._on_step_mode_toggled)
         self.addAction(self.action_step_mode)
 
-        # Step Next
-        self.action_step = QAction("Step", self)
+        # Step Next (F10 - VS Code standard)
+        self.action_step = QAction(get_toolbar_icon("step"), "Step Over", self)
         self.action_step.setToolTip("Execute next node (F10)")
         self.action_step.setShortcut("F10")
         self.action_step.triggered.connect(self._on_step)
         self.addAction(self.action_step)
 
-        # Continue
-        self.action_continue = QAction("Continue", self)
-        self.action_continue.setToolTip("Continue execution until next breakpoint (F8)")
-        self.action_continue.setShortcut("F8")
+        # Continue (F5 when paused - VS Code standard)
+        self.action_continue = QAction(get_toolbar_icon("continue"), "Continue", self)
+        self.action_continue.setToolTip("Continue execution until next breakpoint (F5)")
+        self.action_continue.setShortcut("F5")
         self.action_continue.triggered.connect(self._on_continue)
         self.addAction(self.action_continue)
 
         self.addSeparator()
 
-        # Stop
-        self.action_stop = QAction("Stop", self)
+        # Stop (Shift+F5 - VS Code standard)
+        self.action_stop = QAction(get_toolbar_icon("stop"), "Stop", self)
         self.action_stop.setToolTip("Stop workflow execution (Shift+F5)")
         self.action_stop.setShortcut("Shift+F5")
         self.action_stop.triggered.connect(self._on_stop)
@@ -110,8 +125,21 @@ class DebugToolbar(QToolBar):
 
         self.addSeparator()
 
+        # Toggle Breakpoint (F9 - VS Code standard)
+        self.action_toggle_breakpoint = QAction(
+            get_toolbar_icon("breakpoint"), "Toggle Breakpoint", self
+        )
+        self.action_toggle_breakpoint.setToolTip(
+            "Toggle breakpoint on selected node (F9)"
+        )
+        self.action_toggle_breakpoint.setShortcut("F9")
+        self.action_toggle_breakpoint.triggered.connect(self._on_toggle_breakpoint)
+        self.addAction(self.action_toggle_breakpoint)
+
         # Clear Breakpoints
-        self.action_clear_breakpoints = QAction("Clear Breakpoints", self)
+        self.action_clear_breakpoints = QAction(
+            get_toolbar_icon("clear_breakpoints"), "Clear Breakpoints", self
+        )
         self.action_clear_breakpoints.setToolTip(
             "Remove all breakpoints from workflow (Ctrl+Shift+F9)"
         )
@@ -202,6 +230,11 @@ class DebugToolbar(QToolBar):
         """Handle stop action."""
         logger.debug("Stop requested")
         self.stop_requested.emit()
+
+    def _on_toggle_breakpoint(self) -> None:
+        """Handle toggle breakpoint action."""
+        logger.debug("Toggle breakpoint requested")
+        self.toggle_breakpoint_requested.emit()
 
     def _on_clear_breakpoints(self) -> None:
         """Handle clear breakpoints action."""

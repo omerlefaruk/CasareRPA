@@ -23,12 +23,15 @@ from .controllers import (
     ExecutionController,
     NodeController,
     SelectorController,
-    TriggerController,
     PreferencesController,
     AutosaveController,
 )
 from ...utils.config import setup_logging, APP_NAME
 from ...utils.playwright_setup import ensure_playwright_ready
+from ...nodes.file.file_operations import (
+    validate_path_security,
+    PathSecurityError,
+)
 
 
 class CasareRPAApp:
@@ -44,15 +47,15 @@ class CasareRPAApp:
     - Event loop integration
     - Signal routing
 
-    Business logic delegated to components:
-    - WorkflowLifecycleComponent: New/Open/Save/Template operations
-    - ExecutionComponent: Workflow execution and debugging
-    - NodeRegistryComponent: Node type registration (no dependencies)
-    - SelectorComponent: Element selector integration
-    - TriggerComponent: Trigger management
-    - PreferencesComponent: Settings management
-    - DragDropComponent: Drag-drop functionality
-    - AutosaveComponent: Automatic saving
+    Business logic delegated to controllers:
+    - WorkflowController: New/Open/Save/Template operations
+    - ExecutionController: Workflow execution and debugging
+    - NodeController: Node type registration (no dependencies)
+    - SelectorController: Element selector integration
+    - PreferencesController: Settings management
+    - AutosaveController: Automatic saving
+
+    Note: Triggers are now visual nodes on the canvas (not a background system).
 
     Component Initialization Order:
     1. NodeRegistryComponent - Must be first (registers all node types)
@@ -114,12 +117,18 @@ class CasareRPAApp:
         # Set node graph as central widget
         self._main_window.set_central_widget(self._node_graph)
 
-        # Create workflow serializer
+        # Create workflow serializer and deserializer
         from .serialization.workflow_serializer import WorkflowSerializer
+        from .serialization.workflow_deserializer import WorkflowDeserializer
         from .execution.canvas_workflow_runner import CanvasWorkflowRunner
 
         self._serializer = WorkflowSerializer(
             self._node_graph.graph,  # NodeGraphQt NodeGraph instance
+            self._main_window,
+        )
+
+        self._deserializer = WorkflowDeserializer(
+            self._node_graph.graph,
             self._main_window,
         )
 
@@ -171,21 +180,19 @@ class CasareRPAApp:
         # Selector - handles element selection
         self._selector_controller = SelectorController(self._main_window)
 
-        # Trigger - handles trigger management
-        self._trigger_controller = TriggerController(self._main_window, self)
-
         # Preferences - handles settings
         self._preferences_controller = PreferencesController(self._main_window)
 
         # Autosave - handles automatic saving
         self._autosave_controller = AutosaveController(self._main_window)
 
+        # Note: Triggers are now visual nodes on the canvas
+
         # Initialize all phase 2 controllers
         phase_2_controllers = [
             self._workflow_controller,
             self._execution_controller,
             self._selector_controller,
-            self._trigger_controller,
             self._preferences_controller,
             self._autosave_controller,
         ]
@@ -211,7 +218,7 @@ class CasareRPAApp:
             workflow_controller=self._workflow_controller,
             execution_controller=self._execution_controller,
             node_controller=self._node_controller,
-            trigger_controller=self._trigger_controller,
+            selector_controller=self._selector_controller,
         )
         logger.info("Controllers injected into MainWindow")
 
@@ -219,6 +226,12 @@ class CasareRPAApp:
         """Connect controller signals for inter-controller communication."""
         # Controllers are already connected to main_window signals and EventBus internally
         # Additional cross-component connections can be added here if needed
+
+        # Connect workflow save/load signals to actual file operations
+        self._workflow_controller.workflow_saved.connect(self._on_workflow_save)
+        self._workflow_controller.workflow_loaded.connect(self._on_workflow_load)
+        self._workflow_controller.workflow_created.connect(self._on_workflow_new)
+
         logger.debug("Component signals connected")
 
     def _connect_ui_signals(self) -> None:
@@ -236,6 +249,16 @@ class CasareRPAApp:
         undo_stack.canUndoChanged.connect(self._main_window.action_undo.setEnabled)
         undo_stack.canRedoChanged.connect(self._main_window.action_redo.setEnabled)
 
+        # Track modification state using cleanChanged signal
+        # cleanChanged(False) = stack is dirty (has unsaved changes)
+        # cleanChanged(True) = stack is clean (at saved state)
+        undo_stack.cleanChanged.connect(
+            lambda is_clean: self._main_window.set_modified(not is_clean)
+        )
+
+        # Store reference to mark clean after save
+        self._undo_stack = undo_stack
+
         # Other edit operations
         self._main_window.action_delete.triggered.connect(self._on_delete_selected)
         self._main_window.action_cut.triggered.connect(graph.cut_nodes)
@@ -243,7 +266,6 @@ class CasareRPAApp:
         self._main_window.action_paste.triggered.connect(graph.paste_nodes)
         self._main_window.action_duplicate.triggered.connect(self._on_duplicate_nodes)
         self._main_window.action_select_all.triggered.connect(graph.select_all)
-        self._main_window.action_deselect_all.triggered.connect(graph.clear_selection)
 
         # View operations
         self._main_window.action_zoom_in.triggered.connect(self._node_graph.zoom_in)
@@ -253,11 +275,6 @@ class CasareRPAApp:
         )
         self._main_window.action_fit_view.triggered.connect(
             self._node_graph.center_on_nodes
-        )
-
-        # Auto-connect toggle
-        self._main_window.action_auto_connect.triggered.connect(
-            lambda checked: self._node_graph.set_auto_connect_enabled(checked)
         )
 
         # Debug toolbar connections
@@ -282,7 +299,6 @@ class CasareRPAApp:
             self._workflow_controller,
             self._execution_controller,
             self._selector_controller,
-            self._trigger_controller,
             self._preferences_controller,
             self._autosave_controller,
         ]
@@ -359,18 +375,117 @@ class CasareRPAApp:
             if runner and runner.debug_mode:
                 runner.continue_execution()
 
-    # Public API for trigger controller
-    def start_triggers(self) -> None:
-        """Start all triggers for the current scenario."""
-        self._trigger_controller.start_triggers()
+    # =========================================================================
+    # WORKFLOW SAVE/LOAD HANDLERS
+    # =========================================================================
 
-    def stop_triggers(self) -> None:
-        """Stop all active triggers."""
-        self._trigger_controller.stop_triggers()
+    def _on_workflow_save(self, file_path: str) -> None:
+        """
+        Handle workflow save - serialize graph and write to file.
 
-    def are_triggers_running(self) -> bool:
-        """Check if triggers are currently running."""
-        return self._trigger_controller.are_triggers_running()
+        Args:
+            file_path: Path to save workflow to
+        """
+        import orjson
+        from pathlib import Path
+        from PySide6.QtWidgets import QMessageBox
+
+        try:
+            logger.info(f"Saving workflow to: {file_path}")
+
+            # SECURITY: Validate path before writing to prevent saving to
+            # system directories or unauthorized locations
+            try:
+                validated_path = validate_path_security(
+                    file_path, operation="save_workflow"
+                )
+            except PathSecurityError as e:
+                logger.error(f"Security violation saving workflow: {e}")
+                QMessageBox.critical(
+                    self._main_window,
+                    "Save Error",
+                    f"Cannot save to this location:\n{e}",
+                )
+                return
+
+            # Serialize the graph
+            workflow_data = self._serializer.serialize()
+
+            # Write to file
+            path = Path(validated_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(path, "wb") as f:
+                # Use orjson for fast JSON writing with pretty formatting
+                f.write(orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2))
+
+            logger.info(f"Workflow saved successfully: {path.name}")
+            self._main_window.show_status(f"Saved: {path.name}", 3000)
+
+            # Mark undo stack as clean (at saved state)
+            if hasattr(self, "_undo_stack") and self._undo_stack:
+                self._undo_stack.setClean()
+
+        except Exception as e:
+            logger.exception(f"Failed to save workflow: {e}")
+            QMessageBox.critical(
+                self._main_window,
+                "Save Error",
+                f"Failed to save workflow:\n{e}",
+            )
+
+    def _on_workflow_load(self, file_path: str) -> None:
+        """
+        Handle workflow load - read file and deserialize into graph.
+
+        Args:
+            file_path: Path to workflow file
+        """
+        from pathlib import Path
+
+        try:
+            logger.info(f"Loading workflow from: {file_path}")
+
+            # Load using deserializer
+            success = self._deserializer.load_from_file(file_path)
+
+            if success:
+                logger.info("Workflow loaded successfully")
+                self._main_window.show_status(f"Loaded: {Path(file_path).name}", 3000)
+                # Mark undo stack as clean after load
+                if hasattr(self, "_undo_stack") and self._undo_stack:
+                    self._undo_stack.setClean()
+            else:
+                logger.error("Failed to load workflow")
+                from PySide6.QtWidgets import QMessageBox
+
+                QMessageBox.warning(
+                    self._main_window,
+                    "Load Error",
+                    f"Failed to load workflow from:\n{file_path}",
+                )
+
+        except Exception as e:
+            logger.exception(f"Failed to load workflow: {e}")
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.critical(
+                self._main_window,
+                "Load Error",
+                f"Failed to load workflow:\n{e}",
+            )
+
+    def _on_workflow_new(self) -> None:
+        """Handle new workflow - clear the graph."""
+        try:
+            logger.info("Creating new workflow")
+            self._node_graph.graph.clear_session()
+            # Mark undo stack as clean for new workflow
+            if hasattr(self, "_undo_stack") and self._undo_stack:
+                self._undo_stack.setClean()
+            logger.info("Graph cleared for new workflow")
+        except Exception as e:
+            logger.exception(f"Failed to clear graph: {e}")
 
     # Public API for getting controllers
     def get_workflow_controller(self) -> WorkflowController:
@@ -388,10 +503,6 @@ class CasareRPAApp:
     def get_selector_controller(self) -> SelectorController:
         """Get the selector controller."""
         return self._selector_controller
-
-    def get_trigger_controller(self) -> TriggerController:
-        """Get the trigger controller."""
-        return self._trigger_controller
 
     def get_preferences_controller(self) -> PreferencesController:
         """Get the preferences controller."""

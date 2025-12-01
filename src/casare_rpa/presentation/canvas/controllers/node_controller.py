@@ -305,6 +305,157 @@ class NodeController(BaseController):
 
         logger.warning(f"Node not found for property update: {node_id}")
 
+    def get_nearest_exec_out(self) -> None:
+        """
+        Find and select the closest exec_out port to cursor (hotkey 3).
+
+        Searches all nodes for exec_out ports and finds the one closest
+        to the mouse cursor position, then starts a live connection from it.
+        """
+        logger.debug("Getting closest exec_out port to cursor")
+
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        viewer = graph.viewer()
+        if not viewer:
+            return
+
+        # Get mouse position in scene coordinates
+        global_pos = QCursor.pos()
+        view_pos = viewer.mapFromGlobal(global_pos)
+        scene_pos = viewer.mapToScene(view_pos)
+        cursor_x, cursor_y = scene_pos.x(), scene_pos.y()
+
+        # Find closest exec_out port across ALL nodes
+        all_nodes = graph.all_nodes()
+        if not all_nodes:
+            self.main_window.show_status("No nodes in graph", 2000)
+            return
+
+        closest_port = None
+        closest_node = None
+        min_distance = float("inf")
+
+        exec_port_names = ("exec_out", "exec", "body", "completed", "true", "false")
+
+        for node in all_nodes:
+            for port in node.output_ports():
+                port_name = port.name().lower() if hasattr(port, "name") else ""
+                if port_name not in exec_port_names:
+                    continue
+
+                # Get port position from view
+                view_port = port.view if hasattr(port, "view") else None
+                if view_port:
+                    port_pos = view_port.scenePos()
+                    dx = cursor_x - port_pos.x()
+                    dy = cursor_y - port_pos.y()
+                else:
+                    # Fallback: estimate from node position
+                    node_pos = node.pos()
+                    dx = cursor_x - (node_pos[0] + 150)  # Approx right side
+                    dy = cursor_y - node_pos[1]
+
+                distance = (dx * dx + dy * dy) ** 0.5
+
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_port = port
+                    closest_node = node
+
+        if not closest_port:
+            self.main_window.show_status("No exec_out ports found", 2000)
+            return
+
+        # Select the node
+        graph.clear_selection()
+        closest_node.set_selected(True)
+
+        # Start connection from the closest port
+        node_name = closest_node.name() if hasattr(closest_node, "name") else "Node"
+        port_name = closest_port.name() if hasattr(closest_port, "name") else "exec_out"
+        self.main_window.show_status(f"{node_name} → {port_name}", 2000)
+
+        if hasattr(viewer, "start_live_connection"):
+            view_port = closest_port.view if hasattr(closest_port, "view") else None
+            if view_port:
+                viewer.start_live_connection(view_port)
+
+    def get_selected_nodes(self) -> list:
+        """
+        Get list of currently selected node IDs.
+
+        Returns:
+            List of node_id strings for selected nodes
+        """
+        graph = self._get_graph()
+        if not graph:
+            return []
+
+        selected_ids = []
+        for node in graph.selected_nodes():
+            node_id = node.get_property("node_id")
+            if node_id:
+                selected_ids.append(node_id)
+        return selected_ids
+
+    def disable_all_selected(self) -> None:
+        """
+        Toggle disable state on all selected nodes (hotkey 5).
+
+        If any selected node is enabled, disables all.
+        If all selected nodes are disabled, enables all.
+        """
+        logger.debug("Toggling disable on all selected nodes")
+
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        selected_nodes = graph.selected_nodes()
+        if not selected_nodes:
+            self.main_window.show_status("No nodes selected", 2000)
+            return
+
+        # Check if any node is currently enabled
+        any_enabled = False
+        for node in selected_nodes:
+            casare_node = (
+                node.get_casare_node() if hasattr(node, "get_casare_node") else None
+            )
+            if casare_node:
+                if not casare_node.config.get("_disabled", False):
+                    any_enabled = True
+                    break
+
+        # If any is enabled, disable all. Otherwise enable all.
+        new_disabled = any_enabled
+
+        count = 0
+        for node in selected_nodes:
+            casare_node = (
+                node.get_casare_node() if hasattr(node, "get_casare_node") else None
+            )
+            if casare_node:
+                casare_node.config["_disabled"] = new_disabled
+
+                # Update visual appearance
+                if hasattr(node, "view") and node.view:
+                    node.view.setOpacity(0.4 if new_disabled else 1.0)
+
+                node_id = node.get_property("node_id")
+                if node_id:
+                    if new_disabled:
+                        self.node_disabled.emit(node_id)
+                    else:
+                        self.node_enabled.emit(node_id)
+                count += 1
+
+        state = "disabled" if new_disabled else "enabled"
+        self.main_window.show_status(f"{count} node(s) {state}", 2000)
+
     def _get_graph(self):
         """
         Get the node graph from central widget.

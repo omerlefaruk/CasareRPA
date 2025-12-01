@@ -415,6 +415,7 @@ class CreateDictNode(BaseNode):
         tooltip="Escape non-ASCII characters",
     ),
 )
+@executable_node
 class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 

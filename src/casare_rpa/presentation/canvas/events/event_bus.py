@@ -338,8 +338,12 @@ class EventBus:
             logger.debug(f"Publishing event: {event}")
 
             # Build cache key: (event_type, source)
+            # Support both "type" (presentation Event) and "event_type" (domain Event)
             source = event.source if hasattr(event, "source") and event.source else ""
-            cache_key = (event.type, source)
+            event_type = getattr(event, "type", None) or getattr(
+                event, "event_type", None
+            )
+            cache_key = (event_type, source)
 
             # Check cache for handlers
             if cache_key in self._filtered_cache:
@@ -350,8 +354,8 @@ class EventBus:
                 handlers: List[EventHandler] = []
 
                 # 1. Type-specific subscribers
-                if event.type in self._subscribers:
-                    handlers.extend(self._subscribers[event.type])
+                if event_type in self._subscribers:
+                    handlers.extend(self._subscribers[event_type])
 
                 # 2. Filtered subscribers
                 for event_filter, handler in self._filtered_subscribers:

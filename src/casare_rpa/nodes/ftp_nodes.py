@@ -74,6 +74,7 @@ from casare_rpa.nodes.utils.type_converters import safe_int
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@executable_node
 class FTPConnectNode(BaseNode):
     """
     Connect to an FTP server.
@@ -226,6 +227,7 @@ class FTPConnectNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@executable_node
 class FTPUploadNode(BaseNode):
     """
     Upload a file to FTP server.
@@ -380,6 +382,7 @@ class FTPUploadNode(BaseNode):
         tooltip="Delay between retries in milliseconds",
     ),
 )
+@executable_node
 class FTPDownloadNode(BaseNode):
     """
     Download a file from FTP server.

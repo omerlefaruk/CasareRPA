@@ -101,6 +101,13 @@ class BaseNode(ABC):
         """
         # Check required input ports have values (from port OR config)
         for port in self.input_ports.values():
+            # Skip EXEC ports - they control flow, not data
+            # EXEC ports are identified by port_type or by name convention (exec_in, exec_out)
+            if port.port_type in (PortType.EXEC_INPUT, PortType.EXEC_OUTPUT):
+                continue
+            if port.name.startswith("exec_"):
+                continue
+
             if port.required:
                 # Check both sources: port.value (runtime) and config (design-time)
                 port_value = port.value

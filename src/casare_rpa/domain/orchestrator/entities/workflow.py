@@ -5,6 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
+from casare_rpa.utils.datetime_helpers import parse_datetime
+
 
 class WorkflowStatus(Enum):
     """Workflow lifecycle status."""
@@ -81,19 +83,6 @@ class Workflow:
             pass
         else:
             status = WorkflowStatus.DRAFT
-
-        # Parse datetime strings
-        def parse_datetime(value):
-            if value is None or value == "":
-                return None
-            if isinstance(value, datetime):
-                return value
-            if isinstance(value, str):
-                try:
-                    return datetime.fromisoformat(value.replace("Z", "+00:00"))
-                except (ValueError, AttributeError):
-                    return None
-            return None
 
         return cls(
             id=data["id"],

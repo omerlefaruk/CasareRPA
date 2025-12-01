@@ -70,6 +70,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2025-12-01
+
+### Added
+
+**OAuth 2.0 Flow Nodes** (4 new nodes in `nodes/http/http_auth.py`):
+- `OAuth2AuthorizeNode` - Build authorization URL with PKCE support
+  - Supports Authorization Code and Implicit flows
+  - Automatic state parameter generation for CSRF protection
+  - PKCE code challenge/verifier generation (S256 method)
+- `OAuth2TokenExchangeNode` - Exchange authorization code for tokens
+  - All grant types: authorization_code, client_credentials, refresh_token, password
+  - PKCE code_verifier support
+  - OIDC id_token extraction
+- `OAuth2CallbackServerNode` - Local HTTP server for OAuth callbacks
+  - Configurable port and timeout
+  - State verification for CSRF protection
+  - Fragment capture for implicit flow
+- `OAuth2TokenValidateNode` - RFC 7662 token introspection
+  - Check token validity and retrieve metadata
+  - Client authentication via Basic auth or body
+
+**UI/UX Improvements**:
+- **Debug Panel** (`ui/debug_panel.py`) - Integrated with MainWindow
+  - Call Stack visualization
+  - Watch Expressions
+  - Breakpoint management
+  - REPL console
+  - Execution snapshots
+- **Node Library Panel** (`ui/panels/node_library_panel.py`) - NEW
+  - Searchable tree view of all 240+ nodes
+  - Category-based organization with icons
+  - Drag-and-drop to canvas
+  - Double-click to create at center
+- **Toolbar Icons** (`ui/icons.py`) - NEW
+  - Theme-aware Qt standard icons (QStyle.StandardPixmap)
+  - No external icon assets required
+  - Icons for all toolbar actions (new, open, save, run, debug, etc.)
+
+**Keyboard Shortcuts** (VS Code-like standardization):
+- `F5` - Run/Continue execution
+- `F6` - Pause execution
+- `F7` - Stop execution
+- `F9` - Toggle breakpoint
+- `F10` - Step over
+- `Shift+F5` - Stop execution
+- `Ctrl+F5` - Debug mode toggle
+- `Ctrl+Shift+F9` - Clear all breakpoints
+
+### Changed
+
+- `DockCreator` now creates Node Library Panel and Debug Panel
+- `MainToolbar` and `DebugToolbar` use themed icons
+- Shortcut conflicts resolved across action_factory, action_manager, toolbars
+- MainWindow integrates debug handlers (_on_debug_mode_toggled, etc.)
+
+### Fixed
+
+- Shortcut conflict: F5 was used by both main toolbar Run and debug toolbar
+- Shortcut conflict: F6 was used by both Pause and Step Mode
+- Shortcut conflict: F8 was used by both Stop and Continue
+
+---
+
 ## [Unreleased]
 
 ### Robot Execution Improvements (2025-11-30)

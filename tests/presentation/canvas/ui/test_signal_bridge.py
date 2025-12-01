@@ -68,7 +68,6 @@ def mock_main_window(qapp):
 
     # Mock action attributes (fallback)
     mw.action_run = Mock()
-    mw.action_run_to_node = Mock()
     mw.action_pause = Mock()
     mw.action_stop = Mock()
 

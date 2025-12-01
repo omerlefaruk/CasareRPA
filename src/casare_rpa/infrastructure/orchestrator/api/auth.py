@@ -26,13 +26,27 @@ from pydantic import BaseModel
 # JWT CONFIGURATION
 # =============================================================================
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-in-production")
+# SECURITY: JWT_SECRET_KEY must be set in production. No default to prevent insecure deployments.
+_jwt_secret_env = os.getenv("JWT_SECRET_KEY")
+if _jwt_secret_env is None:
+    import warnings
+
+    warnings.warn(
+        "JWT_SECRET_KEY not set. Using insecure default for development only. "
+        "Set JWT_SECRET_KEY environment variable in production!",
+        RuntimeWarning,
+        stacklevel=1,
+    )
+    JWT_SECRET_KEY = "dev-secret-key-DO-NOT-USE-IN-PRODUCTION"
+else:
+    JWT_SECRET_KEY = _jwt_secret_env
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 )
 JWT_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
-JWT_DEV_MODE = os.getenv("JWT_DEV_MODE", "true").lower() in ("true", "1", "yes")
+# SECURITY: JWT_DEV_MODE defaults to false. Must explicitly enable for development.
+JWT_DEV_MODE = os.getenv("JWT_DEV_MODE", "false").lower() in ("true", "1", "yes")
 
 
 # =============================================================================

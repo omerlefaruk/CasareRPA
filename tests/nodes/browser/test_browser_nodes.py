@@ -216,7 +216,12 @@ class TestCloseBrowserNode:
 
         node = CloseBrowserNode(node_id="test_close_input")
         node.set_input_value = MagicMock()
-        node.get_input_value = MagicMock(return_value=mock_browser)
+        # Return mock_browser only for "browser" port, None for others
+        node.get_input_value = MagicMock(
+            side_effect=lambda name, default=None: mock_browser
+            if name == "browser"
+            else default
+        )
 
         result = await node.execute(execution_context)
 

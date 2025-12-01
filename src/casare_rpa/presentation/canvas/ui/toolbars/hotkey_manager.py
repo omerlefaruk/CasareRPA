@@ -68,22 +68,28 @@ class HotkeyEditor(QDialog):
 
         clear_btn = QPushButton("Clear")
         clear_btn.clicked.connect(self._clear_shortcut)
+        clear_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(clear_btn)
 
         button_layout.addStretch()
 
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
+        cancel_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(cancel_btn)
 
         ok_btn = QPushButton("OK")
-        ok_btn.setDefault(True)
         ok_btn.clicked.connect(self._accept)
+        ok_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         button_layout.addWidget(ok_btn)
 
         layout.addLayout(button_layout)
 
         self.resize(400, 150)
+
+        # Ensure dialog receives key events
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()
 
     def keyPressEvent(self, event):
         """Capture key press events."""

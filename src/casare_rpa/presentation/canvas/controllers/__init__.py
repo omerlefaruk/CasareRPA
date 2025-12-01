@@ -17,7 +17,7 @@ Architecture:
     - EventBusController: Centralized event routing and coordination
     - ViewportController: Canvas viewport, minimap, zoom, and frame management
     - SchedulingController: Workflow scheduling and schedule management
-    - TriggerController: Trigger creation, editing, deletion, and management
+    - (Triggers are now visual nodes - see visual_nodes/triggers/)
     - UIStateController: UI state persistence (window geometry, panels, recent files)
     - SelectorController: Element selector/picker (browser, desktop)
     - PreferencesController: Settings and preferences management
@@ -30,7 +30,6 @@ Usage:
         NodeController,
         ViewportController,
         SchedulingController,
-        TriggerController,
         UIStateController,
         SelectorController,
         PreferencesController,
@@ -51,7 +50,8 @@ from .menu_controller import MenuController
 from .event_bus_controller import EventBusController, EventTypes, Event
 from .viewport_controller import ViewportController
 from .scheduling_controller import SchedulingController
-from .trigger_controller import TriggerController
+
+# TriggerController removed - triggers are now visual nodes
 from .ui_state_controller import UIStateController
 from .selector_controller import SelectorController
 from .preferences_controller import PreferencesController
@@ -70,7 +70,6 @@ __all__ = [
     "EventBusController",
     "ViewportController",
     "SchedulingController",
-    "TriggerController",
     "UIStateController",
     "SelectorController",
     "PreferencesController",

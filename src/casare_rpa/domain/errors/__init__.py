@@ -2,30 +2,56 @@
 CasareRPA - Domain Error Handling Module
 
 Provides error classification, handler registry, and recovery interfaces.
+
+Module Structure:
+- types: Error enumerations (ErrorCategory, ErrorSeverity, etc.)
+- context: ErrorContext, RecoveryDecision dataclasses
+- handlers/: Error handler base and implementations
+- registry: ErrorHandlerRegistry and global functions
+- error_handlers: Legacy compatibility module (re-exports all)
 """
 
-from .error_handlers import (
-    ErrorClassification,
+# Import from new modular structure
+from .types import (
     ErrorCategory,
     ErrorSeverity,
-    ErrorContext,
-    ErrorHandler,
-    ErrorHandlerRegistry,
-    NodeErrorHandler,
+    ErrorClassification,
     RecoveryAction,
-    RecoveryDecision,
-    get_error_handler_registry,
 )
 
+from .context import (
+    ErrorContext,
+    RecoveryDecision,
+)
+
+from .handlers import (
+    ErrorHandler,
+    NodeErrorHandler,
+)
+
+from .registry import (
+    ErrorHandlerRegistry,
+    CustomErrorHandlerFunc,
+    get_error_handler_registry,
+    reset_error_handler_registry,
+)
+
+
 __all__ = [
-    "ErrorClassification",
+    # Enums
     "ErrorCategory",
     "ErrorSeverity",
-    "ErrorContext",
-    "ErrorHandler",
-    "ErrorHandlerRegistry",
-    "NodeErrorHandler",
+    "ErrorClassification",
     "RecoveryAction",
+    # Data classes
+    "ErrorContext",
     "RecoveryDecision",
+    # Handlers
+    "ErrorHandler",
+    "NodeErrorHandler",
+    # Registry
+    "ErrorHandlerRegistry",
+    "CustomErrorHandlerFunc",
     "get_error_handler_registry",
+    "reset_error_handler_registry",
 ]

@@ -947,6 +947,7 @@ class DownloadFileNode(BaseNode):
         self.add_input_port("url", PortType.INPUT, DataType.STRING)
         self.add_input_port("filename", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("size", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -1071,6 +1072,7 @@ class DownloadFileNode(BaseNode):
 
             # Set outputs
             self.set_output_value("path", full_path)
+            self.set_output_value("attachment_file", [full_path])
             self.set_output_value("size", file_size)
             self.set_output_value("success", True)
 

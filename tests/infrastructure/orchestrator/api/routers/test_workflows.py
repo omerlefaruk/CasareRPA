@@ -125,8 +125,8 @@ class TestWorkflowSubmissionRequestValidation:
             )
 
     def test_workflow_json_nodes_not_list(self) -> None:
-        """Test workflow_json.nodes must be list."""
-        with pytest.raises(ValueError, match="nodes must be a list"):
+        """Test workflow_json.nodes must be list or dict."""
+        with pytest.raises(ValueError, match="nodes must be a dict or list"):
             WorkflowSubmissionRequest(
                 workflow_name="Test",
                 workflow_json={"nodes": "not a list"},

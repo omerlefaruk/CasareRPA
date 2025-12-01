@@ -13,11 +13,13 @@ Provides nodes for direct mouse and keyboard input:
 from typing import Any, Dict
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.utils.type_converters import safe_int
 from ...desktop import DesktopContext
 
 
+@executable_node
 class MoveMouseNode(BaseNode):
     """
     Node to move the mouse cursor to a specific position.
@@ -101,6 +103,7 @@ class MoveMouseNode(BaseNode):
         return {"success": success, "x": x, "y": y, "duration": duration, "ease": ease}
 
 
+@executable_node
 class MouseClickNode(BaseNode):
     """
     Node to perform mouse clicks at a position.
@@ -221,6 +224,7 @@ class MouseClickNode(BaseNode):
         }
 
 
+@executable_node
 class SendKeysNode(BaseNode):
     """
     Node to send keyboard input.
@@ -330,6 +334,7 @@ class SendKeysNode(BaseNode):
         }
 
 
+@executable_node
 class SendHotKeyNode(BaseNode):
     """
     Node to send hotkey combinations (e.g., Ctrl+C, Alt+Tab, Enter).
@@ -435,6 +440,7 @@ class SendHotKeyNode(BaseNode):
         return {"success": success, "keys": keys}
 
 
+@executable_node
 class GetMousePositionNode(BaseNode):
     """
     Node to get the current mouse cursor position.
@@ -474,6 +480,7 @@ class GetMousePositionNode(BaseNode):
         return {"success": True, "x": x, "y": y}
 
 
+@executable_node
 class DragMouseNode(BaseNode):
     """
     Node to drag the mouse from one position to another.

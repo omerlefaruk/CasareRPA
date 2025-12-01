@@ -255,11 +255,13 @@ class JobLifecycleService:
             }
 
             if self._use_local:
-                jobs = self._local_storage.get_jobs(limit=1000)
-                for j in jobs:
-                    if j["id"] == job_id:
-                        j.update(data)
-                        return self._local_storage.save_job(j)
+                # Use the injected job_repository instead of undefined _local_storage
+                job_obj = await self._job_repository.get_by_id(job_id)
+                if job_obj:
+                    job_obj.cancel_requested = True
+                    job_obj.cancel_reason = reason
+                    await self._job_repository.update(job_obj)
+                    return True
                 return False
             else:
                 try:

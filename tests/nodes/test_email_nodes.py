@@ -763,6 +763,237 @@ class TestMoveEmailNode:
         mock_mail.expunge.assert_called_once()
 
 
+class TestSendEmailNodeEncoding:
+    """Tests for SendEmailNode encoding handling (non-ASCII characters)."""
+
+    @pytest.fixture
+    def execution_context(self) -> None:
+        """Create mock execution context."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        return context
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_nbsp_character(
+        self, mock_smtp, execution_context
+    ) -> None:
+        """Test sending email with non-breaking space (\\xa0) in body.
+
+        This is a regression test for the encoding fix: msg.as_string() -> msg.as_bytes()
+        The \\xa0 character caused 'ascii' codec errors before the fix.
+        """
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_nbsp",
+            config={
+                "smtp_server": "smtp.test.com",
+                "smtp_port": 587,
+                "use_tls": False,
+                "use_ssl": False,
+            },
+        )
+        # Body contains non-breaking space character that caused the original error
+        body_with_nbsp = "Hello\xa0World - price is 100\xa0USD"
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Test with NBSP")
+        node.set_input_value("body", body_with_nbsp)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        mock_server.sendmail.assert_called_once()
+        # Verify the message was sent as bytes (not string)
+        call_args = mock_server.sendmail.call_args
+        msg_data = call_args[0][2]
+        assert isinstance(
+            msg_data, bytes
+        ), "Message should be sent as bytes, not string"
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_unicode_subject(
+        self, mock_smtp, execution_context
+    ) -> None:
+        """Test sending email with unicode characters in subject."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_unicode",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        # Subject with various unicode characters
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Cafe Resume - Buecher und Schnitzel")
+        node.set_input_value("body", "Test body")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_emojis(self, mock_smtp, execution_context) -> None:
+        """Test sending email with emoji characters."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_emoji",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Hello World!")
+        node.set_input_value("body", "Great news! Your order is ready.")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        mock_server.sendmail.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_cyrillic(self, mock_smtp, execution_context) -> None:
+        """Test sending email with Cyrillic characters."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_cyrillic",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Privet Mir")
+        node.set_input_value("body", "Soobshchenie na russkom yazyke")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_chinese(self, mock_smtp, execution_context) -> None:
+        """Test sending email with Chinese characters."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_chinese",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Hello World")
+        node.set_input_value("body", "This is an email test")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_with_mixed_encoding(
+        self, mock_smtp, execution_context
+    ) -> None:
+        """Test sending email with mixed ASCII and non-ASCII content."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_mixed",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        # Mix of ASCII, NBSP, unicode, and special chars
+        mixed_body = (
+            "Hello World,\n\n"
+            "Price:\xa0$100.00\n"  # Non-breaking space
+            "Location: Paris, France\n"  # Accented chars
+            "Contact: O'Brien\n"  # Apostrophe
+            "Status: Ready!\n"  # Emoji
+            "\nBest regards"
+        )
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Mixed Content - Resume")
+        node.set_input_value("body", mixed_body)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_html_email_with_nbsp(
+        self, mock_smtp, execution_context
+    ) -> None:
+        """Test sending HTML email with non-breaking space entities and chars."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_send_html_nbsp",
+            config={"is_html": True, "use_tls": False, "use_ssl": False},
+        )
+        # HTML with both &nbsp; entity and actual \xa0 character
+        html_body = """
+        <html>
+        <body>
+            <h1>Price\xa0List</h1>
+            <p>Item&nbsp;1: $100</p>
+            <p>Item\xa02: $200</p>
+        </body>
+        </html>
+        """
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "HTML with NBSP")
+        node.set_input_value("body", html_body)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+
+    @pytest.mark.asyncio
+    @patch("casare_rpa.nodes.email_nodes.smtplib.SMTP")
+    async def test_send_email_preserves_message_content(
+        self, mock_smtp, execution_context
+    ) -> None:
+        """Test that message content is preserved when sent as bytes."""
+        mock_server = MagicMock()
+        mock_smtp.return_value = mock_server
+
+        node = SendEmailNode(
+            node_id="test_preserve",
+            config={"use_tls": False, "use_ssl": False},
+        )
+        original_body = "Test\xa0content\xa0with\xa0multiple\xa0nbsp"
+        node.set_input_value("from_email", "sender@test.com")
+        node.set_input_value("to_email", "recipient@test.com")
+        node.set_input_value("subject", "Preservation Test")
+        node.set_input_value("body", original_body)
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        # Get the sent message bytes and verify it is bytes type
+        call_args = mock_server.sendmail.call_args
+        msg_bytes = call_args[0][2]
+        assert isinstance(msg_bytes, bytes), "Message should be sent as bytes"
+        # The message should be valid MIME (decodable)
+        msg_str = msg_bytes.decode("utf-8", errors="replace")
+        # Message should contain MIME headers and be properly formatted
+        assert "MIME-Version" in msg_str
+        assert "Preservation Test" in msg_str  # Subject preserved
+
+
 class TestEmailHelperFunctions:
     """Tests for email helper functions."""
 

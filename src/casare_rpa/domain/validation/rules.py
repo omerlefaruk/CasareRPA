@@ -49,6 +49,9 @@ def is_exec_port(port_name: str) -> bool:
     """Check if a port name indicates an execution flow port."""
     if not port_name:
         return False
+    # Port names with leading/trailing whitespace are malformed - reject them
+    if port_name != port_name.strip():
+        return False
     port_lower = port_name.lower()
     exec_port_names = {
         "exec_in",
@@ -165,6 +168,8 @@ def find_entry_points_and_reachable(
 
     # Track which nodes have incoming exec connections
     nodes_with_exec_input: Set[str] = set()
+    # Track which nodes have outgoing connections (are part of a flow)
+    nodes_with_outgoing: Set[str] = set()
 
     for conn in connections:
         parsed = parse_connection(conn)
@@ -178,13 +183,16 @@ def find_entry_points_and_reachable(
         # Add edge to graph (all connections for reachability)
         if source in graph:
             graph[source].append(target)
+            nodes_with_outgoing.add(source)
 
         # Track nodes receiving exec input
         if is_exec_input_port(target_port):
             nodes_with_exec_input.add(target)
 
-    # Find entry points: nodes without incoming exec connections
-    # This naturally handles workflows with or without explicit StartNode
+    # Find entry points:
+    # 1. Explicit StartNode types
+    # 2. Nodes without incoming exec connections that ARE part of the flow
+    #    (have outgoing connections)
     entry_points: List[str] = []
 
     for node_id, node_data in nodes.items():
@@ -195,8 +203,17 @@ def find_entry_points_and_reachable(
                 entry_points.append(node_id)
             continue
 
-        # Check if this node has no incoming exec connections
-        if node_id not in nodes_with_exec_input:
+        # Get node type
+        node_type = ""
+        if isinstance(node_data, dict):
+            node_type = node_data.get("node_type") or node_data.get("type", "")
+
+        # StartNode is always an entry point
+        if node_type == "StartNode":
+            entry_points.append(node_id)
+        # Other nodes without incoming exec are entry points ONLY if they
+        # have outgoing connections (are part of a workflow flow)
+        elif node_id not in nodes_with_exec_input and node_id in nodes_with_outgoing:
             entry_points.append(node_id)
 
     # If still no entry points, use all nodes (degenerate case)

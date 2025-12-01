@@ -279,6 +279,7 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class SendEmailNode(BaseNode):
     """
     Send an email via SMTP.
@@ -309,7 +310,9 @@ class SendEmailNode(BaseNode):
         self.add_input_port("body", PortType.INPUT, DataType.STRING)
         self.add_input_port("cc", PortType.INPUT, DataType.STRING)
         self.add_input_port("bcc", PortType.INPUT, DataType.STRING)
-        self.add_input_port("attachments", PortType.INPUT, DataType.LIST)
+        self.add_input_port(
+            "attachments", PortType.INPUT, DataType.LIST, required=False
+        )
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
 
@@ -351,7 +354,26 @@ class SendEmailNode(BaseNode):
             body = context.resolve_value(body)
             cc = context.resolve_value(cc)
             bcc = context.resolve_value(bcc)
-            attachments = self.get_input_value("attachments") or []
+            # Get attachments from port or config, resolve {{variables}}
+            attachments = self.get_input_value("attachments")
+            if attachments is None:
+                attachments = self.get_parameter("attachments", "")
+            # Resolve {{variable}} patterns in attachments
+            if isinstance(attachments, str):
+                attachments = context.resolve_value(attachments)
+                # Handle comma-separated paths or single path
+                if attachments:
+                    attachments = [
+                        p.strip() for p in attachments.split(",") if p.strip()
+                    ]
+                else:
+                    attachments = []
+            elif isinstance(attachments, list):
+                # Resolve each item in case of {{variables}}
+                attachments = [
+                    context.resolve_value(p) if isinstance(p, str) else p
+                    for p in attachments
+                ]
             is_html = self.get_parameter("is_html", False)
 
             # Advanced options
@@ -430,15 +452,11 @@ class SendEmailNode(BaseNode):
             attempts = 0
             max_attempts = retry_count + 1
 
-            while attempts < max_attempts:
+            # Helper function to send email synchronously (runs in thread pool)
+            def _send_email_sync() -> str:
+                """Send email synchronously - called via run_in_executor."""
+                server = None
                 try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for send email"
-                        )
-
-                    # Send email with timeout
                     if use_ssl:
                         server = smtplib.SMTP_SSL(
                             smtp_server, smtp_port, timeout=timeout
@@ -451,10 +469,27 @@ class SendEmailNode(BaseNode):
                     if username and password:
                         server.login(username, password)
 
-                    server.sendmail(from_email, all_recipients, msg.as_string())
-                    server.quit()
+                    server.sendmail(from_email, all_recipients, msg.as_bytes())
+                    return msg.get("Message-ID", "")
+                finally:
+                    if server:
+                        try:
+                            server.quit()
+                        except Exception:
+                            pass
 
-                    message_id = msg.get("Message-ID", "")
+            loop = asyncio.get_running_loop()
+
+            while attempts < max_attempts:
+                try:
+                    attempts += 1
+                    if attempts > 1:
+                        logger.info(
+                            f"Retry attempt {attempts - 1}/{retry_count} for send email"
+                        )
+
+                    # Run blocking SMTP operations in thread pool to avoid freezing UI
+                    message_id = await loop.run_in_executor(None, _send_email_sync)
                     self.set_output_value("success", True)
                     self.set_output_value("message_id", message_id)
 
@@ -604,6 +639,7 @@ class SendEmailNode(BaseNode):
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
+@executable_node
 class ReadEmailsNode(BaseNode):
     """
     Read emails from an IMAP server.
@@ -672,6 +708,52 @@ class ReadEmailsNode(BaseNode):
 
             logger.info(f"Reading emails from {imap_server}:{imap_port}/{folder}")
 
+            # Helper function to read emails synchronously (runs in thread pool)
+            def _read_emails_sync() -> list:
+                """Read emails synchronously - called via run_in_executor."""
+                mail = None
+                try:
+                    if use_ssl:
+                        mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    else:
+                        mail = imaplib.IMAP4(imap_server, imap_port)
+
+                    mail.login(username, password)
+                    mail.select(folder)
+
+                    # Search for emails
+                    status, message_ids = mail.search(None, search_criteria)
+                    if status != "OK":
+                        raise Exception("Failed to search emails")
+
+                    # Get message IDs (most recent first)
+                    id_list = message_ids[0].split()
+                    id_list = id_list[-limit:] if limit else id_list
+                    id_list.reverse()  # Most recent first
+
+                    emails_list = []
+                    for msg_id in id_list:
+                        status, msg_data = mail.fetch(msg_id, "(RFC822)")
+                        if status == "OK":
+                            raw_email = msg_data[0][1]
+                            msg = email.message_from_bytes(raw_email)
+                            parsed = _parse_email_message(msg)
+                            parsed["uid"] = (
+                                msg_id.decode()
+                                if isinstance(msg_id, bytes)
+                                else str(msg_id)
+                            )
+                            emails_list.append(parsed)
+
+                    return emails_list
+                finally:
+                    if mail:
+                        try:
+                            mail.logout()
+                        except Exception:
+                            pass
+
+            loop = asyncio.get_running_loop()
             last_error = None
             attempts = 0
             max_attempts = retry_count + 1
@@ -684,41 +766,8 @@ class ReadEmailsNode(BaseNode):
                             f"Retry attempt {attempts - 1}/{retry_count} for read emails"
                         )
 
-                    # Connect to IMAP server
-                    if use_ssl:
-                        mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-                    else:
-                        mail = imaplib.IMAP4(imap_server, imap_port)
-
-                    mail.login(username, password)
-                    mail.select(folder)
-
-                    # Search for emails
-                    status, message_ids = mail.search(None, search_criteria)
-                    if status != "OK":
-                        mail.logout()
-                        raise Exception("Failed to search emails")
-
-                    # Get message IDs (most recent first)
-                    id_list = message_ids[0].split()
-                    id_list = id_list[-limit:] if limit else id_list
-                    id_list.reverse()  # Most recent first
-
-                    emails = []
-                    for msg_id in id_list:
-                        status, msg_data = mail.fetch(msg_id, "(RFC822)")
-                        if status == "OK":
-                            raw_email = msg_data[0][1]
-                            msg = email.message_from_bytes(raw_email)
-                            parsed = _parse_email_message(msg)
-                            parsed["uid"] = (
-                                msg_id.decode()
-                                if isinstance(msg_id, bytes)
-                                else str(msg_id)
-                            )
-                            emails.append(parsed)
-
-                    mail.logout()
+                    # Run blocking IMAP operations in thread pool to avoid freezing UI
+                    emails = await loop.run_in_executor(None, _read_emails_sync)
 
                     self.set_output_value("emails", emails)
                     self.set_output_value("count", len(emails))
@@ -803,7 +852,6 @@ class GetEmailContentNode(BaseNode):
                 return {
                     "success": False,
                     "error": "No email data provided",
-                    "next_nodes": [],
                 }
 
             # Extract fields
@@ -819,12 +867,12 @@ class GetEmailContentNode(BaseNode):
                 f"Extracted email content: {email_data.get('subject', 'No subject')}"
             )
             self.status = NodeStatus.SUCCESS
-            return {"success": True, "next_nodes": ["exec_out"]}
+            return {"success": True}
 
         except Exception as e:
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to extract email content: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
 
 @executable_node
@@ -872,6 +920,7 @@ class GetEmailContentNode(BaseNode):
         tooltip="Directory path to save attachments",
     ),
 )
+@executable_node
 class SaveAttachmentNode(BaseNode):
     """
     Save email attachments to disk.
@@ -930,50 +979,64 @@ class SaveAttachmentNode(BaseNode):
             # Ensure save path exists
             Path(save_path).mkdir(parents=True, exist_ok=True)
 
-            # Connect to IMAP
-            mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-            mail.login(username, password)
-            mail.select(folder)
+            # Helper function to save attachments synchronously (runs in thread pool)
+            def _save_attachments_sync() -> list:
+                """Save attachments synchronously - called via run_in_executor."""
+                mail = None
+                try:
+                    mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    mail.login(username, password)
+                    mail.select(folder)
 
-            # Fetch the email
-            status, msg_data = mail.fetch(email_uid.encode(), "(RFC822)")
-            if status != "OK":
-                mail.logout()
-                self.set_output_value("saved_files", [])
-                self.set_output_value("count", 0)
-                self.status = NodeStatus.ERROR
-                return {
-                    "success": False,
-                    "error": "Failed to fetch email",
-                    "next_nodes": [],
-                }
+                    # Fetch the email
+                    status, msg_data = mail.fetch(email_uid.encode(), "(RFC822)")
+                    if status != "OK":
+                        raise Exception("Failed to fetch email")
 
-            raw_email = msg_data[0][1]
-            msg = email.message_from_bytes(raw_email)
+                    raw_email = msg_data[0][1]
+                    msg = email.message_from_bytes(raw_email)
 
-            saved_files = []
-            for part in msg.walk():
-                content_disposition = str(part.get("Content-Disposition", ""))
-                if "attachment" in content_disposition:
-                    filename = part.get_filename()
-                    if filename:
-                        filename = _decode_header_value(filename)
-                        filepath = os.path.join(save_path, filename)
+                    saved = []
+                    for part in msg.walk():
+                        content_disposition = str(part.get("Content-Disposition", ""))
+                        if "attachment" in content_disposition:
+                            filename = part.get_filename()
+                            if filename:
+                                filename = _decode_header_value(filename)
+                                # SECURITY: Sanitize filename to prevent path traversal attacks
+                                # Path(filename).name strips any directory components like ../../../
+                                safe_filename = Path(filename).name
+                                if not safe_filename:
+                                    logger.warning(
+                                        f"Skipping attachment with invalid filename: {filename}"
+                                    )
+                                    continue
+                                filepath = os.path.join(save_path, safe_filename)
 
-                        # Avoid overwriting
-                        base, ext = os.path.splitext(filepath)
-                        counter = 1
-                        while os.path.exists(filepath):
-                            filepath = f"{base}_{counter}{ext}"
-                            counter += 1
+                                # Avoid overwriting
+                                base, ext = os.path.splitext(filepath)
+                                counter = 1
+                                while os.path.exists(filepath):
+                                    filepath = f"{base}_{counter}{ext}"
+                                    counter += 1
 
-                        payload = part.get_payload(decode=True)
-                        if payload:
-                            with open(filepath, "wb") as f:
-                                f.write(payload)
-                            saved_files.append(filepath)
+                                payload = part.get_payload(decode=True)
+                                if payload:
+                                    with open(filepath, "wb") as f:
+                                        f.write(payload)
+                                    saved.append(filepath)
 
-            mail.logout()
+                    return saved
+                finally:
+                    if mail:
+                        try:
+                            mail.logout()
+                        except Exception:
+                            pass
+
+            # Run blocking IMAP operations in thread pool to avoid freezing UI
+            loop = asyncio.get_running_loop()
+            saved_files = await loop.run_in_executor(None, _save_attachments_sync)
 
             self.set_output_value("saved_files", saved_files)
             self.set_output_value("count", len(saved_files))
@@ -1066,7 +1129,6 @@ class FilterEmailsNode(BaseNode):
             return {
                 "success": True,
                 "data": {"count": len(filtered)},
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
@@ -1074,7 +1136,7 @@ class FilterEmailsNode(BaseNode):
             self.set_output_value("count", 0)
             self.status = NodeStatus.ERROR
             logger.error(f"Failed to filter emails: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
 
 @executable_node
@@ -1123,6 +1185,7 @@ class FilterEmailsNode(BaseNode):
         tooltip="Flag to set on the email",
     ),
 )
+@executable_node
 class MarkEmailNode(BaseNode):
     """
     Mark an email as read, unread, or flagged.
@@ -1176,21 +1239,34 @@ class MarkEmailNode(BaseNode):
                     "next_nodes": [],
                 }
 
-            mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-            mail.login(username, password)
-            mail.select(folder)
+            # Helper function to mark email synchronously (runs in thread pool)
+            def _mark_email_sync() -> None:
+                """Mark email synchronously - called via run_in_executor."""
+                mail = None
+                try:
+                    mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    mail.login(username, password)
+                    mail.select(folder)
 
-            # Apply flag based on mark_as
-            if mark_as == "read":
-                mail.store(email_uid.encode(), "+FLAGS", "\\Seen")
-            elif mark_as == "unread":
-                mail.store(email_uid.encode(), "-FLAGS", "\\Seen")
-            elif mark_as == "flagged":
-                mail.store(email_uid.encode(), "+FLAGS", "\\Flagged")
-            elif mark_as == "unflagged":
-                mail.store(email_uid.encode(), "-FLAGS", "\\Flagged")
+                    # Apply flag based on mark_as
+                    if mark_as == "read":
+                        mail.store(email_uid.encode(), "+FLAGS", "\\Seen")
+                    elif mark_as == "unread":
+                        mail.store(email_uid.encode(), "-FLAGS", "\\Seen")
+                    elif mark_as == "flagged":
+                        mail.store(email_uid.encode(), "+FLAGS", "\\Flagged")
+                    elif mark_as == "unflagged":
+                        mail.store(email_uid.encode(), "-FLAGS", "\\Flagged")
+                finally:
+                    if mail:
+                        try:
+                            mail.logout()
+                        except Exception:
+                            pass
 
-            mail.logout()
+            # Run blocking IMAP operations in thread pool to avoid freezing UI
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _mark_email_sync)
 
             self.set_output_value("success", True)
             logger.info(f"Marked email {email_uid} as {mark_as}")
@@ -1253,6 +1329,7 @@ class MarkEmailNode(BaseNode):
         tooltip="Permanently delete (expunge) instead of just marking deleted",
     ),
 )
+@executable_node
 class DeleteEmailNode(BaseNode):
     """
     Delete an email from the mailbox.
@@ -1304,17 +1381,30 @@ class DeleteEmailNode(BaseNode):
                     "next_nodes": [],
                 }
 
-            mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-            mail.login(username, password)
-            mail.select(folder)
+            # Helper function to delete email synchronously (runs in thread pool)
+            def _delete_email_sync() -> None:
+                """Delete email synchronously - called via run_in_executor."""
+                mail = None
+                try:
+                    mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    mail.login(username, password)
+                    mail.select(folder)
 
-            # Mark as deleted
-            mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
+                    # Mark as deleted
+                    mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
 
-            if permanent:
-                mail.expunge()
+                    if permanent:
+                        mail.expunge()
+                finally:
+                    if mail:
+                        try:
+                            mail.logout()
+                        except Exception:
+                            pass
 
-            mail.logout()
+            # Run blocking IMAP operations in thread pool to avoid freezing UI
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _delete_email_sync)
 
             self.set_output_value("success", True)
             logger.info(f"Deleted email {email_uid}")
@@ -1373,6 +1463,7 @@ class DeleteEmailNode(BaseNode):
         tooltip="Target mailbox folder",
     ),
 )
+@executable_node
 class MoveEmailNode(BaseNode):
     """
     Move an email to a different folder.
@@ -1426,18 +1517,31 @@ class MoveEmailNode(BaseNode):
                     "next_nodes": [],
                 }
 
-            mail = imaplib.IMAP4_SSL(imap_server, imap_port)
-            mail.login(username, password)
-            mail.select(source_folder)
+            # Helper function to move email synchronously (runs in thread pool)
+            def _move_email_sync() -> None:
+                """Move email synchronously - called via run_in_executor."""
+                mail = None
+                try:
+                    mail = imaplib.IMAP4_SSL(imap_server, imap_port)
+                    mail.login(username, password)
+                    mail.select(source_folder)
 
-            # Copy to target folder
-            result = mail.copy(email_uid.encode(), target_folder)
-            if result[0] == "OK":
-                # Mark original as deleted
-                mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
-                mail.expunge()
+                    # Copy to target folder
+                    result = mail.copy(email_uid.encode(), target_folder)
+                    if result[0] == "OK":
+                        # Mark original as deleted
+                        mail.store(email_uid.encode(), "+FLAGS", "\\Deleted")
+                        mail.expunge()
+                finally:
+                    if mail:
+                        try:
+                            mail.logout()
+                        except Exception:
+                            pass
 
-            mail.logout()
+            # Run blocking IMAP operations in thread pool to avoid freezing UI
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _move_email_sync)
 
             self.set_output_value("success", True)
             logger.info(f"Moved email {email_uid} to {target_folder}")

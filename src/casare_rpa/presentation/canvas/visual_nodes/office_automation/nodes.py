@@ -1,5 +1,6 @@
 """Visual nodes for office_automation category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
@@ -20,11 +21,11 @@ class VisualExcelOpenNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("file_path")
-        self.add_output("exec_out")
-        self.add_output("workbook")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("workbook", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualExcelReadCellNode(VisualNode):
@@ -43,13 +44,13 @@ class VisualExcelReadCellNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("cell_address")
-        self.add_input("sheet_name")
-        self.add_output("exec_out")
-        self.add_output("value")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("cell_address", DataType.STRING)
+        self.add_typed_input("sheet_name", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("value", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualExcelWriteCellNode(VisualNode):
@@ -69,13 +70,13 @@ class VisualExcelWriteCellNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("cell_address")
-        self.add_input("value")
-        self.add_input("sheet_name")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("cell_address", DataType.STRING)
+        self.add_typed_input("value", DataType.STRING)
+        self.add_typed_input("sheet_name", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualExcelGetRangeNode(VisualNode):
@@ -96,13 +97,13 @@ class VisualExcelGetRangeNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_input("range_address")
-        self.add_input("sheet_name")
-        self.add_output("exec_out")
-        self.add_output("data")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("range_address", DataType.STRING)
+        self.add_typed_input("sheet_name", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("data", DataType.LIST)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualExcelCloseNode(VisualNode):
@@ -120,10 +121,10 @@ class VisualExcelCloseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("workbook")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualWordOpenNode(VisualNode):
@@ -143,11 +144,11 @@ class VisualWordOpenNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("file_path")
-        self.add_output("exec_out")
-        self.add_output("document")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("document", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualWordGetTextNode(VisualNode):
@@ -160,11 +161,11 @@ class VisualWordGetTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_output("exec_out")
-        self.add_output("text")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("document", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("text", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualWordReplaceTextNode(VisualNode):
@@ -185,13 +186,13 @@ class VisualWordReplaceTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_input("find_text")
-        self.add_input("replace_text")
-        self.add_output("exec_out")
-        self.add_output("replacements")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("document", DataType.OBJECT)
+        self.add_typed_input("find_text", DataType.STRING)
+        self.add_typed_input("replace_text", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("replacements", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualWordCloseNode(VisualNode):
@@ -209,10 +210,10 @@ class VisualWordCloseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("document")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("document", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualOutlookSendEmailNode(VisualNode):
@@ -235,13 +236,13 @@ class VisualOutlookSendEmailNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("to")
-        self.add_input("subject")
-        self.add_input("body")
-        self.add_input("attachments")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("to", DataType.STRING)
+        self.add_typed_input("subject", DataType.STRING)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("attachments", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualOutlookReadEmailsNode(VisualNode):
@@ -261,12 +262,12 @@ class VisualOutlookReadEmailsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("folder")
-        self.add_output("exec_out")
-        self.add_output("emails")
-        self.add_output("count")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("folder", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("emails", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualOutlookGetInboxCountNode(VisualNode):
@@ -284,11 +285,11 @@ class VisualOutlookGetInboxCountNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
-        self.add_output("total_count")
-        self.add_output("unread_count")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+        self.add_typed_output("total_count", DataType.INTEGER)
+        self.add_typed_output("unread_count", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # Database Nodes

@@ -210,6 +210,7 @@ class ReadXMLFileNode(BaseNode):
         tooltip="Include <?xml version...?> declaration",
     ),
 )
+@executable_node
 class WriteXMLFileNode(BaseNode):
     """
     Write XML to a file.
