@@ -2,39 +2,17 @@
 HTTP/REST API Nodes for CasareRPA.
 
 This package provides nodes for making HTTP requests and interacting with REST APIs.
-Supports all HTTP methods, authentication, headers, and response parsing.
+Supports all HTTP methods via dropdown, authentication, headers, and response parsing.
 
 Modules:
     - http_base: Base class for all HTTP nodes (HttpBaseNode)
-    - http_basic: Basic HTTP method nodes (GET, POST, PUT, PATCH, DELETE)
+    - http_basic: Unified HttpRequestNode (supports GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS)
     - http_advanced: Advanced operations (headers, JSON parsing, file transfer, URL building)
     - http_auth: Authentication nodes (Bearer, Basic, API Key)
-
-Nodes:
-    - HttpBaseNode: Abstract base class for HTTP nodes
-    - HttpRequestNode: Generic HTTP request (all methods)
-    - HttpGetNode: GET request with query parameters
-    - HttpPostNode: POST request with body
-    - HttpPutNode: PUT request with body
-    - HttpPatchNode: PATCH request with body
-    - HttpDeleteNode: DELETE request
-    - SetHttpHeadersNode: Configure headers for requests
-    - HttpAuthNode: Configure authentication (Bearer, Basic, API Key)
-    - ParseJsonResponseNode: Parse JSON response and extract data
-    - HttpDownloadFileNode: Download file from URL
-    - HttpUploadFileNode: Upload file via HTTP
-    - BuildUrlNode: Build URL with query parameters
 """
 
 from .http_base import HttpBaseNode
-from .http_basic import (
-    HttpRequestNode,
-    HttpGetNode,
-    HttpPostNode,
-    HttpPutNode,
-    HttpPatchNode,
-    HttpDeleteNode,
-)
+from .http_basic import HttpRequestNode
 from .http_advanced import (
     SetHttpHeadersNode,
     ParseJsonResponseNode,
@@ -42,20 +20,13 @@ from .http_advanced import (
     HttpUploadFileNode,
     BuildUrlNode,
 )
-from .http_auth import (
-    HttpAuthNode,
-)
+from .http_auth import HttpAuthNode
 
 __all__ = [
     # Base class
     "HttpBaseNode",
-    # Basic HTTP methods
+    # HTTP request (all methods via dropdown)
     "HttpRequestNode",
-    "HttpGetNode",
-    "HttpPostNode",
-    "HttpPutNode",
-    "HttpPatchNode",
-    "HttpDeleteNode",
     # Advanced operations
     "SetHttpHeadersNode",
     "ParseJsonResponseNode",

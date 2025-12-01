@@ -149,12 +149,13 @@ class TestVisualNodesImports:
         """Test that main __init__.py exports all nodes correctly."""
         from casare_rpa.presentation.canvas.visual_nodes import __all__
 
-        # Check that __all__ contains expected number of nodes (238 total)
+        # Check that __all__ contains expected number of nodes
         # basic(3) + browser(18) + control_flow(10) + database(10) + data_operations(32)
         # + desktop_automation(36) + email(8) + error_handling(10) + file_operations(40)
-        # + scripts(5) + system(13) + utility(26) + office_automation(12) + rest_api(12)
-        # + variable(3) = 239
-        assert len(__all__) == 239
+        # + scripts(5) + system(13) + utility(26) + office_automation(12) + rest_api(7)
+        # + variable(3) + triggers(11) = 245
+        # Note: rest_api reduced from 12 to 7 (consolidated 5 HTTP method nodes into HttpRequestNode)
+        assert len(__all__) == 245
 
         # Check that VisualHttpRequestNode appears only once
         http_request_count = __all__.count("VisualHttpRequestNode")
@@ -169,4 +170,4 @@ class TestVisualNodesImports:
 
         # Both should have the same __all__ list
         assert compat_all == new_all
-        assert len(compat_all) == 239
+        assert len(compat_all) == 245

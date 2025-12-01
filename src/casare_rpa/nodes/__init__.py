@@ -144,11 +144,6 @@ if TYPE_CHECKING:
     )
     from casare_rpa.nodes.http import (
         HttpRequestNode as HttpRequestNodeNew,
-        HttpGetNode,
-        HttpPostNode,
-        HttpPutNode,
-        HttpPatchNode,
-        HttpDeleteNode,
         SetHttpHeadersNode,
         HttpAuthNode,
         ParseJsonResponseNode,
@@ -376,13 +371,8 @@ _NODE_REGISTRY: Dict[str, str] = {
     "MarkEmailNode": "email_nodes",
     "DeleteEmailNode": "email_nodes",
     "MoveEmailNode": "email_nodes",
-    # HTTP/REST API nodes - basic methods
+    # HTTP/REST API nodes
     "HttpRequestNode": "http.http_basic",
-    "HttpGetNode": "http.http_basic",
-    "HttpPostNode": "http.http_basic",
-    "HttpPutNode": "http.http_basic",
-    "HttpPatchNode": "http.http_basic",
-    "HttpDeleteNode": "http.http_basic",
     # HTTP/REST API nodes - advanced operations
     "SetHttpHeadersNode": "http.http_advanced",
     "ParseJsonResponseNode": "http.http_advanced",
@@ -715,11 +705,7 @@ __all__ = [
     "DeleteEmailNode",
     "MoveEmailNode",
     # HTTP/REST API nodes
-    "HttpGetNode",
-    "HttpPostNode",
-    "HttpPutNode",
-    "HttpPatchNode",
-    "HttpDeleteNode",
+    "HttpRequestNode",
     "SetHttpHeadersNode",
     "HttpAuthNode",
     "ParseJsonResponseNode",

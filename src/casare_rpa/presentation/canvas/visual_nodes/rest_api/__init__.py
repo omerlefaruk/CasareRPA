@@ -4,11 +4,6 @@ Visual Nodes - Rest Api
 
 from .nodes import (
     VisualHttpRequestNode,
-    VisualHttpGetNode,
-    VisualHttpPostNode,
-    VisualHttpPutNode,
-    VisualHttpPatchNode,
-    VisualHttpDeleteNode,
     VisualSetHttpHeadersNode,
     VisualHttpAuthNode,
     VisualParseJsonResponseNode,
@@ -19,11 +14,6 @@ from .nodes import (
 
 __all__ = [
     "VisualHttpRequestNode",
-    "VisualHttpGetNode",
-    "VisualHttpPostNode",
-    "VisualHttpPutNode",
-    "VisualHttpPatchNode",
-    "VisualHttpDeleteNode",
     "VisualSetHttpHeadersNode",
     "VisualHttpAuthNode",
     "VisualParseJsonResponseNode",
