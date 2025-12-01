@@ -1,8 +1,8 @@
 """
 Comprehensive tests for HTTP/REST API nodes.
 
-Tests all 12 HTTP nodes:
-- HttpRequestNode, HttpGetNode, HttpPostNode, HttpPutNode, HttpPatchNode, HttpDeleteNode
+Tests HTTP nodes:
+- HttpRequestNode (unified node supporting all HTTP methods via dropdown)
 - SetHttpHeadersNode, HttpAuthNode, ParseJsonResponseNode
 - HttpDownloadFileNode, HttpUploadFileNode, BuildUrlNode
 
@@ -144,8 +144,8 @@ class TestHttpRequestNode:
         assert node.get_output_value("status_code") == 404
 
 
-class TestHttpGetNode:
-    """Tests for HttpGetNode."""
+class TestHttpRequestNodeMethods:
+    """Tests for HttpRequestNode with different HTTP methods."""
 
     @pytest.fixture
     def execution_context(self) -> None:
@@ -156,11 +156,12 @@ class TestHttpGetNode:
 
     @pytest.mark.asyncio
     async def test_http_get_basic(self, execution_context) -> None:
-        """Test HttpGetNode basic request."""
-        from casare_rpa.nodes.http import HttpGetNode
+        """Test HttpRequestNode with GET method."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpGetNode(
-            node_id="test_get", config={"url": "https://api.example.com/users"}
+        node = HttpRequestNode(
+            node_id="test_get",
+            config={"url": "https://api.example.com/users", "method": "GET"},
         )
 
         mock_response = create_mock_response(200, '[{"id": 1, "name": "John"}]')
@@ -176,11 +177,12 @@ class TestHttpGetNode:
 
     @pytest.mark.asyncio
     async def test_http_get_with_params(self, execution_context) -> None:
-        """Test HttpGetNode with query parameters."""
-        from casare_rpa.nodes.http import HttpGetNode
+        """Test HttpRequestNode GET with query parameters."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpGetNode(
-            node_id="test_get_params", config={"url": "https://api.example.com/search"}
+        node = HttpRequestNode(
+            node_id="test_get_params",
+            config={"url": "https://api.example.com/search", "method": "GET"},
         )
         node.set_input_value("params", {"q": "test", "limit": "10"})
 
@@ -193,61 +195,13 @@ class TestHttpGetNode:
         assert result["success"] is True
 
     @pytest.mark.asyncio
-    async def test_http_get_with_headers(self, execution_context) -> None:
-        """Test HttpGetNode with custom headers."""
-        from casare_rpa.nodes.http import HttpGetNode
-
-        node = HttpGetNode(
-            node_id="test_get_headers",
-            config={"url": "https://api.example.com/private"},
-        )
-        node.set_input_value("headers", {"Authorization": "Bearer token123"})
-
-        mock_response = create_mock_response(200, '{"private": "data"}')
-        mock_session = create_mock_session(mock_response)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
-            result = await node.execute(execution_context)
-
-        assert result["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_http_get_non_json_response(self, execution_context) -> None:
-        """Test HttpGetNode handles non-JSON response."""
-        from casare_rpa.nodes.http import HttpGetNode
-
-        node = HttpGetNode(
-            node_id="test_get_text", config={"url": "https://example.com/text"}
-        )
-
-        mock_response = create_mock_response(200, "Plain text response")
-        mock_session = create_mock_session(mock_response)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
-            result = await node.execute(execution_context)
-
-        assert result["success"] is True
-        assert node.get_output_value("response_body") == "Plain text response"
-        assert node.get_output_value("response_json") is None
-
-
-class TestHttpPostNode:
-    """Tests for HttpPostNode."""
-
-    @pytest.fixture
-    def execution_context(self) -> None:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
-
-    @pytest.mark.asyncio
     async def test_http_post_json_body(self, execution_context) -> None:
-        """Test HttpPostNode with JSON body."""
-        from casare_rpa.nodes.http import HttpPostNode
+        """Test HttpRequestNode POST with JSON body."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpPostNode(
-            node_id="test_post_json", config={"url": "https://api.example.com/users"}
+        node = HttpRequestNode(
+            node_id="test_post_json",
+            config={"url": "https://api.example.com/users", "method": "POST"},
         )
         node.set_input_value("body", {"name": "Jane", "email": "jane@example.com"})
 
@@ -262,63 +216,13 @@ class TestHttpPostNode:
         assert node.get_output_value("response_json")["id"] == 123
 
     @pytest.mark.asyncio
-    async def test_http_post_string_body(self, execution_context) -> None:
-        """Test HttpPostNode with string body."""
-        from casare_rpa.nodes.http import HttpPostNode
-
-        node = HttpPostNode(
-            node_id="test_post_string",
-            config={
-                "url": "https://api.example.com/data",
-                "content_type": "text/plain",
-            },
-        )
-        node.set_input_value("body", "Raw string data")
-
-        mock_response = create_mock_response(200, "OK")
-        mock_session = create_mock_session(mock_response)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
-            result = await node.execute(execution_context)
-
-        assert result["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_http_post_server_error(self, execution_context) -> None:
-        """Test HttpPostNode handles 500 server error."""
-        from casare_rpa.nodes.http import HttpPostNode
-
-        node = HttpPostNode(
-            node_id="test_post_error", config={"url": "https://api.example.com/fail"}
-        )
-
-        mock_response = create_mock_response(500, '{"error": "Internal Server Error"}')
-        mock_session = create_mock_session(mock_response)
-
-        with patch("aiohttp.ClientSession", return_value=mock_session):
-            result = await node.execute(execution_context)
-
-        assert result["success"] is True  # Node execution succeeded
-        assert node.get_output_value("success") is False  # HTTP request failed
-
-
-class TestHttpPutNode:
-    """Tests for HttpPutNode."""
-
-    @pytest.fixture
-    def execution_context(self) -> None:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
-
-    @pytest.mark.asyncio
     async def test_http_put_update(self, execution_context) -> None:
-        """Test HttpPutNode for resource update."""
-        from casare_rpa.nodes.http import HttpPutNode
+        """Test HttpRequestNode PUT for resource update."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpPutNode(
-            node_id="test_put", config={"url": "https://api.example.com/users/123"}
+        node = HttpRequestNode(
+            node_id="test_put",
+            config={"url": "https://api.example.com/users/123", "method": "PUT"},
         )
         node.set_input_value("body", {"name": "Updated Name"})
 
@@ -331,24 +235,14 @@ class TestHttpPutNode:
         assert result["success"] is True
         assert node.get_output_value("status_code") == 200
 
-
-class TestHttpPatchNode:
-    """Tests for HttpPatchNode."""
-
-    @pytest.fixture
-    def execution_context(self) -> None:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
-
     @pytest.mark.asyncio
     async def test_http_patch_partial_update(self, execution_context) -> None:
-        """Test HttpPatchNode for partial update."""
-        from casare_rpa.nodes.http import HttpPatchNode
+        """Test HttpRequestNode PATCH for partial update."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpPatchNode(
-            node_id="test_patch", config={"url": "https://api.example.com/users/123"}
+        node = HttpRequestNode(
+            node_id="test_patch",
+            config={"url": "https://api.example.com/users/123", "method": "PATCH"},
         )
         node.set_input_value("body", {"email": "newemail@example.com"})
 
@@ -363,24 +257,14 @@ class TestHttpPatchNode:
         assert result["success"] is True
         assert node.get_output_value("status_code") == 200
 
-
-class TestHttpDeleteNode:
-    """Tests for HttpDeleteNode."""
-
-    @pytest.fixture
-    def execution_context(self) -> None:
-        context = Mock(spec=ExecutionContext)
-        context.variables = {}
-        context.resolve_value = lambda x: x
-        return context
-
     @pytest.mark.asyncio
     async def test_http_delete_resource(self, execution_context) -> None:
-        """Test HttpDeleteNode for resource deletion."""
-        from casare_rpa.nodes.http import HttpDeleteNode
+        """Test HttpRequestNode DELETE for resource deletion."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpDeleteNode(
-            node_id="test_delete", config={"url": "https://api.example.com/users/123"}
+        node = HttpRequestNode(
+            node_id="test_delete",
+            config={"url": "https://api.example.com/users/123", "method": "DELETE"},
         )
 
         mock_response = create_mock_response(204, "")
@@ -393,23 +277,23 @@ class TestHttpDeleteNode:
         assert node.get_output_value("status_code") == 204
 
     @pytest.mark.asyncio
-    async def test_http_delete_with_body(self, execution_context) -> None:
-        """Test HttpDeleteNode returns response body if present."""
-        from casare_rpa.nodes.http import HttpDeleteNode
+    async def test_http_server_error(self, execution_context) -> None:
+        """Test HttpRequestNode handles 500 server error."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        node = HttpDeleteNode(
-            node_id="test_delete_body",
-            config={"url": "https://api.example.com/items/456"},
+        node = HttpRequestNode(
+            node_id="test_error",
+            config={"url": "https://api.example.com/fail", "method": "POST"},
         )
 
-        mock_response = create_mock_response(200, '{"deleted": true}')
+        mock_response = create_mock_response(500, '{"error": "Internal Server Error"}')
         mock_session = create_mock_session(mock_response)
 
         with patch("aiohttp.ClientSession", return_value=mock_session):
             result = await node.execute(execution_context)
 
-        assert result["success"] is True
-        assert node.get_output_value("response_body") == '{"deleted": true}'
+        assert result["success"] is True  # Node execution succeeded
+        assert node.get_output_value("success") is False  # HTTP request failed
 
 
 class TestSetHttpHeadersNode:
@@ -849,15 +733,16 @@ class TestHttpNodesRetry:
         return context
 
     @pytest.mark.asyncio
-    async def test_http_get_retry_on_failure(self, execution_context) -> None:
-        """Test HttpGetNode retries on failure."""
-        from casare_rpa.nodes.http import HttpGetNode
+    async def test_http_request_retry_on_failure(self, execution_context) -> None:
+        """Test HttpRequestNode retries on failure."""
+        from casare_rpa.nodes.http import HttpRequestNode
         import aiohttp
 
-        node = HttpGetNode(
+        node = HttpRequestNode(
             node_id="test_get_retry",
             config={
                 "url": "https://api.example.com/data",
+                "method": "GET",
                 "retry_count": 2,
                 "retry_delay": 0.01,
             },
@@ -906,11 +791,6 @@ class TestHttpNodesIntegration:
         """Test all HTTP nodes implement execute method."""
         from casare_rpa.nodes.http import (
             HttpRequestNode,
-            HttpGetNode,
-            HttpPostNode,
-            HttpPutNode,
-            HttpPatchNode,
-            HttpDeleteNode,
             SetHttpHeadersNode,
             HttpAuthNode,
             ParseJsonResponseNode,
@@ -921,11 +801,6 @@ class TestHttpNodesIntegration:
 
         node_classes = [
             HttpRequestNode,
-            HttpGetNode,
-            HttpPostNode,
-            HttpPutNode,
-            HttpPatchNode,
-            HttpDeleteNode,
             SetHttpHeadersNode,
             HttpAuthNode,
             ParseJsonResponseNode,
@@ -943,11 +818,6 @@ class TestHttpNodesIntegration:
         """Test all HTTP nodes define ports correctly."""
         from casare_rpa.nodes.http import (
             HttpRequestNode,
-            HttpGetNode,
-            HttpPostNode,
-            HttpPutNode,
-            HttpPatchNode,
-            HttpDeleteNode,
             SetHttpHeadersNode,
             HttpAuthNode,
             ParseJsonResponseNode,
@@ -958,11 +828,6 @@ class TestHttpNodesIntegration:
 
         node_classes = [
             HttpRequestNode,
-            HttpGetNode,
-            HttpPostNode,
-            HttpPutNode,
-            HttpPatchNode,
-            HttpDeleteNode,
             SetHttpHeadersNode,
             HttpAuthNode,
             ParseJsonResponseNode,
@@ -994,23 +859,15 @@ class TestHttpNodesIntegration:
         assert "next_nodes" in result
 
     def test_http_methods_coverage(self) -> None:
-        """Test all HTTP methods have corresponding nodes."""
-        from casare_rpa.nodes.http import (
-            HttpGetNode,
-            HttpPostNode,
-            HttpPutNode,
-            HttpPatchNode,
-            HttpDeleteNode,
-        )
+        """Test HttpRequestNode supports all HTTP methods via dropdown."""
+        from casare_rpa.nodes.http import HttpRequestNode
 
-        methods_covered = {
-            "GET": HttpGetNode,
-            "POST": HttpPostNode,
-            "PUT": HttpPutNode,
-            "PATCH": HttpPatchNode,
-            "DELETE": HttpDeleteNode,
-        }
+        methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
 
-        for method, cls in methods_covered.items():
-            node = cls(node_id=f"test_{method}")
+        for method in methods:
+            node = HttpRequestNode(
+                node_id=f"test_{method}",
+                config={"url": "https://example.com", "method": method},
+            )
             assert node is not None
+            assert node.get_parameter("method") == method

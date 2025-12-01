@@ -369,9 +369,27 @@ class CanvasWorkflowRunner:
         """
         nodes = workflow_data.get("nodes", {})
         for node_id, node_data in nodes.items():
-            node_type = node_data.get("node_type", "")
-            if node_type.endswith("TriggerNode"):
-                return (node_id, node_type, node_data.get("config", {}))
+            # Check type_ field (NodeGraphQt serialization format)
+            # e.g., "casare_rpa.triggers.VisualScheduleTriggerNode"
+            type_field = node_data.get("type_", "")
+            if "Trigger" in type_field and type_field.endswith("Node"):
+                # Extract simple node type from full path
+                # "casare_rpa.triggers.VisualScheduleTriggerNode" -> "ScheduleTriggerNode"
+                simple_type = type_field.split(".")[-1]
+                # Remove "Visual" prefix if present
+                if simple_type.startswith("Visual"):
+                    simple_type = simple_type[6:]  # Remove "Visual"
+
+                # Get config from custom properties
+                custom = node_data.get("custom", {})
+                config = {
+                    k: v
+                    for k, v in custom.items()
+                    if not k.startswith("_") and k not in ("node_id", "status")
+                }
+
+                logger.debug(f"Found trigger node: {simple_type} with config: {config}")
+                return (node_id, simple_type, config)
         return None
 
     async def start_listening(self) -> bool:
@@ -510,8 +528,8 @@ class CanvasWorkflowRunner:
             config=trigger_config,
         )
 
-        # Get trigger class from registry
-        trigger_class = TriggerRegistry.get(trigger_type)
+        # Get trigger class from registry (TriggerRegistry is a singleton)
+        trigger_class = TriggerRegistry().get(trigger_type)
         if not trigger_class:
             logger.error(f"No trigger implementation for type: {trigger_type}")
             return None

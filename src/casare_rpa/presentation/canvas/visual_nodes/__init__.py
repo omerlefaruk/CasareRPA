@@ -287,14 +287,9 @@ from .office_automation import (
     VisualOutlookGetInboxCountNode,
 )
 
-# REST API (12 nodes)
+# REST API (7 nodes)
 from .rest_api import (
     VisualHttpRequestNode,
-    VisualHttpGetNode,
-    VisualHttpPostNode,
-    VisualHttpPutNode,
-    VisualHttpPatchNode,
-    VisualHttpDeleteNode,
     VisualSetHttpHeadersNode,
     VisualHttpAuthNode,
     VisualParseJsonResponseNode,
@@ -565,11 +560,6 @@ __all__ = [
     "VisualOutlookGetInboxCountNode",
     # rest_api
     "VisualHttpRequestNode",
-    "VisualHttpGetNode",
-    "VisualHttpPostNode",
-    "VisualHttpPutNode",
-    "VisualHttpPatchNode",
-    "VisualHttpDeleteNode",
     "VisualSetHttpHeadersNode",
     "VisualHttpAuthNode",
     "VisualParseJsonResponseNode",

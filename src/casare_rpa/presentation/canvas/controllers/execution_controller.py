@@ -309,8 +309,18 @@ class ExecutionController(BaseController):
                 visual_node.update_execution_time(None)
 
     def run_workflow(self) -> None:
-        """Run workflow from start to end (F3)."""
+        """
+        Run workflow from start to end (F3).
+
+        Auto-detects trigger nodes: if workflow has a trigger, starts listening mode
+        instead of one-shot execution.
+        """
         logger.info("Running workflow")
+
+        # Check if already listening - stop first
+        if self._is_listening:
+            logger.info("Stopping active trigger before re-run")
+            self.stop_trigger_listening()
 
         # Atomic check-and-set to prevent race condition on rapid F3 presses
         if self._is_running:
@@ -318,26 +328,30 @@ class ExecutionController(BaseController):
             self.main_window.show_status("Workflow is already running", 3000)
             return
 
-        # Set flag immediately to block concurrent calls
+        # Validate before running
+        if not self._check_validation_before_run():
+            return
+
+        # Check if runner is configured
+        if not self._workflow_runner:
+            logger.error("WorkflowRunner not configured")
+            QMessageBox.critical(
+                self.main_window,
+                "Execution Error",
+                "Workflow runner not initialized. Please restart the application.",
+            )
+            return
+
+        # Auto-detect trigger nodes - if present, start listening mode instead
+        if self._has_trigger_node():
+            logger.info("Trigger node detected - starting listening mode")
+            self.start_trigger_listening()
+            return
+
+        # Set flag immediately to block concurrent calls (only for non-trigger runs)
         self._is_running = True
 
         try:
-            # Validate before running
-            if not self._check_validation_before_run():
-                self._is_running = False
-                return
-
-            # Check if runner is configured
-            if not self._workflow_runner:
-                logger.error("WorkflowRunner not configured")
-                QMessageBox.critical(
-                    self.main_window,
-                    "Execution Error",
-                    "Workflow runner not initialized. Please restart the application.",
-                )
-                self._is_running = False
-                return
-
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
 
@@ -826,6 +840,26 @@ class ExecutionController(BaseController):
                 # Also update status indicator
                 if hasattr(visual_node, "update_status"):
                     visual_node.update_status("listening" if listening else "idle")
+
+    def _has_trigger_node(self) -> bool:
+        """
+        Check if workflow contains a trigger node.
+
+        Returns:
+            True if any trigger node is present in the graph
+        """
+        graph = self.main_window.get_graph()
+        if not graph:
+            return False
+
+        for visual_node in graph.all_nodes():
+            node_type = getattr(visual_node, "type_", "")
+            # Check for trigger node types
+            if "Trigger" in node_type and "Node" in node_type:
+                logger.debug(f"Found trigger node: {node_type}")
+                return True
+
+        return False
 
     def _check_validation_before_run(self) -> bool:
         """
