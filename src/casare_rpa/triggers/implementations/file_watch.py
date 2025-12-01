@@ -7,7 +7,7 @@ Uses watchdog library for efficient filesystem monitoring.
 
 import asyncio
 import fnmatch
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -49,6 +49,7 @@ class FileWatchTrigger(BaseTrigger):
         self._task: Optional[asyncio.Task] = None
         self._pending_events: Dict[str, datetime] = {}
         self._debounce_task: Optional[asyncio.Task] = None
+        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
 
     async def start(self) -> bool:
         """Start the file watch trigger."""
@@ -75,8 +76,13 @@ class FileWatchTrigger(BaseTrigger):
             from watchdog.observers import Observer
             from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
+            # Store event loop reference for cross-thread communication
+            # This avoids calling asyncio.get_event_loop() from watchdog's thread
+            self._event_loop = asyncio.get_running_loop()
+
             # Create custom event handler
             trigger = self  # Capture reference for handler
+            loop = self._event_loop  # Capture for closure
 
             class TriggerHandler(FileSystemEventHandler):
                 def on_any_event(self, event: FileSystemEvent):
@@ -97,9 +103,11 @@ class FileWatchTrigger(BaseTrigger):
                         return
 
                     # Queue the event for debounced processing
+                    # Use stored event loop reference (captured in closure)
+                    # to avoid calling asyncio.get_event_loop() from this thread
                     asyncio.run_coroutine_threadsafe(
                         trigger._queue_event(event.src_path, event_type),
-                        asyncio.get_event_loop(),
+                        loop,
                     )
 
             self._handler = TriggerHandler()
@@ -151,7 +159,7 @@ class FileWatchTrigger(BaseTrigger):
         debounce_ms = self.config.config.get("debounce_ms", 1000)
 
         # Record the event
-        self._pending_events[file_path] = datetime.utcnow()
+        self._pending_events[file_path] = datetime.now(timezone.utc)
 
         # Cancel existing debounce task if any
         if self._debounce_task and not self._debounce_task.done():
@@ -196,6 +204,46 @@ class FileWatchTrigger(BaseTrigger):
         watch_path = config.get("watch_path", "")
         if not watch_path:
             return False, "watch_path is required"
+
+        # SECURITY: Validate path to prevent watching sensitive system directories
+        try:
+            resolved_path = Path(watch_path).resolve()
+
+            # Block watching sensitive system directories
+            blocked_paths = [
+                Path("C:/Windows").resolve(),
+                Path("C:/Program Files").resolve(),
+                Path("C:/Program Files (x86)").resolve(),
+                Path("/etc").resolve(),
+                Path("/var").resolve(),
+                Path("/usr").resolve(),
+                Path("/bin").resolve(),
+                Path("/sbin").resolve(),
+            ]
+
+            for blocked in blocked_paths:
+                try:
+                    # Check if resolved_path is under a blocked directory
+                    resolved_path.relative_to(blocked)
+                    return (
+                        False,
+                        f"Cannot watch system directory: {watch_path}. "
+                        "File watching is not allowed for sensitive system paths.",
+                    )
+                except ValueError:
+                    # Path is not relative to blocked path - this is fine
+                    pass
+
+            # Check for path traversal attempts in the original path
+            if ".." in watch_path:
+                return (
+                    False,
+                    "Path traversal detected in watch_path. "
+                    "Please use an absolute path without '..' components.",
+                )
+
+        except Exception as e:
+            return False, f"Invalid watch_path: {e}"
 
         # Validate events
         events = config.get("events", ["created", "modified"])

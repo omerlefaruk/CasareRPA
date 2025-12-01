@@ -9,7 +9,7 @@ import asyncio
 import email as email_lib
 import imaplib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
@@ -134,9 +134,61 @@ class EmailTrigger(BaseTrigger):
         server = config.get("server", "")
         port = config.get("port", 993)
         username = config.get("username", "")
-        password = config.get("password", "")  # In production, use credential manager
         folder = config.get("folder", "INBOX")
 
+        # SECURITY: Get password from credential manager or environment variable (preferred)
+        # Direct password in config is deprecated and insecure
+        password = ""
+        password_credential = config.get("password_credential", "")
+
+        if password_credential:
+            # Use credential manager (secure)
+            try:
+                from casare_rpa.utils.security.secrets_manager import (
+                    get_secrets_manager,
+                )
+
+                secrets = get_secrets_manager()
+                password = secrets.get(password_credential, "")
+                if not password:
+                    logger.error(
+                        f"Credential '{password_credential}' not found in secrets manager"
+                    )
+                    return []
+            except ImportError:
+                logger.error(
+                    "Secrets manager not available. Cannot retrieve password credential."
+                )
+                return []
+        else:
+            # DEPRECATED: Direct password in config (log warning)
+            password = config.get("password", "")
+            if password:
+                logger.warning(
+                    "SECURITY WARNING: Using plain text password in email trigger config is "
+                    "deprecated and insecure. Please use 'password_credential' to reference "
+                    "a credential stored in the secrets manager instead."
+                )
+
+        # Run blocking IMAP operations in a thread to avoid blocking the event loop
+        return await asyncio.to_thread(
+            self._fetch_imap_emails_sync,
+            server,
+            port,
+            username,
+            password,
+            folder,
+        )
+
+    def _fetch_imap_emails_sync(
+        self,
+        server: str,
+        port: int,
+        username: str,
+        password: str,
+        folder: str,
+    ) -> List[Dict[str, Any]]:
+        """Synchronous IMAP fetch - runs in thread pool to avoid blocking."""
         new_emails = []
 
         try:
@@ -246,7 +298,9 @@ class EmailTrigger(BaseTrigger):
             "to_address": email_data.get("to_address", ""),
             "subject": email_data.get("subject", ""),
             "body": email_data.get("body", ""),
-            "received_at": email_data.get("date", datetime.utcnow().isoformat()),
+            "received_at": email_data.get(
+                "date", datetime.now(timezone.utc).isoformat()
+            ),
         }
 
         metadata = {

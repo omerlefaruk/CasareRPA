@@ -375,6 +375,7 @@ class NodeGraphWidget(QWidget):
 
         self._culler = ViewportCullingManager(cell_size=500, margin=200)
         self._culler.set_enabled(True)
+        self._setup_viewport_culling()
         logger.info("Viewport culling enabled for performance optimization")
 
         # Create auto-connect manager
@@ -447,6 +448,119 @@ class NodeGraphWidget(QWidget):
         NodeGraphQt's default MMB behavior is used instead.
         """
         pass
+
+    def _setup_viewport_culling(self) -> None:
+        """
+        Wire up viewport culling to graph events for automatic node/pipe culling.
+
+        This connects to:
+        - node_created: Register new nodes with culler
+        - nodes_deleted: Unregister deleted nodes
+        - port_connected: Register new pipes
+        - port_disconnected: Unregister deleted pipes
+        - Viewport scroll/zoom events via event filter
+        """
+        try:
+            # Connect to node creation/deletion signals
+            if hasattr(self._graph, "node_created"):
+                self._graph.node_created.connect(self._on_culling_node_created)
+            if hasattr(self._graph, "nodes_deleted"):
+                self._graph.nodes_deleted.connect(self._on_culling_nodes_deleted)
+
+            # Connect to pipe creation/deletion signals
+            if hasattr(self._graph, "port_connected"):
+                self._graph.port_connected.connect(self._on_culling_pipe_created)
+            if hasattr(self._graph, "port_disconnected"):
+                self._graph.port_disconnected.connect(self._on_culling_pipe_deleted)
+
+            # Connect to session_changed signal to clear culler when graph is reset
+            if hasattr(self._graph, "session_changed"):
+                self._graph.session_changed.connect(self._on_session_changed)
+
+            # Install viewport update timer for smooth culling during pan/zoom
+            from PySide6.QtCore import QTimer
+
+            self._viewport_update_timer = QTimer(self)
+            self._viewport_update_timer.setInterval(16)  # ~60 FPS
+            self._viewport_update_timer.timeout.connect(self._update_viewport_culling)
+            self._viewport_update_timer.start()
+
+            logger.debug("Viewport culling signals connected")
+        except Exception as e:
+            logger.warning(f"Could not setup viewport culling: {e}")
+
+    def _on_culling_node_created(self, node) -> None:
+        """Register newly created node with culler."""
+        try:
+            if hasattr(node, "view") and node.view:
+                rect = node.view.sceneBoundingRect()
+                self._culler.register_node(node.id, node.view, rect)
+        except Exception as e:
+            logger.debug(f"Could not register node for culling: {e}")
+
+    def _on_culling_nodes_deleted(self, node_ids) -> None:
+        """Unregister deleted nodes from culler."""
+        try:
+            for node_id in node_ids:
+                self._culler.unregister_node(node_id)
+        except Exception as e:
+            logger.debug(f"Could not unregister nodes from culling: {e}")
+
+    def _on_session_changed(self, *args) -> None:
+        """Clear culler when graph session is reset (clear_session called)."""
+        try:
+            self._culler.clear()
+            logger.debug("Viewport culler cleared on session change")
+        except Exception as e:
+            logger.debug(f"Could not clear culler on session change: {e}")
+
+    def _on_culling_pipe_created(self, input_port, output_port) -> None:
+        """Register newly created pipe with culler."""
+        try:
+            # Get the pipe item from the connection
+            # NodeGraphQt stores pipes in the output port
+            if hasattr(output_port, "connected_pipes"):
+                for pipe in output_port.connected_pipes():
+                    if (
+                        pipe
+                        and hasattr(pipe, "input_port")
+                        and pipe.input_port() == input_port
+                    ):
+                        source_node = output_port.node()
+                        target_node = input_port.node()
+                        if source_node and target_node:
+                            pipe_id = f"{source_node.id}:{output_port.name()}>{target_node.id}:{input_port.name()}"
+                            self._culler.register_pipe(
+                                pipe_id, source_node.id, target_node.id, pipe
+                            )
+                        break
+        except Exception as e:
+            logger.debug(f"Could not register pipe for culling: {e}")
+
+    def _on_culling_pipe_deleted(self, input_port, output_port) -> None:
+        """Unregister deleted pipe from culler."""
+        try:
+            source_node = output_port.node() if output_port else None
+            target_node = input_port.node() if input_port else None
+            if source_node and target_node:
+                pipe_id = f"{source_node.id}:{output_port.name()}>{target_node.id}:{input_port.name()}"
+                self._culler.unregister_pipe(pipe_id)
+        except Exception as e:
+            logger.debug(f"Could not unregister pipe from culling: {e}")
+
+    def _update_viewport_culling(self) -> None:
+        """Update culling based on current viewport (called by timer)."""
+        try:
+            viewer = self._graph.viewer()
+            if viewer and viewer.viewport():
+                # Get visible viewport rect in scene coordinates
+                viewport_rect = viewer.mapToScene(
+                    viewer.viewport().rect()
+                ).boundingRect()
+                self._culler.update_viewport(viewport_rect)
+        except Exception as e:
+            # Suppress errors during startup
+            pass
 
     def _setup_graph(self) -> None:
         """Configure the node graph settings and appearance."""

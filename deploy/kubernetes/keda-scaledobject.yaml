@@ -1,0 +1,51 @@
+# KEDA ScaledObject for Queue-Based Robot Scaling
+# Requires KEDA installation: https://keda.sh/docs/deploy/
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: casare-robot-scaler
+  namespace: casare-rpa
+  labels:
+    app.kubernetes.io/name: casare-browser-robot
+    app.kubernetes.io/part-of: casare-rpa
+spec:
+  scaleTargetRef:
+    name: casare-browser-robot
+  pollingInterval: 15
+  cooldownPeriod: 60
+  minReplicaCount: 2
+  maxReplicaCount: 100
+  fallback:
+    failureThreshold: 3
+    replicas: 5
+  triggers:
+    # PostgreSQL queue depth trigger
+    - type: postgresql
+      metadata:
+        connectionFromEnv: DATABASE_URL
+        query: "SELECT COUNT(*) FROM job_queue WHERE status = 'pending'"
+        targetQueryValue: "5"
+        activationTargetQueryValue: "2"
+    # Cron-based scaling for business hours
+    - type: cron
+      metadata:
+        timezone: America/New_York
+        start: "0 8 * * 1-5"   # 8 AM weekdays
+        end: "0 18 * * 1-5"    # 6 PM weekdays
+        desiredReplicas: "20"
+    # Cron-based scaling for off-hours
+    - type: cron
+      metadata:
+        timezone: America/New_York
+        start: "0 18 * * 1-5"  # 6 PM weekdays
+        end: "0 8 * * 1-5"     # 8 AM next day
+        desiredReplicas: "5"
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Percent
+              value: 10
+              periodSeconds: 60

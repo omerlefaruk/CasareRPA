@@ -16,7 +16,7 @@ import hashlib
 import json
 import os
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -297,7 +297,7 @@ class EncryptedSQLiteProvider(VaultProvider):
         """Store secret in SQLite vault."""
         conn, _ = self._ensure_connected()
 
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         encrypted = self._encrypt(data)
 
         # Check if secret exists

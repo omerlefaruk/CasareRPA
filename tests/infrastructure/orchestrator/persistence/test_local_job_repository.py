@@ -1,7 +1,7 @@
 """Tests for LocalJobRepository."""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
 
@@ -69,7 +69,7 @@ async def test_get_by_id_not_found(job_repository):
 @pytest.mark.asyncio
 async def test_get_all(job_repository):
     """Test getting all jobs."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     job1 = Job(
         id="job-1",
         workflow_id="wf-1",
@@ -98,7 +98,7 @@ async def test_get_all(job_repository):
 @pytest.mark.asyncio
 async def test_get_by_status(job_repository):
     """Test getting jobs by status."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     job1 = Job(
         id="job-1",
         workflow_id="wf-1",
@@ -136,7 +136,7 @@ async def test_get_by_status(job_repository):
 @pytest.mark.asyncio
 async def test_get_by_robot(job_repository):
     """Test getting jobs by robot ID."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     job1 = Job(
         id="job-1",
         workflow_id="wf-1",
@@ -174,7 +174,7 @@ async def test_get_by_robot(job_repository):
 @pytest.mark.asyncio
 async def test_get_by_workflow(job_repository):
     """Test getting jobs by workflow ID."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     job1 = Job(
         id="job-1",
         workflow_id="wf-1",

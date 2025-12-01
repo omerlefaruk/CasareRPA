@@ -56,6 +56,7 @@ from .ui_state_controller import UIStateController
 from .selector_controller import SelectorController
 from .preferences_controller import PreferencesController
 from .autosave_controller import AutosaveController
+from .project_controller import ProjectController
 
 __all__ = [
     # Base
@@ -74,6 +75,7 @@ __all__ = [
     "SelectorController",
     "PreferencesController",
     "AutosaveController",
+    "ProjectController",
     # Event utilities
     "EventTypes",
     "Event",

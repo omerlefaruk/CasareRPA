@@ -188,6 +188,10 @@ class ViewportCullingManager(QObject):
         # Track node items for show/hide
         self._node_items: Dict[str, object] = {}
 
+        # Track pipes (connections) for culling
+        # Maps pipe_id -> (source_node_id, target_node_id, pipe_item)
+        self._pipes: Dict[str, Tuple[str, str, object]] = {}
+
         # Culling enabled flag
         self._enabled = True
 
@@ -195,6 +199,8 @@ class ViewportCullingManager(QObject):
         self._stats = {
             "total_nodes": 0,
             "visible_nodes": 0,
+            "total_pipes": 0,
+            "visible_pipes": 0,
             "last_update_ms": 0,
         }
 
@@ -209,8 +215,9 @@ class ViewportCullingManager(QObject):
         """
         self._enabled = enabled
         if not enabled:
-            # Show all nodes
+            # Show all nodes and pipes
             self._show_all_nodes()
+            self._show_all_pipes()
 
     def is_enabled(self) -> bool:
         """Check if culling is enabled."""
@@ -256,6 +263,33 @@ class ViewportCullingManager(QObject):
         if node_id in self._all_nodes:
             self._spatial_hash.insert(node_id, rect)
 
+    def register_pipe(
+        self, pipe_id: str, source_node_id: str, target_node_id: str, pipe_item: object
+    ) -> None:
+        """
+        Register a pipe (connection) for visibility culling.
+
+        Pipes are shown only when both source and target nodes are visible.
+
+        Args:
+            pipe_id: Unique identifier for the pipe
+            source_node_id: ID of the source node
+            target_node_id: ID of the target node
+            pipe_item: The QGraphicsItem for the pipe
+        """
+        self._pipes[pipe_id] = (source_node_id, target_node_id, pipe_item)
+        self._stats["total_pipes"] = len(self._pipes)
+
+    def unregister_pipe(self, pipe_id: str) -> None:
+        """
+        Remove a pipe from the culling manager.
+
+        Args:
+            pipe_id: Unique identifier for the pipe
+        """
+        self._pipes.pop(pipe_id, None)
+        self._stats["total_pipes"] = len(self._pipes)
+
     def update_viewport(self, viewport_rect: QRectF) -> Tuple[Set[str], Set[str]]:
         """
         Update visibility based on the current viewport.
@@ -291,9 +325,13 @@ class ViewportCullingManager(QObject):
         # Apply visibility changes
         self._apply_visibility_changes(newly_visible, newly_hidden)
 
+        # Update pipe visibility
+        visible_pipes = self._update_pipe_visibility()
+
         # Update stats
         elapsed = (time.perf_counter() - start) * 1000
         self._stats["visible_nodes"] = len(self._visible_nodes)
+        self._stats["visible_pipes"] = visible_pipes
         self._stats["last_update_ms"] = elapsed
 
         # Emit signal if there were changes
@@ -326,6 +364,46 @@ class ViewportCullingManager(QObject):
                 if item.scene() is not None:
                     item.setVisible(False)
 
+    def _update_pipe_visibility(self) -> int:
+        """
+        Update visibility of pipes based on connected node visibility.
+
+        A pipe is visible only if BOTH its source and target nodes are visible.
+
+        Returns:
+            Number of visible pipes
+        """
+        visible_count = 0
+        for pipe_id, (source_id, target_id, pipe_item) in self._pipes.items():
+            # Pipe is visible if both endpoints are visible
+            should_be_visible = (
+                source_id in self._visible_nodes and target_id in self._visible_nodes
+            )
+
+            if (
+                pipe_item
+                and hasattr(pipe_item, "setVisible")
+                and hasattr(pipe_item, "scene")
+            ):
+                if pipe_item.scene() is not None:
+                    pipe_item.setVisible(should_be_visible)
+
+            if should_be_visible:
+                visible_count += 1
+
+        return visible_count
+
+    def _show_all_pipes(self) -> None:
+        """Show all pipes (used when culling is disabled)."""
+        for pipe_id, (_, _, pipe_item) in self._pipes.items():
+            if (
+                pipe_item
+                and hasattr(pipe_item, "setVisible")
+                and hasattr(pipe_item, "scene")
+            ):
+                if pipe_item.scene() is not None:
+                    pipe_item.setVisible(True)
+
     def _show_all_nodes(self) -> None:
         """Show all nodes (used when culling is disabled)."""
         for node_id, item in self._node_items.items():
@@ -344,13 +422,16 @@ class ViewportCullingManager(QObject):
         return self._stats.copy()
 
     def clear(self) -> None:
-        """Clear all nodes from the culling manager."""
+        """Clear all nodes and pipes from the culling manager."""
         self._spatial_hash.clear()
         self._visible_nodes.clear()
         self._all_nodes.clear()
         self._node_items.clear()
+        self._pipes.clear()
         self._stats["total_nodes"] = 0
         self._stats["visible_nodes"] = 0
+        self._stats["total_pipes"] = 0
+        self._stats["visible_pipes"] = 0
 
 
 # ============================================================================

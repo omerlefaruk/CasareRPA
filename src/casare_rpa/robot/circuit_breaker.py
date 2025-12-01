@@ -132,7 +132,7 @@ class CircuitBreaker:
 
             if new_state == CircuitState.OPEN:
                 self._opened_at = datetime.now(timezone.utc)
-                self.stats.times_opened += 1
+                self.stats.increment_times_opened_sync()  # Safe: called from within lock
 
             elif new_state == CircuitState.HALF_OPEN:
                 self._half_open_calls = 0
@@ -191,18 +191,18 @@ class CircuitBreaker:
             # Check if circuit is open
             if self._state == CircuitState.OPEN:
                 remaining = self._get_remaining_open_time()
-                self.stats.blocked_calls += 1
+                await self.stats.increment_blocked()
                 raise CircuitBreakerOpenError(self.name, remaining)
 
             # Check half-open call limit
             if self._state == CircuitState.HALF_OPEN:
                 if self._half_open_calls >= self.config.half_open_max_calls:
-                    self.stats.blocked_calls += 1
+                    await self.stats.increment_blocked()
                     raise CircuitBreakerOpenError(self.name, 0)
                 self._half_open_calls += 1
 
-        # Execute the function
-        self.stats.total_calls += 1
+        # Execute the function (stats incremented thread-safely)
+        await self.stats.increment_total()
         try:
             if asyncio.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
@@ -218,9 +218,8 @@ class CircuitBreaker:
 
     async def _on_success(self):
         """Handle successful call."""
+        await self.stats.increment_successful()
         async with self._lock:
-            self.stats.successful_calls += 1
-
             if self._state == CircuitState.HALF_OPEN:
                 self._success_count += 1
                 logger.debug(
@@ -237,9 +236,9 @@ class CircuitBreaker:
 
     async def _on_failure(self, exception: Exception):
         """Handle failed call."""
+        await self.stats.increment_failed()
         async with self._lock:
             self._last_failure_time = datetime.now(timezone.utc)
-            self.stats.failed_calls += 1
 
             if self._state == CircuitState.HALF_OPEN:
                 # Failure in half-open state -> back to open
@@ -291,28 +290,76 @@ class CircuitBreaker:
 
 
 class CircuitBreakerStats:
-    """Statistics for circuit breaker."""
+    """Statistics for circuit breaker (thread-safe with atomic counters)."""
 
     def __init__(self):
-        self.total_calls = 0
-        self.successful_calls = 0
-        self.failed_calls = 0
-        self.blocked_calls = 0
-        self.times_opened = 0
+        self._total_calls = 0
+        self._successful_calls = 0
+        self._failed_calls = 0
+        self._blocked_calls = 0
+        self._times_opened = 0
+        self._lock = asyncio.Lock()
+
+    @property
+    def total_calls(self) -> int:
+        return self._total_calls
+
+    @property
+    def successful_calls(self) -> int:
+        return self._successful_calls
+
+    @property
+    def failed_calls(self) -> int:
+        return self._failed_calls
+
+    @property
+    def blocked_calls(self) -> int:
+        return self._blocked_calls
+
+    @property
+    def times_opened(self) -> int:
+        return self._times_opened
+
+    async def increment_total(self):
+        """Thread-safe increment of total calls."""
+        async with self._lock:
+            self._total_calls += 1
+
+    async def increment_successful(self):
+        """Thread-safe increment of successful calls."""
+        async with self._lock:
+            self._successful_calls += 1
+
+    async def increment_failed(self):
+        """Thread-safe increment of failed calls."""
+        async with self._lock:
+            self._failed_calls += 1
+
+    async def increment_blocked(self):
+        """Thread-safe increment of blocked calls."""
+        async with self._lock:
+            self._blocked_calls += 1
+
+    async def increment_times_opened(self):
+        """Thread-safe increment of times opened."""
+        async with self._lock:
+            self._times_opened += 1
+
+    def increment_times_opened_sync(self):
+        """Sync increment - only call from within an existing lock context."""
+        self._times_opened += 1
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
+        total = self._total_calls
+        successful = self._successful_calls
         return {
-            "total_calls": self.total_calls,
-            "successful_calls": self.successful_calls,
-            "failed_calls": self.failed_calls,
-            "blocked_calls": self.blocked_calls,
-            "times_opened": self.times_opened,
-            "success_rate": (
-                (self.successful_calls / self.total_calls * 100)
-                if self.total_calls > 0
-                else 0
-            ),
+            "total_calls": total,
+            "successful_calls": successful,
+            "failed_calls": self._failed_calls,
+            "blocked_calls": self._blocked_calls,
+            "times_opened": self._times_opened,
+            "success_rate": (successful / total * 100) if total > 0 else 0,
         }
 
 

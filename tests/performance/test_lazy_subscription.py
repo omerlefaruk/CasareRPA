@@ -8,6 +8,7 @@ Validates that:
 - LazySubscriptionGroup manages multiple subscriptions
 """
 
+import gc
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -21,6 +22,10 @@ from casare_rpa.presentation.canvas.events.lazy_subscription import (
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
 from casare_rpa.presentation.canvas.events.event import Event
 from casare_rpa.presentation.canvas.events.event_types import EventType
+
+
+# Track all created LazySubscription instances for cleanup
+_created_subscriptions = []
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +47,30 @@ def event_bus(qapp):
     EventBus.reset_instance()
 
 
+@pytest.fixture(autouse=True)
+def cleanup_lazy_subscriptions():
+    """Clean up LazySubscription instances after each test."""
+    # Clear before test
+    _created_subscriptions.clear()
+
+    yield
+
+    # Clean up all tracked subscriptions after test
+    for sub in _created_subscriptions:
+        try:
+            sub.cleanup()
+        except Exception:
+            pass
+    _created_subscriptions.clear()
+    gc.collect()
+
+
+def _track_subscription(sub):
+    """Helper to track a subscription for cleanup."""
+    _created_subscriptions.append(sub)
+    return sub
+
+
 @pytest.fixture
 def test_widget(qapp):
     """Create test widget for lazy subscription testing."""
@@ -56,14 +85,18 @@ class TestLazySubscriptionActivation:
     def test_subscription_not_active_initially(self, event_bus, test_widget):
         """Subscription should not be active before widget is shown."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         assert not lazy_sub.active
 
     def test_subscription_activates_on_show(self, event_bus, test_widget, qtbot):
         """Subscription should activate when widget becomes visible."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         assert not lazy_sub.active
 
@@ -79,7 +112,9 @@ class TestLazySubscriptionActivation:
         def handler(event):
             received_events.append(event)
 
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         event = Event(
             type=EventType.WORKFLOW_SAVED,
@@ -105,7 +140,9 @@ class TestLazySubscriptionDeactivation:
     def test_subscription_deactivates_on_hide(self, event_bus, test_widget, qtbot):
         """Subscription should deactivate when widget is hidden."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -124,7 +161,9 @@ class TestLazySubscriptionDeactivation:
         def handler(event):
             received_events.append(event)
 
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -148,7 +187,9 @@ class TestLazySubscriptionDeactivation:
         def handler(event):
             received_events.append(event)
 
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -173,7 +214,9 @@ class TestLazySubscriptionManualControl:
     def test_manual_activate(self, event_bus, test_widget):
         """Manual activate should subscribe to EventBus."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         assert not lazy_sub.active
 
@@ -189,7 +232,9 @@ class TestLazySubscriptionManualControl:
     def test_manual_deactivate(self, event_bus, test_widget):
         """Manual deactivate should unsubscribe from EventBus."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         lazy_sub.activate()
         assert lazy_sub.active
@@ -209,7 +254,9 @@ class TestLazySubscriptionManualControl:
         def handler(event):
             received_events.append(event)
 
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         lazy_sub.activate()
         lazy_sub.activate()
@@ -223,7 +270,9 @@ class TestLazySubscriptionManualControl:
     def test_deactivate_idempotent(self, event_bus, test_widget):
         """Multiple deactivate calls should not cause errors."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
         lazy_sub.deactivate()
         lazy_sub.deactivate()
@@ -235,21 +284,24 @@ class TestLazySubscriptionManualControl:
 class TestLazySubscriptionOriginalHandlers:
     """Tests for original event handler preservation."""
 
-    def test_restore_original_handlers(self, event_bus, test_widget, qtbot):
-        """restore_original_handlers should restore widget's original methods."""
-        original_show = test_widget.showEvent
-        original_hide = test_widget.hideEvent
-
+    def test_cleanup_removes_event_filter(self, event_bus, test_widget, qtbot):
+        """cleanup should remove event filter and deactivate subscription."""
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, test_widget)
+        )
 
-        assert test_widget.showEvent != original_show
-        assert test_widget.hideEvent != original_hide
+        # Verify initial state
+        assert lazy_sub.active is False
 
-        lazy_sub.restore_original_handlers()
+        # Activate and verify
+        lazy_sub.activate()
+        assert lazy_sub.active is True
 
-        assert test_widget.showEvent == original_show
-        assert test_widget.hideEvent == original_hide
+        # Cleanup should deactivate and remove event filter
+        lazy_sub.cleanup()
+
+        assert lazy_sub.active is False
 
     def test_original_handlers_still_called(self, event_bus, qapp, qtbot):
         """Original show/hide event handlers should still be called."""
@@ -267,7 +319,9 @@ class TestLazySubscriptionOriginalHandlers:
 
         widget = TestWidget()
         handler = MagicMock()
-        lazy_sub = LazySubscription(EventType.WORKFLOW_SAVED, handler, widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.WORKFLOW_SAVED, handler, widget)
+        )
 
         widget.show()
         qtbot.waitExposed(widget)
@@ -296,6 +350,9 @@ class TestLazySubscriptionGroup:
                 (EventType.NODE_ADDED, handlers[2]),
             ],
         )
+        # Track all internal subscriptions
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         assert len(group._subscriptions) == 3
 
@@ -320,6 +377,8 @@ class TestLazySubscriptionGroup:
                 (EventType.NODE_ADDED, added_handler),
             ],
         )
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -346,6 +405,8 @@ class TestLazySubscriptionGroup:
                 (EventType.WORKFLOW_NEW, handler2),
             ],
         )
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -371,6 +432,8 @@ class TestLazySubscriptionGroup:
                 (EventType.WORKFLOW_NEW, handler2),
             ],
         )
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         group.activate_all()
 
@@ -389,6 +452,8 @@ class TestLazySubscriptionGroup:
         group = LazySubscriptionGroup(
             test_widget, [(EventType.WORKFLOW_SAVED, handler)]
         )
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -407,6 +472,8 @@ class TestLazySubscriptionGroup:
         group = LazySubscriptionGroup(
             test_widget, [(EventType.WORKFLOW_SAVED, handler)]
         )
+        for sub in group._subscriptions:
+            _track_subscription(sub)
 
         test_widget.show()
         qtbot.waitExposed(test_widget)
@@ -439,7 +506,9 @@ class TestLazySubscriptionWithDockWidget:
         def handler(event):
             received_events.append(event)
 
-        lazy_sub = LazySubscription(EventType.NODE_EXECUTION_STARTED, handler, dock)
+        lazy_sub = _track_subscription(
+            LazySubscription(EventType.NODE_EXECUTION_STARTED, handler, dock)
+        )
 
         assert not lazy_sub.active
 
@@ -461,6 +530,8 @@ class TestLazySubscriptionWithDockWidget:
         dock.hide()
         assert not lazy_sub.active
 
+        # Clean up to prevent event filter errors during teardown
+        lazy_sub.cleanup()
         dock.close()
 
 
@@ -485,7 +556,9 @@ class TestLazySubscriptionEventTypes:
         def handler(event):
             received.append(event)
 
-        lazy_sub = LazySubscription(event_type, handler, test_widget)
+        lazy_sub = _track_subscription(
+            LazySubscription(event_type, handler, test_widget)
+        )
 
         test_widget.show()
         qtbot.waitExposed(test_widget)

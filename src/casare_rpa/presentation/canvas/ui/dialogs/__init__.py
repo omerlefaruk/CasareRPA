@@ -13,6 +13,7 @@ from .template_browser_dialog import TemplateBrowserDialog
 # Trigger dialogs removed - triggers are now visual nodes
 from .schedule_dialog import ScheduleDialog, ScheduleManagerDialog
 from .update_dialog import UpdateDialog, UpdateNotificationWidget
+from .project_manager_dialog import ProjectManagerDialog
 
 __all__ = [
     "NodePropertiesDialog",
@@ -24,4 +25,5 @@ __all__ = [
     "ScheduleManagerDialog",
     "UpdateDialog",
     "UpdateNotificationWidget",
+    "ProjectManagerDialog",
 ]

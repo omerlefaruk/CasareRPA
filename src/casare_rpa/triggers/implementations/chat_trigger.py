@@ -6,7 +6,7 @@ Provides a generic webhook interface for chat platforms (Slack, Teams, Discord, 
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -102,7 +102,9 @@ class ChatTrigger(BaseTrigger):
             "sender_name": message_data.get("sender_name", ""),
             "channel_id": message_data.get("channel_id", ""),
             "channel_name": message_data.get("channel_name", ""),
-            "timestamp": message_data.get("timestamp", datetime.utcnow().isoformat()),
+            "timestamp": message_data.get(
+                "timestamp", datetime.now(timezone.utc).isoformat()
+            ),
             "platform": platform,
             "is_mention": message_data.get("is_mention", False),
             "raw_payload": raw_payload,
@@ -177,7 +179,9 @@ class ChatTrigger(BaseTrigger):
                 "channel_name": payload.get(
                     "channel_name", payload.get("room_name", "")
                 ),
-                "timestamp": payload.get("timestamp", datetime.utcnow().isoformat()),
+                "timestamp": payload.get(
+                    "timestamp", datetime.now(timezone.utc).isoformat()
+                ),
                 "is_bot": payload.get("is_bot", False),
                 "is_mention": payload.get("is_mention", False),
             }

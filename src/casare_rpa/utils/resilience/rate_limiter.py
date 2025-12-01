@@ -239,7 +239,8 @@ class SlidingWindowRateLimiter:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.max_wait_time = max_wait_time
-        self._requests: deque = deque()
+        # Use maxlen to prevent unbounded growth under extreme load
+        self._requests: deque = deque(maxlen=max_requests * 2)
         self._lock = asyncio.Lock()
         self._stats = RateLimitStats()
 
@@ -361,7 +362,13 @@ def rate_limited(requests_per_second: float = 10.0, burst_size: int = 1) -> Call
 
 
 # Global rate limiters for common use cases
-_global_limiters: Dict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = {}
+# Use OrderedDict for LRU-like eviction when max size reached
+from collections import OrderedDict
+
+_global_limiters: OrderedDict[str, Union[RateLimiter, SlidingWindowRateLimiter]] = (
+    OrderedDict()
+)
+_MAX_GLOBAL_LIMITERS = 100  # Prevent unbounded growth
 
 
 def get_rate_limiter(
@@ -378,11 +385,22 @@ def get_rate_limiter(
     Returns:
         RateLimiter instance
     """
-    if name not in _global_limiters:
-        config = RateLimitConfig(
-            requests_per_second=requests_per_second, burst_size=burst_size
+    if name in _global_limiters:
+        # Move to end (most recently used)
+        _global_limiters.move_to_end(name)
+        return _global_limiters[name]
+
+    # Evict oldest if at capacity
+    if len(_global_limiters) >= _MAX_GLOBAL_LIMITERS:
+        _global_limiters.popitem(last=False)
+        logger.debug(
+            f"Evicted oldest rate limiter (max {_MAX_GLOBAL_LIMITERS} reached)"
         )
-        _global_limiters[name] = RateLimiter(config)
+
+    config = RateLimitConfig(
+        requests_per_second=requests_per_second, burst_size=burst_size
+    )
+    _global_limiters[name] = RateLimiter(config)
     return _global_limiters[name]
 
 

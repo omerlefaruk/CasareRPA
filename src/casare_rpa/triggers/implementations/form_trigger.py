@@ -5,7 +5,7 @@ Trigger that fires when a form is submitted.
 This is a specialized webhook for handling form data.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -97,7 +97,7 @@ class FormTrigger(BaseTrigger):
         payload = {
             "form_id": config.get("form_id", self.config.id),
             "fields": form_data,
-            "submitted_at": datetime.utcnow().isoformat(),
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
             "submitter_ip": submitter_ip,
         }
 

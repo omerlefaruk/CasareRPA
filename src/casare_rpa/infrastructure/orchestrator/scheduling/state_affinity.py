@@ -11,7 +11,7 @@ Supports state tracking per robot and migration for soft affinity.
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional, Dict, List, Set, Any, Callable, Tuple
 from collections import defaultdict
@@ -55,8 +55,8 @@ class RobotState:
     robot_id: str
     workflow_id: str
     state_type: str  # "browser_session", "filesystem", "memory", "desktop_app"
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_accessed: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     size_bytes: int = 0
@@ -67,21 +67,21 @@ class RobotState:
         """Check if state has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     @property
     def age_seconds(self) -> float:
         """Get age of state in seconds."""
-        return (datetime.utcnow() - self.created_at).total_seconds()
+        return (datetime.now(timezone.utc) - self.created_at).total_seconds()
 
     @property
     def idle_seconds(self) -> float:
         """Get time since last access in seconds."""
-        return (datetime.utcnow() - self.last_accessed).total_seconds()
+        return (datetime.now(timezone.utc) - self.last_accessed).total_seconds()
 
     def touch(self) -> None:
         """Update last accessed timestamp."""
-        self.last_accessed = datetime.utcnow()
+        self.last_accessed = datetime.now(timezone.utc)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
@@ -111,20 +111,20 @@ class WorkflowSession:
     workflow_id: str
     robot_id: str
     chain_id: Optional[str]  # ID linking related workflow executions
-    started_at: datetime = field(default_factory=datetime.utcnow)
-    last_job_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    last_job_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     job_count: int = 0
     timeout_seconds: float = 3600.0  # Session expires after 1 hour of inactivity
 
     @property
     def is_expired(self) -> bool:
         """Check if session has timed out."""
-        idle_time = (datetime.utcnow() - self.last_job_at).total_seconds()
+        idle_time = (datetime.now(timezone.utc) - self.last_job_at).total_seconds()
         return idle_time > self.timeout_seconds
 
     def record_job(self) -> None:
         """Record that a job was executed in this session."""
-        self.last_job_at = datetime.utcnow()
+        self.last_job_at = datetime.now(timezone.utc)
         self.job_count += 1
 
 
@@ -252,7 +252,9 @@ class StateAffinityManager:
             Created RobotState instance
         """
         ttl = ttl_seconds if ttl_seconds is not None else self._default_state_ttl
-        expires_at = datetime.utcnow() + timedelta(seconds=ttl) if ttl > 0 else None
+        expires_at = (
+            datetime.now(timezone.utc) + timedelta(seconds=ttl) if ttl > 0 else None
+        )
 
         state = RobotState(
             robot_id=robot_id,

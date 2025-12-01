@@ -7,7 +7,7 @@ import os
 import asyncio
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -90,7 +90,7 @@ class WorkflowManagementService:
 
     async def save_workflow(self, workflow: Workflow) -> bool:
         """Save or update a workflow."""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         data = {
             "id": workflow.id,
             "name": workflow.name,
@@ -134,7 +134,7 @@ class WorkflowManagementService:
                 json_definition=json_content,
                 version=1,
                 status=WorkflowStatus.DRAFT,
-                created_at=datetime.utcnow().isoformat(),
+                created_at=datetime.now(timezone.utc).isoformat(),
             )
 
             if await self.save_workflow(workflow):

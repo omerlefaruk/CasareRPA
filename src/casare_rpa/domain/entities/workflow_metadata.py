@@ -30,12 +30,16 @@ class WorkflowMetadata:
         Initialize workflow metadata.
 
         Args:
-            name: Workflow name
+            name: Workflow name (required, non-empty)
             description: Workflow description
             author: Workflow creator
             version: Workflow version
             tags: List of tags for categorization
+
+        Raises:
+            ValueError: If name is empty or whitespace-only
         """
+        self._validate_name(name)
         self.name = name
         self.description = description
         self.author = author
@@ -44,6 +48,14 @@ class WorkflowMetadata:
         self.created_at = datetime.now().isoformat()
         self.modified_at = datetime.now().isoformat()
         self.schema_version = SCHEMA_VERSION
+
+    @staticmethod
+    def _validate_name(name: str) -> None:
+        """Validate workflow name."""
+        if not name or not name.strip():
+            raise ValueError("Workflow name cannot be empty or whitespace-only")
+        if len(name) > 255:
+            raise ValueError(f"Workflow name too long: {len(name)} chars (max 255)")
 
     def update_modified_timestamp(self) -> None:
         """Update the modified timestamp to current time."""

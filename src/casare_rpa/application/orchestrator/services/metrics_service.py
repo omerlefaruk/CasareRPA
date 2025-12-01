@@ -3,7 +3,7 @@ Metrics service.
 Calculates dashboard KPIs and job history for visualization.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 
 from loguru import logger
@@ -46,7 +46,7 @@ class MetricsService:
             metrics.robot_utilization = total_utilization / metrics.robots_total
 
         # Job metrics - time-based filtering
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - timedelta(days=7)
         month_start = today_start - timedelta(days=30)
@@ -126,7 +126,7 @@ class MetricsService:
         self, jobs: List[Job], days: int = 7
     ) -> List[JobHistoryEntry]:
         """Get job execution history for charting."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         history: Dict[str, JobHistoryEntry] = {}
 

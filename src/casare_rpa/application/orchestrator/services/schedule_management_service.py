@@ -5,7 +5,7 @@ Handles schedule CRUD operations and enable/disable toggling.
 
 import os
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from loguru import logger
@@ -85,7 +85,7 @@ class ScheduleManagementService:
 
     async def save_schedule(self, schedule: Schedule) -> bool:
         """Save or update a schedule."""
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         data = {
             "id": schedule.id,
             "name": schedule.name,

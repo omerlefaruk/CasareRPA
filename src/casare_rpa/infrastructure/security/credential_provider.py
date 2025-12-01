@@ -13,7 +13,7 @@ Design goals:
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
@@ -246,7 +246,7 @@ class VaultCredentialProvider:
         if cache_key in self._resolved_cache:
             cached = self._resolved_cache[cache_key]
             # Check if still valid
-            if not cached.expires_at or cached.expires_at > datetime.utcnow():
+            if not cached.expires_at or cached.expires_at > datetime.now(timezone.utc):
                 return cached
 
         # Fetch from vault
@@ -264,7 +264,7 @@ class VaultCredentialProvider:
             lease = CredentialLease(
                 lease_id=secret.metadata.lease_id,
                 path=vault_path,
-                expires_at=secret.metadata.expires_at or datetime.utcnow(),
+                expires_at=secret.metadata.expires_at or datetime.now(timezone.utc),
                 renewable=secret.metadata.renewable,
             )
             self._leases[vault_path] = lease
@@ -309,7 +309,7 @@ class VaultCredentialProvider:
             lease = CredentialLease(
                 lease_id=secret.metadata.lease_id,
                 path=full_path,
-                expires_at=secret.metadata.expires_at or datetime.utcnow(),
+                expires_at=secret.metadata.expires_at or datetime.now(timezone.utc),
                 renewable=secret.metadata.renewable,
             )
             self._leases[full_path] = lease
@@ -357,7 +357,7 @@ class VaultCredentialProvider:
 
     async def _check_leases(self) -> None:
         """Check all leases and renew if needed."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         to_remove: List[str] = []
 
         for path, lease in self._leases.items():
@@ -386,7 +386,9 @@ class VaultCredentialProvider:
         """Renew a credential lease."""
         try:
             new_duration = await self._client.renew_lease(lease.lease_id)
-            lease.expires_at = datetime.utcnow() + timedelta(seconds=new_duration)
+            lease.expires_at = datetime.now(timezone.utc) + timedelta(
+                seconds=new_duration
+            )
             logger.info(f"Renewed lease for {lease.path} (new TTL: {new_duration}s)")
         except Exception as e:
             logger.error(f"Failed to renew lease for {lease.path}: {e}")
@@ -439,7 +441,7 @@ class VaultCredentialProvider:
                 "expires_at": lease.expires_at.isoformat(),
                 "renewable": lease.renewable,
                 "time_remaining": (
-                    lease.expires_at - datetime.utcnow()
+                    lease.expires_at - datetime.now(timezone.utc)
                 ).total_seconds(),
             }
             for lease in self._leases.values()

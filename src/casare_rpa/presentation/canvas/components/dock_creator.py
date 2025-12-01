@@ -319,8 +319,18 @@ class DockCreator:
         return debug_panel
 
     def _find_view_menu(self):
-        """Find the View menu in the menu bar."""
+        """Get the View menu from MainWindow (stored reference)."""
         mw = self._main_window
+        # Use stored reference if available (more reliable than searching)
+        if hasattr(mw, "_view_menu") and mw._view_menu is not None:
+            try:
+                # Verify the menu is still valid by accessing a property
+                _ = mw._view_menu.title()
+                return mw._view_menu
+            except RuntimeError:
+                # Menu was deleted, fall through to search
+                pass
+        # Fallback: search menu bar
         for action in mw.menuBar().actions():
             if action.text() == "&View":
                 return action.menu()

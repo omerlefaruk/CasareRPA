@@ -7,7 +7,7 @@ All trigger implementations should inherit from BaseTrigger.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, Optional
 import asyncio
@@ -76,7 +76,7 @@ class TriggerEvent:
     trigger_type: TriggerType
     workflow_id: str
     scenario_id: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     payload: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
     priority: int = 1  # 0=LOW, 1=NORMAL, 2=HIGH, 3=CRITICAL
@@ -101,7 +101,7 @@ class TriggerEvent:
         if isinstance(timestamp, str):
             timestamp = datetime.fromisoformat(timestamp)
         elif timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
 
         return cls(
             trigger_id=data.get("trigger_id", ""),
@@ -156,7 +156,7 @@ class BaseTriggerConfig:
 
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(timezone.utc)
         if not self.id:
             self.id = f"trig_{uuid.uuid4().hex[:8]}"
 
@@ -337,7 +337,9 @@ class BaseTrigger(ABC):
         """
         # Check cooldown
         if self.config.cooldown_seconds > 0 and self.config.last_triggered:
-            elapsed = (datetime.utcnow() - self.config.last_triggered).total_seconds()
+            elapsed = (
+                datetime.now(timezone.utc) - self.config.last_triggered
+            ).total_seconds()
             if elapsed < self.config.cooldown_seconds:
                 logger.debug(
                     f"Trigger {self.config.name} in cooldown "
@@ -357,7 +359,7 @@ class BaseTrigger(ABC):
         )
 
         # Update tracking
-        self.config.last_triggered = datetime.utcnow()
+        self.config.last_triggered = datetime.now(timezone.utc)
         self.config.trigger_count += 1
 
         logger.info(f"Trigger fired: {self.config.name} ({self.trigger_type.value})")

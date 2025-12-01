@@ -63,12 +63,29 @@ def _validate_config_value(value: Any, path: str, depth: int = 0) -> Any:
             raise WorkflowValidationError(
                 f"Config value at '{path}' exceeds maximum length of {MAX_STRING_LENGTH}"
             )
-        # SECURITY: Check for potential code injection patterns
-        dangerous_patterns = ["__import__", "eval(", "exec(", "compile(", "os.system"]
+        # SECURITY: Check for potential code injection patterns - BLOCK, don't just log
+        dangerous_patterns = [
+            "__import__",
+            "eval(",
+            "exec(",
+            "compile(",
+            "os.system",
+            "subprocess.",
+            "open(",
+            "pickle.",
+            "marshal.",
+            "__builtins__",
+            "__globals__",
+        ]
+        value_lower = value.lower()
         for pattern in dangerous_patterns:
-            if pattern in value.lower():
-                logger.warning(
-                    f"Potentially dangerous pattern '{pattern}' found in config at '{path}'"
+            if pattern in value_lower:
+                logger.error(
+                    f"SECURITY: Blocked dangerous pattern '{pattern}' in config at '{path}'"
+                )
+                raise WorkflowValidationError(
+                    f"Security error: Potentially dangerous pattern '{pattern}' found in "
+                    f"config value at '{path}'. This workflow cannot be loaded for security reasons."
                 )
         return value
 
@@ -366,11 +383,6 @@ from casare_rpa.nodes.text_nodes import (
 # HTTP nodes
 from casare_rpa.nodes.http import (
     HttpRequestNode,
-    HttpGetNode,
-    HttpPostNode,
-    HttpPutNode,
-    HttpPatchNode,
-    HttpDeleteNode,
     SetHttpHeadersNode,
     HttpAuthNode,
     ParseJsonResponseNode,
@@ -682,11 +694,6 @@ NODE_TYPE_MAP = {
     "TextExtractNode": TextExtractNode,
     # HTTP nodes
     "HttpRequestNode": HttpRequestNode,
-    "HttpGetNode": HttpGetNode,
-    "HttpPostNode": HttpPostNode,
-    "HttpPutNode": HttpPutNode,
-    "HttpPatchNode": HttpPatchNode,
-    "HttpDeleteNode": HttpDeleteNode,
     "SetHttpHeadersNode": SetHttpHeadersNode,
     "HttpAuthNode": HttpAuthNode,
     "ParseJsonResponseNode": ParseJsonResponseNode,
@@ -899,16 +906,37 @@ def load_workflow_from_dict(
     # Only do this if we created __auto_start__
     if not has_start_node:
         connected_exec_ins = set()
+        trigger_output_targets = set()  # Nodes connected to trigger exec_out
+
         for conn in workflow.connections:
             if conn.target_port == "exec_in":
                 connected_exec_ins.add(conn.target_node)
+            # Track what trigger nodes connect to
+            source_node = nodes_dict.get(conn.source_node)
+            if (
+                source_node
+                and "Trigger" in source_node.node_type
+                and conn.source_port == "exec_out"
+            ):
+                trigger_output_targets.add(conn.target_node)
 
         # Auto-connect Start to entry points
         for node_id, node in nodes_dict.items():
             if node_id == "__auto_start__":
                 continue
-            # Check if node has exec_in port and it's not connected
-            if "exec_in" in node.input_ports and node_id not in connected_exec_ins:
+
+            # Skip trigger nodes - they're entry points themselves, not execution targets
+            if "Trigger" in node.node_type:
+                continue
+
+            # Connect Start to:
+            # 1. Nodes with unconnected exec_in, OR
+            # 2. Nodes that are targets of trigger exec_out (so workflow runs from trigger's target)
+            should_connect = (
+                "exec_in" in node.input_ports and node_id not in connected_exec_ins
+            ) or node_id in trigger_output_targets
+
+            if should_connect:
                 connection = NodeConnection(
                     source_node="__auto_start__",
                     source_port="exec_out",

@@ -7,7 +7,7 @@ Supports both one-time execution and trigger-based listening.
 
 import asyncio
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
 from loguru import logger
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from casare_rpa.presentation.events.event_bus import EventBus
     from casare_rpa.presentation.main_window import MainWindow
     from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
-    from casare_rpa.triggers.base import BaseTrigger
+    from casare_rpa.triggers.base import BaseTrigger, TriggerEvent
 
 
 class CanvasWorkflowRunner:
@@ -369,27 +369,17 @@ class CanvasWorkflowRunner:
         """
         nodes = workflow_data.get("nodes", {})
         for node_id, node_data in nodes.items():
-            # Check type_ field (NodeGraphQt serialization format)
-            # e.g., "casare_rpa.triggers.VisualScheduleTriggerNode"
-            type_field = node_data.get("type_", "")
-            if "Trigger" in type_field and type_field.endswith("Node"):
-                # Extract simple node type from full path
-                # "casare_rpa.triggers.VisualScheduleTriggerNode" -> "ScheduleTriggerNode"
-                simple_type = type_field.split(".")[-1]
-                # Remove "Visual" prefix if present
-                if simple_type.startswith("Visual"):
-                    simple_type = simple_type[6:]  # Remove "Visual"
+            # Check node_type field (WorkflowSerializer format)
+            # e.g., "ScheduleTriggerNode"
+            node_type = node_data.get("node_type", "")
+            if "Trigger" in node_type and node_type.endswith("Node"):
+                # Get config directly from node_data
+                config = node_data.get("config", {})
+                # Filter internal keys
+                config = {k: v for k, v in config.items() if not k.startswith("_")}
 
-                # Get config from custom properties
-                custom = node_data.get("custom", {})
-                config = {
-                    k: v
-                    for k, v in custom.items()
-                    if not k.startswith("_") and k not in ("node_id", "status")
-                }
-
-                logger.debug(f"Found trigger node: {simple_type} with config: {config}")
-                return (node_id, simple_type, config)
+                logger.debug(f"Found trigger node: {node_type} with config: {config}")
+                return (node_id, node_type, config)
         return None
 
     async def start_listening(self) -> bool:
@@ -538,19 +528,22 @@ class CanvasWorkflowRunner:
         trigger = trigger_class(config, event_callback=self._on_trigger_fire)
         return trigger
 
-    async def _on_trigger_fire(self, payload: Dict, metadata: Dict) -> None:
+    async def _on_trigger_fire(self, event: "TriggerEvent") -> None:
         """
         Callback when trigger fires.
 
         Executes the workflow with trigger payload as initial variables.
 
         Args:
-            payload: Trigger payload data
-            metadata: Trigger metadata
+            event: TriggerEvent containing payload and metadata
         """
         if not self._is_listening or not self._cached_workflow_data:
             logger.warning("Trigger fired but not in listening mode")
             return
+
+        # Extract payload and metadata from event
+        payload = event.payload
+        metadata = event.metadata
 
         self._trigger_run_count += 1
         logger.info(f"Trigger fired (run #{self._trigger_run_count}): {metadata}")
@@ -582,7 +575,7 @@ class CanvasWorkflowRunner:
             initial_vars.update(payload)
             initial_vars["_trigger_metadata"] = metadata
             initial_vars["_trigger_run_number"] = self._trigger_run_count
-            initial_vars["_trigger_timestamp"] = datetime.utcnow().isoformat()
+            initial_vars["_trigger_timestamp"] = datetime.now(timezone.utc).isoformat()
 
             # Execute workflow
             settings = ExecutionSettings(

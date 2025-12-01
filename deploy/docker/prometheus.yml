@@ -1,0 +1,60 @@
+# Prometheus Configuration for CasareRPA
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'casare-rpa'
+    env: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - alertmanager:9093
+
+# Rule files (optional)
+# rule_files:
+#   - "alerts/*.yml"
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # CasareRPA Orchestrator API
+  - job_name: 'casare-orchestrator'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['orchestrator:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(:\d+)?'
+        replacement: '${1}'
+
+  # Browser Robot Pool (Docker Compose)
+  - job_name: 'casare-browser-robots'
+    static_configs:
+      - targets: ['browser-robot:8080']
+    # For Kubernetes, use service discovery:
+    # kubernetes_sd_configs:
+    #   - role: pod
+    #     namespaces:
+    #       names:
+    #         - casare-rpa
+    # relabel_configs:
+    #   - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+    #     regex: casare-browser-robot
+    #     action: keep
+
+  # PostgreSQL (using postgres_exporter - optional)
+  # - job_name: 'postgresql'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Redis (using redis_exporter - optional)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']

@@ -6,7 +6,7 @@ routes events to job creation, and handles HTTP server for webhooks.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 import uuid
 
@@ -59,6 +59,7 @@ class TriggerManager:
         self,
         on_trigger_event: Optional[JobCreatorCallback] = None,
         http_port: int = 8766,
+        http_host: str = "127.0.0.1",
     ) -> None:
         """
         Initialize the trigger manager.
@@ -66,9 +67,12 @@ class TriggerManager:
         Args:
             on_trigger_event: Callback invoked when a trigger fires
             http_port: Port for webhook HTTP server
+            http_host: Host to bind HTTP server to (default: 127.0.0.1 for security).
+                       Use "0.0.0.0" to accept connections from any interface (less secure).
         """
         self._on_trigger_event = on_trigger_event
         self._http_port = http_port
+        self._http_host = http_host
 
         # Trigger storage
         self._triggers: Dict[str, BaseTrigger] = {}
@@ -151,11 +155,20 @@ class TriggerManager:
 
             runner = web.AppRunner(self._http_app)
             await runner.setup()
-            site = web.TCPSite(runner, "0.0.0.0", self._http_port)
+            # SECURITY: Bind to configured host (default: localhost only)
+            # Use 0.0.0.0 only if external access is explicitly required
+            site = web.TCPSite(runner, self._http_host, self._http_port)
             await site.start()
             self._http_server = runner
 
-            logger.info(f"Webhook HTTP server started on port {self._http_port}")
+            if self._http_host == "0.0.0.0":
+                logger.warning(
+                    f"Webhook HTTP server bound to ALL interfaces (0.0.0.0:{self._http_port}). "
+                    "This exposes the server to the network. Use 127.0.0.1 for local-only access."
+                )
+            logger.info(
+                f"Webhook HTTP server started on {self._http_host}:{self._http_port}"
+            )
 
         except ImportError:
             logger.warning("aiohttp not installed - webhook triggers disabled")
@@ -194,6 +207,7 @@ class TriggerManager:
     async def _process_webhook(self, request, trigger_id: str) -> Any:
         """Process a webhook request for a trigger."""
         from aiohttp import web
+        from .webhook_auth import verify_webhook_auth
 
         trigger = self._triggers.get(trigger_id)
         if not trigger:
@@ -205,21 +219,25 @@ class TriggerManager:
         # Get trigger config
         config = trigger.config.config
 
-        # Validate secret if configured
-        secret = config.get("secret")
-        if secret:
-            header_secret = request.headers.get("X-Webhook-Secret", "")
-            auth_header = request.headers.get("Authorization", "")
+        # Read raw body for HMAC verification
+        body = await request.read()
 
-            if header_secret != secret and not auth_header.endswith(secret):
-                return web.json_response(
-                    {"error": "Invalid authentication"}, status=401
-                )
+        # Verify authentication (supports api_key, bearer, hmac_sha256, etc.)
+        is_valid, auth_error = verify_webhook_auth(config, dict(request.headers), body)
+        if not is_valid:
+            logger.warning(
+                f"Webhook auth failed for trigger {trigger_id}: {auth_error}"
+            )
+            return web.json_response(
+                {"error": auth_error or "Authentication failed"}, status=401
+            )
 
-        # Parse payload
+        # Parse payload from already-read body
         try:
-            if request.body_exists:
-                payload = await request.json()
+            if body:
+                import json
+
+                payload = json.loads(body)
             else:
                 payload = {}
         except Exception:
@@ -242,7 +260,7 @@ class TriggerManager:
                 {
                     "status": "accepted",
                     "trigger_id": trigger_id,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
             )
         else:
@@ -487,7 +505,10 @@ class TriggerManager:
             logger.warning(f"Cannot fire disabled trigger: {trigger_id}")
             return None
 
-        metadata = {"source": "manual", "fired_at": datetime.utcnow().isoformat()}
+        metadata = {
+            "source": "manual",
+            "fired_at": datetime.now(timezone.utc).isoformat(),
+        }
         success = await trigger.emit(payload or {}, metadata)
 
         if success:

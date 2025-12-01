@@ -343,6 +343,11 @@ class ExecutionContext:
         Clean up resources (close browser, pages, browser contexts, desktop context, etc.).
         Should be called when execution completes or fails.
         """
+        # Check if browser should be kept open
+        skip_browser_close = self.get_variable("_browser_do_not_close", False)
+        if skip_browser_close:
+            logger.info("Skipping browser cleanup - 'do_not_close' flag is set")
+
         # Clean up desktop context first (COM objects should be released early)
         if self.desktop_context is not None:
             try:
@@ -358,7 +363,7 @@ class ExecutionContext:
                 self.desktop_context = None
 
         # Clean up Playwright resources (infrastructure)
-        await self._resources.cleanup()
+        await self._resources.cleanup(skip_browser=skip_browser_close)
 
     def __repr__(self) -> str:
         """String representation."""

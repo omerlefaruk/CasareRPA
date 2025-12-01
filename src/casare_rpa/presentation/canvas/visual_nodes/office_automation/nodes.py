@@ -24,7 +24,7 @@ class VisualExcelOpenNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("workbook", DataType.OBJECT)
+        self.add_typed_output("workbook", DataType.WORKBOOK)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
@@ -45,7 +45,7 @@ class VisualExcelReadCellNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("workbook", DataType.WORKBOOK)
         self.add_typed_input("cell_address", DataType.STRING)
         self.add_typed_input("sheet_name", DataType.STRING)
         self.add_exec_output("exec_out")
@@ -71,7 +71,7 @@ class VisualExcelWriteCellNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("workbook", DataType.WORKBOOK)
         self.add_typed_input("cell_address", DataType.STRING)
         self.add_typed_input("value", DataType.STRING)
         self.add_typed_input("sheet_name", DataType.STRING)
@@ -98,7 +98,7 @@ class VisualExcelGetRangeNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("workbook", DataType.WORKBOOK)
         self.add_typed_input("range_address", DataType.STRING)
         self.add_typed_input("sheet_name", DataType.STRING)
         self.add_exec_output("exec_out")
@@ -122,7 +122,7 @@ class VisualExcelCloseNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("workbook", DataType.OBJECT)
+        self.add_typed_input("workbook", DataType.WORKBOOK)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
 
@@ -147,7 +147,7 @@ class VisualWordOpenNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("document", DataType.OBJECT)
+        self.add_typed_output("document", DataType.DOCUMENT)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
@@ -162,7 +162,7 @@ class VisualWordGetTextNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("document", DataType.OBJECT)
+        self.add_typed_input("document", DataType.DOCUMENT)
         self.add_exec_output("exec_out")
         self.add_typed_output("text", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
@@ -187,7 +187,7 @@ class VisualWordReplaceTextNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("document", DataType.OBJECT)
+        self.add_typed_input("document", DataType.DOCUMENT)
         self.add_typed_input("find_text", DataType.STRING)
         self.add_typed_input("replace_text", DataType.STRING)
         self.add_exec_output("exec_out")
@@ -211,7 +211,7 @@ class VisualWordCloseNode(VisualNode):
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
-        self.add_typed_input("document", DataType.OBJECT)
+        self.add_typed_input("document", DataType.DOCUMENT)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
 

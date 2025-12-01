@@ -83,22 +83,27 @@ class ToolbarBuilder:
         toolbar.setFloatable(False)
         toolbar.setStyleSheet(self.TOOLBAR_STYLE)
 
-        # === Execution Controls (3 buttons) ===
+        # === Execution Controls ===
         toolbar.addAction(mw.action_run)
         toolbar.addAction(mw.action_pause)
         toolbar.addAction(mw.action_stop)
 
         toolbar.addSeparator()
 
-        # === Automation Tools (3 buttons) ===
-        toolbar.addAction(mw.action_record_workflow)
-        toolbar.addAction(mw.action_pick_selector)
-        toolbar.addAction(mw.action_validate)
+        # === Trigger Controls ===
+        toolbar.addAction(mw.action_start_listening)
+        toolbar.addAction(mw.action_stop_listening)
 
         toolbar.addSeparator()
 
-        # === Layout Tools ===
-        toolbar.addAction(mw.action_save_layout)
+        # === Automation Tools ===
+        toolbar.addAction(mw.action_record_workflow)
+        toolbar.addAction(mw.action_pick_selector)
+
+        toolbar.addSeparator()
+
+        # === Project Management ===
+        toolbar.addAction(mw.action_project_manager)
 
         mw.addToolBar(toolbar)
         mw._main_toolbar = toolbar

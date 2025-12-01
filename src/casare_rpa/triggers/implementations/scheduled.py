@@ -6,7 +6,7 @@ Uses APScheduler for scheduling.
 """
 
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -51,6 +51,15 @@ class ScheduledTrigger(BaseTrigger):
         self._job = None
         self._task: Optional[asyncio.Task] = None
 
+    def _to_int(self, value: Any, default: int) -> int:
+        """Convert value to int, handling string inputs from UI widgets."""
+        if value is None:
+            return default
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+
     async def start(self) -> bool:
         """Start the scheduled trigger."""
         try:
@@ -74,34 +83,36 @@ class ScheduledTrigger(BaseTrigger):
                     trigger = DateTrigger(run_date=run_at, timezone=timezone)
                 else:
                     # Schedule for next available time
-                    hour = config.get("time_hour", 9)
-                    minute = config.get("time_minute", 0)
+                    hour = self._to_int(config.get("time_hour"), 9)
+                    minute = self._to_int(config.get("time_minute"), 0)
                     run_at = datetime.now().replace(hour=hour, minute=minute, second=0)
                     if run_at < datetime.now():
                         run_at += timedelta(days=1)
                     trigger = DateTrigger(run_date=run_at, timezone=timezone)
 
             elif frequency == "hourly":
-                minute = config.get("time_minute", 0)
+                minute = self._to_int(config.get("time_minute"), 0)
                 trigger = CronTrigger(minute=minute, timezone=timezone)
 
             elif frequency == "daily":
-                hour = config.get("time_hour", 9)
-                minute = config.get("time_minute", 0)
+                hour = self._to_int(config.get("time_hour"), 9)
+                minute = self._to_int(config.get("time_minute"), 0)
                 trigger = CronTrigger(hour=hour, minute=minute, timezone=timezone)
 
             elif frequency == "weekly":
-                hour = config.get("time_hour", 9)
-                minute = config.get("time_minute", 0)
-                day_of_week = config.get("day_of_week", 0)  # 0=Monday
+                hour = self._to_int(config.get("time_hour"), 9)
+                minute = self._to_int(config.get("time_minute"), 0)
+                day_of_week = config.get(
+                    "day_of_week", "mon"
+                )  # APScheduler accepts string
                 trigger = CronTrigger(
                     day_of_week=day_of_week, hour=hour, minute=minute, timezone=timezone
                 )
 
             elif frequency == "monthly":
-                hour = config.get("time_hour", 9)
-                minute = config.get("time_minute", 0)
-                day = config.get("day_of_month", 1)
+                hour = self._to_int(config.get("time_hour"), 9)
+                minute = self._to_int(config.get("time_minute"), 0)
+                day = self._to_int(config.get("day_of_month"), 1)
                 trigger = CronTrigger(
                     day=day, hour=hour, minute=minute, timezone=timezone
                 )
@@ -112,7 +123,7 @@ class ScheduledTrigger(BaseTrigger):
 
             elif frequency == "interval":
                 # Interval-based scheduling (every N seconds)
-                interval_seconds = config.get("interval_seconds", 60)
+                interval_seconds = self._to_int(config.get("interval_seconds"), 60)
                 trigger = IntervalTrigger(seconds=interval_seconds, timezone=timezone)
 
             else:
@@ -168,7 +179,7 @@ class ScheduledTrigger(BaseTrigger):
     async def _on_schedule(self) -> None:
         """Called when schedule fires."""
         # Check max_runs limit
-        max_runs = self.config.config.get("max_runs", 0)
+        max_runs = self._to_int(self.config.config.get("max_runs"), 0)
         if max_runs > 0 and self.config.trigger_count >= max_runs:
             logger.info(
                 f"Trigger {self.config.name} reached max_runs ({max_runs}), stopping"
@@ -177,7 +188,7 @@ class ScheduledTrigger(BaseTrigger):
             return
 
         payload = {
-            "scheduled_time": datetime.utcnow().isoformat(),
+            "scheduled_time": datetime.now(timezone.utc).isoformat(),
             "trigger_name": self.config.name,
             "frequency": self.config.config.get("frequency", "daily"),
             "run_number": self.config.trigger_count + 1,

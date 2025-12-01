@@ -8,11 +8,11 @@ import hashlib
 import hmac
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List, Callable, Set
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from loguru import logger
 
@@ -355,7 +355,7 @@ class ErrorRecoveryManager:
     ):
         """Record a recovery action."""
         action = RecoveryAction(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             error_type=error_type,
             strategy=strategy,
             success=success,
@@ -551,7 +551,7 @@ class HealthMonitor:
             metrics = HealthMetrics(robot_id=robot_id)
             self._robot_metrics[robot_id] = metrics
 
-        metrics.last_heartbeat = datetime.utcnow()
+        metrics.last_heartbeat = datetime.now(timezone.utc)
         metrics.cpu_percent = cpu_percent
         metrics.memory_percent = memory_percent
         metrics.disk_percent = disk_percent
@@ -586,7 +586,7 @@ class HealthMonitor:
             return HealthStatus.UNKNOWN
 
         # Check heartbeat timeout
-        elapsed = (datetime.utcnow() - metrics.last_heartbeat).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - metrics.last_heartbeat).total_seconds()
         if elapsed > self._thresholds.heartbeat_timeout:
             return HealthStatus.UNHEALTHY
 
@@ -651,7 +651,7 @@ class HealthMonitor:
 
     async def _check_all_robots(self):
         """Check health of all robots."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for robot_id, metrics in self._robot_metrics.items():
             if not metrics.last_heartbeat:
@@ -750,7 +750,7 @@ class AuthToken:
         """Check if token is expired."""
         if not self.expires_at:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
 
 class SecurityManager:
@@ -787,8 +787,9 @@ class SecurityManager:
         # Token storage
         self._tokens: Dict[str, AuthToken] = {}
 
-        # Rate limiting
-        self._request_counts: Dict[str, List[float]] = defaultdict(list)
+        # Rate limiting - use deque with maxlen to bound memory
+        self._request_counts: Dict[str, deque] = {}
+        self._max_tracked_requests = rate_limit_requests * 2  # Allow some headroom
 
         logger.info("SecurityManager initialized")
 
@@ -808,7 +809,7 @@ class SecurityManager:
             Generated token
         """
         token_str = secrets.token_urlsafe(32)
-        expires_at = datetime.utcnow() + self._token_ttl
+        expires_at = datetime.now(timezone.utc) + self._token_ttl
 
         token = AuthToken(
             token=token_str,
@@ -921,16 +922,22 @@ class SecurityManager:
         now = time.time()
         window_start = now - self._rate_limit_window
 
-        # Clean old entries
-        self._request_counts[identifier] = [
-            ts for ts in self._request_counts[identifier] if ts > window_start
-        ]
+        # Create bounded deque for new identifiers
+        if identifier not in self._request_counts:
+            self._request_counts[identifier] = deque(maxlen=self._max_tracked_requests)
+
+        # Clean old entries from front
+        while (
+            self._request_counts[identifier]
+            and self._request_counts[identifier][0] < window_start
+        ):
+            self._request_counts[identifier].popleft()
 
         # Check limit
         if len(self._request_counts[identifier]) >= self._rate_limit_requests:
             return False
 
-        # Record request
+        # Record request (deque maxlen auto-evicts oldest if full)
         self._request_counts[identifier].append(now)
         return True
 
@@ -959,9 +966,31 @@ class SecurityManager:
 
         return len(expired)
 
+    def cleanup_stale_rate_limits(self) -> int:
+        """
+        Clean up stale rate limit entries (identifiers with no recent requests).
+
+        Returns:
+            Number of identifiers removed
+        """
+        now = time.time()
+        window_start = now - self._rate_limit_window
+
+        # Find identifiers with no requests in current window
+        stale = [
+            identifier
+            for identifier, timestamps in self._request_counts.items()
+            if not timestamps or timestamps[-1] < window_start
+        ]
+
+        for identifier in stale:
+            del self._request_counts[identifier]
+
+        return len(stale)
+
     def get_statistics(self) -> Dict[str, Any]:
         """Get security statistics."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         active_tokens = sum(1 for t in self._tokens.values() if not t.is_expired)
         expired_tokens = sum(1 for t in self._tokens.values() if t.is_expired)

@@ -4,7 +4,7 @@ Handles robot connections and message routing.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Set, Callable, Any, List
 import json
 
@@ -42,8 +42,8 @@ class RobotConnection:
         self.environment = environment
         self.max_concurrent_jobs = max_concurrent_jobs
         self.tags = tags or []
-        self.connected_at = datetime.utcnow()
-        self.last_heartbeat = datetime.utcnow()
+        self.connected_at = datetime.now(timezone.utc)
+        self.last_heartbeat = datetime.now(timezone.utc)
         self.current_jobs: Set[str] = set()
         self.status = RobotStatus.ONLINE
         self.cpu_percent = 0.0
@@ -67,7 +67,7 @@ class RobotConnection:
             environment=self.environment,
             max_concurrent_jobs=self.max_concurrent_jobs,
             current_jobs=len(self.current_jobs),
-            last_seen=datetime.utcnow(),
+            last_seen=datetime.now(timezone.utc),
             last_heartbeat=self.last_heartbeat,
             tags=self.tags,
         )
@@ -318,7 +318,7 @@ class OrchestratorServer:
         conn = self._connections.get(robot_id)
 
         if conn:
-            conn.last_heartbeat = datetime.utcnow()
+            conn.last_heartbeat = datetime.now(timezone.utc)
             conn.status = RobotStatus(msg.payload.get("status", "online"))
             conn.cpu_percent = msg.payload.get("cpu_percent", 0.0)
             conn.memory_percent = msg.payload.get("memory_percent", 0.0)
@@ -556,7 +556,7 @@ class OrchestratorServer:
 
     async def _check_robot_health(self):
         """Check health of all connected robots."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         stale_robots = []
 
         for robot_id, conn in self._connections.items():

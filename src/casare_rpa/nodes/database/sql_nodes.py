@@ -65,6 +65,7 @@ class DatabaseConnection:
     Wrapper class for database connections.
 
     Provides a unified interface for different database types.
+    Supports both single connections and connection pools.
     """
 
     def __init__(
@@ -73,18 +74,47 @@ class DatabaseConnection:
         connection: Any,
         connection_string: str = "",
         in_transaction: bool = False,
+        is_pool: bool = False,
+        pool: Any = None,
     ) -> None:
         self.db_type = db_type
-        self.connection = connection
+        self.connection = (
+            connection  # Single connection or acquired connection from pool
+        )
         self.connection_string = connection_string
         self.in_transaction = in_transaction
         self.cursor: Optional[Any] = None
         self.last_results: List[Dict[str, Any]] = []
         self.last_rowcount: int = 0
         self.last_lastrowid: Optional[int] = None
+        self._is_pool = is_pool
+        self._pool = pool  # Connection pool (asyncpg.Pool or aiomysql.Pool)
+        self._acquired_conn: Optional[Any] = (
+            None  # Currently acquired connection from pool
+        )
+        self._transaction: Optional[Any] = None  # Active transaction (for asyncpg)
+
+    async def acquire(self) -> Any:
+        """
+        Acquire a connection from pool or return existing connection.
+
+        Returns:
+            Database connection ready for use
+        """
+        if self._is_pool and self._pool is not None:
+            if self._acquired_conn is None:
+                self._acquired_conn = await self._pool.acquire()
+            return self._acquired_conn
+        return self.connection
+
+    async def release(self) -> None:
+        """Release acquired connection back to pool."""
+        if self._is_pool and self._pool is not None and self._acquired_conn is not None:
+            await self._pool.release(self._acquired_conn)
+            self._acquired_conn = None
 
     async def close(self) -> None:
-        """Close the database connection."""
+        """Close the database connection or pool."""
         if self.cursor:
             if hasattr(self.cursor, "close"):
                 if asyncio.iscoroutinefunction(self.cursor.close):
@@ -93,7 +123,16 @@ class DatabaseConnection:
                     self.cursor.close()
             self.cursor = None
 
-        if self.connection:
+        # Release any acquired connection first
+        await self.release()
+
+        # Close pool or single connection
+        if self._is_pool and self._pool is not None:
+            self._pool.close()
+            if hasattr(self._pool, "wait_closed"):
+                await self._pool.wait_closed()
+            self._pool = None
+        elif self.connection:
             if hasattr(self.connection, "close"):
                 if asyncio.iscoroutinefunction(self.connection.close):
                     await self.connection.close()
@@ -282,6 +321,7 @@ class DatabaseConnectNode(BaseNode):
             username = self.get_parameter("username", "")
             password = self.get_parameter("password", "")
             connection_string = self.get_parameter("connection_string", "")
+            pool_size = self.get_parameter("pool_size", 5)
             retry_count = self.get_parameter("retry_count", 0)
             retry_interval = self.get_parameter("retry_interval", 2000)
 
@@ -312,11 +352,17 @@ class DatabaseConnectNode(BaseNode):
                         connection = await self._connect_sqlite(database)
                     elif db_type == "postgresql":
                         connection = await self._connect_postgresql(
-                            host, port, database, username, password, connection_string
+                            host,
+                            port,
+                            database,
+                            username,
+                            password,
+                            connection_string,
+                            pool_size,
                         )
                     elif db_type == "mysql":
                         connection = await self._connect_mysql(
-                            host, port, database, username, password
+                            host, port, database, username, password, pool_size
                         )
                     else:
                         raise ValueError(f"Unsupported database type: {db_type}")
@@ -380,42 +426,78 @@ class DatabaseConnectNode(BaseNode):
         username: str,
         password: str,
         connection_string: str,
+        pool_size: int = 5,
     ) -> DatabaseConnection:
-        """Connect to PostgreSQL database."""
+        """Connect to PostgreSQL database using connection pool."""
         if not ASYNCPG_AVAILABLE:
             raise ImportError(
                 "asyncpg is required for PostgreSQL support. Install with: pip install asyncpg"
             )
 
+        conn_str = f"postgresql://{host}:{port}/{database}"
+
         if connection_string:
-            conn = await asyncpg.connect(connection_string)
+            pool = await asyncpg.create_pool(
+                connection_string,
+                min_size=1,
+                max_size=pool_size,
+            )
         else:
-            conn = await asyncpg.connect(
+            pool = await asyncpg.create_pool(
                 host=host,
                 port=int(port),
                 database=database,
                 user=username,
                 password=password,
+                min_size=1,
+                max_size=pool_size,
             )
 
+        logger.debug(f"PostgreSQL connection pool created with max_size={pool_size}")
+
         return DatabaseConnection(
-            "postgresql", conn, f"postgresql://{host}:{port}/{database}"
+            "postgresql",
+            connection=None,  # No single connection, use pool
+            connection_string=conn_str,
+            is_pool=True,
+            pool=pool,
         )
 
     async def _connect_mysql(
-        self, host: str, port: int, database: str, username: str, password: str
+        self,
+        host: str,
+        port: int,
+        database: str,
+        username: str,
+        password: str,
+        pool_size: int = 5,
     ) -> DatabaseConnection:
-        """Connect to MySQL database."""
+        """Connect to MySQL database using connection pool."""
         if not AIOMYSQL_AVAILABLE:
             raise ImportError(
                 "aiomysql is required for MySQL support. Install with: pip install aiomysql"
             )
 
-        conn = await aiomysql.connect(
-            host=host, port=int(port), db=database, user=username, password=password
+        pool = await aiomysql.create_pool(
+            host=host,
+            port=int(port),
+            db=database,
+            user=username,
+            password=password,
+            minsize=1,
+            maxsize=pool_size,
         )
 
-        return DatabaseConnection("mysql", conn, f"mysql://{host}:{port}/{database}")
+        conn_str = f"mysql://{host}:{port}/{database}"
+        logger.debug(f"MySQL connection pool created with maxsize={pool_size}")
+
+        return DatabaseConnection(
+            "mysql",
+            connection=None,  # No single connection, use pool
+            connection_string=conn_str,
+            is_pool=True,
+            pool=pool,
+        )
 
 
 @executable_node
@@ -609,39 +691,47 @@ class ExecuteQueryNode(BaseNode):
     async def _execute_postgresql(
         self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Execute query on PostgreSQL."""
-        conn = connection.connection
+        """Execute query on PostgreSQL using connection pool."""
+        conn = await connection.acquire()
 
-        # asyncpg uses $1, $2 for parameters
-        rows = (
-            await conn.fetch(query, *parameters)
-            if parameters
-            else await conn.fetch(query)
-        )
+        try:
+            # asyncpg uses $1, $2 for parameters
+            rows = (
+                await conn.fetch(query, *parameters)
+                if parameters
+                else await conn.fetch(query)
+            )
 
-        if rows:
-            columns = list(rows[0].keys())
-            results = [dict(row) for row in rows]
-        else:
-            columns = []
-            results = []
+            if rows:
+                columns = list(rows[0].keys())
+                results = [dict(row) for row in rows]
+            else:
+                columns = []
+                results = []
 
-        return results, columns
+            return results, columns
+        finally:
+            await connection.release()
 
     async def _execute_mysql(
         self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[List[Dict[str, Any]], List[str]]:
-        """Execute query on MySQL."""
-        conn = connection.connection
+        """Execute query on MySQL using connection pool."""
+        conn = await connection.acquire()
 
-        async with conn.cursor(aiomysql.DictCursor) as cursor:
-            await cursor.execute(query, parameters or [])
-            rows = await cursor.fetchall()
-            columns = (
-                [desc[0] for desc in cursor.description] if cursor.description else []
-            )
+        try:
+            async with conn.cursor(aiomysql.DictCursor) as cursor:
+                await cursor.execute(query, parameters or [])
+                rows = await cursor.fetchall()
+                columns = (
+                    [desc[0] for desc in cursor.description]
+                    if cursor.description
+                    else []
+                )
 
-        return list(rows), columns
+            return list(rows), columns
+        finally:
+            await connection.release()
 
 
 @executable_node
@@ -831,42 +921,50 @@ class ExecuteNonQueryNode(BaseNode):
     async def _execute_postgresql(
         self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[int, Optional[int]]:
-        """Execute non-query on PostgreSQL."""
-        conn = connection.connection
+        """Execute non-query on PostgreSQL using connection pool."""
+        conn = await connection.acquire()
 
-        # asyncpg returns status string like "INSERT 0 1" or "UPDATE 5"
-        result = (
-            await conn.execute(query, *parameters)
-            if parameters
-            else await conn.execute(query)
-        )
+        try:
+            # asyncpg returns status string like "INSERT 0 1" or "UPDATE 5"
+            result = (
+                await conn.execute(query, *parameters)
+                if parameters
+                else await conn.execute(query)
+            )
 
-        # Parse rows affected from result
-        rows_affected = 0
-        if result:
-            parts = result.split()
-            if len(parts) >= 2:
-                try:
-                    rows_affected = int(parts[-1])
-                except ValueError:
-                    pass
+            # Parse rows affected from result
+            rows_affected = 0
+            if result:
+                parts = result.split()
+                if len(parts) >= 2:
+                    try:
+                        rows_affected = int(parts[-1])
+                    except ValueError:
+                        pass
 
-        return rows_affected, None
+            return rows_affected, None
+        finally:
+            if not connection.in_transaction:
+                await connection.release()
 
     async def _execute_mysql(
         self, connection: DatabaseConnection, query: str, parameters: List[Any]
     ) -> Tuple[int, Optional[int]]:
-        """Execute non-query on MySQL."""
-        conn = connection.connection
+        """Execute non-query on MySQL using connection pool."""
+        conn = await connection.acquire()
 
-        async with conn.cursor() as cursor:
-            await cursor.execute(query, parameters or [])
+        try:
+            async with conn.cursor() as cursor:
+                await cursor.execute(query, parameters or [])
+                if not connection.in_transaction:
+                    await conn.commit()
+                rows_affected = cursor.rowcount
+                last_insert_id = cursor.lastrowid
+
+            return rows_affected, last_insert_id
+        finally:
             if not connection.in_transaction:
-                await conn.commit()
-            rows_affected = cursor.rowcount
-            last_insert_id = cursor.lastrowid
-
-        return rows_affected, last_insert_id
+                await connection.release()
 
 
 @executable_node
@@ -915,10 +1013,14 @@ class BeginTransactionNode(BaseNode):
                 # SQLite auto-starts transaction on first statement
                 pass
             elif connection.db_type == "postgresql":
-                # PostgreSQL transaction managed via connection
-                connection.connection = await connection.connection.transaction()
+                # Acquire connection from pool and hold it for transaction
+                conn = await connection.acquire()
+                # Start transaction on acquired connection
+                connection._transaction = conn.transaction()
+                await connection._transaction.start()
             elif connection.db_type == "mysql":
-                await connection.connection.begin()
+                conn = await connection.acquire()
+                await conn.begin()
 
             connection.in_transaction = True
 
@@ -991,10 +1093,15 @@ class CommitTransactionNode(BaseNode):
                 else:
                     conn.commit()
             elif connection.db_type == "postgresql":
-                # asyncpg transaction commit
-                pass  # Transaction context manager handles this
+                # Commit asyncpg transaction and release connection
+                if connection._transaction:
+                    await connection._transaction.commit()
+                    connection._transaction = None
+                await connection.release()
             elif connection.db_type == "mysql":
-                await connection.connection.commit()
+                conn = await connection.acquire()
+                await conn.commit()
+                await connection.release()
 
             connection.in_transaction = False
 
@@ -1067,10 +1174,15 @@ class RollbackTransactionNode(BaseNode):
                 else:
                     conn.rollback()
             elif connection.db_type == "postgresql":
-                # asyncpg transaction rollback
-                pass  # Transaction context manager handles this
+                # Rollback asyncpg transaction and release connection
+                if connection._transaction:
+                    await connection._transaction.rollback()
+                    connection._transaction = None
+                await connection.release()
             elif connection.db_type == "mysql":
-                await connection.connection.rollback()
+                conn = await connection.acquire()
+                await conn.rollback()
+                await connection.release()
 
             connection.in_transaction = False
 
@@ -1249,82 +1361,92 @@ class ExecuteBatchNode(BaseNode):
             total_rows = 0
             errors: List[str] = []
 
-            for i, stmt in enumerate(statements):
-                # Per-statement retry logic
-                stmt_attempts = 0
-                stmt_max_attempts = retry_count + 1
-                stmt_success = False
+            # Acquire connection for batch (hold for entire batch)
+            pool_conn = None
+            if connection.db_type in ("postgresql", "mysql"):
+                pool_conn = await connection.acquire()
 
-                while stmt_attempts < stmt_max_attempts and not stmt_success:
-                    try:
-                        stmt_attempts += 1
-                        if stmt_attempts > 1:
-                            logger.info(
-                                f"Retry attempt {stmt_attempts - 1}/{retry_count} for statement {i}"
-                            )
+            try:
+                for i, stmt in enumerate(statements):
+                    # Per-statement retry logic
+                    stmt_attempts = 0
+                    stmt_max_attempts = retry_count + 1
+                    stmt_success = False
 
-                        rows = 0
-                        if connection.db_type == "sqlite":
-                            conn = connection.connection
-                            if AIOSQLITE_AVAILABLE:
-                                cursor = await conn.execute(stmt)
-                                rows = cursor.rowcount
-                            else:
-                                cursor = conn.execute(stmt)
-                                rows = cursor.rowcount
-                        elif connection.db_type == "postgresql":
-                            result = await connection.connection.execute(stmt)
-                            rows = int(result.split()[-1]) if result else 0
-                        elif connection.db_type == "mysql":
-                            async with connection.connection.cursor() as cursor:
-                                await cursor.execute(stmt)
-                                rows = cursor.rowcount
+                    while stmt_attempts < stmt_max_attempts and not stmt_success:
+                        try:
+                            stmt_attempts += 1
+                            if stmt_attempts > 1:
+                                logger.info(
+                                    f"Retry attempt {stmt_attempts - 1}/{retry_count} for statement {i}"
+                                )
 
-                        results.append(
-                            {
-                                "statement": i,
-                                "rows_affected": rows,
-                                "success": True,
-                                "attempts": stmt_attempts,
-                            }
-                        )
-                        total_rows += rows
-                        stmt_success = True
+                            rows = 0
+                            if connection.db_type == "sqlite":
+                                conn = connection.connection
+                                if AIOSQLITE_AVAILABLE:
+                                    cursor = await conn.execute(stmt)
+                                    rows = cursor.rowcount
+                                else:
+                                    cursor = conn.execute(stmt)
+                                    rows = cursor.rowcount
+                            elif connection.db_type == "postgresql":
+                                result = await pool_conn.execute(stmt)
+                                rows = int(result.split()[-1]) if result else 0
+                            elif connection.db_type == "mysql":
+                                async with pool_conn.cursor() as cursor:
+                                    await cursor.execute(stmt)
+                                    rows = cursor.rowcount
 
-                    except Exception as e:
-                        if stmt_attempts < stmt_max_attempts:
-                            logger.warning(
-                                f"Statement {i} failed (attempt {stmt_attempts}): {e}"
-                            )
-                            await asyncio.sleep(retry_interval / 1000)
-                        else:
-                            # All retries exhausted for this statement
                             results.append(
                                 {
                                     "statement": i,
-                                    "rows_affected": 0,
-                                    "success": False,
-                                    "error": str(e),
+                                    "rows_affected": rows,
+                                    "success": True,
                                     "attempts": stmt_attempts,
                                 }
                             )
-                            errors.append(f"Statement {i}: {str(e)}")
-                            if stop_on_error:
-                                break
+                            total_rows += rows
+                            stmt_success = True
 
-                # If stop_on_error and we had an error, break outer loop
-                if stop_on_error and not stmt_success:
-                    break
+                        except Exception as e:
+                            if stmt_attempts < stmt_max_attempts:
+                                logger.warning(
+                                    f"Statement {i} failed (attempt {stmt_attempts}): {e}"
+                                )
+                                await asyncio.sleep(retry_interval / 1000)
+                            else:
+                                # All retries exhausted for this statement
+                                results.append(
+                                    {
+                                        "statement": i,
+                                        "rows_affected": 0,
+                                        "success": False,
+                                        "error": str(e),
+                                        "attempts": stmt_attempts,
+                                    }
+                                )
+                                errors.append(f"Statement {i}: {str(e)}")
+                                if stop_on_error:
+                                    break
 
-            # Commit if not in transaction
-            if not connection.in_transaction:
-                if connection.db_type == "sqlite":
-                    if AIOSQLITE_AVAILABLE:
-                        await connection.connection.commit()
-                    else:
-                        connection.connection.commit()
-                elif connection.db_type == "mysql":
-                    await connection.connection.commit()
+                    # If stop_on_error and we had an error, break outer loop
+                    if stop_on_error and not stmt_success:
+                        break
+
+                # Commit if not in transaction
+                if not connection.in_transaction:
+                    if connection.db_type == "sqlite":
+                        if AIOSQLITE_AVAILABLE:
+                            await connection.connection.commit()
+                        else:
+                            connection.connection.commit()
+                    elif connection.db_type == "mysql" and pool_conn:
+                        await pool_conn.commit()
+            finally:
+                # Release pool connection
+                if pool_conn and not connection.in_transaction:
+                    await connection.release()
 
             all_success = len(errors) == 0
 

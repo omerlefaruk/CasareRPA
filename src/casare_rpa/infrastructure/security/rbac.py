@@ -13,7 +13,7 @@ import asyncio
 import secrets
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Callable, Dict, FrozenSet, List, Optional, Set, TypeVar, Union
 from uuid import UUID
@@ -243,8 +243,8 @@ class Role(BaseModel):
     is_default: bool = False
     priority: int = 0
     permissions: List[RolePermission] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def has_permission(
         self,
@@ -287,13 +287,13 @@ class UserPermissions(BaseModel):
     tenant_id: UUID
     roles: List[Role] = Field(default_factory=list)
     effective_permissions: Set[str] = Field(default_factory=set)
-    cached_at: datetime = Field(default_factory=datetime.utcnow)
+    cached_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     cache_ttl_seconds: int = 300
 
     @property
     def is_cache_valid(self) -> bool:
         """Check if permission cache is still valid."""
-        age = (datetime.utcnow() - self.cached_at).total_seconds()
+        age = (datetime.now(timezone.utc) - self.cached_at).total_seconds()
         return age < self.cache_ttl_seconds
 
     @property
@@ -588,7 +588,7 @@ class RoleManager:
                     permissions.append(RolePermission(permission=perm))
 
             role.permissions = permissions
-            role.updated_at = datetime.utcnow()
+            role.updated_at = datetime.now(timezone.utc)
 
             logger.info(
                 f"Updated permissions for role {role.name}: {len(permissions)} permissions"

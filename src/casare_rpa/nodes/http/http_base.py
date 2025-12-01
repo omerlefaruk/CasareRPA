@@ -1,16 +1,19 @@
 """
 Base HTTP node providing common functionality for all HTTP nodes.
 
-This module extracts shared HTTP request logic to reduce code duplication
-across HttpGetNode, HttpPostNode, HttpPutNode, HttpPatchNode, HttpDeleteNode.
+This module provides the HttpBaseNode abstract class with shared HTTP request logic.
+HttpRequestNode extends this to support all HTTP methods via a dropdown selector.
 """
 
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import json
+import socket
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
+from urllib.parse import urlparse
 
 import aiohttp
 from aiohttp import ClientTimeout
@@ -24,6 +27,101 @@ from casare_rpa.domain.value_objects.types import (
     PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+
+
+# SSRF Protection: Blocked hosts and schemes
+_BLOCKED_HOSTS: Set[str] = {
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "::1",
+    "[::]",
+    "[::1]",
+}
+
+_BLOCKED_SCHEMES: Set[str] = {
+    "file",
+    "ftp",
+    "gopher",
+    "data",
+    "javascript",
+}
+
+
+def _is_private_ip(ip_str: str) -> bool:
+    """Check if an IP address is in a private range."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local
+    except ValueError:
+        return False
+
+
+def validate_url_for_ssrf(
+    url: str,
+    allow_internal: bool = False,
+    allow_private_ips: bool = False,
+) -> str:
+    """
+    Validate a URL to prevent Server-Side Request Forgery (SSRF) attacks.
+
+    Args:
+        url: The URL to validate
+        allow_internal: If True, allow requests to localhost and internal hosts
+        allow_private_ips: If True, allow requests to private IP ranges (10.x, 192.168.x, etc.)
+
+    Returns:
+        The validated URL
+
+    Raises:
+        ValueError: If the URL is invalid or targets a blocked host/scheme
+    """
+    if not url:
+        raise ValueError("URL is required")
+
+    try:
+        parsed = urlparse(url)
+    except Exception as e:
+        raise ValueError(f"Invalid URL format: {e}")
+
+    # Check scheme
+    scheme = (parsed.scheme or "").lower()
+    if not scheme:
+        raise ValueError("URL must have a scheme (http or https)")
+
+    if scheme in _BLOCKED_SCHEMES:
+        raise ValueError(f"URL scheme '{scheme}' is not allowed")
+
+    if scheme not in ("http", "https"):
+        raise ValueError(f"Only http and https schemes are allowed, got '{scheme}'")
+
+    # Check hostname
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise ValueError("URL must have a hostname")
+
+    # Check for blocked hosts (unless internal access allowed)
+    if not allow_internal:
+        if hostname in _BLOCKED_HOSTS:
+            raise ValueError(
+                f"Requests to '{hostname}' are not allowed for security reasons. "
+                "Set allow_internal=True if you need to access internal services."
+            )
+
+        # Check if hostname resolves to a blocked IP
+        try:
+            # Resolve hostname to check for private IPs
+            ip_str = socket.gethostbyname(hostname)
+            if not allow_private_ips and _is_private_ip(ip_str):
+                raise ValueError(
+                    f"URL hostname '{hostname}' resolves to private IP '{ip_str}'. "
+                    "Private IP addresses are not allowed for security reasons."
+                )
+        except socket.gaierror:
+            # DNS resolution failed - let the request fail naturally later
+            pass
+
+    return url
 
 
 class HttpBaseNode(BaseNode):
@@ -187,6 +285,14 @@ class HttpBaseNode(BaseNode):
             if not url:
                 raise ValueError("URL is required")
 
+            # SSRF protection: validate URL before making request
+            allow_internal = self.get_parameter("allow_internal_urls", False)
+            url = validate_url_for_ssrf(
+                url,
+                allow_internal=allow_internal,
+                allow_private_ips=allow_internal,
+            )
+
             # Parse headers
             headers = self._parse_json_param(headers, {})
 
@@ -317,4 +423,4 @@ class HttpBaseNode(BaseNode):
         return {"success": False, "error": "Unknown error", "next_nodes": []}
 
 
-__all__ = ["HttpBaseNode"]
+__all__ = ["HttpBaseNode", "validate_url_for_ssrf"]

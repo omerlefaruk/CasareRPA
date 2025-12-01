@@ -7,7 +7,7 @@ credential provider integration, and rotation manager.
 
 import asyncio
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -86,14 +86,14 @@ class TestSecretMetadata:
     def test_metadata_expiration(self) -> None:
         """Test expiration detection."""
         # Not expired
-        future = datetime.utcnow() + timedelta(hours=1)
+        future = datetime.now(timezone.utc) + timedelta(hours=1)
         meta = SecretMetadata(path="test", expires_at=future)
         assert meta.is_expired is False
         assert meta.time_until_expiry is not None
         assert meta.time_until_expiry.total_seconds() > 0
 
         # Expired
-        past = datetime.utcnow() - timedelta(hours=1)
+        past = datetime.now(timezone.utc) - timedelta(hours=1)
         meta_expired = SecretMetadata(path="test", expires_at=past)
         assert meta_expired.is_expired is True
         assert meta_expired.time_until_expiry == timedelta(0)
