@@ -115,6 +115,7 @@ class FormatStringNode(BaseNode):
         tooltip=". matches newline characters",
     ),
 )
+@executable_node
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
 
@@ -208,6 +209,7 @@ class RegexMatchNode(BaseNode):
         tooltip="Maximum number of replacements (0 = unlimited)",
     ),
 )
+@executable_node
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
 

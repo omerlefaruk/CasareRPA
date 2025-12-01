@@ -22,7 +22,6 @@ if TYPE_CHECKING:
         NodeController,
         PanelController,
         SchedulingController,
-        TriggerController,
         UIStateController,
         ViewportController,
         WorkflowController,
@@ -75,7 +74,6 @@ class ControllerSignalBridge(QObject):
         event_bus_controller: Optional["EventBusController"] = None,
         viewport_controller: Optional["ViewportController"] = None,
         scheduling_controller: Optional["SchedulingController"] = None,
-        trigger_controller: Optional["TriggerController"] = None,
         ui_state_controller: Optional["UIStateController"] = None,
     ) -> None:
         """
@@ -91,8 +89,9 @@ class ControllerSignalBridge(QObject):
             event_bus_controller: EventBus integration controller
             viewport_controller: Viewport/zoom management controller
             scheduling_controller: Workflow scheduling controller
-            trigger_controller: Trigger management controller
             ui_state_controller: UI state persistence controller
+
+        Note: Triggers are now visual nodes on the canvas (not a controller).
         """
         logger.debug("ControllerSignalBridge: Connecting controller signals...")
 
@@ -237,7 +236,6 @@ class ControllerSignalBridge(QObject):
         else:
             # Fallback to direct action access
             mw.action_run.setEnabled(False)
-            mw.action_run_to_node.setEnabled(False)
             mw.action_pause.setEnabled(True)
             mw.action_pause.setChecked(False)
             mw.action_stop.setEnabled(True)
@@ -250,11 +248,10 @@ class ControllerSignalBridge(QObject):
         actions = getattr(mw, "_action_factory", None)
 
         if actions:
-            actions.set_actions_enabled(["run", "run_to_node"], True)
+            actions.set_actions_enabled(["run"], True)
             actions.set_actions_enabled(["pause", "stop"], False)
         else:
             mw.action_run.setEnabled(True)
-            mw.action_run_to_node.setEnabled(True)
             mw.action_pause.setEnabled(False)
             mw.action_stop.setEnabled(False)
 
@@ -266,11 +263,10 @@ class ControllerSignalBridge(QObject):
         actions = getattr(mw, "_action_factory", None)
 
         if actions:
-            actions.set_actions_enabled(["run", "run_to_node"], True)
+            actions.set_actions_enabled(["run"], True)
             actions.set_actions_enabled(["pause", "stop"], False)
         else:
             mw.action_run.setEnabled(True)
-            mw.action_run_to_node.setEnabled(True)
             mw.action_pause.setEnabled(False)
             mw.action_stop.setEnabled(False)
 
@@ -287,11 +283,10 @@ class ControllerSignalBridge(QObject):
         actions = getattr(mw, "_action_factory", None)
 
         if actions:
-            actions.set_actions_enabled(["run", "run_to_node"], True)
+            actions.set_actions_enabled(["run"], True)
             actions.set_actions_enabled(["pause", "stop"], False)
         else:
             mw.action_run.setEnabled(True)
-            mw.action_run_to_node.setEnabled(True)
             mw.action_pause.setEnabled(False)
             mw.action_stop.setEnabled(False)
 
@@ -302,8 +297,9 @@ class BottomPanelSignalBridge(QObject):
     """
     Bridge that connects BottomPanel signals to MainWindow handlers.
 
-    Handles trigger signals, variable changes, and validation requests
-    from the bottom panel dock widget.
+    Handles variable changes and validation requests from the bottom panel dock widget.
+
+    Note: Triggers are now visual nodes on the canvas (not managed via bottom panel).
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
@@ -331,12 +327,7 @@ class BottomPanelSignalBridge(QObject):
         panel.navigate_to_node.connect(mw._on_navigate_to_node)
         panel.variables_changed.connect(mw._on_panel_variables_changed)
 
-        # Trigger signals
-        panel.trigger_add_requested.connect(mw._on_trigger_add_requested)
-        panel.trigger_edit_requested.connect(mw._on_trigger_edit_requested)
-        panel.trigger_delete_requested.connect(mw._on_trigger_delete_requested)
-        panel.trigger_toggle_requested.connect(mw._on_trigger_toggle_requested)
-        panel.trigger_run_requested.connect(mw._on_trigger_run_requested)
+        # Note: Triggers are now visual nodes on the canvas
 
         # Dock state signals for auto-save
         panel.dockLocationChanged.connect(mw._schedule_ui_state_save)

@@ -29,6 +29,8 @@ class TriggerType(Enum):
     CHAT = "chat"
     ERROR = "error"
     WORKFLOW_CALL = "workflow_call"
+    RSS_FEED = "rss_feed"
+    SSE = "sse"
 
 
 class TriggerStatus(Enum):

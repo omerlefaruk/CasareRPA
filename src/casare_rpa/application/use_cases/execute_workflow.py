@@ -25,6 +25,31 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.domain.events import EventBus, Event
 from casare_rpa.domain.value_objects.types import EventType, NodeId, NodeStatus
 from ...utils.performance.performance_metrics import get_metrics
+from ...utils.workflow.workflow_loader import NODE_TYPE_MAP
+
+
+def _create_node_from_dict(node_data: dict) -> Any:
+    """
+    Create a node instance from a dict definition.
+
+    Args:
+        node_data: Dict with node_id, type, and optional config
+
+    Returns:
+        Node instance
+
+    Raises:
+        ValueError: If node type is unknown
+    """
+    node_type = node_data.get("type") or node_data.get("node_type")
+    node_id = node_data.get("node_id")
+    config = node_data.get("config", {})
+
+    node_class = NODE_TYPE_MAP.get(node_type)
+    if not node_class:
+        raise ValueError(f"Unknown node type: {node_type}")
+
+    return node_class(node_id=node_id, config=config)
 
 
 class ExecutionSettings:
@@ -35,6 +60,7 @@ class ExecutionSettings:
         continue_on_error: bool = False,
         node_timeout: float = 120.0,
         target_node_id: Optional[NodeId] = None,
+        single_node: bool = False,
     ) -> None:
         """
         Initialize execution settings.
@@ -42,11 +68,13 @@ class ExecutionSettings:
         Args:
             continue_on_error: If True, continue workflow on node errors
             node_timeout: Timeout for individual node execution in seconds
-            target_node_id: Optional target node for Run-To-Node feature
+            target_node_id: Optional target node for Run-To-Node (F4) or Run-Single-Node (F5)
+            single_node: If True, execute only target_node_id (F5 mode)
         """
         self.continue_on_error = continue_on_error
         self.node_timeout = node_timeout
         self.target_node_id = target_node_id
+        self.single_node = single_node
 
 
 class ExecuteWorkflowUseCase:
@@ -114,9 +142,59 @@ class ExecuteWorkflowUseCase:
         self._target_reached = False
         self._subgraph_nodes: Optional[Set[NodeId]] = None
 
+        # Node instance cache (for dict-based workflows)
+        self._node_instances: Dict[str, Any] = {}
+
+        # Execution error tracking
+        self._execution_failed = False
+        self._execution_error: Optional[str] = None
+
         # Calculate subgraph if target node is specified
         if self.settings.target_node_id:
-            self._calculate_subgraph()
+            if self.settings.single_node:
+                # F5 mode: only execute the target node
+                self._subgraph_nodes = {self.settings.target_node_id}
+                logger.info(
+                    f"Single node mode: executing only {self.settings.target_node_id}"
+                )
+            else:
+                # F4 mode: execute up to target node
+                self._calculate_subgraph()
+
+    def _get_node_instance(self, node_id: str) -> Any:
+        """
+        Get or create a node instance from workflow nodes.
+
+        Handles both actual node objects and dict-based node definitions.
+        Uses caching to maintain node state across executions.
+
+        Args:
+            node_id: ID of the node to get
+
+        Returns:
+            Node instance (either existing or created from dict)
+
+        Raises:
+            ValueError: If node not found or cannot be created
+        """
+        # Return cached instance if available
+        if node_id in self._node_instances:
+            return self._node_instances[node_id]
+
+        # Get node data from workflow
+        node_data = self.workflow.nodes.get(node_id)
+        if not node_data:
+            raise ValueError(f"Node {node_id} not found in workflow")
+
+        # If already a node object, cache and return
+        if not isinstance(node_data, dict):
+            self._node_instances[node_id] = node_data
+            return node_data
+
+        # Convert dict to node instance
+        node = _create_node_from_dict(node_data)
+        self._node_instances[node_id] = node
+        return node
 
     def _calculate_subgraph(self) -> None:
         """Calculate subgraph for Run-To-Node execution."""
@@ -221,7 +299,7 @@ class ExecuteWorkflowUseCase:
         Execute a single node with error handling.
 
         Args:
-            node: The node to execute
+            node: The node instance to execute
 
         Returns:
             Tuple of (success: bool, result: dict)
@@ -247,6 +325,9 @@ class ExecuteWorkflowUseCase:
         self.current_node_id = node.node_id
         node.status = NodeStatus.RUNNING
 
+        # Track execution path in context state
+        self.context.set_current_node(node.node_id)
+
         self._emit_event(
             EventType.NODE_STARTED,
             {"node_id": node.node_id, "node_type": node.__class__.__name__},
@@ -263,12 +344,15 @@ class ExecuteWorkflowUseCase:
 
         try:
             # Validate node before execution
-            if not node.validate():
-                logger.error(f"Node validation failed: {node.node_id}")
+            # validate() returns tuple (is_valid: bool, error_message: Optional[str])
+            is_valid, validation_error = node.validate()
+            if not is_valid:
+                error_msg = validation_error or "Validation failed"
+                logger.error(f"Node validation failed: {node.node_id} - {error_msg}")
                 node.status = NodeStatus.ERROR
                 self._emit_event(
                     EventType.NODE_ERROR,
-                    {"node_id": node.node_id, "error": "Validation failed"},
+                    {"node_id": node.node_id, "error": error_msg},
                 )
                 return False, None
 
@@ -344,18 +428,17 @@ class ExecuteWorkflowUseCase:
             )
             return False, None
 
-    def _transfer_data(self, connection: Any, nodes: Dict[NodeId, Any]) -> None:
+    def _transfer_data(self, connection: Any) -> None:
         """
         Transfer data from source port to target port.
 
         Args:
             connection: The connection defining source and target
-            nodes: Dictionary of node instances
         """
-        source_node = nodes.get(connection.source_node)
-        target_node = nodes.get(connection.target_node)
-
-        if not source_node or not target_node:
+        try:
+            source_node = self._get_node_instance(connection.source_node)
+            target_node = self._get_node_instance(connection.target_node)
+        except ValueError:
             return
 
         # Get value from source output port
@@ -406,13 +489,41 @@ class ExecuteWorkflowUseCase:
         logger.info(f"Starting workflow execution: {self.workflow.metadata.name}")
 
         try:
-            # Find start node
-            start_node_id = self.orchestrator.find_start_node()
-            if not start_node_id:
-                raise ValueError("No StartNode found in workflow")
+            # Single node mode (F5): Execute only the target node
+            if self.settings.single_node and self.settings.target_node_id:
+                logger.info(
+                    f"Single node execution mode: {self.settings.target_node_id}"
+                )
+                await self._execute_single_node(self.settings.target_node_id)
+            else:
+                # Normal or Run-To-Node mode: Start from StartNode
+                start_node_id = self.orchestrator.find_start_node()
+                if not start_node_id:
+                    raise ValueError("No StartNode found in workflow")
 
-            # Execute workflow sequentially
-            await self._execute_from_node(start_node_id)
+                # Execute workflow sequentially
+                await self._execute_from_node(start_node_id)
+
+            # Check for execution failure
+            if self._execution_failed:
+                self.end_time = datetime.now()
+                duration = (self.end_time - self.start_time).total_seconds()
+
+                self._emit_event(
+                    EventType.WORKFLOW_ERROR,
+                    {
+                        "error": self._execution_error or "Execution failed",
+                        "executed_nodes": len(self.executed_nodes),
+                    },
+                )
+
+                logger.error(f"Workflow execution failed: {self._execution_error}")
+
+                # Record workflow failure for performance dashboard
+                get_metrics().record_workflow_complete(
+                    self.workflow.metadata.name, duration * 1000, success=False
+                )
+                return False
 
             # Check if completed successfully
             if self._stop_requested:
@@ -437,6 +548,9 @@ class ExecuteWorkflowUseCase:
             else:
                 self.end_time = datetime.now()
                 duration = (self.end_time - self.start_time).total_seconds()
+
+                # Mark execution state as completed
+                self.context._state.mark_completed()
 
                 self._emit_event(
                     EventType.WORKFLOW_COMPLETED,
@@ -487,6 +601,44 @@ class ExecuteWorkflowUseCase:
 
             self.current_node_id = None
 
+    async def _execute_single_node(self, node_id: NodeId) -> None:
+        """
+        Execute a single node in isolation (F5 mode).
+
+        This method executes only the specified node, using any existing
+        data from previous executions stored in the context. Useful for
+        re-running a node with the same inputs.
+
+        Args:
+            node_id: Node ID to execute
+        """
+        logger.info(f"Executing single node: {node_id}")
+
+        # Get node instance
+        try:
+            node = self._get_node_instance(node_id)
+        except ValueError as e:
+            error_msg = f"Node {node_id} not found in workflow: {e}"
+            logger.error(error_msg)
+            self._execution_failed = True
+            self._execution_error = error_msg
+            return
+
+        # Transfer data from connected input ports (use existing data if available)
+        for connection in self.workflow.connections:
+            if connection.target_node == node_id:
+                self._transfer_data(connection)
+
+        # Execute the node
+        success, result = await self._execute_node(node)
+
+        if not success:
+            error_msg = f"Node {node_id} execution failed"
+            self._execution_failed = True
+            self._execution_error = (
+                result.get("error", error_msg) if result else error_msg
+            )
+
     async def _execute_from_node(self, start_node_id: NodeId) -> None:
         """
         Execute workflow starting from a specific node.
@@ -517,16 +669,22 @@ class ExecuteWorkflowUseCase:
                 logger.debug(f"Skipping node {current_node_id} (not in subgraph)")
                 continue
 
-            # Get node instance
-            node = self.workflow.nodes.get(current_node_id)
-            if not node:
-                logger.error(f"Node {current_node_id} not found in workflow")
+            # Get node instance (handles both dict and object nodes)
+            try:
+                node = self._get_node_instance(current_node_id)
+            except ValueError as e:
+                error_msg = f"Node {current_node_id} not found in workflow: {e}"
+                logger.error(error_msg)
+                if not self.settings.continue_on_error:
+                    self._execution_failed = True
+                    self._execution_error = error_msg
+                    break
                 continue
 
             # Transfer data from connected input ports
             for connection in self.workflow.connections:
                 if connection.target_node == current_node_id:
-                    self._transfer_data(connection, self.workflow.nodes)
+                    self._transfer_data(connection)
 
             # Execute the node
             success, result = await self._execute_node(node)
@@ -537,8 +695,13 @@ class ExecuteWorkflowUseCase:
                         f"Node {current_node_id} failed but continue_on_error is enabled"
                     )
                 else:
+                    error_msg = f"Node {current_node_id} execution failed"
                     logger.warning(
                         f"Stopping workflow due to node error: {current_node_id}"
+                    )
+                    self._execution_failed = True
+                    self._execution_error = (
+                        result.get("error", error_msg) if result else error_msg
                     )
                     break
 

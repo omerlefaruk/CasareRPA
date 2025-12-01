@@ -11,10 +11,12 @@ Provides nodes for waiting and verifying desktop element states:
 from typing import Any, Dict
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
 from casare_rpa.nodes.utils.type_converters import safe_int
 
 
+@executable_node
 class WaitForElementNode(BaseNode):
     """
     Node to wait for an element to reach a specific state.
@@ -96,6 +98,7 @@ class WaitForElementNode(BaseNode):
             }
 
 
+@executable_node
 class WaitForWindowNode(BaseNode):
     """
     Node to wait for a window to reach a specific state.
@@ -198,6 +201,7 @@ class WaitForWindowNode(BaseNode):
             }
 
 
+@executable_node
 class VerifyElementExistsNode(BaseNode):
     """
     Node to verify if an element exists.
@@ -262,6 +266,7 @@ class VerifyElementExistsNode(BaseNode):
         return {"success": True, "exists": exists, "element": element}
 
 
+@executable_node
 class VerifyElementPropertyNode(BaseNode):
     """
     Node to verify an element property has an expected value.

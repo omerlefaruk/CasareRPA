@@ -11,7 +11,7 @@ from typing import Dict, Any, Tuple
 import copy
 from loguru import logger
 
-from .id_generator import generate_node_id, is_uuid_based_id
+from ..id_generator import generate_node_id, is_uuid_based_id
 
 
 def migrate_workflow_ids(

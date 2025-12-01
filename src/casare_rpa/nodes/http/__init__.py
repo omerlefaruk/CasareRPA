@@ -5,11 +5,13 @@ This package provides nodes for making HTTP requests and interacting with REST A
 Supports all HTTP methods, authentication, headers, and response parsing.
 
 Modules:
+    - http_base: Base class for all HTTP nodes (HttpBaseNode)
     - http_basic: Basic HTTP method nodes (GET, POST, PUT, PATCH, DELETE)
     - http_advanced: Advanced operations (headers, JSON parsing, file transfer, URL building)
     - http_auth: Authentication nodes (Bearer, Basic, API Key)
 
 Nodes:
+    - HttpBaseNode: Abstract base class for HTTP nodes
     - HttpRequestNode: Generic HTTP request (all methods)
     - HttpGetNode: GET request with query parameters
     - HttpPostNode: POST request with body
@@ -24,6 +26,7 @@ Nodes:
     - BuildUrlNode: Build URL with query parameters
 """
 
+from .http_base import HttpBaseNode
 from .http_basic import (
     HttpRequestNode,
     HttpGetNode,
@@ -44,6 +47,8 @@ from .http_auth import (
 )
 
 __all__ = [
+    # Base class
+    "HttpBaseNode",
     # Basic HTTP methods
     "HttpRequestNode",
     "HttpGetNode",

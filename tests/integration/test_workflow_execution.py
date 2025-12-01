@@ -75,16 +75,14 @@ def three_node_linear_workflow() -> WorkflowSchema:
 
 @pytest.fixture
 def branching_workflow() -> WorkflowSchema:
-    """Branching: Start → If → (true/false paths) → End"""
+    """Branching: Start → If → (true/false paths) → End
+
+    The If node evaluates the 'condition' variable from initial_variables.
+    No set_flag node - condition comes from initial_variables.
+    """
     workflow = WorkflowSchema(WorkflowMetadata(name="Branching-If"))
     workflow.add_node({"node_id": "start", "type": "StartNode"})
-    workflow.add_node(
-        {
-            "node_id": "set_flag",
-            "type": "SetVariableNode",
-            "config": {"variable_name": "condition", "default_value": True},
-        }
-    )
+    # IfNode evaluates 'condition' variable from initial_variables
     workflow.add_node(
         {"node_id": "if_node", "type": "IfNode", "config": {"expression": "condition"}}
     )
@@ -106,8 +104,7 @@ def branching_workflow() -> WorkflowSchema:
 
     workflow.connections.extend(
         [
-            NodeConnection("start", "exec_out", "set_flag", "exec_in"),
-            NodeConnection("set_flag", "exec_out", "if_node", "exec_in"),
+            NodeConnection("start", "exec_out", "if_node", "exec_in"),
             NodeConnection("if_node", "true", "true_branch", "exec_in"),
             NodeConnection("if_node", "false", "false_branch", "exec_in"),
             NodeConnection("true_branch", "exec_out", "end", "exec_in"),

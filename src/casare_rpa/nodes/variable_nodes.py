@@ -19,7 +19,6 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from loguru import logger
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "variable_name",
@@ -40,11 +39,23 @@ from loguru import logger
         "variable_type",
         PropertyType.CHOICE,
         default="String",
-        choices=["String", "Boolean", "Int32", "Object", "Array", "DataTable"],
+        choices=[
+            "String",
+            "Boolean",
+            "Int32",
+            "Float",
+            "Object",
+            "Array",
+            "List",
+            "Dict",
+            "FilePath",
+            "DataTable",
+        ],
         label="Variable Type",
         tooltip="Type to convert value to",
     ),
 )
+@executable_node
 class SetVariableNode(BaseNode):
     """
     Set variable node - stores a value in the execution context.
@@ -72,8 +83,11 @@ class SetVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
-        self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
+        # value port is optional - can use default_value from config instead
+        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port(
+            "variable_name", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -106,7 +120,32 @@ class SetVariableNode(BaseNode):
                             value = bool(value)
                     elif variable_type == "Int32":
                         value = int(value)
-                    elif variable_type in ("Object", "Array", "DataTable"):
+                    elif variable_type == "Float":
+                        value = float(value)
+                    elif variable_type == "FilePath":
+                        # Keep as string but validate path exists (optional)
+                        value = str(value)
+                    elif variable_type in ("Object", "Dict"):
+                        if isinstance(value, str):
+                            import json
+
+                            value = json.loads(value)
+                        elif not isinstance(value, dict):
+                            value = {"value": value}
+                    elif variable_type in ("Array", "List"):
+                        if isinstance(value, str):
+                            import json
+
+                            try:
+                                value = json.loads(value)
+                            except json.JSONDecodeError:
+                                # Treat as comma-separated list
+                                value = [
+                                    v.strip() for v in value.split(",") if v.strip()
+                                ]
+                        elif not isinstance(value, list):
+                            value = [value]
+                    elif variable_type == "DataTable":
                         if isinstance(value, str):
                             import json
 
@@ -189,7 +228,10 @@ class GetVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
+        # variable_name optional - can come from config or port
+        self.add_input_port(
+            "variable_name", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -280,8 +322,11 @@ class IncrementVariableNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("variable_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("increment", PortType.INPUT, DataType.FLOAT)
+        # Ports optional - can come from config or port connections
+        self.add_input_port(
+            "variable_name", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("increment", PortType.INPUT, DataType.FLOAT, required=False)
         self.add_output_port("value", PortType.OUTPUT, DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

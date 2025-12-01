@@ -52,25 +52,73 @@ class ExecutionOrchestrator:
 
     def find_start_node(self) -> Optional[NodeId]:
         """
-        Find the StartNode in workflow.
+        Find the workflow entry point (StartNode or TriggerNode).
+
+        Trigger nodes are also valid entry points as they start workflows.
 
         Returns:
-            Node ID of StartNode, or None if not found
+            Node ID of entry point, or None if not found
         """
+        trigger_node_id = None
+
         for node_id, node_data in self.workflow.nodes.items():
             # Handle both dict (serialized) and node instance formats
             if isinstance(node_data, dict):
-                node_type = node_data.get("node_type", "")
+                # Support both "node_type" and "type" keys for compatibility
+                node_type = node_data.get("node_type") or node_data.get("type", "")
             else:
                 # Node instance - check node_type attribute
                 node_type = getattr(node_data, "node_type", "")
 
+            # Prefer StartNode if present
             if node_type == "StartNode":
                 logger.debug(f"Found StartNode: {node_id}")
                 return node_id
 
-        logger.warning("No StartNode found in workflow")
+            # Track trigger nodes as alternative entry points
+            if node_type.endswith("TriggerNode"):
+                trigger_node_id = node_id
+                logger.debug(f"Found trigger node: {node_id} ({node_type})")
+
+        # If no StartNode, use trigger node
+        if trigger_node_id:
+            logger.debug(f"Using trigger node as entry point: {trigger_node_id}")
+            return trigger_node_id
+
+        logger.warning("No StartNode or TriggerNode found in workflow")
         return None
+
+    def find_trigger_node(self) -> Optional[NodeId]:
+        """
+        Find the trigger node in workflow (if any).
+
+        Returns:
+            Node ID of trigger node, or None if not found
+        """
+        for node_id, node_data in self.workflow.nodes.items():
+            if isinstance(node_data, dict):
+                node_type = node_data.get("node_type") or node_data.get("type", "")
+            else:
+                node_type = getattr(node_data, "node_type", "")
+
+            if node_type.endswith("TriggerNode"):
+                logger.debug(f"Found trigger node: {node_id} ({node_type})")
+                return node_id
+
+        return None
+
+    def is_trigger_node(self, node_id: NodeId) -> bool:
+        """
+        Check if a node is a trigger node.
+
+        Args:
+            node_id: Node ID to check
+
+        Returns:
+            True if the node is a trigger node
+        """
+        node_type = self.get_node_type(node_id)
+        return node_type.endswith("TriggerNode")
 
     def get_next_nodes(
         self, current_node_id: NodeId, execution_result: Optional[Dict[str, Any]] = None
@@ -483,7 +531,8 @@ class ExecutionOrchestrator:
         if node_data:
             # Handle both dict (serialized) and node instance formats
             if isinstance(node_data, dict):
-                return node_data.get("node_type", "")
+                # Support both "node_type" and "type" keys for compatibility
+                return node_data.get("node_type") or node_data.get("type", "")
             else:
                 # Node instance - check node_type attribute
                 return getattr(node_data, "node_type", "")
@@ -522,6 +571,15 @@ class ExecutionOrchestrator:
         }
 
         return node_type in control_flow_types
+
+    def get_all_nodes(self) -> List[NodeId]:
+        """
+        Get all node IDs in the workflow.
+
+        Returns:
+            List of all node IDs
+        """
+        return list(self.workflow.nodes.keys())
 
     def __repr__(self) -> str:
         """String representation."""

@@ -390,6 +390,7 @@ class MessageBoxNode(BaseNode):
 
             # Try PySide6 first
             try:
+                import asyncio
                 from PySide6.QtWidgets import QMessageBox, QApplication, QPushButton
                 from PySide6.QtCore import Qt, QTimer
 
@@ -460,7 +461,21 @@ class MessageBoxNode(BaseNode):
                     timer.timeout.connect(on_timeout)
                     timer.start(auto_close_timeout * 1000)
 
-                response = msg_box.exec()
+                # Use non-blocking approach: show dialog and process events
+                # This allows Qt event loop to process while we wait
+                future = asyncio.get_event_loop().create_future()
+
+                def on_finished(button_result):
+                    if not future.done():
+                        future.set_result(button_result)
+
+                msg_box.finished.connect(on_finished)
+                msg_box.show()
+                msg_box.raise_()
+                msg_box.activateWindow()
+
+                # Wait for dialog to close while keeping event loop responsive
+                response = await future
 
                 if timed_out:
                     result = "timeout"
@@ -613,20 +628,40 @@ class InputDialogNode(BaseNode):
             confirmed = False
 
             try:
+                import asyncio
                 from PySide6.QtWidgets import QInputDialog, QApplication, QLineEdit
+                from PySide6.QtCore import Qt
 
                 app = QApplication.instance()
                 if app is None:
                     app = QApplication([])
 
+                # Create dialog manually for non-blocking behavior
+                dialog = QInputDialog()
+                dialog.setWindowTitle(title)
+                dialog.setLabelText(prompt)
+                dialog.setTextValue(default_value)
+                dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowStaysOnTopHint)
+
                 if password_mode:
-                    text, ok = QInputDialog.getText(
-                        None, title, prompt, QLineEdit.Password, default_value
-                    )
-                else:
-                    text, ok = QInputDialog.getText(
-                        None, title, prompt, QLineEdit.Normal, default_value
-                    )
+                    dialog.setTextEchoMode(QLineEdit.Password)
+
+                # Use non-blocking approach with asyncio Future
+                future = asyncio.get_event_loop().create_future()
+
+                def on_finished(result_code):
+                    if not future.done():
+                        future.set_result(
+                            (dialog.textValue(), result_code == QInputDialog.Accepted)
+                        )
+
+                dialog.finished.connect(on_finished)
+                dialog.show()
+                dialog.raise_()
+                dialog.activateWindow()
+
+                # Wait for dialog to close
+                text, ok = await future
 
                 value = text if ok else ""
                 confirmed = ok

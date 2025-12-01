@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, TYPE_CHECKING
 
 from loguru import logger
 
-from casare_rpa.domain.errors.error_handlers import (
+from casare_rpa.domain.errors import (
     ErrorCategory,
     ErrorClassification,
     ErrorContext,

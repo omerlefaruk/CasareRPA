@@ -1,5 +1,6 @@
 """Visual nodes for desktop_automation category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
@@ -35,14 +36,14 @@ class VisualLaunchApplicationNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("application_path")
-        self.add_input("arguments")
-        self.add_input("working_directory")
-        self.add_output("exec_out")
-        self.add_output("window")
-        self.add_output("process_id")
-        self.add_output("window_title")
+        self.add_exec_input()
+        self.add_typed_input("application_path", DataType.STRING)
+        self.add_typed_input("arguments", DataType.STRING)
+        self.add_typed_input("working_directory", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("window", DataType.OBJECT)
+        self.add_typed_output("process_id", DataType.INTEGER)
+        self.add_typed_output("window_title", DataType.STRING)
 
 
 class VisualCloseApplicationNode(VisualNode):
@@ -62,12 +63,12 @@ class VisualCloseApplicationNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_input("process_id")
-        self.add_input("window_title")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_typed_input("process_id", DataType.INTEGER)
+        self.add_typed_input("window_title", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualActivateWindowNode(VisualNode):
@@ -87,12 +88,12 @@ class VisualActivateWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_input("window_title")
-        self.add_output("exec_out")
-        self.add_output("success")
-        self.add_output("window")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_typed_input("window_title", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("window", DataType.OBJECT)
 
 
 class VisualGetWindowListNode(VisualNode):
@@ -111,10 +112,10 @@ class VisualGetWindowListNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
-        self.add_output("window_list")
-        self.add_output("window_count")
+        self.add_exec_input()
+        self.add_exec_output()
+        self.add_typed_output("window_list", DataType.LIST)
+        self.add_typed_output("window_count", DataType.INTEGER)
 
 
 class VisualFindElementNode(VisualNode):
@@ -134,11 +135,11 @@ class VisualFindElementNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("element")
-        self.add_output("found")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("element", DataType.OBJECT)
+        self.add_typed_output("found", DataType.BOOLEAN)
 
 
 class VisualClickElementDesktopNode(VisualNode):
@@ -162,11 +163,11 @@ class VisualClickElementDesktopNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualTypeTextDesktopNode(VisualNode):
@@ -190,11 +191,11 @@ class VisualTypeTextDesktopNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualGetElementTextNode(VisualNode):
@@ -214,12 +215,12 @@ class VisualGetElementTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("text")
-        self.add_output("element")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("text", DataType.STRING)
+        self.add_typed_output("element", DataType.OBJECT)
 
 
 class VisualGetElementPropertyNode(VisualNode):
@@ -239,12 +240,12 @@ class VisualGetElementPropertyNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("value")
-        self.add_output("element")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("value", DataType.STRING)
+        self.add_typed_output("element", DataType.OBJECT)
 
 
 # Window Management Nodes
@@ -267,12 +268,12 @@ class VisualResizeWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_input("window_width")
-        self.add_input("window_height")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_typed_input("window_width", DataType.INTEGER)
+        self.add_typed_input("window_height", DataType.INTEGER)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualMoveWindowNode(VisualNode):
@@ -292,12 +293,12 @@ class VisualMoveWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_input("pos_x")
-        self.add_input("pos_y")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_typed_input("pos_x", DataType.INTEGER)
+        self.add_typed_input("pos_y", DataType.INTEGER)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualMaximizeWindowNode(VisualNode):
@@ -310,10 +311,10 @@ class VisualMaximizeWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualMinimizeWindowNode(VisualNode):
@@ -326,10 +327,10 @@ class VisualMinimizeWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualRestoreWindowNode(VisualNode):
@@ -342,10 +343,10 @@ class VisualRestoreWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualGetWindowPropertiesNode(VisualNode):
@@ -358,18 +359,18 @@ class VisualGetWindowPropertiesNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_output("exec_out")
-        self.add_output("properties")
-        self.add_output("title")
-        self.add_output("x")
-        self.add_output("y")
-        self.add_output("width")
-        self.add_output("height")
-        self.add_output("state")
-        self.add_output("is_maximized")
-        self.add_output("is_minimized")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("properties", DataType.DICT)
+        self.add_typed_output("title", DataType.STRING)
+        self.add_typed_output("x", DataType.INTEGER)
+        self.add_typed_output("y", DataType.INTEGER)
+        self.add_typed_output("width", DataType.INTEGER)
+        self.add_typed_output("height", DataType.INTEGER)
+        self.add_typed_output("state", DataType.STRING)
+        self.add_typed_output("is_maximized", DataType.BOOLEAN)
+        self.add_typed_output("is_minimized", DataType.BOOLEAN)
 
 
 class VisualSetWindowStateNode(VisualNode):
@@ -393,11 +394,11 @@ class VisualSetWindowStateNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("window")
-        self.add_input("state")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("window", DataType.OBJECT)
+        self.add_typed_input("state", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # Advanced Interaction Nodes
@@ -419,11 +420,11 @@ class VisualSelectFromDropdownNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("value")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("value", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualCheckCheckboxNode(VisualNode):
@@ -441,10 +442,10 @@ class VisualCheckCheckboxNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualSelectRadioButtonNode(VisualNode):
@@ -457,10 +458,10 @@ class VisualSelectRadioButtonNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualSelectTabNode(VisualNode):
@@ -479,12 +480,12 @@ class VisualSelectTabNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("tab_control")
-        self.add_input("tab_name")
-        self.add_input("tab_index")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("tab_control", DataType.OBJECT)
+        self.add_typed_input("tab_name", DataType.STRING)
+        self.add_typed_input("tab_index", DataType.INTEGER)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualExpandTreeItemNode(VisualNode):
@@ -502,10 +503,10 @@ class VisualExpandTreeItemNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualScrollElementNode(VisualNode):
@@ -530,10 +531,10 @@ class VisualScrollElementNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # Mouse & Keyboard Control Nodes
@@ -556,12 +557,12 @@ class VisualMoveMouseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("x")
-        self.add_input("y")
-        self.add_input("duration")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("x", DataType.INTEGER)
+        self.add_typed_input("y", DataType.INTEGER)
+        self.add_typed_input("duration", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualMouseClickNode(VisualNode):
@@ -594,11 +595,11 @@ class VisualMouseClickNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("x")
-        self.add_input("y")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("x", DataType.INTEGER)
+        self.add_typed_input("y", DataType.INTEGER)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualSendKeysNode(VisualNode):
@@ -617,11 +618,11 @@ class VisualSendKeysNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("keys")
-        self.add_input("interval")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("keys", DataType.STRING)
+        self.add_typed_input("interval", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualSendHotKeyNode(VisualNode):
@@ -673,10 +674,10 @@ class VisualGetMousePositionNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
-        self.add_output("x")
-        self.add_output("y")
+        self.add_exec_input()
+        self.add_exec_output()
+        self.add_typed_output("x", DataType.INTEGER)
+        self.add_typed_output("y", DataType.INTEGER)
 
 
 class VisualDragMouseNode(VisualNode):
@@ -705,14 +706,14 @@ class VisualDragMouseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("start_x")
-        self.add_input("start_y")
-        self.add_input("end_x")
-        self.add_input("end_y")
-        self.add_input("duration")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("start_x", DataType.INTEGER)
+        self.add_typed_input("start_y", DataType.INTEGER)
+        self.add_typed_input("end_x", DataType.INTEGER)
+        self.add_typed_input("end_y", DataType.INTEGER)
+        self.add_typed_input("duration", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # Wait & Verification Nodes
@@ -742,12 +743,12 @@ class VisualDesktopWaitForElementNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("selector")
-        self.add_input("timeout")
-        self.add_output("exec_out")
-        self.add_output("element")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("selector", DataType.STRING)
+        self.add_typed_input("timeout", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("element", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualWaitForWindowNode(VisualNode):
@@ -772,14 +773,14 @@ class VisualWaitForWindowNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("title")
-        self.add_input("title_regex")
-        self.add_input("class_name")
-        self.add_input("timeout")
-        self.add_output("exec_out")
-        self.add_output("window")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("title", DataType.STRING)
+        self.add_typed_input("title_regex", DataType.STRING)
+        self.add_typed_input("class_name", DataType.STRING)
+        self.add_typed_input("timeout", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("window", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualVerifyElementExistsNode(VisualNode):
@@ -797,12 +798,12 @@ class VisualVerifyElementExistsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("selector")
-        self.add_input("timeout")
-        self.add_output("exec_out")
-        self.add_output("exists")
-        self.add_output("element")
+        self.add_exec_input()
+        self.add_typed_input("selector", DataType.STRING)
+        self.add_typed_input("timeout", DataType.FLOAT)
+        self.add_exec_output()
+        self.add_typed_output("exists", DataType.BOOLEAN)
+        self.add_typed_output("element", DataType.OBJECT)
 
 
 class VisualVerifyElementPropertyNode(VisualNode):
@@ -837,13 +838,13 @@ class VisualVerifyElementPropertyNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("property_name")
-        self.add_input("expected_value")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("actual_value")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("property_name", DataType.STRING)
+        self.add_typed_input("expected_value", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("result", DataType.BOOLEAN)
+        self.add_typed_output("actual_value", DataType.STRING)
 
 
 # ============================================================
@@ -869,12 +870,12 @@ class VisualCaptureScreenshotNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("file_path")
-        self.add_input("region")
-        self.add_output("exec_out")
-        self.add_output("image")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_typed_input("region", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("image", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualCaptureElementImageNode(VisualNode):
@@ -896,13 +897,13 @@ class VisualCaptureElementImageNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("element")
-        self.add_input("file_path")
-        self.add_input("padding")
-        self.add_output("exec_out")
-        self.add_output("image")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("element", DataType.OBJECT)
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_typed_input("padding", DataType.INTEGER)
+        self.add_exec_output()
+        self.add_typed_output("image", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualOCRExtractTextNode(VisualNode):
@@ -928,14 +929,14 @@ class VisualOCRExtractTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("image")
-        self.add_input("image_path")
-        self.add_input("region")
-        self.add_output("exec_out")
-        self.add_output("text")
-        self.add_output("engine_used")
-        self.add_output("success")
+        self.add_exec_input()
+        self.add_typed_input("image", DataType.OBJECT)
+        self.add_typed_input("image_path", DataType.STRING)
+        self.add_typed_input("region", DataType.OBJECT)
+        self.add_exec_output()
+        self.add_typed_output("text", DataType.STRING)
+        self.add_typed_output("engine_used", DataType.STRING)
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualCompareImagesNode(VisualNode):
@@ -962,15 +963,15 @@ class VisualCompareImagesNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("image1")
-        self.add_input("image2")
-        self.add_input("image1_path")
-        self.add_input("image2_path")
-        self.add_output("exec_out")
-        self.add_output("similarity")
-        self.add_output("is_match")
-        self.add_output("method")
+        self.add_exec_input()
+        self.add_typed_input("image1", DataType.OBJECT)
+        self.add_typed_input("image2", DataType.OBJECT)
+        self.add_typed_input("image1_path", DataType.STRING)
+        self.add_typed_input("image2_path", DataType.STRING)
+        self.add_exec_output()
+        self.add_typed_output("similarity", DataType.FLOAT)
+        self.add_typed_output("is_match", DataType.BOOLEAN)
+        self.add_typed_output("method", DataType.STRING)
 
 
 # =============================================================================

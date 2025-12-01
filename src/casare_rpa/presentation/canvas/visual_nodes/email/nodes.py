@@ -1,6 +1,17 @@
 """Visual nodes for email category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.nodes.email_nodes import (
+    SendEmailNode,
+    ReadEmailsNode,
+    GetEmailContentNode,
+    SaveAttachmentNode,
+    FilterEmailsNode,
+    MarkEmailNode,
+    DeleteEmailNode,
+    MoveEmailNode,
+)
 
 
 class VisualSendEmailNode(VisualNode):
@@ -9,58 +20,33 @@ class VisualSendEmailNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Send Email"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "SendEmailNode"
 
     def __init__(self) -> None:
         """Initialize Send Email node."""
         super().__init__()
+        # Widgets auto-generated from @node_schema on SendEmailNode
+        # Add attachments widget manually (not in schema, supports {{variable}} syntax)
         self.add_text_input(
-            "smtp_server", "SMTP Server", text="smtp.gmail.com", tab="connection"
+            "attachments",
+            "Attachments",
+            tab="properties",
+            placeholder_text="{{zip_path}} or C:\\path\\to\\file.pdf",
         )
-        self.add_text_input("smtp_port", "SMTP Port", text="587", tab="connection")
-        self.add_text_input("username", "Username", text="", tab="connection")
-        self.add_text_input("password", "Password", text="", tab="connection")
-        self.add_text_input("from_email", "From Email", text="", tab="email")
-        self.add_text_input("to_email", "To Email", text="", tab="email")
-        self.add_text_input("subject", "Subject", text="", tab="email")
-        self.add_text_input("cc", "CC", text="", tab="email")
-        self.add_text_input("bcc", "BCC", text="", tab="email")
-        self.create_property("use_tls", True, widget_type=1, tab="config")
-        self.create_property("is_html", False, widget_type=1, tab="config")
-        # Advanced options
-        self.add_text_input(
-            "timeout", "Timeout (s)", placeholder_text="30", tab="advanced"
-        )
-        self.add_text_input(
-            "reply_to", "Reply-To", placeholder_text="Optional", tab="advanced"
-        )
-        self.add_combo_menu(
-            "priority", "Priority", items=["normal", "high", "low"], tab="advanced"
-        )
-        self.create_property("read_receipt", False, widget_type=1, tab="advanced")
-        self.add_text_input(
-            "sender_name", "Sender Name", placeholder_text="Optional", tab="advanced"
-        )
-        # Retry options
-        self.add_text_input(
-            "retry_count", "Retry Count", placeholder_text="0", tab="advanced"
-        )
-        self.add_text_input(
-            "retry_interval",
-            "Retry Interval (s)",
-            placeholder_text="2.0",
-            tab="advanced",
-        )
+
+    def get_node_class(self) -> type:
+        return SendEmailNode
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("to_email")
-        self.add_input("subject")
-        self.add_input("body")
-        self.add_input("attachments")
-        self.add_output("exec_out")
-        self.add_output("success")
-        self.add_output("message_id")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("to_email", DataType.STRING)
+        self.add_typed_input("subject", DataType.STRING)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("attachments", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("message_id", DataType.STRING)
 
 
 class VisualReadEmailsNode(VisualNode):
@@ -69,6 +55,10 @@ class VisualReadEmailsNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Read Emails"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "ReadEmailsNode"
+
+    def get_node_class(self) -> type:
+        return ReadEmailsNode
 
     def __init__(self) -> None:
         """Initialize Read Emails node."""
@@ -107,13 +97,13 @@ class VisualReadEmailsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("folder")
-        self.add_input("limit")
-        self.add_input("search_criteria")
-        self.add_output("exec_out")
-        self.add_output("emails")
-        self.add_output("count")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("folder", DataType.STRING)
+        self.add_typed_input("limit", DataType.INTEGER)
+        self.add_typed_input("search_criteria", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("emails", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
 
 
 class VisualGetEmailContentNode(VisualNode):
@@ -122,6 +112,10 @@ class VisualGetEmailContentNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Get Email Content"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "GetEmailContentNode"
+
+    def get_node_class(self) -> type:
+        return GetEmailContentNode
 
     def __init__(self) -> None:
         """Initialize Get Email Content node."""
@@ -129,16 +123,16 @@ class VisualGetEmailContentNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("email")
-        self.add_output("exec_out")
-        self.add_output("subject")
-        self.add_output("from")
-        self.add_output("to")
-        self.add_output("date")
-        self.add_output("body_text")
-        self.add_output("body_html")
-        self.add_output("attachments")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("email", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("subject", DataType.STRING)
+        self.add_typed_output("from", DataType.STRING)
+        self.add_typed_output("to", DataType.STRING)
+        self.add_typed_output("date", DataType.STRING)
+        self.add_typed_output("body_text", DataType.STRING)
+        self.add_typed_output("body_html", DataType.STRING)
+        self.add_typed_output("attachments", DataType.LIST)
 
 
 class VisualSaveAttachmentNode(VisualNode):
@@ -147,6 +141,10 @@ class VisualSaveAttachmentNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Save Attachment"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "SaveAttachmentNode"
+
+    def get_node_class(self) -> type:
+        return SaveAttachmentNode
 
     def __init__(self) -> None:
         """Initialize Save Attachment node."""
@@ -161,12 +159,12 @@ class VisualSaveAttachmentNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("email_uid")
-        self.add_input("save_path")
-        self.add_output("exec_out")
-        self.add_output("saved_files")
-        self.add_output("count")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("email_uid", DataType.STRING)
+        self.add_typed_input("save_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("saved_files", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
 
 
 class VisualFilterEmailsNode(VisualNode):
@@ -175,6 +173,10 @@ class VisualFilterEmailsNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Filter Emails"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "FilterEmailsNode"
+
+    def get_node_class(self) -> type:
+        return FilterEmailsNode
 
     def __init__(self) -> None:
         """Initialize Filter Emails node."""
@@ -187,13 +189,13 @@ class VisualFilterEmailsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("emails")
-        self.add_input("subject_contains")
-        self.add_input("from_contains")
-        self.add_output("exec_out")
-        self.add_output("filtered")
-        self.add_output("count")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("emails", DataType.LIST)
+        self.add_typed_input("subject_contains", DataType.STRING)
+        self.add_typed_input("from_contains", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("filtered", DataType.LIST)
+        self.add_typed_output("count", DataType.INTEGER)
 
 
 class VisualMarkEmailNode(VisualNode):
@@ -202,6 +204,10 @@ class VisualMarkEmailNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Mark Email"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "MarkEmailNode"
+
+    def get_node_class(self) -> type:
+        return MarkEmailNode
 
     def __init__(self) -> None:
         """Initialize Mark Email node."""
@@ -221,11 +227,11 @@ class VisualMarkEmailNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("email_uid")
-        self.add_input("mark_as")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("email_uid", DataType.STRING)
+        self.add_typed_input("mark_as", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualDeleteEmailNode(VisualNode):
@@ -234,6 +240,10 @@ class VisualDeleteEmailNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Delete Email"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "DeleteEmailNode"
+
+    def get_node_class(self) -> type:
+        return DeleteEmailNode
 
     def __init__(self) -> None:
         """Initialize Delete Email node."""
@@ -248,10 +258,10 @@ class VisualDeleteEmailNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("email_uid")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("email_uid", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 class VisualMoveEmailNode(VisualNode):
@@ -260,6 +270,10 @@ class VisualMoveEmailNode(VisualNode):
     __identifier__ = "casare_rpa.email"
     NODE_NAME = "Move Email"
     NODE_CATEGORY = "email"
+    CASARE_NODE_CLASS = "MoveEmailNode"
+
+    def get_node_class(self) -> type:
+        return MoveEmailNode
 
     def __init__(self) -> None:
         """Initialize Move Email node."""
@@ -276,11 +290,11 @@ class VisualMoveEmailNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("email_uid")
-        self.add_input("target_folder")
-        self.add_output("exec_out")
-        self.add_output("success")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("email_uid", DataType.STRING)
+        self.add_typed_input("target_folder", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
 
 
 # =============================================================================

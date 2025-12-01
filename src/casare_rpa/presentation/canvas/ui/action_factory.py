@@ -302,6 +302,14 @@ class ActionFactory(QObject):
         )
 
         self._create_action(
+            "disable_all_selected",
+            "Disable All &Selected",
+            shortcut="5",
+            status_tip="Disable/enable all selected nodes (5)",
+            triggered=mw._on_disable_all_selected,
+        )
+
+        self._create_action(
             "preferences",
             "&Preferences...",
             shortcut="Ctrl+,",
@@ -390,31 +398,52 @@ class ActionFactory(QObject):
             checked=True,
         )
 
+        self._create_action(
+            "toggle_panel",
+            "Toggle &Panel",
+            shortcut="6",
+            status_tip="Show/hide bottom panel (Variables, Output, Log) (6)",
+            triggered=mw._on_toggle_panel,
+            checkable=True,
+        )
+
+        self._create_action(
+            "get_exec_out",
+            "Get &Exec Out",
+            shortcut="3",
+            status_tip="Get nearest node's exec_out port (3)",
+            triggered=mw._on_get_exec_out,
+        )
+
     def _create_workflow_actions(self) -> None:
         """Create Workflow menu actions."""
         mw = self._main_window
 
+        # Standardized shortcuts (VS Code-like):
+        # F5 = Run/Continue, F6 = Pause, F7 = Stop
+        # Shift+F5 = Stop, Ctrl+F5 = Debug mode
+        # F10 = Step over, F11 = Step into (future)
         self._create_action(
             "run",
             "\u25b6 Run",  # Unicode play symbol
-            shortcut="F3",
-            status_tip="Execute the entire workflow (F3)",
+            shortcut="F5",
+            status_tip="Execute the entire workflow (F5)",
             triggered=mw._on_run_workflow,
         )
 
         self._create_action(
             "run_to_node",
             "\u25b7 To Node",  # Unicode play outline
-            shortcut="F4",
-            status_tip="Execute workflow up to selected node (F4)",
+            shortcut="Ctrl+F4",
+            status_tip="Execute workflow up to selected node (Ctrl+F4)",
             triggered=mw._on_run_to_node,
         )
 
         self._create_action(
             "run_single_node",
             "\u2299 This Node",  # Unicode circled dot
-            shortcut="F5",
-            status_tip="Re-run only the selected node with existing inputs (F5)",
+            shortcut="Ctrl+F10",
+            status_tip="Re-run only the selected node with existing inputs (Ctrl+F10)",
             triggered=mw._on_run_single_node,
         )
 
@@ -450,6 +479,24 @@ class ActionFactory(QObject):
             "&Manage Schedules...",
             status_tip="View and manage all scheduled workflows",
             triggered=mw._on_manage_schedules,
+        )
+
+        # Trigger listening (for trigger-based workflows)
+        self._create_action(
+            "start_listening",
+            "\u23f5 Start Listening",  # Unicode forward/play
+            shortcut="F9",
+            status_tip="Start listening for trigger events (F9)",
+            triggered=mw._on_start_listening,
+        )
+
+        self._create_action(
+            "stop_listening",
+            "\u23f9 Stop Listening",  # Unicode stop
+            shortcut="Shift+F9",
+            status_tip="Stop listening for trigger events (Shift+F9)",
+            triggered=mw._on_stop_listening,
+            enabled=False,
         )
 
     def _create_tool_actions(self) -> None:
@@ -556,6 +603,9 @@ class ActionFactory(QObject):
             "stop": "stop",
             "create_frame": "create_frame",
             "hotkey_manager": "hotkey_manager",
+            "get_exec_out": "get_exec_out",
+            "disable_all_selected": "disable_all_selected",
+            "toggle_panel": "toggle_panel",
         }
 
         for hotkey_name, action_name in hotkey_action_map.items():

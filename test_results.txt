@@ -1,0 +1,1074 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.0, pytest-8.4.1, pluggy-1.5.0
+benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\Rau\Desktop\CasareRPA
+configfile: pyproject.toml
+plugins: anyio-4.9.0, Faker-37.0.0, langsmith-0.3.19, asyncio-1.1.0, benchmark-5.2.3, cov-6.2.1, qt-4.4.0
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 2825 items
+
+tests\application\orchestrator\use_cases\test_execute_job.py .....       [  0%]
+tests\application\services\test_orchestrator_client.py ................. [  0%]
+..                                                                       [  0%]
+tests\application\use_cases\test_execute_workflow.py ................... [  1%]
+..............                                                           [  2%]
+tests\application\use_cases\test_execute_workflow_integration.py ....... [  2%]
+........F................                                                [  3%]
+tests\desktop\managers\test_form_interactor.py ......................... [  4%]
+....                                                                     [  4%]
+tests\desktop\managers\test_keyboard_controller.py ..................... [  4%]
+........                                                                 [  5%]
+tests\desktop\managers\test_mouse_controller.py .......................  [  6%]
+tests\desktop\managers\test_screen_capture.py .......................... [  6%]
+....                                                                     [  7%]
+tests\desktop\managers\test_wait_manager.py ............................ [  8%]
+.......                                                                  [  8%]
+tests\desktop\managers\test_window_manager.py .......................... [  9%]
+..                                                                       [  9%]
+tests\domain\entities\test_base_node_validation.py ...............       [  9%]
+tests\domain\entities\test_execution_state.py .......................... [ 10%]
+.......................                                                  [ 11%]
+tests\domain\entities\test_node_connection.py ........................   [ 12%]
+tests\domain\entities\test_project.py .................................. [ 13%]
+.............................                                            [ 14%]
+tests\domain\entities\test_workflow.py ................................. [ 15%]
+......                                                                   [ 16%]
+tests\domain\entities\test_workflow_metadata.py ............             [ 16%]
+tests\domain\orchestrator\entities\test_job.py ........                  [ 16%]
+tests\domain\orchestrator\entities\test_robot.py .............           [ 17%]
+tests\domain\schemas\test_property_schema.py ........................... [ 18%]
+..........                                                               [ 18%]
+tests\domain\schemas\test_validation_edge_cases.py ..................... [ 19%]
+........F...........                                                     [ 19%]
+tests\domain\services\test_execution_orchestrator.py ................... [ 20%]
+................................                                         [ 21%]
+tests\domain\services\test_project_context.py .......................... [ 22%]
+.............                                                            [ 23%]
+tests\domain\test_connections.py ....................................... [ 24%]
+........................................................                 [ 26%]
+tests\domain\test_decorators.py ....................                     [ 27%]
+tests\domain\test_validation_module.py .......................F......... [ 28%]
+................                                                         [ 28%]
+tests\domain\value_objects\test_value_objects.py ....................... [ 29%]
+.........................................                                [ 31%]
+tests\infrastructure\browser\healing\test_anchor_healer.py ............. [ 31%]
+.....................                                                    [ 32%]
+tests\infrastructure\browser\healing\test_healing_chain.py ............. [ 32%]
+..                                                                       [ 32%]
+tests\infrastructure\browser\healing\test_telemetry.py ................. [ 33%]
+.......                                                                  [ 33%]
+tests\infrastructure\observability\test_logging.py ....................  [ 34%]
+tests\infrastructure\observability\test_metrics.py ..................... [ 35%]
+..........                                                               [ 35%]
+tests\infrastructure\observability\test_telemetry.py ................... [ 36%]
+.....                                                                    [ 36%]
+tests\infrastructure\orchestrator\api\routers\test_schedules.py ........ [ 36%]
+...................                                                      [ 37%]
+tests\infrastructure\orchestrator\api\routers\test_workflows.py ....F... [ 37%]
+....F..FFF........F..                                                    [ 38%]
+tests\infrastructure\orchestrator\persistence\test_local_job_repository.py . [ 38%]
+.......                                                                  [ 38%]
+tests\infrastructure\orchestrator\persistence\test_local_robot_repository.py . [ 38%]
+.......                                                                  [ 39%]
+tests\infrastructure\orchestrator\persistence\test_local_schedule_repository.py . [ 39%]
+.....                                                                    [ 39%]
+tests\infrastructure\orchestrator\persistence\test_local_workflow_repository.py . [ 39%]
+.....                                                                    [ 39%]
+tests\infrastructure\queue\test_dlq_manager.py ......................... [ 40%]
+........                                                                 [ 40%]
+tests\infrastructure\queue\test_memory_queue.py ........................ [ 41%]
+..........                                                               [ 41%]
+tests\infrastructure\queue\test_pgqueuer_consumer.py ................... [ 42%]
+..                                                                       [ 42%]
+tests\infrastructure\resources\test_unified_resource_manager.py .......F [ 42%]
+...                                                                      [ 42%]
+tests\infrastructure\security\test_validation_security.py .............. [ 43%]
+.F.......F.....                                                          [ 43%]
+tests\infrastructure\security\test_validators.py ....................... [ 44%]
+.....                                                                    [ 44%]
+tests\infrastructure\security\test_vault_client.py ..................... [ 45%]
+......                                                                   [ 45%]
+tests\infrastructure\security\test_workflow_schema.py ................   [ 46%]
+tests\integration\test_lazy_component_loading.py ......................  [ 47%]
+tests\integration\test_monitoring_event_bus.py ......................... [ 48%]
+..........                                                               [ 48%]
+tests\integration\test_robot_orchestration.py .......................... [ 49%]
+..........                                                               [ 49%]
+tests\integration\test_v3_compatibility.py .................             [ 50%]
+tests\integration\test_workflow_execution.py .......................     [ 51%]
+tests\nodes\browser\test_browser_nodes.py ........F............          [ 51%]
+tests\nodes\browser\test_data_extraction_nodes.py ...............F...... [ 52%]
+.                                                                        [ 52%]
+tests\nodes\browser\test_interaction_nodes.py .......................    [ 53%]
+tests\nodes\browser\test_navigation_nodes.py ...................         [ 54%]
+tests\nodes\browser\test_wait_nodes.py .........................         [ 55%]
+tests\nodes\chain\test_chain_infrastructure.py ...................       [ 55%]
+tests\nodes\desktop\test_application_nodes.py .......................... [ 56%]
+................                                                         [ 57%]
+tests\nodes\desktop\test_element_nodes.py .............................. [ 58%]
+                                                                         [ 58%]
+tests\nodes\desktop\test_interaction_nodes.py .......................... [ 59%]
+.........                                                                [ 59%]
+tests\nodes\desktop\test_mouse_keyboard_nodes.py ....................... [ 60%]
+..............................                                           [ 61%]
+tests\nodes\desktop\test_office_nodes.py ............................... [ 62%]
+........................................................                 [ 64%]
+tests\nodes\desktop\test_screenshot_ocr_nodes.py .....................   [ 65%]
+tests\nodes\desktop\test_wait_verification_nodes.py .................... [ 65%]
+.......                                                                  [ 66%]
+tests\nodes\desktop\test_window_nodes.py .............................   [ 67%]
+tests\nodes\test_basic_nodes.py ............                             [ 67%]
+tests\nodes\test_control_flow_nodes.py ................................. [ 68%]
+.....................................................                    [ 70%]
+tests\nodes\test_data_operation_nodes.py ............................... [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+                                                                         [ 76%]
+tests\nodes\test_database_nodes.py ...................................   [ 78%]
+tests\nodes\test_datetime_nodes.py ..............................        [ 79%]
+tests\nodes\test_email_nodes.py .....................................    [ 80%]
+tests\nodes\test_error_handling_nodes.py ............................... [ 81%]
+.FFF...                                                                  [ 81%]
+tests\nodes\test_file_nodes.py ......................................... [ 83%]
+...FFF.....FF.....                                                       [ 83%]
+tests\nodes\test_ftp_nodes.py ........................................   [ 85%]
+tests\nodes\test_http_nodes.py ...........................F............F [ 86%]
+....                                                                     [ 86%]
+tests\nodes\test_pdf_nodes.py ........................                   [ 87%]
+tests\nodes\test_random_nodes.py .............................           [ 88%]
+tests\nodes\test_script_nodes.py .............................           [ 89%]
+tests\nodes\test_text_nodes.py ......................................... [ 91%]
+.............                                                            [ 91%]
+tests\nodes\test_variable_nodes.py ........................              [ 92%]
+tests\nodes\test_xml_nodes.py .............................              [ 93%]
+tests\performance\test_baseline.py ..........ss                          [ 94%]
+tests\performance\test_cache_hit_rates.py ................               [ 94%]
+tests\performance\test_event_batcher.py ....................             [ 95%]
+tests\performance\test_lazy_subscription.py ..........F....F..........   [ 96%]
+tests\performance\test_performance_regression.py ....F........           [ 96%]
+tests\performance\test_validation_performance.py ..F.F.....F.F.F........ [ 97%]
+...                                                                      [ 97%]
+tests\performance\test_workflow_performance.py ..{
+    "resource_metrics": [
+        {
+            "resource": {
+                "attributes": {
+                    "telemetry.sdk.language": "python",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "1.38.0",
+                    "service.name": "test-init",
+                    "service.version": "1.0.0",
+                    "service.instance.id": "R",
+                    "deployment.environment": "development",
+                    "host.name": "R"
+                },
+                "schema_url": ""
+            },
+            "scope_metrics": [
+                {
+                    "scope": {
+                        "name": "casare_rpa.core",
+                        "version": "1.0.0",
+                        "schema_url": "",
+                        "attributes": null
+                    },
+                    "metrics": [
+                        {
+                            "name": "casare_rpa.queue.depth",
+                            "description": "Current depth of the job queue",
+                            "unit": "1",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {},
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549780486487500,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "casare_rpa.robot.utilization",
+                            "description": "Robot utilization percentage (0-100)",
+                            "unit": "%",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {
+                                            "active_robots": 0
+                                        },
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549780486487500,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "schema_url": ""
+                }
+            ],
+            "schema_url": ""
+        }
+    ]
+}
+{
+    "resource_metrics": [
+        {
+            "resource": {
+                "attributes": {
+                    "telemetry.sdk.language": "python",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "1.38.0",
+                    "service.name": "test-init",
+                    "service.version": "1.0.0",
+                    "service.instance.id": "R",
+                    "deployment.environment": "development",
+                    "host.name": "R"
+                },
+                "schema_url": ""
+            },
+            "scope_metrics": [
+                {
+                    "scope": {
+                        "name": "casare_rpa.core",
+                        "version": "1.0.0",
+                        "schema_url": "",
+                        "attributes": null
+                    },
+                    "metrics": [
+                        {
+                            "name": "casare_rpa.queue.depth",
+                            "description": "Current depth of the job queue",
+                            "unit": "1",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {},
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549780487045300,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "casare_rpa.robot.utilization",
+                            "description": "Robot utilization percentage (0-100)",
+                            "unit": "%",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {
+                                            "active_robots": 0
+                                        },
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549780487045300,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "schema_url": ""
+                }
+            ],
+            "schema_url": ""
+        }
+    ]
+}
+....................    [ 98%]
+tests\robot\test_cli.py ......                                           [ 98%]
+tests\robot\test_robot_agent.py ................................         [ 99%]
+tests\test_visual_nodes_imports.py ....FF
+ERROR: Coverage failure: total of 37 is less than fail-under=75
+                                                                         [100%]
+
+============================== warnings summary ===============================
+src\casare_rpa\infrastructure\orchestrator\api\auth.py:33
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\orchestrator\api\auth.py:33: RuntimeWarning: JWT_SECRET_KEY not set. Using insecure default for development only. Set JWT_SECRET_KEY environment variable in production!
+    warnings.warn(
+
+..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\_internal\_config.py:323
+tests/performance/test_cache_hit_rates.py::TestResourceCache::test_icon_cache_hit
+  C:\Users\Rau\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\_internal\_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+..\..\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\_internal\_generate_schema.py:298: 7 warnings
+tests/performance/test_cache_hit_rates.py: 7 warnings
+  C:\Users\Rau\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\_internal\_generate_schema.py:298: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.11/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(
+
+tests/infrastructure/orchestrator/persistence/test_local_job_repository.py::test_get_all
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\orchestrator\persistence\test_local_job_repository.py:72: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/infrastructure/orchestrator/persistence/test_local_job_repository.py::test_get_by_status
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\orchestrator\persistence\test_local_job_repository.py:101: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/infrastructure/orchestrator/persistence/test_local_job_repository.py::test_get_by_robot
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\orchestrator\persistence\test_local_job_repository.py:139: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/infrastructure/orchestrator/persistence/test_local_job_repository.py::test_get_by_workflow
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\orchestrator\persistence\test_local_job_repository.py:177: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow()
+
+tests/infrastructure/security/test_vault_client.py: 45 warnings
+  C:\Users\Rau\AppData\Local\Programs\Python\Python313\Lib\site-packages\pydantic\main.py:253: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\security\test_vault_client.py:89: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    future = datetime.utcnow() + timedelta(hours=1)
+
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\vault_client.py:146: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    return datetime.utcnow() > self.expires_at
+
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\vault_client.py:153: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    remaining = self.expires_at - datetime.utcnow()
+
+tests/infrastructure/security/test_vault_client.py::TestSecretMetadata::test_metadata_expiration
+  C:\Users\Rau\Desktop\CasareRPA\tests\infrastructure\security\test_vault_client.py:96: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    past = datetime.utcnow() - timedelta(hours=1)
+
+tests/infrastructure/security/test_vault_client.py: 10 warnings
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\vault_client.py:375: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    cached_at=datetime.utcnow(),
+
+tests/infrastructure/security/test_vault_client.py::TestSecretCache::test_cache_set_get
+tests/infrastructure/security/test_vault_client.py::TestSecretCache::test_cache_expiration
+tests/infrastructure/security/test_vault_client.py::TestSecretCache::test_cache_invalidate
+tests/infrastructure/security/test_vault_client.py::TestSecretCache::test_cache_stats
+tests/infrastructure/security/test_vault_client.py::TestSecretCache::test_cache_stats
+tests/infrastructure/security/test_vault_client.py::TestVaultClient::test_client_caching
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\vault_client.py:326: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    age = (datetime.utcnow() - self.cached_at).total_seconds()
+
+tests/infrastructure/security/test_vault_client.py::TestEncryptedSQLiteProvider::test_sqlite_crud_operations
+tests/infrastructure/security/test_vault_client.py::TestEncryptedSQLiteProvider::test_sqlite_crud_operations
+tests/infrastructure/security/test_vault_client.py::TestEncryptedSQLiteProvider::test_sqlite_encryption
+tests/infrastructure/security/test_vault_client.py::TestVaultCredentialProvider::test_credential_provider_basic
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\providers\sqlite_vault.py:300: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.utcnow().isoformat()
+
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\rotation.py:87: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    base = self.last_rotated or datetime.utcnow()
+
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\rotation.py:294: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    started_at=datetime.utcnow(),
+
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\rotation.py:329: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    policy.last_rotated = datetime.utcnow()
+
+tests/infrastructure/security/test_vault_client.py::TestSecretRotationManager::test_rotation_manager_basic
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\infrastructure\security\rotation.py:333: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    record.completed_at = datetime.utcnow()
+
+tests/integration/test_monitoring_event_bus.py::TestWebSocketBroadcast::test_robot_heartbeat_event_triggers_broadcast
+  C:\Users\Rau\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py:2236: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    def __init__(self, name, parent):
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/nodes/test_database_nodes.py::TestExecuteQueryNode::test_execute_query_returns_columns
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\domain\schemas\property_schema.py:197: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x0000019A7F6D4E50>
+    validator = type_validators.get(prop.type)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/nodes/test_database_nodes.py::TestExecuteQueryNode::test_execute_query_returns_columns
+  C:\Users\Rau\Desktop\CasareRPA\src\casare_rpa\domain\schemas\property_schema.py:197: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x0000019A7F6D57B0>
+    validator = type_validators.get(prop.type)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.13.0-final-0 _______________
+
+Name                                                                                  Stmts   Miss  Cover
+---------------------------------------------------------------------------------------------------------
+src\casare_rpa\__init__.py                                                                5      0   100%
+src\casare_rpa\application\__init__.py                                                    1      0   100%
+src\casare_rpa\application\dependency_injection\__init__.py                               0      0   100%
+src\casare_rpa\application\execution\__init__.py                                          2      2     0%
+src\casare_rpa\application\execution\trigger_runner.py                                  113    113     0%
+src\casare_rpa\application\orchestrator\__init__.py                                       0      0   100%
+src\casare_rpa\application\orchestrator\orchestrator_engine.py                          393    393     0%
+src\casare_rpa\application\orchestrator\services\__init__.py                              6      0   100%
+src\casare_rpa\application\orchestrator\services\dispatcher_service.py                  257    257     0%
+src\casare_rpa\application\orchestrator\services\distribution_service.py                239    239     0%
+src\casare_rpa\application\orchestrator\services\job_lifecycle_service.py               163    138    15%
+src\casare_rpa\application\orchestrator\services\job_queue_manager.py                   278    217    22%
+src\casare_rpa\application\orchestrator\services\metrics_service.py                      82     74    10%
+src\casare_rpa\application\orchestrator\services\result_collector_service.py            232    232     0%
+src\casare_rpa\application\orchestrator\services\robot_management_service.py             67     49    27%
+src\casare_rpa\application\orchestrator\services\schedule_management_service.py          88     69    22%
+src\casare_rpa\application\orchestrator\services\scheduling_coordinator.py              235    235     0%
+src\casare_rpa\application\orchestrator\services\workflow_management_service.py          96     74    23%
+src\casare_rpa\application\orchestrator\use_cases\__init__.py                             2      0   100%
+src\casare_rpa\application\orchestrator\use_cases\execute_job.py                         31      0   100%
+src\casare_rpa\application\scheduling\__init__.py                                         2      2     0%
+src\casare_rpa\application\scheduling\schedule_storage.py                               108    108     0%
+src\casare_rpa\application\services\__init__.py                                           3      0   100%
+src\casare_rpa\application\services\execution_lifecycle_manager.py                      198    149    25%
+src\casare_rpa\application\services\orchestrator_client.py                               69     10    86%
+src\casare_rpa\application\services\port_type_service.py                                 48      6    88%
+src\casare_rpa\application\services\template_loader.py                                  164    164     0%
+src\casare_rpa\application\use_cases\__init__.py                                          3      0   100%
+src\casare_rpa\application\use_cases\error_recovery.py                                  205    205     0%
+src\casare_rpa\application\use_cases\execute_workflow.py                                236     61    74%
+src\casare_rpa\application\use_cases\template_management.py                             298    298     0%
+src\casare_rpa\application\use_cases\validate_workflow.py                               137     17    88%
+src\casare_rpa\application\use_cases\workflow_migration.py                              398    398     0%
+src\casare_rpa\application\workflow\__init__.py                                           3      3     0%
+src\casare_rpa\application\workflow\recent_files.py                                      55     55     0%
+src\casare_rpa\application\workflow\workflow_import.py                                  100    100     0%
+src\casare_rpa\cli\__init__.py                                                            0      0   100%
+src\casare_rpa\cli\robot_cli.py                                                           5      5     0%
+src\casare_rpa\cloud\__init__.py                                                          2      2     0%
+src\casare_rpa\cloud\dbos_cloud.py                                                      316    316     0%
+src\casare_rpa\desktop\__init__.py                                                        5      0   100%
+src\casare_rpa\desktop\context.py                                                       121     62    49%
+src\casare_rpa\desktop\desktop_recorder.py                                              282    282     0%
+src\casare_rpa\desktop\element.py                                                       201    167    17%
+src\casare_rpa\desktop\managers\__init__.py                                               7      0   100%
+src\casare_rpa\desktop\managers\form_interactor.py                                      299     68    77%
+src\casare_rpa\desktop\managers\keyboard_controller.py                                  130      0   100%
+src\casare_rpa\desktop\managers\mouse_controller.py                                     134      8    94%
+src\casare_rpa\desktop\managers\screen_capture.py                                       268     76    72%
+src\casare_rpa\desktop\managers\wait_manager.py                                         161     13    92%
+src\casare_rpa\desktop\managers\window_manager.py                                       283     46    84%
+src\casare_rpa\desktop\selector.py                                                      124    115     7%
+src\casare_rpa\domain\__init__.py                                                         2      0   100%
+src\casare_rpa\domain\decorators.py                                                      38      0   100%
+src\casare_rpa\domain\entities\__init__.py                                                8      0   100%
+src\casare_rpa\domain\entities\base_node.py                                             103     25    76%
+src\casare_rpa\domain\entities\execution_state.py                                        89      7    92%
+src\casare_rpa\domain\entities\node_connection.py                                        39      0   100%
+src\casare_rpa\domain\entities\project\__init__.py                                        8      0   100%
+src\casare_rpa\domain\entities\project\base.py                                            6      0   100%
+src\casare_rpa\domain\entities\project\credentials.py                                    39      0   100%
+src\casare_rpa\domain\entities\project\index.py                                          54      0   100%
+src\casare_rpa\domain\entities\project\project.py                                        69      2    97%
+src\casare_rpa\domain\entities\project\scenario.py                                       55      3    95%
+src\casare_rpa\domain\entities\project\settings.py                                       23      0   100%
+src\casare_rpa\domain\entities\project\variables.py                                      42      0   100%
+src\casare_rpa\domain\entities\variable.py                                               17      0   100%
+src\casare_rpa\domain\entities\workflow.py                                               89      3    97%
+src\casare_rpa\domain\entities\workflow_metadata.py                                      26      0   100%
+src\casare_rpa\domain\errors\__init__.py                                                  5      5     0%
+src\casare_rpa\domain\errors\context.py                                                  84     84     0%
+src\casare_rpa\domain\errors\error_handlers.py                                            5      5     0%
+src\casare_rpa\domain\errors\handlers\__init__.py                                         3      3     0%
+src\casare_rpa\domain\errors\handlers\base.py                                            13     13     0%
+src\casare_rpa\domain\errors\handlers\node_handler.py                                   106    106     0%
+src\casare_rpa\domain\errors\registry.py                                                130    130     0%
+src\casare_rpa\domain\errors\types.py                                                    27     27     0%
+src\casare_rpa\domain\events.py                                                         113     62    45%
+src\casare_rpa\domain\orchestrator\__init__.py                                            0      0   100%
+src\casare_rpa\domain\orchestrator\entities\__init__.py                                   6      0   100%
+src\casare_rpa\domain\orchestrator\entities\dashboard_metrics.py                         33      0   100%
+src\casare_rpa\domain\orchestrator\entities\job.py                                       95     23    76%
+src\casare_rpa\domain\orchestrator\entities\robot.py                                     66      8    88%
+src\casare_rpa\domain\orchestrator\entities\schedule.py                                  69     16    77%
+src\casare_rpa\domain\orchestrator\entities\workflow.py                                  53     12    77%
+src\casare_rpa\domain\orchestrator\errors.py                                             12      0   100%
+src\casare_rpa\domain\orchestrator\protocols\__init__.py                                  2      2     0%
+src\casare_rpa\domain\orchestrator\protocols\robot_protocol.py                          108    108     0%
+src\casare_rpa\domain\orchestrator\repositories\__init__.py                               5      0   100%
+src\casare_rpa\domain\orchestrator\repositories\job_repository.py                        25      7    72%
+src\casare_rpa\domain\orchestrator\repositories\robot_repository.py                      25      7    72%
+src\casare_rpa\domain\orchestrator\repositories\schedule_repository.py                   19      5    74%
+src\casare_rpa\domain\orchestrator\repositories\workflow_repository.py                   19      5    74%
+src\casare_rpa\domain\port_type_system.py                                                 3      0   100%
+src\casare_rpa\domain\ports\__init__.py                                                   2      0   100%
+src\casare_rpa\domain\ports\port_type_interfaces.py                                      62      1    98%
+src\casare_rpa\domain\project_schema.py                                                   3      3     0%
+src\casare_rpa\domain\repositories\__init__.py                                            1      1     0%
+src\casare_rpa\domain\schemas\__init__.py                                                 3      0   100%
+src\casare_rpa\domain\schemas\property_schema.py                                        103      1    99%
+src\casare_rpa\domain\schemas\property_types.py                                          22      0   100%
+src\casare_rpa\domain\services\__init__.py                                                5      0   100%
+src\casare_rpa\domain\services\execution_orchestrator.py                                193      3    98%
+src\casare_rpa\domain\services\project_context.py                                        98      0   100%
+src\casare_rpa\domain\services\variable_resolver.py                                      37     29    22%
+src\casare_rpa\domain\validation\__init__.py                                              5      0   100%
+src\casare_rpa\domain\validation\rules.py                                                97      4    96%
+src\casare_rpa\domain\validation\schemas.py                                              19      3    84%
+src\casare_rpa\domain\validation\types.py                                                60      3    95%
+src\casare_rpa\domain\validation\validators.py                                          113      2    98%
+src\casare_rpa\domain\value_objects\__init__.py                                           3      0   100%
+src\casare_rpa\domain\value_objects\port.py                                              42      0   100%
+src\casare_rpa\domain\value_objects\types.py                                            178     15    92%
+src\casare_rpa\domain\variable_resolver.py                                                2      2     0%
+src\casare_rpa\domain\workflow\__init__.py                                                3      3     0%
+src\casare_rpa\domain\workflow\templates.py                                             481    481     0%
+src\casare_rpa\domain\workflow\versioning.py                                            360    360     0%
+src\casare_rpa\infrastructure\__init__.py                                                 1      0   100%
+src\casare_rpa\infrastructure\analytics\__init__.py                                       2      0   100%
+src\casare_rpa\infrastructure\analytics\metrics_aggregator.py                           581    364    37%
+src\casare_rpa\infrastructure\browser\__init__.py                                         2      0   100%
+src\casare_rpa\infrastructure\browser\healing\__init__.py                                 6      0   100%
+src\casare_rpa\infrastructure\browser\healing\anchor_healer.py                          174     24    86%
+src\casare_rpa\infrastructure\browser\healing\cv_healer.py                              424    296    30%
+src\casare_rpa\infrastructure\browser\healing\healing_chain.py                          184     45    76%
+src\casare_rpa\infrastructure\browser\healing\models.py                                 129      8    94%
+src\casare_rpa\infrastructure\browser\healing\telemetry.py                              221     15    93%
+src\casare_rpa\infrastructure\database\__init__.py                                        0      0   100%
+src\casare_rpa\infrastructure\database\migrations\__init__.py                             0      0   100%
+src\casare_rpa\infrastructure\events\__init__.py                                          2      0   100%
+src\casare_rpa\infrastructure\events\monitoring_events.py                                88      5    94%
+src\casare_rpa\infrastructure\execution\__init__.py                                       2      0   100%
+src\casare_rpa\infrastructure\execution\dbos_executor.py                                208    143    31%
+src\casare_rpa\infrastructure\execution\debug_executor.py                               259    259     0%
+src\casare_rpa\infrastructure\execution\execution_context.py                            160     71    56%
+src\casare_rpa\infrastructure\execution\recovery_strategies.py                          371    371     0%
+src\casare_rpa\infrastructure\observability\__init__.py                                   4      0   100%
+src\casare_rpa\infrastructure\observability\logging.py                                  129     49    62%
+src\casare_rpa\infrastructure\observability\metrics.py                                  312     29    91%
+src\casare_rpa\infrastructure\observability\telemetry.py                                558    247    56%
+src\casare_rpa\infrastructure\orchestrator\api\__init__.py                                2      0   100%
+src\casare_rpa\infrastructure\orchestrator\api\adapters.py                              287    262     9%
+src\casare_rpa\infrastructure\orchestrator\api\auth.py                                  143     85    41%
+src\casare_rpa\infrastructure\orchestrator\api\dependencies.py                          140    101    28%
+src\casare_rpa\infrastructure\orchestrator\api\main.py                                  109     65    40%
+src\casare_rpa\infrastructure\orchestrator\api\models.py                                 97      0   100%
+src\casare_rpa\infrastructure\orchestrator\api\routers\__init__.py                        0      0   100%
+src\casare_rpa\infrastructure\orchestrator\api\routers\auth.py                           57     23    60%
+src\casare_rpa\infrastructure\orchestrator\api\routers\metrics.py                        92     61    34%
+src\casare_rpa\infrastructure\orchestrator\api\routers\schedules.py                     143     12    92%
+src\casare_rpa\infrastructure\orchestrator\api\routers\websockets.py                    110     38    65%
+src\casare_rpa\infrastructure\orchestrator\api\routers\workflows.py                     198     32    84%
+src\casare_rpa\infrastructure\orchestrator\persistence\__init__.py                        6      0   100%
+src\casare_rpa\infrastructure\orchestrator\persistence\local_job_repository.py           30      0   100%
+src\casare_rpa\infrastructure\orchestrator\persistence\local_robot_repository.py         32      0   100%
+src\casare_rpa\infrastructure\orchestrator\persistence\local_schedule_repository.py      24      0   100%
+src\casare_rpa\infrastructure\orchestrator\persistence\local_storage_repository.py       84      6    93%
+src\casare_rpa\infrastructure\orchestrator\persistence\local_workflow_repository.py      24      0   100%
+src\casare_rpa\infrastructure\persistence\__init__.py                                     2      2     0%
+src\casare_rpa\infrastructure\persistence\project_storage.py                            242    242     0%
+src\casare_rpa\infrastructure\persistence\setup_db.py                                   113    113     0%
+src\casare_rpa\infrastructure\persistence\template_storage.py                           177    177     0%
+src\casare_rpa\infrastructure\queue\__init__.py                                           4      0   100%
+src\casare_rpa\infrastructure\queue\dlq_manager.py                                      261     42    84%
+src\casare_rpa\infrastructure\queue\memory_queue.py                                     177      4    98%
+src\casare_rpa\infrastructure\queue\pgqueuer_consumer.py                                341    127    63%
+src\casare_rpa\infrastructure\realtime\__init__.py                                        2      2     0%
+src\casare_rpa\infrastructure\realtime\supabase_realtime.py                             532    532     0%
+src\casare_rpa\infrastructure\resources\__init__.py                                       2      0   100%
+src\casare_rpa\infrastructure\resources\browser_resource_manager.py                      71     43    39%
+src\casare_rpa\infrastructure\resources\unified_resource_manager.py                     606    434    28%
+src\casare_rpa\infrastructure\security\__init__.py                                        7      0   100%
+src\casare_rpa\infrastructure\security\credential_provider.py                           188     88    53%
+src\casare_rpa\infrastructure\security\merkle_audit.py                                  223    125    44%
+src\casare_rpa\infrastructure\security\providers\__init__.py                              5      0   100%
+src\casare_rpa\infrastructure\security\providers\factory.py                              67     46    31%
+src\casare_rpa\infrastructure\security\providers\hashicorp.py                           218    193    11%
+src\casare_rpa\infrastructure\security\providers\sqlite_vault.py                        179     47    74%
+src\casare_rpa\infrastructure\security\providers\supabase_vault.py                      142    122    14%
+src\casare_rpa\infrastructure\security\rbac.py                                          388    250    36%
+src\casare_rpa\infrastructure\security\rotation.py                                      191     80    58%
+src\casare_rpa\infrastructure\security\tenancy.py                                       580    332    43%
+src\casare_rpa\infrastructure\security\validators.py                                     48      3    94%
+src\casare_rpa\infrastructure\security\vault_client.py                                  398    103    74%
+src\casare_rpa\infrastructure\security\workflow_schema.py                                59      0   100%
+src\casare_rpa\infrastructure\updater\__init__.py                                         3      3     0%
+src\casare_rpa\infrastructure\updater\tuf_updater.py                                    188    188     0%
+src\casare_rpa\infrastructure\updater\update_manager.py                                 172    172     0%
+src\casare_rpa\nodes\__init__.py                                                         38     13    66%
+src\casare_rpa\nodes\basic_nodes.py                                                      62      8    87%
+src\casare_rpa\nodes\browser_nodes.py                                                   384     74    81%
+src\casare_rpa\nodes\control_flow_nodes.py                                              296     39    87%
+src\casare_rpa\nodes\data_nodes.py                                                      288     67    77%
+src\casare_rpa\nodes\data_operation_nodes.py                                              5      0   100%
+src\casare_rpa\nodes\database\__init__.py                                                 3      0   100%
+src\casare_rpa\nodes\database\database_utils.py                                         156     50    68%
+src\casare_rpa\nodes\database\sql_nodes.py                                              614    146    76%
+src\casare_rpa\nodes\datetime_nodes.py                                                  339     33    90%
+src\casare_rpa\nodes\desktop_nodes\__init__.py                                            9      0   100%
+src\casare_rpa\nodes\desktop_nodes\application_nodes.py                                 206     18    91%
+src\casare_rpa\nodes\desktop_nodes\element_nodes.py                                     251     58    77%
+src\casare_rpa\nodes\desktop_nodes\interaction_nodes.py                                 224    128    43%
+src\casare_rpa\nodes\desktop_nodes\mouse_keyboard_nodes.py                              251     18    93%
+src\casare_rpa\nodes\desktop_nodes\office_nodes.py                                      532     60    89%
+src\casare_rpa\nodes\desktop_nodes\screenshot_ocr_nodes.py                              147      3    98%
+src\casare_rpa\nodes\desktop_nodes\wait_verification_nodes.py                           160      8    95%
+src\casare_rpa\nodes\desktop_nodes\window_nodes.py                                      380     48    87%
+src\casare_rpa\nodes\dict_nodes.py                                                      329     21    94%
+src\casare_rpa\nodes\email_nodes.py                                                     656    117    82%
+src\casare_rpa\nodes\error_handling_nodes.py                                            377     64    83%
+src\casare_rpa\nodes\file\__init__.py                                                     3      0   100%
+src\casare_rpa\nodes\file\file_operations.py                                            631    125    80%
+src\casare_rpa\nodes\file\structured_data.py                                            375     80    79%
+src\casare_rpa\nodes\ftp_nodes.py                                                       456     37    92%
+src\casare_rpa\nodes\http\__init__.py                                                     5      0   100%
+src\casare_rpa\nodes\http\http_advanced.py                                              347     98    72%
+src\casare_rpa\nodes\http\http_auth.py                                                   66      2    97%
+src\casare_rpa\nodes\http\http_base.py                                                  162     26    84%
+src\casare_rpa\nodes\http\http_basic.py                                                  94      0   100%
+src\casare_rpa\nodes\interaction_nodes.py                                               297     69    77%
+src\casare_rpa\nodes\list_nodes.py                                                      499     54    89%
+src\casare_rpa\nodes\math_nodes.py                                                      124      0   100%
+src\casare_rpa\nodes\navigation_nodes.py                                                248     40    84%
+src\casare_rpa\nodes\pdf_nodes.py                                                       356     25    93%
+src\casare_rpa\nodes\random_nodes.py                                                    177     19    89%
+src\casare_rpa\nodes\script_nodes.py                                                    401     48    88%
+src\casare_rpa\nodes\string_nodes.py                                                    138      6    96%
+src\casare_rpa\nodes\system_nodes.py                                                    710    622    12%
+src\casare_rpa\nodes\text_nodes.py                                                      522     78    85%
+src\casare_rpa\nodes\utility_nodes.py                                                   428    340    21%
+src\casare_rpa\nodes\utils\__init__.py                                                    3      0   100%
+src\casare_rpa\nodes\utils\retry_decorator.py                                            64     37    42%
+src\casare_rpa\nodes\utils\type_converters.py                                            21     15    29%
+src\casare_rpa\nodes\variable_nodes.py                                                  110     12    89%
+src\casare_rpa\nodes\wait_nodes.py                                                      210     44    79%
+src\casare_rpa\nodes\xml_nodes.py                                                       392     74    81%
+src\casare_rpa\presentation\__init__.py                                                   1      0   100%
+src\casare_rpa\presentation\canvas\__init__.py                                            2      0   100%
+src\casare_rpa\presentation\canvas\__main__.py                                            4      4     0%
+src\casare_rpa\presentation\canvas\app.py                                               234    189    19%
+src\casare_rpa\presentation\canvas\component_factory.py                                  45      0   100%
+src\casare_rpa\presentation\canvas\components\__init__.py                                 6      0   100%
+src\casare_rpa\presentation\canvas\components\action_manager.py                          72     63    12%
+src\casare_rpa\presentation\canvas\components\dock_creator.py                            91     79    13%
+src\casare_rpa\presentation\canvas\components\menu_builder.py                            78     67    14%
+src\casare_rpa\presentation\canvas\components\status_bar_manager.py                      80     66    18%
+src\casare_rpa\presentation\canvas\components\toolbar_builder.py                         23     17    26%
+src\casare_rpa\presentation\canvas\connections\__init__.py                                0      0   100%
+src\casare_rpa\presentation\canvas\connections\auto_connect.py                          323    287    11%
+src\casare_rpa\presentation\canvas\connections\connection_cutter.py                     355    330     7%
+src\casare_rpa\presentation\canvas\connections\connection_validator.py                  110     76    31%
+src\casare_rpa\presentation\canvas\controllers\__init__.py                               16      0   100%
+src\casare_rpa\presentation\canvas\controllers\autosave_controller.py                   114     87    24%
+src\casare_rpa\presentation\canvas\controllers\base_controller.py                        22      8    64%
+src\casare_rpa\presentation\canvas\controllers\connection_controller.py                  48     29    40%
+src\casare_rpa\presentation\canvas\controllers\event_bus_controller.py                  103     52    50%
+src\casare_rpa\presentation\canvas\controllers\example_workflow_controller.py            91     91     0%
+src\casare_rpa\presentation\canvas\controllers\execution_controller.py                  305    255    16%
+src\casare_rpa\presentation\canvas\controllers\menu_controller.py                       249    213    14%
+src\casare_rpa\presentation\canvas\controllers\node_controller.py                       164    142    13%
+src\casare_rpa\presentation\canvas\controllers\panel_controller.py                      168    136    19%
+src\casare_rpa\presentation\canvas\controllers\preferences_controller.py                127    100    21%
+src\casare_rpa\presentation\canvas\controllers\scheduling_controller.py                 149    122    18%
+src\casare_rpa\presentation\canvas\controllers\selector_controller.py                    95     70    26%
+src\casare_rpa\presentation\canvas\controllers\trigger_controller.py                    248    212    15%
+src\casare_rpa\presentation\canvas\controllers\ui_state_controller.py                   278    229    18%
+src\casare_rpa\presentation\canvas\controllers\viewport_controller.py                   142    114    20%
+src\casare_rpa\presentation\canvas\controllers\workflow_controller.py                   328    279    15%
+src\casare_rpa\presentation\canvas\debugger\__init__.py                                   2      2     0%
+src\casare_rpa\presentation\canvas\debugger\debug_controller.py                         366    366     0%
+src\casare_rpa\presentation\canvas\desktop\__init__.py                                    0      0   100%
+src\casare_rpa\presentation\canvas\desktop\desktop_recording_panel.py                   187    187     0%
+src\casare_rpa\presentation\canvas\desktop\rich_comment_node.py                          69     69     0%
+src\casare_rpa\presentation\canvas\events\__init__.py                                     8      0   100%
+src\casare_rpa\presentation\canvas\events\event.py                                       97     41    58%
+src\casare_rpa\presentation\canvas\events\event_batcher.py                               52      4    92%
+src\casare_rpa\presentation\canvas\events\event_bus.py                                  172     71    59%
+src\casare_rpa\presentation\canvas\events\event_handler.py                               99     80    19%
+src\casare_rpa\presentation\canvas\events\event_types.py                                274     19    93%
+src\casare_rpa\presentation\canvas\events\lazy_subscription.py                           90      2    98%
+src\casare_rpa\presentation\canvas\events\qt_signal_bridge.py                            93     59    37%
+src\casare_rpa\presentation\canvas\execution\__init__.py                                  2      2     0%
+src\casare_rpa\presentation\canvas\execution\canvas_workflow_runner.py                  134    134     0%
+src\casare_rpa\presentation\canvas\graph\__init__.py                                      5      0   100%
+src\casare_rpa\presentation\canvas\graph\custom_node_item.py                            221    184    17%
+src\casare_rpa\presentation\canvas\graph\custom_pipe.py                                 120    102    15%
+src\casare_rpa\presentation\canvas\graph\minimap.py                                     170    138    19%
+src\casare_rpa\presentation\canvas\graph\node_frame.py                                  691    691     0%
+src\casare_rpa\presentation\canvas\graph\node_graph_widget.py                           733    661    10%
+src\casare_rpa\presentation\canvas\graph\node_icons.py                                  104     86    17%
+src\casare_rpa\presentation\canvas\graph\node_quick_actions.py                          135    105    22%
+src\casare_rpa\presentation\canvas\graph\node_registry.py                               380    273    28%
+src\casare_rpa\presentation\canvas\graph\node_widgets.py                                126     77    39%
+src\casare_rpa\presentation\canvas\graph\port_shapes.py                                 112     94    16%
+src\casare_rpa\presentation\canvas\graph\viewport_culling.py                            156    156     0%
+src\casare_rpa\presentation\canvas\main_window.py                                       659    471    29%
+src\casare_rpa\presentation\canvas\port_type_system.py                                   98     98     0%
+src\casare_rpa\presentation\canvas\resources.py                                          86     10    88%
+src\casare_rpa\presentation\canvas\search\__init__.py                                     0      0   100%
+src\casare_rpa\presentation\canvas\search\command_palette.py                            183    183     0%
+src\casare_rpa\presentation\canvas\search\node_search.py                                177    177     0%
+src\casare_rpa\presentation\canvas\search\node_search_dialog.py                         111    111     0%
+src\casare_rpa\presentation\canvas\search\searchable_menu.py                            113    113     0%
+src\casare_rpa\presentation\canvas\selectors\__init__.py                                  0      0   100%
+src\casare_rpa\presentation\canvas\selectors\desktop_selector_builder.py                295    295     0%
+src\casare_rpa\presentation\canvas\selectors\element_picker.py                          134    134     0%
+src\casare_rpa\presentation\canvas\selectors\element_tree_widget.py                     161    161     0%
+src\casare_rpa\presentation\canvas\selectors\selector_dialog.py                         246    246     0%
+src\casare_rpa\presentation\canvas\selectors\selector_integration.py                     95     95     0%
+src\casare_rpa\presentation\canvas\selectors\selector_strategy.py                       135    135     0%
+src\casare_rpa\presentation\canvas\selectors\selector_validator.py                      116    116     0%
+src\casare_rpa\presentation\canvas\serialization\__init__.py                              3      3     0%
+src\casare_rpa\presentation\canvas\serialization\workflow_deserializer.py               227    227     0%
+src\casare_rpa\presentation\canvas\serialization\workflow_serializer.py                 138    138     0%
+src\casare_rpa\presentation\canvas\theme.py                                              74     74     0%
+src\casare_rpa\presentation\canvas\ui\__init__.py                                         7      7     0%
+src\casare_rpa\presentation\canvas\ui\action_factory.py                                 121    121     0%
+src\casare_rpa\presentation\canvas\ui\base_widget.py                                     67     67     0%
+src\casare_rpa\presentation\canvas\ui\debug_panel.py                                    721    721     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\__init__.py                                10     10     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\node_properties_dialog.py                 139    139     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\preferences_dialog.py                     247    247     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\recording_dialog.py                       109    109     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\schedule_dialog.py                        397    397     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\template_browser_dialog.py                146    146     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\trigger_config_dialog.py                  288    288     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\trigger_type_selector.py                  142    142     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\update_dialog.py                          249    249     0%
+src\casare_rpa\presentation\canvas\ui\dialogs\workflow_settings_dialog.py               200    200     0%
+src\casare_rpa\presentation\canvas\ui\panels\__init__.py                                 11     11     0%
+src\casare_rpa\presentation\canvas\ui\panels\bottom_panel_dock.py                       225    225     0%
+src\casare_rpa\presentation\canvas\ui\panels\debug_panel.py                             235    235     0%
+src\casare_rpa\presentation\canvas\ui\panels\history_tab.py                             180    180     0%
+src\casare_rpa\presentation\canvas\ui\panels\log_tab.py                                 154    154     0%
+src\casare_rpa\presentation\canvas\ui\panels\minimap_panel.py                           120    120     0%
+src\casare_rpa\presentation\canvas\ui\panels\output_tab.py                              170    170     0%
+src\casare_rpa\presentation\canvas\ui\panels\properties_panel.py                        189    189     0%
+src\casare_rpa\presentation\canvas\ui\panels\triggers_tab.py                            277    277     0%
+src\casare_rpa\presentation\canvas\ui\panels\validation_tab.py                          141    141     0%
+src\casare_rpa\presentation\canvas\ui\panels\variable_inspector_dock.py                  36     36     0%
+src\casare_rpa\presentation\canvas\ui\panels\variables_panel.py                         202    202     0%
+src\casare_rpa\presentation\canvas\ui\panels\variables_tab.py                            23     23     0%
+src\casare_rpa\presentation\canvas\ui\signal_bridge.py                                  134    134     0%
+src\casare_rpa\presentation\canvas\ui\toolbars\__init__.py                                4      4     0%
+src\casare_rpa\presentation\canvas\ui\toolbars\debug_toolbar.py                          97     97     0%
+src\casare_rpa\presentation\canvas\ui\toolbars\hotkey_manager.py                        175    175     0%
+src\casare_rpa\presentation\canvas\ui\toolbars\main_toolbar.py                          132    132     0%
+src\casare_rpa\presentation\canvas\ui\toolbars\zoom_toolbar.py                          103    103     0%
+src\casare_rpa\presentation\canvas\ui\widgets\__init__.py                                 4      4     0%
+src\casare_rpa\presentation\canvas\ui\widgets\execution_timeline.py                     154    154     0%
+src\casare_rpa\presentation\canvas\ui\widgets\output_console_widget.py                   94     94     0%
+src\casare_rpa\presentation\canvas\ui\widgets\performance_dashboard.py                  424    424     0%
+src\casare_rpa\presentation\canvas\ui\widgets\search_widget.py                          110    110     0%
+src\casare_rpa\presentation\canvas\ui\widgets\variable_editor_widget.py                  75     75     0%
+src\casare_rpa\presentation\canvas\visual_nodes\__init__.py                              23      1    96%
+src\casare_rpa\presentation\canvas\visual_nodes\base_visual_node.py                     213    180    15%
+src\casare_rpa\presentation\canvas\visual_nodes\basic\__init__.py                         2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\basic\nodes.py                           22      5    77%
+src\casare_rpa\presentation\canvas\visual_nodes\browser\__init__.py                       2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\browser\nodes.py                        210    103    51%
+src\casare_rpa\presentation\canvas\visual_nodes\control_flow\__init__.py                  2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\control_flow\nodes.py                   142     64    55%
+src\casare_rpa\presentation\canvas\visual_nodes\data_operations\__init__.py               2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\data_operations\nodes.py                436    227    48%
+src\casare_rpa\presentation\canvas\visual_nodes\database\__init__.py                      2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\database\nodes.py                       178    107    40%
+src\casare_rpa\presentation\canvas\visual_nodes\desktop_automation\__init__.py            2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\desktop_automation\nodes.py             580    330    43%
+src\casare_rpa\presentation\canvas\visual_nodes\email\__init__.py                         2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\email\nodes.py                          170    104    39%
+src\casare_rpa\presentation\canvas\visual_nodes\error_handling\__init__.py                2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\error_handling\nodes.py                 134     73    46%
+src\casare_rpa\presentation\canvas\visual_nodes\file_operations\__init__.py               2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\file_operations\nodes.py                577    315    45%
+src\casare_rpa\presentation\canvas\visual_nodes\office_automation\__init__.py             2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\office_automation\nodes.py              193    109    44%
+src\casare_rpa\presentation\canvas\visual_nodes\rest_api\__init__.py                      2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\rest_api\nodes.py                       289    186    36%
+src\casare_rpa\presentation\canvas\visual_nodes\scripts\__init__.py                       2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\scripts\nodes.py                         83     48    42%
+src\casare_rpa\presentation\canvas\visual_nodes\system\__init__.py                        2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\system\nodes.py                         172     84    51%
+src\casare_rpa\presentation\canvas\visual_nodes\utility\__init__.py                       2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\utility\nodes.py                        355    204    43%
+src\casare_rpa\presentation\canvas\visual_nodes\variable\__init__.py                      2      0   100%
+src\casare_rpa\presentation\canvas\visual_nodes\variable\nodes.py                        37     18    51%
+src\casare_rpa\robot\__init__.py                                                          5      0   100%
+src\casare_rpa\robot\__main__.py                                                          3      3     0%
+src\casare_rpa\robot\audit.py                                                           213    127    40%
+src\casare_rpa\robot\checkpoint.py                                                      155    155     0%
+src\casare_rpa\robot\circuit_breaker.py                                                 159    115    28%
+src\casare_rpa\robot\cli.py                                                             242    181    25%
+src\casare_rpa\robot\coordination.py                                                    804    375    53%
+src\casare_rpa\robot\distributed_agent.py                                               573    445    22%
+src\casare_rpa\robot\metrics.py                                                         194    131    32%
+src\casare_rpa\robot\tray_icon.py                                                        62     62     0%
+src\casare_rpa\triggers\__init__.py                                                       3      3     0%
+src\casare_rpa\triggers\base.py                                                         157    157     0%
+src\casare_rpa\triggers\implementations\__init__.py                                      10     10     0%
+src\casare_rpa\triggers\implementations\app_event.py                                    142    142     0%
+src\casare_rpa\triggers\implementations\chat_trigger.py                                  83     83     0%
+src\casare_rpa\triggers\implementations\email_trigger.py                                156    156     0%
+src\casare_rpa\triggers\implementations\error_trigger.py                                 89     89     0%
+src\casare_rpa\triggers\implementations\file_watch.py                                   121    121     0%
+src\casare_rpa\triggers\implementations\form_trigger.py                                  66     66     0%
+src\casare_rpa\triggers\implementations\scheduled.py                                    143    143     0%
+src\casare_rpa\triggers\implementations\webhook.py                                       39     39     0%
+src\casare_rpa\triggers\implementations\workflow_call.py                                 56     56     0%
+src\casare_rpa\triggers\manager.py                                                      262    262     0%
+src\casare_rpa\triggers\registry.py                                                      74     74     0%
+src\casare_rpa\utils\__init__.py                                                         15      0   100%
+src\casare_rpa\utils\config.py                                                           67     17    75%
+src\casare_rpa\utils\config_loader.py                                                   184    128    30%
+src\casare_rpa\utils\datetime_helpers.py                                                 45     25    44%
+src\casare_rpa\utils\fuzzy_search.py                                                    183    158    14%
+src\casare_rpa\utils\hotkey_settings.py                                                  46     30    35%
+src\casare_rpa\utils\id_generator.py                                                     41     33    20%
+src\casare_rpa\utils\performance\__init__.py                                              0      0   100%
+src\casare_rpa\utils\performance\parallel_executor.py                                   128    128     0%
+src\casare_rpa\utils\performance\performance_metrics.py                                 274    120    56%
+src\casare_rpa\utils\playwright_setup.py                                                141    131     7%
+src\casare_rpa\utils\pooling\__init__.py                                                  0      0   100%
+src\casare_rpa\utils\pooling\browser_pool.py                                            247    247     0%
+src\casare_rpa\utils\pooling\database_pool.py                                           306    306     0%
+src\casare_rpa\utils\pooling\http_session_pool.py                                       285    285     0%
+src\casare_rpa\utils\resilience\__init__.py                                               0      0   100%
+src\casare_rpa\utils\resilience\error_handler.py                                        169    169     0%
+src\casare_rpa\utils\resilience\rate_limiter.py                                         154    154     0%
+src\casare_rpa\utils\resilience\retry.py                                                131    131     0%
+src\casare_rpa\utils\security\__init__.py                                                 0      0   100%
+src\casare_rpa\utils\security\credential_manager.py                                     136    136     0%
+src\casare_rpa\utils\security\safe_eval.py                                               37      5    86%
+src\casare_rpa\utils\security\secrets_manager.py                                         89     89     0%
+src\casare_rpa\utils\security\vault_client.py                                           176    176     0%
+src\casare_rpa\utils\selectors\__init__.py                                                0      0   100%
+src\casare_rpa\utils\selectors\selector_cache.py                                        101    101     0%
+src\casare_rpa\utils\selectors\selector_generator.py                                    135    135     0%
+src\casare_rpa\utils\selectors\selector_healing.py                                      243    159    35%
+src\casare_rpa\utils\selectors\selector_manager.py                                      174    174     0%
+src\casare_rpa\utils\selectors\selector_normalizer.py                                    62     43    31%
+src\casare_rpa\utils\settings_manager.py                                                 69     51    26%
+src\casare_rpa\utils\workflow\__init__.py                                                 0      0   100%
+src\casare_rpa\utils\workflow\subgraph_calculator.py                                     96     96     0%
+src\casare_rpa\utils\workflow\template_loader.py                                        204    204     0%
+src\casare_rpa\utils\workflow\workflow_loader.py                                        147    105    29%
+src\casare_rpa\utils\workflow\workflow_migration.py                                      85     85     0%
+---------------------------------------------------------------------------------------------------------
+TOTAL                                                                                 63664  40105    37%
+FAIL Required test coverage of 75% not reached. Total coverage: 37.01%
+
+----------------------------------------------------------------------------------------------------------- benchmark: 26 tests ------------------------------------------------------------------------------------------------------------
+Name (time in us)                                     Min                     Max                   Mean                 StdDev                 Median                   IQR            Outliers           OPS            Rounds  Iterations
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_node_validation_timing                        1.7000 (1.0)           89.6000 (1.0)           1.8498 (1.0)           0.6484 (1.0)           1.8000 (1.0)          0.1000 (1.0)       313;459  540,585.7771 (1.0)       88496           1
+test_serialize_100_node_chain                     22.7000 (13.35)        129.6000 (1.45)         23.3673 (12.63)         1.3323 (2.05)         23.2000 (12.89)        0.3000 (3.00)     498;1649   42,794.7653 (0.08)      28249           1
+test_small_workflow_timing                        41.2000 (24.24)        306.8000 (3.42)         43.9640 (23.77)        14.1354 (21.80)        42.5000 (23.61)        0.8000 (8.00)      120;737   22,745.9019 (0.04)      12837           1
+test_control_flow_node_execution                  56.3000 (33.12)        457.5000 (5.11)         67.4363 (36.46)        36.4470 (56.21)        59.1000 (32.83)        2.0000 (20.00)     346;919   14,828.8067 (0.03)       7717           1
+test_connection_validation_timing                 60.5000 (35.59)        176.8000 (1.97)         63.2310 (34.18)         4.3387 (6.69)         62.8000 (34.89)        1.3000 (13.00)     339;659   15,815.0257 (0.03)      11849           1
+test_deserialize_100_node_chain                   71.3000 (41.94)        159.4000 (1.78)         73.3952 (39.68)         3.8604 (5.95)         72.6000 (40.33)        0.8000 (8.00)      380;916   13,624.8717 (0.03)       9183           1
+test_serialize_large_workflow                    110.9000 (65.24)        266.5000 (2.97)        114.7646 (62.04)         5.0673 (7.82)        113.5000 (63.06)        2.8000 (28.00)     196;196    8,713.4909 (0.02)       6014           1
+test_entry_point_detection_timing                114.8000 (67.53)        233.0000 (2.60)        117.5453 (63.54)         3.7364 (5.76)        117.1000 (65.06)        0.7000 (7.00)      118;650    8,507.3566 (0.02)       7594           1
+test_circular_dependency_detection_timing        119.1000 (70.06)        868.0000 (9.69)        131.4496 (71.06)        31.9396 (49.26)       123.2000 (68.44)        3.3000 (33.00)     412;693    7,607.4779 (0.01)       6545           1
+test_basic_node_execution                        140.8000 (82.82)        660.3000 (7.37)        166.0264 (89.75)        59.2248 (91.34)       145.0000 (80.56)        5.7000 (57.00)     412;506    6,023.1386 (0.01)       3273           1
+test_variable_node_execution                     162.9000 (95.82)      1,037.3000 (11.58)       184.5162 (99.75)        46.2125 (71.27)       172.4000 (95.78)        9.7000 (97.00)     154;261    5,419.5777 (0.01)       2614           1
+test_medium_workflow_timing                      377.7000 (222.18)       689.2000 (7.69)        404.4278 (218.63)       39.4712 (60.88)       393.4000 (218.56)       7.3000 (73.00)     146;250    2,472.6290 (0.00)       2270           1
+test_validate_100_node_chain                     462.6000 (272.12)       965.9000 (10.78)       486.7277 (263.12)       47.4296 (73.15)       473.8000 (263.22)       7.8000 (78.00)     102;162    2,054.5369 (0.00)       1607           1
+test_simple_workflow_execution                   476.4000 (280.24)     3,210.7000 (35.83)       525.1889 (283.91)       91.2840 (140.79)      506.6000 (281.44)      25.3000 (253.00)     80;139    1,904.0770 (0.00)       1274           1
+test_dense_workflow_timing                       608.9000 (358.18)     1,686.1000 (18.82)       636.7340 (344.21)       47.0836 (72.62)       628.4000 (349.11)       7.6000 (76.00)      50;124    1,570.5146 (0.00)       1469           1
+test_validate_branching_workflow                 956.4000 (562.59)     1,965.7000 (21.94)     1,007.2598 (544.51)       73.6753 (113.63)      984.7000 (547.06)      18.7750 (187.75)    114;139      992.7925 (0.00)        955           1
+test_canvas_imports_time                       1,381.2000 (812.47)     2,051.5000 (22.90)     1,442.6150 (779.86)       71.8683 (110.84)    1,428.7500 (793.75)      39.3000 (393.00)      14;15      693.1856 (0.00)        286           1
+test_core_imports_time                         1,543.2000 (907.77)     4,031.3000 (44.99)     1,649.1026 (891.48)      180.0446 (277.69)    1,620.0000 (900.00)      58.4000 (584.00)      14;21      606.3904 (0.00)        386           1
+test_5_level_branching_construction            2,047.6000 (>1000.0)    2,664.5000 (29.74)     2,143.6320 (>1000.0)      50.4644 (77.83)     2,129.2000 (>1000.0)     31.0750 (310.75)      58;46      466.4980 (0.00)        437           1
+test_100_node_chain_construction_time          2,194.9000 (>1000.0)    2,785.1000 (31.08)     2,325.8623 (>1000.0)      50.5462 (77.96)     2,313.6000 (>1000.0)     47.1250 (471.25)      86;12      429.9481 (0.00)        395           1
+test_node_imports_time                         2,217.3000 (>1000.0)    6,800.5000 (75.90)     2,560.4831 (>1000.0)     398.2170 (614.18)    2,474.7500 (>1000.0)    240.6000 (>1000.0)     27;27      390.5513 (0.00)        314           1
+test_500_node_chain_construction_time         11,165.1000 (>1000.0)   12,389.2000 (138.27)   11,861.9568 (>1000.0)     255.1322 (393.50)   11,899.2000 (>1000.0)    225.5250 (>1000.0)     23;14       84.3031 (0.00)         81           1
+test_module_import_startup                    14,783.7000 (>1000.0)   20,681.5000 (230.82)   16,592.6481 (>1000.0)   1,352.1409 (>1000.0)  16,302.0500 (>1000.0)  1,322.1000 (>1000.0)      15;4       60.2677 (0.00)         54           1
+test_500_set_500_get_operations               19,772.2000 (>1000.0)  157,644.9000 (>1000.0)  23,259.9860 (>1000.0)  19,399.4131 (>1000.0)  20,497.2000 (>1000.0)    919.8000 (>1000.0)       1;1       42.9923 (0.00)         50           1
+test_1000_set_operations                      22,770.4000 (>1000.0)   25,567.9000 (285.36)   24,380.8256 (>1000.0)     665.2521 (>1000.0)  24,432.1000 (>1000.0)    851.1500 (>1000.0)      13;0       41.0158 (0.00)         39           1
+test_10_level_deep_branching                  73,152.9000 (>1000.0)  221,875.1000 (>1000.0)  86,045.9714 (>1000.0)  39,157.3258 (>1000.0)  75,881.4000 (>1000.0)  3,201.6000 (>1000.0)       1;2       11.6217 (0.00)         14           1
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+-------------------------------------------------- benchmark 'execution': 1 tests --------------------------------------------------
+Name (time in ms)                              Min      Max     Mean  StdDev   Median     IQR  Outliers      OPS  Rounds  Iterations
+------------------------------------------------------------------------------------------------------------------------------------
+test_100_node_workflow_under_threshold     11.0157  17.3805  11.6974  0.9728  11.4506  0.3554       6;7  85.4888      87           1
+------------------------------------------------------------------------------------------------------------------------------------
+
+---------------------------------------------------- benchmark 'startup': 1 tests ---------------------------------------------------
+Name (time in us)                         Min       Max     Mean  StdDev   Median     IQR  Outliers  OPS (Kops/s)  Rounds  Iterations
+-------------------------------------------------------------------------------------------------------------------------------------
+test_startup_time_under_threshold     14.2000  159.9000  14.8310  1.5433  14.7000  0.3000   562;789       67.4266   28012           1
+-------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+=========================== short test summary info ===========================
+FAILED tests/application/use_cases/test_execute_workflow_integration.py::TestEventBusIntegration::test_workflow_error_event_on_failure
+FAILED tests/domain/schemas/test_validation_edge_cases.py::TestPortNames::test_is_exec_port_edge_cases
+FAILED tests/domain/test_validation_module.py::TestSemanticValidation::test_unreachable_nodes_warning
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestWorkflowSubmissionRequestValidation::test_workflow_json_nodes_not_list
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestStoreWorkflowDatabase::test_returns_true_stub
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestSubmitWorkflowEndpoint::test_submit_manual_trigger_success
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestSubmitWorkflowEndpoint::test_submit_scheduled_trigger
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestSubmitWorkflowEndpoint::test_submit_webhook_trigger
+FAILED tests/infrastructure/orchestrator/api/routers/test_workflows.py::TestUploadWorkflowEndpoint::test_upload_valid_json_file
+FAILED tests/infrastructure/resources/test_unified_resource_manager.py::TestAnalyzeWorkflowNeeds::test_handles_none_nodes
+FAILED tests/infrastructure/security/test_validation_security.py::TestInputValidationBypass::test_type_confusion_attack
+FAILED tests/infrastructure/security/test_validation_security.py::TestRaceConditions::test_global_state_isolation
+FAILED tests/nodes/browser/test_browser_nodes.py::TestCloseBrowserNode::test_close_browser_from_input
+FAILED tests/nodes/browser/test_data_extraction_nodes.py::TestScreenshotNode::test_screenshot_page_success
+FAILED tests/nodes/test_error_handling_nodes.py::TestWebhookNotifyNode::test_webhook_slack_format
+FAILED tests/nodes/test_error_handling_nodes.py::TestWebhookNotifyNode::test_webhook_discord_format
+FAILED tests/nodes/test_error_handling_nodes.py::TestWebhookNotifyNode::test_webhook_teams_format
+FAILED tests/nodes/test_file_nodes.py::TestCreateDirectoryNode::test_create_directory
+FAILED tests/nodes/test_file_nodes.py::TestCreateDirectoryNode::test_create_nested_directories
+FAILED tests/nodes/test_file_nodes.py::TestCreateDirectoryNode::test_create_existing_exist_ok
+FAILED tests/nodes/test_file_nodes.py::TestFileExistsNode::test_file_exists
+FAILED tests/nodes/test_file_nodes.py::TestFileExistsNode::test_directory_exists
+FAILED tests/nodes/test_http_nodes.py::TestParseJsonResponseNode::test_parse_json_path_not_found
+FAILED tests/nodes/test_http_nodes.py::TestHttpNodesRetry::test_http_get_retry_on_failure
+FAILED tests/performance/test_lazy_subscription.py::TestLazySubscriptionOriginalHandlers::test_restore_original_handlers
+FAILED tests/performance/test_lazy_subscription.py::TestLazySubscriptionGroup::test_group_activate_all
+FAILED tests/performance/test_performance_regression.py::TestExecutionPerformance::test_100_node_workflow_execution_under_threshold
+FAILED tests/performance/test_validation_performance.py::TestValidationTiming::test_large_workflow_timing
+FAILED tests/performance/test_validation_performance.py::TestValidationTiming::test_validation_scales_linearly
+FAILED tests/performance/test_validation_performance.py::TestRepeatedValidation::test_validation_caching_behavior
+FAILED tests/performance/test_validation_performance.py::TestWorstCaseScenarios::test_worst_case_unreachable_nodes
+FAILED tests/performance/test_validation_performance.py::TestMemoryUsage::test_large_workflow_memory_usage
+FAILED tests/test_visual_nodes_imports.py::TestVisualNodesImports::test_main_init_exports_all_nodes
+FAILED tests/test_visual_nodes_imports.py::TestVisualNodesImports::test_compatibility_layer_has_all_exports
+==== 34 failed, 2789 passed, 2 skipped, 102 warnings in 142.85s (0:02:22) =====
+{
+    "resource_metrics": [
+        {
+            "resource": {
+                "attributes": {
+                    "telemetry.sdk.language": "python",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "1.38.0",
+                    "service.name": "test-init",
+                    "service.version": "1.0.0",
+                    "service.instance.id": "R",
+                    "deployment.environment": "development",
+                    "host.name": "R"
+                },
+                "schema_url": ""
+            },
+            "scope_metrics": [
+                {
+                    "scope": {
+                        "name": "casare_rpa.core",
+                        "version": "1.0.0",
+                        "schema_url": "",
+                        "attributes": null
+                    },
+                    "metrics": [
+                        {
+                            "name": "casare_rpa.queue.depth",
+                            "description": "Current depth of the job queue",
+                            "unit": "1",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {},
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549812361697700,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "casare_rpa.robot.utilization",
+                            "description": "Robot utilization percentage (0-100)",
+                            "unit": "%",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {
+                                            "active_robots": 0
+                                        },
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549812361697700,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "schema_url": ""
+                }
+            ],
+            "schema_url": ""
+        }
+    ]
+}
+{
+    "resource_metrics": [
+        {
+            "resource": {
+                "attributes": {
+                    "telemetry.sdk.language": "python",
+                    "telemetry.sdk.name": "opentelemetry",
+                    "telemetry.sdk.version": "1.38.0",
+                    "service.name": "test-init",
+                    "service.version": "1.0.0",
+                    "service.instance.id": "R",
+                    "deployment.environment": "development",
+                    "host.name": "R"
+                },
+                "schema_url": ""
+            },
+            "scope_metrics": [
+                {
+                    "scope": {
+                        "name": "casare_rpa.core",
+                        "version": "1.0.0",
+                        "schema_url": "",
+                        "attributes": null
+                    },
+                    "metrics": [
+                        {
+                            "name": "casare_rpa.queue.depth",
+                            "description": "Current depth of the job queue",
+                            "unit": "1",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {},
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549812362464400,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "casare_rpa.robot.utilization",
+                            "description": "Robot utilization percentage (0-100)",
+                            "unit": "%",
+                            "data": {
+                                "data_points": [
+                                    {
+                                        "attributes": {
+                                            "active_robots": 0
+                                        },
+                                        "start_time_unix_nano": null,
+                                        "time_unix_nano": 1764549812362464400,
+                                        "value": 0.0,
+                                        "exemplars": []
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                    "schema_url": ""
+                }
+            ],
+            "schema_url": ""
+        }
+    ]
+}

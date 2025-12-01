@@ -640,7 +640,7 @@ class TestWebhookNotifyNode:
             node_id="test_webhook_slack", config={"format": "slack"}
         )
 
-        payload = node._build_payload("Test message", {"key": "value"})
+        payload = node._build_payload("slack", "Test message", {"key": "value"})
 
         assert "text" in payload
         assert payload["text"] == "Test message"
@@ -655,7 +655,7 @@ class TestWebhookNotifyNode:
             node_id="test_webhook_discord", config={"format": "discord"}
         )
 
-        payload = node._build_payload("Test message", {"key": "value"})
+        payload = node._build_payload("discord", "Test message", {"key": "value"})
 
         assert "content" in payload
         assert payload["content"] == "Test message"
@@ -670,7 +670,7 @@ class TestWebhookNotifyNode:
             node_id="test_webhook_teams", config={"format": "teams"}
         )
 
-        payload = node._build_payload("Test message", {"key": "value"})
+        payload = node._build_payload("teams", "Test message", {"key": "value"})
 
         assert "@type" in payload
         assert payload["@type"] == "MessageCard"

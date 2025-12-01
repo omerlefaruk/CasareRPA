@@ -517,6 +517,7 @@ class WriteFileNode(BaseNode):
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("content", PortType.INPUT, DataType.STRING)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("bytes_written", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -565,6 +566,7 @@ class WriteFileNode(BaseNode):
                     bytes_written = f.write(str(content) if content else "")
 
             self.set_output_value("file_path", str(path))
+            self.set_output_value("attachment_file", [str(path)])
             self.set_output_value("bytes_written", bytes_written)
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
@@ -1270,6 +1272,7 @@ class ListFilesNode(BaseNode):
         self.add_input_port("directory_path", PortType.INPUT, DataType.STRING)
         self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1306,6 +1309,7 @@ class ListFilesNode(BaseNode):
 
             self.set_output_value("files", files)
             self.set_output_value("count", len(files))
+            self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
             return {
@@ -1463,6 +1467,7 @@ class ListDirectoryNode(BaseNode):
         return True, ""
 
 
+@executable_node
 @node_schema(
     PropertyDef(
         "path",
@@ -1488,7 +1493,6 @@ class ListDirectoryNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class FileExistsNode(BaseNode):
     """
     Check if a file or directory exists.
@@ -1559,12 +1563,11 @@ class FileExistsNode(BaseNode):
                     "is_file": is_file,
                     "is_dir": is_directory,
                 },
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         check_type = self.config.get("check_type", "any")
@@ -1573,6 +1576,7 @@ class FileExistsNode(BaseNode):
         return True, ""
 
 
+@executable_node
 @node_schema(
     PropertyDef(
         "file_path",
@@ -1590,7 +1594,6 @@ class FileExistsNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class GetFileSizeNode(BaseNode):
     """
     Get the size of a file in bytes.
@@ -1644,17 +1647,18 @@ class GetFileSizeNode(BaseNode):
             self.set_output_value("success", True)
             self.status = NodeStatus.SUCCESS
 
-            return {"success": True, "data": {"size": size}, "next_nodes": ["exec_out"]}
+            return {"success": True, "data": {"size": size}}
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""
 
 
+@executable_node
 @node_schema(
     PropertyDef(
         "file_path",
@@ -1672,7 +1676,6 @@ class GetFileSizeNode(BaseNode):
         tooltip="Allow access to system directories (use with caution)",
     ),
 )
-@executable_node
 class GetFileInfoNode(BaseNode):
     """
     Get detailed information about a file.
@@ -1752,13 +1755,12 @@ class GetFileInfoNode(BaseNode):
                     "size": stat.st_size,
                     "extension": path.suffix,
                 },
-                "next_nodes": ["exec_out"],
             }
 
         except Exception as e:
             self.set_output_value("success", False)
             self.status = NodeStatus.ERROR
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return {"success": False, "error": str(e)}
 
     def _validate_config(self) -> tuple[bool, str]:
         return True, ""

@@ -1653,7 +1653,10 @@ class AdvancedScheduler:
 
             if schedule.conditional.condition_expression:
                 try:
-                    result = eval(
+                    # Use safe_eval instead of dangerous eval() to prevent RCE
+                    from casare_rpa.utils.security.safe_eval import safe_eval
+
+                    result = safe_eval(
                         schedule.conditional.condition_expression,
                         {"schedule": schedule},
                     )

@@ -1,8 +1,15 @@
 ---
 # PROGRESS TRACKER
-**Last Updated**: 2025-11-29 (ALL PHASES COMPLETE! 🎉)
+**Last Updated**: 2025-12-01 (ALL PHASES COMPLETE! 🎉)
 **Status**: 16/16 Implementation Tasks Complete (100%)
 **User Actions Required**: PostgreSQL installation + Platform testing
+
+## Recent v3.1.0 Additions
+- ✅ OAuth 2.0 Nodes (4 new nodes for complete OAuth flow automation)
+- ✅ Debug Panel with Call Stack, Watch Expressions, Breakpoints
+- ✅ Node Library Panel with search and drag-and-drop
+- ✅ VS Code-like Keyboard Shortcuts (F5, F9, F10)
+- ✅ Toolbar Icons using Qt standard theme-aware icons
 
 ## Progress Summary
 

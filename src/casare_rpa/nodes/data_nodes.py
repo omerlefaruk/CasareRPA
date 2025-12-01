@@ -640,6 +640,7 @@ class ScreenshotNode(BaseNode):
         self.add_input_port("page", PortType.INPUT, DataType.PAGE)
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -790,6 +791,7 @@ class ScreenshotNode(BaseNode):
 
                     # Set output
                     self.set_output_value("file_path", file_path)
+                    self.set_output_value("attachment_file", [file_path])
 
                     self.status = NodeStatus.SUCCESS
                     logger.info(f"Screenshot saved: {file_path} (attempt {attempts})")
@@ -799,7 +801,9 @@ class ScreenshotNode(BaseNode):
                         "data": {
                             "file_path": file_path,
                             "full_page": full_page,
-                            "element": selector is not None,
+                            "element": bool(
+                                selector
+                            ),  # True if selector is non-empty string
                             "type": img_type,
                             "attempts": attempts,
                         },

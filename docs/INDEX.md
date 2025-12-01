@@ -126,9 +126,29 @@ All documentation uses Mermaid.js diagrams. Key diagram types:
 
 | Item | Version |
 |------|---------|
-| Documentation | 3.0.0 |
-| CasareRPA | 3.0.0 |
-| Last Updated | 2025-11-30 |
+| Documentation | 3.1.0 |
+| CasareRPA | 3.1.0 |
+| Last Updated | 2025-12-01 |
+
+## Recent Updates (v3.1.0)
+
+### New Features
+- **OAuth 2.0 Nodes** - Complete OAuth flow automation:
+  - `OAuth2AuthorizeNode` - Build authorization URL with PKCE support
+  - `OAuth2TokenExchangeNode` - All grant types (auth code, client credentials, refresh, password)
+  - `OAuth2CallbackServerNode` - Local HTTP server for OAuth callbacks
+  - `OAuth2TokenValidateNode` - RFC 7662 token introspection
+
+### UI/UX Improvements
+- **Debug Panel** - Call stack, watch expressions, breakpoints, REPL console
+- **Node Library Panel** - Searchable tree view with drag-and-drop
+- **VS Code-like Shortcuts** - Standardized keyboard shortcuts (F5, F9, F10)
+- **Toolbar Icons** - Theme-aware Qt standard icons
+
+### Architecture
+- Clean separation of concerns with DockCreator pattern
+- 3-tier lazy loading for faster startup
+- Improved event handling for debug workflows
 
 ---
 

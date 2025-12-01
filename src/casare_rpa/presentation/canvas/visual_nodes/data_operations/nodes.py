@@ -1,5 +1,6 @@
 """Visual nodes for data operations category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 # Import logic nodes
@@ -59,9 +60,9 @@ class VisualConcatenateNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("string_1")
-        self.add_input("string_2")
-        self.add_output("result")
+        self.add_typed_input("string_1", DataType.STRING)
+        self.add_typed_input("string_2", DataType.STRING)
+        self.add_typed_output("result", DataType.STRING)
 
     def get_node_class(self) -> type:
         return ConcatenateNode
@@ -76,9 +77,9 @@ class VisualFormatStringNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("template")
-        self.add_input("variables")
-        self.add_output("result")
+        self.add_typed_input("template", DataType.STRING)
+        self.add_typed_input("variables", DataType.DICT)
+        self.add_typed_output("result", DataType.STRING)
 
     def get_node_class(self) -> type:
         return FormatStringNode
@@ -93,12 +94,12 @@ class VisualRegexMatchNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("text")
-        self.add_input("pattern")
-        self.add_output("match_found")
-        self.add_output("first_match")
-        self.add_output("all_matches")
-        self.add_output("groups")
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("pattern", DataType.STRING)
+        self.add_typed_output("match_found", DataType.BOOLEAN)
+        self.add_typed_output("first_match", DataType.STRING)
+        self.add_typed_output("all_matches", DataType.LIST)
+        self.add_typed_output("groups", DataType.LIST)
 
     def get_node_class(self) -> type:
         return RegexMatchNode
@@ -111,13 +112,13 @@ class VisualRegexReplaceNode(VisualNode):
     NODE_NAME = "Regex Replace"
     NODE_CATEGORY = "data_operations"
 
-    def __init__(self):
-        super().__init__()
-        self.add_input("text")
-        self.add_input("pattern")
-        self.add_input("replacement")
-        self.add_output("result")
-        self.add_output("count")
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        self.add_typed_input("text", DataType.STRING)
+        self.add_typed_input("pattern", DataType.STRING)
+        self.add_typed_input("replacement", DataType.STRING)
+        self.add_typed_output("result", DataType.STRING)
+        self.add_typed_output("count", DataType.INTEGER)
 
     def get_node_class(self):
         return RegexReplaceNode
@@ -141,11 +142,11 @@ class VisualMathOperationNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("a")
-        self.add_input("b")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("a", DataType.FLOAT)
+        self.add_typed_input("b", DataType.FLOAT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.FLOAT)
 
     def get_node_class(self):
         return MathOperationNode
@@ -176,11 +177,11 @@ class VisualComparisonNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("a")
-        self.add_input("b")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("a", DataType.ANY)
+        self.add_typed_input("b", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.BOOLEAN)
 
     def get_node_class(self):
         return ComparisonNode
@@ -195,10 +196,10 @@ class VisualCreateListNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("item_1")
-        self.add_input("item_2")
-        self.add_input("item_3")
-        self.add_output("list")
+        self.add_typed_input("item_1", DataType.ANY)
+        self.add_typed_input("item_2", DataType.ANY)
+        self.add_typed_input("item_3", DataType.ANY)
+        self.add_typed_output("list", DataType.LIST)
 
     def get_node_class(self) -> type:
         return CreateListNode
@@ -213,9 +214,9 @@ class VisualListGetItemNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("list")
-        self.add_input("index")
-        self.add_output("item")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("index", DataType.INTEGER)
+        self.add_typed_output("item", DataType.ANY)
 
     def get_node_class(self) -> type:
         return ListGetItemNode
@@ -230,8 +231,8 @@ class VisualJsonParseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("json_string")
-        self.add_output("data")
+        self.add_typed_input("json_string", DataType.STRING)
+        self.add_typed_output("data", DataType.ANY)
 
     def get_node_class(self) -> type:
         return JsonParseNode
@@ -246,9 +247,9 @@ class VisualGetPropertyNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("object")
-        self.add_input("property_path")
-        self.add_output("value")
+        self.add_typed_input("object", DataType.ANY)
+        self.add_typed_input("property_path", DataType.STRING)
+        self.add_typed_output("value", DataType.ANY)
 
     def get_node_class(self) -> type:
         return GetPropertyNode
@@ -268,10 +269,10 @@ class VisualListLengthNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_output("exec_out")
-        self.add_output("length")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("length", DataType.INTEGER)
 
     def get_node_class(self):
         return ListLengthNode
@@ -286,11 +287,11 @@ class VisualListAppendNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("item")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("item", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListAppendNode
@@ -305,12 +306,12 @@ class VisualListContainsNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("item")
-        self.add_output("exec_out")
-        self.add_output("contains")
-        self.add_output("index")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("item", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("contains", DataType.BOOLEAN)
+        self.add_typed_output("index", DataType.INTEGER)
 
     def get_node_class(self):
         return ListContainsNode
@@ -331,12 +332,12 @@ class VisualListSliceNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("start")
-        self.add_input("end")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("start", DataType.INTEGER)
+        self.add_typed_input("end", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListSliceNode
@@ -355,11 +356,11 @@ class VisualListJoinNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("separator")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("separator", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.STRING)
 
     def get_node_class(self):
         return ListJoinNode
@@ -379,10 +380,10 @@ class VisualListSortNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListSortNode
@@ -397,10 +398,10 @@ class VisualListReverseNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListReverseNode
@@ -415,11 +416,11 @@ class VisualListUniqueNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("removed_count")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
+        self.add_typed_output("removed_count", DataType.INTEGER)
 
     def get_node_class(self):
         return ListUniqueNode
@@ -456,14 +457,14 @@ class VisualListFilterNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("condition")
-        self.add_input("value")
-        self.add_input("key_path")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("removed")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        # Note: "condition" port removed - use combo menu property instead
+        self.add_typed_input("value", DataType.ANY)
+        self.add_typed_input("key_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
+        self.add_typed_output("removed", DataType.LIST)
 
     def get_node_class(self):
         return ListFilterNode
@@ -497,12 +498,12 @@ class VisualListMapNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("transform")
-        self.add_input("key_path")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("transform", DataType.STRING)
+        self.add_typed_input("key_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListMapNode
@@ -538,12 +539,12 @@ class VisualListReduceNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("operation")
-        self.add_input("key_path")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        # Note: "operation" port removed - use combo menu property instead
+        self.add_typed_input("key_path", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.ANY)
 
     def get_node_class(self):
         return ListReduceNode
@@ -562,11 +563,11 @@ class VisualListFlattenNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("list")
-        self.add_input("depth")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("list", DataType.LIST)
+        self.add_typed_input("depth", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.LIST)
 
     def get_node_class(self):
         return ListFlattenNode
@@ -591,13 +592,13 @@ class VisualDictGetNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_input("key")
-        self.add_input("default")
-        self.add_output("exec_out")
-        self.add_output("value")
-        self.add_output("found")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_typed_input("key", DataType.STRING)
+        self.add_typed_input("default", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("value", DataType.ANY)
+        self.add_typed_output("found", DataType.BOOLEAN)
 
     def get_node_class(self):
         return DictGetNode
@@ -616,12 +617,12 @@ class VisualDictSetNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_input("key")
-        self.add_input("value")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_typed_input("key", DataType.STRING)
+        self.add_typed_input("value", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.DICT)
 
     def get_node_class(self):
         return DictSetNode
@@ -640,12 +641,12 @@ class VisualDictRemoveNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_input("key")
-        self.add_output("exec_out")
-        self.add_output("result")
-        self.add_output("removed_value")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_typed_input("key", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.DICT)
+        self.add_typed_output("removed_value", DataType.ANY)
 
     def get_node_class(self):
         return DictRemoveNode
@@ -660,11 +661,11 @@ class VisualDictMergeNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict1")
-        self.add_input("dict2")
-        self.add_output("exec_out")
-        self.add_output("result")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict1", DataType.DICT)
+        self.add_typed_input("dict2", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("result", DataType.DICT)
 
     def get_node_class(self):
         return DictMergeNode
@@ -679,10 +680,10 @@ class VisualDictKeysNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_output("exec_out")
-        self.add_output("keys")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("keys", DataType.LIST)
 
     def get_node_class(self):
         return DictKeysNode
@@ -697,10 +698,10 @@ class VisualDictValuesNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_output("exec_out")
-        self.add_output("values")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("values", DataType.LIST)
 
     def get_node_class(self):
         return DictValuesNode
@@ -719,11 +720,11 @@ class VisualDictHasKeyNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_input("key")
-        self.add_output("exec_out")
-        self.add_output("exists")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_typed_input("key", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("exists", DataType.BOOLEAN)
 
     def get_node_class(self):
         return DictHasKeyNode
@@ -738,15 +739,15 @@ class VisualCreateDictNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("key1")
-        self.add_input("value1")
-        self.add_input("key2")
-        self.add_input("value2")
-        self.add_input("key3")
-        self.add_input("value3")
-        self.add_output("exec_out")
-        self.add_output("dict")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("key1", DataType.STRING)
+        self.add_typed_input("value1", DataType.ANY)
+        self.add_typed_input("key2", DataType.STRING)
+        self.add_typed_input("value2", DataType.ANY)
+        self.add_typed_input("key3", DataType.STRING)
+        self.add_typed_input("value3", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("dict", DataType.DICT)
 
     def get_node_class(self):
         return CreateDictNode
@@ -765,11 +766,11 @@ class VisualDictToJsonNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_input("indent")
-        self.add_output("exec_out")
-        self.add_output("json")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_typed_input("indent", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("json", DataType.STRING)
 
     def get_node_class(self):
         return DictToJsonNode
@@ -784,10 +785,10 @@ class VisualDictItemsNode(VisualNode):
 
     def setup_ports(self):
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("dict")
-        self.add_output("exec_out")
-        self.add_output("items")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("dict", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("items", DataType.LIST)
 
     def get_node_class(self):
         return DictItemsNode

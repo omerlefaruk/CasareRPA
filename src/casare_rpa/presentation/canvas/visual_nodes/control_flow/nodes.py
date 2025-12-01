@@ -1,5 +1,6 @@
 """Visual nodes for control_flow category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
@@ -13,14 +14,14 @@ class VisualIfNode(VisualNode):
     def __init__(self) -> None:
         """Initialize If node."""
         super().__init__()
-        self.add_text_input("expression", "Expression", tab="properties")
+        # Note: 'expression' property is auto-created from CasareRPA IfNode schema
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("condition")
-        self.add_output("true")
-        self.add_output("false")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("condition", DataType.BOOLEAN)
+        self.add_exec_output("true")
+        self.add_exec_output("false")
 
 
 class VisualForLoopNode(VisualNode):
@@ -64,9 +65,7 @@ class VisualForLoopStartNode(VisualNode):
     def __init__(self) -> None:
         """Initialize For Loop Start node."""
         super().__init__()
-        self.add_text_input("start", "Start", text="0", tab="properties")
-        self.add_text_input("end", "End", text="10", tab="properties")
-        self.add_text_input("step", "Step", text="1", tab="properties")
+        # Note: 'start', 'end', 'step' properties are auto-created from CasareRPA ForLoopStartNode schema
         # Store paired end node ID
         self.paired_end_id: str = ""
 
@@ -159,10 +158,7 @@ class VisualWhileLoopStartNode(VisualNode):
     def __init__(self) -> None:
         """Initialize While Loop Start node."""
         super().__init__()
-        self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input(
-            "max_iterations", "Max Iterations", text="1000", tab="properties"
-        )
+        # Note: 'expression', 'max_iterations' properties are auto-created from CasareRPA WhileLoopStartNode schema
         self.paired_end_id: str = ""
 
     def setup_ports(self) -> None:
@@ -224,8 +220,8 @@ class VisualBreakNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
 
 
 class VisualContinueNode(VisualNode):
@@ -241,8 +237,36 @@ class VisualContinueNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
+
+
+class VisualMergeNode(VisualNode):
+    """
+    Visual representation of MergeNode.
+
+    Allows multiple execution paths to converge into a single path.
+    Connect multiple exec outputs to this node's exec_in, then continue
+    from exec_out to the next node.
+
+    Example:
+        If ──┬── TRUE ─────────┬──→ Merge ──→ Send Email
+             └── FALSE → Zip ──┘
+    """
+
+    __identifier__ = "casare_rpa.control_flow"
+    NODE_NAME = "Merge"
+    NODE_CATEGORY = "control_flow"
+
+    def __init__(self) -> None:
+        """Initialize Merge node."""
+        super().__init__()
+
+    def setup_ports(self) -> None:
+        """Setup ports."""
+        # exec_in accepts multiple connections (standard for exec inputs)
+        self.add_exec_input()
+        self.add_exec_output()
 
 
 class VisualSwitchNode(VisualNode):
@@ -255,19 +279,13 @@ class VisualSwitchNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Switch node."""
         super().__init__()
-        self.add_text_input("expression", "Expression", tab="properties")
-        self.add_text_input(
-            "cases",
-            "Cases (comma-separated)",
-            text="success,error,pending",
-            tab="properties",
-        )
+        # Note: 'expression', 'cases' properties are auto-created from CasareRPA SwitchNode schema
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("value")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("value", DataType.ANY)
 
         # Cases will be created dynamically based on config
         # But we need at least the default output
-        self.add_output("default")
+        self.add_exec_output("default")

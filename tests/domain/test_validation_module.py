@@ -587,7 +587,10 @@ class TestHelperFunctions:
         }
         connections = []
         entry_points, reachable = _find_entry_points_and_reachable(nodes, connections)
-        assert len(entry_points) == 3  # All nodes are entry points (no incoming exec)
+        # Only StartNodes are entry points - EndNode is not an entry point
+        assert len(entry_points) == 2
+        assert "n1" in entry_points
+        assert "n2" in entry_points
 
 
 # ============================================================================

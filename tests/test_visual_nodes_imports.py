@@ -1,7 +1,7 @@
 """
 Smoke tests for visual node imports.
 
-This test ensures all 238 visual nodes can be imported successfully
+This test ensures all 239 visual nodes can be imported successfully
 from both the new location and the compatibility layer.
 """
 
@@ -153,8 +153,8 @@ class TestVisualNodesImports:
         # basic(3) + browser(18) + control_flow(10) + database(10) + data_operations(32)
         # + desktop_automation(36) + email(8) + error_handling(10) + file_operations(40)
         # + scripts(5) + system(13) + utility(26) + office_automation(12) + rest_api(12)
-        # + variable(3) = 238
-        assert len(__all__) == 238
+        # + variable(3) = 239
+        assert len(__all__) == 239
 
         # Check that VisualHttpRequestNode appears only once
         http_request_count = __all__.count("VisualHttpRequestNode")
@@ -169,4 +169,4 @@ class TestVisualNodesImports:
 
         # Both should have the same __all__ list
         assert compat_all == new_all
-        assert len(compat_all) == 238
+        assert len(compat_all) == 239

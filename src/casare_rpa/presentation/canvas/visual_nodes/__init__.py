@@ -33,7 +33,7 @@ from .browser import (
     VisualWaitForNavigationNode,
 )
 
-# Control Flow (10 nodes)
+# Control Flow (11 nodes)
 from .control_flow import (
     VisualIfNode,
     VisualForLoopNode,
@@ -44,6 +44,7 @@ from .control_flow import (
     VisualWhileLoopEndNode,
     VisualBreakNode,
     VisualContinueNode,
+    VisualMergeNode,
     VisualSwitchNode,
 )
 
@@ -309,6 +310,21 @@ from .variable import (
     VisualIncrementVariableNode,
 )
 
+# Triggers (11 nodes)
+from .triggers import (
+    VisualWebhookTriggerNode,
+    VisualScheduleTriggerNode,
+    VisualFileWatchTriggerNode,
+    VisualEmailTriggerNode,
+    VisualAppEventTriggerNode,
+    VisualErrorTriggerNode,
+    VisualWorkflowCallTriggerNode,
+    VisualFormTriggerNode,
+    VisualChatTriggerNode,
+    VisualRSSFeedTriggerNode,
+    VisualSSETriggerNode,
+)
+
 __all__ = [
     # basic
     "VisualStartNode",
@@ -343,6 +359,7 @@ __all__ = [
     "VisualWhileLoopEndNode",
     "VisualBreakNode",
     "VisualContinueNode",
+    "VisualMergeNode",
     "VisualSwitchNode",
     # database
     "VisualDatabaseConnectNode",
@@ -563,6 +580,18 @@ __all__ = [
     "VisualSetVariableNode",
     "VisualGetVariableNode",
     "VisualIncrementVariableNode",
+    # triggers
+    "VisualWebhookTriggerNode",
+    "VisualScheduleTriggerNode",
+    "VisualFileWatchTriggerNode",
+    "VisualEmailTriggerNode",
+    "VisualAppEventTriggerNode",
+    "VisualErrorTriggerNode",
+    "VisualWorkflowCallTriggerNode",
+    "VisualFormTriggerNode",
+    "VisualChatTriggerNode",
+    "VisualRSSFeedTriggerNode",
+    "VisualSSETriggerNode",
 ]
 
 # =============================================================================

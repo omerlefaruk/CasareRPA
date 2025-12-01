@@ -30,6 +30,7 @@ from ..utils.security.safe_eval import safe_eval, is_safe_expression
         placeholder="{{variable}} > 10",
     ),
 )
+@executable_node
 class IfNode(BaseNode):
     """
     Conditional node that executes different paths based on condition.
@@ -131,6 +132,7 @@ class IfNode(BaseNode):
         tooltip="Step value for range iteration",
     ),
 )
+@executable_node
 class ForLoopStartNode(BaseNode):
     """
     Start node of a For Loop pair (ForLoopStart + ForLoopEnd).
@@ -347,6 +349,7 @@ class ForLoopEndNode(BaseNode):
         tooltip="Maximum iterations to prevent infinite loops",
     ),
 )
+@executable_node
 class WhileLoopStartNode(BaseNode):
     """
     Start node of a While Loop pair (WhileLoopStart + WhileLoopEnd).
@@ -621,6 +624,59 @@ class ContinueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
+@executable_node
+class MergeNode(BaseNode):
+    """
+    Merge node that allows multiple execution paths to converge.
+
+    This is a pass-through node that accepts multiple incoming exec connections
+    and continues to a single output. Use this to join branches from If/Switch
+    nodes back into a single execution path.
+
+    Example:
+        If ──┬── TRUE ─────────┬──→ Merge ──→ NextNode
+             └── FALSE → ... ──┘
+    """
+
+    def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
+        """Initialize Merge node."""
+        super().__init__(node_id, config)
+        self.name = "Merge"
+        self.node_type = "MergeNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        # exec_in and exec_out added by @executable_node decorator
+        pass
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute merge - simply passes execution through.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Result continuing to exec_out
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            logger.debug("Merge node - passing execution through")
+            self.status = NodeStatus.SUCCESS
+
+            return {
+                "success": True,
+                "data": {},
+                "next_nodes": ["exec_out"],
+            }
+
+        except Exception as e:
+            self.status = NodeStatus.ERROR
+            logger.error(f"Merge node execution failed: {e}")
+            return {"success": False, "error": str(e), "next_nodes": []}
+
+
 @node_schema(
     PropertyDef(
         "cases",
@@ -638,6 +694,7 @@ class ContinueNode(BaseNode):
         placeholder="{{status}}",
     ),
 )
+@executable_node
 class SwitchNode(BaseNode):
     """
     Multi-way branching node based on value matching.

@@ -15,6 +15,8 @@ from .error_trigger import ErrorTrigger
 from .workflow_call import WorkflowCallTrigger
 from .form_trigger import FormTrigger
 from .chat_trigger import ChatTrigger
+from .rss_trigger import RSSFeedTrigger
+from .sse_trigger import SSETrigger
 
 __all__ = [
     "WebhookTrigger",
@@ -26,4 +28,6 @@ __all__ = [
     "WorkflowCallTrigger",
     "FormTrigger",
     "ChatTrigger",
+    "RSSFeedTrigger",
+    "SSETrigger",
 ]

@@ -89,6 +89,7 @@ class TestExecutionSettings:
         assert settings.continue_on_error is False
         assert settings.node_timeout == 120.0
         assert settings.target_node_id is None
+        assert settings.single_node is False
 
     def test_custom_settings(self) -> None:
         """Custom execution settings."""
@@ -102,9 +103,16 @@ class TestExecutionSettings:
         assert settings.target_node_id == "target_node"
 
     def test_run_to_node_setting(self) -> None:
-        """Run-to-node target setting."""
+        """Run-to-node target setting (F4)."""
         settings = ExecutionSettings(target_node_id="my_target")
         assert settings.target_node_id == "my_target"
+        assert settings.single_node is False
+
+    def test_single_node_setting(self) -> None:
+        """Single node execution setting (F5)."""
+        settings = ExecutionSettings(target_node_id="my_node", single_node=True)
+        assert settings.target_node_id == "my_node"
+        assert settings.single_node is True
 
 
 # ============================================================================

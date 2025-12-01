@@ -43,6 +43,62 @@
       research: explore | researcher
     </agent_flow>
 
+    <agent_name_mapping>
+      <!-- Custom Name → System subagent_type for Task tool -->
+      <map custom="explore" system="Explore" />
+      <map custom="plan" system="Plan" />
+      <map custom="architect" system="rpa-engine-architect" />
+      <map custom="quality" system="chaos-qa-engineer" />
+      <map custom="reviewer" system="code-security-auditor" />
+      <map custom="security" system="security-architect" />
+      <map custom="docs" system="rpa-docs-writer" />
+      <map custom="refactor" system="rpa-refactoring-engineer" />
+      <map custom="ui" system="rpa-ui-designer" />
+      <map custom="integrations" system="rpa-integration-specialist" />
+      <map custom="researcher" system="rpa-research-specialist" />
+      <map custom="pm" system="mvp-product-manager" />
+    </agent_name_mapping>
+
+    <auto_workflow_triggers>
+      <!-- Auto-detect and run full workflow for ANY code change -->
+
+      <!-- Node-specific triggers -->
+      <trigger pattern="implement.*node|create.*node|add.*node|build.*node">
+        <workflow>implement-node</workflow>
+        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+
+      <!-- Feature implementation -->
+      <trigger pattern="implement.*feature|add.*feature|create.*feature">
+        <workflow>implement-feature</workflow>
+        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+
+      <!-- Fix/Debug/Repair -->
+      <trigger pattern="fix|repair|debug|resolve|patch">
+        <workflow>implement-feature</workflow>
+        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+
+      <!-- Refactor/Overhaul/Rewrite -->
+      <trigger pattern="refactor|overhaul|rewrite|rebuild|restructure|cleanup|clean up">
+        <workflow>implement-feature</workflow>
+        <phases>explore(3) → plan → refactor → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+
+      <!-- Update/Modify/Change -->
+      <trigger pattern="update|modify|change|improve|enhance|optimize|upgrade">
+        <workflow>implement-feature</workflow>
+        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+
+      <!-- Generic catch-all for code work -->
+      <trigger pattern="look at.*and|work on|handle|address|tackle">
+        <workflow>implement-feature</workflow>
+        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      </trigger>
+    </auto_workflow_triggers>
+
     <cmds>
       <run>python run.py</run>
       <install>pip install -e .</install>

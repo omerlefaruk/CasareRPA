@@ -70,7 +70,7 @@ class OrchestratorEngine:
 
     def __init__(
         self,
-        service: Optional[OrchestratorService] = None,
+        service: Optional[Any] = None,
         load_balancing: str = "least_loaded",
         dispatch_interval: int = 5,
         timeout_check_interval: int = 30,
@@ -81,14 +81,22 @@ class OrchestratorEngine:
         Initialize orchestrator engine.
 
         Args:
-            service: Data persistence service
+            service: Data persistence service providing robot, schedule, job, and workflow management.
+                     Must implement: connect(), get_robots(), get_schedules(), get_job(),
+                     save_schedule(), get_schedule(), toggle_schedule(), delete_schedule(),
+                     get_workflow(), update_robot_status()
             load_balancing: Load balancing strategy (round_robin, least_loaded, random, affinity)
             dispatch_interval: Seconds between dispatch attempts
             timeout_check_interval: Seconds between timeout checks
             default_job_timeout: Default job timeout in seconds
             trigger_webhook_port: Port for trigger webhook server
         """
-        self._service = service or OrchestratorService()
+        if service is None:
+            raise ValueError(
+                "OrchestratorEngine requires a service instance. "
+                "Please provide a service that implements the orchestrator service interface."
+            )
+        self._service = service
 
         # Initialize components
         self._job_queue = JobQueue(

@@ -12,6 +12,7 @@ from .nodes import (
     VisualWhileLoopEndNode,
     VisualBreakNode,
     VisualContinueNode,
+    VisualMergeNode,
     VisualSwitchNode,
 )
 
@@ -25,5 +26,6 @@ __all__ = [
     "VisualWhileLoopEndNode",
     "VisualBreakNode",
     "VisualContinueNode",
+    "VisualMergeNode",
     "VisualSwitchNode",
 ]

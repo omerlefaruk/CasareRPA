@@ -39,7 +39,6 @@ class TestDateTimeNodes:
         after = datetime.now()
 
         assert result["success"] is True
-        assert "exec_out" in result["next_nodes"]
         # Verify timestamp is between before and after
         ts = node.get_output_value("timestamp")
         assert before.timestamp() <= ts <= after.timestamp()
@@ -479,10 +478,8 @@ class TestDateTimeNodes:
         # Verify ExecutionResult structure
         assert "success" in result
         assert "data" in result
-        assert "next_nodes" in result
         assert result["success"] is True
         assert "timestamp" in result["data"]
-        assert "exec_out" in result["next_nodes"]
 
 
 class TestDateTimeEdgeCases:

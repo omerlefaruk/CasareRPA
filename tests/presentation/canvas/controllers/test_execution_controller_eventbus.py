@@ -37,7 +37,6 @@ def mock_main_window(qtbot):
     # Mock signals
     main_window.workflow_run = Mock()
     main_window.action_run = Mock()
-    main_window.action_run_to_node = Mock()
     main_window.action_pause = Mock()
     main_window.action_stop = Mock()
 

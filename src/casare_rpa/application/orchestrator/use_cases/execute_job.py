@@ -58,7 +58,7 @@ class ExecuteJobUseCase:
             logger.error(f"Robot {job.robot_id} not found for job {job_id}")
             raise ValueError(f"Robot {job.robot_id} not found")
 
-        if not robot.is_available():
+        if not robot.is_available:
             logger.warning(
                 f"Robot {robot.id} not available (status: {robot.status.value})"
             )

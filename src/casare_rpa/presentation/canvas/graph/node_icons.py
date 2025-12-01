@@ -26,6 +26,7 @@ CATEGORY_COLORS = {
     "desktop_automation": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
     "debug": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
     "file": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
+    "triggers": QColor(0x9C, 0x27, 0xB0),  # #9C27B0 - Purple (Material Purple 500)
 }
 
 

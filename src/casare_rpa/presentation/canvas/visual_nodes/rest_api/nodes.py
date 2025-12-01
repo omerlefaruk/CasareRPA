@@ -2,6 +2,7 @@
 
 import inspect
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.domain.value_objects.types import DataType
 
 
 class VisualHttpRequestNode(VisualNode):
@@ -48,18 +49,18 @@ class VisualHttpRequestNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("headers")
-        self.add_input("body")
-        self.add_input("params")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("response_headers")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("params", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("response_headers", DataType.DICT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpGetNode(VisualNode):
@@ -86,16 +87,16 @@ class VisualHttpGetNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("params")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("params", DataType.DICT)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpPostNode(VisualNode):
@@ -133,16 +134,16 @@ class VisualHttpPostNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("body")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpPutNode(VisualNode):
@@ -170,16 +171,16 @@ class VisualHttpPutNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("body")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpPatchNode(VisualNode):
@@ -207,16 +208,16 @@ class VisualHttpPatchNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("body")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("body", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpDeleteNode(VisualNode):
@@ -243,14 +244,14 @@ class VisualHttpDeleteNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualSetHttpHeadersNode(VisualNode):
@@ -270,12 +271,12 @@ class VisualSetHttpHeadersNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("base_headers")
-        self.add_input("header_name")
-        self.add_input("header_value")
-        self.add_output("exec_out")
-        self.add_output("headers")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("base_headers", DataType.DICT)
+        self.add_typed_input("header_name", DataType.STRING)
+        self.add_typed_input("header_value", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("headers", DataType.DICT)
 
 
 class VisualHttpAuthNode(VisualNode):
@@ -301,13 +302,13 @@ class VisualHttpAuthNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("token")
-        self.add_input("username")
-        self.add_input("password")
-        self.add_input("base_headers")
-        self.add_output("exec_out")
-        self.add_output("headers")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("token", DataType.STRING)
+        self.add_typed_input("username", DataType.STRING)
+        self.add_typed_input("password", DataType.STRING)
+        self.add_typed_input("base_headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("headers", DataType.DICT)
 
 
 class VisualParseJsonResponseNode(VisualNode):
@@ -326,14 +327,14 @@ class VisualParseJsonResponseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("json_data")
-        self.add_input("path")
-        self.add_input("default")
-        self.add_output("exec_out")
-        self.add_output("value")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("json_data", DataType.ANY)
+        self.add_typed_input("path", DataType.STRING)
+        self.add_typed_input("default", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("value", DataType.ANY)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpDownloadFileNode(VisualNode):
@@ -368,15 +369,15 @@ class VisualHttpDownloadFileNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("save_path")
-        self.add_input("headers")
-        self.add_output("exec_out")
-        self.add_output("file_path")
-        self.add_output("file_size")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("save_path", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("file_path", DataType.STRING)
+        self.add_typed_output("file_size", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualHttpUploadFileNode(VisualNode):
@@ -398,17 +399,17 @@ class VisualHttpUploadFileNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("url")
-        self.add_input("file_path")
-        self.add_input("headers")
-        self.add_input("extra_fields")
-        self.add_output("exec_out")
-        self.add_output("response_body")
-        self.add_output("response_json")
-        self.add_output("status_code")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("url", DataType.STRING)
+        self.add_typed_input("file_path", DataType.STRING)
+        self.add_typed_input("headers", DataType.DICT)
+        self.add_typed_input("extra_fields", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("response_body", DataType.STRING)
+        self.add_typed_output("response_json", DataType.ANY)
+        self.add_typed_output("status_code", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualBuildUrlNode(VisualNode):
@@ -427,12 +428,12 @@ class VisualBuildUrlNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("base_url")
-        self.add_input("path")
-        self.add_input("params")
-        self.add_output("exec_out")
-        self.add_output("url")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("base_url", DataType.STRING)
+        self.add_typed_input("path", DataType.STRING)
+        self.add_typed_input("params", DataType.DICT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("url", DataType.STRING)
 
 
 # Dynamic node discovery

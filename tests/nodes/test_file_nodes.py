@@ -1094,7 +1094,7 @@ class TestCreateDirectoryNode:
         new_dir = tmp_path / "new_folder"
 
         node = CreateDirectoryNode(node_id="test_mkdir")
-        node.set_input_value("dir_path", str(new_dir))
+        node.set_input_value("directory_path", str(new_dir))
 
         result = await node.execute(execution_context)
 
@@ -1112,7 +1112,7 @@ class TestCreateDirectoryNode:
         nested_dir = tmp_path / "a" / "b" / "c"
 
         node = CreateDirectoryNode(node_id="test_nested", config={"parents": True})
-        node.set_input_value("dir_path", str(nested_dir))
+        node.set_input_value("directory_path", str(nested_dir))
 
         result = await node.execute(execution_context)
 
@@ -1130,7 +1130,7 @@ class TestCreateDirectoryNode:
         existing_dir.mkdir()
 
         node = CreateDirectoryNode(node_id="test_exist_ok", config={"exist_ok": True})
-        node.set_input_value("dir_path", str(existing_dir))
+        node.set_input_value("directory_path", str(existing_dir))
 
         result = await node.execute(execution_context)
 
@@ -1277,7 +1277,7 @@ class TestFileExistsNode:
         assert result["success"] is True
         assert node.get_output_value("exists") is True
         assert node.get_output_value("is_file") is True
-        assert node.get_output_value("is_directory") is False
+        assert node.get_output_value("is_dir") is False
 
     @pytest.mark.asyncio
     async def test_directory_exists(
@@ -1297,7 +1297,7 @@ class TestFileExistsNode:
         assert result["success"] is True
         assert node.get_output_value("exists") is True
         assert node.get_output_value("is_file") is False
-        assert node.get_output_value("is_directory") is True
+        assert node.get_output_value("is_dir") is True
 
     @pytest.mark.asyncio
     async def test_path_not_exists(

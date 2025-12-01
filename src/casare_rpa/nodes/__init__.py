@@ -55,6 +55,7 @@ if TYPE_CHECKING:
         WhileLoopEndNode,
         BreakNode,
         ContinueNode,
+        MergeNode,
         SwitchNode,
     )
     from .error_handling_nodes import (
@@ -294,6 +295,7 @@ _NODE_REGISTRY: Dict[str, str] = {
     "WhileLoopEndNode": "control_flow_nodes",
     "BreakNode": "control_flow_nodes",
     "ContinueNode": "control_flow_nodes",
+    "MergeNode": "control_flow_nodes",
     "SwitchNode": "control_flow_nodes",
     # Error handling nodes
     "TryNode": "error_handling_nodes",
@@ -477,6 +479,18 @@ _NODE_REGISTRY: Dict[str, str] = {
     "FTPRenameNode": "ftp_nodes",
     "FTPDisconnectNode": "ftp_nodes",
     "FTPGetSizeNode": "ftp_nodes",
+    # Trigger nodes
+    "WebhookTriggerNode": "trigger_nodes.webhook_trigger_node",
+    "ScheduleTriggerNode": "trigger_nodes.schedule_trigger_node",
+    "FileWatchTriggerNode": "trigger_nodes.file_watch_trigger_node",
+    "EmailTriggerNode": "trigger_nodes.email_trigger_node",
+    "AppEventTriggerNode": "trigger_nodes.app_event_trigger_node",
+    "ErrorTriggerNode": "trigger_nodes.error_trigger_node",
+    "WorkflowCallTriggerNode": "trigger_nodes.workflow_call_trigger_node",
+    "FormTriggerNode": "trigger_nodes.form_trigger_node",
+    "ChatTriggerNode": "trigger_nodes.chat_trigger_node",
+    "RSSFeedTriggerNode": "trigger_nodes.rss_feed_trigger_node",
+    "SSETriggerNode": "trigger_nodes.sse_trigger_node",
 }
 
 # Cache for loaded modules and classes
@@ -620,6 +634,7 @@ __all__ = [
     "WhileLoopEndNode",
     "BreakNode",
     "ContinueNode",
+    "MergeNode",
     "SwitchNode",
     # Error handling nodes
     "TryNode",
@@ -798,6 +813,18 @@ __all__ = [
     "FTPRenameNode",
     "FTPDisconnectNode",
     "FTPGetSizeNode",
+    # Trigger nodes
+    "WebhookTriggerNode",
+    "ScheduleTriggerNode",
+    "FileWatchTriggerNode",
+    "EmailTriggerNode",
+    "AppEventTriggerNode",
+    "ErrorTriggerNode",
+    "WorkflowCallTriggerNode",
+    "FormTriggerNode",
+    "ChatTriggerNode",
+    "RSSFeedTriggerNode",
+    "SSETriggerNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",

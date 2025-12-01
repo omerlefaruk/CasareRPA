@@ -1,5 +1,6 @@
 """Visual nodes for database category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
@@ -49,16 +50,16 @@ class VisualDatabaseConnectNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("db_type")
-        self.add_input("host")
-        self.add_input("database")
-        self.add_input("username")
-        self.add_input("password")
-        self.add_output("exec_out")
-        self.add_output("connection")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        # Note: "db_type" port removed - use combo menu property instead
+        self.add_typed_input("host", DataType.STRING)
+        self.add_typed_input("database", DataType.STRING)
+        self.add_typed_input("username", DataType.STRING)
+        self.add_typed_input("password", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualExecuteQueryNode(VisualNode):
@@ -86,16 +87,16 @@ class VisualExecuteQueryNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_input("query")
-        self.add_input("parameters")
-        self.add_output("exec_out")
-        self.add_output("results")
-        self.add_output("row_count")
-        self.add_output("columns")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("query", DataType.STRING)
+        self.add_typed_input("parameters", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("results", DataType.LIST)
+        self.add_typed_output("row_count", DataType.INTEGER)
+        self.add_typed_output("columns", DataType.LIST)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualExecuteNonQueryNode(VisualNode):
@@ -123,15 +124,15 @@ class VisualExecuteNonQueryNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_input("query")
-        self.add_input("parameters")
-        self.add_output("exec_out")
-        self.add_output("rows_affected")
-        self.add_output("last_insert_id")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("query", DataType.STRING)
+        self.add_typed_input("parameters", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("rows_affected", DataType.INTEGER)
+        self.add_typed_output("last_insert_id", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualBeginTransactionNode(VisualNode):
@@ -148,12 +149,12 @@ class VisualBeginTransactionNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_output("exec_out")
-        self.add_output("connection")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualCommitTransactionNode(VisualNode):
@@ -170,12 +171,12 @@ class VisualCommitTransactionNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_output("exec_out")
-        self.add_output("connection")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualRollbackTransactionNode(VisualNode):
@@ -192,12 +193,12 @@ class VisualRollbackTransactionNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_output("exec_out")
-        self.add_output("connection")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("connection", DataType.OBJECT)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualCloseDatabaseNode(VisualNode):
@@ -214,11 +215,11 @@ class VisualCloseDatabaseNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_output("exec_out")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualTableExistsNode(VisualNode):
@@ -236,13 +237,13 @@ class VisualTableExistsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_input("table_name")
-        self.add_output("exec_out")
-        self.add_output("exists")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("table_name", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("exists", DataType.BOOLEAN)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualGetTableColumnsNode(VisualNode):
@@ -260,14 +261,14 @@ class VisualGetTableColumnsNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_input("table_name")
-        self.add_output("exec_out")
-        self.add_output("columns")
-        self.add_output("column_names")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("table_name", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("columns", DataType.LIST)
+        self.add_typed_output("column_names", DataType.LIST)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 class VisualExecuteBatchNode(VisualNode):
@@ -285,14 +286,14 @@ class VisualExecuteBatchNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("connection")
-        self.add_input("statements")
-        self.add_output("exec_out")
-        self.add_output("results")
-        self.add_output("total_rows_affected")
-        self.add_output("success")
-        self.add_output("error")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("connection", DataType.OBJECT)
+        self.add_typed_input("statements", DataType.LIST)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("results", DataType.LIST)
+        self.add_typed_output("total_rows_affected", DataType.INTEGER)
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("error", DataType.STRING)
 
 
 # HTTP/REST API Nodes

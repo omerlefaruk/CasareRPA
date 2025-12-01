@@ -122,7 +122,9 @@ class MenuController(BaseController):
 
         from ..ui.toolbars.hotkey_manager import HotkeyManagerDialog
 
-        dialog = HotkeyManagerDialog(self._actions, self.main_window)
+        # Use ActionManager's actions which are always populated
+        actions = self.main_window._action_manager.get_all_actions()
+        dialog = HotkeyManagerDialog(actions, self.main_window)
         if dialog.exec():
             logger.info("Hotkey settings updated")
             self._reload_hotkeys()
@@ -165,45 +167,63 @@ class MenuController(BaseController):
         if not hasattr(self.main_window, "action_new"):
             return
 
+        mw = self.main_window
+
         # File actions
-        self._actions["new"] = self.main_window.action_new
-        self._actions["open"] = self.main_window.action_open
-        self._actions["save"] = self.main_window.action_save
-        self._actions["save_as"] = self.main_window.action_save_as
+        self._actions["new"] = mw.action_new
+        self._actions["open"] = mw.action_open
+        self._actions["save"] = mw.action_save
+        self._actions["save_as"] = mw.action_save_as
 
         # Edit actions
-        if hasattr(self.main_window, "action_undo"):
-            self._actions["undo"] = self.main_window.action_undo
-        if hasattr(self.main_window, "action_redo"):
-            self._actions["redo"] = self.main_window.action_redo
-        if hasattr(self.main_window, "action_cut"):
-            self._actions["cut"] = self.main_window.action_cut
-        if hasattr(self.main_window, "action_copy"):
-            self._actions["copy"] = self.main_window.action_copy
-        if hasattr(self.main_window, "action_paste"):
-            self._actions["paste"] = self.main_window.action_paste
-        if hasattr(self.main_window, "action_delete"):
-            self._actions["delete"] = self.main_window.action_delete
+        if hasattr(mw, "action_undo"):
+            self._actions["undo"] = mw.action_undo
+        if hasattr(mw, "action_redo"):
+            self._actions["redo"] = mw.action_redo
+        if hasattr(mw, "action_cut"):
+            self._actions["cut"] = mw.action_cut
+        if hasattr(mw, "action_copy"):
+            self._actions["copy"] = mw.action_copy
+        if hasattr(mw, "action_paste"):
+            self._actions["paste"] = mw.action_paste
+        if hasattr(mw, "action_delete"):
+            self._actions["delete"] = mw.action_delete
+        if hasattr(mw, "action_select_all"):
+            self._actions["select_all"] = mw.action_select_all
+        if hasattr(mw, "action_find_node"):
+            self._actions["find_node"] = mw.action_find_node
 
         # View actions
-        if hasattr(self.main_window, "action_zoom_in"):
-            self._actions["zoom_in"] = self.main_window.action_zoom_in
-        if hasattr(self.main_window, "action_zoom_out"):
-            self._actions["zoom_out"] = self.main_window.action_zoom_out
-        if hasattr(self.main_window, "action_zoom_reset"):
-            self._actions["zoom_reset"] = self.main_window.action_zoom_reset
-        if hasattr(self.main_window, "action_fit_view"):
-            self._actions["fit_view"] = self.main_window.action_fit_view
+        if hasattr(mw, "action_zoom_in"):
+            self._actions["zoom_in"] = mw.action_zoom_in
+        if hasattr(mw, "action_zoom_out"):
+            self._actions["zoom_out"] = mw.action_zoom_out
+        if hasattr(mw, "action_zoom_reset"):
+            self._actions["zoom_reset"] = mw.action_zoom_reset
+        if hasattr(mw, "action_fit_view"):
+            self._actions["fit_view"] = mw.action_fit_view
 
-        # Execution actions
-        if hasattr(self.main_window, "action_run"):
-            self._actions["run"] = self.main_window.action_run
-        if hasattr(self.main_window, "action_run_to_node"):
-            self._actions["run_to_node"] = self.main_window.action_run_to_node
-        if hasattr(self.main_window, "action_pause"):
-            self._actions["pause"] = self.main_window.action_pause
-        if hasattr(self.main_window, "action_stop"):
-            self._actions["stop"] = self.main_window.action_stop
+        # Run actions
+        if hasattr(mw, "action_run"):
+            self._actions["run"] = mw.action_run
+        if hasattr(mw, "action_pause"):
+            self._actions["pause"] = mw.action_pause
+        if hasattr(mw, "action_stop"):
+            self._actions["stop"] = mw.action_stop
+        if hasattr(mw, "action_debug"):
+            self._actions["debug"] = mw.action_debug
+
+        # Automation actions
+        if hasattr(mw, "action_validate"):
+            self._actions["validate"] = mw.action_validate
+        if hasattr(mw, "action_record_workflow"):
+            self._actions["record"] = mw.action_record_workflow
+        if hasattr(mw, "action_pick_selector"):
+            self._actions["pick_browser"] = mw.action_pick_selector
+        if hasattr(mw, "action_desktop_selector_builder"):
+            self._actions["pick_desktop"] = mw.action_desktop_selector_builder
+        if hasattr(mw, "action_schedule"):
+            self._actions["schedule"] = mw.action_schedule
 
         logger.info(f"Collected {len(self._actions)} actions")
 

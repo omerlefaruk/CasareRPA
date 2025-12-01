@@ -206,6 +206,7 @@ from casare_rpa.nodes.control_flow_nodes import (
     WhileLoopEndNode,
     BreakNode,
     ContinueNode,
+    MergeNode,
     SwitchNode,
 )
 
@@ -524,6 +525,21 @@ from casare_rpa.nodes.desktop_nodes import (
     OutlookGetInboxCountNode,
 )
 
+# Trigger nodes
+from casare_rpa.nodes.trigger_nodes import (
+    WebhookTriggerNode,
+    ScheduleTriggerNode,
+    FileWatchTriggerNode,
+    EmailTriggerNode,
+    AppEventTriggerNode,
+    ErrorTriggerNode,
+    WorkflowCallTriggerNode,
+    FormTriggerNode,
+    ChatTriggerNode,
+    RSSFeedTriggerNode,
+    SSETriggerNode,
+)
+
 # Map node types to classes
 NODE_TYPE_MAP = {
     # Basic nodes
@@ -542,6 +558,7 @@ NODE_TYPE_MAP = {
     "WhileLoopEndNode": WhileLoopEndNode,
     "BreakNode": BreakNode,
     "ContinueNode": ContinueNode,
+    "MergeNode": MergeNode,
     "SwitchNode": SwitchNode,
     # Error handling nodes
     "TryNode": TryNode,
@@ -798,6 +815,18 @@ NODE_TYPE_MAP = {
     "OutlookSendEmailNode": OutlookSendEmailNode,
     "OutlookReadEmailsNode": OutlookReadEmailsNode,
     "OutlookGetInboxCountNode": OutlookGetInboxCountNode,
+    # Trigger nodes
+    "WebhookTriggerNode": WebhookTriggerNode,
+    "ScheduleTriggerNode": ScheduleTriggerNode,
+    "FileWatchTriggerNode": FileWatchTriggerNode,
+    "EmailTriggerNode": EmailTriggerNode,
+    "AppEventTriggerNode": AppEventTriggerNode,
+    "ErrorTriggerNode": ErrorTriggerNode,
+    "WorkflowCallTriggerNode": WorkflowCallTriggerNode,
+    "FormTriggerNode": FormTriggerNode,
+    "ChatTriggerNode": ChatTriggerNode,
+    "RSSFeedTriggerNode": RSSFeedTriggerNode,
+    "SSETriggerNode": SSETriggerNode,
 }
 
 

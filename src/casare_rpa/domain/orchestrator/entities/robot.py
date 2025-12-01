@@ -5,6 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
+from casare_rpa.utils.datetime_helpers import parse_datetime
+
 
 class RobotStatus(Enum):
     """Robot connection status."""
@@ -50,6 +52,7 @@ class Robot:
                 f"max_concurrent_jobs ({self.max_concurrent_jobs})"
             )
 
+    @property
     def is_available(self) -> bool:
         """Check if robot can accept new jobs.
 
@@ -61,6 +64,7 @@ class Robot:
             and self.current_jobs < self.max_concurrent_jobs
         )
 
+    @property
     def utilization(self) -> float:
         """Get robot utilization percentage.
 
@@ -134,19 +138,6 @@ class Robot:
             pass
         else:
             status = RobotStatus.OFFLINE
-
-        # Parse datetime strings
-        def parse_datetime(value):
-            if value is None or value == "":
-                return None
-            if isinstance(value, datetime):
-                return value
-            if isinstance(value, str):
-                try:
-                    return datetime.fromisoformat(value.replace("Z", "+00:00"))
-                except (ValueError, AttributeError):
-                    return None
-            return None
 
         return cls(
             id=data["id"],

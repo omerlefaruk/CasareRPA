@@ -1,5 +1,6 @@
 """Visual nodes for error_handling category."""
 
+from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
@@ -16,12 +17,12 @@ class VisualTryNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("try_body")
-        self.add_output("success")
-        self.add_output("catch")
-        self.add_output("error_message")
-        self.add_output("error_type")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("try_body")
+        self.add_exec_output("success")
+        self.add_exec_output("catch")
+        self.add_typed_output("error_message", DataType.STRING)
+        self.add_typed_output("error_type", DataType.STRING)
 
 
 class VisualRetryNode(VisualNode):
@@ -44,12 +45,12 @@ class VisualRetryNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("retry_body")
-        self.add_output("success")
-        self.add_output("failed")
-        self.add_output("attempt")
-        self.add_output("last_error")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("retry_body")
+        self.add_exec_output("success")
+        self.add_exec_output("failed")
+        self.add_typed_output("attempt", DataType.INTEGER)
+        self.add_typed_output("last_error", DataType.ANY)
 
 
 class VisualRetrySuccessNode(VisualNode):
@@ -65,8 +66,8 @@ class VisualRetrySuccessNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("exec_out")
 
 
 class VisualRetryFailNode(VisualNode):
@@ -82,9 +83,9 @@ class VisualRetryFailNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("error_message")
-        self.add_output("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("error_message", DataType.STRING)
+        self.add_exec_output("exec_out")
 
 
 class VisualThrowErrorNode(VisualNode):
@@ -103,9 +104,9 @@ class VisualThrowErrorNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("error_message")
-        self.add_output("exec_out")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("error_message", DataType.STRING)
+        self.add_exec_output("exec_out")
 
 
 class VisualWebhookNotifyNode(VisualNode):
@@ -132,13 +133,13 @@ class VisualWebhookNotifyNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("webhook_url")
-        self.add_input("message")
-        self.add_input("error_details")
-        self.add_output("exec_out")
-        self.add_output("success")
-        self.add_output("response")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("webhook_url", DataType.STRING)
+        self.add_typed_input("message", DataType.STRING)
+        self.add_typed_input("error_details", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("success", DataType.BOOLEAN)
+        self.add_typed_output("response", DataType.ANY)
 
 
 class VisualOnErrorNode(VisualNode):
@@ -154,14 +155,14 @@ class VisualOnErrorNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_output("protected_body")
-        self.add_output("on_error")
-        self.add_output("finally")
-        self.add_output("error_message")
-        self.add_output("error_type")
-        self.add_output("error_node")
-        self.add_output("stack_trace")
+        self.add_exec_input("exec_in")
+        self.add_exec_output("protected_body")
+        self.add_exec_output("on_error")
+        self.add_exec_output("finally")
+        self.add_typed_output("error_message", DataType.STRING)
+        self.add_typed_output("error_type", DataType.STRING)
+        self.add_typed_output("error_node", DataType.STRING)
+        self.add_typed_output("stack_trace", DataType.STRING)
 
 
 class VisualErrorRecoveryNode(VisualNode):
@@ -185,11 +186,11 @@ class VisualErrorRecoveryNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("strategy")
-        self.add_input("max_retries")
-        self.add_output("exec_out")
-        self.add_output("fallback")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("strategy", DataType.STRING)
+        self.add_typed_input("max_retries", DataType.INTEGER)
+        self.add_exec_output("exec_out")
+        self.add_exec_output("fallback")
 
 
 class VisualLogErrorNode(VisualNode):
@@ -213,12 +214,12 @@ class VisualLogErrorNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("error_message")
-        self.add_input("error_type")
-        self.add_input("context")
-        self.add_output("exec_out")
-        self.add_output("log_entry")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("error_message", DataType.STRING)
+        self.add_typed_input("error_type", DataType.STRING)
+        self.add_typed_input("context", DataType.ANY)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("log_entry", DataType.STRING)
 
 
 class VisualAssertNode(VisualNode):
@@ -237,11 +238,11 @@ class VisualAssertNode(VisualNode):
 
     def setup_ports(self) -> None:
         """Setup ports."""
-        self.add_input("exec_in")
-        self.add_input("condition")
-        self.add_input("message")
-        self.add_output("exec_out")
-        self.add_output("passed")
+        self.add_exec_input("exec_in")
+        self.add_typed_input("condition", DataType.BOOLEAN)
+        self.add_typed_input("message", DataType.STRING)
+        self.add_exec_output("exec_out")
+        self.add_typed_output("passed", DataType.BOOLEAN)
 
 
 # Desktop Automation Nodes

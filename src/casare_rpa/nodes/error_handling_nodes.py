@@ -23,6 +23,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
+@executable_node
 class TryNode(BaseNode):
     """
     Try block node for error handling.
@@ -138,6 +139,7 @@ class TryNode(BaseNode):
         tooltip="Exponential backoff multiplier for retry delays",
     ),
 )
+@executable_node
 class RetryNode(BaseNode):
     """
     Retry node for automatic retry with backoff.
@@ -451,6 +453,7 @@ class ThrowErrorNode(BaseNode):
         tooltip="Delay between retries",
     ),
 )
+@executable_node
 class WebhookNotifyNode(BaseNode):
     """
     Send error notifications via webhook.
@@ -640,6 +643,7 @@ class WebhookNotifyNode(BaseNode):
             }
 
 
+@executable_node
 class OnErrorNode(BaseNode):
     """
     Global error handler node.
@@ -765,6 +769,7 @@ class OnErrorNode(BaseNode):
         tooltip="Maximum retries for 'retry' strategy",
     ),
 )
+@executable_node
 class ErrorRecoveryNode(BaseNode):
     """
     Configure error recovery strategy for workflow.

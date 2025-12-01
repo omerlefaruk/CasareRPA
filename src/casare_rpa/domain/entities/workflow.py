@@ -3,13 +3,12 @@ CasareRPA - Domain Entity: Workflow
 Workflow aggregate root - manages nodes, connections, and workflow metadata.
 """
 
-from dataclasses import dataclass, asdict
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-import orjson
 from loguru import logger
+
+if TYPE_CHECKING:
+    from ...domain.validation import ValidationResult
 
 from ..value_objects.types import (
     NodeId,
@@ -293,117 +292,6 @@ class WorkflowSchema:
         workflow.settings = data.get("settings", workflow.settings)
 
         return workflow
-
-    def save_to_file(self, file_path: Path, validate_before_save: bool = False) -> None:
-        """
-        Save workflow to JSON file using orjson.
-
-        Args:
-            file_path: Path to save file
-            validate_before_save: If True, validate workflow before saving
-
-        Raises:
-            ValueError: If validation fails and validate_before_save is True
-        """
-        try:
-            # Optionally validate before saving
-            if validate_before_save:
-                result = self.validate_full()
-                if not result.is_valid:
-                    error_summary = result.format_summary()
-                    logger.error(f"Validation failed before save:\n{error_summary}")
-                    raise ValueError(
-                        f"Cannot save invalid workflow: {result.error_count} error(s)"
-                    )
-
-            # Update modified timestamp
-            self.metadata.update_modified_timestamp()
-
-            # Serialize to JSON using orjson for performance
-            json_data = orjson.dumps(
-                self.to_dict(),
-                option=orjson.OPT_INDENT_2 | orjson.OPT_SORT_KEYS,
-            )
-
-            # Write to file
-            file_path.write_bytes(json_data)
-            logger.info(f"Workflow saved to {file_path}")
-
-        except ValueError:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to save workflow: {e}")
-            raise
-
-    @classmethod
-    def load_from_file(
-        cls,
-        file_path: Path,
-        validate_on_load: bool = False,
-        strict: bool = False,
-    ) -> "WorkflowSchema":
-        """
-        Load workflow from JSON file.
-
-        Args:
-            file_path: Path to workflow file
-            validate_on_load: If True, validate workflow after loading
-            strict: If True and validate_on_load is True, raise on validation errors
-
-        Returns:
-            WorkflowSchema instance
-
-        Raises:
-            ValueError: If strict validation fails
-        """
-        try:
-            # Read file
-            json_data = file_path.read_bytes()
-
-            # Parse JSON using orjson
-            data = orjson.loads(json_data)
-
-            # Auto-migrate legacy node IDs to UUID format if needed
-            from ...utils.id_generator import is_uuid_based_id
-            from ...utils.workflow_migration import (
-                migrate_workflow_ids,
-                needs_migration,
-            )
-
-            if needs_migration(data):
-                logger.info(f"Migrating legacy node IDs in {file_path}")
-                data, _ = migrate_workflow_ids(data)
-
-            # Optionally validate before creating workflow
-            if validate_on_load:
-                from casare_rpa.domain.validation import validate_workflow
-
-                result = validate_workflow(data)
-
-                if not result.is_valid:
-                    error_summary = result.format_summary()
-                    logger.warning(f"Workflow validation issues:\n{error_summary}")
-
-                    if strict:
-                        raise ValueError(
-                            f"Workflow validation failed: {result.error_count} error(s)"
-                        )
-                elif result.warnings:
-                    logger.info(
-                        f"Workflow loaded with {result.warning_count} warning(s)"
-                    )
-
-            # Create workflow
-            workflow = cls.from_dict(data)
-            logger.info(f"Workflow loaded from {file_path}")
-
-            return workflow
-
-        except ValueError:
-            raise
-        except Exception as e:
-            logger.error(f"Failed to load workflow: {e}")
-            raise
 
     def __repr__(self) -> str:
         """String representation."""

@@ -84,13 +84,22 @@ class ExecutionLifecycleManager:
         self._state_lock = asyncio.Lock()
         self._orphaned_browser_pids: Set[int] = set()
 
-    async def start_workflow(self, workflow_runner, force_cleanup: bool = True) -> bool:
+    async def start_workflow(
+        self,
+        workflow_runner,
+        force_cleanup: bool = True,
+        target_node_id: Optional[str] = None,
+        single_node: bool = False,
+    ) -> bool:
         """
         Start new workflow execution, cleaning up previous if needed.
 
         Args:
             workflow_runner: CanvasWorkflowRunner instance
             force_cleanup: Force cleanup of previous execution if still running
+            target_node_id: For Run-To-Node (F4), stop at this node.
+                            For Run-Single-Node (F5), run only this node.
+            single_node: If True, execute only the target_node_id node (F5 mode)
 
         Returns:
             True if started successfully, False otherwise
@@ -119,10 +128,14 @@ class ExecutionLifecycleManager:
             pause_event = asyncio.Event()
             pause_event.set()  # Initially not paused
 
-            # Create task
+            # Create task with target_node_id and single_node parameters
             task = asyncio.create_task(
                 self._run_workflow_with_session(
-                    workflow_runner, session_id, pause_event
+                    workflow_runner,
+                    session_id,
+                    pause_event,
+                    target_node_id,
+                    single_node,
                 )
             )
 
@@ -145,7 +158,12 @@ class ExecutionLifecycleManager:
             return True
 
     async def _run_workflow_with_session(
-        self, workflow_runner, session_id: str, pause_event: asyncio.Event
+        self,
+        workflow_runner,
+        session_id: str,
+        pause_event: asyncio.Event,
+        target_node_id: Optional[str] = None,
+        single_node: bool = False,
     ):
         """
         Execute workflow and track context/use_case in session.
@@ -154,10 +172,14 @@ class ExecutionLifecycleManager:
             workflow_runner: CanvasWorkflowRunner instance
             session_id: Unique session ID
             pause_event: Event for pause/resume coordination
+            target_node_id: For F4/F5, the target node to stop at or run
+            single_node: If True, run only the target node (F5 mode)
         """
         try:
             # Run workflow - this creates ExecuteWorkflowUseCase internally
-            await workflow_runner.run_workflow_with_pause_support(pause_event)
+            await workflow_runner.run_workflow_with_pause_support(
+                pause_event, target_node_id=target_node_id, single_node=single_node
+            )
 
             # Update session with context reference (workflow_runner exposes it)
             if self._current_session:
