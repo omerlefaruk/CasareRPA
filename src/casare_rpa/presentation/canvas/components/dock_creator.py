@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..ui.panels.variable_inspector_dock import VariableInspectorDock
     from ..ui.panels.properties_panel import PropertiesPanel
     from ..ui.panels.node_library_panel import NodeLibraryPanel
+    from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.widgets.execution_timeline import ExecutionTimeline
     from ..ui.debug_panel import DebugPanel
     from ..debugger.debug_controller import DebugController
@@ -317,6 +318,56 @@ class DockCreator:
 
         logger.info("Debug Panel created with Call Stack, Watch, Breakpoints tabs")
         return debug_panel
+
+    def create_process_mining_panel(self) -> "ProcessMiningPanel":
+        """
+        Create the Process Mining Panel for AI-powered process discovery.
+
+        Features:
+        - Process Discovery: Build process models from execution logs
+        - Variant Analysis: See different execution paths
+        - Conformance Checking: Compare actual vs expected
+        - Optimization Insights: AI-generated recommendations
+
+        Returns:
+            Created ProcessMiningPanel instance
+        """
+        from ..ui.panels.process_mining_panel import ProcessMiningPanel
+
+        mw = self._main_window
+        process_mining_panel = ProcessMiningPanel(mw)
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, process_mining_panel)
+
+        # Tabify with properties panel if exists
+        if mw._properties_panel:
+            mw.tabifyDockWidget(mw._properties_panel, process_mining_panel)
+
+        # Connect dock state changes to auto-save
+        process_mining_panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
+        process_mining_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
+        process_mining_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = process_mining_panel.toggleViewAction()
+                toggle_action.setText("Process &Mining")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+M"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_process_mining = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Process Mining Panel to View menu: {e}")
+
+        # Initially hidden
+        process_mining_panel.hide()
+
+        logger.info(
+            "Process Mining Panel created with Discovery, Variants, Insights tabs"
+        )
+        return process_mining_panel
 
     def _find_view_menu(self):
         """Get the View menu from MainWindow (stored reference)."""

@@ -27,6 +27,7 @@ CATEGORY_COLORS = {
     "debug": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
     "file": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
     "triggers": QColor(0x9C, 0x27, 0xB0),  # #9C27B0 - Purple (Material Purple 500)
+    "ai_ml": QColor(0x00, 0xBC, 0xD4),  # #00BCD4 - Cyan (Material Cyan 500) - AI/ML
 }
 
 
@@ -107,6 +108,13 @@ NODE_ICONS = {
     "Write File": ("💾", "file"),
     "Delete File": ("🗑", "file"),
     "File Exists": ("❓", "file"),
+    # AI/ML nodes
+    "LLM Completion": ("🤖", "ai_ml"),
+    "LLM Chat": ("💬", "ai_ml"),
+    "LLM Extract Data": ("📊", "ai_ml"),
+    "LLM Summarize": ("📝", "ai_ml"),
+    "LLM Classify": ("🏷", "ai_ml"),
+    "LLM Translate": ("🌐", "ai_ml"),
 }
 
 

@@ -77,6 +77,9 @@ class CredentialType(Enum):
     OAUTH2 = "oauth2"
     CERTIFICATE = "certificate"
     SSH_KEY = "ssh_key"
+    # Messaging integrations
+    TELEGRAM_BOT = "telegram_bot"
+    WHATSAPP_BUSINESS = "whatsapp_business"
 
 
 @dataclass
@@ -93,6 +96,10 @@ class Credential:
         refresh_token: OAuth refresh token
         certificate: Certificate data (base64 encoded)
         private_key: Private key data (base64 encoded)
+        bot_token: Telegram bot token (from @BotFather)
+        phone_number_id: WhatsApp Business phone number ID
+        business_account_id: WhatsApp Business account ID
+        verify_token: Webhook verification token (for Meta webhooks)
         metadata: Additional metadata
         created_at: Creation timestamp
         updated_at: Last update timestamp
@@ -108,6 +115,11 @@ class Credential:
     refresh_token: Optional[str] = None
     certificate: Optional[str] = None
     private_key: Optional[str] = None
+    # Messaging integrations
+    bot_token: Optional[str] = None
+    phone_number_id: Optional[str] = None
+    business_account_id: Optional[str] = None
+    verify_token: Optional[str] = None
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -136,6 +148,15 @@ class Credential:
             data["certificate"] = self.certificate
         if self.private_key:
             data["private_key"] = self.private_key
+        # Messaging integration fields
+        if self.bot_token:
+            data["bot_token"] = self.bot_token
+        if self.phone_number_id:
+            data["phone_number_id"] = self.phone_number_id
+        if self.business_account_id:
+            data["business_account_id"] = self.business_account_id
+        if self.verify_token:
+            data["verify_token"] = self.verify_token
 
         # Timestamps
         if self.created_at:
@@ -160,6 +181,11 @@ class Credential:
             refresh_token=data.get("refresh_token"),
             certificate=data.get("certificate"),
             private_key=data.get("private_key"),
+            # Messaging integration fields
+            bot_token=data.get("bot_token"),
+            phone_number_id=data.get("phone_number_id"),
+            business_account_id=data.get("business_account_id"),
+            verify_token=data.get("verify_token"),
             metadata=data.get("metadata", {}),
             created_at=datetime.fromisoformat(data["created_at"])
             if data.get("created_at")
@@ -447,6 +473,137 @@ class CredentialManager:
             return True
         except (VaultSecretNotFoundError, FileNotFoundError):
             return False
+
+    # =========================================================================
+    # Messaging Integration Helpers
+    # =========================================================================
+
+    def store_telegram_credential(
+        self,
+        name: str,
+        bot_token: str,
+        scope: CredentialScope = CredentialScope.GLOBAL,
+        scope_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Store Telegram bot credentials.
+
+        Args:
+            name: Credential name (e.g., "my_telegram_bot")
+            bot_token: Bot token from @BotFather
+            scope: Credential scope
+            scope_id: Optional scope ID
+            metadata: Additional metadata (e.g., bot_username)
+        """
+        path = self._build_path(name, scope, scope_id)
+        now = datetime.now()
+
+        credential = Credential(
+            name=name,
+            credential_type=CredentialType.TELEGRAM_BOT,
+            bot_token=bot_token,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+        )
+
+        self.vault.store_secret(path, credential.to_dict())
+        logger.info(f"Telegram credential stored: {path}")
+
+    def store_whatsapp_credential(
+        self,
+        name: str,
+        access_token: str,
+        phone_number_id: str,
+        business_account_id: Optional[str] = None,
+        verify_token: Optional[str] = None,
+        scope: CredentialScope = CredentialScope.GLOBAL,
+        scope_id: Optional[str] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Store WhatsApp Business credentials.
+
+        Args:
+            name: Credential name (e.g., "my_whatsapp_business")
+            access_token: Meta Business permanent access token
+            phone_number_id: WhatsApp Business phone number ID
+            business_account_id: Optional business account ID (for media uploads)
+            verify_token: Optional webhook verification token
+            scope: Credential scope
+            scope_id: Optional scope ID
+            metadata: Additional metadata
+        """
+        path = self._build_path(name, scope, scope_id)
+        now = datetime.now()
+
+        credential = Credential(
+            name=name,
+            credential_type=CredentialType.WHATSAPP_BUSINESS,
+            access_token=access_token,
+            phone_number_id=phone_number_id,
+            business_account_id=business_account_id,
+            verify_token=verify_token,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+        )
+
+        self.vault.store_secret(path, credential.to_dict())
+        logger.info(f"WhatsApp credential stored: {path}")
+
+    def get_telegram_credential(
+        self,
+        name: str,
+        scope: CredentialScope = CredentialScope.GLOBAL,
+        scope_id: Optional[str] = None,
+    ) -> Credential:
+        """Get Telegram bot credentials.
+
+        Args:
+            name: Credential name
+            scope: Credential scope
+            scope_id: Optional scope ID
+
+        Returns:
+            Credential with bot_token populated
+
+        Raises:
+            VaultSecretNotFoundError: If credential doesn't exist
+        """
+        credential = self.get_credential(name, scope, scope_id)
+        if credential.credential_type != CredentialType.TELEGRAM_BOT:
+            logger.warning(
+                f"Credential '{name}' is type {credential.credential_type.value}, "
+                "expected telegram_bot"
+            )
+        return credential
+
+    def get_whatsapp_credential(
+        self,
+        name: str,
+        scope: CredentialScope = CredentialScope.GLOBAL,
+        scope_id: Optional[str] = None,
+    ) -> Credential:
+        """Get WhatsApp Business credentials.
+
+        Args:
+            name: Credential name
+            scope: Credential scope
+            scope_id: Optional scope ID
+
+        Returns:
+            Credential with access_token, phone_number_id populated
+
+        Raises:
+            VaultSecretNotFoundError: If credential doesn't exist
+        """
+        credential = self.get_credential(name, scope, scope_id)
+        if credential.credential_type != CredentialType.WHATSAPP_BUSINESS:
+            logger.warning(
+                f"Credential '{name}' is type {credential.credential_type.value}, "
+                "expected whatsapp_business"
+            )
+        return credential
 
     # NOTE: Local storage methods have been REMOVED for security reasons.
     # All credential storage now requires HashiCorp Vault.

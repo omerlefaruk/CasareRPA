@@ -387,6 +387,15 @@ class ActionManager:
             mw._on_project_manager,
         )
 
+        # === CREDENTIAL ACTIONS ===
+        mw.action_credential_manager = self._create_action(
+            "credential_manager",
+            "&Credential Manager...",
+            QKeySequence("Ctrl+Shift+K"),
+            "Manage API keys and credentials",
+            mw._on_credential_manager,
+        )
+
         # Apply saved hotkeys
         self._load_hotkeys()
 

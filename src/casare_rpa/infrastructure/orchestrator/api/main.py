@@ -169,13 +169,26 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Build CORS origins list
+_cors_origins = [
+    "http://localhost:5173",  # Vite dev server
+    "http://localhost:8000",  # Local production
+]
+
+# Add Cloudflare Tunnel URLs if configured
+_api_url = os.getenv("CASARE_API_URL", "")
+if _api_url and _api_url not in _cors_origins:
+    _cors_origins.append(_api_url)
+
+# Add custom CORS origins from environment (comma-separated)
+_custom_origins = os.getenv("CORS_ORIGINS", "")
+if _custom_origins:
+    _cors_origins.extend([o.strip() for o in _custom_origins.split(",") if o.strip()])
+
 # CORS middleware for browser access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:8000",  # Production (served by FastAPI)
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=[
         "GET",

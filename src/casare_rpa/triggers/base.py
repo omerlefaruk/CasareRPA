@@ -31,6 +31,8 @@ class TriggerType(Enum):
     WORKFLOW_CALL = "workflow_call"
     RSS_FEED = "rss_feed"
     SSE = "sse"
+    TELEGRAM = "telegram"
+    WHATSAPP = "whatsapp"
 
 
 class TriggerStatus(Enum):

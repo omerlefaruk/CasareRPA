@@ -102,8 +102,9 @@ class ToolbarBuilder:
 
         toolbar.addSeparator()
 
-        # === Project Management ===
+        # === Project & Settings ===
         toolbar.addAction(mw.action_project_manager)
+        toolbar.addAction(mw.action_credential_manager)
 
         mw.addToolBar(toolbar)
         mw._main_toolbar = toolbar
