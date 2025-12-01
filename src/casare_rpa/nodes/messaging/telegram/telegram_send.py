@@ -6,8 +6,7 @@ Nodes for sending messages, photos, documents, and locations via Telegram Bot AP
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 

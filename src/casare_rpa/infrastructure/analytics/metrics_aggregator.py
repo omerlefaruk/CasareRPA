@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from threading import Lock
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -1161,7 +1161,6 @@ class MetricsAggregator:
 
         # Resource: inverse of healing rate
         attempts = healing.get("attempts", 0)
-        successes = healing.get("successes", 0)
         if attempts == 0:
             resource = 100.0
         else:

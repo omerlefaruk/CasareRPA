@@ -6,7 +6,7 @@ Nodes for intelligent document processing using LLM vision models.
 
 import json
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from loguru import logger
 
@@ -18,7 +18,6 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
-    DocumentType,
     LLMConfig,
     LLMProvider,
 )

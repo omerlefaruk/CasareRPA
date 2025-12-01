@@ -13,7 +13,7 @@ Features:
 - Live model fetching from provider APIs (cached)
 """
 
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 from loguru import logger
 

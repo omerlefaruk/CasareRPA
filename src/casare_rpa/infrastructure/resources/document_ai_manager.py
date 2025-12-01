@@ -11,15 +11,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime
 
 from loguru import logger
 
 from .llm_resource_manager import (
     LLMResourceManager,
     LLMConfig,
-    LLMProvider,
-    LLMResponse,
 )
 
 
@@ -204,21 +201,9 @@ Example response:
 
 Only return the JSON, no other text."""
 
-        # Build message with image
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:{media_type};base64,{base64_data}",
-                        },
-                    },
-                ],
-            }
-        ]
+        # TODO: Use messages with image content when LLM manager supports vision
+        # For now, use text-only completion
+        _ = f"data:{media_type};base64,{base64_data}"  # Image data for future vision support
 
         try:
             response = await manager.completion(

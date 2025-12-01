@@ -5,7 +5,6 @@ Base class for all visual trigger nodes. Provides distinct styling
 and behavior for trigger nodes on the canvas.
 """
 
-from typing import Optional
 from PySide6.QtGui import QColor
 
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode

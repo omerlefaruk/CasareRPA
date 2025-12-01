@@ -1,0 +1,267 @@
+"""
+CasareRPA - WhatsApp Base Node
+
+Abstract base class for all WhatsApp nodes with shared functionality.
+"""
+
+from __future__ import annotations
+
+import os
+from abc import abstractmethod
+from typing import Any, Optional
+
+from loguru import logger
+
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.value_objects.types import (
+    DataType,
+    ExecutionResult,
+    NodeStatus,
+    PortType,
+)
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.infrastructure.resources.whatsapp_client import (
+    WhatsAppClient,
+    WhatsAppConfig,
+    WhatsAppAPIError,
+)
+
+
+class WhatsAppBaseNode(BaseNode):
+    """
+    Abstract base class for WhatsApp nodes.
+
+    Provides common functionality:
+    - WhatsApp client access
+    - Access token configuration from credentials/env
+    - Error handling
+    - Standard output ports
+
+    Subclasses implement _execute_whatsapp() for specific operations.
+    """
+
+    def __init__(
+        self, node_id: str, name: str = "WhatsApp Node", **kwargs: Any
+    ) -> None:
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config)
+        self.name = name
+        self._client: Optional[WhatsAppClient] = None
+
+    def _define_common_input_ports(self) -> None:
+        """Define standard WhatsApp input ports."""
+        self.add_input_port(
+            "access_token", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port(
+            "phone_number_id", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port(
+            "credential_name", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("to", PortType.INPUT, DataType.STRING, required=True)
+
+    def _define_common_output_ports(self) -> None:
+        """Define standard WhatsApp output ports."""
+        self.add_output_port("message_id", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("phone_number", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+
+    async def _get_whatsapp_client(self, context: ExecutionContext) -> WhatsAppClient:
+        """
+        Get or create WhatsApp client from context.
+
+        Args:
+            context: Execution context
+
+        Returns:
+            Configured WhatsApp client instance
+        """
+        # Check if client exists in context
+        if hasattr(context, "resources") and "whatsapp" in context.resources:
+            return context.resources["whatsapp"]
+
+        # Get credentials
+        access_token = await self._get_access_token(context)
+        phone_number_id = await self._get_phone_number_id(context)
+
+        if not access_token:
+            raise WhatsAppAPIError("No WhatsApp access token configured")
+        if not phone_number_id:
+            raise WhatsAppAPIError("No WhatsApp phone number ID configured")
+
+        # Get optional business account ID
+        business_account_id = self.get_parameter("business_account_id")
+        if hasattr(context, "resolve_value") and business_account_id:
+            business_account_id = context.resolve_value(business_account_id)
+
+        # Create client
+        config = WhatsAppConfig(
+            access_token=access_token,
+            phone_number_id=phone_number_id,
+            business_account_id=business_account_id,
+        )
+        client = WhatsAppClient(config)
+
+        # Store in context for reuse
+        if hasattr(context, "resources"):
+            context.resources["whatsapp"] = client
+
+        self._client = client
+        return client
+
+    async def _get_access_token(self, context: ExecutionContext) -> Optional[str]:
+        """Get access token from context, credentials, or environment."""
+        # Try direct parameter first
+        token = self.get_parameter("access_token")
+        if token:
+            if hasattr(context, "resolve_value"):
+                token = context.resolve_value(token)
+            return token
+
+        # Try context variables
+        if hasattr(context, "get_variable"):
+            token = context.get_variable("whatsapp_access_token")
+            if token:
+                return token
+
+        # Try credential manager
+        try:
+            from casare_rpa.utils.security.credential_manager import credential_manager
+
+            cred_name = self.get_parameter("credential_name")
+            if cred_name:
+                if hasattr(context, "resolve_value"):
+                    cred_name = context.resolve_value(cred_name)
+                cred = credential_manager.get_whatsapp_credential(cred_name)
+                if cred and cred.access_token:
+                    return cred.access_token
+
+            # Try default credential names
+            for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
+                cred = credential_manager.get_whatsapp_credential(name)
+                if cred and cred.access_token:
+                    return cred.access_token
+        except Exception as e:
+            logger.debug(f"Could not get credential: {e}")
+
+        # Try environment
+        return os.environ.get("WHATSAPP_ACCESS_TOKEN")
+
+    async def _get_phone_number_id(self, context: ExecutionContext) -> Optional[str]:
+        """Get phone number ID from context, credentials, or environment."""
+        # Try direct parameter first
+        phone_id = self.get_parameter("phone_number_id")
+        if phone_id:
+            if hasattr(context, "resolve_value"):
+                phone_id = context.resolve_value(phone_id)
+            return phone_id
+
+        # Try context variables
+        if hasattr(context, "get_variable"):
+            phone_id = context.get_variable("whatsapp_phone_number_id")
+            if phone_id:
+                return phone_id
+
+        # Try credential manager
+        try:
+            from casare_rpa.utils.security.credential_manager import credential_manager
+
+            cred_name = self.get_parameter("credential_name")
+            if cred_name:
+                if hasattr(context, "resolve_value"):
+                    cred_name = context.resolve_value(cred_name)
+                cred = credential_manager.get_whatsapp_credential(cred_name)
+                if cred and cred.phone_number_id:
+                    return cred.phone_number_id
+
+            # Try default credential names
+            for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
+                cred = credential_manager.get_whatsapp_credential(name)
+                if cred and cred.phone_number_id:
+                    return cred.phone_number_id
+        except Exception as e:
+            logger.debug(f"Could not get credential: {e}")
+
+        # Try environment
+        return os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
+
+    def _get_recipient(self, context: ExecutionContext) -> str:
+        """Get recipient phone number from parameter, resolving variables."""
+        to = self.get_parameter("to")
+        if hasattr(context, "resolve_value"):
+            to = context.resolve_value(to)
+        return str(to)
+
+    def _set_error_outputs(self, error_msg: str) -> None:
+        """Set output values for error case."""
+        self.set_output_value("success", False)
+        self.set_output_value("error", error_msg)
+        self.set_output_value("message_id", "")
+        self.set_output_value("phone_number", "")
+
+    def _set_success_outputs(
+        self,
+        message_id: str,
+        phone_number: str,
+    ) -> None:
+        """Set output values for successful response."""
+        self.set_output_value("success", True)
+        self.set_output_value("error", "")
+        self.set_output_value("message_id", message_id)
+        self.set_output_value("phone_number", phone_number)
+
+    @abstractmethod
+    async def _execute_whatsapp(
+        self,
+        context: ExecutionContext,
+        client: WhatsAppClient,
+    ) -> ExecutionResult:
+        """
+        Execute the WhatsApp operation.
+
+        Args:
+            context: Execution context
+            client: WhatsApp client
+
+        Returns:
+            Execution result
+        """
+        ...
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """Execute the WhatsApp node."""
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get WhatsApp client
+            client = await self._get_whatsapp_client(context)
+
+            async with client:
+                # Execute specific WhatsApp operation
+                result = await self._execute_whatsapp(context, client)
+
+            if result.get("success", False):
+                self.status = NodeStatus.SUCCESS
+            else:
+                self.status = NodeStatus.ERROR
+
+            return result
+
+        except WhatsAppAPIError as e:
+            error_msg = str(e)
+            logger.error(f"WhatsApp API error: {error_msg}")
+            self._set_error_outputs(error_msg)
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": error_msg, "next_nodes": []}
+
+        except Exception as e:
+            error_msg = f"WhatsApp error: {str(e)}"
+            logger.error(error_msg)
+            self._set_error_outputs(error_msg)
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": error_msg, "next_nodes": []}
+
+
+__all__ = ["WhatsAppBaseNode"]
