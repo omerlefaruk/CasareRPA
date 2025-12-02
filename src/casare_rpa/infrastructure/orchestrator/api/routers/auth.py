@@ -14,7 +14,6 @@ Security:
 
 import time
 from collections import defaultdict
-from datetime import datetime, timezone
 from typing import Dict, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -239,22 +238,63 @@ async def login(request: LoginRequest, http_request: Request) -> TokenResponse:
         )
 
     # Production: validate credentials against database
-    # TODO: Implement actual user validation
-    # user = await user_repository.validate_credentials(request.username, request.password)
-    # if not user:
-    #     _record_login_attempt(client_ip, success=False)
-    #     raise HTTPException(
-    #         status_code=status.HTTP_401_UNAUTHORIZED,
-    #         detail="Invalid username or password",
-    #     )
+    try:
+        from casare_rpa.infrastructure.persistence.repositories import UserRepository
 
-    # Record failed attempt (production mode not implemented)
-    _record_login_attempt(client_ip, success=False)
+        user_repo = UserRepository()
+        user = await user_repo.validate_credentials(request.username, request.password)
 
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Production authentication not yet implemented. Enable JWT_DEV_MODE=true for testing.",
-    )
+        if not user:
+            _record_login_attempt(client_ip, success=False)
+            logger.warning(
+                f"Failed login attempt for user: {request.username} from {client_ip}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid username or password",
+            )
+
+        # Check if MFA is required (MFA enforcement deferred to future release)
+        if user.get("mfa_enabled"):
+            logger.info(f"MFA enabled for user {user['user_id']} - enforcement pending")
+
+        # Record successful login
+        _record_login_attempt(client_ip, success=True)
+
+        # Create tokens with actual user roles
+        access_token = create_access_token(
+            user_id=user["user_id"],
+            roles=user["roles"],
+            tenant_id=user.get("tenant_id") or request.tenant_id,
+        )
+        refresh_token = create_refresh_token(
+            user_id=user["user_id"],
+            tenant_id=user.get("tenant_id") or request.tenant_id,
+        )
+
+        logger.info(f"User logged in: {user['user_id']} from {client_ip}")
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=3600,
+        )
+
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
+    except ImportError as e:
+        logger.error(f"UserRepository import failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service temporarily unavailable. Missing dependencies.",
+        )
+    except Exception as e:
+        logger.error(f"Authentication error: {e}")
+        _record_login_attempt(client_ip, success=False)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication service error. Please try again later.",
+        )
 
 
 @router.post("/refresh", response_model=TokenResponse)

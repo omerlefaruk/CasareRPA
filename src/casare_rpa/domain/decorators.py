@@ -9,7 +9,7 @@ Provides decorators for common node patterns:
 from typing import Type, TypeVar
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import DataType, PortType
+from casare_rpa.domain.value_objects.types import PortType
 from casare_rpa.domain.schemas import PropertyDef, NodeSchema
 
 T = TypeVar("T")

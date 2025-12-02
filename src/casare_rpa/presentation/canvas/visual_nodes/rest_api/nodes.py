@@ -13,7 +13,7 @@ class VisualHttpRequestNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Request"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/basic"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -40,7 +40,7 @@ class VisualSetHttpHeadersNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Set HTTP Headers"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/auth"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -61,7 +61,7 @@ class VisualHttpAuthNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Auth"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/auth"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -83,7 +83,7 @@ class VisualParseJsonResponseNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Parse JSON Response"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/advanced"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -106,7 +106,7 @@ class VisualHttpDownloadFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Download File"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/advanced"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -130,7 +130,7 @@ class VisualHttpUploadFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "HTTP Upload File"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/advanced"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:
@@ -156,7 +156,7 @@ class VisualBuildUrlNode(VisualNode):
 
     __identifier__ = "casare_rpa.http"
     NODE_NAME = "Build URL"
-    NODE_CATEGORY = "rest_api"
+    NODE_CATEGORY = "rest_api/basic"
     CASARE_NODE_MODULE = "http_nodes"
 
     def setup_ports(self) -> None:

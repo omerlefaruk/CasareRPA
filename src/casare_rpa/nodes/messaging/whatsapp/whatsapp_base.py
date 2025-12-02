@@ -2,6 +2,7 @@
 CasareRPA - WhatsApp Base Node
 
 Abstract base class for all WhatsApp nodes with shared functionality.
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from typing import Any, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import CredentialAwareMixin
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -27,15 +29,21 @@ from casare_rpa.infrastructure.resources.whatsapp_client import (
 )
 
 
-class WhatsAppBaseNode(BaseNode):
+class WhatsAppBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for WhatsApp nodes.
 
     Provides common functionality:
     - WhatsApp client access
-    - Access token configuration from credentials/env
+    - Access token configuration from vault/credentials/env
     - Error handling
     - Standard output ports
+
+    Uses CredentialAwareMixin for unified credential resolution:
+    1. Vault lookup (via credential_name parameter)
+    2. Direct parameter (access_token, phone_number_id)
+    3. Context variable (whatsapp_access_token, whatsapp_phone_number_id)
+    4. Environment variables (WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID)
 
     Subclasses implement _execute_whatsapp() for specific operations.
     """
@@ -112,21 +120,36 @@ class WhatsAppBaseNode(BaseNode):
         return client
 
     async def _get_access_token(self, context: ExecutionContext) -> Optional[str]:
-        """Get access token from context, credentials, or environment."""
-        # Try direct parameter first
-        token = self.get_parameter("access_token")
+        """
+        Get access token using unified credential resolution.
+
+        Resolution order:
+        1. Vault lookup (via credential_name parameter)
+        2. Direct parameter (access_token)
+        3. Context variable (whatsapp_access_token)
+        4. Environment variable (WHATSAPP_ACCESS_TOKEN)
+
+        Args:
+            context: ExecutionContext with credential provider
+
+        Returns:
+            Access token string or None
+        """
+        # Use CredentialAwareMixin's resolve_credential method
+        token = await self.resolve_credential(
+            context,
+            credential_name_param="credential_name",
+            direct_param="access_token",
+            env_var="WHATSAPP_ACCESS_TOKEN",
+            context_var="whatsapp_access_token",
+            credential_field="access_token",
+            required=False,
+        )
+
         if token:
-            if hasattr(context, "resolve_value"):
-                token = context.resolve_value(token)
             return token
 
-        # Try context variables
-        if hasattr(context, "get_variable"):
-            token = context.get_variable("whatsapp_access_token")
-            if token:
-                return token
-
-        # Try credential manager
+        # Fallback: try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
@@ -136,35 +159,54 @@ class WhatsAppBaseNode(BaseNode):
                     cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.access_token:
+                    logger.debug(f"Using legacy credential manager: {cred_name}")
                     return cred.access_token
 
-            # Try default credential names
+            # Try default credential names in legacy system
             for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
                 cred = credential_manager.get_whatsapp_credential(name)
                 if cred and cred.access_token:
+                    logger.debug(f"Using legacy default credential: {name}")
                     return cred.access_token
+        except ImportError:
+            # Legacy credential manager not available
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential manager lookup failed: {e}")
 
-        # Try environment
-        return os.environ.get("WHATSAPP_ACCESS_TOKEN")
+        return None
 
     async def _get_phone_number_id(self, context: ExecutionContext) -> Optional[str]:
-        """Get phone number ID from context, credentials, or environment."""
-        # Try direct parameter first
-        phone_id = self.get_parameter("phone_number_id")
+        """
+        Get phone number ID using unified credential resolution.
+
+        Resolution order:
+        1. Vault lookup (via credential_name parameter)
+        2. Direct parameter (phone_number_id)
+        3. Context variable (whatsapp_phone_number_id)
+        4. Environment variable (WHATSAPP_PHONE_NUMBER_ID)
+
+        Args:
+            context: ExecutionContext with credential provider
+
+        Returns:
+            Phone number ID string or None
+        """
+        # Use CredentialAwareMixin's resolve_credential method
+        phone_id = await self.resolve_credential(
+            context,
+            credential_name_param="credential_name",
+            direct_param="phone_number_id",
+            env_var="WHATSAPP_PHONE_NUMBER_ID",
+            context_var="whatsapp_phone_number_id",
+            credential_field="phone_number_id",
+            required=False,
+        )
+
         if phone_id:
-            if hasattr(context, "resolve_value"):
-                phone_id = context.resolve_value(phone_id)
             return phone_id
 
-        # Try context variables
-        if hasattr(context, "get_variable"):
-            phone_id = context.get_variable("whatsapp_phone_number_id")
-            if phone_id:
-                return phone_id
-
-        # Try credential manager
+        # Fallback: try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
@@ -174,18 +216,24 @@ class WhatsAppBaseNode(BaseNode):
                     cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.phone_number_id:
+                    logger.debug(
+                        f"Using legacy credential for phone_number_id: {cred_name}"
+                    )
                     return cred.phone_number_id
 
-            # Try default credential names
+            # Try default credential names in legacy system
             for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
                 cred = credential_manager.get_whatsapp_credential(name)
                 if cred and cred.phone_number_id:
+                    logger.debug(f"Using legacy default phone_number_id: {name}")
                     return cred.phone_number_id
+        except ImportError:
+            # Legacy credential manager not available
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential manager lookup failed: {e}")
 
-        # Try environment
-        return os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
+        return None
 
     def _get_recipient(self, context: ExecutionContext) -> str:
         """Get recipient phone number from parameter, resolving variables."""

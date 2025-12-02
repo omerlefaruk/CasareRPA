@@ -24,16 +24,13 @@ from typing import Any, Callable, Dict, List, Optional, Set, TYPE_CHECKING
 from loguru import logger
 
 from casare_rpa.domain.errors import (
-    ErrorCategory,
-    ErrorClassification,
     ErrorContext,
     ErrorHandlerRegistry,
-    ErrorSeverity,
     RecoveryAction,
     RecoveryDecision,
     get_error_handler_registry,
 )
-from casare_rpa.domain.events import Event, EventBus, get_event_bus
+from casare_rpa.domain.events import EventBus, get_event_bus
 from casare_rpa.domain.value_objects.types import EventType, NodeId
 from casare_rpa.infrastructure.execution.recovery_strategies import (
     CircuitBreaker,

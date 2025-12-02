@@ -9,7 +9,7 @@ class VisualDatabaseConnectNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Database Connect"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/connection"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -67,7 +67,7 @@ class VisualExecuteQueryNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Execute Query"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/query"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -104,7 +104,7 @@ class VisualExecuteNonQueryNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Execute Non-Query"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/query"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -140,7 +140,7 @@ class VisualBeginTransactionNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Begin Transaction"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/transaction"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -162,7 +162,7 @@ class VisualCommitTransactionNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Commit Transaction"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/transaction"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -184,7 +184,7 @@ class VisualRollbackTransactionNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Rollback Transaction"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/transaction"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -206,7 +206,7 @@ class VisualCloseDatabaseNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Close Database"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/connection"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -227,7 +227,7 @@ class VisualTableExistsNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Table Exists"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/query"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -251,7 +251,7 @@ class VisualGetTableColumnsNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Get Table Columns"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/query"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:
@@ -276,7 +276,7 @@ class VisualExecuteBatchNode(VisualNode):
 
     __identifier__ = "casare_rpa.database"
     NODE_NAME = "Execute Batch"
-    NODE_CATEGORY = "database"
+    NODE_CATEGORY = "database/query"
     CASARE_NODE_MODULE = "database_nodes"
 
     def __init__(self) -> None:

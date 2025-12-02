@@ -19,7 +19,7 @@ Usage:
             ]
 """
 
-from typing import Callable, List, Optional, TYPE_CHECKING
+from typing import Callable, List
 
 from PySide6.QtCore import QEvent, QObject
 from PySide6.QtWidgets import QWidget

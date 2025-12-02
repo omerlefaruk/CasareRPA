@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, AsyncGenerator, Callable, Dict, List, Optional, Set, TypeVar
+from typing import Any, AsyncGenerator, Dict, List, Optional, Set
 from uuid import UUID, uuid4
 
 from loguru import logger
@@ -27,7 +27,6 @@ from casare_rpa.infrastructure.security.merkle_audit import (
     MerkleAuditService,
     AuditEntry as MerkleAuditEntry,
     AuditAction as MerkleAuditAction,
-    ResourceType as MerkleResourceType,
     get_audit_service as get_merkle_audit_service,
 )
 

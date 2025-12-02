@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QToolBar
 
+from ..ui.icons import get_toolbar_icon
+
 if TYPE_CHECKING:
     from ..main_window import MainWindow
 
@@ -83,6 +85,18 @@ class ToolbarBuilder:
         toolbar.setFloatable(False)
         toolbar.setStyleSheet(self.TOOLBAR_STYLE)
 
+        # Set icons on actions (they don't have icons by default from ActionManager)
+        mw.action_run.setIcon(get_toolbar_icon("run"))
+        mw.action_pause.setIcon(get_toolbar_icon("pause"))
+        mw.action_stop.setIcon(get_toolbar_icon("stop"))
+        mw.action_start_listening.setIcon(get_toolbar_icon("listen"))
+        mw.action_stop_listening.setIcon(get_toolbar_icon("stop_listen"))
+        mw.action_record_workflow.setIcon(get_toolbar_icon("record"))
+        mw.action_pick_selector.setIcon(get_toolbar_icon("pick_selector"))
+        mw.action_project_manager.setIcon(get_toolbar_icon("project"))
+        mw.action_credential_manager.setIcon(get_toolbar_icon("credentials"))
+        mw.action_performance_dashboard.setIcon(get_toolbar_icon("performance"))
+
         # === Execution Controls ===
         toolbar.addAction(mw.action_run)
         toolbar.addAction(mw.action_pause)
@@ -105,6 +119,11 @@ class ToolbarBuilder:
         # === Project & Settings ===
         toolbar.addAction(mw.action_project_manager)
         toolbar.addAction(mw.action_credential_manager)
+
+        toolbar.addSeparator()
+
+        # === Performance ===
+        toolbar.addAction(mw.action_performance_dashboard)
 
         mw.addToolBar(toolbar)
         mw._main_toolbar = toolbar

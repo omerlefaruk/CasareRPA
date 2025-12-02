@@ -9,7 +9,7 @@ Handles all node-related operations:
 - Node registry initialization and management
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QCursor
 from loguru import logger

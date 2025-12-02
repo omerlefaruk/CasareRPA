@@ -6,7 +6,6 @@ and optimization insights from workflow execution logs.
 """
 
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -22,13 +21,10 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QTabWidget,
     QTextEdit,
-    QSplitter,
     QProgressBar,
     QGroupBox,
     QTreeWidget,
     QTreeWidgetItem,
-    QFrame,
-    QScrollArea,
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
 from PySide6.QtGui import QColor, QBrush, QFont
@@ -185,6 +181,10 @@ class ProcessMiningPanel(QDockWidget):
         self._current_model = None
         self._current_insights: List[Dict[str, Any]] = []
         self._llm_manager = None
+
+        # Thread management for AI enhancement
+        self._ai_thread: Optional[QThread] = None
+        self._ai_worker: Optional[AIEnhanceWorker] = None
 
         self._setup_dock()
         self._setup_ui()
@@ -1259,6 +1259,19 @@ class ProcessMiningPanel(QDockWidget):
     def cleanup(self) -> None:
         """Clean up resources."""
         self._refresh_timer.stop()
+
+        # Clean up AI thread if running
+        if self._ai_thread is not None:
+            if self._ai_thread.isRunning():
+                self._ai_thread.quit()
+                self._ai_thread.wait(3000)  # Wait up to 3 seconds
+            self._ai_thread.deleteLater()
+            self._ai_thread = None
+
+        if self._ai_worker is not None:
+            self._ai_worker.deleteLater()
+            self._ai_worker = None
+
         logger.debug("ProcessMiningPanel cleaned up")
 
     def _get_llm_manager(self):
@@ -1282,122 +1295,47 @@ class ProcessMiningPanel(QDockWidget):
         if not self._current_insights:
             return
 
+        # Guard against concurrent AI operations
+        if self._ai_thread is not None and self._ai_thread.isRunning():
+            logger.warning("AI enhancement already in progress")
+            return
+
         ai_settings = self.get_ai_settings()
         model = ai_settings.get("model", "gpt-4o-mini")
+        provider = ai_settings.get("provider", "OpenAI")
 
         # Show progress
         self._enhance_progress.show()
         self._enhance_btn.setEnabled(False)
 
-        # Run in background thread to avoid blocking UI
-        from PySide6.QtCore import QObject, Signal as QtSignal
+        # Clean up previous thread/worker if they exist
+        if self._ai_thread is not None:
+            self._ai_thread.deleteLater()
+        if self._ai_worker is not None:
+            self._ai_worker.deleteLater()
 
-        class AIEnhanceWorker(QObject):
-            finished = QtSignal(list)
-            error = QtSignal(str)
-
-            def __init__(self, panel, insights, model):
-                super().__init__()
-                self.panel = panel
-                self.insights = insights
-                self.model = model
-
-            def run(self):
-                try:
-                    import asyncio
-
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        result = loop.run_until_complete(self._enhance_async())
-                        self.finished.emit(result)
-                    finally:
-                        loop.close()
-                except Exception as e:
-                    self.error.emit(str(e))
-
-            async def _enhance_async(self):
-                manager = self.panel._get_llm_manager()
-                if not manager:
-                    raise RuntimeError("LLM manager not available")
-
-                from casare_rpa.infrastructure.resources.llm_resource_manager import (
-                    LLMConfig,
-                    LLMProvider,
-                )
-
-                # Configure with selected model
-                provider = self.panel._provider_combo.currentText()
-                provider_map = {
-                    "OpenAI": LLMProvider.OPENAI,
-                    "Anthropic": LLMProvider.ANTHROPIC,
-                    "Local (Ollama)": LLMProvider.OLLAMA,
-                }
-                llm_provider = provider_map.get(provider, LLMProvider.OPENAI)
-
-                manager.configure(
-                    LLMConfig(
-                        provider=llm_provider,
-                        model=self.model,
-                    )
-                )
-
-                # Build prompt with insights summary
-                insights_text = "\n".join(
-                    [
-                        f"- {i.get('title', '')}: {i.get('description', '')} (Impact: {i.get('impact', 'low')})"
-                        for i in self.insights
-                    ]
-                )
-
-                prompt = f"""Analyze these process mining insights and provide enhanced recommendations.
-
-Current Insights:
-{insights_text}
-
-Process Model Summary:
-- Activities: {len(self.panel._current_model.get('activities', []))}
-- Edges: {sum(len(t) for t in self.panel._current_model.get('edges', {}).values())}
-
-For each insight, provide:
-1. A more specific actionable recommendation
-2. Potential root cause analysis
-3. Estimated improvement impact
-
-Format your response as a structured list with clear sections."""
-
-                response, _ = await manager.chat(
-                    message=prompt,
-                    system_prompt=(
-                        "You are a process optimization expert. Analyze RPA workflow "
-                        "execution data and provide actionable insights for improvement. "
-                        "Be specific and practical."
-                    ),
-                    temperature=0.3,
-                    max_tokens=2000,
-                )
-
-                # Parse response and enhance insights
-                enhanced = []
-                for insight in self.insights:
-                    enhanced_insight = insight.copy()
-                    enhanced_insight["ai_enhanced"] = True
-                    enhanced_insight["ai_analysis"] = response.content
-                    enhanced.append(enhanced_insight)
-
-                return enhanced
-
-        # Create worker and thread
+        # Create worker and thread using module-level class
         self._ai_thread = QThread()
-        self._ai_worker = AIEnhanceWorker(self, self._current_insights, model)
+        self._ai_worker = AIEnhanceWorker(
+            insights=self._current_insights,
+            model=model,
+            provider=provider,
+            process_model=self._current_model or {},
+        )
         self._ai_worker.moveToThread(self._ai_thread)
 
         # Connect signals
         self._ai_thread.started.connect(self._ai_worker.run)
         self._ai_worker.finished.connect(self._on_ai_enhance_finished)
         self._ai_worker.error.connect(self._on_ai_enhance_error)
+
+        # Proper cleanup: quit thread after worker signals
         self._ai_worker.finished.connect(self._ai_thread.quit)
         self._ai_worker.error.connect(self._ai_thread.quit)
+
+        # Schedule deletion after thread finishes
+        self._ai_thread.finished.connect(self._ai_worker.deleteLater)
+        self._ai_thread.finished.connect(self._ai_thread.deleteLater)
 
         # Start
         self._ai_thread.start()

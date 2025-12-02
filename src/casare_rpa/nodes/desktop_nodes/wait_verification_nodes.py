@@ -13,7 +13,6 @@ from typing import Any, Dict
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import DataType, NodeStatus
-from casare_rpa.nodes.utils.type_converters import safe_int
 
 
 @executable_node

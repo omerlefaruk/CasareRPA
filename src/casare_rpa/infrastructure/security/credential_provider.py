@@ -12,9 +12,9 @@ Design goals:
 """
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -24,7 +24,6 @@ from .vault_client import (
     VaultBackend,
     SecretValue,
     CredentialType,
-    VaultError,
     SecretNotFoundError,
 )
 

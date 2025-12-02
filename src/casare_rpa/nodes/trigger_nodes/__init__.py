@@ -20,11 +20,21 @@ from .chat_trigger_node import ChatTriggerNode
 from .rss_feed_trigger_node import RSSFeedTriggerNode
 from .sse_trigger_node import SSETriggerNode
 
+# Messaging triggers
+from .telegram_trigger_node import TelegramTriggerNode
+from .whatsapp_trigger_node import WhatsAppTriggerNode
+
+# Google triggers
+from .gmail_trigger_node import GmailTriggerNode
+from .drive_trigger_node import DriveTriggerNode
+from .sheets_trigger_node import SheetsTriggerNode
+from .calendar_trigger_node import CalendarTriggerNode
+
 __all__ = [
     # Base
     "BaseTriggerNode",
     "trigger_node",
-    # Trigger nodes
+    # General trigger nodes
     "WebhookTriggerNode",
     "ScheduleTriggerNode",
     "FileWatchTriggerNode",
@@ -36,4 +46,12 @@ __all__ = [
     "ChatTriggerNode",
     "RSSFeedTriggerNode",
     "SSETriggerNode",
+    # Messaging triggers
+    "TelegramTriggerNode",
+    "WhatsAppTriggerNode",
+    # Google triggers
+    "GmailTriggerNode",
+    "DriveTriggerNode",
+    "SheetsTriggerNode",
+    "CalendarTriggerNode",
 ]

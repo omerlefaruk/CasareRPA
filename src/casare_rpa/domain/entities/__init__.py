@@ -10,6 +10,7 @@ from .node_connection import NodeConnection
 from .variable import Variable, VariableDefinition, ProjectVariable
 from .workflow import WorkflowSchema
 from .execution_state import ExecutionState, ExecutionContext
+from .tenant import Tenant, TenantId, TenantSettings
 from .project import (
     # Constants
     PROJECT_SCHEMA_VERSION,
@@ -60,4 +61,8 @@ __all__ = [
     "generate_project_id",
     "generate_scenario_id",
     "PROJECT_SCHEMA_VERSION",
+    # Tenant entities
+    "Tenant",
+    "TenantId",
+    "TenantSettings",
 ]

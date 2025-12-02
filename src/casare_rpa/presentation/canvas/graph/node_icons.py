@@ -19,6 +19,7 @@ CATEGORY_COLORS = {
     "navigation": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
     "interaction": QColor(0xCE, 0x91, 0x78),  # #CE9178 - String orange
     "data": QColor(0x89, 0xD1, 0x85),  # #89D185 - Success green
+    "data_operations": QColor(0x89, 0xD1, 0x85),  # #89D185 - Success green
     "wait": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Warning yellow
     "variable": QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Variable light blue
     "control_flow": QColor(0xF4, 0x87, 0x71),  # #F48771 - Error red
@@ -26,8 +27,20 @@ CATEGORY_COLORS = {
     "desktop_automation": QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
     "debug": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
     "file": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
+    "file_operations": QColor(0xDC, 0xDC, 0xAA),  # #DCDCAA - Warm yellow
+    "rest_api": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
+    "database": QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Type teal
+    "email": QColor(0xCE, 0x91, 0x78),  # #CE9178 - Orange
+    "office_automation": QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
+    "scripts": QColor(0xD7, 0xBA, 0x7D),  # #D7BA7D - Yellow
+    "system": QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
+    "utility": QColor(0x80, 0x80, 0x80),  # #808080 - Gray
+    # New categories
     "triggers": QColor(0x9C, 0x27, 0xB0),  # #9C27B0 - Purple (Material Purple 500)
-    "ai_ml": QColor(0x00, 0xBC, 0xD4),  # #00BCD4 - Cyan (Material Cyan 500) - AI/ML
+    "messaging": QColor(0x25, 0xD3, 0x66),  # #25D366 - WhatsApp green
+    "ai_ml": QColor(0x00, 0xBC, 0xD4),  # #00BCD4 - Cyan (Material Cyan 500)
+    "document": QColor(0xFF, 0x98, 0x00),  # #FF9800 - Orange (Material Orange 500)
+    "google": QColor(0x42, 0x85, 0xF4),  # #4285F4 - Google Blue
 }
 
 

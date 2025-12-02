@@ -7,7 +7,6 @@ Supports OpenAI, Anthropic, Azure, and local models (Ollama).
 
 from __future__ import annotations
 
-import asyncio
 import time
 from dataclasses import dataclass, field
 from enum import Enum
@@ -77,16 +76,45 @@ class LLMUsageMetrics:
 
 
 @dataclass
+class ImageContent:
+    """Represents an image in a message for vision models."""
+
+    base64_data: str
+    media_type: str = "image/png"  # image/png, image/jpeg, image/gif, image/webp
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to LiteLLM image_url format."""
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{self.media_type};base64,{self.base64_data}",
+            },
+        }
+
+
+@dataclass
 class ChatMessage:
     """Represents a chat message."""
 
     role: str  # "system", "user", "assistant"
     content: str
     name: Optional[str] = None
+    images: Optional[List[ImageContent]] = None  # For vision models
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to LiteLLM message format."""
-        msg = {"role": self.role, "content": self.content}
+        if self.images:
+            # Multi-modal message with text and images
+            content_parts: List[Dict[str, Any]] = [
+                {"type": "text", "text": self.content}
+            ]
+            for img in self.images:
+                content_parts.append(img.to_dict())
+            msg: Dict[str, Any] = {"role": self.role, "content": content_parts}
+        else:
+            # Text-only message
+            msg = {"role": self.role, "content": self.content}
+
         if self.name:
             msg["name"] = self.name
         return msg
@@ -508,6 +536,99 @@ class LLMResourceManager:
             logger.error(f"LLM chat failed: {e}")
             raise
 
+    async def vision_completion(
+        self,
+        prompt: str,
+        images: List[ImageContent],
+        model: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs: Any,
+    ) -> LLMResponse:
+        """
+        Generate a completion from a prompt with images (vision).
+
+        Args:
+            prompt: User prompt describing what to analyze
+            images: List of ImageContent objects with base64 encoded images
+            model: Vision model to use (defaults to gpt-4o or configured model)
+            system_prompt: Optional system prompt
+            temperature: Sampling temperature (0-2)
+            max_tokens: Maximum tokens in response
+            **kwargs: Additional LiteLLM parameters
+
+        Returns:
+            LLMResponse with generated content
+        """
+        litellm = self._ensure_initialized()
+
+        # Default to vision-capable model
+        if model is None:
+            model = self._config.model if self._config else "gpt-4o"
+
+        model_str = self._get_model_string(model)
+
+        # Build multi-modal message with images
+        user_content: List[Dict[str, Any]] = [{"type": "text", "text": prompt}]
+        for img in images:
+            user_content.append(img.to_dict())
+
+        messages: List[Dict[str, Any]] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": user_content})
+
+        # Get API key for this specific model
+        api_key = self._get_api_key_for_model(model_str)
+
+        try:
+            call_kwargs: Dict[str, Any] = {
+                "model": model_str,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                **kwargs,
+            }
+            if api_key:
+                call_kwargs["api_key"] = api_key
+
+            response = await litellm.acompletion(**call_kwargs)
+
+            # Extract usage
+            usage = response.get("usage", {})
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+
+            # Calculate cost
+            cost = self._calculate_cost(model_str, prompt_tokens, completion_tokens)
+            self._metrics.add_usage(prompt_tokens, completion_tokens, cost)
+
+            # Extract content
+            content = response["choices"][0]["message"]["content"]
+            finish_reason = response["choices"][0].get("finish_reason", "stop")
+
+            logger.debug(
+                f"LLM vision completion: model={model_str}, "
+                f"images={len(images)}, tokens={total_tokens}, cost=${cost:.4f}"
+            )
+
+            return LLMResponse(
+                content=content,
+                model=model_str,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=total_tokens,
+                finish_reason=finish_reason,
+                raw_response=response,
+            )
+
+        except Exception as e:
+            self._metrics.record_error()
+            logger.error(f"LLM vision completion failed: {e}")
+            raise
+
     async def extract_structured(
         self,
         text: str,
@@ -622,4 +743,5 @@ __all__ = [
     "LLMUsageMetrics",
     "ChatMessage",
     "ConversationHistory",
+    "ImageContent",
 ]

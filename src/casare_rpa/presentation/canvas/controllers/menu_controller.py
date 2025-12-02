@@ -11,7 +11,7 @@ Handles all menu-related operations:
 - Desktop selector builder
 """
 
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 from pathlib import Path
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction

@@ -9,7 +9,7 @@ class VisualExcelOpenNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Excel Open"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/excel"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -33,7 +33,7 @@ class VisualExcelReadCellNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Excel Read Cell"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/excel"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -58,7 +58,7 @@ class VisualExcelWriteCellNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Excel Write Cell"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/excel"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -84,7 +84,7 @@ class VisualExcelGetRangeNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Excel Get Range"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/excel"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -111,7 +111,7 @@ class VisualExcelCloseNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Excel Close"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/excel"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -132,7 +132,7 @@ class VisualWordOpenNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Word Open"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/word"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -156,7 +156,7 @@ class VisualWordGetTextNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Word Get Text"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/word"
     CASARE_NODE_MODULE = "office"
 
     def setup_ports(self) -> None:
@@ -173,7 +173,7 @@ class VisualWordReplaceTextNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Word Replace Text"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/word"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -200,7 +200,7 @@ class VisualWordCloseNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Word Close"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/word"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -221,7 +221,7 @@ class VisualOutlookSendEmailNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Outlook Send Email"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/outlook"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -250,7 +250,7 @@ class VisualOutlookReadEmailsNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Outlook Read Emails"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/outlook"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:
@@ -275,7 +275,7 @@ class VisualOutlookGetInboxCountNode(VisualNode):
 
     __identifier__ = "casare_rpa.office"
     NODE_NAME = "Outlook Get Inbox Count"
-    NODE_CATEGORY = "office_automation"
+    NODE_CATEGORY = "office_automation/outlook"
     CASARE_NODE_MODULE = "office"
 
     def __init__(self) -> None:

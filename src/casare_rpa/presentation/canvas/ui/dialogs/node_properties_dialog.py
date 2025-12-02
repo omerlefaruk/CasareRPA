@@ -9,13 +9,11 @@ from typing import Optional, Any, Dict
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QHBoxLayout,
     QFormLayout,
     QLabel,
     QLineEdit,
     QTextEdit,
     QSpinBox,
-    QDoubleSpinBox,
     QCheckBox,
     QComboBox,
     QDialogButtonBox,
@@ -23,7 +21,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QWidget,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 
 from loguru import logger
 
@@ -262,7 +260,9 @@ class NodePropertiesDialog(QDialog):
             self._retry_spin.setValue(int(self.properties["retry_count"]))
 
         if "continue_on_error" in self.properties:
-            self._continue_on_error.setChecked(bool(self.properties["continue_on_error"]))
+            self._continue_on_error.setChecked(
+                bool(self.properties["continue_on_error"])
+            )
 
         if "log_level" in self.properties:
             self._log_level_combo.setCurrentText(str(self.properties["log_level"]))

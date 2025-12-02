@@ -9,7 +9,7 @@ class VisualLaunchApplicationNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Launch Application"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/application"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -51,7 +51,7 @@ class VisualCloseApplicationNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Close Application"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/application"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -76,7 +76,7 @@ class VisualActivateWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Activate Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -101,7 +101,7 @@ class VisualGetWindowListNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Window List"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -123,7 +123,7 @@ class VisualFindElementNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Find Element"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -149,7 +149,7 @@ class VisualClickElementDesktopNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Click Element (Desktop)"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -177,7 +177,7 @@ class VisualTypeTextDesktopNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Type Text (Desktop)"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -203,7 +203,7 @@ class VisualGetElementTextNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Element Text"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -228,7 +228,7 @@ class VisualGetElementPropertyNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Element Property"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -256,7 +256,7 @@ class VisualResizeWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Resize Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -281,7 +281,7 @@ class VisualMoveWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Move Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -306,7 +306,7 @@ class VisualMaximizeWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Maximize Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -322,7 +322,7 @@ class VisualMinimizeWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Minimize Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -338,7 +338,7 @@ class VisualRestoreWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Restore Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -354,7 +354,7 @@ class VisualGetWindowPropertiesNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Window Properties"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -378,7 +378,7 @@ class VisualSetWindowStateNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Set Window State"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -409,7 +409,7 @@ class VisualSelectFromDropdownNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select From Dropdown"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -432,7 +432,7 @@ class VisualCheckCheckboxNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Check Checkbox"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -453,7 +453,7 @@ class VisualSelectRadioButtonNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select Radio Button"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -469,7 +469,7 @@ class VisualSelectTabNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Select Tab"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -493,7 +493,7 @@ class VisualExpandTreeItemNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Expand Tree Item"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -514,7 +514,7 @@ class VisualScrollElementNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Scroll Element"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -545,7 +545,7 @@ class VisualMoveMouseNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Move Mouse"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -570,7 +570,7 @@ class VisualMouseClickNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Mouse Click"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -607,7 +607,7 @@ class VisualSendKeysNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Keys"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -630,7 +630,7 @@ class VisualSendHotKeyNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Hotkey"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -669,7 +669,7 @@ class VisualGetMousePositionNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Get Mouse Position"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def setup_ports(self) -> None:
@@ -685,7 +685,7 @@ class VisualDragMouseNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Drag Mouse"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -724,7 +724,7 @@ class VisualDesktopWaitForElementNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Wait For Desktop Element"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
     CASARE_NODE_CLASS = "WaitForElementNode"
 
@@ -756,7 +756,7 @@ class VisualWaitForWindowNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Wait For Window"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/window"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -788,7 +788,7 @@ class VisualVerifyElementExistsNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Verify Element Exists"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -811,7 +811,7 @@ class VisualVerifyElementPropertyNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Verify Element Property"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/element"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -857,7 +857,7 @@ class VisualCaptureScreenshotNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Capture Screenshot"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/capture"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -883,7 +883,7 @@ class VisualCaptureElementImageNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Capture Element Image"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/capture"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -911,7 +911,7 @@ class VisualOCRExtractTextNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "OCR Extract Text"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/capture"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:
@@ -944,7 +944,7 @@ class VisualCompareImagesNode(VisualNode):
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Compare Images"
-    NODE_CATEGORY = "desktop_automation"
+    NODE_CATEGORY = "desktop_automation/capture"
     CASARE_NODE_MODULE = "desktop"
 
     def __init__(self) -> None:

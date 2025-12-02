@@ -6,7 +6,6 @@ attributes, screenshots, and page information.
 """
 
 import asyncio
-from typing import Optional
 from pathlib import Path
 
 
@@ -20,7 +19,6 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
 from ..utils.config import DEFAULT_NODE_TIMEOUT
 from ..utils.selectors.selector_normalizer import normalize_selector
 from loguru import logger

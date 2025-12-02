@@ -455,6 +455,9 @@ class EventType(Enum):
     DEBUG_MODE_DISABLED = auto()
     """Debug mode disabled."""
 
+    DEBUG_CALL_STACK_UPDATED = auto()
+    """Debug call stack updated with current execution frames."""
+
     VARIABLE_INSPECTOR_UPDATED = auto()
     """Variable inspector data updated."""
 
@@ -543,7 +546,16 @@ class EventType(Enum):
         # UI events
         if any(
             keyword in self.name
-            for keyword in ["PANEL", "ZOOM", "VIEW", "THEME", "MINIMAP", "SEARCH", "COMMAND", "HOTKEY"]
+            for keyword in [
+                "PANEL",
+                "ZOOM",
+                "VIEW",
+                "THEME",
+                "MINIMAP",
+                "SEARCH",
+                "COMMAND",
+                "HOTKEY",
+            ]
         ):
             return EventCategory.UI
 

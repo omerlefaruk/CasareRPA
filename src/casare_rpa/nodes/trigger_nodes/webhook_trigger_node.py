@@ -5,7 +5,7 @@ Trigger node that listens for HTTP webhook requests.
 Enhanced with CORS, IP whitelist, authentication, and binary data support.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from casare_rpa.domain.decorators import node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

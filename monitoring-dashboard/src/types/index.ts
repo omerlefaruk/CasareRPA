@@ -97,3 +97,52 @@ export interface WebSocketMessage {
   payload: any;
   timestamp: string;
 }
+
+// Re-export MetricsSnapshot from client.ts for convenience
+export type { MetricsSnapshot } from '@/api/client';
+
+/**
+ * Real-time metrics snapshot from WebSocket stream.
+ * Includes fleet, job, system, and self-healing metrics.
+ */
+export interface MetricsSnapshotExtended {
+  timestamp: string;
+  environment: string;
+
+  // Fleet metrics
+  queue_depth: number;
+  active_jobs: number;
+  total_robots: number;
+  busy_robots: number;
+  idle_robots: number;
+  fleet_utilization_percent: number;
+
+  // Job metrics (aggregated)
+  jobs_completed: number;
+  jobs_failed: number;
+  jobs_cancelled: number;
+  job_success_rate: number;
+  average_job_duration_seconds: number;
+  average_queue_wait_seconds: number;
+
+  // System metrics
+  process_cpu_percent: number;
+  process_memory_mb: number;
+  system_cpu_percent: number;
+  system_memory_percent: number;
+
+  // Self-healing stats
+  healing_attempts: number;
+  healing_successes: number;
+  healing_success_rate: number;
+
+  // Top executed nodes
+  top_nodes: NodeMetricsSummary[];
+}
+
+export interface NodeMetricsSummary {
+  node_type: string;
+  total_executions: number;
+  success_rate: number;
+  avg_duration_ms: number;
+}

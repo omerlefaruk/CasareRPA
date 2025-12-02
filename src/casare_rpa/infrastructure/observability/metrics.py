@@ -7,14 +7,18 @@ Specialized metrics collectors for RPA operations including:
 - Queue metrics (depth, throughput, backpressure)
 - Node execution metrics (per-type latency, failure rate)
 - Self-healing metrics (healing attempts, success rate)
+- JSON export for WebSocket streaming to dashboard
+- Multi-backend export (Prometheus, JSON, OTLP)
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from dataclasses import dataclass, asdict
+from datetime import datetime
 from enum import Enum
 from threading import Lock
 from typing import Any, Callable, Dict, Generator, List, Optional
@@ -25,6 +29,12 @@ from casare_rpa.infrastructure.observability.telemetry import (
     TelemetryProvider,
     get_meter,
     OTEL_AVAILABLE,
+)
+from casare_rpa.infrastructure.observability.system_metrics import (
+    get_system_metrics_collector,
+    SystemMetricsCollector,
+    ProcessMetrics,
+    SystemMetrics,
 )
 from casare_rpa.infrastructure.events import (
     get_monitoring_event_bus,
@@ -575,6 +585,10 @@ class RPAMetricsCollector:
         # Update global utilization metrics
         self._update_global_utilization()
 
+        # Get actual CPU/memory from system metrics
+        system_collector = get_system_metrics_collector()
+        process_metrics = system_collector.get_process_metrics()
+
         # Emit robot heartbeat event
         self._emit_monitoring_event(
             MonitoringEventType.ROBOT_HEARTBEAT,
@@ -585,9 +599,8 @@ class RPAMetricsCollector:
                 "jobs_completed": robot.jobs_completed,
                 "jobs_failed": robot.jobs_failed,
                 "utilization_percent": robot.utilization_percent,
-                # TODO: Get actual CPU/memory from system metrics
-                "cpu_percent": 0.0,
-                "memory_mb": 0.0,
+                "cpu_percent": process_metrics.cpu_percent,
+                "memory_mb": process_metrics.memory_rss_mb,
             },
         )
 
@@ -816,3 +829,461 @@ class RPAMetricsCollector:
 def get_metrics_collector() -> RPAMetricsCollector:
     """Get the singleton metrics collector instance."""
     return RPAMetricsCollector.get_instance()
+
+
+# =============================================================================
+# Metrics Snapshot for JSON Export
+# =============================================================================
+
+
+@dataclass
+class MetricsSnapshot:
+    """
+    Point-in-time snapshot of all metrics for JSON export.
+
+    Used for WebSocket streaming to dashboard and REST API responses.
+    """
+
+    timestamp: str  # ISO format
+    environment: str
+
+    # Fleet metrics
+    queue_depth: int
+    active_jobs: int
+    total_robots: int
+    busy_robots: int
+    idle_robots: int
+    fleet_utilization_percent: float
+
+    # Job metrics (aggregated)
+    jobs_completed: int
+    jobs_failed: int
+    jobs_cancelled: int
+    job_success_rate: float
+    average_job_duration_seconds: float
+    average_queue_wait_seconds: float
+
+    # System metrics (optional)
+    process_cpu_percent: float
+    process_memory_mb: float
+    system_cpu_percent: float
+    system_memory_percent: float
+
+    # Self-healing stats
+    healing_attempts: int
+    healing_successes: int
+    healing_success_rate: float
+
+    # Node metrics summary (top 5 by execution count)
+    top_nodes: List[Dict[str, Any]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return asdict(self)
+
+    def to_json(self) -> str:
+        """Convert to JSON string."""
+        return json.dumps(self.to_dict())
+
+    @classmethod
+    def from_collector(
+        cls,
+        collector: RPAMetricsCollector,
+        environment: str = "development",
+    ) -> "MetricsSnapshot":
+        """
+        Create snapshot from metrics collector state.
+
+        Args:
+            collector: RPAMetricsCollector instance
+            environment: Deployment environment name
+        """
+        now = datetime.now()
+        job_metrics = collector.get_job_metrics()
+        all_robot_metrics = collector.get_all_robot_metrics()
+        healing_stats = collector.get_healing_stats()
+        node_metrics = collector.get_all_node_metrics()
+
+        # Calculate robot counts
+        total_robots = len(all_robot_metrics)
+        busy_robots = sum(
+            1 for r in all_robot_metrics.values() if r.status == RobotStatus.BUSY
+        )
+        idle_robots = sum(
+            1 for r in all_robot_metrics.values() if r.status == RobotStatus.IDLE
+        )
+
+        # Fleet utilization
+        fleet_utilization = (
+            (busy_robots / total_robots * 100) if total_robots > 0 else 0.0
+        )
+
+        # Get system metrics
+        system_collector = get_system_metrics_collector()
+        process = system_collector.get_process_metrics()
+        system = system_collector.get_system_metrics()
+
+        # Top nodes by execution count
+        sorted_nodes = sorted(
+            node_metrics.items(),
+            key=lambda x: x[1].get("total_executions", 0),
+            reverse=True,
+        )[:5]
+        top_nodes = [
+            {
+                "node_type": node_type,
+                "total_executions": metrics.get("total_executions", 0),
+                "success_rate": (
+                    metrics.get("successful", 0)
+                    / metrics.get("total_executions", 1)
+                    * 100
+                )
+                if metrics.get("total_executions", 0) > 0
+                else 0.0,
+                "avg_duration_ms": (
+                    metrics.get("total_duration_ms", 0)
+                    / metrics.get("total_executions", 1)
+                )
+                if metrics.get("total_executions", 0) > 0
+                else 0.0,
+            }
+            for node_type, metrics in sorted_nodes
+        ]
+
+        return cls(
+            timestamp=now.isoformat(),
+            environment=environment,
+            queue_depth=collector.get_queue_depth(),
+            active_jobs=len(collector.get_active_jobs()),
+            total_robots=total_robots,
+            busy_robots=busy_robots,
+            idle_robots=idle_robots,
+            fleet_utilization_percent=round(fleet_utilization, 2),
+            jobs_completed=job_metrics.completed_jobs,
+            jobs_failed=job_metrics.failed_jobs,
+            jobs_cancelled=job_metrics.cancelled_jobs,
+            job_success_rate=round(job_metrics.success_rate, 2),
+            average_job_duration_seconds=round(job_metrics.average_duration_seconds, 3),
+            average_queue_wait_seconds=round(job_metrics.average_queue_wait_seconds, 3),
+            process_cpu_percent=process.cpu_percent,
+            process_memory_mb=process.memory_rss_mb,
+            system_cpu_percent=system.cpu_percent,
+            system_memory_percent=system.memory_percent,
+            healing_attempts=healing_stats.get("total_attempts", 0),
+            healing_successes=healing_stats.get("successes", 0),
+            healing_success_rate=round(healing_stats.get("success_rate", 0.0), 2),
+            top_nodes=top_nodes,
+        )
+
+
+# =============================================================================
+# Multi-Backend Metrics Exporter
+# =============================================================================
+
+
+class MetricsExporter:
+    """
+    Exports metrics to multiple backends (Prometheus, JSON, WebSocket).
+
+    Runs on a configurable interval and pushes metrics to registered backends.
+
+    Usage:
+        exporter = MetricsExporter(interval_seconds=10)
+
+        # Add callbacks for different backends
+        exporter.add_json_callback(websocket_broadcast)
+        exporter.add_prometheus_callback(prometheus_push)
+
+        # Start exporting
+        await exporter.start()
+
+        # Stop when done
+        await exporter.stop()
+    """
+
+    def __init__(
+        self,
+        interval_seconds: float = 10.0,
+        environment: str = "development",
+    ) -> None:
+        """
+        Initialize metrics exporter.
+
+        Args:
+            interval_seconds: Export interval in seconds
+            environment: Environment name for snapshot
+        """
+        self._interval = interval_seconds
+        self._environment = environment
+        self._running = False
+        self._task: Optional[asyncio.Task] = None
+        self._lock = Lock()
+
+        # Registered callbacks
+        self._json_callbacks: List[Callable[[str], None]] = []
+        self._dict_callbacks: List[Callable[[Dict[str, Any]], None]] = []
+        self._prometheus_callbacks: List[Callable[[str], None]] = []
+
+        # Last snapshot for on-demand access
+        self._last_snapshot: Optional[MetricsSnapshot] = None
+
+    def add_json_callback(self, callback: Callable[[str], None]) -> None:
+        """
+        Add callback that receives JSON string on each export.
+
+        Args:
+            callback: Function(json_str) called on each export
+        """
+        with self._lock:
+            self._json_callbacks.append(callback)
+
+    def add_dict_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
+        """
+        Add callback that receives dict on each export.
+
+        Args:
+            callback: Function(dict) called on each export
+        """
+        with self._lock:
+            self._dict_callbacks.append(callback)
+
+    def add_prometheus_callback(self, callback: Callable[[str], None]) -> None:
+        """
+        Add callback that receives Prometheus-formatted metrics.
+
+        Args:
+            callback: Function(prometheus_text) called on each export
+        """
+        with self._lock:
+            self._prometheus_callbacks.append(callback)
+
+    def remove_callback(self, callback: Callable) -> None:
+        """Remove a registered callback."""
+        with self._lock:
+            for lst in [
+                self._json_callbacks,
+                self._dict_callbacks,
+                self._prometheus_callbacks,
+            ]:
+                try:
+                    lst.remove(callback)
+                except ValueError:
+                    pass
+
+    def get_last_snapshot(self) -> Optional[MetricsSnapshot]:
+        """Get most recent snapshot."""
+        return self._last_snapshot
+
+    def get_snapshot_json(self) -> str:
+        """Get current metrics as JSON string."""
+        collector = get_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, self._environment)
+        return snapshot.to_json()
+
+    def get_snapshot_dict(self) -> Dict[str, Any]:
+        """Get current metrics as dictionary."""
+        collector = get_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, self._environment)
+        return snapshot.to_dict()
+
+    def get_prometheus_format(self) -> str:
+        """
+        Get metrics in Prometheus exposition format.
+
+        Returns:
+            Prometheus-formatted metrics text
+        """
+        collector = get_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, self._environment)
+
+        lines = []
+        prefix = "casare_rpa"
+
+        # Fleet metrics
+        lines.append(f"# HELP {prefix}_queue_depth Current job queue depth")
+        lines.append(f"# TYPE {prefix}_queue_depth gauge")
+        lines.append(
+            f'{prefix}_queue_depth{{env="{snapshot.environment}"}} {snapshot.queue_depth}'
+        )
+
+        lines.append(f"# HELP {prefix}_active_jobs Number of currently running jobs")
+        lines.append(f"# TYPE {prefix}_active_jobs gauge")
+        lines.append(
+            f'{prefix}_active_jobs{{env="{snapshot.environment}"}} {snapshot.active_jobs}'
+        )
+
+        lines.append(f"# HELP {prefix}_robots_total Total number of registered robots")
+        lines.append(f"# TYPE {prefix}_robots_total gauge")
+        lines.append(
+            f'{prefix}_robots_total{{env="{snapshot.environment}"}} {snapshot.total_robots}'
+        )
+
+        lines.append(f"# HELP {prefix}_robots_busy Number of busy robots")
+        lines.append(f"# TYPE {prefix}_robots_busy gauge")
+        lines.append(
+            f'{prefix}_robots_busy{{env="{snapshot.environment}"}} {snapshot.busy_robots}'
+        )
+
+        lines.append(f"# HELP {prefix}_fleet_utilization Fleet utilization percentage")
+        lines.append(f"# TYPE {prefix}_fleet_utilization gauge")
+        lines.append(
+            f'{prefix}_fleet_utilization{{env="{snapshot.environment}"}} '
+            f"{snapshot.fleet_utilization_percent}"
+        )
+
+        # Job metrics
+        lines.append(f"# HELP {prefix}_jobs_completed_total Total completed jobs")
+        lines.append(f"# TYPE {prefix}_jobs_completed_total counter")
+        lines.append(
+            f'{prefix}_jobs_completed_total{{env="{snapshot.environment}"}} {snapshot.jobs_completed}'
+        )
+
+        lines.append(f"# HELP {prefix}_jobs_failed_total Total failed jobs")
+        lines.append(f"# TYPE {prefix}_jobs_failed_total counter")
+        lines.append(
+            f'{prefix}_jobs_failed_total{{env="{snapshot.environment}"}} {snapshot.jobs_failed}'
+        )
+
+        lines.append(f"# HELP {prefix}_job_success_rate Job success rate percentage")
+        lines.append(f"# TYPE {prefix}_job_success_rate gauge")
+        lines.append(
+            f'{prefix}_job_success_rate{{env="{snapshot.environment}"}} {snapshot.job_success_rate}'
+        )
+
+        lines.append(f"# HELP {prefix}_job_duration_avg Average job duration seconds")
+        lines.append(f"# TYPE {prefix}_job_duration_avg gauge")
+        lines.append(
+            f'{prefix}_job_duration_avg{{env="{snapshot.environment}"}} '
+            f"{snapshot.average_job_duration_seconds}"
+        )
+
+        # System metrics
+        lines.append(f"# HELP {prefix}_process_cpu Process CPU usage percent")
+        lines.append(f"# TYPE {prefix}_process_cpu gauge")
+        lines.append(
+            f'{prefix}_process_cpu{{env="{snapshot.environment}"}} {snapshot.process_cpu_percent}'
+        )
+
+        lines.append(f"# HELP {prefix}_process_memory_mb Process memory usage MB")
+        lines.append(f"# TYPE {prefix}_process_memory_mb gauge")
+        lines.append(
+            f'{prefix}_process_memory_mb{{env="{snapshot.environment}"}} {snapshot.process_memory_mb}'
+        )
+
+        # Self-healing
+        lines.append(f"# HELP {prefix}_healing_attempts_total Total healing attempts")
+        lines.append(f"# TYPE {prefix}_healing_attempts_total counter")
+        lines.append(
+            f'{prefix}_healing_attempts_total{{env="{snapshot.environment}"}} {snapshot.healing_attempts}'
+        )
+
+        lines.append(
+            f"# HELP {prefix}_healing_success_rate Healing success rate percent"
+        )
+        lines.append(f"# TYPE {prefix}_healing_success_rate gauge")
+        lines.append(
+            f'{prefix}_healing_success_rate{{env="{snapshot.environment}"}} '
+            f"{snapshot.healing_success_rate}"
+        )
+
+        return "\n".join(lines) + "\n"
+
+    async def start(self) -> None:
+        """Start periodic metrics export."""
+        if self._running:
+            logger.warning("MetricsExporter already running")
+            return
+
+        self._running = True
+        self._task = asyncio.create_task(self._export_loop())
+        logger.info(f"MetricsExporter started (interval={self._interval}s)")
+
+    async def stop(self) -> None:
+        """Stop metrics export."""
+        self._running = False
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+        logger.info("MetricsExporter stopped")
+
+    async def _export_loop(self) -> None:
+        """Main export loop."""
+        while self._running:
+            try:
+                await self._export_once()
+                await asyncio.sleep(self._interval)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Metrics export error: {e}")
+                await asyncio.sleep(self._interval)
+
+    async def _export_once(self) -> None:
+        """Export metrics to all registered callbacks."""
+        collector = get_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, self._environment)
+        self._last_snapshot = snapshot
+
+        # JSON callbacks
+        json_str = snapshot.to_json()
+        for callback in self._json_callbacks:
+            try:
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(json_str)
+                else:
+                    callback(json_str)
+            except Exception as e:
+                logger.warning(f"JSON callback error: {e}")
+
+        # Dict callbacks
+        dict_data = snapshot.to_dict()
+        for callback in self._dict_callbacks:
+            try:
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(dict_data)
+                else:
+                    callback(dict_data)
+            except Exception as e:
+                logger.warning(f"Dict callback error: {e}")
+
+        # Prometheus callbacks
+        if self._prometheus_callbacks:
+            prom_text = self.get_prometheus_format()
+            for callback in self._prometheus_callbacks:
+                try:
+                    if asyncio.iscoroutinefunction(callback):
+                        await callback(prom_text)
+                    else:
+                        callback(prom_text)
+                except Exception as e:
+                    logger.warning(f"Prometheus callback error: {e}")
+
+
+# Singleton exporter instance
+_metrics_exporter: Optional[MetricsExporter] = None
+
+
+def get_metrics_exporter(
+    interval_seconds: float = 10.0,
+    environment: str = "development",
+) -> MetricsExporter:
+    """
+    Get or create singleton MetricsExporter instance.
+
+    Args:
+        interval_seconds: Export interval (only used on first call)
+        environment: Environment name (only used on first call)
+
+    Returns:
+        MetricsExporter singleton
+    """
+    global _metrics_exporter
+    if _metrics_exporter is None:
+        _metrics_exporter = MetricsExporter(
+            interval_seconds=interval_seconds,
+            environment=environment,
+        )
+    return _metrics_exporter

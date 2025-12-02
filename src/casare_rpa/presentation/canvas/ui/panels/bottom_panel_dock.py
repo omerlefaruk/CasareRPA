@@ -56,6 +56,7 @@ class BottomPanelDock(QDockWidget):
     TAB_LOG = 2
     TAB_VALIDATION = 3
     TAB_HISTORY = 4
+    TAB_TERMINAL = 5
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -115,6 +116,7 @@ class BottomPanelDock(QDockWidget):
         from .log_tab import LogTab
         from .validation_tab import ValidationTab
         from .history_tab import HistoryTab
+        from .terminal_tab import TerminalTab
 
         # Variables tab
         self._variables_tab = VariablesTab()
@@ -144,6 +146,10 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.node_selected.connect(self.navigate_to_node.emit)
         self._history_tab.clear_requested.connect(self._on_history_clear_requested)
         self._tab_widget.addTab(self._history_tab, "History")
+
+        # Terminal tab (raw stdout/stderr output)
+        self._terminal_tab = TerminalTab()
+        self._tab_widget.addTab(self._terminal_tab, "Terminal")
 
         # Note: Triggers are now visual nodes on the canvas (not a tab)
 
@@ -289,6 +295,15 @@ class BottomPanelDock(QDockWidget):
         """Show and focus the History tab."""
         self.show()
         self._tab_widget.setCurrentIndex(self.TAB_HISTORY)
+
+    def get_terminal_tab(self) -> "TerminalTab":
+        """Get the Terminal tab widget."""
+        return self._terminal_tab
+
+    def show_terminal_tab(self) -> None:
+        """Show and focus the Terminal tab."""
+        self.show()
+        self._tab_widget.setCurrentIndex(self.TAB_TERMINAL)
 
     # ==================== Variables API ====================
 
@@ -454,6 +469,30 @@ class BottomPanelDock(QDockWidget):
         self._history_tab.clear()
         self._update_tab_badges()
 
+    # ==================== Terminal API ====================
+
+    def terminal_write(self, text: str, level: str = "info") -> None:
+        """
+        Write text to the Terminal tab.
+
+        Args:
+            text: Text to write
+            level: Output level (info, warning, error, success, debug)
+        """
+        self._terminal_tab.write(text, level)
+
+    def terminal_write_stdout(self, text: str) -> None:
+        """Write stdout text to the Terminal tab."""
+        self._terminal_tab.write_stdout(text)
+
+    def terminal_write_stderr(self, text: str) -> None:
+        """Write stderr text to the Terminal tab."""
+        self._terminal_tab.write_stderr(text)
+
+    def clear_terminal(self) -> None:
+        """Clear the Terminal tab."""
+        self._terminal_tab.clear()
+
     # ==================== State Management ====================
 
     def prepare_for_execution(self) -> None:
@@ -462,6 +501,7 @@ class BottomPanelDock(QDockWidget):
         self.clear_log()
         self.clear_outputs()
         self.clear_history()
+        self.clear_terminal()
         # Don't change panel visibility or current tab
 
     def execution_finished(self) -> None:
@@ -475,5 +515,6 @@ class BottomPanelDock(QDockWidget):
         self._log_tab.clear()
         self._validation_tab.clear()
         self._history_tab.clear()
+        self._terminal_tab.clear()
         self.set_runtime_mode(False)
         self._update_tab_badges()

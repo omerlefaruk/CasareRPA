@@ -9,7 +9,6 @@ Reduced from 3,112 lines to ~400 lines by extracting components.
 
 import sys
 import asyncio
-from typing import Any, Dict, Optional
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt

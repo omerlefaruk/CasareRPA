@@ -93,6 +93,7 @@ class EventType(Enum):
     WORKFLOW_STOPPED = auto()  # Workflow execution stopped by user
     WORKFLOW_PAUSED = auto()  # Workflow execution paused
     WORKFLOW_RESUMED = auto()  # Workflow execution resumed
+    WORKFLOW_PROGRESS = auto()  # Workflow progress update (e.g., parallel execution)
     VARIABLE_SET = auto()  # Variable was set in context
     LOG_MESSAGE = auto()  # Log message emitted
 

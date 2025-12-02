@@ -9,12 +9,14 @@ Features:
 - OTLP log export to Grafana Loki, Jaeger, or any OTLP backend
 - Structured logging with semantic attributes
 - Context-aware logging helpers
+- EventBus integration for UI log display
 """
 
 from __future__ import annotations
 
-import logging
+import atexit
 import sys
+import threading
 from typing import Any, Callable, Dict, Optional
 
 from loguru import logger
@@ -25,9 +27,7 @@ from casare_rpa.infrastructure.observability.telemetry import (
 )
 
 if OTEL_AVAILABLE:
-    from opentelemetry.trace import get_current_span, Span
-    from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-    from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+    from opentelemetry.trace import get_current_span
 
 
 class OTelLoguruSink:
@@ -162,6 +162,173 @@ class OTelLoguruSink:
         except Exception as e:
             # Don't let logging errors break the application
             sys.stderr.write(f"OTel log export error: {e}\n")
+
+
+class UILoguruSink:
+    """
+    Loguru sink that forwards logs to a callback for UI display.
+
+    Used to bridge Loguru logging to the presentation layer (Log Tab, Terminal).
+    Thread-safe: Qt signal emission is thread-safe.
+
+    Usage:
+        def log_callback(level: str, message: str, module: str, timestamp: str):
+            # Forward to UI
+            log_tab.log_message(message, level)
+
+        sink = UILoguruSink(log_callback)
+        logger.add(sink, level="DEBUG")
+    """
+
+    def __init__(
+        self,
+        callback: Callable[[str, str, str, str], None],
+        min_level: str = "DEBUG",
+    ) -> None:
+        """
+        Initialize the UI log sink.
+
+        Args:
+            callback: Function(level, message, module, timestamp) to receive logs
+            min_level: Minimum log level to forward (DEBUG, INFO, WARNING, ERROR)
+        """
+        self._callback = callback
+        self._min_level = min_level.upper()
+        self._level_order = {
+            "TRACE": 0,
+            "DEBUG": 1,
+            "INFO": 2,
+            "SUCCESS": 2,
+            "WARNING": 3,
+            "ERROR": 4,
+            "CRITICAL": 5,
+        }
+        self._min_level_value = self._level_order.get(self._min_level, 0)
+
+    def __call__(self, message: Any) -> None:
+        """
+        Process a Loguru log record and forward to UI callback.
+
+        Also publishes LOG_MESSAGE event for WARNING and above levels
+        to enable event-driven log monitoring.
+
+        Args:
+            message: Loguru message object containing log record data
+        """
+        try:
+            record = message.record
+            level = record["level"].name
+            level_value = self._level_order.get(level, 0)
+
+            # Filter by minimum level
+            if level_value < self._min_level_value:
+                return
+
+            text = record["message"]
+            module = record["module"] or "unknown"
+            timestamp = record["time"].strftime("%H:%M:%S.%f")[:-3]
+
+            # Call the UI callback
+            self._callback(level, text, module, timestamp)
+
+            # Publish LOG_MESSAGE event for WARNING and above (level_value >= 3)
+            if level_value >= 3:
+                try:
+                    from casare_rpa.domain.events import get_event_bus, Event
+                    from casare_rpa.domain.value_objects.types import EventType
+
+                    event_bus = get_event_bus()
+                    event_bus.publish(
+                        Event(
+                            event_type=EventType.LOG_MESSAGE,
+                            data={
+                                "level": level,
+                                "message": text,
+                                "module": module,
+                                "timestamp": timestamp,
+                            },
+                        )
+                    )
+                except Exception:
+                    pass  # Don't break for event failures
+
+        except Exception as e:
+            # Don't let logging errors break the application
+            sys.stderr.write(f"UI log sink error: {e}\n")
+
+
+# Module-level lock for global state
+_global_lock = threading.Lock()
+
+# Global UI sink instance (set by presentation layer)
+_ui_log_sink: Optional[UILoguruSink] = None
+_ui_sink_handler_id: Optional[int] = None
+
+
+def _cleanup_on_exit() -> None:
+    """Cleanup handler registered with atexit to remove sink on exit."""
+    global _ui_log_sink, _ui_sink_handler_id
+    with _global_lock:
+        if _ui_sink_handler_id is not None:
+            try:
+                logger.remove(_ui_sink_handler_id)
+            except ValueError:
+                pass
+            _ui_sink_handler_id = None
+        _ui_log_sink = None
+
+
+# Register cleanup handler
+atexit.register(_cleanup_on_exit)
+
+
+def set_ui_log_callback(
+    callback: Callable[[str, str, str, str], None],
+    min_level: str = "DEBUG",
+) -> None:
+    """
+    Set the UI log callback to receive log messages (thread-safe).
+
+    Called by the presentation layer to wire Loguru to Log Tab/Terminal.
+
+    Args:
+        callback: Function(level, message, module, timestamp) to receive logs
+        min_level: Minimum log level to forward
+    """
+    global _ui_log_sink, _ui_sink_handler_id
+
+    with _global_lock:
+        # Remove existing handler if present
+        if _ui_sink_handler_id is not None:
+            try:
+                logger.remove(_ui_sink_handler_id)
+            except ValueError:
+                pass  # Handler already removed
+            _ui_sink_handler_id = None
+
+        # Create and add new sink
+        _ui_log_sink = UILoguruSink(callback, min_level)
+        _ui_sink_handler_id = logger.add(
+            _ui_log_sink,
+            format="{message}",
+            level=min_level,
+        )
+    logger.debug(f"UI log callback registered (min_level={min_level})")
+
+
+def remove_ui_log_callback() -> None:
+    """Remove the UI log callback (thread-safe)."""
+    global _ui_log_sink, _ui_sink_handler_id
+
+    with _global_lock:
+        if _ui_sink_handler_id is not None:
+            try:
+                logger.remove(_ui_sink_handler_id)
+            except ValueError:
+                pass
+            _ui_sink_handler_id = None
+        _ui_log_sink = None
+    logger.debug("UI log callback removed")
 
 
 def create_trace_context_format() -> str:

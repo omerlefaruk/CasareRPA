@@ -35,7 +35,7 @@ from PySide6.QtGui import QColor
 
 from loguru import logger
 
-from ...utils.performance.performance_metrics import get_metrics
+from casare_rpa.utils.performance.performance_metrics import get_metrics
 
 
 class MetricCard(QFrame):

@@ -5,20 +5,88 @@ Provides live streams for:
 - Job status updates
 - Robot heartbeats
 - Queue metrics
+
+Security:
+- All WebSocket endpoints require token authentication via query parameter
+- Tokens are validated against JWT or robot API keys
 """
 
-from typing import Set
+from typing import Optional, Set
 from datetime import datetime
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from loguru import logger
 import asyncio
 import orjson
 
-from casare_rpa.infrastructure.events import MonitoringEvent, MonitoringEventType
+from casare_rpa.infrastructure.events import MonitoringEvent
+from casare_rpa.infrastructure.observability.metrics import get_metrics_collector
+from casare_rpa.infrastructure.orchestrator.api.auth import (
+    decode_token,
+    get_robot_authenticator,
+    JWT_DEV_MODE,
+)
 from ..models import LiveJobUpdate, RobotStatusUpdate, QueueMetricsUpdate
 
 # WebSocket send timeout (seconds)
 WS_SEND_TIMEOUT = 1.0
+
+
+async def verify_websocket_token(
+    websocket: WebSocket,
+    token: Optional[str] = None,
+) -> Optional[str]:
+    """
+    Verify WebSocket authentication token.
+
+    WebSockets cannot use HTTP headers for authentication in the same way as
+    REST endpoints. Token must be passed as a query parameter.
+
+    Args:
+        websocket: WebSocket connection
+        token: Authentication token from query parameter
+
+    Returns:
+        user_id/robot_id if authenticated, None if authentication fails
+
+    Security Flow:
+    1. Check for token in query parameter
+    2. Try JWT token validation first
+    3. Fall back to robot API key validation
+    4. Allow in dev mode if no token and JWT_DEV_MODE=true
+    """
+    # Allow unauthenticated access in development mode
+    if not token:
+        if JWT_DEV_MODE:
+            logger.debug("WebSocket dev mode: allowing unauthenticated connection")
+            return "dev_user"
+        logger.warning("WebSocket connection rejected: no authentication token")
+        await websocket.close(code=4001, reason="Authentication required")
+        return None
+
+    # Try JWT token first
+    try:
+        payload = decode_token(token)
+        if payload.type == "access":
+            logger.debug(f"WebSocket authenticated via JWT: user={payload.sub}")
+            return payload.sub
+    except Exception as jwt_error:
+        logger.debug(f"JWT validation failed, trying robot token: {jwt_error}")
+
+    # Try robot API key
+    try:
+        authenticator = get_robot_authenticator()
+        if authenticator.is_enabled:
+            robot_id = await authenticator.verify_token_async(token)
+            if robot_id:
+                logger.debug(f"WebSocket authenticated via robot token: {robot_id}")
+                return robot_id
+    except Exception as robot_error:
+        logger.debug(f"Robot token validation failed: {robot_error}")
+
+    # Authentication failed
+    logger.warning("WebSocket connection rejected: invalid authentication token")
+    await websocket.close(code=4001, reason="Invalid authentication token")
+    return None
 
 
 router = APIRouter()
@@ -79,12 +147,19 @@ queue_metrics_manager = ConnectionManager()
 
 
 @router.websocket("/live-jobs")
-async def websocket_live_jobs(websocket: WebSocket):
+async def websocket_live_jobs(
+    websocket: WebSocket,
+    token: Optional[str] = Query(None, alias="token"),
+):
     """
     WebSocket endpoint for real-time job status updates.
 
+    Security:
+        Requires authentication via token query parameter.
+        Example: ws://host/live-jobs?token=<jwt_or_api_key>
+
     Clients receive job updates as they transition through states:
-    pending → claimed → completed/failed
+    pending -> claimed -> completed/failed
 
     Message format:
     {
@@ -93,6 +168,11 @@ async def websocket_live_jobs(websocket: WebSocket):
         "timestamp": "2025-11-29T10:30:00Z"
     }
     """
+    # Verify authentication before accepting connection
+    user_id = await verify_websocket_token(websocket, token)
+    if not user_id:
+        return  # Connection already closed by verify_websocket_token
+
     await live_jobs_manager.connect(websocket)
 
     try:
@@ -113,9 +193,16 @@ async def websocket_live_jobs(websocket: WebSocket):
 
 
 @router.websocket("/robot-status")
-async def websocket_robot_status(websocket: WebSocket):
+async def websocket_robot_status(
+    websocket: WebSocket,
+    token: Optional[str] = Query(None, alias="token"),
+):
     """
     WebSocket endpoint for robot heartbeat stream.
+
+    Security:
+        Requires authentication via token query parameter.
+        Example: ws://host/robot-status?token=<jwt_or_api_key>
 
     Broadcasts robot status updates every 5-10 seconds.
 
@@ -128,6 +215,11 @@ async def websocket_robot_status(websocket: WebSocket):
         "timestamp": "2025-11-29T10:30:00Z"
     }
     """
+    # Verify authentication before accepting connection
+    user_id = await verify_websocket_token(websocket, token)
+    if not user_id:
+        return  # Connection already closed by verify_websocket_token
+
     await robot_status_manager.connect(websocket)
 
     try:
@@ -146,9 +238,16 @@ async def websocket_robot_status(websocket: WebSocket):
 
 
 @router.websocket("/queue-metrics")
-async def websocket_queue_metrics(websocket: WebSocket):
+async def websocket_queue_metrics(
+    websocket: WebSocket,
+    token: Optional[str] = Query(None, alias="token"),
+):
     """
     WebSocket endpoint for queue depth updates.
+
+    Security:
+        Requires authentication via token query parameter.
+        Example: ws://host/queue-metrics?token=<jwt_or_api_key>
 
     Broadcasts queue metrics every 5 seconds.
 
@@ -158,13 +257,19 @@ async def websocket_queue_metrics(websocket: WebSocket):
         "timestamp": "2025-11-29T10:30:00Z"
     }
     """
+    # Verify authentication before accepting connection
+    user_id = await verify_websocket_token(websocket, token)
+    if not user_id:
+        return  # Connection already closed by verify_websocket_token
+
     await queue_metrics_manager.connect(websocket)
 
     try:
-        # Send initial queue depth
-        # TODO: Get actual queue depth from metrics collector
+        # Send initial queue depth from metrics collector
+        metrics = get_metrics_collector()
+        current_depth = metrics.get_queue_depth()
         initial_message = QueueMetricsUpdate(
-            depth=0,
+            depth=current_depth,
             timestamp=datetime.now(),
         )
         await websocket.send_text(orjson.dumps(initial_message.model_dump()).decode())

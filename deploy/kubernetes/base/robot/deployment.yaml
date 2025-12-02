@@ -1,0 +1,174 @@
+# CasareRPA Robot Deployment
+# Supports both browser-only (Linux) and desktop (Windows) workloads
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casare-browser-robot
+  labels:
+    app.kubernetes.io/name: casare-browser-robot
+    app.kubernetes.io/component: robot
+    robot.casare-rpa.io/type: browser
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: casare-browser-robot
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: casare-browser-robot
+        app.kubernetes.io/component: robot
+        robot.casare-rpa.io/type: browser
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: casare-robot
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: robot
+          image: casare-rpa/robot:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # Browser needs writable fs
+            capabilities:
+              drop:
+                - ALL
+          args:
+            - "start"
+            - "--name"
+            - "$(POD_NAME)"
+            - "--env"
+            - "$(CASARE_ENV)"
+            - "--browser-only"
+          envFrom:
+            - configMapRef:
+                name: casare-robot-config
+            - secretRef:
+                name: casare-secrets
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: ROBOT_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: browser-data
+              mountPath: /home/casare/.local/share/chromium
+            - name: tmp
+              mountPath: /tmp
+            - name: downloads
+              mountPath: /home/casare/downloads
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - "/bin/sh"
+                  - "-c"
+                  - "sleep 10 && kill -SIGTERM 1"
+
+      volumes:
+        - name: browser-data
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: downloads
+          emptyDir:
+            sizeLimit: 5Gi
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: casare-browser-robot
+                topologyKey: kubernetes.io/hostname
+
+      topologySpreadConstraints:
+        - maxSkew: 2
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: casare-browser-robot
+
+---
+# ServiceAccount for robot pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: casare-robot
+  labels:
+    app.kubernetes.io/name: casare-robot
+    app.kubernetes.io/component: robot
+
+---
+# PodDisruptionBudget for robot fleet
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: casare-robot-pdb
+  labels:
+    app.kubernetes.io/name: casare-browser-robot
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: casare-browser-robot

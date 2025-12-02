@@ -5,7 +5,7 @@ Dockable panel that displays and edits properties of the selected node.
 Extracted from canvas/panels/properties_panel.py for reusability.
 """
 
-from typing import Optional, Any, Dict, TYPE_CHECKING
+from typing import Optional, Any, Dict, List, TYPE_CHECKING
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 
 from loguru import logger
-from ..base_widget import BaseDockWidget
+from ..widgets.robot_override_widget import RobotOverrideWidget
 
 if TYPE_CHECKING:
     from NodeGraphQt import BaseNode
@@ -141,9 +141,13 @@ class PropertiesPanel(QDockWidget):
 
     Signals:
         property_changed: Emitted when property value changes (str: node_id, str: property_name, object: value)
+        robot_override_changed: Emitted when node robot override changes (str: node_id, dict: override_config)
+        robot_override_cleared: Emitted when node robot override is cleared (str: node_id)
     """
 
     property_changed = Signal(str, str, object)
+    robot_override_changed = Signal(str, dict)
+    robot_override_cleared = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -157,6 +161,8 @@ class PropertiesPanel(QDockWidget):
 
         self._current_node: Optional["BaseNode"] = None
         self._property_widgets: Dict[str, QWidget] = {}
+        self._cloud_mode_enabled: bool = False
+        self._available_robots: List[Dict[str, Any]] = []
 
         self._setup_dock()
         self._setup_ui()
@@ -231,6 +237,11 @@ class PropertiesPanel(QDockWidget):
         self._no_selection.setStyleSheet("color: #666666; padding: 20px;")
         self._properties_layout.addWidget(self._no_selection)
 
+        # Robot Override Section (for cloud execution mode)
+        self._robot_override_section = self._create_target_robot_section()
+        self._main_layout.addWidget(self._robot_override_section)
+        self._robot_override_section.hide()  # Hidden until cloud mode enabled
+
         # Stretch at bottom
         self._main_layout.addStretch()
 
@@ -286,9 +297,13 @@ class PropertiesPanel(QDockWidget):
             self._node_type_label.setText("")
             self._node_id_label.setText("")
             self._no_selection.show()
+            self._robot_override_section.hide()
             return
 
         self._no_selection.hide()
+
+        # Show robot override section if cloud mode is enabled
+        self._robot_override_section.setVisible(self._cloud_mode_enabled)
 
         # Update header
         self._node_name_label.setText(node.name() if hasattr(node, "name") else "Node")
@@ -301,6 +316,10 @@ class PropertiesPanel(QDockWidget):
 
         # Build property sections
         self._build_properties(node)
+
+        # Clear robot override widget for the new node
+        # The actual override will be loaded by the controller if one exists
+        self._robot_override_widget.set_override(None)
 
     def _clear_properties(self) -> None:
         """Clear all property widgets."""
@@ -446,6 +465,120 @@ class PropertiesPanel(QDockWidget):
             )
             self.property_changed.emit(node_id, name, value)
             logger.debug(f"Property changed: {name} = {value}")
+
+    def _create_target_robot_section(self) -> QWidget:
+        """
+        Create the target robot override section.
+
+        Collapsible section for robot targeting with:
+        - Checkbox: "Override workflow default"
+        - Dropdown: Select specific robot OR
+        - Multi-select: Required capabilities
+        - Text field: Reason for override
+
+        Returns:
+            Container widget with robot override controls
+        """
+        section = CollapsibleSection("Target Robot")
+
+        # Create robot override widget
+        self._robot_override_widget = RobotOverrideWidget()
+        section.add_widget(self._robot_override_widget)
+
+        # Connect signals
+        self._robot_override_widget.override_changed.connect(
+            self._on_robot_override_changed
+        )
+        self._robot_override_widget.override_cleared.connect(
+            self._on_robot_override_cleared
+        )
+
+        return section
+
+    def _on_robot_override_changed(self, config: Dict[str, Any]) -> None:
+        """
+        Handle robot override configuration change.
+
+        Args:
+            config: Override configuration dictionary
+        """
+        if self._current_node:
+            node_id = (
+                self._current_node.get_property("node_id")
+                if hasattr(self._current_node, "get_property")
+                else ""
+            )
+            if node_id:
+                self.robot_override_changed.emit(node_id, config)
+                logger.debug(f"Robot override changed for node {node_id}: {config}")
+
+                # Update visual indicator on node
+                self._update_node_override_indicator(True)
+
+    def _on_robot_override_cleared(self) -> None:
+        """Handle robot override being cleared."""
+        if self._current_node:
+            node_id = (
+                self._current_node.get_property("node_id")
+                if hasattr(self._current_node, "get_property")
+                else ""
+            )
+            if node_id:
+                self.robot_override_cleared.emit(node_id)
+                logger.debug(f"Robot override cleared for node {node_id}")
+
+                # Update visual indicator on node
+                self._update_node_override_indicator(False)
+
+    def _update_node_override_indicator(self, has_override: bool) -> None:
+        """
+        Update the visual indicator on the current node.
+
+        Args:
+            has_override: Whether the node has a robot override
+        """
+        if self._current_node and hasattr(self._current_node, "view"):
+            view = self._current_node.view
+            if hasattr(view, "set_robot_override"):
+                view.set_robot_override(has_override)
+
+    def set_cloud_mode(self, enabled: bool) -> None:
+        """
+        Enable or disable cloud execution mode.
+
+        When cloud mode is enabled, the robot override section is shown.
+        Robot overrides only apply to cloud execution.
+
+        Args:
+            enabled: Whether cloud execution mode is enabled
+        """
+        self._cloud_mode_enabled = enabled
+        self._robot_override_section.setVisible(
+            enabled and self._current_node is not None
+        )
+        self._robot_override_widget.set_cloud_mode(enabled)
+        logger.debug(f"Cloud mode {'enabled' if enabled else 'disabled'}")
+
+    def set_available_robots(self, robots: List[Dict[str, Any]]) -> None:
+        """
+        Update the list of available robots for selection.
+
+        Args:
+            robots: List of robot dictionaries with id, name, status keys
+        """
+        self._available_robots = robots
+        self._robot_override_widget.set_available_robots(robots)
+
+    def set_node_override(self, override: Optional[Dict[str, Any]]) -> None:
+        """
+        Set the current node's robot override configuration.
+
+        Called when a node is selected to load its existing override.
+
+        Args:
+            override: Override configuration dict or None
+        """
+        self._robot_override_widget.set_override(override)
 
     def refresh(self) -> None:
         """Refresh the properties display."""

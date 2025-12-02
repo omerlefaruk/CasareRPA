@@ -1,0 +1,52 @@
+# CasareRPA Development Environment Overlay
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: casare-rpa-dev
+
+resources:
+  - ../../base
+
+namePrefix: dev-
+nameSuffix: ""
+
+commonLabels:
+  environment: development
+
+# Use dev image tags
+images:
+  - name: casare-rpa/orchestrator
+    newTag: dev
+  - name: casare-rpa/robot
+    newTag: dev
+
+# Patch deployments for dev environment
+patches:
+  - path: patches/orchestrator-patch.yaml
+  - path: patches/robot-patch.yaml
+  - path: patches/ingress-patch.yaml
+
+# Override configmaps
+configMapGenerator:
+  - name: casare-orchestrator-config
+    behavior: merge
+    literals:
+      - CASARE_ENV=development
+      - CASARE_LOG_LEVEL=DEBUG
+      - JWT_DEV_MODE=true
+
+  - name: casare-robot-config
+    behavior: merge
+    literals:
+      - CASARE_ENV=development
+      - CASARE_LOG_LEVEL=DEBUG
+      - BROWSER_HEADLESS=false
+
+# Development secrets (less secure, for testing)
+secretGenerator:
+  - name: casare-secrets
+    behavior: merge
+    literals:
+      - DATABASE_URL=postgresql://casare:devpassword@dev-casare-db:5432/casare_dev
+      - JWT_SECRET_KEY=dev-secret-key-not-for-production
+      - REDIS_URL=redis://dev-casare-redis:6379

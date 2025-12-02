@@ -52,7 +52,7 @@ class VisualConcatenateNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Concatenate Strings"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/string"
 
     def __init__(self) -> None:
         super().__init__()
@@ -73,7 +73,7 @@ class VisualFormatStringNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Format String"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/string"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -90,7 +90,7 @@ class VisualRegexMatchNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Regex Match"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/string"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -110,7 +110,7 @@ class VisualRegexReplaceNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Regex Replace"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/string"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -129,7 +129,7 @@ class VisualMathOperationNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Math Operation"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/math"
 
     def __init__(self):
         super().__init__()
@@ -157,7 +157,7 @@ class VisualComparisonNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Compare Values"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/math"
 
     def __init__(self):
         super().__init__()
@@ -192,7 +192,7 @@ class VisualCreateListNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Create List"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -210,7 +210,7 @@ class VisualListGetItemNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Get List Item"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -227,7 +227,7 @@ class VisualJsonParseNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Parse JSON"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/json"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -243,7 +243,7 @@ class VisualGetPropertyNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Get Property"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/json"
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -265,7 +265,7 @@ class VisualListLengthNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Length"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self):
         """Setup ports."""
@@ -283,7 +283,7 @@ class VisualListAppendNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Append"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self):
         """Setup ports."""
@@ -302,7 +302,7 @@ class VisualListContainsNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Contains"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self):
         """Setup ports."""
@@ -322,7 +322,7 @@ class VisualListSliceNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Slice"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -348,7 +348,7 @@ class VisualListJoinNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Join"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -371,7 +371,7 @@ class VisualListSortNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Sort"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -394,7 +394,7 @@ class VisualListReverseNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Reverse"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self):
         """Setup ports."""
@@ -412,7 +412,7 @@ class VisualListUniqueNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Unique"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def setup_ports(self):
         """Setup ports."""
@@ -431,7 +431,7 @@ class VisualListFilterNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Filter"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -475,7 +475,7 @@ class VisualListMapNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Map"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -514,7 +514,7 @@ class VisualListReduceNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Reduce"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -555,7 +555,7 @@ class VisualListFlattenNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Flatten"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/list"
 
     def __init__(self):
         super().__init__()
@@ -583,7 +583,7 @@ class VisualDictGetNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Get"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def __init__(self):
         super().__init__()
@@ -609,7 +609,7 @@ class VisualDictSetNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Set"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def __init__(self):
         super().__init__()
@@ -633,7 +633,7 @@ class VisualDictRemoveNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Remove"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def __init__(self):
         super().__init__()
@@ -657,7 +657,7 @@ class VisualDictMergeNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Merge"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def setup_ports(self):
         """Setup ports."""
@@ -676,7 +676,7 @@ class VisualDictKeysNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Keys"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def setup_ports(self):
         """Setup ports."""
@@ -694,7 +694,7 @@ class VisualDictValuesNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Values"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def setup_ports(self):
         """Setup ports."""
@@ -712,7 +712,7 @@ class VisualDictHasKeyNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Has Key"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def __init__(self):
         super().__init__()
@@ -735,7 +735,7 @@ class VisualCreateDictNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Create Dict"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def setup_ports(self):
         """Setup ports."""
@@ -758,7 +758,7 @@ class VisualDictToJsonNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict to JSON"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def __init__(self):
         super().__init__()
@@ -781,7 +781,7 @@ class VisualDictItemsNode(VisualNode):
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict Items"
-    NODE_CATEGORY = "data_operations"
+    NODE_CATEGORY = "data_operations/dict"
 
     def setup_ports(self):
         """Setup ports."""

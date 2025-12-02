@@ -1,0 +1,63 @@
+# Production orchestrator patches
+# High availability configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casare-orchestrator
+spec:
+  replicas: 3
+  template:
+    metadata:
+      annotations:
+        # Enable pod security
+        container.seccomp.security.alpha.kubernetes.io/orchestrator: runtime/default
+    spec:
+      containers:
+        - name: orchestrator
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+        - name: metrics-exporter
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+---
+# Production HPA settings
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: casare-orchestrator-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# Production PDB - maintain minimum availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: casare-orchestrator-pdb
+spec:
+  minAvailable: 2

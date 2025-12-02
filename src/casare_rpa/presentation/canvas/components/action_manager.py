@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Dict, Optional
 from PySide6.QtGui import QAction, QKeySequence
 
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QMainWindow
     from ..main_window import MainWindow
 
 
@@ -223,6 +222,14 @@ class ActionManager:
             checkable=True,
         )
 
+        mw.action_fleet_dashboard = self._create_action(
+            "fleet_dashboard",
+            "&Fleet Dashboard",
+            QKeySequence("Ctrl+Shift+F"),
+            "Open fleet management dashboard",
+            mw._on_fleet_dashboard,
+        )
+
         # === RUN ACTIONS ===
         # Standardized shortcuts (VS Code-like):
         # F5 = Run/Continue, F6 = Pause, F7 = Stop
@@ -234,6 +241,14 @@ class ActionManager:
             QKeySequence("F5"),
             "Execute the workflow (F5)",
             mw._on_run_workflow,
+        )
+
+        mw.action_run_all = self._create_action(
+            "run_all",
+            "Run All Workflows",
+            QKeySequence("Shift+F3"),
+            "Execute all workflows on canvas concurrently (Shift+F3)",
+            mw._on_run_all_workflows,
         )
 
         mw.action_pause = self._create_action(
@@ -324,6 +339,16 @@ class ActionManager:
             mw._on_create_frame,
         )
 
+        mw.action_auto_connect = self._create_action(
+            "auto_connect",
+            "Auto-&Connect",
+            QKeySequence("Ctrl+Shift+A"),
+            "Auto-suggest connections when dragging nodes (Ctrl+Shift+A)",
+            mw._on_toggle_auto_connect,
+            checkable=True,
+        )
+        mw.action_auto_connect.setChecked(True)  # Enabled by default
+
         mw.action_schedule = self._create_action(
             "schedule",
             "&Schedule...",
@@ -394,6 +419,15 @@ class ActionManager:
             QKeySequence("Ctrl+Shift+K"),
             "Manage API keys and credentials",
             mw._on_credential_manager,
+        )
+
+        # === PERFORMANCE ACTIONS ===
+        mw.action_performance_dashboard = self._create_action(
+            "performance_dashboard",
+            "Performance Dashboard",
+            QKeySequence("Ctrl+Alt+P"),
+            "View performance metrics and statistics",
+            mw._on_open_performance_dashboard,
         )
 
         # Apply saved hotkeys
@@ -468,6 +502,7 @@ class ActionManager:
             "pause": mw.action_pause,
             "stop": mw.action_stop,
             "create_frame": mw.action_create_frame,
+            "auto_connect": mw.action_auto_connect,
             "get_exec_out": mw.action_get_exec_out,
             "disable_all_selected": mw.action_disable_all_selected,
             "toggle_panel": mw.action_toggle_panel,

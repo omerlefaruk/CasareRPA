@@ -5,17 +5,43 @@ OpenTelemetry integration for distributed tracing, metrics, and log aggregation.
 Provides production-grade monitoring for the CasareRPA platform.
 
 Key Components:
+- Observability: Unified facade for all observability functionality (RECOMMENDED)
 - TelemetryProvider: Singleton for initializing and managing OpenTelemetry SDK
-- Instrumentation decorators: For automatic tracing of functions and methods
 - RPAMetricsCollector: Job duration, queue depth, robot utilization metrics
+- MetricsExporter: Multi-backend metrics export (JSON, Prometheus, OTLP)
+- MetricsSnapshot: Point-in-time metrics for streaming/REST
+- SystemMetricsCollector: CPU, memory, disk, network monitoring
 - Log correlation: Automatic trace context injection into logs
 
-Example Usage:
-    # Initialize at application startup
+Recommended Usage (via unified facade):
+    from casare_rpa.infrastructure.observability import (
+        Observability,
+        configure_observability,
+    )
+
+    # Quick setup (auto-detects environment)
+    configure_observability(robot_id="robot-01")
+
+    # Or with full config
+    Observability.configure()
+
+    # Use throughout application
+    Observability.log("info", "Starting workflow", workflow_id="abc123")
+    Observability.metric("job_duration", 45.2, {"robot_id": "r1"})
+
+    with Observability.trace("execute_workflow", {"workflow_name": "invoice"}):
+        # Traced code block
+        pass
+
+    # Shutdown at exit
+    Observability.shutdown()
+
+Legacy Usage (direct components):
     from casare_rpa.infrastructure.observability import (
         TelemetryProvider,
         TelemetryConfig,
         configure_logging,
+        get_metrics_collector,
     )
 
     config = TelemetryConfig(
@@ -25,19 +51,24 @@ Example Usage:
     TelemetryProvider.get_instance().initialize(config)
     configure_logging(enable_otel_export=True)
 
-    # Use decorators for automatic tracing
-    from casare_rpa.infrastructure.observability import trace_workflow, trace_node
-
-    @trace_workflow(workflow_name="InvoiceProcessor")
-    async def process_invoices(ctx):
-        ...
-
-    # Record metrics
-    from casare_rpa.infrastructure.observability import get_metrics_collector
-
     collector = get_metrics_collector()
     collector.record_job_start("job-123", "robot-01")
 """
+
+# =============================================================================
+# Unified Facade (RECOMMENDED)
+# =============================================================================
+
+from casare_rpa.infrastructure.observability.facade import (
+    Observability,
+    ObservabilityConfig,
+    Environment,
+    configure_observability,
+)
+
+# =============================================================================
+# Telemetry (OpenTelemetry)
+# =============================================================================
 
 from casare_rpa.infrastructure.observability.telemetry import (
     TelemetryProvider,
@@ -59,27 +90,78 @@ from casare_rpa.infrastructure.observability.telemetry import (
     OTEL_AVAILABLE,
 )
 
+# =============================================================================
+# Metrics Collection
+# =============================================================================
+
 from casare_rpa.infrastructure.observability.metrics import (
+    # Core collector
     RPAMetricsCollector,
+    get_metrics_collector,
+    # Data classes
     JobMetrics,
     RobotMetrics,
     JobStatus,
     RobotStatus,
-    get_metrics_collector,
+    # Multi-backend export
+    MetricsExporter,
+    MetricsSnapshot,
+    get_metrics_exporter,
 )
+
+# =============================================================================
+# System Metrics
+# =============================================================================
+
+from casare_rpa.infrastructure.observability.system_metrics import (
+    SystemMetricsCollector,
+    ProcessMetrics,
+    SystemMetrics,
+    get_system_metrics_collector,
+    get_cpu_percent,
+    get_memory_mb,
+)
+
+# =============================================================================
+# Logging
+# =============================================================================
 
 from casare_rpa.infrastructure.observability.logging import (
     OTelLoguruSink,
+    UILoguruSink,
     SpanLogger,
     configure_logging,
     get_span_logger,
     log_with_trace,
     trace_context_patcher,
     create_trace_context_format,
+    set_ui_log_callback,
+    remove_ui_log_callback,
 )
 
+# =============================================================================
+# Stdout Capture
+# =============================================================================
+
+from casare_rpa.infrastructure.observability.stdout_capture import (
+    OutputCapture,
+    set_output_callbacks,
+    remove_output_callbacks,
+    capture_output,
+)
+
+
 __all__ = [
+    # =========================================================================
+    # Unified Facade (RECOMMENDED)
+    # =========================================================================
+    "Observability",
+    "ObservabilityConfig",
+    "Environment",
+    "configure_observability",
+    # =========================================================================
     # Telemetry core
+    # =========================================================================
     "TelemetryProvider",
     "TelemetryConfig",
     "ExporterProtocol",
@@ -100,20 +182,47 @@ __all__ = [
     # Context propagation
     "inject_context_to_headers",
     "extract_context_from_headers",
+    "setup_loguru_otel_sink",
+    # =========================================================================
     # Metrics collector
+    # =========================================================================
     "RPAMetricsCollector",
     "JobMetrics",
     "RobotMetrics",
     "JobStatus",
     "RobotStatus",
     "get_metrics_collector",
+    # Multi-backend export
+    "MetricsExporter",
+    "MetricsSnapshot",
+    "get_metrics_exporter",
+    # =========================================================================
+    # System Metrics
+    # =========================================================================
+    "SystemMetricsCollector",
+    "ProcessMetrics",
+    "SystemMetrics",
+    "get_system_metrics_collector",
+    "get_cpu_percent",
+    "get_memory_mb",
+    # =========================================================================
     # Logging
+    # =========================================================================
     "OTelLoguruSink",
+    "UILoguruSink",
     "SpanLogger",
     "configure_logging",
     "get_span_logger",
     "log_with_trace",
     "trace_context_patcher",
     "create_trace_context_format",
-    "setup_loguru_otel_sink",
+    "set_ui_log_callback",
+    "remove_ui_log_callback",
+    # =========================================================================
+    # Stdout Capture
+    # =========================================================================
+    "OutputCapture",
+    "set_output_callbacks",
+    "remove_output_callbacks",
+    "capture_output",
 ]

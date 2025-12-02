@@ -15,8 +15,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QCheckBox,
 )
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextCursor, QColor
+from PySide6.QtGui import QTextCursor
 
 from loguru import logger
 from ..base_widget import BaseWidget

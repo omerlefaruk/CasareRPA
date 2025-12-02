@@ -18,6 +18,7 @@ class CasarePipe(PipeItem):
     - Dotted style when being dragged
     - Optional data type label on the connection
     - Output preview on hover
+    - Insert highlight when node is dragged over
     """
 
     def __init__(self):
@@ -28,6 +29,7 @@ class CasarePipe(PipeItem):
         self._output_value = None
         self._show_output_preview = False
         self._hovered = False
+        self._insert_highlight = False  # Highlight when node dragged over
 
         # Enable hover events
         self.setAcceptHoverEvents(True)
@@ -50,8 +52,12 @@ class CasarePipe(PipeItem):
             painter.setPen(pen)
         else:
             # Connection is complete - use solid line
-            # Highlight on hover
-            if self._hovered:
+            # Priority: insert highlight > hover > normal
+            if self._insert_highlight:
+                # Bright orange highlight when node is being dragged over
+                # Much thicker and brighter for visibility
+                pen = QPen(QColor(255, 140, 0), pen_width + 5)
+            elif self._hovered:
                 pen = QPen(QColor(100, 200, 255), pen_width + 1)
             else:
                 pen = QPen(self.color, pen_width)
@@ -225,6 +231,16 @@ class CasarePipe(PipeItem):
         self._hovered = False
         self.update()
         super().hoverLeaveEvent(event)
+
+    def set_insert_highlight(self, highlight: bool) -> None:
+        """Set insert highlight state (when node is dragged over this pipe)."""
+        if self._insert_highlight != highlight:
+            self._insert_highlight = highlight
+            self.update()
+
+    def is_insert_highlighted(self) -> bool:
+        """Check if pipe is currently insert-highlighted."""
+        return self._insert_highlight
 
 
 # Global setting to enable/disable connection labels

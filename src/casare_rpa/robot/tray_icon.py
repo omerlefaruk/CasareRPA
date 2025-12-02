@@ -10,8 +10,24 @@ from PySide6.QtCore import QObject
 from loguru import logger
 import qasync
 
-from casare_rpa.robot.agent import RobotAgent
-from casare_rpa.utils.playwright_setup import ensure_playwright_ready
+from casare_rpa.robot.agent import RobotAgent, RobotConfig
+
+# Try to import playwright setup, fall back to internal check
+try:
+    from casare_rpa.utils.playwright_setup import ensure_playwright_ready
+except ImportError:
+
+    def ensure_playwright_ready() -> bool:
+        """Fallback playwright check."""
+        try:
+            from playwright.sync_api import sync_playwright
+
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                browser.close()
+            return True
+        except Exception:
+            return False
 
 
 class RobotTrayApp(QObject):
@@ -20,8 +36,9 @@ class RobotTrayApp(QObject):
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
 
-        # Initialize Agent
-        self.agent = RobotAgent()
+        # Initialize Agent with config from environment
+        config = RobotConfig.from_env()
+        self.agent = RobotAgent(config)
 
         # Setup Tray Icon
         self.tray_icon = QSystemTrayIcon(self.app)

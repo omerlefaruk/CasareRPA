@@ -8,7 +8,7 @@ Provides persistence for workflow templates using both:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 import orjson
 from loguru import logger
 
@@ -468,7 +468,6 @@ class TemplateStorageFactory:
         Returns:
             TemplateStorage with project-specific user templates
         """
-        from ...utils.config import CONFIG_DIR
 
         import casare_rpa
 

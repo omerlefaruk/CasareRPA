@@ -14,7 +14,7 @@ Enterprise scheduling features including:
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, List, Optional, Set, Callable, Any, Tuple, Union
+from typing import Dict, List, Optional, Callable, Any, Tuple
 from zoneinfo import ZoneInfo
 from collections import defaultdict
 import asyncio
@@ -37,7 +37,7 @@ except ImportError:
     HAS_APSCHEDULER = False
     logger.warning("APScheduler not installed. Advanced scheduling features disabled.")
 
-from .calendar import BusinessCalendar, CalendarConfig
+from .calendar import BusinessCalendar
 
 
 class ScheduleType(Enum):

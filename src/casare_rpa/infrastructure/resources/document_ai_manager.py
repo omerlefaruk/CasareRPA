@@ -17,6 +17,7 @@ from loguru import logger
 from .llm_resource_manager import (
     LLMResourceManager,
     LLMConfig,
+    ImageContent,
 )
 
 
@@ -201,13 +202,13 @@ Example response:
 
 Only return the JSON, no other text."""
 
-        # TODO: Use messages with image content when LLM manager supports vision
-        # For now, use text-only completion
-        _ = f"data:{media_type};base64,{base64_data}"  # Image data for future vision support
+        # Create image content for vision API
+        image = ImageContent(base64_data=base64_data, media_type=media_type)
 
         try:
-            response = await manager.completion(
+            response = await manager.vision_completion(
                 prompt=prompt,
+                images=[image],
                 model=model,
                 temperature=0.0,
                 max_tokens=500,
@@ -285,9 +286,13 @@ Respond with a JSON object containing:
 
 Only return the JSON, no other text."""
 
+        # Create image content for vision API
+        image = ImageContent(base64_data=base64_data, media_type=media_type)
+
         try:
-            response = await manager.completion(
+            response = await manager.vision_completion(
                 prompt=prompt,
+                images=[image],
                 model=model,
                 temperature=0.0,
                 max_tokens=2000,
@@ -361,9 +366,13 @@ Respond with a JSON object containing:
 
 Only return the JSON, no other text."""
 
+        # Create image content for vision API
+        image = ImageContent(base64_data=base64_data, media_type=media_type)
+
         try:
-            response = await manager.completion(
+            response = await manager.vision_completion(
                 prompt=prompt,
+                images=[image],
                 model=model,
                 temperature=0.0,
                 max_tokens=2000,
@@ -445,9 +454,13 @@ Example format:
 
 Only return the JSON, no other text."""
 
+        # Create image content for vision API
+        image = ImageContent(base64_data=base64_data, media_type=media_type)
+
         try:
-            response = await manager.completion(
+            response = await manager.vision_completion(
                 prompt=prompt,
+                images=[image],
                 model=model,
                 temperature=0.0,
                 max_tokens=4000,

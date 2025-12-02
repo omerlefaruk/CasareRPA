@@ -113,7 +113,7 @@ class AutoConnectManager(QObject):
                 if scene:
                     scene.installEventFilter(self)
         except Exception as e:
-            print(f"Warning: Could not setup event filters: {e}")
+            logger.warning(f"Could not setup event filters: {e}")
 
     def set_active(self, active: bool):
         """Enable or disable the auto-connect feature."""
@@ -206,7 +206,7 @@ class AutoConnectManager(QObject):
                     return True
 
         except Exception as e:
-            print(f"Error in eventFilter: {e}")
+            logger.debug(f"Error in eventFilter: {e}")
 
         return super().eventFilter(watched, event)
 
@@ -229,7 +229,7 @@ class AutoConnectManager(QObject):
                     if hasattr(item, "inputs") and hasattr(item, "outputs"):
                         return item
         except Exception as e:
-            print(f"Error getting node at position: {e}")
+            logger.debug(f"Error getting node at position: {e}")
 
         return None
 
@@ -313,7 +313,7 @@ class AutoConnectManager(QObject):
                     suggestions.append(closest_connection)
 
         except Exception as e:
-            print(f"Error finding connections: {e}")
+            logger.debug(f"Error finding connections: {e}")
 
         return suggestions
 
@@ -421,7 +421,7 @@ class AutoConnectManager(QObject):
                 self._suggestion_lines.append(line)
 
         except Exception as e:
-            print(f"Error drawing suggestion lines: {e}")
+            logger.debug(f"Error drawing suggestion lines: {e}")
 
     def _get_port_scene_pos(
         self, node: BaseNode, port_name: str, is_output: bool
@@ -552,7 +552,7 @@ class AutoConnectManager(QObject):
                 # Disable context menu
                 viewer.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
         except Exception as e:
-            print(f"Error disabling context menu: {e}")
+            logger.debug(f"Error disabling context menu: {e}")
 
     def _restore_context_menu(self):
         """Restore context menu on the viewer after drag."""
@@ -563,7 +563,7 @@ class AutoConnectManager(QObject):
                 viewer.setContextMenuPolicy(self._original_context_policy)
                 self._original_context_policy = None
         except Exception as e:
-            print(f"Error restoring context menu: {e}")
+            logger.debug(f"Error restoring context menu: {e}")
 
     def set_max_distance(self, distance: float):
         """Set the maximum distance for suggesting connections."""

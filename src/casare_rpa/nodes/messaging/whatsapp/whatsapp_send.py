@@ -6,12 +6,13 @@ Nodes for sending messages, templates, media, and locations via WhatsApp Busines
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 import json
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -22,6 +23,75 @@ from casare_rpa.infrastructure.resources.whatsapp_client import WhatsAppClient
 from .whatsapp_base import WhatsAppBaseNode
 
 
+# ============================================================================
+# Reusable Property Definitions for WhatsApp Nodes
+# ============================================================================
+
+# Connection properties (shared across all WhatsApp nodes)
+WHATSAPP_ACCESS_TOKEN = PropertyDef(
+    "access_token",
+    PropertyType.STRING,
+    default="",
+    label="Access Token",
+    placeholder="Meta Graph API access token",
+    tooltip="WhatsApp Business Cloud API access token",
+    tab="connection",
+)
+
+WHATSAPP_PHONE_NUMBER_ID = PropertyDef(
+    "phone_number_id",
+    PropertyType.STRING,
+    default="",
+    label="Phone Number ID",
+    placeholder="123456789012345",
+    tooltip="WhatsApp Business phone number ID from Meta Business Suite",
+    tab="connection",
+)
+
+WHATSAPP_CREDENTIAL_NAME = PropertyDef(
+    "credential_name",
+    PropertyType.STRING,
+    default="",
+    label="Credential Name",
+    placeholder="whatsapp",
+    tooltip="Name of stored WhatsApp credential (alternative to access token)",
+    tab="connection",
+)
+
+WHATSAPP_TO = PropertyDef(
+    "to",
+    PropertyType.STRING,
+    default="",
+    required=True,
+    label="To (Phone Number)",
+    placeholder="+1234567890",
+    tooltip="Recipient phone number with country code",
+)
+
+
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        required=True,
+        label="Message Text",
+        placeholder="Hello from CasareRPA!",
+        tooltip="Text message content (up to 4096 characters)",
+    ),
+    PropertyDef(
+        "preview_url",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Preview URL",
+        tooltip="Enable URL preview in message",
+    ),
+)
+@executable_node
 class WhatsAppSendMessageNode(WhatsAppBaseNode):
     """
     Send a text message via WhatsApp.
@@ -108,6 +178,38 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "template_name",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Template Name",
+        placeholder="hello_world",
+        tooltip="Name of the pre-approved WhatsApp template",
+    ),
+    PropertyDef(
+        "language_code",
+        PropertyType.STRING,
+        default="en_US",
+        label="Language Code",
+        placeholder="en_US",
+        tooltip="Template language code (e.g., en_US, es_ES)",
+    ),
+    PropertyDef(
+        "components",
+        PropertyType.JSON,
+        default={},
+        label="Template Components",
+        placeholder='[{"type": "body", "parameters": [...]}]',
+        tooltip="JSON array of template component parameters",
+    ),
+)
+@executable_node
 class WhatsAppSendTemplateNode(WhatsAppBaseNode):
     """
     Send a template message via WhatsApp.
@@ -220,6 +322,30 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "image",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Image URL",
+        placeholder="https://example.com/image.jpg",
+        tooltip="URL of the image to send (JPEG, PNG supported)",
+    ),
+    PropertyDef(
+        "caption",
+        PropertyType.TEXT,
+        default="",
+        label="Caption",
+        placeholder="Image caption...",
+        tooltip="Optional caption for the image",
+    ),
+)
+@executable_node
 class WhatsAppSendImageNode(WhatsAppBaseNode):
     """
     Send an image via WhatsApp.
@@ -301,6 +427,38 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Document URL",
+        placeholder="https://example.com/file.pdf",
+        tooltip="URL of the document to send",
+    ),
+    PropertyDef(
+        "filename",
+        PropertyType.STRING,
+        default="",
+        label="Filename",
+        placeholder="report.pdf",
+        tooltip="Display filename for the document",
+    ),
+    PropertyDef(
+        "caption",
+        PropertyType.TEXT,
+        default="",
+        label="Caption",
+        placeholder="Document description...",
+        tooltip="Optional caption for the document",
+    ),
+)
+@executable_node
 class WhatsAppSendDocumentNode(WhatsAppBaseNode):
     """
     Send a document via WhatsApp.
@@ -389,6 +547,30 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "video",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Video URL",
+        placeholder="https://example.com/video.mp4",
+        tooltip="URL of the video to send (MP4, 3GP supported)",
+    ),
+    PropertyDef(
+        "caption",
+        PropertyType.TEXT,
+        default="",
+        label="Caption",
+        placeholder="Video caption...",
+        tooltip="Optional caption for the video",
+    ),
+)
+@executable_node
 class WhatsAppSendVideoNode(WhatsAppBaseNode):
     """
     Send a video via WhatsApp.
@@ -470,6 +652,51 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "latitude",
+        PropertyType.FLOAT,
+        default=0.0,
+        required=True,
+        label="Latitude",
+        placeholder="37.7749",
+        tooltip="Location latitude (-90 to 90)",
+        min_value=-90.0,
+        max_value=90.0,
+    ),
+    PropertyDef(
+        "longitude",
+        PropertyType.FLOAT,
+        default=0.0,
+        required=True,
+        label="Longitude",
+        placeholder="-122.4194",
+        tooltip="Location longitude (-180 to 180)",
+        min_value=-180.0,
+        max_value=180.0,
+    ),
+    PropertyDef(
+        "name",
+        PropertyType.STRING,
+        default="",
+        label="Location Name",
+        placeholder="Anthropic HQ",
+        tooltip="Display name for the location",
+    ),
+    PropertyDef(
+        "address",
+        PropertyType.STRING,
+        default="",
+        label="Address",
+        placeholder="123 Main St, San Francisco, CA",
+        tooltip="Address text for the location",
+    ),
+)
+@executable_node
 class WhatsAppSendLocationNode(WhatsAppBaseNode):
     """
     Send a location via WhatsApp.
@@ -590,6 +817,56 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         }
 
 
+@node_schema(
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
+    PropertyDef(
+        "interactive_type",
+        PropertyType.CHOICE,
+        default="button",
+        required=True,
+        choices=["button", "list"],
+        label="Interactive Type",
+        tooltip="Type of interactive message (button or list)",
+    ),
+    PropertyDef(
+        "body_text",
+        PropertyType.TEXT,
+        default="",
+        required=True,
+        label="Body Text",
+        placeholder="Choose an option...",
+        tooltip="Main message body text",
+    ),
+    PropertyDef(
+        "action_json",
+        PropertyType.JSON,
+        default={},
+        required=True,
+        label="Action (JSON)",
+        placeholder='{"buttons": [...]}',
+        tooltip="JSON object defining buttons or list sections",
+    ),
+    PropertyDef(
+        "header_json",
+        PropertyType.JSON,
+        default={},
+        label="Header (JSON)",
+        placeholder='{"type": "text", "text": "Header"}',
+        tooltip="Optional JSON header object",
+    ),
+    PropertyDef(
+        "footer_text",
+        PropertyType.STRING,
+        default="",
+        label="Footer Text",
+        placeholder="Powered by CasareRPA",
+        tooltip="Optional footer text",
+    ),
+)
+@executable_node
 class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
     """
     Send an interactive message (buttons, lists) via WhatsApp.

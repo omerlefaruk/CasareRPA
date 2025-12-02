@@ -7,8 +7,7 @@ Handles browser and desktop element selection:
 - Selector management and updates
 """
 
-import asyncio
-from typing import Optional, TYPE_CHECKING, Any, Dict
+from typing import Optional, TYPE_CHECKING, Any
 from PySide6.QtCore import Signal
 from loguru import logger
 

@@ -622,3 +622,104 @@ class TestIsControlFlowNode:
         workflow.add_node({"node_id": "rty", "type": "RetryNode"})
         orch = ExecutionOrchestrator(workflow)
         assert orch.is_control_flow_node("rty") is True
+
+
+# ============================================================================
+# Port Connection Validation Tests
+# ============================================================================
+
+
+class TestNextNodesPortValidation:
+    """Tests for port connection validation in get_next_nodes."""
+
+    def test_dynamic_routing_missing_port_connection(self, caplog) -> None:
+        """Warning logged when dynamic routing specifies port with no connections."""
+        workflow = WorkflowSchema(WorkflowMetadata(name="MissingPort"))
+        workflow.add_node({"node_id": "if_node", "type": "IfNode"})
+        workflow.add_node({"node_id": "true_target", "type": "ActionNode"})
+        # Only connect true branch, not false
+        workflow.connections.append(
+            NodeConnection("if_node", "true", "true_target", "exec_in")
+        )
+
+        orch = ExecutionOrchestrator(workflow)
+        # Request false branch which has no connection
+        result = {"next_nodes": ["false"]}
+        next_nodes = orch.get_next_nodes("if_node", result)
+
+        assert next_nodes == []
+        # Check warning was logged
+        assert "no connections found" in caplog.text.lower() or len(next_nodes) == 0
+
+    def test_dynamic_routing_exec_out_no_connection_debug(self) -> None:
+        """Debug log (not warning) when exec_out has no connections."""
+        workflow = WorkflowSchema(WorkflowMetadata(name="EndNode"))
+        workflow.add_node({"node_id": "end", "type": "EndNode"})
+
+        orch = ExecutionOrchestrator(workflow)
+        result = {"next_nodes": ["exec_out"]}
+        next_nodes = orch.get_next_nodes("end", result)
+
+        assert next_nodes == []
+        # This should NOT produce a warning, only debug
+
+    def test_dynamic_routing_partial_connections(self) -> None:
+        """Partial connections return only connected nodes."""
+        workflow = WorkflowSchema(WorkflowMetadata(name="Partial"))
+        workflow.add_node({"node_id": "switch", "type": "SwitchNode"})
+        workflow.add_node({"node_id": "case1", "type": "ActionNode"})
+        # Only connect case1, not case2
+        workflow.connections.append(
+            NodeConnection("switch", "case1", "case1", "exec_in")
+        )
+
+        orch = ExecutionOrchestrator(workflow)
+        result = {"next_nodes": ["case1", "case2"]}
+        next_nodes = orch.get_next_nodes("switch", result)
+
+        assert next_nodes == ["case1"]
+
+    def test_get_connections_from_port_helper(self) -> None:
+        """Test _get_connections_from_port helper method."""
+        workflow = WorkflowSchema(WorkflowMetadata(name="Helper"))
+        workflow.add_node({"node_id": "src", "type": "Node"})
+        workflow.add_node({"node_id": "dst1", "type": "Node"})
+        workflow.add_node({"node_id": "dst2", "type": "Node"})
+        workflow.connections.append(
+            NodeConnection("src", "exec_out", "dst1", "exec_in")
+        )
+        workflow.connections.append(
+            NodeConnection("src", "exec_out", "dst2", "exec_in")
+        )
+        workflow.connections.append(
+            NodeConnection("src", "data_out", "dst1", "data_in")
+        )
+
+        orch = ExecutionOrchestrator(workflow)
+        exec_connections = orch._get_connections_from_port("src", "exec_out")
+        data_connections = orch._get_connections_from_port("src", "data_out")
+        missing_connections = orch._get_connections_from_port("src", "missing")
+
+        assert len(exec_connections) == 2
+        assert len(data_connections) == 1
+        assert len(missing_connections) == 0
+
+    def test_dynamic_routing_no_duplicates(self) -> None:
+        """Same target node from multiple ports is not duplicated."""
+        workflow = WorkflowSchema(WorkflowMetadata(name="NoDupes"))
+        workflow.add_node({"node_id": "merge", "type": "Node"})
+        workflow.add_node({"node_id": "target", "type": "Node"})
+        # Two connections to same target
+        workflow.connections.append(
+            NodeConnection("merge", "port1", "target", "exec_in")
+        )
+        workflow.connections.append(
+            NodeConnection("merge", "port2", "target", "exec_in")
+        )
+
+        orch = ExecutionOrchestrator(workflow)
+        result = {"next_nodes": ["port1", "port2"]}
+        next_nodes = orch.get_next_nodes("merge", result)
+
+        assert next_nodes == ["target"]
+        assert len(next_nodes) == 1

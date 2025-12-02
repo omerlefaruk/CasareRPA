@@ -5,7 +5,6 @@ Handles robot registration, status updates, and availability checks.
 
 import os
 import asyncio
-from datetime import datetime
 from typing import List, Optional, Callable
 
 from loguru import logger
@@ -101,9 +100,10 @@ class RobotManagementService:
             return True
         else:
             try:
+                status_data = {"status": status.value}
                 await asyncio.to_thread(
                     lambda: self._client.table("robots")
-                    .update(data)
+                    .update(status_data)
                     .eq("id", robot_id)
                     .execute()
                 )

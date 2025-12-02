@@ -9,7 +9,7 @@ Handles all scheduling-related operations:
 """
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, List, Any
+from typing import TYPE_CHECKING, List, Any
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QDialog, QMessageBox
 from loguru import logger
@@ -18,7 +18,6 @@ from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ..ui.dialogs.schedule_dialog import WorkflowSchedule
 
 
 class SchedulingController(BaseController):

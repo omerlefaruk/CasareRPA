@@ -1,0 +1,96 @@
+# CasareRPA Cloud Orchestrator - Fly.io Configuration
+# https://fly.io/docs/reference/configuration/
+#
+# DEPLOYMENT:
+#   1. Install Fly CLI: https://fly.io/docs/hands-on/install-flyctl/
+#   2. Login: fly auth login
+#   3. Launch: fly launch --config deploy/platforms/fly.toml
+#   4. Create PostgreSQL: fly pg create --name casare-db
+#   5. Attach database: fly pg attach casare-db
+#   6. Set secrets:
+#      fly secrets set API_SECRET=$(openssl rand -hex 32)
+#      fly secrets set SUPABASE_URL=https://your-project.supabase.co
+#      fly secrets set SUPABASE_KEY=your-key
+#   7. Deploy: fly deploy
+
+app = "casare-orchestrator"
+primary_region = "iad"  # Ashburn, Virginia (US East)
+
+# Kill timeout for graceful shutdown
+kill_timeout = "30s"
+
+# =============================================================================
+# Build Configuration
+# =============================================================================
+[build]
+  dockerfile = "deploy/docker/Dockerfile"
+  target = "orchestrator-cloud"
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+[env]
+  HOST = "0.0.0.0"
+  WORKERS = "1"
+  ROBOT_HEARTBEAT_TIMEOUT = "90"
+  JOB_TIMEOUT_DEFAULT = "3600"
+  WS_PING_INTERVAL = "30"
+  CORS_ORIGINS = "*"
+
+# =============================================================================
+# HTTP Service
+# =============================================================================
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false  # Keep running for WebSocket connections
+  auto_start_machines = true
+  min_machines_running = 1
+
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+# =============================================================================
+# Health Checks
+# =============================================================================
+[[services.http_checks]]
+  interval = "30s"
+  timeout = "10s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/health"
+  protocol = "http"
+
+# =============================================================================
+# VM Configuration
+# =============================================================================
+[[vm]]
+  size = "shared-cpu-1x"  # shared-cpu-1x, shared-cpu-2x, dedicated-cpu-1x
+  memory = "512mb"
+
+  [vm.scaling]
+    min = 1
+    max = 3
+
+# =============================================================================
+# Metrics
+# =============================================================================
+[metrics]
+  port = 9091
+  path = "/metrics"
+
+# =============================================================================
+# Secrets (set via fly secrets set)
+# =============================================================================
+# Required:
+#   API_SECRET    - Admin API authentication
+#   DATABASE_URL  - Auto-populated by fly pg attach
+#
+# Optional:
+#   SUPABASE_URL  - Supabase project URL
+#   SUPABASE_KEY  - Supabase anon key
+#   REDIS_URL     - Upstash Redis URL

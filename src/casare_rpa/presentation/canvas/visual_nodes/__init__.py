@@ -33,7 +33,7 @@ from .browser import (
     VisualWaitForNavigationNode,
 )
 
-# Control Flow (11 nodes)
+# Control Flow (16 nodes)
 from .control_flow import (
     VisualIfNode,
     VisualForLoopNode,
@@ -46,6 +46,11 @@ from .control_flow import (
     VisualContinueNode,
     VisualMergeNode,
     VisualSwitchNode,
+    # Try/Catch/Finally nodes
+    VisualTryCatchFinallyNode,
+    VisualTryNode,
+    VisualCatchNode,
+    VisualFinallyNode,
 )
 
 # Database (10 nodes)
@@ -153,9 +158,8 @@ from .email import (
     VisualMoveEmailNode,
 )
 
-# Error Handling (10 nodes)
+# Error Handling (9 nodes - TryNode moved to control_flow)
 from .error_handling import (
-    VisualTryNode,
     VisualRetryNode,
     VisualRetrySuccessNode,
     VisualRetryFailNode,
@@ -305,7 +309,7 @@ from .variable import (
     VisualIncrementVariableNode,
 )
 
-# Triggers (11 nodes)
+# Triggers (17 nodes)
 from .triggers import (
     VisualWebhookTriggerNode,
     VisualScheduleTriggerNode,
@@ -318,6 +322,14 @@ from .triggers import (
     VisualChatTriggerNode,
     VisualRSSFeedTriggerNode,
     VisualSSETriggerNode,
+    # Messaging triggers
+    VisualTelegramTriggerNode,
+    VisualWhatsAppTriggerNode,
+    # Google triggers
+    VisualGmailTriggerNode,
+    VisualDriveTriggerNode,
+    VisualSheetsTriggerNode,
+    VisualCalendarTriggerNode,
 )
 
 # AI/ML (6 nodes)
@@ -339,12 +351,131 @@ from .document import (
     VisualValidateExtractionNode,
 )
 
-# Messaging (4 nodes)
+# Messaging (16 nodes)
 from .messaging import (
+    # Telegram - Send (4)
     VisualTelegramSendMessageNode,
     VisualTelegramSendPhotoNode,
     VisualTelegramSendDocumentNode,
     VisualTelegramSendLocationNode,
+    # Telegram - Actions (5)
+    VisualTelegramEditMessageNode,
+    VisualTelegramDeleteMessageNode,
+    VisualTelegramSendMediaGroupNode,
+    VisualTelegramAnswerCallbackNode,
+    VisualTelegramGetUpdatesNode,
+    # WhatsApp (7)
+    VisualWhatsAppSendMessageNode,
+    VisualWhatsAppSendTemplateNode,
+    VisualWhatsAppSendImageNode,
+    VisualWhatsAppSendDocumentNode,
+    VisualWhatsAppSendVideoNode,
+    VisualWhatsAppSendLocationNode,
+    VisualWhatsAppSendInteractiveNode,
+)
+
+# Google Workspace (77 nodes = 65 + 12 Calendar)
+from .google import (
+    # Calendar - Event operations (8)
+    VisualCalendarListEventsNode,
+    VisualCalendarGetEventNode,
+    VisualCalendarCreateEventNode,
+    VisualCalendarUpdateEventNode,
+    VisualCalendarDeleteEventNode,
+    VisualCalendarQuickAddNode,
+    VisualCalendarMoveEventNode,
+    VisualCalendarGetFreeBusyNode,
+    # Calendar - Management operations (4)
+    VisualCalendarListCalendarsNode,
+    VisualCalendarGetCalendarNode,
+    VisualCalendarCreateCalendarNode,
+    VisualCalendarDeleteCalendarNode,
+    # Gmail - Send operations (6)
+    VisualGmailSendEmailNode,
+    VisualGmailSendWithAttachmentNode,
+    VisualGmailReplyToEmailNode,
+    VisualGmailForwardEmailNode,
+    VisualGmailCreateDraftNode,
+    VisualGmailSendDraftNode,
+    # Gmail - Read operations (5)
+    VisualGmailGetEmailNode,
+    VisualGmailListEmailsNode,
+    VisualGmailSearchEmailsNode,
+    VisualGmailGetThreadNode,
+    VisualGmailGetAttachmentNode,
+    # Gmail - Management operations (7)
+    VisualGmailModifyLabelsNode,
+    VisualGmailMoveToTrashNode,
+    VisualGmailMarkAsReadNode,
+    VisualGmailMarkAsUnreadNode,
+    VisualGmailStarEmailNode,
+    VisualGmailArchiveEmailNode,
+    VisualGmailDeleteEmailNode,
+    # Gmail - Batch operations (3)
+    VisualGmailBatchSendNode,
+    VisualGmailBatchModifyNode,
+    VisualGmailBatchDeleteNode,
+    # Sheets - Cell operations (5)
+    VisualSheetsGetCellNode,
+    VisualSheetsSetCellNode,
+    VisualSheetsGetRangeNode,
+    VisualSheetsWriteRangeNode,
+    VisualSheetsClearRangeNode,
+    # Sheets - Sheet operations (6)
+    VisualSheetsCreateSpreadsheetNode,
+    VisualSheetsGetSpreadsheetNode,
+    VisualSheetsAddSheetNode,
+    VisualSheetsDeleteSheetNode,
+    VisualSheetsDuplicateSheetNode,
+    VisualSheetsRenameSheetNode,
+    # Sheets - Row/Column operations (5)
+    VisualSheetsAppendRowNode,
+    VisualSheetsInsertRowNode,
+    VisualSheetsDeleteRowNode,
+    VisualSheetsInsertColumnNode,
+    VisualSheetsDeleteColumnNode,
+    # Sheets - Format operations (2)
+    VisualSheetsFormatCellsNode,
+    VisualSheetsAutoResizeNode,
+    # Sheets - Batch operations (3)
+    VisualSheetsBatchUpdateNode,
+    VisualSheetsBatchGetNode,
+    VisualSheetsBatchClearNode,
+    # Docs - Document operations (3)
+    VisualDocsCreateDocumentNode,
+    VisualDocsGetDocumentNode,
+    VisualDocsGetContentNode,
+    # Docs - Text operations (3)
+    VisualDocsInsertTextNode,
+    VisualDocsDeleteContentNode,
+    VisualDocsReplaceTextNode,
+    # Docs - Formatting (4)
+    VisualDocsInsertTableNode,
+    VisualDocsInsertImageNode,
+    VisualDocsUpdateStyleNode,
+    VisualDocsBatchUpdateNode,
+    # Drive - File operations (7)
+    VisualDriveUploadFileNode,
+    VisualDriveDownloadFileNode,
+    VisualDriveDeleteFileNode,
+    VisualDriveCopyFileNode,
+    VisualDriveMoveFileNode,
+    VisualDriveRenameFileNode,
+    VisualDriveGetFileNode,
+    # Drive - Folder operations (3)
+    VisualDriveCreateFolderNode,
+    VisualDriveListFilesNode,
+    VisualDriveSearchFilesNode,
+    # Drive - Permissions (3)
+    VisualDriveShareFileNode,
+    VisualDriveRemovePermissionNode,
+    VisualDriveGetPermissionsNode,
+    # Drive - Export (1)
+    VisualDriveExportFileNode,
+    # Drive - Batch operations (3)
+    VisualDriveBatchDeleteNode,
+    VisualDriveBatchMoveNode,
+    VisualDriveBatchCopyNode,
 )
 
 __all__ = [
@@ -383,6 +514,11 @@ __all__ = [
     "VisualContinueNode",
     "VisualMergeNode",
     "VisualSwitchNode",
+    # Try/Catch/Finally nodes
+    "VisualTryCatchFinallyNode",
+    "VisualTryNode",
+    "VisualCatchNode",
+    "VisualFinallyNode",
     # database
     "VisualDatabaseConnectNode",
     "VisualExecuteQueryNode",
@@ -473,8 +609,7 @@ __all__ = [
     "VisualMarkEmailNode",
     "VisualDeleteEmailNode",
     "VisualMoveEmailNode",
-    # error_handling
-    "VisualTryNode",
+    # error_handling (TryNode moved to control_flow)
     "VisualRetryNode",
     "VisualRetrySuccessNode",
     "VisualRetryFailNode",
@@ -609,6 +744,14 @@ __all__ = [
     "VisualChatTriggerNode",
     "VisualRSSFeedTriggerNode",
     "VisualSSETriggerNode",
+    # triggers - Messaging
+    "VisualTelegramTriggerNode",
+    "VisualWhatsAppTriggerNode",
+    # triggers - Google
+    "VisualGmailTriggerNode",
+    "VisualDriveTriggerNode",
+    "VisualSheetsTriggerNode",
+    "VisualCalendarTriggerNode",
     # ai_ml
     "VisualLLMCompletionNode",
     "VisualLLMChatNode",
@@ -622,11 +765,125 @@ __all__ = [
     "VisualExtractInvoiceNode",
     "VisualExtractTableNode",
     "VisualValidateExtractionNode",
-    # messaging
+    # messaging - Telegram Send
     "VisualTelegramSendMessageNode",
     "VisualTelegramSendPhotoNode",
     "VisualTelegramSendDocumentNode",
     "VisualTelegramSendLocationNode",
+    # messaging - Telegram Actions
+    "VisualTelegramEditMessageNode",
+    "VisualTelegramDeleteMessageNode",
+    "VisualTelegramSendMediaGroupNode",
+    "VisualTelegramAnswerCallbackNode",
+    "VisualTelegramGetUpdatesNode",
+    # messaging - WhatsApp
+    "VisualWhatsAppSendMessageNode",
+    "VisualWhatsAppSendTemplateNode",
+    "VisualWhatsAppSendImageNode",
+    "VisualWhatsAppSendDocumentNode",
+    "VisualWhatsAppSendVideoNode",
+    "VisualWhatsAppSendLocationNode",
+    "VisualWhatsAppSendInteractiveNode",
+    # google - Calendar Event (8)
+    "VisualCalendarListEventsNode",
+    "VisualCalendarGetEventNode",
+    "VisualCalendarCreateEventNode",
+    "VisualCalendarUpdateEventNode",
+    "VisualCalendarDeleteEventNode",
+    "VisualCalendarQuickAddNode",
+    "VisualCalendarMoveEventNode",
+    "VisualCalendarGetFreeBusyNode",
+    # google - Calendar Management (4)
+    "VisualCalendarListCalendarsNode",
+    "VisualCalendarGetCalendarNode",
+    "VisualCalendarCreateCalendarNode",
+    "VisualCalendarDeleteCalendarNode",
+    # google - Gmail Send (6)
+    "VisualGmailSendEmailNode",
+    "VisualGmailSendWithAttachmentNode",
+    "VisualGmailReplyToEmailNode",
+    "VisualGmailForwardEmailNode",
+    "VisualGmailCreateDraftNode",
+    "VisualGmailSendDraftNode",
+    # google - Gmail Read (5)
+    "VisualGmailGetEmailNode",
+    "VisualGmailListEmailsNode",
+    "VisualGmailSearchEmailsNode",
+    "VisualGmailGetThreadNode",
+    "VisualGmailGetAttachmentNode",
+    # google - Gmail Management (7)
+    "VisualGmailModifyLabelsNode",
+    "VisualGmailMoveToTrashNode",
+    "VisualGmailMarkAsReadNode",
+    "VisualGmailMarkAsUnreadNode",
+    "VisualGmailStarEmailNode",
+    "VisualGmailArchiveEmailNode",
+    "VisualGmailDeleteEmailNode",
+    # google - Gmail Batch (3)
+    "VisualGmailBatchSendNode",
+    "VisualGmailBatchModifyNode",
+    "VisualGmailBatchDeleteNode",
+    # google - Sheets Cell (5)
+    "VisualSheetsGetCellNode",
+    "VisualSheetsSetCellNode",
+    "VisualSheetsGetRangeNode",
+    "VisualSheetsWriteRangeNode",
+    "VisualSheetsClearRangeNode",
+    # google - Sheets Sheet (6)
+    "VisualSheetsCreateSpreadsheetNode",
+    "VisualSheetsGetSpreadsheetNode",
+    "VisualSheetsAddSheetNode",
+    "VisualSheetsDeleteSheetNode",
+    "VisualSheetsDuplicateSheetNode",
+    "VisualSheetsRenameSheetNode",
+    # google - Sheets Row/Column (5)
+    "VisualSheetsAppendRowNode",
+    "VisualSheetsInsertRowNode",
+    "VisualSheetsDeleteRowNode",
+    "VisualSheetsInsertColumnNode",
+    "VisualSheetsDeleteColumnNode",
+    # google - Sheets Format (2)
+    "VisualSheetsFormatCellsNode",
+    "VisualSheetsAutoResizeNode",
+    # google - Sheets Batch (3)
+    "VisualSheetsBatchUpdateNode",
+    "VisualSheetsBatchGetNode",
+    "VisualSheetsBatchClearNode",
+    # google - Docs Document (3)
+    "VisualDocsCreateDocumentNode",
+    "VisualDocsGetDocumentNode",
+    "VisualDocsGetContentNode",
+    # google - Docs Text (3)
+    "VisualDocsInsertTextNode",
+    "VisualDocsDeleteContentNode",
+    "VisualDocsReplaceTextNode",
+    # google - Docs Formatting (4)
+    "VisualDocsInsertTableNode",
+    "VisualDocsInsertImageNode",
+    "VisualDocsUpdateStyleNode",
+    "VisualDocsBatchUpdateNode",
+    # google - Drive File (7)
+    "VisualDriveUploadFileNode",
+    "VisualDriveDownloadFileNode",
+    "VisualDriveDeleteFileNode",
+    "VisualDriveCopyFileNode",
+    "VisualDriveMoveFileNode",
+    "VisualDriveRenameFileNode",
+    "VisualDriveGetFileNode",
+    # google - Drive Folder (3)
+    "VisualDriveCreateFolderNode",
+    "VisualDriveListFilesNode",
+    "VisualDriveSearchFilesNode",
+    # google - Drive Permissions (3)
+    "VisualDriveShareFileNode",
+    "VisualDriveRemovePermissionNode",
+    "VisualDriveGetPermissionsNode",
+    # google - Drive Export (1)
+    "VisualDriveExportFileNode",
+    # google - Drive Batch (3)
+    "VisualDriveBatchDeleteNode",
+    "VisualDriveBatchMoveNode",
+    "VisualDriveBatchCopyNode",
 ]
 
 # =============================================================================

@@ -10,8 +10,9 @@ Handles all execution-related operations:
 """
 
 import asyncio
+from datetime import datetime
 from typing import Optional, TYPE_CHECKING
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QObject, Qt
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
@@ -20,6 +21,47 @@ from casare_rpa.application.services import ExecutionLifecycleManager
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+
+
+class _ThreadSafeLogBridge(QObject):
+    """
+    Thread-safe bridge for Loguru → Log Tab.
+
+    Qt signals are thread-safe and automatically marshal calls to the
+    main thread when emitted from background threads.
+    """
+
+    log_received = Signal(str, str, str, str)  # level, message, module, timestamp
+
+    def __init__(self, parent: Optional[QObject] = None):
+        super().__init__(parent)
+
+    def emit_log(self, level: str, message: str, module: str, timestamp: str) -> None:
+        """Emit log signal (thread-safe)."""
+        self.log_received.emit(level, message, module, timestamp)
+
+
+class _ThreadSafeTerminalBridge(QObject):
+    """
+    Thread-safe bridge for stdout/stderr → Terminal Tab.
+
+    Qt signals are thread-safe and automatically marshal calls to the
+    main thread when emitted from background threads.
+    """
+
+    stdout_received = Signal(str)
+    stderr_received = Signal(str)
+
+    def __init__(self, parent: Optional[QObject] = None):
+        super().__init__(parent)
+
+    def emit_stdout(self, text: str) -> None:
+        """Emit stdout signal (thread-safe)."""
+        self.stdout_received.emit(text)
+
+    def emit_stderr(self, text: str) -> None:
+        """Emit stderr signal (thread-safe)."""
+        self.stderr_received.emit(text)
 
 
 class ExecutionController(BaseController):
@@ -65,6 +107,10 @@ class ExecutionController(BaseController):
         self._workflow_runner: Optional["CanvasWorkflowRunner"] = None
         self._node_index: dict[str, object] = {}  # O(1) node lookup by node_id
 
+        # Thread-safe bridges for cross-thread Qt calls
+        self._log_bridge: Optional[_ThreadSafeLogBridge] = None
+        self._terminal_bridge: Optional[_ThreadSafeTerminalBridge] = None
+
         # Execution lifecycle manager for state machine and cleanup
         self._lifecycle_manager = ExecutionLifecycleManager()
         logger.debug("ExecutionLifecycleManager initialized")
@@ -74,6 +120,10 @@ class ExecutionController(BaseController):
         super().initialize()
         # Setup EventBus integration for visual node feedback
         self._setup_event_bus()
+        # Setup Loguru → Log Tab bridge
+        self._setup_log_tab_bridge()
+        # Setup stdout/stderr → Terminal tab bridge
+        self._setup_terminal_bridge()
         logger.info("ExecutionController initialized")
 
     def _setup_event_bus(self) -> None:
@@ -111,6 +161,116 @@ class ExecutionController(BaseController):
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
 
+    def _setup_log_tab_bridge(self) -> None:
+        """
+        Setup Loguru → Log Tab bridge.
+
+        Forwards all Loguru logs to the bottom panel's Log Tab for UI display.
+        Uses thread-safe Qt signals to marshal calls from background threads.
+        """
+        try:
+            from casare_rpa.infrastructure.observability.logging import (
+                set_ui_log_callback,
+            )
+
+            # Create thread-safe bridge (must be parented to Qt object for thread affinity)
+            self._log_bridge = _ThreadSafeLogBridge(self.main_window)
+
+            # Connect signal to slot (runs in main thread)
+            def on_log_received(
+                level: str, message: str, module: str, timestamp: str
+            ) -> None:
+                """Handle log in main thread."""
+                bottom_panel = self.main_window.get_bottom_panel()
+                if bottom_panel:
+                    # Map level to Log Tab format (lowercase)
+                    level_map = {
+                        "DEBUG": "debug",
+                        "INFO": "info",
+                        "SUCCESS": "success",
+                        "WARNING": "warning",
+                        "ERROR": "error",
+                        "CRITICAL": "error",
+                    }
+                    log_level = level_map.get(level, "info")
+                    # Include module in message for context
+                    full_message = f"[{module}] {message}"
+                    bottom_panel.log_message(full_message, log_level)
+
+            self._log_bridge.log_received.connect(
+                on_log_received, Qt.ConnectionType.QueuedConnection
+            )
+
+            # Register callback that emits signal (thread-safe)
+            def log_callback(
+                level: str, message: str, module: str, timestamp: str
+            ) -> None:
+                """Forward log via thread-safe signal."""
+                if self._log_bridge:
+                    self._log_bridge.emit_log(level, message, module, timestamp)
+
+            # Register callback with DEBUG level to capture all logs
+            # (user can filter in Log Tab dropdown)
+            set_ui_log_callback(log_callback, min_level="DEBUG")
+            logger.info("Log Tab bridge configured (thread-safe)")
+
+        except ImportError as e:
+            logger.warning(f"Failed to setup Log Tab bridge: {e}")
+
+    def _setup_terminal_bridge(self) -> None:
+        """
+        Setup stdout/stderr → Terminal tab bridge.
+
+        Captures print() statements and subprocess output during workflow
+        execution and displays them in the Terminal tab.
+        Uses thread-safe Qt signals to marshal calls from background threads.
+        """
+        try:
+            from casare_rpa.infrastructure.observability.stdout_capture import (
+                set_output_callbacks,
+            )
+
+            # Create thread-safe bridge (must be parented to Qt object for thread affinity)
+            self._terminal_bridge = _ThreadSafeTerminalBridge(self.main_window)
+
+            # Connect signals to slots (runs in main thread)
+            def on_stdout_received(text: str) -> None:
+                """Handle stdout in main thread."""
+                bottom_panel = self.main_window.get_bottom_panel()
+                if bottom_panel:
+                    bottom_panel.terminal_write_stdout(text)
+
+            def on_stderr_received(text: str) -> None:
+                """Handle stderr in main thread."""
+                bottom_panel = self.main_window.get_bottom_panel()
+                if bottom_panel:
+                    bottom_panel.terminal_write_stderr(text)
+
+            self._terminal_bridge.stdout_received.connect(
+                on_stdout_received, Qt.ConnectionType.QueuedConnection
+            )
+            self._terminal_bridge.stderr_received.connect(
+                on_stderr_received, Qt.ConnectionType.QueuedConnection
+            )
+
+            # Register callbacks that emit signals (thread-safe)
+            def stdout_callback(text: str) -> None:
+                """Forward stdout via thread-safe signal."""
+                if self._terminal_bridge:
+                    self._terminal_bridge.emit_stdout(text)
+
+            def stderr_callback(text: str) -> None:
+                """Forward stderr via thread-safe signal."""
+                if self._terminal_bridge:
+                    self._terminal_bridge.emit_stderr(text)
+
+            # Register callbacks
+            set_output_callbacks(stdout_callback, stderr_callback)
+            logger.info("Terminal bridge configured (thread-safe)")
+
+        except ImportError as e:
+            logger.warning(f"Failed to setup Terminal bridge: {e}")
+
     def set_workflow_runner(self, runner: "CanvasWorkflowRunner") -> None:
         """
         Set the workflow runner instance.
@@ -142,6 +302,37 @@ class ExecutionController(BaseController):
             self._workflow_task = None
         self._use_case = None
         self._node_index.clear()  # Clear node index
+
+        # Remove Log Tab bridge
+        try:
+            from casare_rpa.infrastructure.observability.logging import (
+                remove_ui_log_callback,
+            )
+
+            remove_ui_log_callback()
+        except ImportError:
+            pass
+
+        # Clean up log bridge
+        if self._log_bridge:
+            self._log_bridge.deleteLater()
+            self._log_bridge = None
+
+        # Remove Terminal bridge
+        try:
+            from casare_rpa.infrastructure.observability.stdout_capture import (
+                remove_output_callbacks,
+            )
+
+            remove_output_callbacks()
+        except ImportError:
+            pass
+
+        # Clean up terminal bridge
+        if self._terminal_bridge:
+            self._terminal_bridge.deleteLater()
+            self._terminal_bridge = None
+
         super().cleanup()
         logger.info("ExecutionController cleanup")
 
@@ -187,25 +378,59 @@ class ExecutionController(BaseController):
 
         Extracted from: canvas/components/execution_component.py
         Updates visual node status to 'success' (shows green checkmark).
+        Also forwards node output to Output Tab and History Tab.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
         node_id = event_data.get("node_id") if isinstance(event_data, dict) else None
         if node_id:
             visual_node = self._find_visual_node(node_id)
+
+            # Extract execution time early (before visual_node check)
+            # Support both 'execution_time' (seconds) and 'duration_ms' (milliseconds)
+            execution_time_sec = None
+            if isinstance(event_data, dict):
+                if "execution_time" in event_data:
+                    # execution_time is in seconds
+                    execution_time_sec = event_data.get("execution_time")
+                elif "duration_ms" in event_data:
+                    # duration_ms is in milliseconds, convert to seconds
+                    duration_ms = event_data.get("duration_ms")
+                    if duration_ms is not None:
+                        execution_time_sec = duration_ms / 1000.0
+
             if visual_node and hasattr(visual_node, "update_status"):
                 visual_node.update_status("success")
-                # Update execution time if available
-                duration_ms = (
-                    event_data.get("duration_ms")
-                    if isinstance(event_data, dict)
-                    else None
-                )
-                if duration_ms is not None and hasattr(
+                if execution_time_sec is not None and hasattr(
                     visual_node, "update_execution_time"
                 ):
-                    visual_node.update_execution_time(duration_ms / 1000.0)
+                    visual_node.update_execution_time(execution_time_sec)
                 logger.debug(f"Node {node_id} visual status: success")
+
+            # Forward output to Output Tab and History Tab
+            bottom_panel = self.main_window.get_bottom_panel()
+            if bottom_panel and isinstance(event_data, dict):
+                # Get node name for output display
+                node_type = event_data.get("node_type", "Node")
+                node_name = event_data.get("node_name", node_id)
+
+                # Check for output value in event data
+                output_value = event_data.get("result") or event_data.get("output")
+                if output_value is not None:
+                    bottom_panel.add_output(node_name, output_value)
+
+                # Add to history
+                history_entry = {
+                    "timestamp": event_data.get(
+                        "timestamp",
+                        datetime.now().isoformat(),
+                    ),
+                    "node_id": node_id,
+                    "node_type": node_type,
+                    "execution_time": execution_time_sec or 0,
+                    "status": "success",
+                }
+                bottom_panel.append_history_entry(history_entry)
 
     def _on_node_error(self, event) -> None:
         """
@@ -213,6 +438,7 @@ class ExecutionController(BaseController):
 
         Extracted from: canvas/components/execution_component.py
         Updates visual node status to 'error' (shows red X icon).
+        Also adds failed entry to History Tab.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -228,13 +454,55 @@ class ExecutionController(BaseController):
                 visual_node.update_status("error")
                 logger.error(f"Node {node_id} error: {error}")
 
+            # Add to history
+            bottom_panel = self.main_window.get_bottom_panel()
+            if bottom_panel and isinstance(event_data, dict):
+                node_type = event_data.get("node_type", "Node")
+                history_entry = {
+                    "timestamp": event_data.get(
+                        "timestamp",
+                        datetime.now().isoformat(),
+                    ),
+                    "node_id": node_id,
+                    "node_type": node_type,
+                    "execution_time": 0,
+                    "status": "failed",
+                    "error": str(error),
+                }
+                bottom_panel.append_history_entry(history_entry)
+
     def _on_workflow_completed(self, event) -> None:
         """
         Handle WORKFLOW_COMPLETED event from EventBus.
 
         Extracted from: canvas/components/execution_component.py
+        Also sets workflow result and exports variables to Output Tab.
         """
         logger.info("Workflow execution completed (EventBus)")
+
+        # Set workflow result in Output Tab
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            event_data = event.data if hasattr(event, "data") else event
+            message = "Workflow completed successfully"
+            if isinstance(event_data, dict):
+                message = event_data.get("message", message)
+                # Include execution stats if available
+                # ExecuteWorkflowUseCase emits: executed_nodes, total_nodes, duration
+                node_count = event_data.get("executed_nodes", 0)
+                duration = event_data.get("duration", 0)
+                if node_count or duration:
+                    message = f"{message} ({node_count} nodes in {duration:.2f}s)"
+
+                # Export final variables to Output Tab
+                variables = event_data.get("variables", {})
+                if variables:
+                    for var_name, var_value in variables.items():
+                        bottom_panel.add_output(var_name, var_value)
+                    logger.debug(f"Exported {len(variables)} variables to Output tab")
+
+            bottom_panel.set_workflow_result(True, message)
+
         self.on_execution_completed()
 
     def _on_workflow_error(self, event) -> None:
@@ -242,6 +510,7 @@ class ExecutionController(BaseController):
         Handle WORKFLOW_ERROR event from EventBus.
 
         Extracted from: canvas/components/execution_component.py
+        Also sets workflow result in Output Tab.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -251,6 +520,20 @@ class ExecutionController(BaseController):
             else "Unknown error"
         )
         logger.error(f"Workflow error (EventBus): {error}")
+
+        # Set workflow result in Output Tab
+        bottom_panel = self.main_window.get_bottom_panel()
+        if bottom_panel:
+            # Include node info if available for better error context
+            node_id = (
+                event_data.get("node_id", "") if isinstance(event_data, dict) else ""
+            )
+            if node_id:
+                error_msg = f"Failed at node {node_id}: {error}"
+            else:
+                error_msg = str(error)
+            bottom_panel.set_workflow_result(False, error_msg)
+
         self.on_execution_error(str(error))
 
     def _on_workflow_stopped(self, event) -> None:
@@ -377,7 +660,7 @@ class ExecutionController(BaseController):
                 )
             )
 
-        except Exception as e:
+        except Exception:
             # Ensure flag is reset on any unexpected error during setup
             logger.exception("Unexpected error during workflow startup")
             self._is_running = False
@@ -486,7 +769,7 @@ class ExecutionController(BaseController):
                 )
             )
 
-        except Exception as e:
+        except Exception:
             # Ensure flag is reset on any unexpected error during setup
             logger.exception("Unexpected error during run_to_node startup")
             self._is_running = False
@@ -574,9 +857,75 @@ class ExecutionController(BaseController):
                 )
             )
 
-        except Exception as e:
+        except Exception:
             # Ensure flag is reset on any unexpected error during setup
             logger.exception("Unexpected error during run_single_node startup")
+            self._is_running = False
+            self._update_execution_actions(running=False)
+            raise
+
+    def run_all_workflows(self) -> None:
+        """
+        Run all workflows on canvas concurrently (Shift+F3).
+
+        When the canvas contains multiple independent workflows (each with its
+        own StartNode), this executes them all in parallel. Each workflow gets
+        SHARED variables but SEPARATE browser instances.
+        """
+        logger.info("Running all workflows concurrently")
+
+        # Atomic check-and-set to prevent race condition
+        if self._is_running:
+            logger.warning("Workflow already running")
+            self.main_window.show_status("Workflow is already running", 3000)
+            return
+
+        # Validate before running
+        if not self._check_validation_before_run():
+            return
+
+        # Check if runner is configured
+        if not self._workflow_runner:
+            logger.error("WorkflowRunner not configured")
+            QMessageBox.critical(
+                self.main_window,
+                "Execution Error",
+                "Workflow runner not initialized. Please restart the application.",
+            )
+            return
+
+        # Set flag immediately to block concurrent calls
+        self._is_running = True
+
+        try:
+            # Reset all node visuals before starting
+            self._reset_all_node_visuals()
+
+            # Build node index for O(1) lookups during execution events
+            self._build_node_index()
+
+            self._is_paused = False
+            self.execution_started.emit()
+
+            # Emit MainWindow signal for parallel workflow execution
+            self.main_window.workflow_run_all.emit()
+
+            # Update UI state
+            self._update_execution_actions(running=True)
+
+            self.main_window.show_status("Running all workflows concurrently...", 0)
+
+            # Create async task using lifecycle manager for run_all mode
+            self._workflow_task = asyncio.create_task(
+                self._lifecycle_manager.start_workflow_run_all(
+                    self._workflow_runner,
+                    force_cleanup=True,
+                )
+            )
+
+        except Exception:
+            # Ensure flag is reset on any unexpected error during setup
+            logger.exception("Unexpected error during run_all_workflows startup")
             self._is_running = False
             self._update_execution_actions(running=False)
             raise

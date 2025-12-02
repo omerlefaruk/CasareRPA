@@ -73,11 +73,19 @@ if not exist "monitoring-dashboard\node_modules" (
 echo Starting platform with Windows Terminal tabs...
 echo.
 
+REM Kill any existing process on port 8000
+echo [INFO] Checking for existing processes on port 8000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING" 2^>nul') do (
+    echo [INFO] Killing process %%a on port 8000...
+    taskkill /F /PID %%a >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
+
 REM Build Windows Terminal command with tabs - ALL components
 REM Tab 1: Cloudflare Tunnel
 set WT_CMD=wt -w 0 new-tab --title "Cloudflare Tunnel" -d "%CD%" cmd /k "cloudflared tunnel run casare-rpa"
 
-REM Tab 2: Orchestrator API
+REM Tab 2: Orchestrator API (loads .env automatically)
 set WT_CMD=%WT_CMD% ; new-tab --title "Orchestrator API" -d "%CD%" cmd /k "python -m uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port 8000"
 
 REM Tab 3: Dashboard
@@ -130,6 +138,14 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
+
+REM Kill any existing process on port 8000
+echo [INFO] Checking for existing processes on port 8000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8000" ^| findstr "LISTENING" 2^>nul') do (
+    echo [INFO] Killing process %%a on port 8000...
+    taskkill /F /PID %%a >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
 
 echo [1/4] Starting Cloudflare Tunnel...
 start "Cloudflare Tunnel" cmd /k "cloudflared tunnel run casare-rpa"

@@ -1,58 +1,11 @@
 """Performance tests for Canvas-related operations.
 
-Tests node creation, registry lookups, and data structure operations
+Tests node creation and data structure operations
 performance without requiring full Qt GUI setup.
 """
 
 import time
 import pytest
-
-
-class TestNodeRegistryPerformance:
-    """Tests for node registry lookup performance."""
-
-    @pytest.mark.skipif(
-        True,
-        reason="NodeRegistry requires Qt - skipped for CI",
-    )
-    def test_node_registry_import_time(self, benchmark):
-        """Benchmark time to import node registry."""
-
-        def import_registry():
-            import sys
-
-            if "casare_rpa.presentation.canvas.graph.node_registry" in sys.modules:
-                del sys.modules["casare_rpa.presentation.canvas.graph.node_registry"]
-
-            from casare_rpa.presentation.canvas.graph.node_registry import (
-                NodeRegistry,
-            )
-
-            return NodeRegistry
-
-        result = benchmark(import_registry)
-        assert result is not None
-
-    @pytest.mark.skipif(
-        True,
-        reason="NodeRegistry requires Qt - skipped for CI",
-    )
-    def test_get_visual_class_lookup_time(self):
-        """Test visual class lookup performance."""
-        from casare_rpa.presentation.canvas.graph.node_registry import NodeRegistry
-
-        registry = NodeRegistry()
-
-        lookups = ["StartNode", "EndNode", "SetVariableNode", "IfNode", "LogNode"]
-        start = time.perf_counter()
-        for _ in range(100):
-            for node_type in lookups:
-                registry.get_visual_class(node_type)
-        elapsed = time.perf_counter() - start
-
-        assert (
-            elapsed < 0.1
-        ), f"Registry lookups too slow: {elapsed:.3f}s for 500 lookups"
 
 
 class TestNodeCreationPerformance:

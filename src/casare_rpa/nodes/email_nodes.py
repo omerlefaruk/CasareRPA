@@ -3,6 +3,8 @@ Email automation nodes for CasareRPA.
 
 Provides nodes for sending and receiving emails via SMTP and IMAP,
 with support for attachments, HTML content, and email management.
+
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 import asyncio
@@ -20,6 +22,14 @@ import os
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import (
+    CredentialAwareMixin,
+    CREDENTIAL_NAME_PROP,
+    SMTP_SERVER_PROP,
+    SMTP_PORT_PROP,
+    IMAP_SERVER_PROP,
+    IMAP_PORT_PROP,
+)
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -30,7 +40,29 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     ExecutionResult,
 )
-from casare_rpa.nodes.utils.type_converters import safe_int
+
+
+# =============================================================================
+# Email-specific PropertyDef constants
+# =============================================================================
+
+EMAIL_USERNAME_PROP = PropertyDef(
+    "username",
+    PropertyType.STRING,
+    default="",
+    label="Username",
+    tooltip="Email account username (or use Credential Name for vault lookup)",
+    tab="connection",
+)
+
+EMAIL_PASSWORD_PROP = PropertyDef(
+    "password",
+    PropertyType.STRING,
+    default="",
+    label="Password",
+    tooltip="Email account password (or use Credential Name for vault lookup)",
+    tab="connection",
+)
 
 
 def _decode_header_value(value: str) -> str:
@@ -135,34 +167,11 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
 
 @executable_node
 @node_schema(
-    PropertyDef(
-        "smtp_server",
-        PropertyType.STRING,
-        default="smtp.gmail.com",
-        label="SMTP Server",
-        tooltip="SMTP server hostname",
-    ),
-    PropertyDef(
-        "smtp_port",
-        PropertyType.INTEGER,
-        default=587,
-        label="SMTP Port",
-        tooltip="SMTP server port (587 for TLS, 465 for SSL)",
-    ),
-    PropertyDef(
-        "username",
-        PropertyType.STRING,
-        default="",
-        label="Username",
-        tooltip="Email account username",
-    ),
-    PropertyDef(
-        "password",
-        PropertyType.STRING,
-        default="",
-        label="Password",
-        tooltip="Email account password",
-    ),
+    CREDENTIAL_NAME_PROP,  # For vault lookup
+    SMTP_SERVER_PROP,
+    SMTP_PORT_PROP,
+    EMAIL_USERNAME_PROP,
+    EMAIL_PASSWORD_PROP,
     PropertyDef(
         "from_email",
         PropertyType.STRING,
@@ -280,7 +289,7 @@ def _parse_email_message(msg: email.message.Message) -> Dict[str, Any]:
     ),
 )
 @executable_node
-class SendEmailNode(BaseNode):
+class SendEmailNode(CredentialAwareMixin, BaseNode):
     """
     Send an email via SMTP.
 
@@ -289,6 +298,11 @@ class SendEmailNode(BaseNode):
     - Multiple recipients (To, CC, BCC)
     - File attachments
     - SSL/TLS encryption
+
+    Credential Resolution (in order):
+    1. Vault lookup (via credential_name parameter)
+    2. Direct parameters (username, password)
+    3. Environment variables (SMTP_USERNAME, SMTP_PASSWORD)
     """
 
     def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
@@ -324,16 +338,23 @@ class SendEmailNode(BaseNode):
             # Get connection settings
             smtp_server = self.get_parameter("smtp_server", "smtp.gmail.com")
             smtp_port = self.get_parameter("smtp_port", 587)
-            username = self.get_parameter("username", "")
-            password = self.get_parameter("password", "")
             use_tls = self.get_parameter("use_tls", True)
             use_ssl = self.get_parameter("use_ssl", False)
             timeout = self.get_parameter("timeout", 30)
 
             # Resolve {{variable}} patterns in connection parameters
             smtp_server = context.resolve_value(smtp_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
+
+            # Resolve credentials using CredentialAwareMixin
+            # Order: vault -> direct params -> env vars
+            username, password = await self.resolve_username_password(
+                context,
+                credential_name_param="credential_name",
+                username_param="username",
+                password_param="password",
+                env_prefix="SMTP",
+                required=False,  # May be optional for some servers
+            )
 
             # Get retry options
             retry_count = self.get_parameter("retry_count", 0)
@@ -537,34 +558,11 @@ class SendEmailNode(BaseNode):
 
 @executable_node
 @node_schema(
-    PropertyDef(
-        "imap_server",
-        PropertyType.STRING,
-        default="imap.gmail.com",
-        label="IMAP Server",
-        tooltip="IMAP server hostname",
-    ),
-    PropertyDef(
-        "imap_port",
-        PropertyType.INTEGER,
-        default=993,
-        label="IMAP Port",
-        tooltip="IMAP server port (usually 993 for SSL)",
-    ),
-    PropertyDef(
-        "username",
-        PropertyType.STRING,
-        default="",
-        label="Username",
-        tooltip="Email account username",
-    ),
-    PropertyDef(
-        "password",
-        PropertyType.STRING,
-        default="",
-        label="Password",
-        tooltip="Email account password",
-    ),
+    CREDENTIAL_NAME_PROP,  # For vault lookup
+    IMAP_SERVER_PROP,
+    IMAP_PORT_PROP,
+    EMAIL_USERNAME_PROP,
+    EMAIL_PASSWORD_PROP,
     PropertyDef(
         "folder",
         PropertyType.STRING,
@@ -640,7 +638,7 @@ class SendEmailNode(BaseNode):
     ),
 )
 @executable_node
-class ReadEmailsNode(BaseNode):
+class ReadEmailsNode(CredentialAwareMixin, BaseNode):
     """
     Read emails from an IMAP server.
 
@@ -649,6 +647,11 @@ class ReadEmailsNode(BaseNode):
     - Unread/All filter
     - Limit number of emails
     - Search criteria
+
+    Credential Resolution (in order):
+    1. Vault lookup (via credential_name parameter)
+    2. Direct parameters (username, password)
+    3. Environment variables (IMAP_USERNAME, IMAP_PASSWORD)
     """
 
     def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
@@ -678,8 +681,6 @@ class ReadEmailsNode(BaseNode):
             # Get connection settings
             imap_server = self.get_parameter("imap_server", "imap.gmail.com")
             imap_port = self.get_parameter("imap_port", 993)
-            username = self.get_parameter("username", "")
-            password = self.get_parameter("password", "")
             folder = self.get_parameter("folder", "INBOX")
             limit = self.get_parameter("limit", 10)
             search_criteria = self.get_parameter("search_criteria", "ALL")
@@ -687,10 +688,18 @@ class ReadEmailsNode(BaseNode):
 
             # Resolve {{variable}} patterns in connection parameters
             imap_server = context.resolve_value(imap_server)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
             folder = context.resolve_value(folder)
             search_criteria = context.resolve_value(search_criteria)
+
+            # Resolve credentials using CredentialAwareMixin
+            username, password = await self.resolve_username_password(
+                context,
+                credential_name_param="credential_name",
+                username_param="username",
+                password_param="password",
+                env_prefix="IMAP",
+                required=True,
+            )
 
             # Get retry options
             retry_count = self.get_parameter("retry_count", 0)

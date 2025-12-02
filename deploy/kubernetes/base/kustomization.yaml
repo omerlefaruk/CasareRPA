@@ -1,0 +1,29 @@
+# CasareRPA Kustomize Base Configuration
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: casare-rpa
+
+resources:
+  - namespace.yaml
+  - common/secrets.yaml
+  - common/networkpolicy.yaml
+  - orchestrator/deployment.yaml
+  - orchestrator/service.yaml
+  - orchestrator/hpa.yaml
+  - orchestrator/configmap.yaml
+  - orchestrator/ingress.yaml
+  - robot/deployment.yaml
+  - robot/service.yaml
+  - robot/configmap.yaml
+  - robot/scaledobject.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: casare-rpa
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: casare-rpa/orchestrator
+    newTag: latest
+  - name: casare-rpa/robot
+    newTag: latest

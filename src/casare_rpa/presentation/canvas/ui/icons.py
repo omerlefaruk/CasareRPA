@@ -72,6 +72,16 @@ class ToolbarIcons:
         "warning": "SP_MessageBoxWarning",
         "error": "SP_MessageBoxCritical",
         "success": "SP_DialogApplyButton",
+        # Performance/Monitoring
+        "performance": "SP_ComputerIcon",
+        "dashboard": "SP_ComputerIcon",
+        "metrics": "SP_DriveHDIcon",
+        # Project/Settings
+        "project": "SP_DirIcon",
+        "credentials": "SP_DialogApplyButton",
+        # Trigger controls
+        "listen": "SP_MediaPlay",
+        "stop_listen": "SP_MediaStop",
     }
 
     _style: Optional["QStyle"] = None

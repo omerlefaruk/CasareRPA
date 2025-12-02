@@ -7,7 +7,6 @@ Provides shared dependencies like database connections and metrics collectors.
 import os
 import asyncio
 from typing import AsyncGenerator, Optional
-from functools import lru_cache
 from dataclasses import dataclass
 
 from fastapi import Request, HTTPException

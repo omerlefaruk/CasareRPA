@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import atexit
 import functools
-import logging
 import os
 import socket
 import threading
@@ -32,7 +31,6 @@ from typing import (
     List,
     Optional,
     TypeVar,
-    Union,
     ParamSpec,
 )
 

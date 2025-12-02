@@ -8,12 +8,9 @@ Full-featured dialog for managing encrypted credentials:
 - Custom credentials
 """
 
-from typing import Any, Dict, List, Optional
-from concurrent.futures import ThreadPoolExecutor
-import functools
+from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, QThread, QObject
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
@@ -29,12 +26,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QWidget,
     QComboBox,
-    QTextEdit,
     QMessageBox,
-    QSplitter,
-    QFrame,
-    QStackedWidget,
-    QInputDialog,
 )
 
 from loguru import logger

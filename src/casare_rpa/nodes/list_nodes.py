@@ -8,7 +8,7 @@ Provides nodes for list/array manipulation including:
 - Reduction operations
 """
 
-from typing import Any, Dict
+from typing import Any
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode

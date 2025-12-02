@@ -8,7 +8,7 @@ Provides async pub/sub system for orchestrator-level events:
 """
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from typing import Callable, Dict, List, Optional

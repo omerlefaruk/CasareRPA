@@ -21,7 +21,7 @@ from casare_rpa.infrastructure.browser.healing.models import (
 )
 
 if TYPE_CHECKING:
-    from playwright.async_api import Page, ElementHandle
+    from playwright.async_api import Page
 
 
 # Threshold in pixels for "near" relationship

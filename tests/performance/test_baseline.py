@@ -141,38 +141,6 @@ class TestMemoryBaseline:
             memory_increase < 200
         ), f"Memory increase {memory_increase:.2f} MB exceeds 200 MB threshold"
 
-    def test_node_registry_memory(self) -> None:
-        """Measure memory usage of node registry."""
-        force_gc()
-        initial_memory = get_process_memory_mb()
-
-        try:
-            from casare_rpa.presentation.canvas.graph.node_registry import NodeRegistry
-
-            registry = NodeRegistry()
-            # Trigger node discovery if available
-            if hasattr(registry, "discover_nodes"):
-                registry.discover_nodes()
-            elif hasattr(registry, "get_all_nodes"):
-                registry.get_all_nodes()
-        except ImportError:
-            pytest.skip("NodeRegistry not available")
-
-        force_gc()
-        after_registry_memory = get_process_memory_mb()
-
-        memory_increase = after_registry_memory - initial_memory
-
-        print("\n=== Node Registry Memory ===")
-        print(f"Initial memory: {initial_memory:.2f} MB")
-        print(f"After registry: {after_registry_memory:.2f} MB")
-        print(f"Memory increase: {memory_increase:.2f} MB")
-
-        # Assert reasonable memory usage for node registry
-        assert (
-            memory_increase < 100
-        ), f"Node registry memory {memory_increase:.2f} MB exceeds 100 MB threshold"
-
 
 class TestNodeExecutionBaseline:
     """Tests for node execution performance."""

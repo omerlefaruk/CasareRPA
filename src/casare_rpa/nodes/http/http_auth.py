@@ -3,16 +3,21 @@ HTTP authentication nodes for CasareRPA.
 
 This module provides nodes for configuring HTTP authentication:
 - HttpAuthNode: Configure Bearer, Basic, or API Key authentication
+
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
 
 import base64
-import json
 from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import (
+    CredentialAwareMixin,
+    CREDENTIAL_NAME_PROP,
+)
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -25,8 +30,37 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@executable_node
+# HTTP Auth specific PropertyDef constants
+HTTP_TOKEN_PROP = PropertyDef(
+    "token",
+    PropertyType.STRING,
+    default="",
+    label="Token / API Key",
+    tooltip="Bearer token or API key (or use Credential Name for vault lookup)",
+    tab="connection",
+)
+
+HTTP_USERNAME_PROP = PropertyDef(
+    "username",
+    PropertyType.STRING,
+    default="",
+    label="Username",
+    tooltip="Username for Basic authentication (or use Credential Name)",
+    tab="connection",
+)
+
+HTTP_PASSWORD_PROP = PropertyDef(
+    "password",
+    PropertyType.STRING,
+    default="",
+    label="Password",
+    tooltip="Password for Basic authentication (or use Credential Name)",
+    tab="connection",
+)
+
+
 @node_schema(
+    CREDENTIAL_NAME_PROP,
     PropertyDef(
         "auth_type",
         PropertyType.CHOICE,
@@ -35,27 +69,9 @@ from casare_rpa.domain.value_objects.types import (
         label="Authentication Type",
         tooltip="Type of authentication (Bearer, Basic, or API Key)",
     ),
-    PropertyDef(
-        "token",
-        PropertyType.STRING,
-        default="",
-        label="Token / API Key",
-        tooltip="Bearer token or API key",
-    ),
-    PropertyDef(
-        "username",
-        PropertyType.STRING,
-        default="",
-        label="Username",
-        tooltip="Username for Basic authentication",
-    ),
-    PropertyDef(
-        "password",
-        PropertyType.STRING,
-        default="",
-        label="Password",
-        tooltip="Password for Basic authentication",
-    ),
+    HTTP_TOKEN_PROP,
+    HTTP_USERNAME_PROP,
+    HTTP_PASSWORD_PROP,
     PropertyDef(
         "api_key_name",
         PropertyType.STRING,
@@ -65,7 +81,7 @@ from casare_rpa.domain.value_objects.types import (
     ),
 )
 @executable_node
-class HttpAuthNode(BaseNode):
+class HttpAuthNode(CredentialAwareMixin, BaseNode):
     """
     Configure HTTP authentication headers.
 
@@ -74,7 +90,13 @@ class HttpAuthNode(BaseNode):
         - Basic authentication (username/password)
         - API Key authentication (custom header)
 
+    Credential Resolution (in order):
+        1. Vault lookup (via credential_name parameter)
+        2. Direct parameters (token, username, password)
+        3. Environment variables (HTTP_TOKEN, HTTP_USERNAME, HTTP_PASSWORD)
+
     Config (via @node_schema):
+        credential_name: Credential alias for vault lookup
         auth_type: Type of authentication (Bearer, Basic, ApiKey)
         token: Bearer token or API key
         username: Username for Basic auth
@@ -95,6 +117,7 @@ class HttpAuthNode(BaseNode):
         self.node_type = "HttpAuthNode"
 
     def _define_ports(self) -> None:
+        self.add_input_port("credential_name", PortType.INPUT, DataType.STRING)
         self.add_input_port("auth_type", PortType.INPUT, DataType.STRING)
         self.add_input_port("token", PortType.INPUT, DataType.STRING)
         self.add_input_port("username", PortType.INPUT, DataType.STRING)
@@ -109,15 +132,32 @@ class HttpAuthNode(BaseNode):
 
         try:
             auth_type = self.get_parameter("auth_type", "Bearer")
-            token = self.get_parameter("token", "")
-            username = self.get_parameter("username", "")
-            password = self.get_parameter("password", "")
             api_key_name = self.get_parameter("api_key_name", "X-API-Key")
             base_headers = self.get_input_value("base_headers") or {}
 
-            token = context.resolve_value(token)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
+            # Resolve credentials using CredentialAwareMixin
+            if auth_type.lower() == "basic":
+                username, password = await self.resolve_username_password(
+                    context,
+                    credential_name_param="credential_name",
+                    username_param="username",
+                    password_param="password",
+                    env_prefix="HTTP",
+                    required=False,
+                )
+                token = None
+            else:
+                # Bearer or ApiKey - resolve token
+                token = await self.resolve_credential(
+                    context,
+                    credential_name_param="credential_name",
+                    direct_param="token",
+                    env_var="HTTP_TOKEN",
+                    credential_field="api_key",
+                    required=False,
+                )
+                username = None
+                password = None
 
             headers = dict(base_headers)
 
@@ -638,7 +678,6 @@ class OAuth2CallbackServerNode(BaseNode):
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         import asyncio
         from aiohttp import web
-        from urllib.parse import parse_qs, urlparse
 
         self.status = NodeStatus.RUNNING
 

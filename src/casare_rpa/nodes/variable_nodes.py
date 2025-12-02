@@ -4,8 +4,6 @@ Variable nodes for data flow and storage.
 This module provides nodes for setting and getting variables in the execution context.
 """
 
-from typing import Any, Optional
-
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType

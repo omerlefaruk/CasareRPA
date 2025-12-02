@@ -30,29 +30,23 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QAbstractItemView,
     QTabWidget,
-    QTextEdit,
-    QSplitter,
     QTreeWidget,
     QTreeWidgetItem,
     QLineEdit,
-    QCheckBox,
-    QSpinBox,
     QMenu,
     QInputDialog,
     QMessageBox,
     QPlainTextEdit,
     QFrame,
-    QToolButton,
 )
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QBrush, QFont, QTextCursor, QAction
+from PySide6.QtGui import QColor, QBrush, QFont, QAction
 
 from loguru import logger
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
         DebugController,
-        Breakpoint,
         WatchExpression,
         CallStackFrame,
         ExecutionSnapshot,

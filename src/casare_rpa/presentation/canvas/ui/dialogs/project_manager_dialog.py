@@ -15,9 +15,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTextEdit,
     QPushButton,
-    QListWidget,
-    QListWidgetItem,
-    QDialogButtonBox,
     QGroupBox,
     QTabWidget,
     QWidget,
@@ -33,7 +30,7 @@ from PySide6.QtGui import QFont
 from loguru import logger
 
 if TYPE_CHECKING:
-    from casare_rpa.domain.entities.project import Project, ProjectIndexEntry
+    from casare_rpa.domain.entities.project import ProjectIndexEntry
 
 
 class ProjectManagerDialog(QDialog):

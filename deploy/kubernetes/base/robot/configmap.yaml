@@ -1,0 +1,41 @@
+# CasareRPA Robot Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casare-robot-config
+  labels:
+    app.kubernetes.io/name: casare-browser-robot
+    app.kubernetes.io/component: robot
+data:
+  # Application settings
+  CASARE_ENV: "production"
+  CASARE_LOG_LEVEL: "INFO"
+  CASARE_LOG_FORMAT: "json"
+
+  # Orchestrator connection
+  ORCHESTRATOR_URL: "http://casare-orchestrator:80"
+  ORCHESTRATOR_WS_URL: "ws://casare-orchestrator:8001"
+
+  # Robot configuration
+  ROBOT_TYPE: "browser"
+  ROBOT_CAPABILITIES: "playwright,chromium,firefox"
+  MAX_CONCURRENT_WORKFLOWS: "3"
+  HEARTBEAT_INTERVAL: "30"
+
+  # Browser settings
+  BROWSER_HEADLESS: "true"
+  BROWSER_TIMEOUT: "30000"
+  BROWSER_DEFAULT_VIEWPORT_WIDTH: "1920"
+  BROWSER_DEFAULT_VIEWPORT_HEIGHT: "1080"
+
+  # Playwright settings
+  PLAYWRIGHT_BROWSERS_PATH: "/home/casare/.local/share/chromium"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "false"
+
+  # Resource limits
+  MAX_MEMORY_PER_WORKFLOW: "1024"
+  MAX_EXECUTION_TIME: "3600"
+
+  # Metrics
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "9090"

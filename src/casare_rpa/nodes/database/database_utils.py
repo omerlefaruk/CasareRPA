@@ -97,7 +97,6 @@ from casare_rpa.domain.value_objects.types import (
 from .sql_nodes import (
     DatabaseConnection,
     AIOSQLITE_AVAILABLE,
-    ASYNCPG_AVAILABLE,
     AIOMYSQL_AVAILABLE,
 )
 

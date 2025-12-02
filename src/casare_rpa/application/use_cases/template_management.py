@@ -12,7 +12,6 @@ from typing import Any, Dict, List, Optional, Protocol
 import uuid
 
 from loguru import logger
-import orjson
 
 from casare_rpa.domain.workflow.templates import (
     TemplateCategory,

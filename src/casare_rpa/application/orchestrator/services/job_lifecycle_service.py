@@ -19,15 +19,33 @@ from casare_rpa.domain.orchestrator.repositories import JobRepository
 load_dotenv()
 
 
+# Forward reference for type hints - avoid circular import
+if False:  # TYPE_CHECKING equivalent that works at runtime
+    from casare_rpa.application.orchestrator.services.robot_management_service import (
+        RobotManagementService,
+    )
+
+
 class JobLifecycleService:
     """
     Service for managing job lifecycle operations.
     Supports both cloud (Supabase) and local storage modes.
     """
 
-    def __init__(self, job_repository: JobRepository):
-        """Initialize with injected repository."""
+    def __init__(
+        self,
+        job_repository: JobRepository,
+        robot_management_service: Optional["RobotManagementService"] = None,
+    ):
+        """Initialize with injected repository and optional robot service.
+
+        Args:
+            job_repository: Repository for job persistence.
+            robot_management_service: Service for robot lookups.
+                If not provided, robot_name will not be auto-populated.
+        """
         self._job_repository = job_repository
+        self._robot_management_service = robot_management_service
         self._supabase_url = os.getenv("SUPABASE_URL")
         self._supabase_key = os.getenv("SUPABASE_KEY")
         self._client = None
@@ -36,6 +54,18 @@ class JobLifecycleService:
 
         # Event callbacks
         self._on_job_update: Optional[Callable[[Job], None]] = None
+
+    def set_robot_management_service(
+        self, robot_service: "RobotManagementService"
+    ) -> None:
+        """Set the robot management service for robot lookups.
+
+        Allows late injection of the service after construction.
+
+        Args:
+            robot_service: The RobotManagementService instance.
+        """
+        self._robot_management_service = robot_service
 
     @property
     def is_cloud_mode(self) -> bool:
@@ -300,7 +330,16 @@ class JobLifecycleService:
     async def dispatch_workflow_file(
         self, file_path: Path, robot_id: str, priority: JobPriority = JobPriority.NORMAL
     ) -> Optional[Job]:
-        """Dispatch a workflow from a file to a robot."""
+        """Dispatch a workflow from a file to a robot.
+
+        Args:
+            file_path: Path to the workflow JSON file.
+            robot_id: ID of the robot to dispatch to.
+            priority: Job priority level.
+
+        Returns:
+            Created Job if successful, None otherwise.
+        """
         try:
             import json
 
@@ -308,16 +347,32 @@ class JobLifecycleService:
                 workflow_json = f.read()
                 workflow_data = json.loads(workflow_json)
 
-            # TODO: Get robot from RobotManagementService
-            # For now, create job with robot_id
+            # Get robot name from RobotManagementService if available
+            robot_name = ""
+            if self._robot_management_service:
+                robot = await self._robot_management_service.get_robot(robot_id)
+                if robot:
+                    robot_name = robot.name
+                    logger.debug(f"Resolved robot {robot_id} to name '{robot_name}'")
+                else:
+                    logger.warning(
+                        f"Robot {robot_id} not found in RobotManagementService"
+                    )
+
             return await self.create_job(
                 workflow_id=str(uuid.uuid4()),
                 workflow_name=workflow_data.get("name", file_path.stem),
                 workflow_json=workflow_json,
                 robot_id=robot_id,
-                robot_name="",  # Will be filled by caller
+                robot_name=robot_name,
                 priority=priority,
             )
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in workflow file {file_path}: {e}")
+            return None
+        except FileNotFoundError:
+            logger.error(f"Workflow file not found: {file_path}")
+            return None
         except Exception as e:
             logger.error(f"Failed to dispatch workflow from {file_path}: {e}")
             return None

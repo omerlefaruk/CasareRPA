@@ -57,6 +57,7 @@ from .selector_controller import SelectorController
 from .preferences_controller import PreferencesController
 from .autosave_controller import AutosaveController
 from .project_controller import ProjectController
+from .robot_controller import RobotController
 
 __all__ = [
     # Base
@@ -76,6 +77,7 @@ __all__ = [
     "PreferencesController",
     "AutosaveController",
     "ProjectController",
+    "RobotController",
     # Event utilities
     "EventTypes",
     "Event",

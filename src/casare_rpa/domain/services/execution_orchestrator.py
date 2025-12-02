@@ -20,7 +20,6 @@ from collections import deque
 from loguru import logger
 
 from ..entities.workflow import WorkflowSchema
-from ..entities.node_connection import NodeConnection
 from ..value_objects.types import NodeId
 
 
@@ -88,6 +87,31 @@ class ExecutionOrchestrator:
         logger.warning("No StartNode or TriggerNode found in workflow")
         return None
 
+    def find_all_start_nodes(self) -> List[NodeId]:
+        """
+        Find all StartNodes in workflow for parallel execution.
+
+        Unlike find_start_node() which returns the first one, this returns
+        all StartNodes to enable multi-workflow parallel execution.
+
+        Returns:
+            List of all StartNode IDs in the workflow
+        """
+        start_nodes: List[NodeId] = []
+
+        for node_id, node_data in self.workflow.nodes.items():
+            # Handle both dict (serialized) and node instance formats
+            if isinstance(node_data, dict):
+                node_type = node_data.get("node_type") or node_data.get("type", "")
+            else:
+                node_type = getattr(node_data, "node_type", "")
+
+            if node_type == "StartNode":
+                start_nodes.append(node_id)
+
+        logger.debug(f"Found {len(start_nodes)} StartNodes in workflow")
+        return start_nodes
+
     def find_trigger_node(self) -> Optional[NodeId]:
         """
         Find the trigger node in workflow (if any).
@@ -126,6 +150,8 @@ class ExecutionOrchestrator:
         """
         Determine next nodes to execute based on connections and result.
 
+        Validates that specified ports have connections and logs warnings if not.
+
         Handles:
         - Dynamic routing (next_nodes in result)
         - Control flow (break, continue)
@@ -147,17 +173,39 @@ class ExecutionOrchestrator:
                 f"Dynamic routing from {current_node_id}: ports={next_port_names}"
             )
 
-            # Find connections from specified ports
+            # Find connections from specified ports with validation
             for port_name in next_port_names:
-                for connection in self.workflow.connections:
-                    if (
-                        connection.source_node == current_node_id
-                        and connection.source_port == port_name
-                    ):
+                connections = self._get_connections_from_port(
+                    current_node_id, port_name
+                )
+
+                if not connections:
+                    # Log warning for missing connections
+                    if port_name == "exec_out":
+                        logger.debug(
+                            f"Node {current_node_id} exec_out has no connections - "
+                            f"execution path ends here"
+                        )
+                    else:
+                        logger.warning(
+                            f"Node {current_node_id} specified next port '{port_name}' "
+                            f"but no connections found. Workflow may have incomplete connections."
+                        )
+                    continue
+
+                # Add connected node IDs
+                for connection in connections:
+                    if connection.target_node not in next_nodes:
                         next_nodes.append(connection.target_node)
                         logger.debug(
                             f"  Route: {current_node_id}.{port_name} -> {connection.target_node}"
                         )
+
+            if not next_nodes and next_port_names:
+                logger.info(
+                    f"Node {current_node_id} completed with no next nodes to execute "
+                    f"(end of branch)"
+                )
 
             return next_nodes
 
@@ -172,6 +220,23 @@ class ExecutionOrchestrator:
                     )
 
         return next_nodes
+
+    def _get_connections_from_port(self, node_id: NodeId, port_name: str) -> List:
+        """
+        Get all connections originating from a specific port.
+
+        Args:
+            node_id: Source node ID
+            port_name: Source port name
+
+        Returns:
+            List of connections from the specified port
+        """
+        return [
+            conn
+            for conn in self.workflow.connections
+            if conn.source_node == node_id and conn.source_port == port_name
+        ]
 
     def calculate_execution_path(
         self, start_node_id: NodeId, target_node_id: Optional[NodeId] = None

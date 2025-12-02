@@ -11,7 +11,7 @@ Handles all workflow-related operations:
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 from loguru import logger
 from pydantic import ValidationError
 

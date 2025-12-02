@@ -104,6 +104,19 @@
       <install>pip install -e .</install>
       <test>pytest tests/ -v</test>
     </cmds>
+
+    <orchestration_changes>
+      <!-- IMPORTANT: When modifying robot, orchestrator, or API code -->
+      <rule>Always update start_platform_tunnel.bat if changing startup behavior</rule>
+      <rule>After code changes, remind user to restart the Orchestrator API to load new code</rule>
+      <rule>Test with: python -m casare_rpa.robot.cli start --name "TestRobot" --env development</rule>
+      <affected_files>
+        - src/casare_rpa/robot/distributed_agent.py
+        - src/casare_rpa/infrastructure/orchestrator/api/*.py
+        - src/casare_rpa/infrastructure/orchestrator/api/routers/*.py
+        - deploy/supabase/migrations/*.sql
+      </affected_files>
+    </orchestration_changes>
   </meta>
 
   <project name="CasareRPA">
@@ -138,6 +151,206 @@
       <item>Trigger System: Registry-based (Manual, Scheduled, Webhook, File, AppEvent, etc).</item>
       <item>Connection Pooling: Browser contexts, DB connections, HTTP sessions.</item>
     </patterns>
+
+    <node_implementation_checklist>
+      <!-- MANDATORY: Every new node MUST include ALL of these -->
+      <rule>When implementing ANY new node, ALWAYS complete ALL items below.</rule>
+
+      <checklist>
+        <item name="1. @executable_node decorator">
+          Adds exec_in/exec_out ports automatically.
+          Import: from casare_rpa.domain.decorators import executable_node
+        </item>
+
+        <item name="2. @node_schema decorator">
+          Defines property schema for auto-widget generation in properties panel.
+          Import: from casare_rpa.domain.decorators import node_schema
+          Import: from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+          PropertyTypes: STRING, TEXT, INTEGER, FLOAT, BOOLEAN, CHOICE, JSON
+          Tabs: "connection" (credentials), "properties" (main), "advanced" (optional)
+
+          Example:
+            @node_schema(
+                PropertyDef("url", PropertyType.STRING, required=True, label="URL"),
+                PropertyDef("timeout", PropertyType.INTEGER, default=30000, tab="advanced"),
+            )
+            @executable_node
+            class MyNode(BaseNode): ...
+        </item>
+
+        <item name="3. Reusable PropertyDef constants">
+          Create UPPERCASE constants for shared properties (credentials, common fields).
+          Export from package __init__.py for reuse.
+
+          Example:
+            MY_API_TOKEN = PropertyDef("api_token", PropertyType.STRING, tab="connection", ...)
+            MY_CREDENTIAL_NAME = PropertyDef("credential_name", PropertyType.STRING, tab="connection", ...)
+        </item>
+
+        <item name="4. Visual node class">
+          Create in: src/casare_rpa/presentation/canvas/visual_nodes/{category}/
+          Must include: __identifier__, NODE_NAME, NODE_CATEGORY, CASARE_NODE_CLASS
+          Implement: __init__() with add_text_input/add_combo_menu, setup_ports(), get_node_class()
+          Export from category __init__.py
+
+          Example:
+            class VisualMyNode(VisualNode):
+                __identifier__ = "casare_rpa.mycategory"
+                NODE_NAME = "My Node"
+                NODE_CATEGORY = "mycategory"
+                CASARE_NODE_CLASS = "MyNode"
+        </item>
+
+        <item name="5. Unit tests">
+          Test file: tests/nodes/{category}/test_{module}.py
+          Test: SUCCESS, ERROR, EDGE_CASES scenarios
+          Use category fixtures from conftest.py
+        </item>
+
+        <item name="6. Export from __init__.py">
+          Logic node: src/casare_rpa/nodes/{category}/__init__.py
+          Visual node: src/casare_rpa/presentation/canvas/visual_nodes/{category}/__init__.py
+          PropertyDef constants: Export from logic node package
+        </item>
+
+        <item name="7. Register in nodes package _NODE_REGISTRY">
+          File: src/casare_rpa/nodes/__init__.py
+          Add to _NODE_REGISTRY dict: "NodeClassName": "category.module_name"
+          Add to __all__ list
+          Add to TYPE_CHECKING imports (for IDE support)
+
+          Example:
+            _NODE_REGISTRY = {
+                ...
+                "MyNode": "mycat.mycat_nodes",
+            }
+        </item>
+      </checklist>
+
+      <example_structure>
+        # Logic node file structure
+        src/casare_rpa/nodes/mycat/
+        ├── __init__.py          # Export nodes + PropertyDef constants
+        ├── mycat_base.py        # Base class with shared logic
+        └── mycat_nodes.py       # Node implementations with @node_schema + @executable_node
+
+        # Visual node file structure
+        src/casare_rpa/presentation/canvas/visual_nodes/mycat/
+        ├── __init__.py          # Export visual nodes
+        └── nodes.py             # VisualNode subclasses
+
+        # Tests
+        tests/nodes/mycat/
+        ├── __init__.py
+        ├── conftest.py          # Category fixtures
+        └── test_mycat_nodes.py  # Node tests
+      </example_structure>
+    </node_implementation_checklist>
+
+    <trigger_node_implementation_checklist>
+      <!-- MANDATORY: Every new TRIGGER node MUST include ALL of these -->
+      <rule>Trigger nodes are DIFFERENT from executable nodes. They START workflows, not run within them.</rule>
+
+      <key_differences>
+        <item>Use @trigger_node decorator (NOT @executable_node)</item>
+        <item>Extend BaseTriggerNode (NOT BaseNode)</item>
+        <item>NO exec_in port (triggers START workflows)</item>
+        <item>Only exec_out port + payload ports</item>
+        <item>Must implement: get_trigger_type(), get_trigger_config(), _define_payload_ports()</item>
+      </key_differences>
+
+      <checklist>
+        <item name="1. @trigger_node decorator">
+          Marks class as trigger node. Import: from casare_rpa.nodes.trigger_nodes import trigger_node
+        </item>
+
+        <item name="2. @node_schema decorator">
+          Same as executable nodes. Define connection (credentials) and config properties.
+          Tab "connection" for API tokens/credentials.
+
+          Example:
+            @node_schema(
+                PropertyDef("bot_token", PropertyType.STRING, tab="connection", ...),
+                PropertyDef("filter_chat_ids", PropertyType.STRING, ...),
+            )
+            @trigger_node
+            class TelegramTriggerNode(BaseTriggerNode): ...
+        </item>
+
+        <item name="3. Extend BaseTriggerNode">
+          Import: from casare_rpa.nodes.trigger_nodes import BaseTriggerNode
+
+          Class attributes:
+            trigger_display_name = "Telegram"
+            trigger_description = "Trigger on Telegram message"
+            trigger_icon = "telegram"
+            trigger_category = "triggers"
+        </item>
+
+        <item name="4. Implement required methods">
+          def _define_payload_ports(self) -> None:
+              """Define output ports for trigger data."""
+              self.add_output_port("message_id", DataType.INTEGER, "Message ID")
+              self.add_output_port("text", DataType.STRING, "Message Text")
+
+          def get_trigger_type(self) -> TriggerType:
+              """Return the TriggerType enum value."""
+              return TriggerType.TELEGRAM
+
+          def get_trigger_config(self) -> Dict[str, Any]:
+              """Return trigger-specific config dict."""
+              return {
+                  "bot_token": self.config.get("bot_token", ""),
+                  "filter_chat_ids": [...],
+              }
+        </item>
+
+        <item name="5. Visual trigger node">
+          Create in: presentation/canvas/visual_nodes/triggers/nodes.py
+          Extend: VisualTriggerNode (NOT VisualNode)
+          Must set: CASARE_NODE_CLASS attribute
+
+          Example:
+            class VisualTelegramTriggerNode(VisualTriggerNode):
+                __identifier__ = "casare_rpa.triggers"
+                NODE_NAME = "Telegram Trigger"
+                NODE_CATEGORY = "triggers"
+                CASARE_NODE_CLASS = "TelegramTriggerNode"
+
+                def _setup_payload_ports(self) -> None:
+                    self.add_typed_output("message_id", DataType.INTEGER)
+                    self.add_typed_output("text", DataType.STRING)
+        </item>
+
+        <item name="6. Register in _NODE_REGISTRY">
+          File: src/casare_rpa/nodes/__init__.py
+          "TelegramTriggerNode": "trigger_nodes.telegram_trigger_node",
+        </item>
+
+        <item name="7. Export from packages">
+          Logic: trigger_nodes/__init__.py
+          Visual: presentation/canvas/visual_nodes/triggers/__init__.py
+        </item>
+      </checklist>
+
+      <available_trigger_types>
+        <!-- From casare_rpa.triggers.base.TriggerType enum -->
+        MANUAL, SCHEDULED, WEBHOOK, FILE_WATCH, APP_EVENT, EMAIL, ERROR,
+        WORKFLOW_CALL, FORM, CHAT, RSS_FEED, SSE, TELEGRAM, WHATSAPP,
+        GMAIL, SHEETS, DRIVE, CALENDAR
+      </available_trigger_types>
+
+      <example_structure>
+        # Logic node
+        src/casare_rpa/nodes/trigger_nodes/
+        ├── telegram_trigger_node.py   # @node_schema + @trigger_node + BaseTriggerNode
+
+        # Visual node
+        src/casare_rpa/presentation/canvas/visual_nodes/triggers/
+        └── nodes.py                   # VisualTelegramTriggerNode(VisualTriggerNode)
+      </example_structure>
+    </trigger_node_implementation_checklist>
 
     <plans>
       <instruction>At the end of each plan, list unresolved questions to answer. Be extremely concise.</instruction>

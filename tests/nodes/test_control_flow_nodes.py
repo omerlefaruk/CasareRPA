@@ -25,6 +25,9 @@ from casare_rpa.nodes.control_flow_nodes import (
     SwitchNode,
     BreakNode,
     ContinueNode,
+    TryNode,
+    CatchNode,
+    FinallyNode,
 )
 
 
@@ -277,15 +280,17 @@ class TestForLoopStartNode:
         assert "completed" in result["next_nodes"]
 
     @pytest.mark.asyncio
-    async def test_for_string_converted_to_list(self, execution_context):
-        """Test ForLoopStartNode with string input (treated as single item)."""
+    async def test_for_string_iterates_characters(self, execution_context):
+        """Test ForLoopStartNode with string input (iterates over characters in items mode)."""
         node = ForLoopStartNode(node_id="test_for_string")
         node.set_input_value("items", "hello")
 
         result = await node.execute(execution_context)
 
         assert result["success"] is True
-        assert result["data"]["item"] == "hello"
+        # In items mode, strings are iterated character by character (ForEach behavior)
+        assert result["data"]["item"] == "h"
+        assert result["data"]["remaining"] == 4  # 5 chars total - 1 done
 
     @pytest.mark.asyncio
     async def test_for_output_values(self, execution_context):
@@ -932,15 +937,17 @@ class TestControlFlowEdgeCases:
 
     @pytest.mark.asyncio
     async def test_for_loop_dict_items(self, execution_context):
-        """Test ForLoopStartNode with dictionary (iterates keys)."""
+        """Test ForLoopStartNode with dictionary (iterates values with keys available)."""
         node = ForLoopStartNode(node_id="test_dict")
         node.set_input_value("items", {"a": 1, "b": 2, "c": 3})
 
         result = await node.execute(execution_context)
 
         assert result["success"] is True
-        # Dict iteration gives keys
-        assert result["data"]["item"] in ["a", "b", "c"]
+        # Dict iteration gives values (ForEach mode)
+        assert result["data"]["item"] in [1, 2, 3]
+        # Keys are available via current_key output port
+        assert node.get_output_value("current_key") in ["a", "b", "c"]
 
     @pytest.mark.asyncio
     async def test_for_loop_tuple_items(self, execution_context):
@@ -1029,15 +1036,17 @@ class TestControlFlowEdgeCases:
         assert result["data"]["matched_case"] == "apple"
 
     @pytest.mark.asyncio
-    async def test_switch_whitespace_value(self, execution_context):
-        """Test SwitchNode handles whitespace values."""
-        node = SwitchNode(node_id="test_ws", config={"cases": ["  ", "a"]})
-        node.set_input_value("value", "  ")
+    async def test_switch_underscore_value(self, execution_context):
+        """Test SwitchNode handles underscore case values (valid port names)."""
+        node = SwitchNode(
+            node_id="test_underscore", config={"cases": ["status_ok", "status_error"]}
+        )
+        node.set_input_value("value", "status_ok")
 
         result = await node.execute(execution_context)
 
         assert result["success"] is True
-        assert "case_  " in result["next_nodes"]
+        assert "case_status_ok" in result["next_nodes"]
 
     @pytest.mark.asyncio
     async def test_break_node_status(self, execution_context):
@@ -1245,3 +1254,489 @@ class TestControlFlowEdgeCases:
         assert "control_flow" in result
         assert "next_nodes" in result
         assert result["control_flow"] == "continue"
+
+
+# =============================================================================
+# TryNode Tests
+# =============================================================================
+
+
+class TestTryNode:
+    """Tests for TryNode error handling block."""
+
+    @pytest.fixture
+    def execution_context(self):
+        """Create a mock execution context with real variable storage."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        context.get_variable = lambda name, default=None: context.variables.get(
+            name, default
+        )
+        context.set_variable = lambda name, value: context.variables.__setitem__(
+            name, value
+        )
+        return context
+
+    @pytest.mark.asyncio
+    async def test_try_initializes_state(self, execution_context):
+        """Test TryNode initializes try state in context."""
+        node = TryNode(node_id="try_node")
+        node.paired_catch_id = "catch_node"
+        node.paired_finally_id = "finally_node"
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "try_body" in result["next_nodes"]
+
+        # Verify try state is initialized
+        try_state_key = f"{node.node_id}_try_state"
+        assert try_state_key in execution_context.variables
+        try_state = execution_context.variables[try_state_key]
+        assert try_state["error"] is False
+        assert try_state["catch_id"] == "catch_node"
+        assert try_state["finally_id"] == "finally_node"
+
+    @pytest.mark.asyncio
+    async def test_try_routes_to_body(self, execution_context):
+        """Test TryNode routes to try_body."""
+        node = TryNode(node_id="try_node")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "try_body" in result["next_nodes"]
+
+    def test_try_node_ports(self):
+        """Test TryNode has correct ports."""
+        node = TryNode(node_id="test_ports")
+        input_ports = [p.name for p in node.input_ports.values()]
+        output_ports = [p.name for p in node.output_ports.values()]
+
+        assert "exec_in" in input_ports
+        assert "try_body" in output_ports
+        assert "exec_out" in output_ports
+
+    def test_try_node_type(self):
+        """Test TryNode has correct type."""
+        node = TryNode(node_id="test_type")
+        assert node.node_type == "TryNode"
+        assert node.name == "Try"
+
+
+# =============================================================================
+# CatchNode Tests
+# =============================================================================
+
+
+class TestCatchNode:
+    """Tests for CatchNode error handling."""
+
+    @pytest.fixture
+    def execution_context(self):
+        """Create a mock execution context with real variable storage."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        context.get_variable = lambda name, default=None: context.variables.get(
+            name, default
+        )
+        context.set_variable = lambda name, value: context.variables.__setitem__(
+            name, value
+        )
+        return context
+
+    @pytest.mark.asyncio
+    async def test_catch_handles_error(self, execution_context):
+        """Test CatchNode handles error and provides error details."""
+        # Set up try state with error
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": True,
+            "error_type": "ValueError",
+            "error_message": "Test error message",
+            "stack_trace": "Traceback...",
+        }
+
+        node = CatchNode(node_id="catch_node")
+        node.set_paired_try("try_start")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "catch_body" in result["next_nodes"]
+        assert node.get_output_value("error_message") == "Test error message"
+        assert node.get_output_value("error_type") == "ValueError"
+        assert node.get_output_value("stack_trace") == "Traceback..."
+
+    @pytest.mark.asyncio
+    async def test_catch_skips_when_no_error(self, execution_context):
+        """Test CatchNode skips body when no error occurred."""
+        # Set up try state with no error
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": False,
+        }
+
+        node = CatchNode(node_id="catch_node")
+        node.set_paired_try("try_start")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert result["next_nodes"] == []  # Skip catch body
+
+    @pytest.mark.asyncio
+    async def test_catch_filters_by_error_type(self, execution_context):
+        """Test CatchNode filters by error type."""
+        # Set up try state with KeyError
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": True,
+            "error_type": "KeyError",
+            "error_message": "Key not found",
+        }
+
+        node = CatchNode(node_id="catch_node")
+        node.set_paired_try("try_start")
+        node.config["error_types"] = "ValueError,TypeError"  # KeyError not in filter
+
+        result = await node.execute(execution_context)
+
+        # Should re-raise because KeyError not in filter
+        assert result["success"] is False
+
+    @pytest.mark.asyncio
+    async def test_catch_matches_error_type_filter(self, execution_context):
+        """Test CatchNode matches error when type is in filter."""
+        # Set up try state with ValueError
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": True,
+            "error_type": "ValueError",
+            "error_message": "Value error",
+            "stack_trace": "",
+        }
+
+        node = CatchNode(node_id="catch_node")
+        node.set_paired_try("try_start")
+        node.config["error_types"] = "ValueError,TypeError"
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "catch_body" in result["next_nodes"]
+
+    def test_catch_node_ports(self):
+        """Test CatchNode has correct ports."""
+        node = CatchNode(node_id="test_ports")
+        input_ports = [p.name for p in node.input_ports.values()]
+        output_ports = [p.name for p in node.output_ports.values()]
+
+        assert "exec_in" in input_ports
+        assert "catch_body" in output_ports
+        assert "error_message" in output_ports
+        assert "error_type" in output_ports
+        assert "stack_trace" in output_ports
+
+    def test_catch_node_type(self):
+        """Test CatchNode has correct type."""
+        node = CatchNode(node_id="test_type")
+        assert node.node_type == "CatchNode"
+        assert node.name == "Catch"
+
+
+# =============================================================================
+# FinallyNode Tests
+# =============================================================================
+
+
+class TestFinallyNode:
+    """Tests for FinallyNode cleanup handling."""
+
+    @pytest.fixture
+    def execution_context(self):
+        """Create a mock execution context with real variable storage."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        context.get_variable = lambda name, default=None: context.variables.get(
+            name, default
+        )
+        context.set_variable = lambda name, value: context.variables.__setitem__(
+            name, value
+        )
+        return context
+
+    @pytest.mark.asyncio
+    async def test_finally_executes_after_error(self, execution_context):
+        """Test FinallyNode executes after error and reports had_error=True."""
+        # Set up try state with error
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": True,
+            "error_type": "ValueError",
+        }
+
+        node = FinallyNode(node_id="finally_node")
+        node.set_paired_try("try_start")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "finally_body" in result["next_nodes"]
+        assert node.get_output_value("had_error") is True
+        assert result["data"]["had_error"] is True
+
+    @pytest.mark.asyncio
+    async def test_finally_executes_after_success(self, execution_context):
+        """Test FinallyNode executes after success and reports had_error=False."""
+        # Set up try state with no error
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": False,
+        }
+
+        node = FinallyNode(node_id="finally_node")
+        node.set_paired_try("try_start")
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert "finally_body" in result["next_nodes"]
+        assert node.get_output_value("had_error") is False
+        assert result["data"]["had_error"] is False
+
+    @pytest.mark.asyncio
+    async def test_finally_cleans_up_try_state(self, execution_context):
+        """Test FinallyNode cleans up try state from context."""
+        # Set up try state
+        try_state_key = "try_start_try_state"
+        execution_context.variables[try_state_key] = {
+            "error": False,
+        }
+
+        node = FinallyNode(node_id="finally_node")
+        node.set_paired_try("try_start")
+
+        await node.execute(execution_context)
+
+        # Try state should be cleaned up
+        assert try_state_key not in execution_context.variables
+
+    def test_finally_node_ports(self):
+        """Test FinallyNode has correct ports."""
+        node = FinallyNode(node_id="test_ports")
+        input_ports = [p.name for p in node.input_ports.values()]
+        output_ports = [p.name for p in node.output_ports.values()]
+
+        assert "exec_in" in input_ports
+        assert "finally_body" in output_ports
+        assert "had_error" in output_ports
+
+    def test_finally_node_type(self):
+        """Test FinallyNode has correct type."""
+        node = FinallyNode(node_id="test_type")
+        assert node.node_type == "FinallyNode"
+        assert node.name == "Finally"
+
+
+# =============================================================================
+# Try/Catch/Finally Integration Tests
+# =============================================================================
+
+
+class TestTryCatchFinallyIntegration:
+    """Integration tests for Try/Catch/Finally patterns."""
+
+    @pytest.fixture
+    def execution_context(self):
+        """Create a mock execution context with real variable storage."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        context.get_variable = lambda name, default=None: context.variables.get(
+            name, default
+        )
+        context.set_variable = lambda name, value: context.variables.__setitem__(
+            name, value
+        )
+        return context
+
+    @pytest.mark.asyncio
+    async def test_try_catch_finally_success_flow(self, execution_context):
+        """Test complete try/catch/finally flow when no error occurs."""
+        try_node = TryNode(node_id="try_node")
+        try_node.paired_catch_id = "catch_node"
+        try_node.paired_finally_id = "finally_node"
+
+        finally_node = FinallyNode(node_id="finally_node")
+        finally_node.set_paired_try("try_node")
+
+        # Execute try
+        result = await try_node.execute(execution_context)
+        assert "try_body" in result["next_nodes"]
+
+        # Execute finally (no error)
+        result = await finally_node.execute(execution_context)
+        assert "finally_body" in result["next_nodes"]
+        assert result["data"]["had_error"] is False
+
+    @pytest.mark.asyncio
+    async def test_try_catch_finally_error_flow(self, execution_context):
+        """Test complete try/catch/finally flow when error occurs."""
+        try_node = TryNode(node_id="try_node")
+        try_node.paired_catch_id = "catch_node"
+        try_node.paired_finally_id = "finally_node"
+
+        catch_node = CatchNode(node_id="catch_node")
+        catch_node.set_paired_try("try_node")
+
+        finally_node = FinallyNode(node_id="finally_node")
+        finally_node.set_paired_try("try_node")
+
+        # Execute try
+        result = await try_node.execute(execution_context)
+        assert "try_body" in result["next_nodes"]
+
+        # Simulate error occurring in try body
+        try_state_key = "try_node_try_state"
+        execution_context.variables[try_state_key]["error"] = True
+        execution_context.variables[try_state_key]["error_type"] = "ValueError"
+        execution_context.variables[try_state_key]["error_message"] = "Test error"
+        execution_context.variables[try_state_key]["stack_trace"] = "..."
+
+        # Execute catch
+        result = await catch_node.execute(execution_context)
+        assert "catch_body" in result["next_nodes"]
+        assert catch_node.get_output_value("error_message") == "Test error"
+
+        # Execute finally
+        result = await finally_node.execute(execution_context)
+        assert "finally_body" in result["next_nodes"]
+        assert result["data"]["had_error"] is True
+
+
+# =============================================================================
+# ForLoop ForEach Mode Tests
+# =============================================================================
+
+
+class TestForLoopForEachMode:
+    """Tests for ForLoop ForEach mode (dict iteration with keys)."""
+
+    @pytest.fixture
+    def execution_context(self):
+        """Create a mock execution context with real variable storage."""
+        context = Mock(spec=ExecutionContext)
+        context.variables = {}
+        context.resolve_value = lambda x: x
+        context.get_variable = lambda name, default=None: context.variables.get(
+            name, default
+        )
+        context.set_variable = lambda name, value: context.variables.__setitem__(
+            name, value
+        )
+        return context
+
+    @pytest.mark.asyncio
+    async def test_for_items_mode_with_list(self, execution_context):
+        """Test ForLoop in items mode with list."""
+        node = ForLoopStartNode(node_id="for_items")
+        node.config["mode"] = "items"
+        node.set_input_value("items", [10, 20, 30])
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert result["data"]["item"] == 10
+        assert result["data"]["index"] == 0
+        assert node.get_output_value("current_key") is None  # No keys for list
+
+    @pytest.mark.asyncio
+    async def test_for_items_mode_with_dict(self, execution_context):
+        """Test ForLoop in items mode with dict provides keys."""
+        node = ForLoopStartNode(node_id="for_dict")
+        node.config["mode"] = "items"
+        node.set_input_value("items", {"a": 1, "b": 2, "c": 3})
+
+        # First iteration
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert node.get_output_value("current_item") == 1
+        assert node.get_output_value("current_key") == "a"
+        assert node.get_output_value("current_index") == 0
+
+    @pytest.mark.asyncio
+    async def test_for_dict_iteration_all_items(self, execution_context):
+        """Test ForLoop iterates through all dict items with keys."""
+        node = ForLoopStartNode(node_id="for_dict_all")
+        node.config["mode"] = "items"
+        node.set_input_value("items", {"x": 100, "y": 200})
+
+        # First iteration
+        result = await node.execute(execution_context)
+        assert node.get_output_value("current_item") == 100
+        assert node.get_output_value("current_key") == "x"
+
+        # Second iteration
+        result = await node.execute(execution_context)
+        assert node.get_output_value("current_item") == 200
+        assert node.get_output_value("current_key") == "y"
+
+        # Completed
+        result = await node.execute(execution_context)
+        assert "completed" in result["next_nodes"]
+
+    @pytest.mark.asyncio
+    async def test_for_range_mode(self, execution_context):
+        """Test ForLoop in range mode uses start/end/step."""
+        node = ForLoopStartNode(node_id="for_range")
+        node.config["mode"] = "range"
+        node.config["start"] = 5
+        node.config["end"] = 8
+        node.config["step"] = 1
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert result["data"]["item"] == 5
+        assert node.get_output_value("current_key") is None  # No keys in range mode
+
+    @pytest.mark.asyncio
+    async def test_for_items_mode_with_string(self, execution_context):
+        """Test ForLoop in items mode with string iterates characters."""
+        node = ForLoopStartNode(node_id="for_string")
+        node.config["mode"] = "items"
+        node.set_input_value("items", "abc")
+
+        # First iteration
+        result = await node.execute(execution_context)
+        assert result["data"]["item"] == "a"
+
+        # Second iteration
+        result = await node.execute(execution_context)
+        assert result["data"]["item"] == "b"
+
+    @pytest.mark.asyncio
+    async def test_for_items_mode_fallback_to_range(self, execution_context):
+        """Test ForLoop items mode falls back to range when no items provided."""
+        node = ForLoopStartNode(node_id="for_fallback")
+        node.config["mode"] = "items"
+        node.config["start"] = 0
+        node.config["end"] = 3
+        # No items input - should fallback to range
+
+        result = await node.execute(execution_context)
+
+        assert result["success"] is True
+        assert result["data"]["item"] == 0
+
+    def test_for_node_has_current_key_port(self):
+        """Test ForLoopStartNode has current_key output port."""
+        node = ForLoopStartNode(node_id="test_key_port")
+        output_ports = [p.name for p in node.output_ports.values()]
+
+        assert "current_key" in output_ports

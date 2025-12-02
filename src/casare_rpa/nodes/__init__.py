@@ -57,9 +57,16 @@ if TYPE_CHECKING:
         ContinueNode,
         MergeNode,
         SwitchNode,
+        TryNode,
+        CatchNode,
+        FinallyNode,
+    )
+    from .parallel_nodes import (
+        ForkNode,
+        JoinNode,
+        ParallelForEachNode,
     )
     from .error_handling_nodes import (
-        TryNode,
         RetryNode,
         RetrySuccessNode,
         RetryFailNode,
@@ -267,6 +274,32 @@ if TYPE_CHECKING:
         TelegramSendPhotoNode,
         TelegramSendDocumentNode,
         TelegramSendLocationNode,
+        TelegramEditMessageNode,
+        TelegramDeleteMessageNode,
+        TelegramSendMediaGroupNode,
+        TelegramAnswerCallbackNode,
+        TelegramGetUpdatesNode,
+    )
+    from .messaging.whatsapp import (
+        WhatsAppSendMessageNode,
+        WhatsAppSendTemplateNode,
+        WhatsAppSendImageNode,
+        WhatsAppSendDocumentNode,
+        WhatsAppSendVideoNode,
+        WhatsAppSendLocationNode,
+        WhatsAppSendInteractiveNode,
+    )
+    from .google.docs import (
+        DocsGetDocumentNode,
+        DocsGetTextNode,
+        DocsExportNode,
+        DocsCreateDocumentNode,
+        DocsInsertTextNode,
+        DocsAppendTextNode,
+        DocsReplaceTextNode,
+        DocsInsertTableNode,
+        DocsInsertImageNode,
+        DocsApplyStyleNode,
     )
 
 
@@ -313,8 +346,15 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ContinueNode": "control_flow_nodes",
     "MergeNode": "control_flow_nodes",
     "SwitchNode": "control_flow_nodes",
+    # Try/Catch/Finally nodes
+    "TryNode": "control_flow_nodes",
+    "CatchNode": "control_flow_nodes",
+    "FinallyNode": "control_flow_nodes",
+    # Parallel execution nodes
+    "ForkNode": "parallel_nodes",
+    "JoinNode": "parallel_nodes",
+    "ParallelForEachNode": "parallel_nodes",
     # Error handling nodes
-    "TryNode": "error_handling_nodes",
     "RetryNode": "error_handling_nodes",
     "RetrySuccessNode": "error_handling_nodes",
     "RetryFailNode": "error_handling_nodes",
@@ -503,7 +543,7 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ExtractFormNode": "document.document_nodes",
     "ExtractTableNode": "document.document_nodes",
     "ValidateExtractionNode": "document.document_nodes",
-    # Trigger nodes
+    # Trigger nodes - General
     "WebhookTriggerNode": "trigger_nodes.webhook_trigger_node",
     "ScheduleTriggerNode": "trigger_nodes.schedule_trigger_node",
     "FileWatchTriggerNode": "trigger_nodes.file_watch_trigger_node",
@@ -515,11 +555,103 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ChatTriggerNode": "trigger_nodes.chat_trigger_node",
     "RSSFeedTriggerNode": "trigger_nodes.rss_feed_trigger_node",
     "SSETriggerNode": "trigger_nodes.sse_trigger_node",
-    # Telegram messaging nodes
+    # Trigger nodes - Messaging
+    "TelegramTriggerNode": "trigger_nodes.telegram_trigger_node",
+    "WhatsAppTriggerNode": "trigger_nodes.whatsapp_trigger_node",
+    # Trigger nodes - Google
+    "GmailTriggerNode": "trigger_nodes.gmail_trigger_node",
+    "DriveTriggerNode": "trigger_nodes.drive_trigger_node",
+    "SheetsTriggerNode": "trigger_nodes.sheets_trigger_node",
+    "CalendarTriggerNode": "trigger_nodes.calendar_trigger_node",
+    # Telegram messaging nodes - Send
     "TelegramSendMessageNode": "messaging.telegram.telegram_send",
     "TelegramSendPhotoNode": "messaging.telegram.telegram_send",
     "TelegramSendDocumentNode": "messaging.telegram.telegram_send",
     "TelegramSendLocationNode": "messaging.telegram.telegram_send",
+    # Telegram messaging nodes - Actions
+    "TelegramEditMessageNode": "messaging.telegram.telegram_actions",
+    "TelegramDeleteMessageNode": "messaging.telegram.telegram_actions",
+    "TelegramSendMediaGroupNode": "messaging.telegram.telegram_actions",
+    "TelegramAnswerCallbackNode": "messaging.telegram.telegram_actions",
+    "TelegramGetUpdatesNode": "messaging.telegram.telegram_actions",
+    # WhatsApp messaging nodes
+    "WhatsAppSendMessageNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendTemplateNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendImageNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendDocumentNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendVideoNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendLocationNode": "messaging.whatsapp.whatsapp_send",
+    "WhatsAppSendInteractiveNode": "messaging.whatsapp.whatsapp_send",
+    # Google Docs nodes (standalone - with own OAuth)
+    "DocsGetDocumentNode": "google.docs.docs_read",
+    "DocsGetTextNode": "google.docs.docs_read",
+    "DocsExportNode": "google.docs.docs_read",
+    "DocsCreateDocumentNode": "google.docs.docs_write",
+    "DocsInsertTextNode": "google.docs.docs_write",
+    "DocsAppendTextNode": "google.docs.docs_write",
+    "DocsReplaceTextNode": "google.docs.docs_write",
+    "DocsInsertTableNode": "google.docs.docs_write",
+    "DocsInsertImageNode": "google.docs.docs_write",
+    "DocsApplyStyleNode": "google.docs.docs_write",
+    # Gmail nodes (from google.gmail_nodes)
+    "GmailSendEmailNode": "google.gmail_nodes",
+    "GmailSendWithAttachmentNode": "google.gmail_nodes",
+    "GmailCreateDraftNode": "google.gmail_nodes",
+    "GmailSendDraftNode": "google.gmail_nodes",
+    "GmailGetEmailNode": "google.gmail_nodes",
+    "GmailListEmailsNode": "google.gmail_nodes",
+    "GmailSearchEmailsNode": "google.gmail_nodes",
+    "GmailGetThreadNode": "google.gmail_nodes",
+    "GmailModifyLabelsNode": "google.gmail_nodes",
+    "GmailMoveToTrashNode": "google.gmail_nodes",
+    "GmailMarkAsReadNode": "google.gmail_nodes",
+    "GmailMarkAsUnreadNode": "google.gmail_nodes",
+    "GmailStarEmailNode": "google.gmail_nodes",
+    "GmailArchiveEmailNode": "google.gmail_nodes",
+    "GmailDeleteEmailNode": "google.gmail_nodes",
+    "GmailBatchSendNode": "google.gmail_nodes",
+    "GmailBatchModifyNode": "google.gmail_nodes",
+    "GmailBatchDeleteNode": "google.gmail_nodes",
+    # Sheets nodes (from google.sheets_nodes)
+    "SheetsGetCellNode": "google.sheets_nodes",
+    "SheetsSetCellNode": "google.sheets_nodes",
+    "SheetsGetRangeNode": "google.sheets_nodes",
+    "SheetsWriteRangeNode": "google.sheets_nodes",
+    "SheetsClearRangeNode": "google.sheets_nodes",
+    "SheetsCreateSpreadsheetNode": "google.sheets_nodes",
+    "SheetsGetSpreadsheetNode": "google.sheets_nodes",
+    "SheetsAddSheetNode": "google.sheets_nodes",
+    "SheetsDeleteSheetNode": "google.sheets_nodes",
+    "SheetsDuplicateSheetNode": "google.sheets_nodes",
+    "SheetsRenameSheetNode": "google.sheets_nodes",
+    "SheetsAppendRowNode": "google.sheets_nodes",
+    "SheetsInsertRowNode": "google.sheets_nodes",
+    "SheetsDeleteRowNode": "google.sheets_nodes",
+    "SheetsInsertColumnNode": "google.sheets_nodes",
+    "SheetsDeleteColumnNode": "google.sheets_nodes",
+    "SheetsFormatCellsNode": "google.sheets_nodes",
+    "SheetsAutoResizeNode": "google.sheets_nodes",
+    "SheetsBatchUpdateNode": "google.sheets_nodes",
+    "SheetsBatchGetNode": "google.sheets_nodes",
+    "SheetsBatchClearNode": "google.sheets_nodes",
+    # Drive nodes (from google.drive_nodes)
+    "DriveUploadFileNode": "google.drive_nodes",
+    "DriveDownloadFileNode": "google.drive_nodes",
+    "DriveDeleteFileNode": "google.drive_nodes",
+    "DriveCopyFileNode": "google.drive_nodes",
+    "DriveMoveFileNode": "google.drive_nodes",
+    "DriveRenameFileNode": "google.drive_nodes",
+    "DriveGetFileNode": "google.drive_nodes",
+    "DriveCreateFolderNode": "google.drive_nodes",
+    "DriveListFilesNode": "google.drive_nodes",
+    "DriveSearchFilesNode": "google.drive_nodes",
+    "DriveShareFileNode": "google.drive_nodes",
+    "DriveRemovePermissionNode": "google.drive_nodes",
+    "DriveGetPermissionsNode": "google.drive_nodes",
+    "DriveExportFileNode": "google.drive_nodes",
+    "DriveBatchDeleteNode": "google.drive_nodes",
+    "DriveBatchMoveNode": "google.drive_nodes",
+    "DriveBatchCopyNode": "google.drive_nodes",
 }
 
 # Cache for loaded modules and classes
@@ -665,6 +797,10 @@ __all__ = [
     "ContinueNode",
     "MergeNode",
     "SwitchNode",
+    # Parallel execution nodes
+    "ForkNode",
+    "JoinNode",
+    "ParallelForEachNode",
     # Error handling nodes
     "TryNode",
     "RetryNode",
@@ -851,7 +987,7 @@ __all__ = [
     "ExtractFormNode",
     "ExtractTableNode",
     "ValidateExtractionNode",
-    # Trigger nodes
+    # Trigger nodes - General
     "WebhookTriggerNode",
     "ScheduleTriggerNode",
     "FileWatchTriggerNode",
@@ -863,11 +999,44 @@ __all__ = [
     "ChatTriggerNode",
     "RSSFeedTriggerNode",
     "SSETriggerNode",
-    # Telegram messaging nodes
+    # Trigger nodes - Messaging
+    "TelegramTriggerNode",
+    "WhatsAppTriggerNode",
+    # Trigger nodes - Google
+    "GmailTriggerNode",
+    "DriveTriggerNode",
+    "SheetsTriggerNode",
+    "CalendarTriggerNode",
+    # Telegram messaging nodes - Send
     "TelegramSendMessageNode",
     "TelegramSendPhotoNode",
     "TelegramSendDocumentNode",
     "TelegramSendLocationNode",
+    # Telegram messaging nodes - Actions
+    "TelegramEditMessageNode",
+    "TelegramDeleteMessageNode",
+    "TelegramSendMediaGroupNode",
+    "TelegramAnswerCallbackNode",
+    "TelegramGetUpdatesNode",
+    # WhatsApp messaging nodes
+    "WhatsAppSendMessageNode",
+    "WhatsAppSendTemplateNode",
+    "WhatsAppSendImageNode",
+    "WhatsAppSendDocumentNode",
+    "WhatsAppSendVideoNode",
+    "WhatsAppSendLocationNode",
+    "WhatsAppSendInteractiveNode",
+    # Google Docs nodes (standalone)
+    "DocsGetDocumentNode",
+    "DocsGetTextNode",
+    "DocsExportNode",
+    "DocsCreateDocumentNode",
+    "DocsInsertTextNode",
+    "DocsAppendTextNode",
+    "DocsReplaceTextNode",
+    "DocsInsertTableNode",
+    "DocsInsertImageNode",
+    "DocsApplyStyleNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",

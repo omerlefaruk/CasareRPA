@@ -32,6 +32,33 @@ from .whatsapp_client import (
     WhatsAppTemplate,
     WhatsAppAPIError,
 )
+from .google_client import (
+    GoogleAPIClient,
+    GoogleConfig,
+    GoogleCredentials,
+    GoogleScope,
+    GoogleAPIError,
+    GoogleAuthError,
+    GoogleQuotaError,
+    SCOPES as GOOGLE_SCOPES,
+    create_google_client,
+)
+from .google_docs_client import (
+    GoogleDocsClient,
+    GoogleDocsConfig,
+    GoogleDocument,
+    GoogleDocsAPIError,
+    ExportFormat as DocsExportFormat,
+    DocumentStyle,
+)
+from .google_calendar_client import (
+    GoogleCalendarClient,
+    GoogleCalendarAPIError,
+    CalendarConfig,
+    CalendarEvent,
+    Calendar,
+    FreeBusyInfo,
+)
 
 __all__ = [
     "BrowserResourceManager",
@@ -55,4 +82,28 @@ __all__ = [
     "WhatsAppMessage",
     "WhatsAppTemplate",
     "WhatsAppAPIError",
+    # Google
+    "GoogleAPIClient",
+    "GoogleConfig",
+    "GoogleCredentials",
+    "GoogleScope",
+    "GoogleAPIError",
+    "GoogleAuthError",
+    "GoogleQuotaError",
+    "GOOGLE_SCOPES",
+    "create_google_client",
+    # Google Docs
+    "GoogleDocsClient",
+    "GoogleDocsConfig",
+    "GoogleDocument",
+    "GoogleDocsAPIError",
+    "DocsExportFormat",
+    "DocumentStyle",
+    # Google Calendar
+    "GoogleCalendarClient",
+    "GoogleCalendarAPIError",
+    "CalendarConfig",
+    "CalendarEvent",
+    "Calendar",
+    "FreeBusyInfo",
 ]

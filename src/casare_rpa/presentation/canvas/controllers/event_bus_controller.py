@@ -11,7 +11,7 @@ Handles event coordination between controllers:
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal
 from loguru import logger
 
 from .base_controller import BaseController
@@ -92,7 +92,9 @@ class EventBusController(BaseController):
                 self._subscribers[event_type].remove(callback)
                 logger.debug(f"Unsubscribed from event: {event_type}")
 
-    def dispatch(self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None) -> None:
+    def dispatch(
+        self, event_type: str, source: str, data: Optional[Dict[str, Any]] = None
+    ) -> None:
         """
         Dispatch an event to all subscribers.
 

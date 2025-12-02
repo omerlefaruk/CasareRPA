@@ -10,6 +10,8 @@ from typing import Any
 
 from loguru import logger
 
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
@@ -20,6 +22,83 @@ from casare_rpa.infrastructure.resources.telegram_client import TelegramClient
 from .telegram_base import TelegramBaseNode
 
 
+# ============================================================================
+# Reusable Property Definitions for Telegram Nodes
+# ============================================================================
+
+# Connection properties (shared across all Telegram nodes)
+TELEGRAM_BOT_TOKEN = PropertyDef(
+    "bot_token",
+    PropertyType.STRING,
+    default="",
+    label="Bot Token",
+    placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz",
+    tooltip="Telegram Bot token from @BotFather",
+    tab="connection",
+)
+
+TELEGRAM_CREDENTIAL_NAME = PropertyDef(
+    "credential_name",
+    PropertyType.STRING,
+    default="",
+    label="Credential Name",
+    placeholder="telegram",
+    tooltip="Name of stored Telegram credential (alternative to bot token)",
+    tab="connection",
+)
+
+TELEGRAM_CHAT_ID = PropertyDef(
+    "chat_id",
+    PropertyType.STRING,
+    default="",
+    required=True,
+    label="Chat ID",
+    placeholder="123456789 or @username",
+    tooltip="Target chat ID or @username",
+)
+
+TELEGRAM_PARSE_MODE = PropertyDef(
+    "parse_mode",
+    PropertyType.CHOICE,
+    default="",
+    choices=["", "Markdown", "MarkdownV2", "HTML"],
+    label="Parse Mode",
+    tooltip="Text formatting mode",
+)
+
+TELEGRAM_DISABLE_NOTIFICATION = PropertyDef(
+    "disable_notification",
+    PropertyType.BOOLEAN,
+    default=False,
+    label="Silent",
+    tooltip="Send message silently (no notification sound)",
+)
+
+
+@node_schema(
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CREDENTIAL_NAME,
+    TELEGRAM_CHAT_ID,
+    PropertyDef(
+        "text",
+        PropertyType.TEXT,
+        default="",
+        required=True,
+        label="Message Text",
+        placeholder="Hello from CasareRPA!",
+        tooltip="Message content (1-4096 characters)",
+    ),
+    TELEGRAM_PARSE_MODE,
+    TELEGRAM_DISABLE_NOTIFICATION,
+    PropertyDef(
+        "reply_to_message_id",
+        PropertyType.INTEGER,
+        default=0,
+        label="Reply To",
+        tooltip="Message ID to reply to (0 for no reply)",
+    ),
+)
+@executable_node
 class TelegramSendMessageNode(TelegramBaseNode):
     """
     Send a text message via Telegram.
@@ -120,6 +199,31 @@ class TelegramSendMessageNode(TelegramBaseNode):
         }
 
 
+@node_schema(
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CREDENTIAL_NAME,
+    TELEGRAM_CHAT_ID,
+    PropertyDef(
+        "photo",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Photo",
+        placeholder="https://example.com/photo.jpg or file path",
+        tooltip="Photo URL, file path, or Telegram file_id",
+    ),
+    PropertyDef(
+        "caption",
+        PropertyType.TEXT,
+        default="",
+        label="Caption",
+        placeholder="Photo caption...",
+        tooltip="Optional photo caption (0-1024 characters)",
+    ),
+    TELEGRAM_PARSE_MODE,
+    TELEGRAM_DISABLE_NOTIFICATION,
+)
+@executable_node
 class TelegramSendPhotoNode(TelegramBaseNode):
     """
     Send a photo via Telegram.
@@ -216,6 +320,39 @@ class TelegramSendPhotoNode(TelegramBaseNode):
         }
 
 
+@node_schema(
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CREDENTIAL_NAME,
+    TELEGRAM_CHAT_ID,
+    PropertyDef(
+        "document",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Document",
+        placeholder="https://example.com/file.pdf or file path",
+        tooltip="Document URL, file path, or Telegram file_id",
+    ),
+    PropertyDef(
+        "filename",
+        PropertyType.STRING,
+        default="",
+        label="Filename",
+        placeholder="report.pdf",
+        tooltip="Custom display filename",
+    ),
+    PropertyDef(
+        "caption",
+        PropertyType.TEXT,
+        default="",
+        label="Caption",
+        placeholder="Document description...",
+        tooltip="Optional document caption",
+    ),
+    TELEGRAM_PARSE_MODE,
+    TELEGRAM_DISABLE_NOTIFICATION,
+)
+@executable_node
 class TelegramSendDocumentNode(TelegramBaseNode):
     """
     Send a document/file via Telegram.
@@ -318,6 +455,35 @@ class TelegramSendDocumentNode(TelegramBaseNode):
         }
 
 
+@node_schema(
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CREDENTIAL_NAME,
+    TELEGRAM_CHAT_ID,
+    PropertyDef(
+        "latitude",
+        PropertyType.FLOAT,
+        default=0.0,
+        required=True,
+        label="Latitude",
+        placeholder="37.7749",
+        tooltip="Location latitude (-90 to 90)",
+        min_value=-90.0,
+        max_value=90.0,
+    ),
+    PropertyDef(
+        "longitude",
+        PropertyType.FLOAT,
+        default=0.0,
+        required=True,
+        label="Longitude",
+        placeholder="-122.4194",
+        tooltip="Location longitude (-180 to 180)",
+        min_value=-180.0,
+        max_value=180.0,
+    ),
+    TELEGRAM_DISABLE_NOTIFICATION,
+)
+@executable_node
 class TelegramSendLocationNode(TelegramBaseNode):
     """
     Send a location via Telegram.

@@ -12,20 +12,23 @@ Coordinates:
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
-import asyncio
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 import copy
+
+# Type aliases for workflow migration
+JsonValue = Union[
+    str, int, float, bool, None, List["JsonValue"], Dict[str, "JsonValue"]
+]
+WorkflowData = Dict[str, JsonValue]
+NodeData = Dict[str, JsonValue]
 
 from loguru import logger
 
 from casare_rpa.domain.workflow.versioning import (
     SemanticVersion,
-    VersionStatus,
     WorkflowVersion,
     VersionHistory,
     VersionDiff,
-    BreakingChange,
-    BreakingChangeType,
     CompatibilityResult,
 )
 from casare_rpa.domain.events import EventBus, Event
@@ -63,8 +66,8 @@ class MigrationContext:
     to_version: WorkflowVersion
     diff: VersionDiff
     compatibility: CompatibilityResult
-    workflow_data: Dict[str, Any]  # Mutable copy being transformed
-    variables: Dict[str, Any] = field(default_factory=dict)
+    workflow_data: WorkflowData  # Mutable copy being transformed
+    variables: Dict[str, JsonValue] = field(default_factory=dict)
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
 
@@ -86,7 +89,7 @@ class MigrationResult:
     breaking_changes_resolved: int = 0
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
-    migrated_data: Optional[Dict[str, Any]] = None
+    migrated_data: Optional[WorkflowData] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -122,7 +125,7 @@ class NodeMigrationRule:
         node_type: str,
         from_version_range: Tuple[str, str],  # (min, max) inclusive
         to_version_range: Tuple[str, str],
-        transformer: Callable[[Dict[str, Any]], Dict[str, Any]],
+        transformer: Callable[[NodeData], NodeData],
         description: str = "",
     ) -> None:
         """
@@ -199,12 +202,14 @@ def register_migration_rule(
 
     Example:
         @register_migration_rule("NavigateNode", ("1.0.0", "1.9.9"), ("2.0.0", "2.9.9"))
-        def migrate_navigate_v1_to_v2(node_data: Dict[str, Any]) -> Dict[str, Any]:
+        def migrate_navigate_v1_to_v2(node_data: NodeData) -> NodeData:
             # Transform node data
             return transformed_data
     """
 
-    def decorator(func: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Callable:
+    def decorator(
+        func: Callable[[NodeData], NodeData],
+    ) -> Callable[[NodeData], NodeData]:
         rule = NodeMigrationRule(
             node_type=node_type,
             from_version_range=from_version_range,
@@ -249,7 +254,7 @@ class WorkflowMigrationUseCase:
         self._migration_steps: List[MigrationStep] = []
         self._current_context: Optional[MigrationContext] = None
 
-    def _emit_event(self, event_type: EventType, data: Dict[str, Any]) -> None:
+    def _emit_event(self, event_type: EventType, data: Dict[str, JsonValue]) -> None:
         """Emit migration event."""
         if self.event_bus:
             event = Event(event_type=event_type, data=data)
