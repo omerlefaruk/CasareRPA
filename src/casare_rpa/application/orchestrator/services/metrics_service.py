@@ -6,7 +6,6 @@ Calculates dashboard KPIs and job history for visualization.
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 
-from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import (
     Robot,

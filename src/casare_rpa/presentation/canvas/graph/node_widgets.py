@@ -11,10 +11,8 @@ Classes:
     CasarePipeItem: Fixes draw_path viewer None crash
 """
 
-from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QTransform
 from PySide6.QtWidgets import QComboBox
 
@@ -405,8 +403,6 @@ class CasareViewerFontFix:
     def apply_fix() -> None:
         """Apply the font fix to NodeViewer._set_viewer_pan_zoom."""
         try:
-            from PySide6.QtGui import QFont
-
             # Patch QGraphicsTextItem to ensure font() always returns valid font
             from PySide6.QtWidgets import QGraphicsTextItem
 

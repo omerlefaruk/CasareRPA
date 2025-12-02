@@ -412,6 +412,81 @@ class SupabaseVaultProvider(VaultProvider):
 
             return [row["path"] for row in rows]
 
+    async def rotate_secret(self, path: str) -> SecretMetadata:
+        """
+        Rotate a secret by generating new random values.
+
+        For password-type secrets, generates a new secure password.
+        For API keys, generates a new random key.
+
+        Args:
+            path: Secret path to rotate
+
+        Returns:
+            SecretMetadata for the new secret version
+        """
+        # Get current secret to understand its structure
+        current = await self.get_secret(path)
+
+        # Generate new values based on credential type
+        new_data = self._generate_rotated_values(
+            current.data, current.metadata.credential_type
+        )
+
+        # Store with incremented version
+        return await self.put_secret(
+            path=path,
+            data=new_data,
+            credential_type=current.metadata.credential_type,
+            metadata=current.metadata.custom_metadata,
+        )
+
+    def _generate_rotated_values(
+        self, current_data: Dict[str, Any], cred_type: CredentialType
+    ) -> Dict[str, Any]:
+        """Generate new secret values based on type."""
+        import secrets as secrets_module
+
+        new_data = current_data.copy()
+
+        if cred_type == CredentialType.USERNAME_PASSWORD:
+            # Generate new password, keep username
+            new_data["password"] = self._generate_password()
+
+        elif cred_type == CredentialType.API_KEY:
+            # Generate new API key
+            for key in ["api_key", "apikey", "key", "token"]:
+                if key in new_data:
+                    new_data[key] = secrets_module.token_urlsafe(32)
+                    break
+            else:
+                new_data["api_key"] = secrets_module.token_urlsafe(32)
+
+        elif cred_type == CredentialType.OAUTH2_TOKEN:
+            # Can't rotate OAuth tokens automatically
+            logger.warning(
+                "OAuth2 tokens cannot be rotated automatically. "
+                "Re-authentication required."
+            )
+
+        else:
+            # For custom types, try to rotate common password fields
+            for key in ["password", "secret", "key"]:
+                if key in new_data:
+                    new_data[key] = self._generate_password()
+
+        return new_data
+
+    def _generate_password(self, length: int = 32) -> str:
+        """Generate a secure random password."""
+        import secrets as secrets_module
+
+        # Mix of letters, digits, and special chars
+        alphabet = (
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+        )
+        return "".join(secrets_module.choice(alphabet) for _ in range(length))
+
     def _infer_credential_type(self, data: Dict[str, Any]) -> CredentialType:
         """Infer credential type from data keys."""
         keys = set(data.keys())

@@ -1,0 +1,199 @@
+# =============================================================================
+# CasareRPA Client Configuration Template
+# =============================================================================
+#
+# This file is a template for the client configuration.
+# Copy to: %APPDATA%\CasareRPA\config.yaml
+#
+# The Setup Wizard will create this file automatically on first run.
+# You can also edit this file manually to change settings.
+#
+# Documentation: https://github.com/omerlefaruk/CasareRPA/docs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Orchestrator Connection
+# -----------------------------------------------------------------------------
+# Configure connection to CasareRPA Cloud Orchestrator.
+# Leave url empty to run in local-only mode (no cloud connection).
+
+orchestrator:
+  # WebSocket URL for orchestrator connection
+  # Format: wss://orchestrator.example.com/ws/robot/{robot_id}
+  # Use ws:// for local/development servers, wss:// for production
+  url: ""
+
+  # API key for authentication (provided by orchestrator admin)
+  # Format: crpa_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  # Keep this secret - do not share or commit to version control
+  api_key: ""
+
+  # SSL/TLS verification (set to false only for development)
+  verify_ssl: true
+
+  # Reconnection settings
+  # Initial delay before attempting reconnection (seconds)
+  reconnect_delay: 1.0
+
+  # Maximum delay between reconnection attempts (seconds)
+  max_reconnect_delay: 60.0
+
+# -----------------------------------------------------------------------------
+# Robot Configuration
+# -----------------------------------------------------------------------------
+# Configure the robot agent identity and execution settings.
+
+robot:
+  # Robot name - displayed in orchestrator dashboard
+  # Should be unique within your organization
+  # Default: {hostname}-Robot
+  name: ""
+
+  # Capabilities for job matching
+  # The orchestrator uses these to route jobs to appropriate robots
+  # Common capabilities:
+  #   - browser    : Web automation (Playwright)
+  #   - desktop    : Windows desktop automation (UIAutomation)
+  #   - high_memory: Robot has 8GB+ RAM available
+  #   - gpu        : Robot has GPU for accelerated processing
+  #   - secure     : Robot is in a secure/isolated environment
+  #   - on_premise : Robot is on-premise (not cloud)
+  #   - cloud      : Robot is running in cloud environment
+  capabilities:
+    - browser
+    - desktop
+
+  # Tags for filtering robots (optional)
+  # Examples: finance, hr, reports, development
+  tags: []
+
+  # Maximum concurrent jobs this robot can execute
+  # Higher values = more throughput but higher resource usage
+  # Recommended: 1-4 depending on workflow complexity
+  max_concurrent_jobs: 2
+
+  # Environment name (production, staging, development)
+  # Used for job routing and logging
+  environment: production
+
+  # Job execution timeout in seconds (default: 1 hour)
+  # Jobs exceeding this duration will be terminated
+  job_timeout: 3600
+
+  # Continue executing subsequent nodes on error
+  # Set to true for workflows with error handling nodes
+  continue_on_error: false
+
+# -----------------------------------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------------------------------
+# Configure logging behavior for the robot agent.
+
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  # DEBUG: Very verbose, useful for troubleshooting
+  # INFO: Normal operation (recommended)
+  # WARNING: Warnings and errors only
+  # ERROR: Errors only
+  level: INFO
+
+  # Log directory (default: %APPDATA%\CasareRPA\logs)
+  # Leave empty to use default location
+  directory: ""
+
+  # Maximum log file size in MB before rotation
+  max_size_mb: 50
+
+  # Number of days to retain old log files
+  retention_days: 30
+
+  # Log format (console, json)
+  # json: Structured logging for log aggregation systems
+  format: console
+
+# -----------------------------------------------------------------------------
+# Browser Automation Settings
+# -----------------------------------------------------------------------------
+# Configure Playwright browser automation.
+
+browser:
+  # Browser type: chromium, firefox, webkit
+  type: chromium
+
+  # Run in headless mode (no visible browser window)
+  # Set to false for debugging or when workflows need to be observed
+  headless: true
+
+  # Browser launch timeout in milliseconds
+  launch_timeout: 30000
+
+  # Default navigation timeout in milliseconds
+  navigation_timeout: 30000
+
+  # Default action timeout (click, fill, etc.) in milliseconds
+  action_timeout: 10000
+
+  # Enable browser devtools (for debugging)
+  devtools: false
+
+  # Browser viewport size
+  viewport:
+    width: 1920
+    height: 1080
+
+  # Download directory for file downloads
+  # Leave empty to use default (%APPDATA%\CasareRPA\downloads)
+  downloads_path: ""
+
+  # Maximum browser contexts (tabs/windows) per browser instance
+  max_contexts: 5
+
+# -----------------------------------------------------------------------------
+# Desktop Automation Settings
+# -----------------------------------------------------------------------------
+# Configure Windows desktop automation (UIAutomation).
+
+desktop:
+  # Screenshot capture directory
+  # Leave empty to use default (%APPDATA%\CasareRPA\screenshots)
+  screenshot_path: ""
+
+  # Default timeout for finding UI elements in milliseconds
+  element_timeout: 10000
+
+  # Retry count for UI element interactions
+  retry_count: 3
+
+  # Delay between retries in milliseconds
+  retry_delay: 500
+
+  # Highlight elements during automation (useful for debugging)
+  highlight_elements: false
+
+# -----------------------------------------------------------------------------
+# Advanced Settings
+# -----------------------------------------------------------------------------
+# Advanced configuration options. Modify with caution.
+
+advanced:
+  # Enable metrics collection for performance monitoring
+  enable_metrics: true
+
+  # Metrics port (for Prometheus scraping)
+  metrics_port: 9100
+
+  # Enable debug mode (verbose logging, additional checks)
+  debug_mode: false
+
+  # Worker thread pool size
+  thread_pool_size: 4
+
+  # Enable execution tracing (creates detailed execution logs)
+  enable_tracing: false
+
+# -----------------------------------------------------------------------------
+# Setup Status
+# -----------------------------------------------------------------------------
+# Internal flag set by Setup Wizard. Do not modify manually.
+
+first_run_complete: false

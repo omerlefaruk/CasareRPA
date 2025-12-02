@@ -8,7 +8,7 @@ Provides validation for enterprise scheduling constraints.
 from dataclasses import dataclass, field
 from datetime import datetime, date, time, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Callable, Any
+from typing import Dict, List, Optional, Set, Tuple, Any
 from zoneinfo import ZoneInfo
 import threading
 import calendar

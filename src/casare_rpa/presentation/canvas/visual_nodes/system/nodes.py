@@ -31,7 +31,7 @@ class VisualClipboardCopyNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Clipboard Copy"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/clipboard"
 
     def get_node_class(self) -> type:
         return ClipboardCopyNode
@@ -48,7 +48,7 @@ class VisualClipboardPasteNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Clipboard Paste"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/clipboard"
 
     def get_node_class(self) -> type:
         return ClipboardPasteNode
@@ -64,7 +64,7 @@ class VisualClipboardClearNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Clipboard Clear"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/clipboard"
 
     def get_node_class(self) -> type:
         return ClipboardClearNode
@@ -88,7 +88,7 @@ class VisualMessageBoxNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Message Box"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/dialog"
 
     def __init__(self) -> None:
         super().__init__()
@@ -113,7 +113,7 @@ class VisualInputDialogNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Input Dialog"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/dialog"
 
     def __init__(self) -> None:
         super().__init__()
@@ -138,7 +138,7 @@ class VisualTooltipNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Tooltip"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/dialog"
 
     def __init__(self) -> None:
         super().__init__()
@@ -167,7 +167,7 @@ class VisualRunCommandNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Run Command"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/terminal"
 
     def __init__(self) -> None:
         super().__init__()
@@ -195,7 +195,7 @@ class VisualRunPowerShellNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Run PowerShell"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/terminal"
 
     def __init__(self) -> None:
         super().__init__()
@@ -224,7 +224,7 @@ class VisualGetServiceStatusNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Get Service Status"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/service"
 
     def get_node_class(self) -> type:
         return GetServiceStatusNode
@@ -243,7 +243,7 @@ class VisualStartServiceNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Start Service"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/service"
 
     def get_node_class(self) -> type:
         return StartServiceNode
@@ -261,7 +261,7 @@ class VisualStopServiceNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Stop Service"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/service"
 
     def get_node_class(self) -> type:
         return StopServiceNode
@@ -282,7 +282,7 @@ class VisualRestartServiceNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "Restart Service"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/service"
 
     def __init__(self) -> None:
         super().__init__()
@@ -307,7 +307,7 @@ class VisualListServicesNode(VisualNode):
 
     __identifier__ = "casare_rpa.system"
     NODE_NAME = "List Services"
-    NODE_CATEGORY = "system"
+    NODE_CATEGORY = "system/service"
 
     def __init__(self) -> None:
         super().__init__()

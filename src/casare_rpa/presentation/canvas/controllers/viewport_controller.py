@@ -8,7 +8,7 @@ Handles all viewport-related operations:
 - Viewport state management
 """
 
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
@@ -17,8 +17,6 @@ from .base_controller import BaseController
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ..graph.minimap import Minimap
-    from ..graph.node_frame import NodeFrame
 
 
 class ViewportController(BaseController):

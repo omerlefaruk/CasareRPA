@@ -8,7 +8,7 @@ Supports capability matching, load balancing, tag affinity, and state preference
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, Set, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 from collections import defaultdict
 import threading
 

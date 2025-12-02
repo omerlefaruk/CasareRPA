@@ -20,10 +20,7 @@ from NodeGraphQt import NodeGraph
 from loguru import logger
 
 if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.visual_nodes import (
-        ALL_VISUAL_NODE_CLASSES,
-        VisualNode,
-    )
+    pass
 
 
 def _build_casare_node_mapping() -> Dict[Type, Type]:
@@ -485,11 +482,13 @@ class NodeRegistry:
                             name=qmenu._first_match.NODE_NAME,
                             pos=[pos_x, pos_y],
                         )
-                        # Attach CasareRPA node immediately with unique ID
-                        factory = get_node_factory()
-                        casare_node = factory.create_casare_node(node)
-                        if casare_node:
-                            node.set_casare_node(casare_node)
+                        # Skip CasareRPA node for composite nodes (they create multiple nodes)
+                        if not getattr(qmenu._first_match, "COMPOSITE_NODE", False):
+                            # Attach CasareRPA node immediately with unique ID
+                            factory = get_node_factory()
+                            casare_node = factory.create_casare_node(node)
+                            if casare_node:
+                                node.set_casare_node(casare_node)
 
                         # Auto-connect to source node if Shift+Enter
                         if auto_connect and source_node:
@@ -583,13 +582,62 @@ class NodeRegistry:
         qmenu._first_match = None  # Store first matched node for Enter key
         qmenu._initial_scene_pos = None  # Store initial mouse position when menu opens
 
-        # Organize nodes by category and add to menu (sorted A-Z, case-insensitive)
-        for category, nodes in sorted(
-            self._categories.items(), key=lambda x: x[0].lower()
-        ):
-            category_label = category.replace("_", " ").title()
-            category_menu = qmenu.addMenu(category_label)
-            qmenu._category_menus[category_label] = category_menu
+        # Import category utilities for display names
+        try:
+            from casare_rpa.presentation.canvas.graph.category_utils import (
+                get_display_name,
+                get_category_sort_key,
+            )
+
+            use_hierarchy = True
+        except ImportError:
+            use_hierarchy = False
+
+        def get_or_create_submenu(parent_menu, category_path: str):
+            """Get or create nested submenu for category path."""
+            if category_path in qmenu._category_menus:
+                return qmenu._category_menus[category_path]
+
+            parts = category_path.split("/")
+            if len(parts) == 1:
+                # Root category
+                if use_hierarchy:
+                    label = get_display_name(category_path)
+                else:
+                    label = category_path.replace("_", " ").title()
+                menu = parent_menu.addMenu(label)
+                qmenu._category_menus[category_path] = menu
+                return menu
+            else:
+                # Nested category - ensure parent exists first
+                parent_path = "/".join(parts[:-1])
+                parent_submenu = get_or_create_submenu(parent_menu, parent_path)
+                if use_hierarchy:
+                    label = get_display_name(category_path)
+                else:
+                    label = parts[-1].replace("_", " ").title()
+                menu = parent_submenu.addMenu(label)
+                qmenu._category_menus[category_path] = menu
+                return menu
+
+        # Sort categories by hierarchy (root categories first, then alphabetically)
+        if use_hierarchy:
+            sorted_categories = sorted(
+                self._categories.items(), key=lambda x: get_category_sort_key(x[0])
+            )
+        else:
+            sorted_categories = sorted(
+                self._categories.items(), key=lambda x: x[0].lower()
+            )
+
+        # Organize nodes by category and add to nested menus
+        for category, nodes in sorted_categories:
+            if use_hierarchy:
+                category_label = get_display_name(category)
+            else:
+                category_label = category.replace("_", " ").title()
+
+            category_menu = get_or_create_submenu(qmenu, category)
 
             for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                 # Skip internal nodes (created programmatically, not from menu)
@@ -623,11 +671,14 @@ class NodeRegistry:
                             name=cls.NODE_NAME,
                             pos=[pos.x() - 100, pos.y() - 30],
                         )
-                        # Attach CasareRPA node immediately with unique ID
-                        factory = get_node_factory()
-                        casare_node = factory.create_casare_node(node)
-                        if casare_node:
-                            node.set_casare_node(casare_node)
+                        # Skip CasareRPA node for composite nodes (they create multiple nodes)
+                        # The composite handling in node_graph_widget will create the real nodes
+                        if not getattr(cls, "COMPOSITE_NODE", False):
+                            # Attach CasareRPA node immediately with unique ID
+                            factory = get_node_factory()
+                            casare_node = factory.create_casare_node(node)
+                            if casare_node:
+                                node.set_casare_node(casare_node)
                         return node
 
                     return create_node
@@ -675,11 +726,24 @@ class NodeRegistry:
                 qmenu.removeAction(action)
 
             if not text.strip():
-                # Restore full categorized menu structure
+                # Restore full hierarchical categorized menu structure
+                # Clear and rebuild category menus cache
+                qmenu._category_menus.clear()
 
-                for category, nodes in self._categories.items():
-                    category_label = category.replace("_", " ").title()
-                    category_menu = qmenu.addMenu(category_label)
+                # Sort categories hierarchically
+                if use_hierarchy:
+                    sorted_cats = sorted(
+                        self._categories.items(),
+                        key=lambda x: get_category_sort_key(x[0]),
+                    )
+                else:
+                    sorted_cats = sorted(
+                        self._categories.items(), key=lambda x: x[0].lower()
+                    )
+
+                for category, nodes in sorted_cats:
+                    # Use hierarchical submenu creation
+                    category_menu = get_or_create_submenu(qmenu, category)
 
                     for node_class in sorted(nodes, key=lambda x: x.NODE_NAME):
                         # Skip internal nodes (created programmatically, not from menu)
@@ -702,11 +766,13 @@ class NodeRegistry:
                                     name=cls.NODE_NAME,
                                     pos=[pos.x() - 100, pos.y() - 30],
                                 )
-                                # Attach CasareRPA node immediately with unique ID
-                                factory = get_node_factory()
-                                casare_node = factory.create_casare_node(node)
-                                if casare_node:
-                                    node.set_casare_node(casare_node)
+                                # Skip CasareRPA node for composite nodes (they create multiple nodes)
+                                if not getattr(cls, "COMPOSITE_NODE", False):
+                                    # Attach CasareRPA node immediately with unique ID
+                                    factory = get_node_factory()
+                                    casare_node = factory.create_casare_node(node)
+                                    if casare_node:
+                                        node.set_casare_node(casare_node)
                                 return node
 
                             return create_node
@@ -750,11 +816,13 @@ class NodeRegistry:
                                 name=cls.NODE_NAME,
                                 pos=[pos.x() - 100, pos.y() - 30],
                             )
-                            # Attach CasareRPA node immediately with unique ID
-                            factory = get_node_factory()
-                            casare_node = factory.create_casare_node(node)
-                            if casare_node:
-                                node.set_casare_node(casare_node)
+                            # Skip CasareRPA node for composite nodes (they create multiple nodes)
+                            if not getattr(cls, "COMPOSITE_NODE", False):
+                                # Attach CasareRPA node immediately with unique ID
+                                factory = get_node_factory()
+                                casare_node = factory.create_casare_node(node)
+                                if casare_node:
+                                    node.set_casare_node(casare_node)
                             qmenu.close()  # Close menu after adding node
                             return node
 
@@ -812,22 +880,88 @@ class NodeRegistry:
 
     def get_nodes_by_category(self, category: str) -> List[Type]:
         """
-        Get all nodes in a category.
+        Get all nodes in a specific category (exact match only).
 
         Args:
-            category: Category name
+            category: Category path (e.g., "google/gmail")
 
         Returns:
-            List of node classes in the category
+            List of node classes in the exact category
         """
         return self._categories.get(category, [])
+
+    def get_all_nodes_in_category(self, category: str) -> List[Type]:
+        """
+        Get all nodes in a category including all subcategories.
+
+        Args:
+            category: Category path (e.g., "google" returns nodes from
+                      google, google/gmail, google/sheets, etc.)
+
+        Returns:
+            List of node classes in the category and all subcategories
+        """
+        result = []
+
+        # Get direct nodes
+        if category in self._categories:
+            result.extend(self._categories[category])
+
+        # Get nodes from subcategories
+        prefix = category + "/"
+        for cat_path, nodes in self._categories.items():
+            if cat_path.startswith(prefix):
+                result.extend(nodes)
+
+        return result
+
+    def get_subcategories(self, parent: str) -> List[str]:
+        """
+        Get immediate subcategories of a parent category.
+
+        Args:
+            parent: Parent category path (e.g., "google")
+
+        Returns:
+            List of immediate subcategory names (e.g., ["gmail", "sheets", "docs"])
+        """
+        subcategories = set()
+        prefix = parent + "/" if parent else ""
+
+        for cat_path in self._categories.keys():
+            if parent:
+                if cat_path.startswith(prefix):
+                    # Extract immediate child name
+                    remainder = cat_path[len(prefix) :]
+                    immediate_child = remainder.split("/")[0]
+                    if immediate_child:
+                        subcategories.add(immediate_child)
+            else:
+                # Get root categories
+                root = cat_path.split("/")[0]
+                subcategories.add(root)
+
+        return sorted(subcategories)
+
+    def get_root_categories(self) -> List[str]:
+        """
+        Get all root (top-level) categories.
+
+        Returns:
+            List of root category names
+        """
+        roots = set()
+        for cat_path in self._categories.keys():
+            root = cat_path.split("/")[0]
+            roots.add(root)
+        return sorted(roots)
 
     def get_categories(self) -> List[str]:
         """
         Get all registered categories.
 
         Returns:
-            List of category names
+            List of category names (all levels)
         """
         return list(self._categories.keys())
 

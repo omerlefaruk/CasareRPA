@@ -13,9 +13,6 @@ running within an asyncio event loop to avoid blocking.
 """
 
 import asyncio
-import time
-import subprocess
-import psutil
 from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 import uiautomation as auto

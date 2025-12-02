@@ -10,7 +10,7 @@ Handles all panel-related operations:
 - Panel state persistence
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from PySide6.QtCore import Signal
 from loguru import logger
 

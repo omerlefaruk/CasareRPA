@@ -179,8 +179,19 @@ async def verify_setup():
     conn = await get_db_connection()
 
     try:
-        # Check required tables
-        required_tables = ["workflows", "jobs", "schedules", "workflow_versions"]
+        # Check required tables (from migrations 001 and 002)
+        required_tables = [
+            # Migration 001: Core workflow tables
+            "workflows",
+            "jobs",
+            "schedules",
+            "workflow_versions",
+            # Migration 002: Robot orchestration tables
+            "robots",
+            "workflow_robot_assignments",
+            "node_robot_overrides",
+            "robot_heartbeats",
+        ]
 
         for table_name in required_tables:
             exists = await conn.fetchval(

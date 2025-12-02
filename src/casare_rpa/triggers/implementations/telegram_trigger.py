@@ -3,6 +3,7 @@ CasareRPA - Telegram Trigger
 
 Trigger that fires when a Telegram message is received.
 Supports both webhook mode and polling mode (auto-fallback).
+Uses vault-integrated credential resolution.
 """
 
 import asyncio
@@ -86,29 +87,76 @@ class TelegramTrigger(BaseTrigger):
         return self._client
 
     async def _get_bot_token(self) -> Optional[str]:
-        """Get bot token from config, credentials, or environment."""
+        """
+        Get bot token using unified credential resolution.
+
+        Resolution order:
+        1. Direct config (bot_token)
+        2. Vault credential lookup (via credential_name)
+        3. Legacy credential manager (for backwards compatibility)
+        4. Environment variable (TELEGRAM_BOT_TOKEN)
+
+        Returns:
+            Bot token string or None
+        """
         # Try direct config first
         token = self.config.config.get("bot_token")
         if token:
             return token
 
-        # Try credential manager
+        # Try vault credential provider
+        cred_name = self.config.config.get("credential_name")
+        if cred_name:
+            try:
+                from casare_rpa.infrastructure.security.credential_provider import (
+                    VaultCredentialProvider,
+                )
+
+                provider = VaultCredentialProvider()
+                await provider.initialize()
+                try:
+                    cred = await provider.get_credential(cred_name)
+                    if cred:
+                        # Try bot_token field or api_key field
+                        bot_token = getattr(cred, "bot_token", None)
+                        if bot_token:
+                            logger.debug(f"Using vault credential: {cred_name}")
+                            return bot_token
+                        # Try data dict
+                        if hasattr(cred, "data") and cred.data:
+                            bot_token = cred.data.get("bot_token")
+                            if bot_token:
+                                logger.debug(
+                                    f"Using vault credential data: {cred_name}"
+                                )
+                                return bot_token
+                finally:
+                    await provider.shutdown()
+            except ImportError:
+                logger.debug("Vault credential provider not available")
+            except Exception as e:
+                logger.debug(f"Vault credential lookup failed: {e}")
+
+        # Try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
-            cred_name = self.config.config.get("credential_name")
             if cred_name:
                 cred = credential_manager.get_telegram_credential(cred_name)
                 if cred and cred.bot_token:
+                    logger.debug(f"Using legacy credential: {cred_name}")
                     return cred.bot_token
 
-            # Try default names
+            # Try default names in legacy system
             for name in ["telegram", "telegram_bot", "default_telegram"]:
                 cred = credential_manager.get_telegram_credential(name)
                 if cred and cred.bot_token:
+                    logger.debug(f"Using legacy default credential: {name}")
                     return cred.bot_token
+        except ImportError:
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential lookup failed: {e}")
 
         # Try environment
         return os.environ.get("TELEGRAM_BOT_TOKEN")

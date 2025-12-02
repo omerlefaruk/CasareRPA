@@ -454,6 +454,7 @@ class TestProcessModel:
         assert "nodes" in data
         assert "edges" in data
         assert "variants" in data
+        assert "variant_paths" in data
 
     def test_to_mermaid(self, multiple_traces: list[ExecutionTrace]) -> None:
         """Test Mermaid diagram export."""
@@ -464,6 +465,95 @@ class TestProcessModel:
         assert mermaid.startswith("graph LR")
         assert "start" in mermaid
         assert "-->" in mermaid
+
+    def test_get_most_common_path(self, multiple_traces: list[ExecutionTrace]) -> None:
+        """Test getting most common execution path."""
+        discovery = ProcessDiscovery()
+        model = discovery.discover(multiple_traces)
+
+        most_common = model.get_most_common_path()
+
+        # Most common path should be [start, click_1, end] (2 traces)
+        assert len(most_common) == 3
+        assert most_common[0] == "start"
+        assert most_common[-1] == "end"
+        assert "click_1" in most_common
+
+    def test_get_most_common_path_empty(self) -> None:
+        """Test get_most_common_path with no variants."""
+        model = ProcessModel(workflow_id="wf_test")
+        path = model.get_most_common_path()
+        assert path == []
+
+    def test_variant_paths_populated(
+        self, multiple_traces: list[ExecutionTrace]
+    ) -> None:
+        """Test that variant_paths is populated during discovery."""
+        discovery = ProcessDiscovery()
+        model = discovery.discover(multiple_traces)
+
+        # Should have 2 variants
+        assert len(model.variant_paths) == 2
+
+        # Each variant hash should map to its actual path
+        for variant_hash, path in model.variant_paths.items():
+            assert isinstance(path, list)
+            assert len(path) > 0
+            assert path[0] == "start"
+            assert path[-1] == "end"
+
+    def test_get_variant_path(self, multiple_traces: list[ExecutionTrace]) -> None:
+        """Test getting specific variant path by hash."""
+        discovery = ProcessDiscovery()
+        model = discovery.discover(multiple_traces)
+
+        # Get a known variant hash
+        variant_hash = list(model.variants.keys())[0]
+        path = model.get_variant_path(variant_hash)
+
+        assert len(path) > 0
+        assert path[0] == "start"
+
+        # Non-existent hash returns empty list
+        assert model.get_variant_path("nonexistent") == []
+
+    def test_get_all_variant_paths(self, multiple_traces: list[ExecutionTrace]) -> None:
+        """Test getting all variants with paths and counts."""
+        discovery = ProcessDiscovery()
+        model = discovery.discover(multiple_traces)
+
+        all_variants = model.get_all_variant_paths()
+
+        assert len(all_variants) == 2
+
+        for variant_hash, (path, count) in all_variants.items():
+            assert isinstance(path, list)
+            assert isinstance(count, int)
+            assert count > 0
+            assert len(path) > 0
+
+    def test_reconstruct_path_from_edges(self) -> None:
+        """Test path reconstruction from edges when variant_paths is empty."""
+        model = ProcessModel(workflow_id="wf_test")
+        model.nodes = {"start", "middle", "end"}
+        model.entry_nodes = {"start"}
+        model.exit_nodes = {"end"}
+        model.edges = {
+            "start": {
+                "middle": DirectFollowsEdge(
+                    source="start", target="middle", frequency=5
+                )
+            },
+            "middle": {
+                "end": DirectFollowsEdge(source="middle", target="end", frequency=5)
+            },
+        }
+        model.variants = {"abc123": 5}  # Has variant but no path stored
+
+        path = model.get_most_common_path()
+
+        # Should reconstruct via edges
+        assert path == ["start", "middle", "end"]
 
 
 # =============================================================================

@@ -10,8 +10,7 @@ Provides high-level update management:
 
 import asyncio
 import os
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional

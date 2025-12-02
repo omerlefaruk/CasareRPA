@@ -6,6 +6,7 @@ Visual representations of trigger nodes for the canvas.
 
 from .base import VisualTriggerNode, TRIGGER_ACCENT_COLOR, TRIGGER_LISTENING_COLOR
 from .nodes import (
+    # General triggers
     VisualWebhookTriggerNode,
     VisualScheduleTriggerNode,
     VisualFileWatchTriggerNode,
@@ -17,6 +18,14 @@ from .nodes import (
     VisualChatTriggerNode,
     VisualRSSFeedTriggerNode,
     VisualSSETriggerNode,
+    # Messaging triggers
+    VisualTelegramTriggerNode,
+    VisualWhatsAppTriggerNode,
+    # Google triggers
+    VisualGmailTriggerNode,
+    VisualDriveTriggerNode,
+    VisualSheetsTriggerNode,
+    VisualCalendarTriggerNode,
 )
 
 __all__ = [
@@ -24,7 +33,7 @@ __all__ = [
     "VisualTriggerNode",
     "TRIGGER_ACCENT_COLOR",
     "TRIGGER_LISTENING_COLOR",
-    # Visual trigger nodes
+    # General triggers
     "VisualWebhookTriggerNode",
     "VisualScheduleTriggerNode",
     "VisualFileWatchTriggerNode",
@@ -36,4 +45,12 @@ __all__ = [
     "VisualChatTriggerNode",
     "VisualRSSFeedTriggerNode",
     "VisualSSETriggerNode",
+    # Messaging triggers
+    "VisualTelegramTriggerNode",
+    "VisualWhatsAppTriggerNode",
+    # Google triggers
+    "VisualGmailTriggerNode",
+    "VisualDriveTriggerNode",
+    "VisualSheetsTriggerNode",
+    "VisualCalendarTriggerNode",
 ]

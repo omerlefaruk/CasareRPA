@@ -58,7 +58,6 @@ from casare_rpa.infrastructure.queue import (
     PgQueuerConsumer,
     ClaimedJob,
     ConsumerConfig,
-    ConnectionState,
 )
 from casare_rpa.infrastructure.execution.dbos_executor import (
     DBOSWorkflowExecutor,
@@ -908,21 +907,28 @@ class DistributedRobotAgent:
 
         try:
             # Insert into robots table via consumer's pool
+            # Uses Supabase schema: robot_id UUID, name, hostname, status, environment, capabilities, etc.
             if self._consumer and self._consumer._pool:
                 async with self._consumer._pool.acquire() as conn:
+                    # Use hostname for ON CONFLICT since it has unique constraint
                     await conn.execute(
                         """
-                        INSERT INTO robots (robot_id, hostname, capabilities, status, registered_at, last_seen)
-                        VALUES ($1, $2, $3, 'idle', NOW(), NOW())
-                        ON CONFLICT (robot_id) DO UPDATE
-                        SET capabilities = $3,
-                            status = 'idle',
-                            registered_at = NOW(),
-                            last_seen = NOW()
+                        INSERT INTO robots (name, hostname, status, environment, capabilities, last_heartbeat, last_seen, created_at, updated_at)
+                        VALUES ($1, $2, 'online', $3, $4::jsonb, NOW(), NOW(), NOW(), NOW())
+                        ON CONFLICT (hostname) DO UPDATE
+                        SET status = 'online',
+                            capabilities = $4::jsonb,
+                            last_heartbeat = NOW(),
+                            last_seen = NOW(),
+                            updated_at = NOW()
+                        RETURNING robot_id
                         """,
-                        self.robot_id,
-                        socket.gethostname(),
-                        orjson.dumps(registration.to_dict()).decode("utf-8"),
+                        self.robot_name,  # name
+                        socket.gethostname(),  # hostname
+                        self.config.environment,  # environment
+                        orjson.dumps(self._capabilities.to_dict()).decode(
+                            "utf-8"
+                        ),  # capabilities as JSONB
                     )
 
             logger.info(
@@ -941,10 +947,10 @@ class DistributedRobotAgent:
                 async with self._consumer._pool.acquire() as conn:
                     await conn.execute(
                         """
-                        UPDATE robots SET status = $2, last_seen = NOW()
-                        WHERE robot_id = $1
+                        UPDATE robots SET status = $2, last_seen = NOW(), updated_at = NOW()
+                        WHERE hostname = $1
                         """,
-                        self.robot_id,
+                        socket.gethostname(),
                         status,
                     )
         except Exception as e:

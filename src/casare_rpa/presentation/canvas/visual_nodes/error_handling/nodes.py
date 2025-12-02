@@ -4,25 +4,9 @@ from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
 
 
-class VisualTryNode(VisualNode):
-    """Visual representation of TryNode."""
-
-    __identifier__ = "casare_rpa.error_handling"
-    NODE_NAME = "Try"
-    NODE_CATEGORY = "error_handling"
-
-    def __init__(self) -> None:
-        """Initialize Try node."""
-        super().__init__()
-
-    def setup_ports(self) -> None:
-        """Setup ports."""
-        self.add_exec_input("exec_in")
-        self.add_exec_output("try_body")
-        self.add_exec_output("success")
-        self.add_exec_output("catch")
-        self.add_typed_output("error_message", DataType.STRING)
-        self.add_typed_output("error_type", DataType.STRING)
+# NOTE: VisualTryNode has been moved to control_flow/nodes.py
+# as part of the Try/Catch/Finally composite pattern.
+# Use VisualTryCatchFinallyNode from control_flow instead.
 
 
 class VisualRetryNode(VisualNode):
@@ -30,7 +14,7 @@ class VisualRetryNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/retry"
 
     def __init__(self) -> None:
         """Initialize Retry node."""
@@ -58,7 +42,7 @@ class VisualRetrySuccessNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry Success"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/retry"
 
     def __init__(self) -> None:
         """Initialize RetrySuccess node."""
@@ -75,7 +59,7 @@ class VisualRetryFailNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry Fail"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/retry"
 
     def __init__(self) -> None:
         """Initialize RetryFail node."""
@@ -93,7 +77,7 @@ class VisualThrowErrorNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Throw Error"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/try_catch"
 
     def __init__(self) -> None:
         """Initialize ThrowError node."""
@@ -114,7 +98,7 @@ class VisualWebhookNotifyNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Webhook Notify"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/logging"
 
     def __init__(self) -> None:
         """Initialize Webhook Notify node."""
@@ -147,7 +131,7 @@ class VisualOnErrorNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "On Error"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/try_catch"
 
     def __init__(self) -> None:
         """Initialize On Error node."""
@@ -170,7 +154,7 @@ class VisualErrorRecoveryNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Error Recovery"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/retry"
 
     def __init__(self) -> None:
         """Initialize Error Recovery node."""
@@ -198,7 +182,7 @@ class VisualLogErrorNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Log Error"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/logging"
 
     def __init__(self) -> None:
         """Initialize Log Error node."""
@@ -227,7 +211,7 @@ class VisualAssertNode(VisualNode):
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Assert"
-    NODE_CATEGORY = "error_handling"
+    NODE_CATEGORY = "error_handling/try_catch"
 
     def __init__(self) -> None:
         """Initialize Assert node."""

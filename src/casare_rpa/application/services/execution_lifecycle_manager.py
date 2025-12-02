@@ -157,6 +157,106 @@ class ExecutionLifecycleManager:
             logger.info(f"Started workflow execution session: {session_id}")
             return True
 
+    async def start_workflow_run_all(
+        self,
+        workflow_runner,
+        force_cleanup: bool = True,
+    ) -> bool:
+        """
+        Start parallel execution of all workflows on canvas (Shift+F3).
+
+        When the canvas contains multiple independent workflows (each with its
+        own StartNode), this executes them all in parallel with SHARED variables
+        but SEPARATE browser instances.
+
+        Args:
+            workflow_runner: CanvasWorkflowRunner instance
+            force_cleanup: Force cleanup of previous execution if still running
+
+        Returns:
+            True if started successfully, False otherwise
+        """
+        async with self._state_lock:
+            if self._state != ExecutionState.IDLE:
+                if force_cleanup:
+                    logger.warning(
+                        "Forcing cleanup of previous execution before Run All"
+                    )
+                    try:
+                        await self._force_cleanup()
+                    except Exception as e:
+                        logger.error(f"Force cleanup failed: {e}")
+                        self._state = ExecutionState.IDLE
+                        return False
+                else:
+                    logger.error("Cannot start: workflow already running")
+                    return False
+
+            self._state = ExecutionState.STARTING
+
+            # Create new execution session
+            session_id = str(uuid.uuid4())
+            pause_event = asyncio.Event()
+            pause_event.set()  # Initially not paused
+
+            # Create task for run_all mode
+            task = asyncio.create_task(
+                self._run_all_workflows_with_session(
+                    workflow_runner,
+                    session_id,
+                    pause_event,
+                )
+            )
+
+            self._current_session = ExecutionSession(
+                session_id=session_id,
+                workflow_name="run_all",  # Special name for parallel execution
+                task=task,
+                context=None,
+                use_case=None,
+                start_time=datetime.now(),
+                pause_event=pause_event,
+            )
+
+            self._state = ExecutionState.RUNNING
+            logger.info(f"Started Run All workflows session: {session_id}")
+            return True
+
+    async def _run_all_workflows_with_session(
+        self,
+        workflow_runner,
+        session_id: str,
+        pause_event: asyncio.Event,
+    ):
+        """
+        Execute all workflows in parallel.
+
+        Args:
+            workflow_runner: CanvasWorkflowRunner instance
+            session_id: Unique session ID
+            pause_event: Event for pause/resume coordination
+        """
+        try:
+            # Run all workflows - this uses run_all=True mode
+            await workflow_runner.run_all_workflows(pause_event)
+
+            # Update session with references
+            if self._current_session:
+                if hasattr(workflow_runner, "_current_use_case"):
+                    self._current_session.use_case = workflow_runner._current_use_case
+
+            logger.info(f"Run All workflows session {session_id} completed")
+
+        except asyncio.CancelledError:
+            logger.info(f"Run All workflows session {session_id} cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"Run All workflows session {session_id} failed: {e}")
+            self._state = ExecutionState.ERROR
+            raise
+        finally:
+            await self._cleanup_session()
+
     async def _run_workflow_with_session(
         self,
         workflow_runner,

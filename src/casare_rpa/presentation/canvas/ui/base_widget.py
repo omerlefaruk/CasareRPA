@@ -8,7 +8,7 @@ for all reusable UI widgets in the CasareRPA Canvas application.
 from abc import ABCMeta, abstractmethod
 from typing import Optional, Dict, Any
 
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 
 from loguru import logger

@@ -1,6 +1,5 @@
 """Execute Job use case."""
 
-from typing import Optional
 from loguru import logger
 
 from casare_rpa.domain.orchestrator.entities import Job, JobStatus

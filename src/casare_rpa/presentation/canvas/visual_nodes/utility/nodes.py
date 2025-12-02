@@ -14,7 +14,7 @@ class VisualRandomNumberNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random Number"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/random"
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,7 +35,7 @@ class VisualRandomChoiceNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random Choice"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/random"
 
     def __init__(self) -> None:
         super().__init__()
@@ -57,7 +57,7 @@ class VisualRandomStringNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random String"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/random"
 
     def __init__(self) -> None:
         super().__init__()
@@ -83,7 +83,7 @@ class VisualRandomUUIDNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random UUID"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/random"
 
     def __init__(self) -> None:
         super().__init__()
@@ -102,7 +102,7 @@ class VisualShuffleListNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Shuffle List"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/random"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -121,7 +121,7 @@ class VisualGetCurrentDateTimeNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Get Current DateTime"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def __init__(self) -> None:
         super().__init__()
@@ -148,7 +148,7 @@ class VisualFormatDateTimeNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Format DateTime"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def __init__(self) -> None:
         super().__init__()
@@ -166,7 +166,7 @@ class VisualParseDateTimeNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Parse DateTime"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def __init__(self) -> None:
         super().__init__()
@@ -193,7 +193,7 @@ class VisualDateTimeAddNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "DateTime Add"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -212,7 +212,7 @@ class VisualDateTimeDiffNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "DateTime Diff"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -234,7 +234,7 @@ class VisualDateTimeCompareNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "DateTime Compare"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -252,7 +252,7 @@ class VisualGetTimestampNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Get Timestamp"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/datetime"
 
     def __init__(self) -> None:
         super().__init__()
@@ -274,7 +274,7 @@ class VisualTextSplitNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Split"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -294,7 +294,7 @@ class VisualTextReplaceNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Replace"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -315,7 +315,7 @@ class VisualTextTrimNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Trim"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -335,7 +335,7 @@ class VisualTextCaseNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Case"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -358,7 +358,7 @@ class VisualTextPadNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Pad"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -380,7 +380,7 @@ class VisualTextSubstringNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Substring"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -397,7 +397,7 @@ class VisualTextContainsNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Contains"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -420,7 +420,7 @@ class VisualTextStartsWithNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Starts With"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -441,7 +441,7 @@ class VisualTextEndsWithNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Ends With"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -462,7 +462,7 @@ class VisualTextLinesNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Lines"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -484,7 +484,7 @@ class VisualTextReverseNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Reverse"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -498,7 +498,7 @@ class VisualTextCountNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Count"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()
@@ -521,7 +521,7 @@ class VisualTextJoinNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Join"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -536,7 +536,7 @@ class VisualTextExtractNode(VisualNode):
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Text Extract"
-    NODE_CATEGORY = "utility"
+    NODE_CATEGORY = "utility/text"
 
     def __init__(self) -> None:
         super().__init__()

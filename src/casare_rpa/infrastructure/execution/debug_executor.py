@@ -16,7 +16,7 @@ from enum import Enum, auto
 from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
 from loguru import logger
 
-from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId, NodeStatus
+from casare_rpa.domain.value_objects.types import NodeId, NodeStatus
 
 if TYPE_CHECKING:
     from casare_rpa.domain.entities.workflow import WorkflowSchema

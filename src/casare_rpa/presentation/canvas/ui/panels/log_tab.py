@@ -80,7 +80,9 @@ class LogTab(QWidget):
         filter_label = QLabel("Filter:")
         self._filter_combo = QComboBox()
         self._filter_combo.setFixedSize(70, 16)
-        self._filter_combo.addItems(["All", "Info", "Warning", "Error", "Success"])
+        self._filter_combo.addItems(
+            ["All", "Debug", "Info", "Warning", "Error", "Success"]
+        )
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
 
         # Auto-scroll toggle
@@ -259,6 +261,7 @@ class LogTab(QWidget):
         from casare_rpa.presentation.canvas.theme import THEME
 
         colors = {
+            "debug": QColor(THEME.text_muted),  # Dimmed for debug
             "info": QColor(THEME.status_info),
             "warning": QColor(THEME.status_warning),
             "error": QColor(THEME.status_error),

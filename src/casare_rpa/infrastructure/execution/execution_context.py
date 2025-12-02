@@ -22,6 +22,9 @@ from casare_rpa.infrastructure.resources.browser_resource_manager import (
 if TYPE_CHECKING:
     from playwright.async_api import Browser, BrowserContext, Page
     from casare_rpa.domain.services.project_context import ProjectContext
+    from casare_rpa.infrastructure.security.credential_provider import (
+        VaultCredentialProvider,
+    )
 
 
 class ExecutionContext:
@@ -73,6 +76,12 @@ class ExecutionContext:
         self.pause_event = pause_event or asyncio.Event()
         self.pause_event.set()  # Initially not paused
 
+        # Resource registry for nodes (telegram client, credential provider, etc.)
+        self.resources: Dict[str, Any] = {}
+
+        # Credential provider (lazy-initialized)
+        self._credential_provider: Optional["VaultCredentialProvider"] = None
+
     # ========================================================================
     # VARIABLE MANAGEMENT - Delegate to ExecutionState (domain)
     # ========================================================================
@@ -81,11 +90,33 @@ class ExecutionContext:
         """
         Set a variable in the context.
 
+        Publishes VARIABLE_SET event after successfully setting the variable.
+
         Args:
             name: Variable name
             value: Variable value
         """
         self._state.set_variable(name, value)
+
+        # Publish VARIABLE_SET event (skip internal variables starting with _)
+        if not name.startswith("_"):
+            try:
+                from casare_rpa.domain.events import get_event_bus, Event
+                from casare_rpa.domain.value_objects.types import EventType
+
+                event_bus = get_event_bus()
+                event_bus.publish(
+                    Event(
+                        event_type=EventType.VARIABLE_SET,
+                        data={
+                            "name": name,
+                            "value": value,
+                            "timestamp": datetime.now().isoformat(),
+                        },
+                    )
+                )
+            except Exception:
+                pass  # Don't break execution for event failures
 
     def get_variable(self, name: str, default: Any = None) -> Any:
         """
@@ -135,6 +166,87 @@ class ExecutionContext:
             Vault path if found, None otherwise
         """
         return self._state.resolve_credential_path(alias)
+
+    # ========================================================================
+    # CREDENTIAL MANAGEMENT
+    # ========================================================================
+
+    async def get_credential_provider(self) -> Optional["VaultCredentialProvider"]:
+        """
+        Get or create the credential provider.
+
+        Lazy-initializes the provider on first access and registers
+        project credential bindings if available.
+
+        Returns:
+            VaultCredentialProvider instance or None if unavailable
+        """
+        if self._credential_provider is not None:
+            return self._credential_provider
+
+        # Check if already in resources
+        if "credential_provider" in self.resources:
+            self._credential_provider = self.resources["credential_provider"]
+            return self._credential_provider
+
+        try:
+            from casare_rpa.infrastructure.security.credential_provider import (
+                VaultCredentialProvider,
+            )
+
+            provider = VaultCredentialProvider()
+            await provider.initialize()
+
+            # Set execution context for audit logging
+            provider.set_execution_context(
+                workflow_id=self._state.workflow_name,
+                robot_id=None,  # Robot ID set by orchestrator if applicable
+            )
+
+            # Register project credential bindings
+            if self._state.has_project_context and self._state.project_context:
+                bindings = self._state.project_context.get_credential_bindings()
+                if bindings:
+                    provider.register_bindings(bindings)
+                    logger.debug(f"Registered {len(bindings)} credential bindings")
+
+            self._credential_provider = provider
+            self.resources["credential_provider"] = provider
+
+            logger.debug("Credential provider initialized")
+            return provider
+
+        except Exception as e:
+            logger.warning(f"Failed to initialize credential provider: {e}")
+            return None
+
+    async def resolve_credential(
+        self,
+        alias: str,
+        required: bool = False,
+    ) -> Optional[Any]:
+        """
+        Resolve a credential by alias from the vault.
+
+        Args:
+            alias: Credential alias to resolve
+            required: If True, raises error when not found
+
+        Returns:
+            ResolvedCredential object or None
+
+        Raises:
+            SecretNotFoundError: If required and credential not found
+        """
+        provider = await self.get_credential_provider()
+        if not provider:
+            if required:
+                raise ValueError(
+                    f"Credential provider unavailable, cannot resolve: {alias}"
+                )
+            return None
+
+        return await provider.get_credential(alias, required=required)
 
     # ========================================================================
     # EXECUTION FLOW - Delegate to ExecutionState (domain)
@@ -319,6 +431,108 @@ class ExecutionContext:
         return self._state.has_project_context
 
     # ========================================================================
+    # PARALLEL EXECUTION SUPPORT
+    # ========================================================================
+
+    def clone_for_branch(self, branch_name: str) -> "ExecutionContext":
+        """
+        Create an isolated context copy for parallel branch execution.
+
+        Each parallel branch gets its own variable namespace to prevent
+        conflicts during concurrent execution. Browser resources are shared
+        (read-only) but each branch can create new pages.
+
+        Args:
+            branch_name: Name of the branch (used for variable namespacing)
+
+        Returns:
+            New ExecutionContext with copied variables and shared resources
+        """
+        # Create new context with copied variables
+        branch_context = ExecutionContext(
+            workflow_name=f"{self._state.workflow_name}::{branch_name}",
+            mode=self._state.mode,
+            initial_variables=self._state.variables.copy(),  # Snapshot
+            project_context=self._state.project_context,
+            pause_event=self.pause_event,  # Share pause/resume control
+        )
+
+        # Share browser resources (read-only during parallel execution)
+        # Branches can create new pages but shouldn't modify shared state
+        branch_context._resources = self._resources
+
+        # Copy desktop context reference (read-only)
+        branch_context.desktop_context = self.desktop_context
+
+        # Store branch name for result merging
+        branch_context.set_variable("_branch_name", branch_name)
+
+        return branch_context
+
+    def merge_branch_results(
+        self, branch_name: str, branch_variables: Dict[str, Any]
+    ) -> None:
+        """
+        Merge variables from a completed branch back to main context.
+
+        Variables are namespaced by branch name to avoid conflicts.
+        Special variables (starting with _) are not merged.
+
+        Args:
+            branch_name: Name of the branch
+            branch_variables: Variables from the branch context
+        """
+        for key, value in branch_variables.items():
+            # Skip internal variables
+            if key.startswith("_"):
+                continue
+            # Namespace by branch name
+            namespaced_key = f"{branch_name}_{key}"
+            self._state.set_variable(namespaced_key, value)
+
+    def create_workflow_context(self, workflow_name: str) -> "ExecutionContext":
+        """
+        Create context for parallel workflow with SHARED variables but SEPARATE browser.
+
+        Used for multi-workflow parallel execution where multiple StartNodes
+        execute concurrently on the same canvas. Unlike clone_for_branch():
+        - Variables are SHARED (same dict reference, not a copy)
+        - Browser is SEPARATE (new BrowserResourceManager per workflow)
+
+        Args:
+            workflow_name: Name identifier for this workflow
+
+        Returns:
+            New ExecutionContext with shared variables and separate browser
+        """
+        # Create new context (will have new BrowserResourceManager)
+        workflow_context = ExecutionContext(
+            workflow_name=workflow_name,
+            mode=self._state.mode,
+            initial_variables=None,  # Don't copy - will share reference
+            project_context=self._state.project_context,
+            pause_event=self.pause_event,  # Share pause/resume control
+        )
+
+        # SHARE the same variables dict (not a copy!)
+        # This allows workflows to coordinate via shared variables
+        workflow_context._state.variables = self._state.variables
+
+        # Browser is SEPARATE - workflow_context already has new BrowserResourceManager
+
+        # Copy desktop context reference (shared, read-only)
+        workflow_context.desktop_context = self.desktop_context
+
+        # Store workflow name for identification
+        workflow_context.set_variable("_workflow_name", workflow_name)
+
+        logger.debug(
+            f"Created workflow context '{workflow_name}' with shared variables, separate browser"
+        )
+
+        return workflow_context
+
+    # ========================================================================
     # PAUSE/RESUME SUPPORT
     # ========================================================================
 
@@ -348,6 +562,16 @@ class ExecutionContext:
         if skip_browser_close:
             logger.info("Skipping browser cleanup - 'do_not_close' flag is set")
 
+        # Clean up credential provider (revokes active leases)
+        if self._credential_provider is not None:
+            try:
+                await self._credential_provider.shutdown()
+                logger.debug("Credential provider shutdown complete")
+            except Exception as e:
+                logger.warning(f"Error shutting down credential provider: {e}")
+            finally:
+                self._credential_provider = None
+
         # Clean up desktop context first (COM objects should be released early)
         if self.desktop_context is not None:
             try:
@@ -361,6 +585,23 @@ class ExecutionContext:
                 logger.warning(f"Error cleaning up desktop context: {e}")
             finally:
                 self.desktop_context = None
+
+        # Clean up custom resources (telegram clients, etc.)
+        for key, resource in list(self.resources.items()):
+            try:
+                if hasattr(resource, "close"):
+                    if asyncio.iscoroutinefunction(resource.close):
+                        await resource.close()
+                    else:
+                        resource.close()
+                elif hasattr(resource, "shutdown"):
+                    if asyncio.iscoroutinefunction(resource.shutdown):
+                        await resource.shutdown()
+                    else:
+                        resource.shutdown()
+            except Exception as e:
+                logger.warning(f"Error cleaning up resource '{key}': {e}")
+        self.resources.clear()
 
         # Clean up Playwright resources (infrastructure)
         await self._resources.cleanup(skip_browser=skip_browser_close)

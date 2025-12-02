@@ -2,6 +2,7 @@
 CasareRPA - Telegram Base Node
 
 Abstract base class for all Telegram nodes with shared functionality.
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from typing import Any, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import CredentialAwareMixin
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -27,15 +29,21 @@ from casare_rpa.infrastructure.resources.telegram_client import (
 )
 
 
-class TelegramBaseNode(BaseNode):
+class TelegramBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for Telegram nodes.
 
     Provides common functionality:
     - Telegram client access
-    - Bot token configuration from credentials/env
+    - Bot token configuration from vault/credentials/env
     - Error handling
     - Standard output ports
+
+    Uses CredentialAwareMixin for unified credential resolution:
+    1. Vault lookup (via credential_name parameter)
+    2. Direct parameter (bot_token)
+    3. Context variable (telegram_bot_token)
+    4. Environment variable (TELEGRAM_BOT_TOKEN)
 
     Subclasses implement _execute_telegram() for specific operations.
     """
@@ -96,42 +104,61 @@ class TelegramBaseNode(BaseNode):
         return client
 
     async def _get_bot_token(self, context: ExecutionContext) -> Optional[str]:
-        """Get bot token from context, credentials, or environment."""
-        # Try direct parameter first
-        token = self.get_parameter("bot_token")
+        """
+        Get bot token using unified credential resolution.
+
+        Resolution order:
+        1. Vault lookup (via credential_name parameter)
+        2. Direct parameter (bot_token)
+        3. Context variable (telegram_bot_token)
+        4. Environment variable (TELEGRAM_BOT_TOKEN)
+
+        Args:
+            context: ExecutionContext with credential provider
+
+        Returns:
+            Bot token string or None
+        """
+        # Use CredentialAwareMixin's resolve_credential method
+        # This handles vault lookup, direct params, context vars, and env vars
+        token = await self.resolve_credential(
+            context,
+            credential_name_param="credential_name",
+            direct_param="bot_token",
+            env_var="TELEGRAM_BOT_TOKEN",
+            context_var="telegram_bot_token",
+            credential_field="bot_token",  # Field in vault credential
+            required=False,
+        )
+
         if token:
-            if hasattr(context, "resolve_value"):
-                token = context.resolve_value(token)
             return token
 
-        # Try context variables
-        if hasattr(context, "get_variable"):
-            token = context.get_variable("telegram_bot_token")
-            if token:
-                return token
-
-        # Try credential manager with credential_name
+        # Fallback: try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
             cred_name = self.get_parameter("credential_name")
             if cred_name:
-                if hasattr(context, "resolve_value"):
-                    cred_name = context.resolve_value(cred_name)
+                cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_telegram_credential(cred_name)
                 if cred and cred.bot_token:
+                    logger.debug(f"Using legacy credential manager: {cred_name}")
                     return cred.bot_token
 
-            # Try default credential names
+            # Try default credential names in legacy system
             for name in ["telegram", "telegram_bot", "default_telegram"]:
                 cred = credential_manager.get_telegram_credential(name)
                 if cred and cred.bot_token:
+                    logger.debug(f"Using legacy default credential: {name}")
                     return cred.bot_token
+        except ImportError:
+            # Legacy credential manager not available
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential manager lookup failed: {e}")
 
-        # Try environment
-        return os.environ.get("TELEGRAM_BOT_TOKEN")
+        return None
 
     def _get_chat_id(self, context: ExecutionContext) -> str:
         """Get chat ID from parameter, resolving variables."""

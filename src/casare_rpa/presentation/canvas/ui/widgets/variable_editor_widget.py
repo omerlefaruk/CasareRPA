@@ -8,12 +8,10 @@ from typing import Optional, Any, Dict
 
 from PySide6.QtWidgets import (
     QWidget,
-    QVBoxLayout,
     QHBoxLayout,
     QLineEdit,
     QComboBox,
     QPushButton,
-    QLabel,
 )
 from PySide6.QtCore import Signal
 
@@ -75,15 +73,17 @@ class VariableEditorWidget(BaseWidget):
 
         # Type selector
         self._type_combo = QComboBox()
-        self._type_combo.addItems([
-            "String",
-            "Integer",
-            "Float",
-            "Boolean",
-            "List",
-            "Dict",
-            "DataTable",
-        ])
+        self._type_combo.addItems(
+            [
+                "String",
+                "Integer",
+                "Float",
+                "Boolean",
+                "List",
+                "Dict",
+                "DataTable",
+            ]
+        )
         self._type_combo.setCurrentText(self._var_type)
         self._type_combo.setMinimumWidth(100)
         self._type_combo.currentTextChanged.connect(self._on_value_changed)
@@ -147,11 +147,13 @@ class VariableEditorWidget(BaseWidget):
             elif var_type == "List":
                 if value.startswith("[") and value.endswith("]"):
                     import json
+
                     return json.loads(value)
                 return [item.strip() for item in value.split(",") if item.strip()]
             elif var_type == "Dict":
                 if value.startswith("{") and value.endswith("}"):
                     import json
+
                     return json.loads(value)
                 return {}
             else:

@@ -33,6 +33,10 @@ class TriggerType(Enum):
     SSE = "sse"
     TELEGRAM = "telegram"
     WHATSAPP = "whatsapp"
+    GMAIL = "gmail"
+    SHEETS = "sheets"
+    DRIVE = "drive"
+    CALENDAR = "calendar"
 
 
 class TriggerStatus(Enum):

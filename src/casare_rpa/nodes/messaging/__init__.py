@@ -11,6 +11,11 @@ from .telegram import (
     TelegramSendPhotoNode,
     TelegramSendDocumentNode,
     TelegramSendLocationNode,
+    TelegramEditMessageNode,
+    TelegramDeleteMessageNode,
+    TelegramSendMediaGroupNode,
+    TelegramAnswerCallbackNode,
+    TelegramGetUpdatesNode,
 )
 from .whatsapp import (
     WhatsAppSendMessageNode,
@@ -23,11 +28,17 @@ from .whatsapp import (
 )
 
 __all__ = [
-    # Telegram
+    # Telegram - Send
     "TelegramSendMessageNode",
     "TelegramSendPhotoNode",
     "TelegramSendDocumentNode",
     "TelegramSendLocationNode",
+    # Telegram - Actions
+    "TelegramEditMessageNode",
+    "TelegramDeleteMessageNode",
+    "TelegramSendMediaGroupNode",
+    "TelegramAnswerCallbackNode",
+    "TelegramGetUpdatesNode",
     # WhatsApp
     "WhatsAppSendMessageNode",
     "WhatsAppSendTemplateNode",

@@ -42,14 +42,39 @@ class VariablesTab(QWidget):
 
     def get_variables(self) -> Dict[str, Dict[str, Any]]:
         """Get current variables."""
-        return self._panel._variables
+        return self._panel.get_variables()
 
     def set_variables(self, variables: Dict[str, Dict[str, Any]]) -> None:
         """Set variables."""
-        self._panel._variables = variables
-        self._panel._populate_table()
+        # Clear existing and add new ones
+        self._panel.clear_variables()
+        for name, var_data in variables.items():
+            self._panel.add_variable(
+                name=name,
+                var_type=var_data.get("type", "String"),
+                default_value=var_data.get("default", ""),
+                scope=var_data.get("scope", "Workflow"),
+            )
 
     def clear(self) -> None:
         """Clear all variables."""
-        self._panel._variables.clear()
-        self._panel._populate_table()
+        self._panel.clear_variables()
+
+    def update_runtime_values(self, values: Dict[str, Any]) -> None:
+        """
+        Update variable values during runtime.
+
+        Args:
+            values: Dict of {variable_name: current_value}
+        """
+        for name, value in values.items():
+            self._panel.update_variable_value(name, value)
+
+    def set_runtime_mode(self, enabled: bool) -> None:
+        """
+        Switch between design mode and runtime mode.
+
+        Args:
+            enabled: True for runtime mode, False for design mode
+        """
+        self._panel.set_runtime_mode(enabled)

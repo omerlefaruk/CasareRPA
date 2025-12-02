@@ -11,19 +11,15 @@ Handles automatic and scheduled secret rotation with:
 
 import asyncio
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
 from loguru import logger
 
 from .vault_client import (
     VaultClient,
-    VaultConfig,
-    SecretMetadata,
-    CredentialType,
     VaultError,
 )
 

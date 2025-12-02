@@ -11,8 +11,7 @@ Performance Impact:
 """
 
 import threading
-from typing import Dict, Tuple, Optional
-from functools import lru_cache
+from typing import Dict, Tuple
 from loguru import logger
 
 # Use TYPE_CHECKING to avoid import at module load time

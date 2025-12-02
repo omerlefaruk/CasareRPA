@@ -30,7 +30,7 @@ class TestExecuteJobUseCase:
             name="Test Robot",
             status=RobotStatus.ONLINE,
             max_concurrent_jobs=3,
-            current_jobs=0,
+            current_job_ids=[],
         )
 
         job_repo.get_by_id.return_value = job

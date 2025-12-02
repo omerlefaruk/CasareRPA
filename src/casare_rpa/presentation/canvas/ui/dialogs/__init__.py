@@ -15,6 +15,7 @@ from .schedule_dialog import ScheduleDialog, ScheduleManagerDialog
 from .update_dialog import UpdateDialog, UpdateNotificationWidget
 from .project_manager_dialog import ProjectManagerDialog
 from .credential_manager_dialog import CredentialManagerDialog
+from .fleet_dashboard import FleetDashboardDialog
 
 __all__ = [
     "NodePropertiesDialog",
@@ -28,4 +29,5 @@ __all__ = [
     "UpdateNotificationWidget",
     "ProjectManagerDialog",
     "CredentialManagerDialog",
+    "FleetDashboardDialog",
 ]

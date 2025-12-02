@@ -20,7 +20,7 @@ class VisualTelegramSendMessageNode(VisualNode):
 
     __identifier__ = "casare_rpa.messaging"
     NODE_NAME = "Telegram: Send Message"
-    NODE_CATEGORY = "messaging"
+    NODE_CATEGORY = "messaging/telegram/send"
     CASARE_NODE_CLASS = "TelegramSendMessageNode"
 
     def __init__(self) -> None:
@@ -94,7 +94,7 @@ class VisualTelegramSendPhotoNode(VisualNode):
 
     __identifier__ = "casare_rpa.messaging"
     NODE_NAME = "Telegram: Send Photo"
-    NODE_CATEGORY = "messaging"
+    NODE_CATEGORY = "messaging/telegram/send"
     CASARE_NODE_CLASS = "TelegramSendPhotoNode"
 
     def __init__(self) -> None:
@@ -168,7 +168,7 @@ class VisualTelegramSendDocumentNode(VisualNode):
 
     __identifier__ = "casare_rpa.messaging"
     NODE_NAME = "Telegram: Send Document"
-    NODE_CATEGORY = "messaging"
+    NODE_CATEGORY = "messaging/telegram/send"
     CASARE_NODE_CLASS = "TelegramSendDocumentNode"
 
     def __init__(self) -> None:
@@ -250,7 +250,7 @@ class VisualTelegramSendLocationNode(VisualNode):
 
     __identifier__ = "casare_rpa.messaging"
     NODE_NAME = "Telegram: Send Location"
-    NODE_CATEGORY = "messaging"
+    NODE_CATEGORY = "messaging/telegram/send"
     CASARE_NODE_CLASS = "TelegramSendLocationNode"
 
     def __init__(self) -> None:

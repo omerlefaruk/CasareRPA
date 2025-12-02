@@ -6,9 +6,8 @@ Supports both one-time execution and trigger-based listening.
 """
 
 import asyncio
-import uuid
 from datetime import datetime, timezone
-from typing import Any, Callable, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
@@ -16,9 +15,10 @@ if TYPE_CHECKING:
         WorkflowSerializer,
     )
     from casare_rpa.presentation.events.event_bus import EventBus
-    from casare_rpa.presentation.main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
     from casare_rpa.triggers.base import BaseTrigger, TriggerEvent
+    from casare_rpa.domain.services.project_context import ProjectContext
 
 
 class CanvasWorkflowRunner:
@@ -65,6 +65,97 @@ class CanvasWorkflowRunner:
 
         logger.debug("CanvasWorkflowRunner initialized")
 
+    def _get_continue_on_error(self, workflow_data: Dict[str, Any]) -> bool:
+        """
+        Get continue_on_error setting from workflow data or project context.
+
+        Priority (highest to lowest):
+        1. Workflow-level execution_settings
+        2. Project settings (stop_on_error inverted)
+        3. Default: False
+
+        Args:
+            workflow_data: Serialized workflow data
+
+        Returns:
+            True if execution should continue after node errors
+        """
+        # Check workflow-level settings first
+        exec_settings = workflow_data.get("execution_settings", {})
+        if "continue_on_error" in exec_settings:
+            return bool(exec_settings["continue_on_error"])
+
+        # Check stop_on_error (inverted logic) in execution_settings
+        if "stop_on_error" in exec_settings:
+            return not bool(exec_settings["stop_on_error"])
+
+        # Check project context if available
+        project_context = self._get_project_context()
+        if project_context is not None:
+            try:
+                # ProjectContext.get_stop_on_error() returns True if should stop
+                return not project_context.get_stop_on_error()
+            except Exception as e:
+                logger.debug(f"Could not get stop_on_error from project: {e}")
+
+        # Default: stop on error (continue_on_error = False)
+        return False
+
+    def _get_node_timeout(self, workflow_data: Dict[str, Any]) -> float:
+        """
+        Get node timeout setting from workflow data or project context.
+
+        Args:
+            workflow_data: Serialized workflow data
+
+        Returns:
+            Node timeout in seconds
+        """
+        # Check workflow-level settings
+        exec_settings = workflow_data.get("execution_settings", {})
+        if "node_timeout" in exec_settings:
+            timeout = exec_settings["node_timeout"]
+            if isinstance(timeout, (int, float)) and timeout > 0:
+                return float(timeout)
+
+        # Check project context
+        project_context = self._get_project_context()
+        if project_context is not None:
+            try:
+                timeout = project_context.get_timeout()
+                if timeout > 0:
+                    return float(timeout)
+            except Exception as e:
+                logger.debug(f"Could not get timeout from project: {e}")
+
+        # Default timeout
+        return 120.0
+
+    def _get_project_context(self) -> Optional["ProjectContext"]:
+        """
+        Get project context from main window's project controller.
+
+        Returns:
+            ProjectContext if a project is open, None otherwise
+        """
+        try:
+            project_controller = self._main_window.get_project_controller()
+            if project_controller is None:
+                return None
+
+            current_project = project_controller.current_project
+            if current_project is None:
+                return None
+
+            # Create ProjectContext from current project
+            from casare_rpa.domain.services.project_context import ProjectContext
+
+            return ProjectContext(project=current_project)
+
+        except Exception as e:
+            logger.debug(f"Could not get project context: {e}")
+            return None
+
     async def run_workflow(
         self, target_node_id: Optional[str] = None, single_node: bool = False
     ) -> bool:
@@ -109,10 +200,18 @@ class CanvasWorkflowRunner:
                 ExecutionSettings,
             )
 
+            continue_on_error = self._get_continue_on_error(workflow_data)
+            node_timeout = self._get_node_timeout(workflow_data)
+
             settings = ExecutionSettings(
                 target_node_id=target_node_id,
-                continue_on_error=False,  # TODO: Get from main_window settings
-                node_timeout=120.0,
+                continue_on_error=continue_on_error,
+                node_timeout=node_timeout,
+            )
+
+            logger.debug(
+                f"Execution settings: continue_on_error={continue_on_error}, "
+                f"node_timeout={node_timeout}s"
             )
 
             # Step 4: Extract initial variables with fallback chain
@@ -129,14 +228,19 @@ class CanvasWorkflowRunner:
 
             logger.info(f"Initialized {len(initial_vars)} variables")
 
-            # Step 5: Create and execute use case
+            # Step 5: Get project context for scoped variables and credentials
+            project_context = self._get_project_context()
+            if project_context:
+                logger.debug(f"Using project context: {project_context}")
+
+            # Step 6: Create and execute use case
             logger.info("Creating execution use case")
             self._current_use_case = ExecuteWorkflowUseCase(
                 workflow=workflow,
                 event_bus=self._event_bus,
                 settings=settings,
                 initial_variables=initial_vars,
-                project_context=None,  # TODO: Add project context support
+                project_context=project_context,
                 pause_event=None,  # No pause support in standard run
             )
 
@@ -210,11 +314,19 @@ class CanvasWorkflowRunner:
                 ExecutionSettings,
             )
 
+            continue_on_error = self._get_continue_on_error(workflow_data)
+            node_timeout = self._get_node_timeout(workflow_data)
+
             settings = ExecutionSettings(
                 target_node_id=target_node_id,
                 single_node=single_node,
-                continue_on_error=False,
-                node_timeout=120.0,
+                continue_on_error=continue_on_error,
+                node_timeout=node_timeout,
+            )
+
+            logger.debug(
+                f"Execution settings: continue_on_error={continue_on_error}, "
+                f"node_timeout={node_timeout}s"
             )
 
             # Step 4: Extract initial variables
@@ -230,14 +342,19 @@ class CanvasWorkflowRunner:
 
             logger.info(f"Initialized {len(initial_vars)} variables")
 
-            # Step 5: Create and execute use case with pause support
+            # Step 5: Get project context for scoped variables and credentials
+            project_context = self._get_project_context()
+            if project_context:
+                logger.debug(f"Using project context: {project_context}")
+
+            # Step 6: Create and execute use case with pause support
             logger.info("Creating execution use case with pause support")
             self._current_use_case = ExecuteWorkflowUseCase(
                 workflow=workflow,
                 event_bus=self._event_bus,
                 settings=settings,
                 initial_variables=initial_vars,
-                project_context=None,
+                project_context=project_context,
                 pause_event=pause_event,  # Pass pause_event for pause/resume
             )
 
@@ -253,6 +370,115 @@ class CanvasWorkflowRunner:
 
         except Exception as e:
             logger.exception(f"Workflow execution failed: {e}")
+            return False
+
+        finally:
+            self._is_running = False
+            self._current_use_case = None
+
+    async def run_all_workflows(self, pause_event: asyncio.Event) -> bool:
+        """
+        Execute all workflows on canvas concurrently (Shift+F3).
+
+        NOTE: Shortcut is Shift+F3 (not Shift+F5 which is Stop).
+
+        When the canvas contains multiple independent workflows (each with its
+        own StartNode), this method executes them all in parallel. Each workflow
+        gets SHARED variables but SEPARATE browser instances.
+
+        Args:
+            pause_event: Event for pause/resume coordination
+
+        Returns:
+            True if at least one workflow completed successfully, False if all failed
+        """
+        if self._is_running:
+            logger.warning("Workflow is already running")
+            return False
+
+        self._is_running = True
+
+        try:
+            # Step 1: Serialize the graph to workflow dict
+            logger.info("Serializing workflow for Run All mode")
+            workflow_data = self._serializer.serialize()
+
+            if not workflow_data.get("nodes"):
+                logger.warning("Workflow has no nodes - cannot execute")
+                self._is_running = False
+                return False
+
+            # Step 2: Load workflow dict into WorkflowSchema
+            from casare_rpa.utils.workflow.workflow_loader import (
+                load_workflow_from_dict,
+            )
+
+            workflow = load_workflow_from_dict(workflow_data)
+
+            # Step 3: Create execution settings
+            from casare_rpa.application.use_cases.execute_workflow import (
+                ExecuteWorkflowUseCase,
+                ExecutionSettings,
+            )
+
+            continue_on_error = self._get_continue_on_error(workflow_data)
+            node_timeout = self._get_node_timeout(workflow_data)
+
+            settings = ExecutionSettings(
+                target_node_id=None,
+                single_node=False,
+                continue_on_error=continue_on_error,
+                node_timeout=node_timeout,
+            )
+
+            logger.debug(
+                f"Execution settings: continue_on_error={continue_on_error}, "
+                f"node_timeout={node_timeout}s"
+            )
+
+            # Step 4: Extract initial variables
+            variables = workflow_data.get("variables", {})
+            initial_vars = {}
+            for var_name, var_data in variables.items():
+                if isinstance(var_data, dict):
+                    initial_vars[var_name] = var_data.get(
+                        "default_value", var_data.get("value")
+                    )
+                else:
+                    initial_vars[var_name] = var_data
+
+            # Step 5: Get project context for scoped variables and credentials
+            project_context = self._get_project_context()
+            if project_context:
+                logger.debug(f"Using project context: {project_context}")
+
+            # Step 6: Create and execute use case with run_all=True
+            logger.info("Creating execution use case for Run All mode")
+            self._current_use_case = ExecuteWorkflowUseCase(
+                workflow=workflow,
+                event_bus=self._event_bus,
+                settings=settings,
+                initial_variables=initial_vars,
+                project_context=project_context,
+                pause_event=pause_event,
+            )
+
+            logger.info("Starting Run All workflow execution")
+            result = await self._current_use_case.execute(run_all=True)
+
+            if result:
+                logger.success("Run All workflows completed successfully")
+            else:
+                logger.warning("Run All workflows completed with errors")
+
+            return result
+
+        except asyncio.CancelledError:
+            logger.info("Run All workflow execution cancelled")
+            raise
+
+        except Exception as e:
+            logger.exception(f"Run All workflow execution failed: {e}")
             return False
 
         finally:
@@ -577,19 +803,25 @@ class CanvasWorkflowRunner:
             initial_vars["_trigger_run_number"] = self._trigger_run_count
             initial_vars["_trigger_timestamp"] = datetime.now(timezone.utc).isoformat()
 
-            # Execute workflow
+            # Get execution settings from cached workflow data
+            continue_on_error = self._get_continue_on_error(self._cached_workflow_data)
+            node_timeout = self._get_node_timeout(self._cached_workflow_data)
+
             settings = ExecutionSettings(
                 target_node_id=None,
-                continue_on_error=False,
-                node_timeout=120.0,
+                continue_on_error=continue_on_error,
+                node_timeout=node_timeout,
             )
+
+            # Get project context for scoped variables and credentials
+            project_context = self._get_project_context()
 
             use_case = ExecuteWorkflowUseCase(
                 workflow=workflow,
                 event_bus=self._event_bus,
                 settings=settings,
                 initial_variables=initial_vars,
-                project_context=None,
+                project_context=project_context,
                 pause_event=None,
             )
 

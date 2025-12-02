@@ -12,11 +12,8 @@ from typing import List, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.project import (
-    CredentialBindingsFile,
     Project,
-    ProjectsIndex,
     Scenario,
-    VariablesFile,
 )
 from casare_rpa.domain.repositories import ProjectRepository
 

@@ -8,7 +8,7 @@ Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from typing import Optional, Any, Dict, List
+from typing import Any, Dict, List, Optional
 from datetime import datetime
 
 from PySide6.QtWidgets import (
@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QTabWidget,
     QTextEdit,
-    QSplitter,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
@@ -46,7 +45,7 @@ class DebugPanel(QDockWidget):
     Features:
     - Execution logs with filtering
     - Breakpoint list
-    - Variable inspector
+    - Call stack with execution frames
     - Output console
 
     Signals:
@@ -114,6 +113,10 @@ class DebugPanel(QDockWidget):
         # Console tab
         console_tab = self._create_console_tab()
         self._tabs.addTab(console_tab, "Console")
+
+        # Call Stack tab
+        call_stack_tab = self._create_call_stack_tab()
+        self._tabs.addTab(call_stack_tab, "Call Stack")
 
         # Breakpoints tab
         breakpoints_tab = self._create_breakpoints_tab()
@@ -233,6 +236,68 @@ class DebugPanel(QDockWidget):
 
         layout.addLayout(toolbar)
         layout.addWidget(self._console)
+
+        return widget
+
+    def _create_call_stack_tab(self) -> QWidget:
+        """
+        Create the call stack tab for viewing execution frames.
+
+        Returns:
+            Call stack tab widget
+        """
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(4)
+
+        # Toolbar
+        toolbar = QHBoxLayout()
+        toolbar.setSpacing(8)
+
+        # Status label
+        self._call_stack_status = QLabel("No active execution")
+        toolbar.addWidget(self._call_stack_status)
+        toolbar.addStretch()
+
+        # Clear button
+        clear_stack_btn = QPushButton("Clear")
+        clear_stack_btn.setFixedWidth(60)
+        clear_stack_btn.clicked.connect(self.clear_call_stack)
+        toolbar.addWidget(clear_stack_btn)
+
+        layout.addLayout(toolbar)
+
+        # Call stack table
+        self._call_stack_table = QTableWidget()
+        self._call_stack_table.setColumnCount(4)
+        self._call_stack_table.setHorizontalHeaderLabels(
+            ["#", "Node Name", "Node Type", "Status"]
+        )
+
+        # Configure table
+        self._call_stack_table.setAlternatingRowColors(True)
+        self._call_stack_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self._call_stack_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self._call_stack_table.itemDoubleClicked.connect(
+            self._on_call_stack_double_click
+        )
+        self._call_stack_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )
+
+        # Configure column sizing
+        header = self._call_stack_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+
+        layout.addWidget(self._call_stack_table)
 
         return widget
 
@@ -433,6 +498,35 @@ class DebugPanel(QDockWidget):
         self._bp_table.setRowCount(0)
         logger.debug("Breakpoints cleared")
 
+    def clear_call_stack(self) -> None:
+        """Clear call stack table and reset status."""
+        self._call_stack_table.setRowCount(0)
+        self._call_stack_status.setText("No active execution")
+        logger.debug("Call stack cleared")
+
+    def update_call_stack(
+        self, call_stack: List[Dict[str, Any]], status: Optional[str] = None
+    ) -> None:
+        """
+        Update the call stack display programmatically.
+
+        Args:
+            call_stack: List of frame dicts with keys:
+                - node_id: Unique node identifier
+                - node_name: Display name of the node
+                - node_type: Type of node (e.g., "ClickNode", "NavigateNode")
+                - status: Frame status ("executing", "completed", "failed", "paused")
+            status: Optional status message to display
+        """
+        if status:
+            self._call_stack_status.setText(status)
+        elif call_stack:
+            self._call_stack_status.setText(f"Frames: {len(call_stack)}")
+        else:
+            self._call_stack_status.setText("No active execution")
+
+        self._update_call_stack_table(call_stack)
+
     def _on_filter_changed(self, filter_text: str) -> None:
         """
         Handle filter change.
@@ -500,6 +594,7 @@ class DebugPanel(QDockWidget):
                 (EventType.NODE_EXECUTION_COMPLETED, self._on_node_execution_completed),
                 (EventType.NODE_EXECUTION_FAILED, self._on_node_execution_failed),
                 (EventType.BREAKPOINT_HIT, self._on_breakpoint_hit),
+                (EventType.DEBUG_CALL_STACK_UPDATED, self._on_call_stack_updated),
             ],
         )
 
@@ -554,7 +649,89 @@ class DebugPanel(QDockWidget):
         node_name = event.get("node_name", "")
         self.add_log("Warning", f"Breakpoint hit: {node_name}", node_id, node_name)
         self.add_console_output(f"** Breakpoint: {node_name}", "#cca700")
-        self._tabs.setCurrentIndex(0)
+        # Switch to Call Stack tab when breakpoint is hit
+        self._tabs.setCurrentIndex(2)
+        self._call_stack_status.setText(f"Paused at: {node_name}")
+
+    def _on_call_stack_updated(self, event: Event) -> None:
+        """
+        Handle call stack update event.
+
+        Args:
+            event: Event with call_stack list of frame dicts
+        """
+        event_data = event.data if hasattr(event, "data") else event
+        if not isinstance(event_data, dict):
+            return
+
+        call_stack = event_data.get("call_stack", [])
+        status = event_data.get("status", "")
+
+        if status:
+            self._call_stack_status.setText(status)
+        elif call_stack:
+            self._call_stack_status.setText(f"Frames: {len(call_stack)}")
+        else:
+            self._call_stack_status.setText("No active execution")
+
+        self._update_call_stack_table(call_stack)
+
+    def _update_call_stack_table(self, call_stack: List[Dict[str, Any]]) -> None:
+        """
+        Update the call stack table with current frames.
+
+        Args:
+            call_stack: List of frame dicts with node_id, node_name, node_type, status
+        """
+        self._call_stack_table.setRowCount(0)
+
+        for i, frame in enumerate(call_stack):
+            row = self._call_stack_table.rowCount()
+            self._call_stack_table.insertRow(row)
+
+            # Frame number
+            frame_item = QTableWidgetItem(str(i))
+            self._call_stack_table.setItem(row, 0, frame_item)
+
+            # Node name
+            node_name = frame.get("node_name", "")
+            node_id = frame.get("node_id", "")
+            name_item = QTableWidgetItem(node_name)
+            name_item.setData(Qt.ItemDataRole.UserRole, node_id)
+            self._call_stack_table.setItem(row, 1, name_item)
+
+            # Node type
+            node_type = frame.get("node_type", "")
+            type_item = QTableWidgetItem(node_type)
+            self._call_stack_table.setItem(row, 2, type_item)
+
+            # Status with color
+            status = frame.get("status", "")
+            status_item = QTableWidgetItem(status)
+            if status.lower() == "executing":
+                status_item.setForeground(QBrush(QColor("#569cd6")))
+            elif status.lower() == "completed":
+                status_item.setForeground(QBrush(QColor("#89d185")))
+            elif status.lower() == "failed":
+                status_item.setForeground(QBrush(QColor("#f44747")))
+            elif status.lower() == "paused":
+                status_item.setForeground(QBrush(QColor("#cca700")))
+            self._call_stack_table.setItem(row, 3, status_item)
+
+    def _on_call_stack_double_click(self, item: QTableWidgetItem) -> None:
+        """
+        Handle call stack entry double-click to navigate to node.
+
+        Args:
+            item: Clicked table item
+        """
+        row = item.row()
+        name_item = self._call_stack_table.item(row, 1)
+        if name_item:
+            node_id = name_item.data(Qt.ItemDataRole.UserRole)
+            if node_id:
+                self.navigate_to_node.emit(node_id)
+                logger.debug(f"Navigate to call stack node: {node_id}")
 
     def closeEvent(self, event) -> None:
         """

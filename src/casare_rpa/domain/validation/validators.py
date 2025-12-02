@@ -15,9 +15,6 @@ from .schemas import (
     get_valid_node_types,
 )
 from .rules import (
-    parse_connection,
-    is_exec_port,
-    is_exec_input_port,
     has_circular_dependency,
     find_entry_points_and_reachable,
 )

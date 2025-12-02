@@ -19,9 +19,11 @@ if TYPE_CHECKING:
     from ..ui.panels.properties_panel import PropertiesPanel
     from ..ui.panels.node_library_panel import NodeLibraryPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
+    from ..ui.panels.robot_picker_panel import RobotPickerPanel
     from ..ui.widgets.execution_timeline import ExecutionTimeline
     from ..ui.debug_panel import DebugPanel
     from ..debugger.debug_controller import DebugController
+    from ..controllers.robot_controller import RobotController
 
 
 class DockCreator:
@@ -368,6 +370,63 @@ class DockCreator:
             "Process Mining Panel created with Discovery, Variants, Insights tabs"
         )
         return process_mining_panel
+
+    def create_robot_picker_panel(
+        self, robot_controller: Optional["RobotController"] = None
+    ) -> "RobotPickerPanel":
+        """
+        Create the Robot Picker Panel for selecting robots and execution mode.
+
+        Features:
+        - Execution mode toggle: Local vs Cloud
+        - Tree view of available robots with status indicators
+        - Robot filtering by capability
+        - Refresh button to update robot list
+
+        Args:
+            robot_controller: Optional robot controller for integration
+
+        Returns:
+            Created RobotPickerPanel instance
+        """
+        from ..ui.panels.robot_picker_panel import RobotPickerPanel
+
+        mw = self._main_window
+        robot_picker = RobotPickerPanel(mw)
+
+        # Connect to robot controller if provided
+        if robot_controller:
+            robot_controller.set_panel(robot_picker)
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, robot_picker)
+
+        # Tabify with properties panel if exists
+        if mw._properties_panel:
+            mw.tabifyDockWidget(mw._properties_panel, robot_picker)
+
+        # Connect dock state changes to auto-save
+        robot_picker.dockLocationChanged.connect(mw._schedule_ui_state_save)
+        robot_picker.visibilityChanged.connect(mw._schedule_ui_state_save)
+        robot_picker.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = robot_picker.toggleViewAction()
+                toggle_action.setText("&Robot Picker")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+R"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_robot_picker = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Robot Picker to View menu: {e}")
+
+        # Initially hidden (show when user enables cloud execution)
+        robot_picker.hide()
+
+        logger.info("Robot Picker Panel created")
+        return robot_picker
 
     def _find_view_menu(self):
         """Get the View menu from MainWindow (stored reference)."""

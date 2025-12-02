@@ -7,7 +7,7 @@ Provides a standardized way to select:
 - Model (filtered by provider)
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QComboBox,
     QGroupBox,
-    QPushButton,
 )
 from PySide6.QtCore import Signal
 

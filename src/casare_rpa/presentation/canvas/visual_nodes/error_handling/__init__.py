@@ -1,9 +1,11 @@
 """
 Visual Nodes - Error Handling
+
+NOTE: VisualTryNode has been moved to control_flow package
+as part of the Try/Catch/Finally composite pattern.
 """
 
 from .nodes import (
-    VisualTryNode,
     VisualRetryNode,
     VisualRetrySuccessNode,
     VisualRetryFailNode,
@@ -16,7 +18,6 @@ from .nodes import (
 )
 
 __all__ = [
-    "VisualTryNode",
     "VisualRetryNode",
     "VisualRetrySuccessNode",
     "VisualRetryFailNode",

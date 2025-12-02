@@ -31,7 +31,8 @@ class TestTriggerType:
     def test_all_types_present(self):
         """Test that all expected trigger types exist."""
         types = [t.value for t in TriggerType]
-        assert len(types) == 12  # 10 original + RSS_FEED + SSE
+        # 10 original + RSS_FEED + SSE + TELEGRAM + WHATSAPP + GMAIL + SHEETS + DRIVE + CALENDAR
+        assert len(types) == 18
 
 
 class TestTriggerStatus:

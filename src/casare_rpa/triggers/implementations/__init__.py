@@ -20,6 +20,13 @@ from .sse_trigger import SSETrigger
 from .telegram_trigger import TelegramTrigger
 from .whatsapp_trigger import WhatsAppTrigger
 
+# Google Workspace triggers
+from .google_trigger_base import GoogleTriggerBase, GoogleAPIClient, GoogleCredentials
+from .gmail_trigger import GmailTrigger
+from .sheets_trigger import SheetsTrigger
+from .drive_trigger import DriveTrigger
+from .calendar_trigger import CalendarTrigger
+
 __all__ = [
     "WebhookTrigger",
     "ScheduledTrigger",
@@ -34,4 +41,12 @@ __all__ = [
     "SSETrigger",
     "TelegramTrigger",
     "WhatsAppTrigger",
+    # Google Workspace
+    "GoogleTriggerBase",
+    "GoogleAPIClient",
+    "GoogleCredentials",
+    "GmailTrigger",
+    "SheetsTrigger",
+    "DriveTrigger",
+    "CalendarTrigger",
 ]

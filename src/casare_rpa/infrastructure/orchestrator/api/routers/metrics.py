@@ -2,11 +2,24 @@
 REST API endpoints for metrics and monitoring.
 
 Provides fleet, robot, job, and analytics data for the React dashboard.
+Includes WebSocket endpoint for real-time metrics streaming.
 """
 
+import asyncio
+import json
 from datetime import datetime
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, Request
+from typing import Any, Dict, Optional, List, Set
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Path,
+    Request,
+    WebSocket,
+    WebSocketDisconnect,
+)
+from fastapi.responses import PlainTextResponse
 from loguru import logger
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -22,10 +35,18 @@ from ..models import (
     ActivityResponse,
 )
 from ..dependencies import get_metrics_collector
+from casare_rpa.infrastructure.observability.metrics import (
+    get_metrics_exporter,
+    MetricsSnapshot,
+    get_metrics_collector as get_rpa_metrics_collector,
+)
 
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
+
+# WebSocket connection manager for metrics streaming
+_metrics_ws_connections: Set[WebSocket] = set()
 
 
 @router.get("/metrics/fleet", response_model=FleetMetrics)
@@ -196,7 +217,8 @@ async def get_job_details(
     logger.debug(f"Fetching job details: {job_id}")
 
     try:
-        job = collector.get_job_details(job_id)
+        # Use async method for database-backed job lookups
+        job = await collector.get_job_details_async(job_id)
         if not job:
             raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
 
@@ -297,3 +319,172 @@ async def get_activity(
     except Exception as e:
         logger.error(f"Failed to fetch activity events: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch activity events")
+
+
+# =============================================================================
+# Real-time Metrics Streaming
+# =============================================================================
+
+
+@router.get("/metrics/snapshot")
+async def get_metrics_snapshot(
+    request: Request,
+    environment: str = Query(default="development", description="Environment name"),
+):
+    """
+    Get a point-in-time snapshot of all metrics.
+
+    Returns complete metrics state as JSON for dashboard initialization.
+    Useful for initial page load before WebSocket connection.
+
+    Rate Limit: Inherits from /metrics/fleet rate limit
+    """
+    try:
+        collector = get_rpa_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, environment)
+        return snapshot.to_dict()
+    except Exception as e:
+        logger.error(f"Failed to get metrics snapshot: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get metrics snapshot")
+
+
+@router.get("/metrics/prometheus", response_class=PlainTextResponse)
+async def get_prometheus_metrics(
+    request: Request,
+    environment: str = Query(default="development", description="Environment name"),
+):
+    """
+    Get metrics in Prometheus exposition format.
+
+    Returns plain text metrics compatible with Prometheus scraping.
+    Can be used to configure Prometheus to scrape CasareRPA metrics.
+
+    Example Prometheus scrape config:
+        - job_name: 'casare-rpa'
+          static_configs:
+            - targets: ['localhost:8000']
+          metrics_path: '/api/v1/metrics/prometheus'
+    """
+    try:
+        exporter = get_metrics_exporter(environment=environment)
+        return exporter.get_prometheus_format()
+    except Exception as e:
+        logger.error(f"Failed to get Prometheus metrics: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get Prometheus metrics")
+
+
+@router.websocket("/metrics/stream")
+async def metrics_websocket_stream(
+    websocket: WebSocket,
+    interval: int = Query(
+        default=5, ge=1, le=60, description="Update interval in seconds"
+    ),
+    environment: str = Query(default="development", description="Environment name"),
+):
+    """
+    WebSocket endpoint for real-time metrics streaming.
+
+    Clients connect and receive periodic metrics updates as JSON messages.
+    Connection is maintained until client disconnects.
+
+    Query Parameters:
+        - interval: Update frequency in seconds (1-60, default: 5)
+        - environment: Environment name for metrics labels
+
+    Message Format:
+        {
+            "type": "metrics",
+            "timestamp": "2024-01-15T10:30:00.000Z",
+            "data": { ... metrics snapshot ... }
+        }
+
+    Usage (JavaScript):
+        const ws = new WebSocket('ws://localhost:8000/api/v1/metrics/stream?interval=5');
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            updateDashboard(data.data);
+        };
+    """
+    await websocket.accept()
+    _metrics_ws_connections.add(websocket)
+
+    logger.info(
+        f"Metrics WebSocket connected (interval={interval}s, "
+        f"total connections={len(_metrics_ws_connections)})"
+    )
+
+    try:
+        # Send initial snapshot immediately
+        collector = get_rpa_metrics_collector()
+        snapshot = MetricsSnapshot.from_collector(collector, environment)
+        await websocket.send_json(
+            {
+                "type": "metrics",
+                "timestamp": snapshot.timestamp,
+                "data": snapshot.to_dict(),
+            }
+        )
+
+        # Stream updates at configured interval
+        while True:
+            await asyncio.sleep(interval)
+
+            try:
+                snapshot = MetricsSnapshot.from_collector(collector, environment)
+                await websocket.send_json(
+                    {
+                        "type": "metrics",
+                        "timestamp": snapshot.timestamp,
+                        "data": snapshot.to_dict(),
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Error sending metrics update: {e}")
+                # Continue trying - connection may still be valid
+
+    except WebSocketDisconnect:
+        logger.debug("Metrics WebSocket client disconnected normally")
+    except Exception as e:
+        logger.warning(f"Metrics WebSocket error: {e}")
+    finally:
+        _metrics_ws_connections.discard(websocket)
+        logger.info(
+            f"Metrics WebSocket closed (remaining connections={len(_metrics_ws_connections)})"
+        )
+
+
+async def broadcast_metrics_to_websockets(data: Dict[str, Any]) -> None:
+    """
+    Broadcast metrics data to all connected WebSocket clients.
+
+    Called by MetricsExporter to push updates to all dashboards.
+
+    Args:
+        data: Metrics data dictionary to broadcast
+    """
+    if not _metrics_ws_connections:
+        return
+
+    message = json.dumps(
+        {
+            "type": "metrics",
+            "timestamp": datetime.now().isoformat(),
+            "data": data,
+        }
+    )
+
+    disconnected = set()
+    for ws in _metrics_ws_connections:
+        try:
+            await ws.send_text(message)
+        except Exception:
+            disconnected.add(ws)
+
+    # Remove disconnected clients
+    for ws in disconnected:
+        _metrics_ws_connections.discard(ws)
+
+
+def get_websocket_connection_count() -> int:
+    """Get number of active WebSocket connections."""
+    return len(_metrics_ws_connections)

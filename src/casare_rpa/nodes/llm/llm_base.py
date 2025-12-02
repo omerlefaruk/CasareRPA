@@ -2,15 +2,18 @@
 CasareRPA - LLM Base Node
 
 Abstract base class for all LLM nodes with shared functionality.
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 """
 
 from __future__ import annotations
 
+import os
 from abc import abstractmethod
 from typing import Any, Optional
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import CredentialAwareMixin
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.value_objects.types import (
     DataType,
@@ -26,7 +29,7 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
 )
 
 
-class LLMBaseNode(BaseNode):
+class LLMBaseNode(CredentialAwareMixin, BaseNode):
     """
     Abstract base class for LLM nodes.
 
@@ -36,6 +39,11 @@ class LLMBaseNode(BaseNode):
     - Token usage tracking
     - Error handling
     - Standard output ports
+
+    Credential Resolution (in order):
+    1. Vault lookup (via credential_name parameter)
+    2. Context variable (llm_api_key)
+    3. Environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, LLM_API_KEY)
 
     Subclasses implement _execute_llm() for specific operations.
     """
@@ -52,6 +60,12 @@ class LLMBaseNode(BaseNode):
 
     def _define_common_input_ports(self) -> None:
         """Define standard LLM input ports."""
+        # Credential ports
+        self.add_input_port(
+            "credential_name", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("api_key", PortType.INPUT, DataType.STRING, required=False)
+        # Model config ports
         self.add_input_port("model", PortType.INPUT, DataType.STRING, required=False)
         self.add_input_port(
             "temperature", PortType.INPUT, DataType.FLOAT, required=False
@@ -71,7 +85,7 @@ class LLMBaseNode(BaseNode):
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
 
-    def _get_llm_manager(self, context: ExecutionContext) -> LLMResourceManager:
+    async def _get_llm_manager(self, context: ExecutionContext) -> LLMResourceManager:
         """
         Get or create LLM resource manager from context.
 
@@ -89,7 +103,7 @@ class LLMBaseNode(BaseNode):
         manager = LLMResourceManager()
 
         # Configure from context variables or environment
-        api_key = self._get_api_key(context)
+        api_key = await self._get_api_key(context)
         provider = self._get_provider(context)
 
         model = self.get_parameter("model") or self.DEFAULT_MODEL
@@ -110,33 +124,55 @@ class LLMBaseNode(BaseNode):
 
         return manager
 
-    def _get_api_key(self, context: ExecutionContext) -> Optional[str]:
-        """Get API key from context or credentials."""
-        # Try context variables first
-        if hasattr(context, "get_variable"):
-            key = context.get_variable("llm_api_key")
-            if key:
-                return key
+    async def _get_api_key(self, context: ExecutionContext) -> Optional[str]:
+        """
+        Get API key using unified credential resolution.
 
-        # Try credential manager
-        try:
-            from casare_rpa.utils.security.credential_manager import credential_manager
+        Resolution order:
+        1. Vault lookup (via credential_name parameter)
+        2. Direct parameter (api_key)
+        3. Context variable (llm_api_key)
+        4. Environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, LLM_API_KEY)
 
-            # Try provider-specific keys
-            for key_name in ["openai_api_key", "anthropic_api_key", "llm_api_key"]:
-                key = credential_manager.get(key_name)
-                if key:
-                    return key
-        except Exception:
-            pass
+        Args:
+            context: ExecutionContext with credential provider
 
-        # Try environment
-        import os
+        Returns:
+            API key string or None
+        """
+        # Use CredentialAwareMixin for vault and direct params
+        api_key = await self.resolve_credential(
+            context,
+            credential_name_param="credential_name",
+            direct_param="api_key",
+            context_var="llm_api_key",
+            credential_field="api_key",
+            required=False,
+        )
 
+        if api_key:
+            return api_key
+
+        # Fallback to environment variables for multiple providers
         for env_var in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "LLM_API_KEY"]:
             key = os.environ.get(env_var)
             if key:
+                logger.debug(f"Using LLM API key from {env_var}")
                 return key
+
+        # Fallback: try legacy credential manager
+        try:
+            from casare_rpa.utils.security.credential_manager import credential_manager
+
+            for key_name in ["openai_api_key", "anthropic_api_key", "llm_api_key"]:
+                key = credential_manager.get(key_name)
+                if key:
+                    logger.debug(f"Using legacy credential: {key_name}")
+                    return key
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.debug(f"Legacy credential lookup failed: {e}")
 
         return None
 
@@ -202,7 +238,7 @@ class LLMBaseNode(BaseNode):
 
         try:
             # Get LLM manager
-            manager = self._get_llm_manager(context)
+            manager = await self._get_llm_manager(context)
 
             # Execute specific LLM operation
             result = await self._execute_llm(context, manager)

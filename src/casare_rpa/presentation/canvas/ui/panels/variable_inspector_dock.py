@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
 )
-from PySide6.QtCore import Qt
 from loguru import logger
 
 

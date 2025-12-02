@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Callable, Dict, List, Optional, Set, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from loguru import logger
 
 from PySide6.QtCore import QObject, Signal

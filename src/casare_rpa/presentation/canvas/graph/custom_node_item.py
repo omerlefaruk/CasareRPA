@@ -133,6 +133,10 @@ class CasareNodeItem(NodeItem):
         self._execution_time_ms: Optional[float] = None
         self._animation_offset = 0
 
+        # Robot override state
+        self._has_robot_override = False
+        self._override_is_capability_based = False
+
         # Use centralized animation coordinator instead of per-node timer
         # This significantly improves performance when many nodes are running
         self._animation_coordinator = AnimationCoordinator.get_instance()
@@ -145,6 +149,8 @@ class CasareNodeItem(NodeItem):
         self._selected_border_color = QColor(255, 215, 0)  # Bright yellow
         self._running_border_color = QColor(255, 215, 0)  # Bright yellow animated
         self._node_bg_color = QColor(45, 45, 45)  # Dark background
+        self._robot_override_color = QColor(0, 150, 136)  # Teal for robot icon
+        self._capability_override_color = QColor(156, 39, 176)  # Purple for capability
 
         # Hide parent's text item to avoid double title
         if hasattr(self, "_text_item") and self._text_item:
@@ -223,6 +229,10 @@ class CasareNodeItem(NodeItem):
 
         # Draw execution time badge at bottom
         self._draw_execution_time(painter, rect)
+
+        # Draw robot override indicator (bottom-left corner)
+        if self._has_robot_override:
+            self._draw_robot_override_icon(painter, rect)
 
         # Draw status indicator LAST so it's always on top (error takes precedence over completed)
         if self._has_error:
@@ -433,7 +443,11 @@ class CasareNodeItem(NodeItem):
         self.update()
 
     def clear_execution_state(self):
-        """Reset all execution state for workflow restart."""
+        """Reset all execution state for workflow restart.
+
+        Note: Robot override state is NOT cleared here as it's configuration,
+        not execution state. Override persists across workflow runs.
+        """
         self.prepareGeometryChange()  # Bounding rect changes when badge is removed
         self._is_running = False
         self._is_completed = False
@@ -442,6 +456,100 @@ class CasareNodeItem(NodeItem):
         self._animation_offset = 0
         self._animation_coordinator.unregister(self)
         self.update()
+
+    def clear_robot_override(self):
+        """Clear robot override state for this node."""
+        self._has_robot_override = False
+        self._override_is_capability_based = False
+        self.update()
+
+    def _draw_robot_override_icon(self, painter, rect):
+        """Draw robot override indicator in the bottom-left corner.
+
+        Shows a small robot icon when this node has a robot override configured.
+        Different colors indicate specific robot (teal) vs capability-based (purple).
+        """
+        size = 18
+        margin = 6
+        x = rect.left() + margin
+        y = rect.bottom() - size - margin
+
+        # Choose color based on override type
+        if self._override_is_capability_based:
+            bg_color = self._capability_override_color  # Purple for capability
+        else:
+            bg_color = self._robot_override_color  # Teal for specific robot
+
+        # Background circle
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
+
+        # Draw robot icon (simplified)
+        painter.setPen(
+            QPen(
+                Qt.GlobalColor.white,
+                1.5,
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.RoundCap,
+                Qt.PenJoinStyle.RoundJoin,
+            )
+        )
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+
+        # Robot head (rectangle)
+        head_w = size * 0.5
+        head_h = size * 0.35
+        head_x = x + (size - head_w) / 2
+        head_y = y + size * 0.2
+        painter.drawRect(QRectF(head_x, head_y, head_w, head_h))
+
+        # Robot eyes (two small circles)
+        eye_r = size * 0.06
+        eye_y = head_y + head_h * 0.4
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
+        painter.drawEllipse(QPointF(head_x + head_w * 0.3, eye_y), eye_r, eye_r)
+        painter.drawEllipse(QPointF(head_x + head_w * 0.7, eye_y), eye_r, eye_r)
+
+        # Robot antenna
+        antenna_x = x + size / 2
+        painter.drawLine(
+            QPointF(antenna_x, head_y), QPointF(antenna_x, head_y - size * 0.12)
+        )
+        painter.drawEllipse(
+            QPointF(antenna_x, head_y - size * 0.15), size * 0.04, size * 0.04
+        )
+
+        # Robot body (rectangle below head)
+        body_y = head_y + head_h + size * 0.05
+        body_h = size * 0.25
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(QRectF(head_x, body_y, head_w, body_h))
+
+    def set_robot_override(
+        self, has_override: bool, is_capability_based: bool = False
+    ) -> None:
+        """Set robot override state for this node.
+
+        Args:
+            has_override: Whether this node has a robot override
+            is_capability_based: True if override is capability-based, False if specific robot
+        """
+        self._has_robot_override = has_override
+        self._override_is_capability_based = is_capability_based
+        self.update()
+
+    def get_robot_override_tooltip(self) -> Optional[str]:
+        """Get tooltip text for robot override indicator.
+
+        Returns:
+            Tooltip text if override exists, None otherwise
+        """
+        if not self._has_robot_override:
+            return None
+        if self._override_is_capability_based:
+            return "This node requires specific capabilities"
+        return "This node is assigned to a specific robot"
 
     def set_icon(self, pixmap: QPixmap):
         """Set custom node icon."""

@@ -8,7 +8,7 @@ Supports sending messages, media, and handling updates.
 import asyncio
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 import aiohttp
 from loguru import logger
 
@@ -460,6 +460,179 @@ class TelegramClient:
     async def get_me(self) -> dict:
         """Get bot info."""
         return await self._request("getMe")
+
+    # =========================================================================
+    # Edit/Delete Methods
+    # =========================================================================
+
+    async def edit_message_text(
+        self,
+        chat_id: Union[int, str],
+        message_id: int,
+        text: str,
+        parse_mode: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+    ) -> TelegramMessage:
+        """
+        Edit a message text.
+
+        Args:
+            chat_id: Target chat ID
+            message_id: ID of message to edit
+            text: New text content
+            parse_mode: Text parse mode
+            reply_markup: New inline keyboard
+
+        Returns:
+            Edited TelegramMessage
+        """
+        data = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": text,
+        }
+        if parse_mode:
+            data["parse_mode"] = parse_mode
+        if reply_markup:
+            import json
+
+            data["reply_markup"] = json.dumps(reply_markup)
+
+        result = await self._request("editMessageText", data)
+        return TelegramMessage.from_response(result)
+
+    async def edit_message_caption(
+        self,
+        chat_id: Union[int, str],
+        message_id: int,
+        caption: str,
+        parse_mode: Optional[str] = None,
+        reply_markup: Optional[dict] = None,
+    ) -> TelegramMessage:
+        """
+        Edit a message caption.
+
+        Args:
+            chat_id: Target chat ID
+            message_id: ID of message to edit
+            caption: New caption
+            parse_mode: Caption parse mode
+            reply_markup: New inline keyboard
+
+        Returns:
+            Edited TelegramMessage
+        """
+        data = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "caption": caption,
+        }
+        if parse_mode:
+            data["parse_mode"] = parse_mode
+        if reply_markup:
+            import json
+
+            data["reply_markup"] = json.dumps(reply_markup)
+
+        result = await self._request("editMessageCaption", data)
+        return TelegramMessage.from_response(result)
+
+    async def delete_message(
+        self,
+        chat_id: Union[int, str],
+        message_id: int,
+    ) -> bool:
+        """
+        Delete a message.
+
+        Args:
+            chat_id: Target chat ID
+            message_id: ID of message to delete
+
+        Returns:
+            True if successful
+        """
+        data = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+        }
+        await self._request("deleteMessage", data)
+        return True
+
+    # =========================================================================
+    # Media Group Methods
+    # =========================================================================
+
+    async def send_media_group(
+        self,
+        chat_id: Union[int, str],
+        media: list[dict],
+        disable_notification: bool = False,
+        reply_to_message_id: Optional[int] = None,
+    ) -> list[TelegramMessage]:
+        """
+        Send a group of photos or videos as an album.
+
+        Args:
+            chat_id: Target chat ID
+            media: Array of InputMediaPhoto/InputMediaVideo
+            disable_notification: Send silently
+            reply_to_message_id: Message to reply to
+
+        Returns:
+            List of TelegramMessage
+        """
+        import json
+
+        data = {
+            "chat_id": chat_id,
+            "media": json.dumps(media),
+        }
+        if disable_notification:
+            data["disable_notification"] = True
+        if reply_to_message_id:
+            data["reply_to_message_id"] = reply_to_message_id
+
+        results = await self._request("sendMediaGroup", data)
+        return [TelegramMessage.from_response(r) for r in results]
+
+    # =========================================================================
+    # Callback Query Methods
+    # =========================================================================
+
+    async def answer_callback_query(
+        self,
+        callback_query_id: str,
+        text: Optional[str] = None,
+        show_alert: bool = False,
+        url: Optional[str] = None,
+        cache_time: int = 0,
+    ) -> bool:
+        """
+        Answer a callback query from inline keyboard.
+
+        Args:
+            callback_query_id: ID of callback query to answer
+            text: Text to show (toast or alert)
+            show_alert: Show as alert instead of toast
+            url: URL to open (game URL)
+            cache_time: Cache time in seconds
+
+        Returns:
+            True if successful
+        """
+        data = {"callback_query_id": callback_query_id}
+        if text:
+            data["text"] = text
+        if show_alert:
+            data["show_alert"] = True
+        if url:
+            data["url"] = url
+        if cache_time > 0:
+            data["cache_time"] = cache_time
+
+        await self._request("answerCallbackQuery", data)
+        return True
 
     # =========================================================================
     # Utility Methods

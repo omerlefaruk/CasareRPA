@@ -18,7 +18,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils import retry_operation, safe_int
+from casare_rpa.nodes.utils import retry_operation
 from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 

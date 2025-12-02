@@ -10,9 +10,20 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Union
 import re
 import uuid
+
+# Type alias for JSON-serializable values (used throughout templates)
+JsonValue = Union[
+    str, int, float, bool, None, List["JsonValue"], Dict[str, "JsonValue"]
+]
+# Type alias for constraint dictionaries
+ConstraintDict = Dict[str, Union[str, int, float, bool, List[str]]]
+# Type alias for parameter values (can be any JSON value or special types)
+ParameterValue = Union[
+    str, int, float, bool, None, List[JsonValue], Dict[str, JsonValue]
+]
 
 from loguru import logger
 
@@ -83,7 +94,7 @@ class TemplateParameterType(Enum):
     JSON = "json"
 
     def validate_value(
-        self, value: Any, constraints: Optional[Dict[str, Any]] = None
+        self, value: ParameterValue, constraints: Optional[ConstraintDict] = None
     ) -> tuple[bool, Optional[str]]:
         """
         Validate a value against this parameter type.
@@ -222,13 +233,13 @@ class TemplateParameter:
     display_name: str
     description: str
     param_type: TemplateParameterType
-    default_value: Optional[Any] = None
+    default_value: Optional[ParameterValue] = None
     required: bool = True
-    constraints: Dict[str, Any] = field(default_factory=dict)
+    constraints: ConstraintDict = field(default_factory=dict)
     group: str = "General"
     order: int = 0
 
-    def validate_value(self, value: Any) -> tuple[bool, Optional[str]]:
+    def validate_value(self, value: ParameterValue) -> tuple[bool, Optional[str]]:
         """
         Validate a value against this parameter's type and constraints.
 
@@ -245,7 +256,9 @@ class TemplateParameter:
 
         return self.param_type.validate_value(value, self.constraints)
 
-    def get_effective_value(self, provided_value: Optional[Any]) -> Any:
+    def get_effective_value(
+        self, provided_value: Optional[ParameterValue]
+    ) -> ParameterValue:
         """
         Get the effective value considering defaults.
 
@@ -961,7 +974,7 @@ class WorkflowTemplate:
 
     def _find_placeholders_recursive(
         self,
-        obj: Any,
+        obj: Union[str, Dict[str, JsonValue], List[JsonValue], JsonValue],
         placeholders: Set[str],
     ) -> None:
         """Recursively find placeholders in nested structure."""
@@ -977,7 +990,7 @@ class WorkflowTemplate:
 
     def validate_parameters(
         self,
-        values: Dict[str, Any],
+        values: Dict[str, ParameterValue],
     ) -> tuple[bool, List[str]]:
         """
         Validate provided parameter values.
@@ -1006,9 +1019,9 @@ class WorkflowTemplate:
 
     def instantiate(
         self,
-        values: Dict[str, Any],
+        values: Dict[str, ParameterValue],
         validate: bool = True,
-    ) -> tuple[Dict[str, Any], List[str]]:
+    ) -> tuple[Dict[str, JsonValue], List[str]]:
         """
         Instantiate the template with provided parameter values.
 
@@ -1033,7 +1046,7 @@ class WorkflowTemplate:
                 raise ValueError(f"Parameter validation failed: {'; '.join(errors)}")
 
         # Build effective values dict with defaults
-        effective_values: Dict[str, Any] = {}
+        effective_values: Dict[str, ParameterValue] = {}
         for param in self.parameters:
             provided = values.get(param.name)
             effective = param.get_effective_value(provided)
@@ -1056,9 +1069,9 @@ class WorkflowTemplate:
 
     def _substitute_placeholders(
         self,
-        obj: Any,
-        values: Dict[str, Any],
-    ) -> Any:
+        obj: Union[str, Dict[str, JsonValue], List[JsonValue], JsonValue],
+        values: Dict[str, ParameterValue],
+    ) -> Union[str, Dict[str, JsonValue], List[JsonValue], JsonValue]:
         """
         Recursively substitute placeholders with values.
 
@@ -1093,7 +1106,7 @@ class WorkflowTemplate:
             return obj
         return obj
 
-    def get_missing_parameters(self, values: Dict[str, Any]) -> List[str]:
+    def get_missing_parameters(self, values: Dict[str, ParameterValue]) -> List[str]:
         """
         Get list of required parameters not provided.
 
@@ -1188,7 +1201,6 @@ class WorkflowTemplate:
         Returns:
             New WorkflowTemplate instance
         """
-        import copy
 
         data = self.to_dict()
         data["id"] = f"tmpl_{uuid.uuid4().hex[:12]}"
@@ -1205,7 +1217,7 @@ class WorkflowTemplate:
         data["metadata"]["created_at"] = datetime.now().isoformat()
         data["metadata"]["modified_at"] = datetime.now().isoformat()
 
-        return cls.from_dict(data)
+        return WorkflowTemplate.from_dict(data)
 
     def __repr__(self) -> str:
         """String representation."""

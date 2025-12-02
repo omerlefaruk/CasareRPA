@@ -1,27 +1,41 @@
 """
 CasareRPA Robot Agent
 
-Distributed robot agent for workflow execution with PostgreSQL/PgQueuer backend.
+Distributed robot agent for workflow execution with full lifecycle management.
 
 Main Components:
-- DistributedRobotAgent: Enterprise robot agent with job queue integration
+- RobotAgent: Unified robot agent (recommended)
+- RobotConfig: Configuration for robot agent
+- DistributedRobotAgent: Legacy agent (deprecated, use RobotAgent)
 - CLI: Command-line interface for starting/stopping robots
+- Windows Service: Run robot as Windows service
 
 Usage:
     # Start robot via CLI
     python -m casare_rpa.robot.cli start
 
-    # Or programmatically
-    from casare_rpa.robot import DistributedRobotAgent, DistributedRobotConfig
+    # Or programmatically (recommended)
+    from casare_rpa.robot import RobotAgent, RobotConfig
 
-    config = DistributedRobotConfig(
-        postgres_url="postgresql://user:pass@localhost/casare_rpa",
-        robot_id="worker-01",
-    )
-    agent = DistributedRobotAgent(config)
+    config = RobotConfig.from_env()
+    agent = RobotAgent(config)
     await agent.start()
+
+    # Legacy (deprecated)
+    from casare_rpa.robot import DistributedRobotAgent, DistributedRobotConfig
 """
 
+# New unified agent (recommended)
+from .agent import (
+    RobotAgent,
+    RobotConfig,
+    RobotCapabilities as UnifiedRobotCapabilities,
+    AgentState as UnifiedAgentState,
+    AgentCheckpoint,
+    run_agent,
+)
+
+# Legacy imports (deprecated - for backward compatibility)
 from .distributed_agent import (
     DistributedRobotAgent,
     DistributedRobotConfig,
@@ -29,6 +43,8 @@ from .distributed_agent import (
     RobotRegistration,
     AgentState,
 )
+
+# Circuit breaker
 from .circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
@@ -38,6 +54,8 @@ from .circuit_breaker import (
     get_circuit_breaker,
     get_circuit_breaker_registry,
 )
+
+# Metrics
 from .metrics import (
     MetricsCollector,
     JobMetrics,
@@ -45,6 +63,8 @@ from .metrics import (
     ResourceSnapshot,
     get_metrics_collector,
 )
+
+# Audit
 from .audit import (
     AuditLogger,
     AuditEntry,
@@ -55,7 +75,14 @@ from .audit import (
 )
 
 __all__ = [
-    # Main agent
+    # Unified agent (recommended)
+    "RobotAgent",
+    "RobotConfig",
+    "UnifiedRobotCapabilities",
+    "UnifiedAgentState",
+    "AgentCheckpoint",
+    "run_agent",
+    # Legacy agent (deprecated)
     "DistributedRobotAgent",
     "DistributedRobotConfig",
     "RobotCapabilities",

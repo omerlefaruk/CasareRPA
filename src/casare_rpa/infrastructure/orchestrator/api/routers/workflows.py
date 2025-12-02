@@ -17,20 +17,25 @@ Security:
 """
 
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
-from pydantic import BaseModel, Field, field_validator
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel, Field, UUID4, field_validator
 from loguru import logger
 import orjson
 
+from casare_rpa.infrastructure.orchestrator.api.auth import (
+    get_current_user,
+    AuthenticatedUser,
+)
+
 from casare_rpa.infrastructure.queue import (
     get_memory_queue,
-    MemoryQueue,
 )
 
 
@@ -71,6 +76,42 @@ ALLOWED_UPLOAD_CONTENT_TYPES = {
     "text/plain",
     "application/octet-stream",  # Some browsers send this for .json files
 }
+
+# UUID validation pattern (prevents path traversal and injection)
+UUID_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+
+
+def validate_uuid_format(value: str, field_name: str = "ID") -> str:
+    """
+    Validate that a string is a valid UUID format.
+
+    Prevents path traversal attacks by ensuring the ID contains only
+    valid UUID characters (hex digits and hyphens).
+
+    Args:
+        value: String to validate
+        field_name: Name of the field for error messages
+
+    Returns:
+        The validated UUID string
+
+    Raises:
+        HTTPException: 400 if format is invalid
+    """
+    if not UUID_PATTERN.match(value):
+        logger.warning(
+            "Invalid {} format rejected: {}",
+            field_name,
+            value[:50] if len(value) > 50 else value,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid {field_name} format. Expected UUID.",
+        )
+    return value
 
 
 # =========================
@@ -157,6 +198,25 @@ class WorkflowDetailsResponse(BaseModel):
     description: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+
+# =========================
+# Trigger Manager Singleton
+# =========================
+
+_trigger_manager: Optional["TriggerManager"] = None  # type: ignore
+
+
+def set_trigger_manager(manager: "TriggerManager") -> None:  # type: ignore
+    """Set the global trigger manager for webhook registration."""
+    global _trigger_manager
+    _trigger_manager = manager
+    logger.info("Workflows router: TriggerManager set")
+
+
+def _get_trigger_manager() -> Optional["TriggerManager"]:  # type: ignore
+    """Get the global trigger manager."""
+    return _trigger_manager
 
 
 # =========================
@@ -381,6 +441,7 @@ async def enqueue_job(
 @router.post("/workflows", response_model=WorkflowSubmissionResponse)
 async def submit_workflow(
     request: WorkflowSubmissionRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> WorkflowSubmissionResponse:
     """
     Submit a workflow from Canvas to Orchestrator.
@@ -451,21 +512,227 @@ async def submit_workflow(
             )
 
         elif request.trigger_type == "scheduled":
-            # TODO: Create schedule via ScheduleManagementService
-            schedule_id = str(uuid.uuid4())  # Placeholder
-            status_message = (
-                f"Workflow submitted and scheduled (cron: {request.schedule_cron})"
-            )
-            logger.warning(
-                "Schedule creation not yet implemented, returning placeholder"
-            )
+            # Create schedule via the schedules router
+            if not request.schedule_cron:
+                raise HTTPException(
+                    status_code=400,
+                    detail="schedule_cron is required when trigger_type=scheduled",
+                )
+
+            try:
+                from casare_rpa.infrastructure.orchestrator.scheduling import (
+                    get_global_scheduler,
+                    is_scheduler_initialized,
+                    AdvancedSchedule,
+                    ScheduleType,
+                    ScheduleStatus,
+                )
+                from croniter import croniter
+
+                schedule_id = str(uuid.uuid4())
+                now = datetime.now(timezone.utc)
+
+                # Validate cron expression
+                try:
+                    cron = croniter(request.schedule_cron, now)
+                    next_run = cron.get_next(datetime)
+                except (ValueError, KeyError) as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid cron expression: {str(e)}",
+                    )
+
+                # Create AdvancedSchedule for APScheduler
+                advanced_schedule = AdvancedSchedule(
+                    id=schedule_id,
+                    name=f"Schedule for {request.workflow_name}",
+                    workflow_id=workflow_id,
+                    workflow_name=request.workflow_name,
+                    schedule_type=ScheduleType.CRON,
+                    status=ScheduleStatus.ACTIVE,
+                    enabled=True,
+                    cron_expression=request.schedule_cron,
+                    priority=request.priority,
+                    metadata={
+                        "execution_mode": request.execution_mode,
+                        **request.metadata,
+                    },
+                    next_run=next_run,
+                    created_at=now,
+                    updated_at=now,
+                )
+
+                # Register with APScheduler if available
+                scheduler = get_global_scheduler()
+                if scheduler is not None and is_scheduler_initialized():
+                    success = scheduler.add_schedule(advanced_schedule)
+                    if success:
+                        logger.info(
+                            "Schedule registered with APScheduler: {} (workflow={}, cron='{}')",
+                            schedule_id,
+                            workflow_id,
+                            request.schedule_cron,
+                        )
+                    else:
+                        logger.warning(
+                            "Failed to register schedule with APScheduler: {}",
+                            schedule_id,
+                        )
+                else:
+                    logger.warning(
+                        "APScheduler not initialized, schedule stored but won't auto-execute: {}",
+                        schedule_id,
+                    )
+
+                # Store schedule in database if pool available
+                pool = get_db_pool()
+                if pool:
+                    try:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                """
+                                INSERT INTO schedules (
+                                    id, workflow_id, schedule_name, cron_expression,
+                                    enabled, priority, execution_mode, next_run,
+                                    created_at, updated_at, metadata
+                                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10)
+                                ON CONFLICT (id) DO UPDATE SET
+                                    cron_expression = EXCLUDED.cron_expression,
+                                    enabled = EXCLUDED.enabled,
+                                    updated_at = NOW()
+                                """,
+                                uuid.UUID(schedule_id),
+                                uuid.UUID(workflow_id),
+                                f"Schedule for {request.workflow_name}",
+                                request.schedule_cron,
+                                True,
+                                request.priority,
+                                request.execution_mode,
+                                next_run,
+                                now,
+                                orjson.dumps(request.metadata).decode(),
+                            )
+                        logger.info("Schedule stored in database: {}", schedule_id)
+                    except Exception as e:
+                        logger.error("Failed to store schedule in database: {}", e)
+
+                status_message = f"Workflow submitted and scheduled (cron: {request.schedule_cron}, next_run: {next_run.isoformat()})"
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.error("Failed to create schedule: {}", e)
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to create schedule: {str(e)}",
+                )
 
         elif request.trigger_type == "webhook":
-            # TODO: Register webhook trigger
-            status_message = (
-                "Workflow submitted for webhook trigger (not yet implemented)"
-            )
-            logger.warning("Webhook trigger not yet implemented")
+            # Register webhook trigger via TriggerManager
+            try:
+                from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
+                from casare_rpa.triggers.manager import TriggerManager
+
+                trigger_id = str(uuid.uuid4())
+
+                # Build webhook config from metadata
+                webhook_config = request.metadata.get("webhook_config", {})
+                endpoint = webhook_config.get("endpoint", f"/hooks/{trigger_id}")
+                auth_type = webhook_config.get("auth_type", "none")
+                secret = webhook_config.get("secret", "")
+
+                # Create trigger configuration
+                trigger_config = BaseTriggerConfig(
+                    id=trigger_id,
+                    name=f"Webhook for {request.workflow_name}",
+                    trigger_type=TriggerType.WEBHOOK,
+                    scenario_id=request.metadata.get("scenario_id", "default"),
+                    workflow_id=workflow_id,
+                    enabled=True,
+                    priority=request.priority,
+                    description=f"Webhook trigger for workflow: {request.workflow_name}",
+                    config={
+                        "endpoint": endpoint,
+                        "auth_type": auth_type,
+                        "secret": secret,
+                        "methods": webhook_config.get("methods", ["POST"]),
+                        "execution_mode": request.execution_mode,
+                    },
+                )
+
+                # Get or create trigger manager instance
+                # Note: In production, this should be accessed via dependency injection
+                # For now, we create a singleton-like reference
+                trigger_manager = _get_trigger_manager()
+                if trigger_manager:
+                    registered_trigger = await trigger_manager.register_trigger(
+                        trigger_config
+                    )
+                    if registered_trigger:
+                        webhook_url = trigger_manager.get_webhook_url(trigger_id)
+                        logger.info(
+                            "Webhook trigger registered: {} (workflow={}, endpoint='{}')",
+                            trigger_id,
+                            workflow_id,
+                            endpoint,
+                        )
+                        status_message = f"Workflow submitted with webhook trigger (URL: {webhook_url})"
+                    else:
+                        logger.warning(
+                            "Failed to register webhook trigger: {}", trigger_id
+                        )
+                        status_message = (
+                            "Workflow submitted but webhook registration failed"
+                        )
+                else:
+                    logger.warning(
+                        "TriggerManager not available, webhook registered in config only"
+                    )
+                    status_message = (
+                        f"Workflow submitted for webhook trigger (endpoint: {endpoint})"
+                    )
+
+                # Store webhook config in database
+                pool = get_db_pool()
+                if pool:
+                    try:
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                """
+                                INSERT INTO webhook_triggers (
+                                    id, workflow_id, endpoint, auth_type,
+                                    enabled, created_at, metadata
+                                ) VALUES ($1, $2, $3, $4, $5, NOW(), $6)
+                                ON CONFLICT (id) DO UPDATE SET
+                                    endpoint = EXCLUDED.endpoint,
+                                    auth_type = EXCLUDED.auth_type
+                                """,
+                                uuid.UUID(trigger_id),
+                                uuid.UUID(workflow_id),
+                                endpoint,
+                                auth_type,
+                                True,
+                                orjson.dumps(trigger_config.to_dict()).decode(),
+                            )
+                        logger.info(
+                            "Webhook trigger stored in database: {}", trigger_id
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to store webhook in database (table may not exist): {}",
+                            e,
+                        )
+
+            except ImportError as e:
+                logger.warning("Trigger system not available: {}", e)
+                status_message = (
+                    "Workflow submitted (webhook trigger requires trigger system)"
+                )
+            except Exception as e:
+                logger.error("Failed to register webhook trigger: {}", e)
+                status_message = (
+                    f"Workflow submitted but webhook setup failed: {str(e)}"
+                )
 
         return WorkflowSubmissionResponse(
             workflow_id=workflow_id,
@@ -489,6 +756,7 @@ async def upload_workflow(
     trigger_type: str = "manual",
     execution_mode: str = "lan",
     priority: int = 10,
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ) -> WorkflowSubmissionResponse:
     """
     Upload workflow JSON file.
@@ -586,7 +854,10 @@ async def upload_workflow(
 
 
 @router.get("/workflows/{workflow_id}", response_model=WorkflowDetailsResponse)
-async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
+async def get_workflow(
+    workflow_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> WorkflowDetailsResponse:
     """
     Get workflow details by ID.
 
@@ -594,13 +865,56 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
 
     Args:
         workflow_id: Workflow UUID
+        current_user: Authenticated user from JWT
 
     Returns:
         WorkflowDetailsResponse
     """
+    # Security: Validate UUID format to prevent path traversal
+    validate_uuid_format(workflow_id, "workflow_id")
+
     try:
-        # TODO: Try database first
-        # For now, read from filesystem
+        # Try database first
+        pool = get_db_pool()
+        if pool:
+            try:
+                async with pool.acquire() as conn:
+                    row = await conn.fetchrow(
+                        """
+                        SELECT workflow_id, workflow_name, workflow_json,
+                               version, description, created_at, updated_at
+                        FROM workflows
+                        WHERE workflow_id = $1
+                        """,
+                        uuid.UUID(workflow_id),
+                    )
+
+                    if row:
+                        # Parse workflow_json from JSONB
+                        workflow_json = row["workflow_json"]
+                        if isinstance(workflow_json, str):
+                            workflow_json = orjson.loads(workflow_json)
+
+                        logger.debug(
+                            "Workflow retrieved from database: {}", workflow_id
+                        )
+                        return WorkflowDetailsResponse(
+                            workflow_id=str(row["workflow_id"]),
+                            workflow_name=row["workflow_name"],
+                            workflow_json=workflow_json,
+                            version=row["version"] or 1,
+                            description=row["description"],
+                            created_at=row["created_at"] or datetime.now(timezone.utc),
+                            updated_at=row["updated_at"] or datetime.now(timezone.utc),
+                        )
+            except Exception as e:
+                logger.warning(
+                    "Database lookup failed for workflow {}, trying filesystem: {}",
+                    workflow_id,
+                    e,
+                )
+
+        # Fallback to filesystem
         workflows_dir = get_workflows_dir()
         file_path = workflows_dir / f"{workflow_id}.json"
 
@@ -612,6 +926,7 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
         # Load workflow data
         workflow_data = orjson.loads(file_path.read_bytes())
 
+        logger.debug("Workflow retrieved from filesystem: {}", workflow_id)
         return WorkflowDetailsResponse(
             workflow_id=workflow_data.get("workflow_id", workflow_id),
             workflow_name=workflow_data.get("workflow_name", "Unknown"),
@@ -626,7 +941,10 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
             else datetime.now(timezone.utc),
         )
 
-    except orjson.JSONDecodeError as e:
+    except HTTPException:
+        raise
+
+    except orjson.JSONDecodeError:
         logger.error("Corrupted workflow file: {}", workflow_id)
         raise HTTPException(status_code=500, detail="Corrupted workflow file")
 
@@ -638,7 +956,10 @@ async def get_workflow(workflow_id: str) -> WorkflowDetailsResponse:
 
 
 @router.delete("/workflows/{workflow_id}")
-async def delete_workflow(workflow_id: str) -> Dict[str, str]:
+async def delete_workflow(
+    workflow_id: str,
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> Dict[str, str]:
     """
     Delete workflow.
 
@@ -646,12 +967,53 @@ async def delete_workflow(workflow_id: str) -> Dict[str, str]:
 
     Args:
         workflow_id: Workflow UUID
+        current_user: Authenticated user from JWT
 
     Returns:
         Success message
     """
+    # Security: Validate UUID format to prevent path traversal
+    validate_uuid_format(workflow_id, "workflow_id")
+
     try:
-        # TODO: Delete from database
+        db_deleted = False
+        fs_deleted = False
+
+        # Delete from database first
+        pool = get_db_pool()
+        if pool:
+            try:
+                async with pool.acquire() as conn:
+                    # Delete workflow from main table
+                    result = await conn.execute(
+                        "DELETE FROM workflows WHERE workflow_id = $1",
+                        uuid.UUID(workflow_id),
+                    )
+                    if result and "DELETE" in result:
+                        db_deleted = True
+                        logger.info("Workflow deleted from database: {}", workflow_id)
+
+                    # Also delete any associated schedules
+                    await conn.execute(
+                        "DELETE FROM schedules WHERE workflow_id = $1",
+                        uuid.UUID(workflow_id),
+                    )
+
+                    # And webhook triggers if table exists
+                    try:
+                        await conn.execute(
+                            "DELETE FROM webhook_triggers WHERE workflow_id = $1",
+                            uuid.UUID(workflow_id),
+                        )
+                    except Exception:
+                        pass  # Table may not exist
+
+            except Exception as e:
+                logger.warning(
+                    "Failed to delete workflow from database: {} - {}",
+                    workflow_id,
+                    e,
+                )
 
         # Delete from filesystem
         workflows_dir = get_workflows_dir()
@@ -659,12 +1021,41 @@ async def delete_workflow(workflow_id: str) -> Dict[str, str]:
 
         if file_path.exists():
             file_path.unlink()
+            fs_deleted = True
             logger.info("Workflow deleted from filesystem: {}", workflow_id)
+
+        # Unregister any associated webhook triggers
+        trigger_manager = _get_trigger_manager()
+        if trigger_manager:
+            try:
+                # Find and unregister triggers for this workflow
+                for trigger in trigger_manager.get_all_triggers():
+                    if trigger.config.workflow_id == workflow_id:
+                        await trigger_manager.unregister_trigger(trigger.config.id)
+                        logger.info(
+                            "Unregistered trigger {} for workflow {}",
+                            trigger.config.id,
+                            workflow_id,
+                        )
+            except Exception as e:
+                logger.warning("Failed to unregister triggers for workflow: {}", e)
+
+        if not db_deleted and not fs_deleted:
+            raise HTTPException(
+                status_code=404, detail=f"Workflow not found: {workflow_id}"
+            )
 
         return {
             "status": "success",
             "message": f"Workflow deleted: {workflow_id}",
+            "deleted_from": {
+                "database": db_deleted,
+                "filesystem": fs_deleted,
+            },
         }
+
+    except HTTPException:
+        raise
 
     except Exception as e:
         logger.error("Failed to delete workflow {}: {}", workflow_id, e)

@@ -169,6 +169,7 @@ class ProcessModel:
     node_types: Dict[str, str] = field(default_factory=dict)
     edges: Dict[str, Dict[str, DirectFollowsEdge]] = field(default_factory=dict)
     variants: Dict[str, int] = field(default_factory=dict)
+    variant_paths: Dict[str, List[str]] = field(default_factory=dict)
     entry_nodes: Set[str] = field(default_factory=set)
     exit_nodes: Set[str] = field(default_factory=set)
     loop_nodes: Set[str] = field(default_factory=set)
@@ -182,12 +183,128 @@ class ProcessModel:
         return 0
 
     def get_most_common_path(self) -> List[str]:
-        """Get the most frequently executed path."""
+        """Get the most frequently executed path.
+
+        Returns:
+            Ordered list of node IDs representing the most common execution path.
+            Returns empty list if no variants have been recorded.
+        """
         if not self.variants:
             return []
-        # Variant is a hash, need to track actual paths separately
-        # TODO: Track actual paths for proper variant analysis
-        return list(self.nodes)  # Simplified
+
+        # Find the variant hash with highest count
+        most_common_hash = max(self.variants.keys(), key=lambda h: self.variants[h])
+
+        # Return the actual path for that variant
+        if most_common_hash in self.variant_paths:
+            return self.variant_paths[most_common_hash]
+
+        # Fallback: reconstruct path from edges using frequency-based traversal
+        return self._reconstruct_path_from_edges()
+
+    def _reconstruct_path_from_edges(self) -> List[str]:
+        """Reconstruct most likely path by following highest-frequency edges.
+
+        Returns:
+            Ordered list of node IDs representing the reconstructed path.
+        """
+        if not self.entry_nodes:
+            return []
+
+        # Start from entry node with highest outgoing frequency
+        current = self._select_best_entry_node()
+        if current is None:
+            return []
+
+        path = [current]
+        visited = {current}
+        max_steps = len(self.nodes) + 5  # Prevent infinite loops
+
+        while len(path) < max_steps:
+            # Get outgoing edges from current node
+            if current not in self.edges:
+                break
+
+            # Select next node with highest frequency
+            next_node = self._select_next_node(current, visited)
+            if next_node is None:
+                break
+
+            path.append(next_node)
+            visited.add(next_node)
+            current = next_node
+
+            # Stop if we reached an exit node
+            if current in self.exit_nodes:
+                break
+
+        return path
+
+    def _select_best_entry_node(self) -> Optional[str]:
+        """Select entry node with highest total outgoing frequency."""
+        best_entry: Optional[str] = None
+        best_freq = -1
+
+        for entry in self.entry_nodes:
+            total_freq = sum(
+                edge.frequency for edge in self.edges.get(entry, {}).values()
+            )
+            if total_freq > best_freq:
+                best_freq = total_freq
+                best_entry = entry
+
+        return best_entry
+
+    def _select_next_node(self, current: str, visited: Set[str]) -> Optional[str]:
+        """Select next node with highest frequency, preferring unvisited nodes.
+
+        Args:
+            current: Current node ID.
+            visited: Set of already visited node IDs.
+
+        Returns:
+            Next node ID or None if no valid transition exists.
+        """
+        if current not in self.edges:
+            return None
+
+        candidates = self.edges[current]
+        if not candidates:
+            return None
+
+        # Prefer unvisited nodes, then highest frequency
+        unvisited = [(n, e) for n, e in candidates.items() if n not in visited]
+        if unvisited:
+            return max(unvisited, key=lambda x: x[1].frequency)[0]
+
+        # All visited - check if we should allow revisit (loops)
+        if current in self.loop_nodes:
+            return max(candidates.items(), key=lambda x: x[1].frequency)[0]
+
+        return None
+
+    def get_variant_path(self, variant_hash: str) -> List[str]:
+        """Get the actual path for a specific variant hash.
+
+        Args:
+            variant_hash: The variant hash to look up.
+
+        Returns:
+            Ordered list of node IDs for the variant, or empty list if not found.
+        """
+        return self.variant_paths.get(variant_hash, [])
+
+    def get_all_variant_paths(self) -> Dict[str, Tuple[List[str], int]]:
+        """Get all variants with their paths and counts.
+
+        Returns:
+            Dictionary mapping variant hash to (path, count) tuples.
+        """
+        result: Dict[str, Tuple[List[str], int]] = {}
+        for variant_hash, count in self.variants.items():
+            path = self.variant_paths.get(variant_hash, [])
+            result[variant_hash] = (path, count)
+        return result
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -207,6 +324,7 @@ class ProcessModel:
             "node_types": self.node_types,
             "edges": edges_dict,
             "variants": self.variants,
+            "variant_paths": self.variant_paths,
             "entry_nodes": list(self.entry_nodes),
             "exit_nodes": list(self.exit_nodes),
             "loop_nodes": list(self.loop_nodes),
@@ -466,9 +584,13 @@ class ProcessDiscovery:
         if not activities:
             return
 
-        # Track variant
+        # Track variant with actual path
         variant = trace.variant
         model.variants[variant] = model.variants.get(variant, 0) + 1
+
+        # Store the actual path for this variant (first occurrence wins)
+        if variant not in model.variant_paths:
+            model.variant_paths[variant] = trace.activity_sequence
 
         # Process activities
         prev_activity: Optional[Activity] = None

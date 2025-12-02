@@ -185,7 +185,7 @@ class WorkflowSchema:
             ValidationResult with all issues and suggestions
         """
         # Import here to avoid circular dependency
-        from casare_rpa.domain.validation import validate_workflow, ValidationResult
+        from casare_rpa.domain.validation import validate_workflow
 
         return validate_workflow(self.to_dict())
 

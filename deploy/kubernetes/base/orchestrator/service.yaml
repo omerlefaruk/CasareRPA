@@ -1,0 +1,46 @@
+# CasareRPA Orchestrator Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: casare-orchestrator
+  labels:
+    app.kubernetes.io/name: casare-orchestrator
+    app.kubernetes.io/component: orchestrator
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: casare-orchestrator
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+    - name: websocket
+      port: 8001
+      targetPort: websocket
+      protocol: TCP
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  sessionAffinity: None
+
+---
+# Headless service for WebSocket sticky sessions
+apiVersion: v1
+kind: Service
+metadata:
+  name: casare-orchestrator-headless
+  labels:
+    app.kubernetes.io/name: casare-orchestrator
+    app.kubernetes.io/component: orchestrator
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: casare-orchestrator
+  ports:
+    - name: websocket
+      port: 8001
+      targetPort: websocket
+      protocol: TCP

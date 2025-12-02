@@ -104,8 +104,6 @@ class ProjectController(BaseController):
         """Show project manager dialog."""
         import asyncio
 
-        from ..ui.dialogs import ProjectManagerDialog
-
         # Get recent projects asynchronously
         try:
             loop = asyncio.get_event_loop()

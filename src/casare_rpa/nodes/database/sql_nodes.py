@@ -3,6 +3,7 @@ SQL Database Nodes for CasareRPA.
 
 This module provides core nodes for connecting to and interacting with databases.
 Supports SQLite (built-in), PostgreSQL, MySQL/MariaDB.
+Uses CredentialAwareMixin for vault-integrated credential resolution.
 
 Nodes:
     - DatabaseConnectNode: Establish database connection
@@ -23,6 +24,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
+from casare_rpa.domain.credentials import CredentialAwareMixin, CREDENTIAL_NAME_PROP
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
@@ -141,8 +143,8 @@ class DatabaseConnection:
             self.connection = None
 
 
-@executable_node
 @node_schema(
+    CREDENTIAL_NAME_PROP,  # For vault credential lookup
     PropertyDef(
         "db_type",
         PropertyType.CHOICE,
@@ -178,6 +180,7 @@ class DatabaseConnection:
         PropertyType.STRING,
         default="",
         label="Username",
+        tab="connection",
         tooltip="Database username (PostgreSQL/MySQL)",
     ),
     PropertyDef(
@@ -185,6 +188,7 @@ class DatabaseConnection:
         PropertyType.STRING,
         default="",
         label="Password",
+        tab="connection",
         tooltip="Database password (PostgreSQL/MySQL)",
     ),
     PropertyDef(
@@ -192,6 +196,7 @@ class DatabaseConnection:
         PropertyType.STRING,
         default="",
         label="Connection String",
+        tab="connection",
         tooltip="Full connection string (overrides individual parameters)",
     ),
     PropertyDef(
@@ -200,6 +205,7 @@ class DatabaseConnection:
         default=30.0,
         min_value=0.1,
         label="Timeout (seconds)",
+        tab="advanced",
         tooltip="Connection timeout in seconds",
     ),
     PropertyDef(
@@ -207,6 +213,7 @@ class DatabaseConnection:
         PropertyType.BOOLEAN,
         default=False,
         label="Use SSL",
+        tab="advanced",
         tooltip="Use SSL for connection (PostgreSQL/MySQL)",
     ),
     PropertyDef(
@@ -214,6 +221,7 @@ class DatabaseConnection:
         PropertyType.STRING,
         default="",
         label="SSL CA Certificate",
+        tab="advanced",
         tooltip="Path to CA certificate for SSL",
     ),
     PropertyDef(
@@ -222,6 +230,7 @@ class DatabaseConnection:
         default=5,
         min_value=1,
         label="Pool Size",
+        tab="advanced",
         tooltip="Connection pool size (PostgreSQL/MySQL)",
     ),
     PropertyDef(
@@ -229,6 +238,7 @@ class DatabaseConnection:
         PropertyType.BOOLEAN,
         default=True,
         label="Auto Commit",
+        tab="advanced",
         tooltip="Enable auto-commit mode",
     ),
     PropertyDef(
@@ -236,6 +246,7 @@ class DatabaseConnection:
         PropertyType.STRING,
         default="utf8mb4",
         label="Character Set",
+        tab="advanced",
         tooltip="Character set (MySQL)",
     ),
     PropertyDef(
@@ -244,6 +255,7 @@ class DatabaseConnection:
         default=0,
         min_value=0,
         label="Retry Count",
+        tab="advanced",
         tooltip="Number of retry attempts on connection failure",
     ),
     PropertyDef(
@@ -252,11 +264,12 @@ class DatabaseConnection:
         default=2000,
         min_value=0,
         label="Retry Interval (ms)",
+        tab="advanced",
         tooltip="Delay between retry attempts in milliseconds",
     ),
 )
 @executable_node
-class DatabaseConnectNode(BaseNode):
+class DatabaseConnectNode(CredentialAwareMixin, BaseNode):
     """
     Establish a database connection.
 
@@ -265,7 +278,13 @@ class DatabaseConnectNode(BaseNode):
         - PostgreSQL: Via asyncpg (if installed)
         - MySQL: Via aiomysql (if installed)
 
+    Uses CredentialAwareMixin for unified credential resolution:
+    1. Vault lookup (via credential_name parameter)
+    2. Direct parameters (username, password, connection_string)
+    3. Environment variables (DB_USERNAME, DB_PASSWORD, DATABASE_URL)
+
     Config (via @node_schema):
+        credential_name: Vault credential alias for DB credentials
         db_type: Database type (sqlite, postgresql, mysql)
         host: Database host
         port: Database port
@@ -318,19 +337,37 @@ class DatabaseConnectNode(BaseNode):
             host = self.get_parameter("host", "localhost")
             port = self.get_parameter("port", 5432)
             database = self.get_parameter("database", "")
-            username = self.get_parameter("username", "")
-            password = self.get_parameter("password", "")
-            connection_string = self.get_parameter("connection_string", "")
             pool_size = self.get_parameter("pool_size", 5)
             retry_count = self.get_parameter("retry_count", 0)
             retry_interval = self.get_parameter("retry_interval", 2000)
 
+            # Use credential resolution for username/password
+            username, password = await self.resolve_username_password(
+                context,
+                credential_name_param="credential_name",
+                username_param="username",
+                password_param="password",
+                env_prefix="DB",
+                required=False,
+            )
+
+            # Try connection string from vault or direct param
+            connection_string = (
+                await self.resolve_credential(
+                    context,
+                    credential_name_param="credential_name",
+                    direct_param="connection_string",
+                    env_var="DATABASE_URL",
+                    context_var="database_url",
+                    credential_field="connection_string",
+                    required=False,
+                )
+                or ""
+            )
+
             # Resolve {{variable}} patterns in connection parameters
             host = context.resolve_value(host)
             database = context.resolve_value(database)
-            username = context.resolve_value(username)
-            password = context.resolve_value(password)
-            connection_string = context.resolve_value(connection_string)
 
             logger.info(f"Connecting to {db_type} database")
 
@@ -500,7 +537,6 @@ class DatabaseConnectNode(BaseNode):
         )
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "query",
@@ -734,7 +770,6 @@ class ExecuteQueryNode(BaseNode):
             await connection.release()
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "query",
@@ -1270,7 +1305,6 @@ class CloseDatabaseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "statements",

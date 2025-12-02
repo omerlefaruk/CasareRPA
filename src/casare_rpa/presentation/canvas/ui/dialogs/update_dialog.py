@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QTextEdit,
     QWidget,
-    QSizePolicy,
 )
 from PySide6.QtCore import Signal, Slot, Qt, QTimer
 from PySide6.QtGui import QFont
@@ -26,7 +25,6 @@ from loguru import logger
 
 from casare_rpa.infrastructure.updater.update_manager import (
     UpdateManager,
-    UpdateState,
 )
 from casare_rpa.infrastructure.updater.tuf_updater import (
     UpdateInfo,

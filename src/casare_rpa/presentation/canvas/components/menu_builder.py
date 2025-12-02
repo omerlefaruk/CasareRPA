@@ -58,7 +58,7 @@ class MenuBuilder:
         return file_menu
 
     def _create_edit_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Edit menu (10 items)."""
+        """Create Edit menu (11 items)."""
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(mw.action_undo)
         edit_menu.addAction(mw.action_redo)
@@ -71,6 +71,8 @@ class MenuBuilder:
         edit_menu.addSeparator()
         edit_menu.addAction(mw.action_select_all)
         edit_menu.addAction(mw.action_find_node)
+        edit_menu.addSeparator()
+        edit_menu.addAction(mw.action_auto_connect)
         return edit_menu
 
     def _create_view_menu(self, menubar, mw: "MainWindow") -> QMenu:
@@ -85,14 +87,17 @@ class MenuBuilder:
         view_menu.addAction(mw.action_toggle_variable_inspector)
         view_menu.addAction(mw.action_toggle_bottom_panel)
         view_menu.addAction(mw.action_toggle_minimap)
+        view_menu.addSeparator()
+        view_menu.addAction(mw.action_fleet_dashboard)
         # Store reference on MainWindow for DockCreator access
         mw._view_menu = view_menu
         return view_menu
 
     def _create_run_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Run menu (6 items)."""
+        """Create Run menu (7 items)."""
         run_menu = menubar.addMenu("&Run")
         run_menu.addAction(mw.action_run)
+        run_menu.addAction(mw.action_run_all)
         run_menu.addAction(mw.action_pause)
         run_menu.addAction(mw.action_stop)
         run_menu.addSeparator()

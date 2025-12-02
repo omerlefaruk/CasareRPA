@@ -13,7 +13,6 @@ import os
 import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from uuid import UUID
 
 import jwt
 from fastapi import Depends, HTTPException, status, Header
@@ -327,15 +326,25 @@ class RobotAuthenticator:
     """
     Validates robot API tokens against configured hashes.
 
-    Tokens are SHA-256 hashed for secure storage. Supports loading
-    from environment variables or database.
+    Supports two modes:
+    1. Environment-based: Load token hashes from ROBOT_TOKENS env var (legacy)
+    2. Database-based: Validate against robot_api_keys table (recommended)
 
-    For internet-connected robots, use X-Api-Token header authentication
+    For internet-connected robots, use X-Api-Key header authentication
     instead of JWT (simpler for automated clients).
     """
 
-    def __init__(self):
-        self._token_hashes = self._load_token_hashes()
+    def __init__(self, use_database: bool = False, db_pool=None):
+        """
+        Initialize the authenticator.
+
+        Args:
+            use_database: If True, validate against database instead of env vars
+            db_pool: Database connection pool (required if use_database=True)
+        """
+        self._use_database = use_database
+        self._db_pool = db_pool
+        self._token_hashes = {} if use_database else self._load_token_hashes()
         self._auth_enabled = os.getenv("ROBOT_AUTH_ENABLED", "false").lower() in (
             "true",
             "1",
@@ -349,14 +358,14 @@ class RobotAuthenticator:
         Format: ROBOT_TOKENS=robot-001:hash1,robot-002:hash2
 
         Returns:
-            Dict mapping token_hash → robot_id
+            Dict mapping token_hash -> robot_id
         """
         token_env = os.getenv("ROBOT_TOKENS", "")
 
         if not token_env:
             logger.warning(
                 "ROBOT_TOKENS not configured. Set ROBOT_TOKENS=robot-001:hash1,robot-002:hash2 "
-                "or use tools/generate_robot_token.py to create tokens."
+                "or use database-based authentication with robot_api_keys table."
             )
             return {}
 
@@ -370,7 +379,7 @@ class RobotAuthenticator:
             robot_id, token_hash = entry.split(":", 1)
             token_map[token_hash.strip()] = robot_id.strip()
 
-        logger.info(f"Loaded {len(token_map)} robot authentication tokens")
+        logger.info(f"Loaded {len(token_map)} robot authentication tokens from env")
         return token_map
 
     def verify_token(self, token: str) -> Optional[str]:
@@ -378,7 +387,7 @@ class RobotAuthenticator:
         Verify robot API token and return robot ID if valid.
 
         Args:
-            token: Raw API token from X-Api-Token header
+            token: Raw API token from X-Api-Key header
 
         Returns:
             robot_id if token is valid, None otherwise
@@ -389,6 +398,74 @@ class RobotAuthenticator:
         # Hash token and check against configured hashes
         token_hash = hashlib.sha256(token.encode()).hexdigest()
         return self._token_hashes.get(token_hash)
+
+    async def verify_token_async(
+        self, token: str, client_ip: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Verify robot API token asynchronously against database.
+
+        Args:
+            token: Raw API token from X-Api-Key header
+            client_ip: Client IP for audit logging
+
+        Returns:
+            robot_id if token is valid, None otherwise
+        """
+        if not token:
+            return None
+
+        # If not using database, fall back to sync method
+        if not self._use_database:
+            return self.verify_token(token)
+
+        # Validate token format
+        if not token.startswith("crpa_") or len(token) < 40:
+            logger.warning(f"Invalid API key format: {token[:8]}...")
+            return None
+
+        token_hash = hashlib.sha256(token.encode()).hexdigest()
+
+        try:
+            if self._db_pool:
+                async with self._db_pool.acquire() as conn:
+                    # Check if key is valid (not revoked, not expired)
+                    result = await conn.fetchrow(
+                        """
+                        SELECT robot_id FROM robot_api_keys
+                        WHERE api_key_hash = $1
+                        AND is_revoked = FALSE
+                        AND (expires_at IS NULL OR expires_at > NOW())
+                        """,
+                        token_hash,
+                    )
+
+                    if result:
+                        robot_id = str(result["robot_id"])
+
+                        # Update last_used timestamp (fire and forget)
+                        await conn.execute(
+                            """
+                            UPDATE robot_api_keys
+                            SET last_used_at = NOW(), last_used_ip = $2::inet
+                            WHERE api_key_hash = $1
+                            """,
+                            token_hash,
+                            client_ip,
+                        )
+
+                        logger.debug(f"Database auth: validated robot {robot_id}")
+                        return robot_id
+
+                    logger.warning(f"API key not found or invalid: {token[:12]}...")
+                    return None
+
+        except Exception as e:
+            logger.error(f"Database API key validation failed: {e}")
+            # Fall back to env-based auth if database fails
+            return self.verify_token(token)
+
+        return None
 
     @property
     def is_enabled(self) -> bool:
@@ -408,15 +485,36 @@ def get_robot_authenticator() -> RobotAuthenticator:
     return _robot_authenticator
 
 
-async def verify_robot_token(x_api_token: str = Header(...)) -> str:
+def configure_robot_authenticator(
+    use_database: bool = False, db_pool=None
+) -> RobotAuthenticator:
     """
-    FastAPI dependency to verify robot API token.
-
-    Extracts token from X-Api-Token header and validates against
-    configured robot tokens.
+    Configure the global robot authenticator.
 
     Args:
-        x_api_token: Token from X-Api-Token HTTP header
+        use_database: Enable database-based authentication
+        db_pool: Database connection pool
+
+    Returns:
+        Configured RobotAuthenticator
+    """
+    global _robot_authenticator
+    _robot_authenticator = RobotAuthenticator(
+        use_database=use_database, db_pool=db_pool
+    )
+    logger.info(f"Robot authenticator configured: database={use_database}")
+    return _robot_authenticator
+
+
+async def verify_robot_token(x_api_key: str = Header(..., alias="X-Api-Key")) -> str:
+    """
+    FastAPI dependency to verify robot API key.
+
+    Extracts token from X-Api-Key header and validates against
+    configured robot tokens or database.
+
+    Args:
+        x_api_key: Token from X-Api-Key HTTP header
 
     Returns:
         robot_id if authentication successful
@@ -432,7 +530,7 @@ async def verify_robot_token(x_api_token: str = Header(...)) -> str:
 
     Environment:
         ROBOT_AUTH_ENABLED=true  # Enable robot authentication
-        ROBOT_TOKENS=robot-001:hash1,robot-002:hash2
+        ROBOT_TOKENS=robot-001:hash1,robot-002:hash2  # Legacy env-based auth
     """
     authenticator = get_robot_authenticator()
 
@@ -441,15 +539,16 @@ async def verify_robot_token(x_api_token: str = Header(...)) -> str:
         logger.debug("Robot authentication disabled (ROBOT_AUTH_ENABLED=false)")
         return "dev_robot"
 
-    robot_id = authenticator.verify_token(x_api_token)
+    # Try async validation first (database-based)
+    robot_id = await authenticator.verify_token_async(x_api_key)
 
     if not robot_id:
         logger.warning(
-            f"Failed robot authentication attempt with token: {x_api_token[:8]}..."
+            f"Failed robot authentication attempt with key: {x_api_key[:12]}..."
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired API token",
+            detail="Invalid or expired API key",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -458,19 +557,19 @@ async def verify_robot_token(x_api_token: str = Header(...)) -> str:
 
 
 async def optional_robot_token(
-    x_api_token: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
 ) -> Optional[str]:
     """
     Optional robot authentication dependency for endpoints that support both
     authenticated and anonymous access.
 
     Args:
-        x_api_token: Optional token from X-Api-Token header
+        x_api_key: Optional token from X-Api-Key header
 
     Returns:
         robot_id if token provided and valid, None otherwise
     """
-    if not x_api_token:
+    if not x_api_key:
         return None
 
     authenticator = get_robot_authenticator()
@@ -478,4 +577,173 @@ async def optional_robot_token(
     if not authenticator.is_enabled:
         return None
 
-    return authenticator.verify_token(x_api_token)
+    return await authenticator.verify_token_async(x_api_key)
+
+
+# =============================================================================
+# TENANT ISOLATION
+# =============================================================================
+
+
+def get_tenant_id(
+    user: AuthenticatedUser = Depends(get_current_user),
+) -> Optional[str]:
+    """
+    Get the tenant ID for the current authenticated user.
+
+    Use this dependency to enforce tenant isolation in database queries.
+    Returns None for users without tenant_id (system admins can see all).
+
+    Args:
+        user: Current authenticated user
+
+    Returns:
+        tenant_id string or None
+
+    Example:
+        @router.get("/workflows")
+        async def list_workflows(
+            tenant_id: Optional[str] = Depends(get_tenant_id),
+        ):
+            # Filter by tenant_id if set
+            if tenant_id:
+                workflows = await repo.list_by_tenant(tenant_id)
+            else:
+                workflows = await repo.list_all()  # Admin sees all
+    """
+    return user.tenant_id
+
+
+def require_tenant() -> str:
+    """
+    Dependency that requires a tenant_id to be present.
+
+    Fails with 403 if user has no tenant_id (prevents cross-tenant access).
+
+    Returns:
+        Dependency function that returns tenant_id or raises HTTPException
+
+    Example:
+        @router.get("/tenant-only", dependencies=[Depends(require_tenant())])
+        async def tenant_only_endpoint():
+            pass
+    """
+
+    def _require_tenant(
+        user: AuthenticatedUser = Depends(get_current_user),
+    ) -> str:
+        if not user.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This endpoint requires tenant context. User has no tenant_id.",
+            )
+        return user.tenant_id
+
+    return _require_tenant
+
+
+def require_same_tenant(resource_tenant_id: str):
+    """
+    Dependency factory to verify user belongs to the same tenant as a resource.
+
+    Args:
+        resource_tenant_id: Tenant ID of the resource being accessed
+
+    Returns:
+        Dependency function that raises HTTPException if tenant mismatch
+
+    Example:
+        # In endpoint logic after fetching resource:
+        if workflow.tenant_id != user.tenant_id and not user.is_admin:
+            raise HTTPException(403, "Cannot access resource from another tenant")
+    """
+
+    def _check_tenant(
+        user: AuthenticatedUser = Depends(get_current_user),
+    ) -> None:
+        # Admins can access any tenant
+        if user.is_admin:
+            return
+
+        # Users without tenant_id cannot access tenant-specific resources
+        if not user.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot access tenant resource without tenant context",
+            )
+
+        # Check tenant match
+        if user.tenant_id != resource_tenant_id:
+            logger.warning(
+                f"Tenant mismatch: user={user.user_id} tenant={user.tenant_id} "
+                f"resource_tenant={resource_tenant_id}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Cannot access resources from another tenant",
+            )
+
+    return _check_tenant
+
+
+# =============================================================================
+# COMBINED AUTH: JWT + API KEY
+# =============================================================================
+
+
+async def get_current_user_or_robot(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    x_api_key: Optional[str] = Header(None, alias="X-Api-Key"),
+) -> AuthenticatedUser:
+    """
+    Combined authentication dependency that accepts either:
+    1. JWT Bearer token (for web dashboard users)
+    2. X-Api-Key header (for robot agents)
+
+    Priority: JWT > API Key > Dev Mode
+
+    Args:
+        credentials: Optional HTTP Bearer credentials
+        x_api_key: Optional X-Api-Key header
+
+    Returns:
+        AuthenticatedUser (user or robot identity)
+
+    Raises:
+        HTTPException 401 if no valid authentication provided
+    """
+    # Try JWT authentication first
+    if credentials:
+        try:
+            return await verify_token(credentials)
+        except HTTPException:
+            pass  # Fall through to API key
+
+    # Try robot API key
+    if x_api_key:
+        authenticator = get_robot_authenticator()
+        if authenticator.is_enabled:
+            robot_id = await authenticator.verify_token_async(x_api_key)
+            if robot_id:
+                return AuthenticatedUser(
+                    user_id=f"robot:{robot_id}",
+                    roles=["robot"],
+                    tenant_id=None,  # Robots can access all tenants (filtered in use case)
+                    dev_mode=False,
+                )
+
+    # Dev mode fallback
+    if JWT_DEV_MODE:
+        logger.debug("Combined auth: allowing dev mode access")
+        return AuthenticatedUser(
+            user_id="dev_user",
+            roles=["admin"],
+            tenant_id=None,
+            dev_mode=True,
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required. Provide Bearer token or X-Api-Key header.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )

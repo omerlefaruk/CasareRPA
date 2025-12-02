@@ -1,6 +1,21 @@
 """
 Multi-Robot Coordination System for CasareRPA.
 
+.. deprecated:: 3.0.0
+    This module is deprecated and will be removed in a future version.
+
+    For robot agent functionality, use the unified RobotAgent class:
+
+        from casare_rpa.robot.agent import RobotAgent, RobotConfig
+
+        config = RobotConfig.from_env()
+        agent = RobotAgent(config)
+        await agent.start()
+
+    The coordination components (RobotCoordinator, LoadBalancer, etc.) are still
+    available in this module for fleet management use cases, but the agent lifecycle
+    is handled by RobotAgent.
+
 Provides distributed coordination for robot fleet management:
 - Robot registration with capabilities/tags
 - Heartbeat-based health monitoring
@@ -13,12 +28,19 @@ Provides distributed coordination for robot fleet management:
 
 from __future__ import annotations
 
+import warnings
+
+warnings.warn(
+    "The 'coordination' module is deprecated. Use 'casare_rpa.robot.agent.RobotAgent' "
+    "for robot agent lifecycle management. The coordination classes (RobotCoordinator, "
+    "LoadBalancer, etc.) remain available for fleet management.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import asyncio
-import hashlib
-import time
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from typing import (
@@ -28,9 +50,7 @@ from typing import (
     Dict,
     List,
     Optional,
-    Set,
     Tuple,
-    TypeVar,
 )
 
 from loguru import logger

@@ -9,7 +9,6 @@ from typing import Optional, Any, Dict
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QHBoxLayout,
     QFormLayout,
     QLabel,
     QLineEdit,
@@ -22,7 +21,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QWidget,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 
 from loguru import logger
 
@@ -242,9 +241,7 @@ class WorkflowSettingsDialog(QDialog):
         self._inherit_variables.setChecked(True)
         scope_layout.addWidget(self._inherit_variables)
 
-        self._expose_variables = QCheckBox(
-            "Expose local variables to parent workflow"
-        )
+        self._expose_variables = QCheckBox("Expose local variables to parent workflow")
         scope_layout.addWidget(self._expose_variables)
 
         scope_group.setLayout(scope_layout)

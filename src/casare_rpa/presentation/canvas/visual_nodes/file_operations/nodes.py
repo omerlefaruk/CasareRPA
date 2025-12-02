@@ -34,7 +34,7 @@ class VisualReadFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "ReadFileNode"
 
     def __init__(self) -> None:
@@ -58,7 +58,7 @@ class VisualWriteFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "WriteFileNode"
 
     def __init__(self) -> None:
@@ -82,7 +82,7 @@ class VisualAppendFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Append File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "AppendFileNode"
 
     def __init__(self) -> None:
@@ -106,7 +106,7 @@ class VisualDeleteFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Delete File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "DeleteFileNode"
 
     def __init__(self) -> None:
@@ -128,7 +128,7 @@ class VisualCopyFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Copy File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "CopyFileNode"
 
     def __init__(self) -> None:
@@ -152,7 +152,7 @@ class VisualMoveFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Move File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "MoveFileNode"
 
     def __init__(self) -> None:
@@ -176,7 +176,7 @@ class VisualFileExistsNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "File Exists"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "FileExistsNode"
 
     def __init__(self) -> None:
@@ -200,7 +200,7 @@ class VisualGetFileSizeNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get File Size"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "GetFileSizeNode"
 
     def __init__(self) -> None:
@@ -223,7 +223,7 @@ class VisualGetFileInfoNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get File Info"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "GetFileInfoNode"
 
     def __init__(self) -> None:
@@ -251,7 +251,7 @@ class VisualListFilesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "List Files"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/basic"
     CASARE_NODE_CLASS = "ListFilesNode"
 
     def __init__(self) -> None:
@@ -280,7 +280,7 @@ class VisualReadCsvNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read CSV"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/csv"
     CASARE_NODE_CLASS = "ReadCSVNode"
 
     def __init__(self) -> None:
@@ -305,7 +305,7 @@ class VisualWriteCsvNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write CSV"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/csv"
     CASARE_NODE_CLASS = "WriteCSVNode"
 
     def __init__(self) -> None:
@@ -335,7 +335,7 @@ class VisualReadJsonNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read JSON"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/json"
     CASARE_NODE_CLASS = "ReadJSONFileNode"
 
     def __init__(self) -> None:
@@ -358,7 +358,7 @@ class VisualWriteJsonNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write JSON"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/json"
     CASARE_NODE_CLASS = "WriteJSONFileNode"
 
     def __init__(self) -> None:
@@ -386,7 +386,7 @@ class VisualZipFilesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Zip Files"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/archive"
     CASARE_NODE_CLASS = "ZipFilesNode"
 
     def __init__(self) -> None:
@@ -411,7 +411,7 @@ class VisualUnzipFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Unzip File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/archive"
     CASARE_NODE_CLASS = "UnzipFilesNode"
 
     def __init__(self) -> None:
@@ -442,7 +442,7 @@ class VisualParseXMLNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Parse XML"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -458,7 +458,7 @@ class VisualReadXMLFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read XML File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -474,7 +474,7 @@ class VisualWriteXMLFileNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Write XML File"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def __init__(self) -> None:
         super().__init__()
@@ -497,7 +497,7 @@ class VisualXPathQueryNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "XPath Query"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -515,7 +515,7 @@ class VisualGetXMLElementNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get XML Element"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -535,7 +535,7 @@ class VisualGetXMLAttributeNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get XML Attribute"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -552,7 +552,7 @@ class VisualXMLToJsonNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "XML To JSON"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def __init__(self) -> None:
         super().__init__()
@@ -573,7 +573,7 @@ class VisualJsonToXMLNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "JSON To XML"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/xml"
 
     def __init__(self) -> None:
         super().__init__()
@@ -596,7 +596,7 @@ class VisualReadPDFTextNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Read PDF Text"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def __init__(self) -> None:
         super().__init__()
@@ -618,7 +618,7 @@ class VisualGetPDFInfoNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Get PDF Info"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -638,7 +638,7 @@ class VisualMergePDFsNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Merge PDFs"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -655,7 +655,7 @@ class VisualSplitPDFNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Split PDF"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def __init__(self) -> None:
         super().__init__()
@@ -678,7 +678,7 @@ class VisualExtractPDFPagesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "Extract PDF Pages"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -696,7 +696,7 @@ class VisualPDFToImagesNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "PDF To Images"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/pdf"
 
     def __init__(self) -> None:
         super().__init__()
@@ -725,7 +725,7 @@ class VisualFTPConnectNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Connect"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def __init__(self) -> None:
         super().__init__()
@@ -758,7 +758,7 @@ class VisualFTPUploadNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Upload"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def __init__(self) -> None:
         super().__init__()
@@ -788,7 +788,7 @@ class VisualFTPDownloadNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Download"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def __init__(self) -> None:
         super().__init__()
@@ -818,7 +818,7 @@ class VisualFTPListNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP List"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def __init__(self) -> None:
         super().__init__()
@@ -837,7 +837,7 @@ class VisualFTPDeleteNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Delete"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -851,7 +851,7 @@ class VisualFTPMakeDirNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Make Dir"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def __init__(self) -> None:
         super().__init__()
@@ -869,7 +869,7 @@ class VisualFTPRemoveDirNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Remove Dir"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -883,7 +883,7 @@ class VisualFTPRenameNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Rename"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -898,7 +898,7 @@ class VisualFTPDisconnectNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Disconnect"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -911,7 +911,7 @@ class VisualFTPGetSizeNode(VisualNode):
 
     __identifier__ = "casare_rpa.file_operations"
     NODE_NAME = "FTP Get Size"
-    NODE_CATEGORY = "file_operations"
+    NODE_CATEGORY = "file_operations/ftp"
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

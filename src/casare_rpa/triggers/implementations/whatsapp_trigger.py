@@ -3,6 +3,7 @@ CasareRPA - WhatsApp Trigger
 
 Trigger that fires when a WhatsApp message is received.
 Webhook-only mode with Meta/Facebook verify token support.
+Uses vault-integrated credential resolution.
 """
 
 import hashlib
@@ -87,57 +88,151 @@ class WhatsAppTrigger(BaseTrigger):
         return self._client
 
     async def _get_access_token(self) -> Optional[str]:
-        """Get access token from config, credentials, or environment."""
+        """
+        Get access token using unified credential resolution.
+
+        Resolution order:
+        1. Direct config (access_token)
+        2. Vault credential lookup (via credential_name)
+        3. Legacy credential manager (for backwards compatibility)
+        4. Environment variable (WHATSAPP_ACCESS_TOKEN)
+
+        Returns:
+            Access token string or None
+        """
         # Try direct config
         token = self.config.config.get("access_token")
         if token:
             return token
 
-        # Try credential manager
+        # Try vault credential provider
+        cred_name = self.config.config.get("credential_name")
+        if cred_name:
+            try:
+                from casare_rpa.infrastructure.security.credential_provider import (
+                    VaultCredentialProvider,
+                )
+
+                provider = VaultCredentialProvider()
+                await provider.initialize()
+                try:
+                    cred = await provider.get_credential(cred_name)
+                    if cred:
+                        access_token = getattr(cred, "access_token", None)
+                        if access_token:
+                            logger.debug(f"Using vault credential: {cred_name}")
+                            return access_token
+                        if hasattr(cred, "data") and cred.data:
+                            access_token = cred.data.get("access_token")
+                            if access_token:
+                                logger.debug(
+                                    f"Using vault credential data: {cred_name}"
+                                )
+                                return access_token
+                finally:
+                    await provider.shutdown()
+            except ImportError:
+                logger.debug("Vault credential provider not available")
+            except Exception as e:
+                logger.debug(f"Vault credential lookup failed: {e}")
+
+        # Try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
-            cred_name = self.config.config.get("credential_name")
             if cred_name:
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.access_token:
+                    logger.debug(f"Using legacy credential: {cred_name}")
                     return cred.access_token
 
-            # Try default names
+            # Try default names in legacy system
             for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
                 cred = credential_manager.get_whatsapp_credential(name)
                 if cred and cred.access_token:
+                    logger.debug(f"Using legacy default credential: {name}")
                     return cred.access_token
+        except ImportError:
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential lookup failed: {e}")
 
         # Try environment
         return os.environ.get("WHATSAPP_ACCESS_TOKEN")
 
     async def _get_phone_number_id(self) -> Optional[str]:
-        """Get phone number ID from config, credentials, or environment."""
+        """
+        Get phone number ID using unified credential resolution.
+
+        Resolution order:
+        1. Direct config (phone_number_id)
+        2. Vault credential lookup (via credential_name)
+        3. Legacy credential manager (for backwards compatibility)
+        4. Environment variable (WHATSAPP_PHONE_NUMBER_ID)
+
+        Returns:
+            Phone number ID string or None
+        """
         # Try direct config
         phone_id = self.config.config.get("phone_number_id")
         if phone_id:
             return phone_id
 
-        # Try credential manager
+        # Try vault credential provider
+        cred_name = self.config.config.get("credential_name")
+        if cred_name:
+            try:
+                from casare_rpa.infrastructure.security.credential_provider import (
+                    VaultCredentialProvider,
+                )
+
+                provider = VaultCredentialProvider()
+                await provider.initialize()
+                try:
+                    cred = await provider.get_credential(cred_name)
+                    if cred:
+                        phone_number_id = getattr(cred, "phone_number_id", None)
+                        if phone_number_id:
+                            logger.debug(
+                                f"Using vault credential phone_number_id: {cred_name}"
+                            )
+                            return phone_number_id
+                        if hasattr(cred, "data") and cred.data:
+                            phone_number_id = cred.data.get("phone_number_id")
+                            if phone_number_id:
+                                logger.debug(
+                                    f"Using vault credential data phone_number_id: {cred_name}"
+                                )
+                                return phone_number_id
+                finally:
+                    await provider.shutdown()
+            except ImportError:
+                logger.debug("Vault credential provider not available")
+            except Exception as e:
+                logger.debug(f"Vault credential lookup failed: {e}")
+
+        # Try legacy credential manager for backwards compatibility
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
-            cred_name = self.config.config.get("credential_name")
             if cred_name:
                 cred = credential_manager.get_whatsapp_credential(cred_name)
                 if cred and cred.phone_number_id:
+                    logger.debug(
+                        f"Using legacy credential phone_number_id: {cred_name}"
+                    )
                     return cred.phone_number_id
 
-            # Try default names
+            # Try default names in legacy system
             for name in ["whatsapp", "whatsapp_business", "default_whatsapp"]:
                 cred = credential_manager.get_whatsapp_credential(name)
                 if cred and cred.phone_number_id:
+                    logger.debug(f"Using legacy default phone_number_id: {name}")
                     return cred.phone_number_id
+        except ImportError:
+            pass
         except Exception as e:
-            logger.debug(f"Could not get credential: {e}")
+            logger.debug(f"Legacy credential lookup failed: {e}")
 
         # Try environment
         return os.environ.get("WHATSAPP_PHONE_NUMBER_ID")

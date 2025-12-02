@@ -10,9 +10,8 @@ Each tier is attempted in sequence until one succeeds or all fail.
 from __future__ import annotations
 
 import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Protocol, Tuple, TYPE_CHECKING
 
 from loguru import logger
 
@@ -34,12 +33,11 @@ from casare_rpa.infrastructure.browser.healing.telemetry import (
 )
 from casare_rpa.utils.selectors.selector_healing import (
     ElementFingerprint,
-    HealingResult,
     SelectorHealer,
 )
 
 if TYPE_CHECKING:
-    from playwright.async_api import Page, ElementHandle
+    from playwright.async_api import Page
 
 
 @dataclass

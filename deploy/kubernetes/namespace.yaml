@@ -1,8 +1,0 @@
-# CasareRPA Kubernetes Namespace
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: casare-rpa
-  labels:
-    app.kubernetes.io/name: casare-rpa
-    app.kubernetes.io/part-of: casare-rpa

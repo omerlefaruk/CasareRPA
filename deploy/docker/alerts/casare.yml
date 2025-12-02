@@ -1,0 +1,242 @@
+# CasareRPA Prometheus Alerting Rules
+# =============================================================================
+
+groups:
+  # ===========================================================================
+  # Orchestrator Alerts
+  # ===========================================================================
+  - name: casare-orchestrator
+    rules:
+      # Service Down
+      - alert: OrchestratorDown
+        expr: up{job="casare-orchestrator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: orchestrator
+        annotations:
+          summary: "Orchestrator is down"
+          description: "CasareRPA Orchestrator has been down for more than 1 minute."
+
+      # High Error Rate
+      - alert: OrchestratorHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="casare-orchestrator", status=~"5.."}[5m])) /
+          sum(rate(http_requests_total{job="casare-orchestrator"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "High error rate on Orchestrator"
+          description: "Orchestrator error rate is above 5% for the last 5 minutes."
+
+      # High Latency
+      - alert: OrchestratorHighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="casare-orchestrator"}[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "High latency on Orchestrator"
+          description: "Orchestrator 95th percentile latency is above 1 second."
+
+      # Too Many Active WebSocket Connections
+      - alert: OrchestratorTooManyConnections
+        expr: casare_websocket_connections_active > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "Too many WebSocket connections"
+          description: "Orchestrator has more than 100 active WebSocket connections."
+
+  # ===========================================================================
+  # Robot Fleet Alerts
+  # ===========================================================================
+  - name: casare-robots
+    rules:
+      # Robot Disconnected
+      - alert: RobotDisconnected
+        expr: |
+          time() - casare_robot_last_heartbeat_timestamp > 120
+        for: 2m
+        labels:
+          severity: warning
+          service: robot
+        annotations:
+          summary: "Robot disconnected"
+          description: "Robot {{ $labels.robot_id }} has not sent heartbeat for more than 2 minutes."
+
+      # All Robots Offline
+      - alert: AllRobotsOffline
+        expr: sum(casare_robots_online) == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: robot
+        annotations:
+          summary: "All robots are offline"
+          description: "No robots are currently connected to the orchestrator."
+
+      # Robot High Memory Usage
+      - alert: RobotHighMemoryUsage
+        expr: casare_robot_memory_usage_percent > 90
+        for: 10m
+        labels:
+          severity: warning
+          service: robot
+        annotations:
+          summary: "Robot high memory usage"
+          description: "Robot {{ $labels.robot_id }} memory usage is above 90%."
+
+      # Robot High CPU Usage
+      - alert: RobotHighCPUUsage
+        expr: casare_robot_cpu_usage_percent > 90
+        for: 10m
+        labels:
+          severity: warning
+          service: robot
+        annotations:
+          summary: "Robot high CPU usage"
+          description: "Robot {{ $labels.robot_id }} CPU usage is above 90%."
+
+  # ===========================================================================
+  # Job Queue Alerts
+  # ===========================================================================
+  - name: casare-jobs
+    rules:
+      # Job Queue Backlog
+      - alert: JobQueueBacklog
+        expr: casare_jobs_pending > 50
+        for: 10m
+        labels:
+          severity: warning
+          service: jobs
+        annotations:
+          summary: "Job queue backlog"
+          description: "More than 50 jobs pending for more than 10 minutes."
+
+      # Jobs Failing
+      - alert: JobHighFailureRate
+        expr: |
+          sum(rate(casare_jobs_failed_total[10m])) /
+          sum(rate(casare_jobs_completed_total[10m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: jobs
+        annotations:
+          summary: "High job failure rate"
+          description: "Job failure rate is above 10% for the last 10 minutes."
+
+      # Job Timeout
+      - alert: JobsTimingOut
+        expr: increase(casare_jobs_timeout_total[30m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: jobs
+        annotations:
+          summary: "Jobs are timing out"
+          description: "More than 5 jobs have timed out in the last 30 minutes."
+
+      # Long Running Job
+      - alert: LongRunningJob
+        expr: |
+          (time() - casare_job_started_timestamp) > 3600
+          and casare_job_status == "running"
+        for: 5m
+        labels:
+          severity: warning
+          service: jobs
+        annotations:
+          summary: "Long running job"
+          description: "Job {{ $labels.job_id }} has been running for more than 1 hour."
+
+  # ===========================================================================
+  # Database Alerts
+  # ===========================================================================
+  - name: casare-database
+    rules:
+      # Database Connection Pool Exhausted
+      - alert: DatabaseConnectionPoolExhausted
+        expr: casare_db_pool_available == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "No available database connections in the pool."
+
+      # Database Slow Queries
+      - alert: DatabaseSlowQueries
+        expr: |
+          histogram_quantile(0.95, sum(rate(casare_db_query_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database slow queries"
+          description: "Database 95th percentile query time is above 1 second."
+
+  # ===========================================================================
+  # Redis Alerts
+  # ===========================================================================
+  - name: casare-redis
+    rules:
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis server is not responding."
+
+      # Redis Memory Full
+      - alert: RedisMemoryFull
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory almost full"
+          description: "Redis memory usage is above 90%."
+
+  # ===========================================================================
+  # Infrastructure Alerts
+  # ===========================================================================
+  - name: casare-infrastructure
+    rules:
+      # Container Restarting
+      - alert: ContainerRestarting
+        expr: increase(container_restarts_total[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Container restarting"
+          description: "Container {{ $labels.container }} has restarted more than 3 times in the last hour."
+
+      # High Disk Usage
+      - alert: HighDiskUsage
+        expr: |
+          (node_filesystem_size_bytes - node_filesystem_free_bytes) /
+          node_filesystem_size_bytes > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is above 85% on {{ $labels.instance }}."

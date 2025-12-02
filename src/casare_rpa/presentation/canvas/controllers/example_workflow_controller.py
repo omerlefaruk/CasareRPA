@@ -16,7 +16,6 @@ from typing import Optional
 from loguru import logger
 
 from ..events import (
-    EventBus,
     Event,
     EventType,
     EventHandler,

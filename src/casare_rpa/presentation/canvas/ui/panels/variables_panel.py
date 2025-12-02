@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
 
@@ -159,6 +158,7 @@ class VariablesPanel(QDockWidget):
 
         self._variables: Dict[str, Dict[str, Any]] = {}
         self._is_runtime_mode = False
+        self._current_scope_filter = "All"
 
         self._setup_dock()
         self._setup_ui()
@@ -190,6 +190,29 @@ class VariablesPanel(QDockWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(8)
 
+        # Scope filter dropdown
+        scope_label = QLabel("Scope:")
+        scope_label.setStyleSheet("color: #a0a0a0;")
+        self._scope_filter = QComboBox()
+        self._scope_filter.addItems(["All", "Global", "Project", "Workflow"])
+        self._scope_filter.setFixedWidth(90)
+        self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
+        self._scope_filter.setStyleSheet("""
+            QComboBox {
+                background-color: #3c3f41;
+                color: #d4d4d4;
+                border: 1px solid #4a4a4a;
+                border-radius: 3px;
+                padding: 2px 4px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox:hover {
+                border: 1px solid #5a8a9a;
+            }
+        """)
+
         # Mode label
         self._mode_label = QLabel("Mode: Design")
         self._mode_label.setStyleSheet("color: #a0a0a0;")
@@ -209,6 +232,8 @@ class VariablesPanel(QDockWidget):
         clear_btn.setFixedWidth(70)
         clear_btn.clicked.connect(self._on_clear_all)
 
+        toolbar.addWidget(scope_label)
+        toolbar.addWidget(self._scope_filter)
         toolbar.addWidget(self._mode_label)
         toolbar.addStretch()
         toolbar.addWidget(add_btn)
@@ -354,6 +379,9 @@ class VariablesPanel(QDockWidget):
         self.variable_added.emit(name, var_type, default_value)
         self.variables_changed.emit(self._variables)
 
+        # Apply scope filter in case new variable doesn't match
+        self._apply_scope_filter()
+
         logger.debug(f"Variable added: {name} ({var_type})")
 
     def remove_variable(self, name: str) -> None:
@@ -442,6 +470,31 @@ class VariablesPanel(QDockWidget):
     def _on_clear_all(self) -> None:
         """Handle clear all button click."""
         self.clear_variables()
+
+    def _on_scope_filter_changed(self, scope: str) -> None:
+        """
+        Handle scope filter dropdown change.
+
+        Filters the table to show only variables matching the selected scope.
+
+        Args:
+            scope: Selected scope filter ("All", "Global", "Project", "Workflow")
+        """
+        self._current_scope_filter = scope
+        self._apply_scope_filter()
+        logger.debug(f"Scope filter changed to: {scope}")
+
+    def _apply_scope_filter(self) -> None:
+        """Apply current scope filter to table rows."""
+        scope_filter = self._current_scope_filter
+
+        for row in range(self._table.rowCount()):
+            scope_item = self._table.item(row, self.COL_SCOPE)
+            if scope_item:
+                row_scope = scope_item.text()
+                # Show row if filter is "All" or matches row scope
+                should_show = scope_filter == "All" or row_scope == scope_filter
+                self._table.setRowHidden(row, not should_show)
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         """

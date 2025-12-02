@@ -9,9 +9,7 @@ from abc import abstractmethod
 from typing import Any, Dict, Optional, Type
 
 from casare_rpa.domain.entities.base_node import BaseNode
-from casare_rpa.domain.value_objects import Port
 from casare_rpa.domain.value_objects.types import (
-    DataType,
     ExecutionResult,
     NodeConfig,
     NodeId,

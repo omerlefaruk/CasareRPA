@@ -12,6 +12,11 @@ from .whatsapp_send import (
     WhatsAppSendLocationNode,
     WhatsAppSendVideoNode,
     WhatsAppSendInteractiveNode,
+    # Reusable PropertyDef constants
+    WHATSAPP_ACCESS_TOKEN,
+    WHATSAPP_PHONE_NUMBER_ID,
+    WHATSAPP_CREDENTIAL_NAME,
+    WHATSAPP_TO,
 )
 
 __all__ = [
@@ -22,4 +27,9 @@ __all__ = [
     "WhatsAppSendLocationNode",
     "WhatsAppSendVideoNode",
     "WhatsAppSendInteractiveNode",
+    # Reusable PropertyDef constants
+    "WHATSAPP_ACCESS_TOKEN",
+    "WHATSAPP_PHONE_NUMBER_ID",
+    "WHATSAPP_CREDENTIAL_NAME",
+    "WHATSAPP_TO",
 ]

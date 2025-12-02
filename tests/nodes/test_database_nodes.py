@@ -766,8 +766,8 @@ class TestDatabaseNodesMockedDrivers:
         self, mock_asyncpg, execution_context
     ) -> None:
         """Test PostgreSQL connection with mocked asyncpg."""
-        mock_conn = AsyncMock()
-        mock_asyncpg.connect = AsyncMock(return_value=mock_conn)
+        mock_pool = AsyncMock()
+        mock_asyncpg.create_pool = AsyncMock(return_value=mock_pool)
 
         node = DatabaseConnectNode(node_id="test_pg")
         node.set_input_value("db_type", "postgresql")
@@ -780,15 +780,15 @@ class TestDatabaseNodesMockedDrivers:
         result = await node.execute(execution_context)
 
         assert result["success"] is True
-        mock_asyncpg.connect.assert_called_once()
+        mock_asyncpg.create_pool.assert_called_once()
 
     @pytest.mark.asyncio
     @patch("casare_rpa.nodes.database.sql_nodes.AIOMYSQL_AVAILABLE", True)
     @patch("casare_rpa.nodes.database.sql_nodes.aiomysql")
     async def test_mysql_connect_mocked(self, mock_aiomysql, execution_context) -> None:
         """Test MySQL connection with mocked aiomysql."""
-        mock_conn = AsyncMock()
-        mock_aiomysql.connect = AsyncMock(return_value=mock_conn)
+        mock_pool = AsyncMock()
+        mock_aiomysql.create_pool = AsyncMock(return_value=mock_pool)
 
         node = DatabaseConnectNode(node_id="test_mysql")
         node.set_input_value("db_type", "mysql")
@@ -801,4 +801,4 @@ class TestDatabaseNodesMockedDrivers:
         result = await node.execute(execution_context)
 
         assert result["success"] is True
-        mock_aiomysql.connect.assert_called_once()
+        mock_aiomysql.create_pool.assert_called_once()

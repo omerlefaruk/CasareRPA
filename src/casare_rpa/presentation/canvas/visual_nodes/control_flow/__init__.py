@@ -14,6 +14,16 @@ from .nodes import (
     VisualContinueNode,
     VisualMergeNode,
     VisualSwitchNode,
+    # Try/Catch/Finally nodes
+    VisualTryCatchFinallyNode,
+    VisualTryNode,
+    VisualCatchNode,
+    VisualFinallyNode,
+    # Parallel execution nodes
+    VisualForkJoinNode,
+    VisualForkNode,
+    VisualJoinNode,
+    VisualParallelForEachNode,
 )
 
 __all__ = [
@@ -28,4 +38,14 @@ __all__ = [
     "VisualContinueNode",
     "VisualMergeNode",
     "VisualSwitchNode",
+    # Try/Catch/Finally nodes
+    "VisualTryCatchFinallyNode",
+    "VisualTryNode",
+    "VisualCatchNode",
+    "VisualFinallyNode",
+    # Parallel execution nodes
+    "VisualForkJoinNode",
+    "VisualForkNode",
+    "VisualJoinNode",
+    "VisualParallelForEachNode",
 ]

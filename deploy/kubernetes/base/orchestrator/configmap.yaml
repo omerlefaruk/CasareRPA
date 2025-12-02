@@ -1,0 +1,68 @@
+# CasareRPA Orchestrator Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: casare-orchestrator-config
+  labels:
+    app.kubernetes.io/name: casare-orchestrator
+    app.kubernetes.io/component: orchestrator
+data:
+  # Application settings
+  CASARE_ENV: "production"
+  CASARE_LOG_LEVEL: "INFO"
+  CASARE_LOG_FORMAT: "json"
+  JWT_DEV_MODE: "false"
+
+  # Server settings
+  ORCHESTRATOR_HOST: "0.0.0.0"
+  ORCHESTRATOR_PORT: "8000"
+  WEBSOCKET_PORT: "8001"
+  WORKERS: "4"
+
+  # Robot management
+  ROBOT_HEARTBEAT_INTERVAL: "30"
+  ROBOT_TIMEOUT_SECONDS: "120"
+  MAX_CONCURRENT_JOBS: "100"
+
+  # Database pool settings
+  DB_POOL_SIZE: "10"
+  DB_POOL_MAX_OVERFLOW: "20"
+  DB_POOL_TIMEOUT: "30"
+
+  # Metrics settings
+  STATSD_HOST: "localhost"
+  STATSD_PORT: "9125"
+  METRICS_PREFIX: "casare"
+
+  # Robot routing configuration
+  routing.yaml: |
+    workload_routing:
+      browser_only:
+        target: kubernetes
+        node_types:
+          - NavigateNode
+          - ClickElementNode
+          - ScrapeDataNode
+          - WaitForSelectorNode
+          - GetElementTextNode
+          - FillFormNode
+      desktop_required:
+        target: windows_fleet
+        node_types:
+          - ClickDesktopNode
+          - TypeTextNode
+          - ReadExcelNode
+          - WindowControlNode
+      mixed:
+        strategy: split
+        description: "Browser nodes -> K8s, Desktop nodes -> Windows"
+
+    scheduling:
+      default_queue: "default"
+      priority_queues:
+        - name: high
+          weight: 10
+        - name: default
+          weight: 5
+        - name: low
+          weight: 1

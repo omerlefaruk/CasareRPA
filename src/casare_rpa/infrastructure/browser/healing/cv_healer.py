@@ -13,7 +13,6 @@ Requires:
 from __future__ import annotations
 
 import asyncio
-import io
 import time
 from dataclasses import dataclass, field
 from enum import Enum

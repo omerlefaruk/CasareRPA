@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 
 from casare_rpa.infrastructure.observability.metrics import (
     RPAMetricsCollector,
-    RobotMetrics as InfraRobotMetrics,
-    JobMetrics as InfraJobMetrics,
 )
 from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
 
@@ -70,12 +68,13 @@ class MonitoringDataAdapter:
         try:
             async with self._db_pool.acquire() as conn:
                 # Query robots from database (consider robots seen in last 5 mins as active)
+                # Actual Supabase schema uses: 'idle', 'busy', 'offline', 'error', 'maintenance'
                 robots_query = """
                     SELECT
                         COUNT(*) AS total,
                         COUNT(*) FILTER (WHERE status = 'busy') AS busy,
                         COUNT(*) FILTER (WHERE status = 'idle' AND last_seen > NOW() - INTERVAL '5 minutes') AS idle,
-                        COUNT(*) FILTER (WHERE status = 'offline' OR last_seen <= NOW() - INTERVAL '5 minutes') AS offline
+                        COUNT(*) FILTER (WHERE status = 'offline' OR status = 'error' OR last_seen <= NOW() - INTERVAL '5 minutes') AS offline
                     FROM robots
                 """
                 robot_stats = await conn.fetchrow(robots_query)
@@ -89,15 +88,16 @@ class MonitoringDataAdapter:
                 active_jobs = await conn.fetchval(active_query) or 0
 
                 # Query jobs completed today with average duration
+                # Use job_queue table (Supabase schema) not pgqueuer_jobs
                 jobs_today_query = """
                     SELECT
                         COUNT(*) AS total,
                         AVG(
-                            EXTRACT(EPOCH FROM (completed_at - claimed_at))
+                            EXTRACT(EPOCH FROM (completed_at - started_at))
                         ) FILTER (
-                            WHERE completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                            WHERE completed_at IS NOT NULL AND started_at IS NOT NULL
                         ) AS avg_duration
-                    FROM pgqueuer_jobs
+                    FROM job_queue
                     WHERE DATE(created_at) = CURRENT_DATE
                 """
                 jobs_today = await conn.fetchrow(jobs_today_query)
@@ -170,19 +170,38 @@ class MonitoringDataAdapter:
         try:
             async with self._db_pool.acquire() as conn:
                 # Build query with optional status filter
+                # Actual Supabase schema: id, robot_id, name, hostname, status,
+                # last_seen, last_heartbeat, metrics, capabilities, environment, etc.
+                # NO current_job_ids column exists!
                 if status:
                     query = """
-                        SELECT robot_id, hostname, status, current_job_id, last_seen, metrics
+                        SELECT
+                            COALESCE(robot_id, id) AS robot_id,
+                            name,
+                            hostname,
+                            status,
+                            NULL AS current_job_id,
+                            last_seen,
+                            last_heartbeat,
+                            metrics
                         FROM robots
                         WHERE status = $1
-                        ORDER BY last_seen DESC
+                        ORDER BY last_seen DESC NULLS LAST
                     """
                     rows = await conn.fetch(query, status)
                 else:
                     query = """
-                        SELECT robot_id, hostname, status, current_job_id, last_seen, metrics
+                        SELECT
+                            COALESCE(robot_id, id) AS robot_id,
+                            name,
+                            hostname,
+                            status,
+                            NULL AS current_job_id,
+                            last_seen,
+                            last_heartbeat,
+                            metrics
                         FROM robots
-                        ORDER BY last_seen DESC
+                        ORDER BY last_seen DESC NULLS LAST
                     """
                     rows = await conn.fetch(query)
 
@@ -200,17 +219,26 @@ class MonitoringDataAdapter:
                     else:
                         metrics = raw_metrics
 
+                    # Map Supabase status to API status (online -> idle when not busy)
+                    api_status = row["status"]
+                    if api_status == "online":
+                        api_status = "idle"
+
                     result.append(
                         {
                             "robot_id": row["robot_id"],
+                            "name": row.get("name")
+                            or row["hostname"]
+                            or row["robot_id"],
                             "hostname": row["hostname"] or row["robot_id"],
-                            "status": row["status"],
+                            "status": api_status,
                             "cpu_percent": metrics.get("cpu_percent", 0.0),
                             "memory_mb": metrics.get("memory_mb", 0.0),
                             "current_job_id": str(row["current_job_id"])
                             if row["current_job_id"]
                             else None,
-                            "last_heartbeat": row["last_seen"],
+                            "last_heartbeat": row.get("last_heartbeat")
+                            or row["last_seen"],
                         }
                     )
                 return result
@@ -434,12 +462,154 @@ class MonitoringDataAdapter:
                 "node_executions": [],
             }
 
-        # For historical jobs, need database
-        logger.warning(
-            "Historical job details require database queries - implement in next phase"
-        )
-        # TODO: Query database (pgqueuer_jobs + dbos tables)
+        # For historical jobs, need database - return None from sync method
+        # Use get_job_details_async() for database-backed historical queries
         return None
+
+    async def get_job_details_async(self, job_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get detailed execution information for a single job from database.
+
+        Checks active jobs first, then queries pgqueuer_jobs for historical data.
+        Extracts error information and retry count from payload JSONB.
+
+        Args:
+            job_id: Job identifier (UUID string)
+
+        Returns:
+            Dict matching JobDetails Pydantic model, or None if not found
+        """
+        # Check active jobs first (in-memory cache)
+        active_jobs = self.metrics.get_active_jobs()
+        if job_id in active_jobs:
+            job = active_jobs[job_id]
+            return {
+                "job_id": job_id,
+                "workflow_id": job.get("workflow_id", ""),
+                "workflow_name": job.get("workflow_name"),
+                "robot_id": job.get("robot_id"),
+                "status": "running",
+                "created_at": job.get("started_at", datetime.now(timezone.utc)),
+                "claimed_at": job.get("started_at"),
+                "completed_at": None,
+                "duration_ms": None,
+                "error_message": None,
+                "error_type": None,
+                "retry_count": 0,
+                "node_executions": [],
+            }
+
+        # Query database for historical job
+        if not self._db_pool:
+            logger.warning("Database pool not configured - cannot fetch historical job")
+            return None
+
+        try:
+            async with self._db_pool.acquire() as conn:
+                return await self._query_job_details(conn, job_id)
+        except Exception as e:
+            logger.error(f"Database error fetching job details for {job_id}: {e}")
+            return None
+
+    async def _query_job_details(
+        self,
+        conn: Any,  # asyncpg.Connection
+        job_id: str,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Execute parameterized query for single job details.
+
+        Extracts all relevant fields from pgqueuer_jobs table including
+        error information stored in payload JSONB.
+
+        Args:
+            conn: Database connection
+            job_id: Job UUID string
+
+        Returns:
+            Dict matching JobDetails model or None if not found
+        """
+        query = """
+            SELECT
+                id::text AS job_id,
+                payload->>'workflow_id' AS workflow_id,
+                payload->>'workflow_name' AS workflow_name,
+                claimed_by AS robot_id,
+                status,
+                created_at,
+                claimed_at,
+                completed_at,
+                CASE
+                    WHEN completed_at IS NOT NULL AND claimed_at IS NOT NULL
+                    THEN EXTRACT(EPOCH FROM (completed_at - claimed_at))::integer * 1000
+                    ELSE NULL
+                END AS duration_ms,
+                payload->>'error_message' AS error_message,
+                COALESCE(
+                    SUBSTRING(
+                        payload->>'error_message'
+                        FROM '^([A-Za-z]+Error|[A-Za-z]+Exception)'
+                    ),
+                    CASE
+                        WHEN payload->>'error_message' ILIKE '%%timeout%%'
+                            THEN 'TimeoutError'
+                        WHEN payload->>'error_message' ILIKE '%%connection%%'
+                            THEN 'ConnectionError'
+                        WHEN payload->>'error_message' ILIKE '%%not found%%'
+                            THEN 'NotFoundError'
+                        WHEN payload->>'error_message' ILIKE '%%permission%%'
+                            THEN 'PermissionError'
+                        WHEN payload->>'error_message' ILIKE '%%validation%%'
+                            THEN 'ValidationError'
+                        WHEN payload->>'error_message' IS NOT NULL
+                            THEN 'UnknownError'
+                        ELSE NULL
+                    END
+                ) AS error_type,
+                COALESCE((payload->>'retry_count')::integer, 0) AS retry_count,
+                payload->'node_executions' AS node_executions_json
+            FROM pgqueuer_jobs
+            WHERE id = $1::uuid
+        """
+
+        try:
+            row = await conn.fetchrow(query, job_id)
+        except Exception as e:
+            # Handle invalid UUID format
+            logger.warning(f"Invalid job_id format or query error: {e}")
+            return None
+
+        if not row:
+            logger.debug(f"Job {job_id} not found in database")
+            return None
+
+        # Parse node_executions from JSONB if present
+        node_executions: List[Dict[str, Any]] = []
+        if row["node_executions_json"]:
+            try:
+                raw_executions = row["node_executions_json"]
+                if isinstance(raw_executions, str):
+                    node_executions = json.loads(raw_executions)
+                elif isinstance(raw_executions, list):
+                    node_executions = raw_executions
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse node_executions for job {job_id}: {e}")
+
+        return {
+            "job_id": row["job_id"],
+            "workflow_id": row["workflow_id"] or "",
+            "workflow_name": row["workflow_name"],
+            "robot_id": row["robot_id"],
+            "status": row["status"],
+            "created_at": row["created_at"],
+            "claimed_at": row["claimed_at"],
+            "completed_at": row["completed_at"],
+            "duration_ms": row["duration_ms"],
+            "error_message": row["error_message"],
+            "error_type": row["error_type"],
+            "retry_count": row["retry_count"],
+            "node_executions": node_executions,
+        }
 
     def get_analytics(self) -> Dict:
         """
@@ -914,10 +1084,11 @@ class MonitoringDataAdapter:
 
         # Check if robots table has status_changed_at column
         # Fall back to using last_seen for status inference
+        # Supabase uses: 'offline', 'online', 'busy', 'error', 'maintenance'
         query_parts = [
             """
             SELECT
-                robot_id,
+                robot_id::text AS robot_id,
                 hostname,
                 status,
                 last_seen,
@@ -926,7 +1097,7 @@ class MonitoringDataAdapter:
                     last_seen
                 ) AS status_changed_at
             FROM robots
-            WHERE status IN ('idle', 'busy', 'offline')
+            WHERE status IN ('online', 'busy', 'offline', 'error')
             """
         ]
 
@@ -934,7 +1105,7 @@ class MonitoringDataAdapter:
         param_idx = 1
 
         if event_type == "robot_online":
-            query_parts.append("AND status IN ('idle', 'busy')")
+            query_parts.append("AND status IN ('online', 'busy')")
         elif event_type == "robot_offline":
             query_parts.append("AND status = 'offline'")
 
@@ -969,7 +1140,7 @@ class MonitoringDataAdapter:
                         "job_id": None,
                     }
                 )
-            elif status in ("idle", "busy"):
+            elif status in ("online", "busy"):
                 # For online events, we only include if recently seen
                 now = datetime.now(timezone.utc)
                 if (now - timestamp).total_seconds() < 300:  # Last 5 minutes

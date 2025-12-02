@@ -23,6 +23,7 @@ from casare_rpa.presentation.canvas.connections.auto_connect import AutoConnectM
 from casare_rpa.presentation.canvas.connections.connection_cutter import (
     ConnectionCutter,
 )
+from casare_rpa.presentation.canvas.connections.node_insert import NodeInsertManager
 from casare_rpa.presentation.canvas.graph.custom_pipe import CasarePipe
 from casare_rpa.presentation.canvas.graph.node_quick_actions import NodeQuickActions
 from casare_rpa.presentation.canvas.graph.node_widgets import (
@@ -384,6 +385,9 @@ class NodeGraphWidget(QWidget):
         # Create connection cutter (Y + LMB drag to cut connections)
         self._connection_cutter = ConnectionCutter(self._graph, self)
 
+        # Create node insert manager (drag node onto connection to insert)
+        self._node_insert = NodeInsertManager(self._graph, self)
+
         # Create quick actions for node context menu
         self._quick_actions = NodeQuickActions(self._graph, self)
 
@@ -515,10 +519,12 @@ class NodeGraphWidget(QWidget):
             logger.debug(f"Could not clear culler on session change: {e}")
 
     def _on_culling_pipe_created(self, input_port, output_port) -> None:
-        """Register newly created pipe with culler."""
+        """Register newly created pipe with culler and propagate control flow frames."""
         try:
             # Get the pipe item from the connection
             # NodeGraphQt stores pipes in the output port
+            source_node = None
+            target_node = None
             if hasattr(output_port, "connected_pipes"):
                 for pipe in output_port.connected_pipes():
                     if (
@@ -534,8 +540,57 @@ class NodeGraphWidget(QWidget):
                                 pipe_id, source_node.id, target_node.id, pipe
                             )
                         break
+
+            # Propagate control flow frame to connected nodes
+            if source_node and target_node:
+                self._propagate_control_flow_frame(source_node, target_node)
+
         except Exception as e:
             logger.debug(f"Could not register pipe for culling: {e}")
+
+    def _propagate_control_flow_frame(self, source_node, target_node) -> None:
+        """
+        Propagate control flow frame membership when nodes are connected.
+
+        If one node is in a control flow frame (For Loop, While Loop, Try/Catch/Finally),
+        add the other node to the same frame and trigger auto-resize.
+        """
+        try:
+            # Get control flow frame from either node
+            source_frame = getattr(source_node, "control_flow_frame", None)
+            target_frame = getattr(target_node, "control_flow_frame", None)
+
+            frame = source_frame or target_frame
+            if not frame:
+                return  # No control flow frame involved
+
+            # Check if frame is still valid (in scene)
+            if not frame.scene():
+                return
+
+            # Add nodes to frame if not already members
+            if source_frame and not target_frame:
+                # Target node is joining the frame
+                frame.add_node(target_node)
+                target_node.control_flow_frame = frame
+                logger.debug(
+                    f"Added {target_node.name()} to control flow frame '{frame.frame_title}'"
+                )
+
+            elif target_frame and not source_frame:
+                # Source node is joining the frame
+                frame.add_node(source_node)
+                source_node.control_flow_frame = frame
+                logger.debug(
+                    f"Added {source_node.name()} to control flow frame '{frame.frame_title}'"
+                )
+
+            # Trigger frame bounds update (auto-resize)
+            if hasattr(frame, "_check_node_bounds"):
+                frame._check_node_bounds()
+
+        except Exception as e:
+            logger.debug(f"Could not propagate control flow frame: {e}")
 
     def _on_culling_pipe_deleted(self, input_port, output_port) -> None:
         """Unregister deleted pipe from culler."""
@@ -558,7 +613,7 @@ class NodeGraphWidget(QWidget):
                     viewer.viewport().rect()
                 ).boundingRect()
                 self._culler.update_viewport(viewport_rect)
-        except Exception as e:
+        except Exception:
             # Suppress errors during startup
             pass
 
@@ -581,11 +636,13 @@ class NodeGraphWidget(QWidget):
 
         # Register custom pipe class for connection labels and output preview
         try:
-            if hasattr(viewer, "_PIPE_ITEM"):
-                viewer._PIPE_ITEM = CasarePipe
-                logger.debug("Custom pipe class registered for connection labels")
+            # Always set - don't check hasattr, just assign directly
+            viewer._PIPE_ITEM = CasarePipe
+            logger.info(
+                "Custom CasarePipe class registered for connection labels and node insertion"
+            )
         except Exception as e:
-            logger.debug(f"Could not register custom pipe: {e}")
+            logger.warning(f"Could not register custom pipe: {e}")
 
         # Set selection colors - transparent overlay, thick yellow border
         if hasattr(viewer, "_node_sel_color"):
@@ -749,6 +806,16 @@ class NodeGraphWidget(QWidget):
             AutoConnectManager instance
         """
         return self._auto_connect
+
+    @property
+    def node_insert(self) -> NodeInsertManager:
+        """
+        Get the node insert manager.
+
+        Returns:
+            NodeInsertManager instance
+        """
+        return self._node_insert
 
     def set_auto_connect_enabled(self, enabled: bool) -> None:
         """
@@ -1027,6 +1094,9 @@ class NodeGraphWidget(QWidget):
         # Check if this is a composite node that creates multiple nodes
         visual_class = node.__class__
         if getattr(visual_class, "COMPOSITE_NODE", False):
+            logger.info(
+                f"Detected composite node: {visual_class.__name__}, handling creation of multiple nodes"
+            )
             self._handle_composite_node_creation(node)
             return
 
@@ -1162,6 +1232,9 @@ class NodeGraphWidget(QWidget):
         # Schedule deletion and replacement (must be done after current event)
         def replace_composite():
             try:
+                logger.debug(
+                    f"Replacing composite marker '{node_name}' with actual nodes at ({x}, {y})"
+                )
                 # Delete the marker composite node
                 self._graph.delete_node(composite_node)
 
@@ -1170,11 +1243,15 @@ class NodeGraphWidget(QWidget):
                     self._create_for_loop_pair(x, y)
                 elif node_name == "While Loop":
                     self._create_while_loop_pair(x, y)
+                elif node_name == "Try/Catch/Finally":
+                    self._create_try_catch_finally(x, y)
                 else:
                     logger.warning(f"Unknown composite node type: {node_name}")
 
             except Exception as e:
-                logger.error(f"Failed to handle composite node creation: {e}")
+                logger.error(
+                    f"Failed to handle composite node creation: {e}", exc_info=True
+                )
 
         # Use QTimer to defer the replacement
         QTimer.singleShot(0, replace_composite)
@@ -1182,6 +1259,9 @@ class NodeGraphWidget(QWidget):
     def _create_for_loop_pair(self, x: float, y: float) -> None:
         """
         Create a For Loop Start + End pair at the given position.
+
+        Layout: Side-by-side with large spacing for workflow nodes
+            ForLoopStart (x, y) -------- ForLoopEnd (x + 600, y)
 
         Args:
             x: X position for the start node
@@ -1193,9 +1273,9 @@ class NodeGraphWidget(QWidget):
                 "casare_rpa.control_flow.VisualForLoopStartNode", pos=[x, y]
             )
 
-            # Create For Loop End node (positioned below and to the right)
+            # Create For Loop End node (side-by-side with large spacing)
             end_node = self._graph.create_node(
-                "casare_rpa.control_flow.VisualForLoopEndNode", pos=[x + 300, y + 150]
+                "casare_rpa.control_flow.VisualForLoopEndNode", pos=[x + 600, y]
             )
 
             if start_node and end_node:
@@ -1241,6 +1321,9 @@ class NodeGraphWidget(QWidget):
         """
         Create a While Loop Start + End pair at the given position.
 
+        Layout: Side-by-side with large spacing for workflow nodes
+            WhileLoopStart (x, y) -------- WhileLoopEnd (x + 600, y)
+
         Args:
             x: X position for the start node
             y: Y position for the start node
@@ -1251,9 +1334,9 @@ class NodeGraphWidget(QWidget):
                 "casare_rpa.control_flow.VisualWhileLoopStartNode", pos=[x, y]
             )
 
-            # Create While Loop End node (positioned below and to the right)
+            # Create While Loop End node (side-by-side with large spacing)
             end_node = self._graph.create_node(
-                "casare_rpa.control_flow.VisualWhileLoopEndNode", pos=[x + 300, y + 150]
+                "casare_rpa.control_flow.VisualWhileLoopEndNode", pos=[x + 600, y]
             )
 
             if start_node and end_node:
@@ -1294,6 +1377,100 @@ class NodeGraphWidget(QWidget):
 
         except Exception as e:
             logger.error(f"Failed to create While Loop pair: {e}")
+
+    def _create_try_catch_finally(self, x: float, y: float) -> None:
+        """
+        Create a Try/Catch/Finally block with three nodes side-by-side.
+
+        Layout: Side-by-side with large spacing for workflow nodes
+            Try (x, y) -------- Catch (x + 450, y) -------- Finally (x + 900, y)
+
+        IDs are automatically paired - no user configuration needed.
+
+        Args:
+            x: X position for the Try node
+            y: Y position for the Try node
+        """
+        try:
+            # Create Try node
+            try_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualTryNode", pos=[x, y]
+            )
+
+            # Create Catch node (side-by-side with large spacing)
+            catch_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualCatchNode", pos=[x + 450, y]
+            )
+
+            # Create Finally node (side-by-side with large spacing)
+            finally_node = self._graph.create_node(
+                "casare_rpa.control_flow.VisualFinallyNode", pos=[x + 900, y]
+            )
+
+            if try_node and catch_node and finally_node:
+                # Get node IDs
+                try_id = try_node.get_property("node_id")
+                catch_id = catch_node.get_property("node_id")
+                finally_id = finally_node.get_property("node_id")
+
+                # Set up automatic pairing on visual nodes
+                try_node.paired_catch_id = catch_id
+                try_node.paired_finally_id = finally_id
+                catch_node.paired_try_id = try_id
+                catch_node.paired_finally_id = finally_id
+                finally_node.paired_try_id = try_id
+
+                # Set up pairing on CasareRPA logic nodes
+                try_casare = (
+                    try_node.get_casare_node()
+                    if hasattr(try_node, "get_casare_node")
+                    else None
+                )
+                catch_casare = (
+                    catch_node.get_casare_node()
+                    if hasattr(catch_node, "get_casare_node")
+                    else None
+                )
+                finally_casare = (
+                    finally_node.get_casare_node()
+                    if hasattr(finally_node, "get_casare_node")
+                    else None
+                )
+
+                if try_casare:
+                    try_casare.paired_catch_id = catch_id
+                    try_casare.paired_finally_id = finally_id
+
+                if catch_casare and hasattr(catch_casare, "set_paired_try"):
+                    catch_casare.set_paired_try(try_id)
+                    catch_casare.paired_finally_id = finally_id
+
+                if finally_casare and hasattr(finally_casare, "set_paired_try"):
+                    finally_casare.set_paired_try(try_id)
+
+                # Connect Try.exec_out -> Catch.exec_in
+                try_exec_out = try_node.get_output("exec_out")
+                catch_exec_in = catch_node.get_input("exec_in")
+                if try_exec_out and catch_exec_in:
+                    try_exec_out.connect_to(catch_exec_in)
+                    logger.debug("Connected Try.exec_out -> Catch.exec_in")
+
+                # Connect Catch.catch_body -> Finally.exec_in
+                catch_body_port = catch_node.get_output("catch_body")
+                finally_exec_in = finally_node.get_input("exec_in")
+                if catch_body_port and finally_exec_in:
+                    catch_body_port.connect_to(finally_exec_in)
+                    logger.debug("Connected Catch.catch_body -> Finally.exec_in")
+
+                logger.info(
+                    f"Created Try/Catch/Finally block: Try={try_id}, "
+                    f"Catch={catch_id}, Finally={finally_id}"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Failed to create Try/Catch/Finally block: {e}", exc_info=True
+            )
 
     # =========================================================================
     # IMPORT CALLBACKS
