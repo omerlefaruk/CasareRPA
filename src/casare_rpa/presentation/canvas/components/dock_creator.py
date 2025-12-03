@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from ..ui.panels.variable_inspector_dock import VariableInspectorDock
     from ..ui.panels.properties_panel import PropertiesPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
+    from ..ui.panels.analytics_panel import AnalyticsPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
     from ..ui.widgets.execution_timeline import ExecutionTimeline
     from ..ui.debug_panel import DebugPanel
@@ -379,6 +380,55 @@ class DockCreator:
 
         logger.info("Robot Picker Panel created")
         return robot_picker
+
+    def create_analytics_panel(self) -> "AnalyticsPanel":
+        """
+        Create the Analytics Panel for bottleneck detection and execution analysis.
+
+        Connects to the Orchestrator REST API for:
+        - Bottleneck Detection: Identify slow/failing nodes
+        - Execution Analysis: Trends, patterns, insights
+        - Timeline visualization
+
+        Returns:
+            Created AnalyticsPanel instance
+        """
+        from ..ui.panels.analytics_panel import AnalyticsPanel
+
+        mw = self._main_window
+        analytics_panel = AnalyticsPanel(mw)
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, analytics_panel)
+
+        # Tabify with properties panel if exists
+        if mw._properties_panel:
+            mw.tabifyDockWidget(mw._properties_panel, analytics_panel)
+
+        # Connect dock state changes to auto-save
+        analytics_panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
+        analytics_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
+        analytics_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = analytics_panel.toggleViewAction()
+                toggle_action.setText("&Analytics Panel")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+A"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_analytics = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Analytics Panel to View menu: {e}")
+
+        # Initially hidden
+        analytics_panel.hide()
+
+        logger.info(
+            "Analytics Panel created with Bottlenecks, Execution, Timeline tabs"
+        )
+        return analytics_panel
 
     def _find_view_menu(self):
         """Get the View menu from MainWindow (stored reference)."""

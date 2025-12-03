@@ -1,6 +1,7 @@
 """API routers for monitoring endpoints."""
 
 from casare_rpa.infrastructure.orchestrator.api.routers import (
+    analytics,
     auth,
     jobs,
     metrics,
@@ -11,6 +12,7 @@ from casare_rpa.infrastructure.orchestrator.api.routers import (
 )
 
 __all__ = [
+    "analytics",
     "auth",
     "jobs",
     "metrics",

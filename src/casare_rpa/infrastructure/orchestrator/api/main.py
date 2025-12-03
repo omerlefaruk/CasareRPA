@@ -57,6 +57,7 @@ from casare_rpa.infrastructure.orchestrator.api.responses import (
     error_response,
 )
 from casare_rpa.infrastructure.orchestrator.api.routers import (
+    analytics,
     auth,
     jobs,
     metrics,
@@ -467,6 +468,11 @@ app.include_router(
     schedules.router,
     prefix="/api/v1",
     tags=["Schedules"],
+)
+app.include_router(
+    analytics.router,
+    prefix="/api/v1",
+    tags=["Analytics"],
 )
 
 # WebSocket router (no version prefix for WS)
