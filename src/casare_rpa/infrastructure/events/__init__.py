@@ -4,10 +4,10 @@ Infrastructure event system for real-time monitoring.
 Provides event bus for monitoring dashboard updates (job status, robot heartbeats, queue metrics).
 """
 
-from .monitoring_events import (
-    MonitoringEventType,
+from casare_rpa.infrastructure.events.monitoring_events import (
     MonitoringEvent,
     MonitoringEventBus,
+    MonitoringEventType,
     get_monitoring_event_bus,
 )
 

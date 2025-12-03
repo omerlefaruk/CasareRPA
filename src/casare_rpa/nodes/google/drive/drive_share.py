@@ -83,7 +83,6 @@ async def _make_drive_request(
         return response_data
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "send_notification",
@@ -114,6 +113,7 @@ async def _make_drive_request(
         tooltip="Transfer ownership to this user (requires role=owner)",
     ),
 )
+@executable_node
 class DriveShareFileNode(BaseNode):
     """
     Add a permission to a Google Drive file or folder.
@@ -270,8 +270,8 @@ class DriveShareFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema()
+@executable_node
 class DriveRemoveShareNode(BaseNode):
     """
     Remove a permission from a Google Drive file or folder.
@@ -352,7 +352,6 @@ class DriveRemoveShareNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "include_permissions_for_view",
@@ -362,6 +361,7 @@ class DriveRemoveShareNode(BaseNode):
         tooltip="Include permissions for published files",
     ),
 )
+@executable_node
 class DriveGetPermissionsNode(BaseNode):
     """
     List all permissions on a Google Drive file or folder.
@@ -471,7 +471,6 @@ class DriveGetPermissionsNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "access_type",
@@ -497,6 +496,7 @@ class DriveGetPermissionsNode(BaseNode):
         tooltip="Allow file to appear in search results",
     ),
 )
+@executable_node
 class DriveCreateShareLinkNode(BaseNode):
     """
     Create a shareable link for a Google Drive file or folder.

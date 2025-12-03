@@ -9,14 +9,14 @@ from typing import List, Optional
 
 from casare_rpa.domain.value_objects.types import ErrorCode
 
-from ..context import ErrorContext, RecoveryDecision
-from ..types import (
+from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
+from casare_rpa.domain.errors.types import (
     ErrorCategory,
     ErrorClassification,
     ErrorSeverity,
     RecoveryAction,
 )
-from .base import ErrorHandler
+from casare_rpa.domain.errors.handlers.base import ErrorHandler
 
 
 class NodeErrorHandler(ErrorHandler):

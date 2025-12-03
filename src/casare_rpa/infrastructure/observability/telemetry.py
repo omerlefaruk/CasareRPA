@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     Generator,
@@ -32,6 +33,7 @@ from typing import (
     Optional,
     TypeVar,
     ParamSpec,
+    cast,
 )
 
 from loguru import logger
@@ -40,7 +42,6 @@ from loguru import logger
 try:
     from opentelemetry import trace, metrics
     from opentelemetry.trace import (
-        Tracer,
         Span,
         SpanKind,
         Status,
@@ -51,17 +52,10 @@ try:
     from opentelemetry.trace.propagation.tracecontext import (
         TraceContextTextMapPropagator,
     )
-    from opentelemetry.context import Context, get_current, attach, detach
-    from opentelemetry.metrics import (
-        Meter,
-        Counter,
-        Histogram,
-        UpDownCounter,
-        ObservableGauge,
-    )
+    from opentelemetry.context import Context
 
     # OpenTelemetry imports - SDK
-    from opentelemetry.sdk.trace import TracerProvider, ReadableSpan
+    from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import (
         BatchSpanProcessor,
         ConsoleSpanExporter,
@@ -73,8 +67,8 @@ try:
         ConsoleMetricExporter,
         MetricReader,
     )
-    from opentelemetry.sdk.resources import Resource, SERVICE_NAME
-    from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk._logs import LoggerProvider
     from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 
     # OTLP exporters
@@ -97,27 +91,47 @@ try:
         OTLPLogExporter as OTLPLogExporterHTTP,
     )
 
-    # Semantic conventions
-    from opentelemetry.semconv.resource import ResourceAttributes
-    from opentelemetry.semconv.trace import SpanAttributes
-
     OTEL_AVAILABLE = True
 except ImportError as e:
-    logger.warning(
+    logger.debug(
         f"OpenTelemetry packages not installed: {e}. "
-        "Telemetry will be disabled. Install with: "
-        "pip install opentelemetry-api opentelemetry-sdk "
+        "Telemetry disabled. Install with: pip install opentelemetry-api opentelemetry-sdk "
         "opentelemetry-exporter-otlp-proto-grpc opentelemetry-exporter-otlp-proto-http"
     )
     OTEL_AVAILABLE = False
 
-    # Stub types for when OTel is not available
-    Tracer = Any  # type: ignore
-    Meter = Any  # type: ignore
-    Span = Any  # type: ignore
-    Counter = Any  # type: ignore
-    Histogram = Any  # type: ignore
-    UpDownCounter = Any  # type: ignore
+    # When OTel is not installed, create stub implementations for runtime
+    # These are needed to avoid NameError at runtime when the library is not installed
+    class Span:  # type: ignore[no-redef]
+        """Stub Span when OpenTelemetry is not installed."""
+
+        pass
+
+    class SpanKind:  # type: ignore[no-redef]
+        """Stub SpanKind when OpenTelemetry is not installed."""
+
+        INTERNAL = None
+
+    class StatusCode:  # type: ignore[no-redef]
+        """Stub StatusCode when OpenTelemetry is not installed."""
+
+        OK = None
+        ERROR = None
+
+    class Status:  # type: ignore[no-redef]
+        """Stub Status when OpenTelemetry is not installed."""
+
+        def __init__(self, code: Any, description: str = "") -> None:
+            pass
+
+    # Stub functions for when OTel is not installed
+    def get_current_span(context: Any = None) -> Any:  # type: ignore[misc]
+        """Stub get_current_span when OpenTelemetry is not installed."""
+        return None
+
+    def set_span_in_context(span: Any, context: Any = None) -> Any:  # type: ignore[misc]
+        """Stub set_span_in_context when OpenTelemetry is not installed."""
+        return None
 
 
 # Type variables for decorators
@@ -244,6 +258,7 @@ class TelemetryProvider:
 
     _instance: Optional["TelemetryProvider"] = None
     _lock: threading.Lock = threading.Lock()
+    _initialized: bool
 
     def __new__(cls) -> "TelemetryProvider":
         """Thread-safe singleton pattern."""
@@ -574,7 +589,7 @@ class TelemetryProvider:
 
         logger.debug("Metrics instruments initialized")
 
-    def get_tracer(self, name: str, version: str = "1.0.0") -> Optional[Tracer]:
+    def get_tracer(self, name: str, version: str = "1.0.0") -> Optional[Any]:
         """
         Get or create a tracer for the given component.
 
@@ -594,7 +609,7 @@ class TelemetryProvider:
 
         return self._tracers[cache_key]
 
-    def get_meter(self, name: str, version: str = "1.0.0") -> Optional[Meter]:
+    def get_meter(self, name: str, version: str = "1.0.0") -> Optional[Any]:
         """
         Get or create a meter for the given component.
 
@@ -825,12 +840,12 @@ class TelemetryProvider:
 # =============================================================================
 
 
-def get_tracer(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Tracer]:
+def get_tracer(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Any]:
     """Get a tracer from the global TelemetryProvider."""
     return TelemetryProvider.get_instance().get_tracer(name, version)
 
 
-def get_meter(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Meter]:
+def get_meter(name: str = "casare_rpa", version: str = "1.0.0") -> Optional[Any]:
     """Get a meter from the global TelemetryProvider."""
     return TelemetryProvider.get_instance().get_meter(name, version)
 
@@ -888,6 +903,7 @@ def trace_workflow(
         async def run_workflow(ctx: ExecutionContext) -> Dict[str, Any]:
             ...
     """
+    import asyncio
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @functools.wraps(func)
@@ -899,7 +915,7 @@ def trace_workflow(
             if not tracer:
                 return func(*args, **kwargs)
 
-            span_attributes = {
+            span_attributes: Dict[str, Any] = {
                 "workflow.name": name,
                 "workflow.function": func.__qualname__,
             }
@@ -949,9 +965,11 @@ def trace_workflow(
             name = workflow_name or func.__name__
 
             if not tracer:
-                return await func(*args, **kwargs)  # type: ignore
+                # Cast is needed because func could be sync or async at runtime
+                coro = cast(Callable[P, Awaitable[T]], func)
+                return await coro(*args, **kwargs)
 
-            span_attributes = {
+            span_attributes: Dict[str, Any] = {
                 "workflow.name": name,
                 "workflow.function": func.__qualname__,
             }
@@ -965,7 +983,8 @@ def trace_workflow(
             ) as span:
                 start_time = time.perf_counter()
                 try:
-                    result = await func(*args, **kwargs)  # type: ignore
+                    coro = cast(Callable[P, Awaitable[T]], func)
+                    result = await coro(*args, **kwargs)
                     span.set_status(Status(StatusCode.OK))
                     provider.record_workflow_execution(
                         workflow_name=name,
@@ -994,11 +1013,9 @@ def trace_workflow(
                     duration = time.perf_counter() - start_time
                     span.set_attribute("workflow.duration_ms", duration * 1000)
 
-        import asyncio
-
         if asyncio.iscoroutinefunction(func):
-            return async_wrapper  # type: ignore
-        return sync_wrapper  # type: ignore
+            return cast(Callable[P, T], async_wrapper)
+        return cast(Callable[P, T], sync_wrapper)
 
     return decorator
 
@@ -1021,6 +1038,7 @@ def trace_node(
         async def execute(self, ctx: ExecutionContext) -> NodeResult:
             ...
     """
+    import asyncio
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @functools.wraps(func)
@@ -1033,7 +1051,7 @@ def trace_node(
                 return func(*args, **kwargs)
 
             node_id = _extract_node_id(args, kwargs)
-            span_attributes = {
+            span_attributes: Dict[str, Any] = {
                 "node.type": ntype,
                 "node.id": node_id or "unknown",
                 "node.function": func.__qualname__,
@@ -1080,10 +1098,11 @@ def trace_node(
             ntype = node_type or _extract_class_name(args)
 
             if not tracer:
-                return await func(*args, **kwargs)  # type: ignore
+                coro = cast(Callable[P, Awaitable[T]], func)
+                return await coro(*args, **kwargs)
 
             node_id = _extract_node_id(args, kwargs)
-            span_attributes = {
+            span_attributes: Dict[str, Any] = {
                 "node.type": ntype,
                 "node.id": node_id or "unknown",
                 "node.function": func.__qualname__,
@@ -1098,7 +1117,8 @@ def trace_node(
             ) as span:
                 start_time = time.perf_counter()
                 try:
-                    result = await func(*args, **kwargs)  # type: ignore
+                    coro = cast(Callable[P, Awaitable[T]], func)
+                    result = await coro(*args, **kwargs)
                     span.set_status(Status(StatusCode.OK))
                     duration_ms = (time.perf_counter() - start_time) * 1000
                     provider.record_node_execution(
@@ -1123,11 +1143,9 @@ def trace_node(
                     duration = time.perf_counter() - start_time
                     span.set_attribute("node.duration_ms", duration * 1000)
 
-        import asyncio
-
         if asyncio.iscoroutinefunction(func):
-            return async_wrapper  # type: ignore
-        return sync_wrapper  # type: ignore
+            return cast(Callable[P, T], async_wrapper)
+        return cast(Callable[P, T], sync_wrapper)
 
     return decorator
 
@@ -1159,11 +1177,13 @@ def trace_async(
             tracer = get_tracer(component)
             span_name = name or func.__name__
 
+            coro = cast(Callable[P, Awaitable[T]], func)
             if not tracer:
-                return await func(*args, **kwargs)  # type: ignore
+                return await coro(*args, **kwargs)
 
-            span_kind = kind or (SpanKind.INTERNAL if OTEL_AVAILABLE else None)
-            span_attributes = {"function": func.__qualname__}
+            # Default to INTERNAL span kind when OTel is available
+            span_kind = kind if kind is not None else SpanKind.INTERNAL
+            span_attributes: Dict[str, Any] = {"function": func.__qualname__}
             if attributes:
                 span_attributes.update(attributes)
 
@@ -1173,7 +1193,7 @@ def trace_async(
                 attributes=span_attributes,
             ) as span:
                 try:
-                    result = await func(*args, **kwargs)  # type: ignore
+                    result = await coro(*args, **kwargs)
                     span.set_status(Status(StatusCode.OK))
                     return result
                 except Exception as e:
@@ -1181,7 +1201,7 @@ def trace_async(
                     span.record_exception(e)
                     raise
 
-        return wrapper  # type: ignore
+        return cast(Callable[P, T], wrapper)
 
     return decorator
 
@@ -1206,6 +1226,8 @@ class DBOSSpanContext:
             ctx.set_result(result)
     """
 
+    _token: Any  # Context token for detaching
+
     def __init__(
         self,
         workflow_id: str,
@@ -1226,8 +1248,8 @@ class DBOSSpanContext:
         self.workflow_name = workflow_name
         self.job_id = job_id
         self.robot_id = robot_id
-        self._span: Optional[Span] = None
-        self._tracer: Optional[Tracer] = None
+        self._span: Optional[Any] = None
+        self._tracer: Optional[Any] = None
         self._start_time: float = 0.0
         self._result: Optional[Dict[str, Any]] = None
 
@@ -1237,8 +1259,8 @@ class DBOSSpanContext:
         self._tracer = provider.get_tracer("casare_rpa.dbos")
         self._start_time = time.perf_counter()
 
-        if self._tracer:
-            attributes = {
+        if self._tracer and OTEL_AVAILABLE:
+            attributes: Dict[str, Any] = {
                 "dbos.workflow_id": self.workflow_id,
                 "workflow.name": self.workflow_name,
             }
@@ -1249,14 +1271,13 @@ class DBOSSpanContext:
 
             self._span = self._tracer.start_span(
                 f"dbos:workflow:{self.workflow_name}",
-                kind=SpanKind.INTERNAL if OTEL_AVAILABLE else None,
+                kind=SpanKind.INTERNAL,
                 attributes=attributes,
             )
             # Make this span current
-            if OTEL_AVAILABLE:
-                from opentelemetry.context import attach
+            from opentelemetry.context import attach
 
-                self._token = attach(set_span_in_context(self._span))
+            self._token = attach(set_span_in_context(self._span))
 
         return self
 
@@ -1271,9 +1292,9 @@ class DBOSSpanContext:
         duration = time.perf_counter() - self._start_time
 
         if self._span:
-            if exc_type:
+            if exc_type and exc_val is not None:
                 self._span.set_status(Status(StatusCode.ERROR, str(exc_val)))
-                self._span.record_exception(exc_val)  # type: ignore
+                self._span.record_exception(exc_val)
                 success = False
             else:
                 self._span.set_status(Status(StatusCode.OK))
@@ -1309,7 +1330,7 @@ class DBOSSpanContext:
         """Store workflow result for span attributes."""
         self._result = result
 
-    def create_step_span(self, step_name: str) -> Optional[Span]:
+    def create_step_span(self, step_name: str) -> Optional[Any]:
         """
         Create a child span for a DBOS step.
 
@@ -1319,12 +1340,12 @@ class DBOSSpanContext:
         Returns:
             Span instance or None if tracing disabled
         """
-        if not self._tracer:
+        if not self._tracer or not OTEL_AVAILABLE:
             return None
 
         return self._tracer.start_span(
             f"dbos:step:{step_name}",
-            kind=SpanKind.INTERNAL if OTEL_AVAILABLE else None,
+            kind=SpanKind.INTERNAL,
             attributes={
                 "dbos.step_name": step_name,
                 "dbos.workflow_id": self.workflow_id,
@@ -1348,7 +1369,7 @@ def setup_loguru_otel_sink() -> None:
         logger.debug("OpenTelemetry not available, skipping loguru integration")
         return
 
-    def otel_context_filter(record: Dict[str, Any]) -> bool:
+    def otel_context_patcher(record: Any) -> None:
         """Add OpenTelemetry context to log records."""
         span = get_current_span()
         if span and span.is_recording():
@@ -1358,12 +1379,9 @@ def setup_loguru_otel_sink() -> None:
         else:
             record["extra"]["trace_id"] = "00000000000000000000000000000000"
             record["extra"]["span_id"] = "0000000000000000"
-        return True
 
-    # Add filter to include trace context
-    logger.configure(
-        patcher=lambda record: otel_context_filter(record) or True,
-    )
+    # Add patcher to include trace context
+    logger.configure(patcher=otel_context_patcher)
 
     logger.debug("Loguru OpenTelemetry integration configured")
 
@@ -1376,24 +1394,27 @@ def setup_loguru_otel_sink() -> None:
 def _extract_node_count(result: Any) -> int:
     """Extract node count from workflow result."""
     if isinstance(result, dict):
-        return result.get("nodes_executed", 0)
+        count = result.get("nodes_executed", 0)
+        return int(count) if count is not None else 0
     return 0
 
 
-def _extract_class_name(args: tuple) -> str:
+def _extract_class_name(args: tuple[Any, ...]) -> str:
     """Extract class name from method args (self)."""
     if args and hasattr(args[0], "__class__"):
-        return args[0].__class__.__name__
+        class_name: str = args[0].__class__.__name__
+        return class_name
     return "Unknown"
 
 
-def _extract_node_id(args: tuple, kwargs: Dict[str, Any]) -> Optional[str]:
+def _extract_node_id(args: tuple[Any, ...], kwargs: Dict[str, Any]) -> Optional[str]:
     """Extract node ID from method args or kwargs."""
     # Try to get from self.id
     if args and hasattr(args[0], "id"):
         return str(args[0].id)
     # Try to get from kwargs
-    return kwargs.get("node_id")
+    node_id = kwargs.get("node_id")
+    return str(node_id) if node_id is not None else None
 
 
 # =============================================================================

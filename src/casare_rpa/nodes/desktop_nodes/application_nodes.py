@@ -4,65 +4,39 @@ Desktop Application Management Nodes
 Nodes for launching, closing, and managing Windows desktop applications.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode as Node
 from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from ...domain.value_objects.types import NodeStatus, PortType, DataType
-from ...desktop import DesktopContext
+from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
 
-
-@executable_node
-@node_schema(
-    PropertyDef(
-        "application_path",
-        PropertyType.STRING,
-        required=True,
-        label="Application Path",
-        tooltip="Full path to the executable",
-        placeholder="C:\\Program Files\\App\\app.exe",
-    ),
-    PropertyDef(
-        "arguments",
-        PropertyType.STRING,
-        default="",
-        label="Arguments",
-        tooltip="Command line arguments",
-    ),
-    PropertyDef(
-        "working_directory",
-        PropertyType.STRING,
-        default="",
-        label="Working Directory",
-        tooltip="Starting directory for the application",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=10.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for application window",
-    ),
-    PropertyDef(
-        "window_title_hint",
-        PropertyType.STRING,
-        default="",
-        label="Window Title Hint",
-        tooltip="Expected window title to identify the application window",
-    ),
-    PropertyDef(
-        "window_state",
-        PropertyType.CHOICE,
-        default="normal",
-        choices=["normal", "maximized", "minimized"],
-        label="Window State",
-        tooltip="Initial window state after launch",
-    ),
+from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
+from casare_rpa.nodes.desktop_nodes.properties import (
+    APPLICATION_PATH_PROP,
+    ARGUMENTS_PROP,
+    WORKING_DIRECTORY_PROP,
+    TIMEOUT_LONG_PROP,
+    WINDOW_TITLE_HINT_PROP,
+    WINDOW_STATE_PROP,
+    FORCE_CLOSE_PROP,
+    TIMEOUT_PROP,
+    MATCH_PARTIAL_PROP,
+    INCLUDE_INVISIBLE_PROP,
+    FILTER_TITLE_PROP,
 )
-class LaunchApplicationNode(Node):
+
+
+@node_schema(
+    APPLICATION_PATH_PROP,
+    ARGUMENTS_PROP,
+    WORKING_DIRECTORY_PROP,
+    TIMEOUT_LONG_PROP,
+    WINDOW_TITLE_HINT_PROP,
+    WINDOW_STATE_PROP,
+)
+@executable_node
+class LaunchApplicationNode(DesktopNodeBase):
     """
     Launch a Windows desktop application.
 
@@ -82,42 +56,28 @@ class LaunchApplicationNode(Node):
         window_title: Title of the application window
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Launch Application"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Launch Application",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "LaunchApplicationNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("application_path", PortType.INPUT, DataType.STRING)
         self.add_input_port("arguments", PortType.INPUT, DataType.STRING)
         self.add_input_port("working_directory", PortType.INPUT, DataType.STRING)
-
-        # Output ports
         self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("process_id", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("window_title", PortType.OUTPUT, DataType.STRING)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - launch application.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with window, process_id, and window_title
-        """
-        # Get parameters using new unified method
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - launch application."""
         app_path = self.get_parameter("application_path", context)
         arguments = self.get_parameter("arguments", context)
         working_dir = self.get_parameter("working_directory", context) or None
@@ -136,7 +96,6 @@ class LaunchApplicationNode(Node):
             import os
 
             app_name = os.path.splitext(os.path.basename(app_path))[0].lower()
-            # Map common apps to their window titles
             title_map = {
                 "calc": "Calculator",
                 "notepad": "Untitled - Notepad",
@@ -153,15 +112,9 @@ class LaunchApplicationNode(Node):
         logger.debug(f"[{self.name}] Window title hint: {window_title_hint}")
         logger.debug(f"[{self.name}] Timeout: {timeout}s")
 
-        # Get or create desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
-            logger.debug(f"[{self.name}] Created new DesktopContext")
-
-        desktop_ctx = context.desktop_context
+        desktop_ctx = self.get_desktop_context(context)
 
         try:
-            # Launch application using async method to avoid blocking event loop
             logger.info(
                 f"[{self.name}] Calling desktop_ctx.async_launch_application..."
             )
@@ -173,7 +126,6 @@ class LaunchApplicationNode(Node):
                 window_title=window_title_hint,
             )
 
-            # Get process ID
             process_id = window._control.ProcessId
             window_title = window.get_text()
 
@@ -199,56 +151,36 @@ class LaunchApplicationNode(Node):
                 f"[{self.name}] Application launched successfully: {window_title} (PID: {process_id})"
             )
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "window": window,
-                "process_id": process_id,
-                "window_title": window_title,
-                "next_nodes": ["exec_out"],
-            }
+            return self.success_result(
+                window=window,
+                process_id=process_id,
+                window_title=window_title,
+            )
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             error_msg = f"Application not found: '{app_path}'. Please check the path is correct."
             logger.error(f"[{self.name}] {error_msg}")
-            logger.exception(e)
             self.status = NodeStatus.ERROR
             raise RuntimeError(error_msg)
-        except TimeoutError as e:
-            error_msg = f"Timeout waiting for window after launching '{app_path}'. Window title hint was '{window_title_hint}'. Try increasing timeout or providing a more specific window title hint."
+        except TimeoutError:
+            error_msg = (
+                f"Timeout waiting for window after launching '{app_path}'. "
+                f"Window title hint was '{window_title_hint}'. "
+                "Try increasing timeout or providing a more specific window title hint."
+            )
             logger.error(f"[{self.name}] {error_msg}")
-            logger.exception(e)
             self.status = NodeStatus.ERROR
             raise RuntimeError(error_msg)
         except Exception as e:
-            error_msg = (
-                f"Failed to launch application '{app_path}': {type(e).__name__}: {e}"
-            )
-            logger.error(f"[{self.name}] {error_msg}")
-            logger.exception(e)
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, f"launch application '{app_path}'")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "force_close",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Force Close",
-        tooltip="Forcefully terminate the application if graceful close fails",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for application to close",
-    ),
+    FORCE_CLOSE_PROP,
+    TIMEOUT_PROP,
 )
-class CloseApplicationNode(Node):
+@executable_node
+class CloseApplicationNode(DesktopNodeBase):
     """
     Close a Windows desktop application.
 
@@ -267,49 +199,33 @@ class CloseApplicationNode(Node):
         success: Whether the close operation succeeded
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Close Application"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Close Application",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "CloseApplicationNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("process_id", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - close application.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - close application."""
         window = self.get_input_value("window")
         process_id = self.get_input_value("process_id")
         window_title = self.get_input_value("window_title")
 
-        # Get configuration
         force_close = self.get_parameter("force_close", context)
         timeout = self.get_parameter("timeout", context)
 
-        # Validate inputs
         if not window and not process_id and not window_title:
             raise ValueError(
                 "Must provide either 'window', 'process_id', or 'window_title'"
@@ -317,52 +233,28 @@ class CloseApplicationNode(Node):
 
         logger.info(f"[{self.name}] Closing application (force={force_close})")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
-
-        desktop_ctx = context.desktop_context
+        desktop_ctx = self.get_desktop_context(context)
 
         try:
-            # Determine what to close
             target = window if window else (process_id if process_id else window_title)
 
-            # Close application using async method to avoid blocking event loop
             success = await desktop_ctx.async_close_application(
                 window_or_pid=target, force=force_close, timeout=timeout
             )
 
             logger.info(f"[{self.name}] Application closed successfully")
-
-            self.status = NodeStatus.SUCCESS
-            return {"success": success, "next_nodes": ["exec_out"]}
+            return self.success_result()
 
         except Exception as e:
-            error_msg = f"Failed to close application: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "close application")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "match_partial",
-        PropertyType.BOOLEAN,
-        default=True,
-        label="Match Partial",
-        tooltip="Allow partial title matching",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait to find window",
-    ),
+    MATCH_PARTIAL_PROP,
+    TIMEOUT_PROP,
 )
-class ActivateWindowNode(Node):
+@executable_node
+class ActivateWindowNode(DesktopNodeBase):
     """
     Activate (bring to foreground) a Windows desktop window.
 
@@ -381,61 +273,41 @@ class ActivateWindowNode(Node):
         window: The activated window object
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Activate Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Activate Window",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "ActivateWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - activate window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status and window
-        """
-        # Get inputs
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - activate window."""
         window = self.get_input_value("window")
         window_title = self.get_input_value("window_title")
 
-        # Get configuration
         match_partial = self.get_parameter("match_partial", context)
         timeout = self.get_parameter("timeout", context)
 
-        # Validate inputs
         if not window and not window_title:
             raise ValueError("Must provide either 'window' or 'window_title'")
 
         logger.info(f"[{self.name}] Activating window")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
-
-        desktop_ctx = context.desktop_context
+        desktop_ctx = self.get_desktop_context(context)
 
         try:
-            # Find window if title provided (use async to avoid blocking)
+            # Find window if title provided
             if not window:
                 window = await desktop_ctx.async_find_window(
                     title=window_title, exact=not match_partial, timeout=timeout
@@ -453,39 +325,21 @@ class ActivateWindowNode(Node):
                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                 win32gui.SetForegroundWindow(hwnd)
             except Exception as e:
-                # Fallback - just set focus
                 logger.debug(f"Win32 foreground failed, using SetFocus: {e}")
 
             logger.info(f"[{self.name}] Window activated: {window.get_text()}")
-
-            self.status = NodeStatus.SUCCESS
-            return {"success": True, "window": window, "next_nodes": ["exec_out"]}
+            return self.success_result(window=window)
 
         except Exception as e:
-            error_msg = f"Failed to activate window: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "activate window")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "include_invisible",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Include Invisible",
-        tooltip="Include invisible windows in the list",
-    ),
-    PropertyDef(
-        "filter_title",
-        PropertyType.STRING,
-        default="",
-        label="Filter Title",
-        tooltip="Filter windows by title (partial match)",
-    ),
+    INCLUDE_INVISIBLE_PROP,
+    FILTER_TITLE_PROP,
 )
-class GetWindowListNode(Node):
+@executable_node
+class GetWindowListNode(DesktopNodeBase):
     """
     Get a list of all open Windows desktop windows.
 
@@ -500,52 +354,34 @@ class GetWindowListNode(Node):
         window_count: Number of windows found
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Window List"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Get Window List",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "GetWindowListNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Output ports
         self.add_output_port("window_list", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("window_count", PortType.OUTPUT, DataType.INTEGER)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - get window list.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with window_list and window_count
-        """
-        # Get configuration
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - get window list."""
         include_invisible = self.get_parameter("include_invisible", context)
         filter_title = self.get_parameter("filter_title", context)
 
         logger.info(f"[{self.name}] Getting window list")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
-
-        desktop_ctx = context.desktop_context
+        desktop_ctx = self.get_desktop_context(context)
 
         try:
-            # Get all windows
             windows = desktop_ctx.get_all_windows(include_invisible=include_invisible)
 
-            # Build window information list
             window_list = []
             for window in windows:
                 window_info = {
@@ -569,16 +405,10 @@ class GetWindowListNode(Node):
 
             logger.info(f"[{self.name}] Found {len(window_list)} windows")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "window_list": window_list,
-                "window_count": len(window_list),
-                "next_nodes": ["exec_out"],
-            }
+            return self.success_result(
+                window_list=window_list,
+                window_count=len(window_list),
+            )
 
         except Exception as e:
-            error_msg = f"Failed to get window list: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "get window list")

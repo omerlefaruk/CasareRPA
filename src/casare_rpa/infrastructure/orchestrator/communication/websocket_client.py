@@ -28,7 +28,11 @@ try:
 except ImportError:
     HAS_PSUTIL = False
 
-from .protocol import Message, MessageType, MessageBuilder
+from casare_rpa.infrastructure.orchestrator.communication.protocol import (
+    Message,
+    MessageBuilder,
+    MessageType,
+)
 
 
 class RobotClient:

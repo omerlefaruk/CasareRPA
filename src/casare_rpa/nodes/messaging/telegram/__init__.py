@@ -5,8 +5,8 @@ Provides nodes for sending messages, photos, documents, and more
 via the Telegram Bot API.
 """
 
-from .telegram_base import TelegramBaseNode
-from .telegram_send import (
+from casare_rpa.nodes.messaging.telegram.telegram_base import TelegramBaseNode
+from casare_rpa.nodes.messaging.telegram.telegram_send import (
     TelegramSendMessageNode,
     TelegramSendPhotoNode,
     TelegramSendDocumentNode,
@@ -18,7 +18,7 @@ from .telegram_send import (
     TELEGRAM_PARSE_MODE,
     TELEGRAM_DISABLE_NOTIFICATION,
 )
-from .telegram_actions import (
+from casare_rpa.nodes.messaging.telegram.telegram_actions import (
     TelegramEditMessageNode,
     TelegramDeleteMessageNode,
     TelegramSendMediaGroupNode,

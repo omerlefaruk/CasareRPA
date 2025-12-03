@@ -13,13 +13,13 @@ import uuid
 
 from loguru import logger
 
-from .base import (
+from casare_rpa.triggers.base import (
     BaseTrigger,
     BaseTriggerConfig,
     TriggerEvent,
     TriggerType,
 )
-from .registry import get_trigger_registry
+from casare_rpa.triggers.registry import get_trigger_registry
 
 
 # Type alias for job creation callback

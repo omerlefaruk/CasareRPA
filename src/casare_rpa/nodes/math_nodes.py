@@ -17,7 +17,6 @@ from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "operation",
@@ -145,7 +144,6 @@ class MathOperationNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "operator",

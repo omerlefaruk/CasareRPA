@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 import orjson
 from loguru import logger
 
-from ...domain.workflow.templates import (
+from casare_rpa.domain.workflow.templates import (
     TemplateCategory,
     WorkflowTemplate,
 )

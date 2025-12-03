@@ -2,7 +2,7 @@
 Visual Nodes - Variable
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.variable.nodes import (
     VisualSetVariableNode,
     VisualGetVariableNode,
     VisualIncrementVariableNode,

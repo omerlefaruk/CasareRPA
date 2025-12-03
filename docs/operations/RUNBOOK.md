@@ -38,10 +38,10 @@ cd C:\Users\Rau\Desktop\CasareRPA
 .\.venv\Scripts\Activate.ps1
 
 # 3. Start Orchestrator
-python -m casare_rpa.orchestrator.main
+python -m casare_rpa.infrastructure.orchestrator.server
 
 # Or with specific configuration
-python -m casare_rpa.orchestrator.main --host 0.0.0.0 --port 8765
+python -m casare_rpa.infrastructure.orchestrator.server --host 0.0.0.0 --port 8765
 ```
 
 **Verification:**
@@ -133,7 +133,7 @@ await asyncio.wait_for(engine.wait_for_completion(), timeout=300)
 
 ```python
 # Send shutdown command to all robots
-from casare_rpa.orchestrator.protocol import MessageBuilder
+from casare_rpa.infrastructure.orchestrator.communication.websocket_server import MessageBuilder
 
 for robot_id in engine.connected_robots:
     msg = MessageBuilder.shutdown(robot_id, graceful=True)
@@ -602,7 +602,7 @@ flowchart TB
 
 ```powershell
 # Start Orchestrator
-python -m casare_rpa.orchestrator.main
+python -m casare_rpa.infrastructure.orchestrator.server
 
 # Start Robot
 python -m casare_rpa.robot.agent

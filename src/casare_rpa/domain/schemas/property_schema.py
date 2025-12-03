@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Type, Tuple
 from loguru import logger
 
-from .property_types import PropertyType
+from casare_rpa.domain.schemas.property_types import PropertyType
 
 
 @dataclass

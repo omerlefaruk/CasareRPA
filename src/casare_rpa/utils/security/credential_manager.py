@@ -40,7 +40,7 @@ from typing import Any, Optional
 
 from loguru import logger
 
-from .vault_client import (
+from casare_rpa.utils.security.vault_client import (
     VaultClient,
     VaultConfig,
     VaultSecretNotFoundError,

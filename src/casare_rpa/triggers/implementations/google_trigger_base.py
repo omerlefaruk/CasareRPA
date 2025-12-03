@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from loguru import logger
 
-from ..base import BaseTrigger, BaseTriggerConfig, TriggerStatus
+from casare_rpa.triggers.base import BaseTrigger, BaseTriggerConfig, TriggerStatus
 
 
 @dataclass

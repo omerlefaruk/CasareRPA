@@ -343,7 +343,6 @@ class RetryFailNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "error_message",
@@ -354,6 +353,7 @@ class RetryFailNode(BaseNode):
         placeholder="Something went wrong",
     ),
 )
+@executable_node
 class ThrowErrorNode(BaseNode):
     """
     Throws a custom error to trigger error handling.
@@ -403,7 +403,6 @@ class ThrowErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "webhook_url",
@@ -838,7 +837,6 @@ class ErrorRecoveryNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "level",
@@ -856,6 +854,7 @@ class ErrorRecoveryNode(BaseNode):
         tooltip="Include stack trace in log output",
     ),
 )
+@executable_node
 class LogErrorNode(BaseNode):
     """
     Log error details with structured information.
@@ -944,7 +943,6 @@ class LogErrorNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "condition",
@@ -962,6 +960,7 @@ class LogErrorNode(BaseNode):
         placeholder="Expected value to be greater than 0",
     ),
 )
+@executable_node
 class AssertNode(BaseNode):
     """
     Assert a condition and throw error if false.

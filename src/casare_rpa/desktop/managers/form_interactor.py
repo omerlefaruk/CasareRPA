@@ -11,7 +11,7 @@ from typing import Union
 import uiautomation as auto
 from loguru import logger
 
-from ..element import DesktopElement
+from casare_rpa.desktop.element import DesktopElement
 
 
 class FormInteractor:

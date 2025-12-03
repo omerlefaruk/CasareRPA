@@ -2,7 +2,7 @@
 Visual Nodes - Database
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.database.nodes import (
     VisualDatabaseConnectNode,
     VisualExecuteQueryNode,
     VisualExecuteNonQueryNode,

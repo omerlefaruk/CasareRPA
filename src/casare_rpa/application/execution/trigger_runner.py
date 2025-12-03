@@ -3,17 +3,28 @@ CasareRPA - Canvas Trigger Runner
 
 Manages trigger lifecycle in the Canvas application.
 Starts/stops triggers and handles trigger events by running workflows.
+
+Architecture:
+    This is an APPLICATION layer component. It MUST NOT import from presentation.
+    The TriggerEventHandler protocol allows presentation to inject callbacks.
 """
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from ...triggers.base import BaseTriggerConfig, BaseTrigger, TriggerEvent, TriggerType
-from ...triggers.registry import get_trigger_registry
-
-if TYPE_CHECKING:
-    from casare_rpa.presentation.canvas.app import CasareRPAApp
+from casare_rpa.application.execution.interfaces import (
+    NullTriggerEventHandler,
+    TriggerEventHandler,
+)
+from casare_rpa.triggers.base import (
+    BaseTrigger,
+    BaseTriggerConfig,
+    TriggerEvent,
+    TriggerType,
+)
+from casare_rpa.triggers.registry import get_trigger_registry
 
 
 class CanvasTriggerRunner:
@@ -22,18 +33,23 @@ class CanvasTriggerRunner:
 
     When triggers are started, they actively monitor for events
     and run the workflow when triggered.
+
+    The trigger runner uses a TriggerEventHandler to communicate
+    with the presentation layer without depending on it directly.
     """
 
-    def __init__(self, app: "CasareRPAApp") -> None:
+    def __init__(self, event_handler: Optional[TriggerEventHandler] = None) -> None:
         """
         Initialize the trigger runner.
 
         Args:
-            app: The Canvas application instance
+            event_handler: Handler for trigger events. If None, uses
+                           NullTriggerEventHandler (logs but takes no action).
         """
-        self._app = app
+        self._event_handler = event_handler or NullTriggerEventHandler()
         self._active_triggers: Dict[str, BaseTrigger] = {}
         self._running = False
+        self._last_trigger_event: Optional[TriggerEvent] = None
 
     @property
     def is_running(self) -> bool:
@@ -44,6 +60,16 @@ class CanvasTriggerRunner:
     def active_trigger_count(self) -> int:
         """Get the number of active triggers."""
         return len(self._active_triggers)
+
+    def set_event_handler(self, handler: TriggerEventHandler) -> None:
+        """
+        Set or update the event handler.
+
+        Args:
+            handler: New event handler to use
+        """
+        self._event_handler = handler
+        logger.debug(f"Trigger runner event handler set to {type(handler).__name__}")
 
     async def start_triggers(self, triggers: List[Dict[str, Any]]) -> int:
         """
@@ -143,92 +169,43 @@ class CanvasTriggerRunner:
         logger.debug(f"Trigger payload: {event.payload}")
 
         try:
-            # Update trigger stats in the bottom panel
-            self._update_trigger_stats(event.trigger_id)
-
-            # Run the workflow
-            # We need to do this on the main thread via Qt signal
-            from PySide6.QtCore import QMetaObject, Qt
-
             # Store the trigger payload for the workflow
             self._last_trigger_event = event
 
-            # Emit the workflow run signal on the main thread
-            # This will be picked up by the app's _on_run_workflow method
-            main_window = self._app._main_window
-            if main_window:
-                # Use invokeMethod to call on the main thread
-                QMetaObject.invokeMethod(
-                    main_window,
-                    "trigger_workflow_run",
-                    Qt.ConnectionType.QueuedConnection,
-                )
+            # Update trigger stats via the event handler
+            self._update_trigger_stats(event.trigger_id)
+
+            # Request workflow execution via the event handler
+            # The handler is responsible for thread-safety (e.g., Qt main thread)
+            self._event_handler.request_workflow_run()
 
         except Exception as e:
             logger.exception(f"Error handling trigger event: {e}")
 
     def _update_trigger_stats(self, trigger_id: str) -> None:
         """
-        Update trigger statistics (count and last_triggered) in the UI.
+        Update trigger statistics (count and last_triggered).
 
         Args:
             trigger_id: The ID of the trigger that fired
         """
-        from datetime import datetime
-        from PySide6.QtCore import QTimer
-
         try:
-            main_window = self._app._main_window
-            if not main_window:
-                logger.warning("No main window for trigger stats update")
-                return
-
-            bottom_panel = main_window.get_bottom_panel()
-            if not bottom_panel:
-                logger.warning("No bottom panel for trigger stats update")
-                return
-
-            triggers_tab = bottom_panel.get_triggers_tab()
-            if not triggers_tab:
-                logger.warning("No triggers tab for trigger stats update")
-                return
-
-            # Get current count for this trigger
-            triggers = triggers_tab.get_triggers()
-            current_count = 0
-            for trigger in triggers:
-                if trigger.get("id") == trigger_id:
-                    current_count = trigger.get("trigger_count", 0)
-                    break
-
+            # Get current count from the event handler
+            current_count = self._event_handler.get_trigger_count(trigger_id)
             new_count = current_count + 1
             timestamp = datetime.now().isoformat()
 
-            logger.debug(
-                f"Scheduling trigger stats update: {trigger_id} -> count={new_count}"
-            )
+            logger.debug(f"Updating trigger stats: {trigger_id} -> count={new_count}")
 
-            # Store values to avoid closure issues
-            _trigger_id = trigger_id
-            _new_count = new_count
-            _timestamp = timestamp
-            _tab = triggers_tab
-
-            def do_update():
-                logger.debug(
-                    f"Executing trigger stats update: {_trigger_id} -> {_new_count}"
-                )
-                _tab.update_trigger_stats(_trigger_id, _new_count, _timestamp)
-
-            # Update the UI on the main thread using QTimer.singleShot
-            QTimer.singleShot(0, do_update)
+            # Update via the event handler (handles thread-safety)
+            self._event_handler.update_trigger_stats(trigger_id, new_count, timestamp)
 
         except Exception as e:
             logger.error(f"Error updating trigger stats: {e}")
 
     def get_last_trigger_event(self) -> Optional[TriggerEvent]:
         """Get the last trigger event (for injecting into workflow variables)."""
-        return getattr(self, "_last_trigger_event", None)
+        return self._last_trigger_event
 
     def clear_last_trigger_event(self) -> None:
         """Clear the last trigger event."""

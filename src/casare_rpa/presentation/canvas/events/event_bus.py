@@ -44,8 +44,8 @@ import time
 
 from loguru import logger
 
-from .event import Event, EventFilter
-from .event_types import EventType, EventCategory
+from casare_rpa.presentation.canvas.events.event import Event, EventFilter
+from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
 
 # Slow handler threshold in seconds (100ms)
 SLOW_HANDLER_THRESHOLD_SEC = 0.1

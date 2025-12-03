@@ -487,8 +487,21 @@ class LogStreamingService:
         }
 
 
-# Singleton instance
-_log_streaming_service: Optional[LogStreamingService] = None
+# Thread-safe singleton using LazySingleton for deferred initialization
+from casare_rpa.application.dependency_injection.singleton import Singleton
+import threading
+
+_log_streaming_lock = threading.Lock()
+_log_streaming_instance: Optional[LogStreamingService] = None
+
+
+def _create_log_streaming_service() -> LogStreamingService:
+    """Factory function for creating LogStreamingService."""
+    from casare_rpa.infrastructure.persistence.repositories.log_repository import (
+        LogRepository,
+    )
+
+    return LogStreamingService(LogRepository())
 
 
 def get_log_streaming_service() -> LogStreamingService:
@@ -498,14 +511,18 @@ def get_log_streaming_service() -> LogStreamingService:
     Returns:
         LogStreamingService instance.
     """
-    global _log_streaming_service
-    if _log_streaming_service is None:
-        from casare_rpa.infrastructure.persistence.repositories.log_repository import (
-            LogRepository,
-        )
+    # Double-checked locking pattern
+    instance = _log_streaming_instance
+    if instance is not None:
+        return instance
 
-        _log_streaming_service = LogStreamingService(LogRepository())
-    return _log_streaming_service
+    with _log_streaming_lock:
+        # Check again within the lock
+        import casare_rpa.infrastructure.logging.log_streaming_service as mod
+
+        if mod._log_streaming_instance is None:
+            mod._log_streaming_instance = _create_log_streaming_service()
+        return mod._log_streaming_instance
 
 
 async def init_log_streaming_service(
@@ -520,15 +537,29 @@ async def init_log_streaming_service(
     Returns:
         Started LogStreamingService.
     """
-    global _log_streaming_service
-    if _log_streaming_service is None:
-        _log_streaming_service = LogStreamingService(log_repository)
-    await _log_streaming_service.start()
-    return _log_streaming_service
+    with _log_streaming_lock:
+        import casare_rpa.infrastructure.logging.log_streaming_service as mod
+
+        if mod._log_streaming_instance is None:
+            mod._log_streaming_instance = LogStreamingService(log_repository)
+        service = mod._log_streaming_instance
+
+    await service.start()
+    return service
+
+
+def reset_log_streaming_service() -> None:
+    """Reset the log streaming service instance (for testing)."""
+    with _log_streaming_lock:
+        import casare_rpa.infrastructure.logging.log_streaming_service as mod
+
+        mod._log_streaming_instance = None
+    logger.debug("Log streaming service reset")
 
 
 __all__ = [
     "LogStreamingService",
     "get_log_streaming_service",
     "init_log_streaming_service",
+    "reset_log_streaming_service",
 ]

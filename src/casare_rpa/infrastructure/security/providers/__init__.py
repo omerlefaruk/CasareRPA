@@ -7,10 +7,16 @@ Supports multiple vault backends:
 - Encrypted SQLite (local development)
 """
 
-from .hashicorp import HashiCorpVaultProvider
-from .supabase_vault import SupabaseVaultProvider
-from .sqlite_vault import EncryptedSQLiteProvider
-from .factory import create_vault_provider
+from casare_rpa.infrastructure.security.providers.factory import create_vault_provider
+from casare_rpa.infrastructure.security.providers.hashicorp import (
+    HashiCorpVaultProvider,
+)
+from casare_rpa.infrastructure.security.providers.sqlite_vault import (
+    EncryptedSQLiteProvider,
+)
+from casare_rpa.infrastructure.security.providers.supabase_vault import (
+    SupabaseVaultProvider,
+)
 
 __all__ = [
     "HashiCorpVaultProvider",

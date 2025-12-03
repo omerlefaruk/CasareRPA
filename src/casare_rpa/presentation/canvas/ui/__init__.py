@@ -20,12 +20,15 @@ All components:
 - Are fully testable
 """
 
-from .base_widget import BaseWidget, BaseDockWidget, BaseDialog
+from casare_rpa.presentation.canvas.ui.base_widget import (
+    BaseWidget,
+    BaseDockWidget,
+    BaseDialog,
+)
 
 # Panels
-from .panels import (
+from casare_rpa.presentation.canvas.ui.panels import (
     PropertiesPanel,
-    DebugPanel,
     VariablesPanel,
     MinimapPanel,
     CollapsibleSection,
@@ -33,23 +36,22 @@ from .panels import (
     VARIABLE_TYPES,
     TYPE_DEFAULTS,
 )
+from casare_rpa.presentation.canvas.ui.debug_panel import DebugPanel
 
 # Toolbars
-from .toolbars import (
+from casare_rpa.presentation.canvas.ui.toolbars import (
     MainToolbar,
-    DebugToolbar,
-    ZoomToolbar,
 )
 
 # Dialogs
-from .dialogs import (
+from casare_rpa.presentation.canvas.ui.dialogs import (
     NodePropertiesDialog,
     WorkflowSettingsDialog,
     PreferencesDialog,
 )
 
 # Widgets
-from .widgets import (
+from casare_rpa.presentation.canvas.ui.widgets import (
     VariableEditorWidget,
     OutputConsoleWidget,
     SearchWidget,
@@ -69,8 +71,6 @@ __all__ = [
     "MinimapChangeTracker",
     # Toolbars
     "MainToolbar",
-    "DebugToolbar",
-    "ZoomToolbar",
     # Dialogs
     "NodePropertiesDialog",
     "WorkflowSettingsDialog",

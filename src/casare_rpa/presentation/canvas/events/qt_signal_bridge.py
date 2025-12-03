@@ -36,9 +36,9 @@ from PySide6.QtCore import QObject, Signal
 
 from loguru import logger
 
-from .event import Event
-from .event_types import EventType, EventCategory
-from .event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
 
 
 class QtSignalBridge(QObject):
@@ -97,7 +97,9 @@ class QtSignalBridge(QObject):
     debug_event = Signal(Event)
     trigger_event = Signal(Event)
 
-    def __init__(self, event_bus: Optional[EventBus] = None, parent: Optional[QObject] = None):
+    def __init__(
+        self, event_bus: Optional[EventBus] = None, parent: Optional[QObject] = None
+    ):
         """
         Initialize Qt signal bridge.
 
@@ -330,6 +332,7 @@ class QtEventSubscriber(QObject):
             subscriber.subscribe(EventType.WORKFLOW_SAVED)
             subscriber.event_received.connect(on_event)
         """
+
         # Create handler that emits Qt signal
         def handler(event: Event) -> None:
             self.event_received.emit(event)

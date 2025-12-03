@@ -6,7 +6,7 @@ Represents workflow identity and versioning information.
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from ..value_objects.types import SCHEMA_VERSION
+from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 
 
 class WorkflowMetadata:

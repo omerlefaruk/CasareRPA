@@ -3,26 +3,26 @@ CasareRPA - Domain Workflow Module
 Workflow versioning, migration, lifecycle management, and templates.
 """
 
-from .versioning import (
-    SemanticVersion,
-    VersionStatus,
-    WorkflowVersion,
-    VersionHistory,
-    VersionDiff,
+from casare_rpa.domain.workflow.templates import (
+    ReviewStatus,
+    TemplateCategory,
+    TemplateMetadata,
+    TemplateParameter,
+    TemplateParameterType,
+    TemplateReview,
+    TemplateUsageStats,
+    TemplateVersion,
+    WorkflowTemplate,
+)
+from casare_rpa.domain.workflow.versioning import (
     BreakingChange,
     BreakingChangeType,
     CompatibilityResult,
-)
-from .templates import (
-    TemplateCategory,
-    TemplateParameter,
-    TemplateParameterType,
-    WorkflowTemplate,
-    TemplateMetadata,
-    TemplateUsageStats,
-    TemplateReview,
-    TemplateVersion,
-    ReviewStatus,
+    SemanticVersion,
+    VersionDiff,
+    VersionHistory,
+    VersionStatus,
+    WorkflowVersion,
 )
 
 __all__ = [

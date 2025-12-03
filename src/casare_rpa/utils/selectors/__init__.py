@@ -1,6 +1,6 @@
 """Selector utilities."""
 
-from .ai_selector_healer import (
+from casare_rpa.utils.selectors.ai_selector_healer import (
     AISelectorHealer,
     AIHealingResult,
     FuzzyMatcher,

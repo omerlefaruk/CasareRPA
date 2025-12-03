@@ -4,12 +4,8 @@ UI Toolbars Module.
 Reusable toolbar components for the CasareRPA Canvas application.
 """
 
-from .main_toolbar import MainToolbar
-from .debug_toolbar import DebugToolbar
-from .zoom_toolbar import ZoomToolbar
+from casare_rpa.presentation.canvas.ui.toolbars.main_toolbar import MainToolbar
 
 __all__ = [
     "MainToolbar",
-    "DebugToolbar",
-    "ZoomToolbar",
 ]

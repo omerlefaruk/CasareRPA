@@ -15,7 +15,7 @@ from typing import Optional
 
 from loguru import logger
 
-from ..events import (
+from casare_rpa.presentation.canvas.events import (
     Event,
     EventType,
     EventHandler,

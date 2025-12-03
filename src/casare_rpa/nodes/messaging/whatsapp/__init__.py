@@ -4,7 +4,7 @@ CasareRPA - WhatsApp Nodes
 Nodes for WhatsApp Business Cloud API integrations.
 """
 
-from .whatsapp_send import (
+from casare_rpa.nodes.messaging.whatsapp.whatsapp_send import (
     WhatsAppSendMessageNode,
     WhatsAppSendTemplateNode,
     WhatsAppSendImageNode,

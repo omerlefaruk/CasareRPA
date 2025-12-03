@@ -1,11 +1,11 @@
 """Application services."""
 
-from .execution_lifecycle_manager import (
+from casare_rpa.application.services.execution_lifecycle_manager import (
     ExecutionLifecycleManager,
     ExecutionState,
     ExecutionSession,
 )
-from .orchestrator_client import (
+from casare_rpa.application.services.orchestrator_client import (
     OrchestratorClient,
     WorkflowSubmissionResult,
     HttpClient,

@@ -8,8 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from .base import PROJECT_SCHEMA_VERSION
-from .project import Project
+from casare_rpa.domain.entities.project.base import PROJECT_SCHEMA_VERSION
+from casare_rpa.domain.entities.project.project import Project
 
 
 @dataclass

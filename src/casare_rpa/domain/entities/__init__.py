@@ -4,14 +4,22 @@ CasareRPA - Domain Entities
 Domain entities are objects with identity that persist over time.
 """
 
-from .base_node import BaseNode
-from .workflow_metadata import WorkflowMetadata
-from .node_connection import NodeConnection
-from .variable import Variable, VariableDefinition, ProjectVariable
-from .workflow import WorkflowSchema
-from .execution_state import ExecutionState, ExecutionContext
-from .tenant import Tenant, TenantId, TenantSettings
-from .project import (
+from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
+from casare_rpa.domain.entities.node_connection import NodeConnection
+from casare_rpa.domain.entities.variable import (
+    Variable,
+    VariableDefinition,
+    ProjectVariable,
+)
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.entities.execution_state import ExecutionState, ExecutionContext
+from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
+from casare_rpa.domain.entities.workflow_schedule import (
+    WorkflowSchedule,
+    ScheduleFrequency,
+)
+from casare_rpa.domain.entities.project import (
     # Constants
     PROJECT_SCHEMA_VERSION,
     generate_project_id,
@@ -65,4 +73,7 @@ __all__ = [
     "Tenant",
     "TenantId",
     "TenantSettings",
+    # Schedule entities
+    "WorkflowSchedule",
+    "ScheduleFrequency",
 ]

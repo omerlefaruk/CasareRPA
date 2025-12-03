@@ -29,7 +29,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QBrush
 
-from .constants import JOB_STATUS_COLORS
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
+    JOB_STATUS_COLORS,
+)
 
 
 if TYPE_CHECKING:

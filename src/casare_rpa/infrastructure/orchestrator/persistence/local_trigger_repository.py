@@ -3,8 +3,10 @@
 from typing import List, Optional
 
 from casare_rpa.domain.orchestrator.repositories import TriggerRepository
+from casare_rpa.infrastructure.orchestrator.persistence.local_storage_repository import (
+    LocalStorageRepository,
+)
 from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
-from .local_storage_repository import LocalStorageRepository
 
 
 class LocalTriggerRepository(TriggerRepository):

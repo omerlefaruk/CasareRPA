@@ -15,7 +15,7 @@ from dataclasses import dataclass, asdict
 from loguru import logger
 import orjson
 
-from .offline_queue import OfflineQueue
+from casare_rpa.robot.offline_queue import OfflineQueue
 
 
 @dataclass

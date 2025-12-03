@@ -1,1 +1,1 @@
-"""Tests for canvas controllers."""
+"""Controller tests for Canvas presentation layer."""

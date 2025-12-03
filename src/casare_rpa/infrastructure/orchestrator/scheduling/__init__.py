@@ -7,62 +7,95 @@ Provides:
 - Business calendar with holidays and working hours
 - Advanced scheduling with enterprise features
 - Global scheduler singleton for API integration
+
+Module structure (after refactoring):
+- scheduling_strategies.py: Cron parsing and scheduling strategies
+- schedule_optimizer.py: Rate limiting and execution optimization
+- schedule_conflict_resolver.py: Dependency tracking and conflict resolution
+- sla_monitor.py: SLA monitoring and alerting
+- advanced_scheduler.py: Main scheduler orchestrator
 """
 
 from typing import Optional
 
 from loguru import logger
 
-from .job_assignment import (
-    JobAssignmentEngine,
-    ScoringWeights,
-    RobotCapability,
-    CapabilityType,
-    JobRequirements,
-    RobotInfo,
+# Import from extracted modules for direct access
+from casare_rpa.infrastructure.orchestrator.scheduling.scheduling_strategies import (
+    CRON_ALIASES,
+    CronExpressionParser,
+    SchedulingStrategy,
+    CronSchedulingStrategy,
+    IntervalSchedulingStrategy,
+    OneTimeSchedulingStrategy,
+    EventDrivenStrategy,
+    DependencySchedulingStrategy,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_optimizer import (
+    RateLimitConfig,
+    SlidingWindowRateLimiter,
+    ExecutionOptimizer,
+    PriorityQueue,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_conflict_resolver import (
+    DependencyConfig,
+    DependencyTracker,
+    CompletionRecord,
+    ConflictResolver,
+    DependencyGraphValidator,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.sla_monitor import (
+    SLAConfig,
+    SLAStatus,
+    SLAMonitor,
+    SLAAggregator,
+    ExecutionMetrics,
+    SLAReport,
+)
+
+# Import from schedule models
+from casare_rpa.infrastructure.orchestrator.scheduling.schedule_models import (
+    AdvancedSchedule,
+    CatchUpConfig,
+    ConditionalConfig,
+    EventTriggerConfig,
+    EventType,
+    ScheduleStatus,
+    ScheduleType,
+)
+
+# Import from main scheduler (orchestrator)
+from casare_rpa.infrastructure.orchestrator.scheduling.advanced_scheduler import (
+    AdvancedScheduler,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.calendar import (
+    BlackoutPeriod,
+    BusinessCalendar,
+    CalendarConfig,
+    DayOfWeek,
+    Holiday,
+    HolidayType,
+    WorkingHours,
+)
+from casare_rpa.infrastructure.orchestrator.scheduling.job_assignment import (
     AssignmentResult,
-    StateAffinityTracker,
+    CapabilityType,
+    JobAssignmentEngine,
+    JobRequirements,
     NoCapableRobotError,
+    RobotCapability,
+    RobotInfo,
+    ScoringWeights,
+    StateAffinityTracker,
     assign_job_to_robot,
 )
-
-from .state_affinity import (
-    StateAffinityLevel,
+from casare_rpa.infrastructure.orchestrator.scheduling.state_affinity import (
     RobotState,
-    WorkflowSession,
-    StateAffinityManager,
     SessionAffinityError,
     StateAffinityDecision,
-)
-
-from .calendar import (
-    DayOfWeek,
-    HolidayType,
-    Holiday,
-    WorkingHours,
-    BlackoutPeriod,
-    CalendarConfig,
-    BusinessCalendar,
-)
-
-from .advanced_scheduler import (
-    ScheduleType,
-    ScheduleStatus,
-    SLAStatus,
-    EventType,
-    CRON_ALIASES,
-    SLAConfig,
-    RateLimitConfig,
-    DependencyConfig,
-    ConditionalConfig,
-    CatchUpConfig,
-    EventTriggerConfig,
-    AdvancedSchedule,
-    CronExpressionParser,
-    SlidingWindowRateLimiter,
-    DependencyTracker,
-    SLAMonitor,
-    AdvancedScheduler,
+    StateAffinityLevel,
+    StateAffinityManager,
+    WorkflowSession,
 )
 
 
@@ -70,7 +103,11 @@ from .advanced_scheduler import (
 # Global Scheduler Singleton
 # =========================
 
-_global_scheduler: Optional[AdvancedScheduler] = None
+import threading
+
+# Thread-safe state holder for scheduler
+_scheduler_lock = threading.Lock()
+_scheduler_instance: Optional[AdvancedScheduler] = None
 _scheduler_initialized: bool = False
 
 
@@ -94,23 +131,28 @@ async def init_global_scheduler(
     Raises:
         RuntimeError: If scheduler is already initialized.
     """
-    global _global_scheduler, _scheduler_initialized
+    # Use module-level variables with lock for thread safety
+    _set_scheduler_state = _get_scheduler_state_setter()
 
-    if _scheduler_initialized and _global_scheduler is not None:
-        logger.warning(
-            "Global scheduler already initialized, returning existing instance"
-        )
-        return _global_scheduler
+    with _scheduler_lock:
+        if _scheduler_initialized and _scheduler_instance is not None:
+            logger.warning(
+                "Global scheduler already initialized, returning existing instance"
+            )
+            return _scheduler_instance
 
     try:
-        _global_scheduler = AdvancedScheduler(
+        scheduler = AdvancedScheduler(
             on_schedule_trigger=on_schedule_trigger,
             default_timezone=default_timezone,
         )
-        await _global_scheduler.start()
-        _scheduler_initialized = True
+        await scheduler.start()
+
+        with _scheduler_lock:
+            _set_scheduler_state(scheduler, True)
+
         logger.info("Global scheduler initialized and started")
-        return _global_scheduler
+        return scheduler
     except ImportError as e:
         logger.error(f"Failed to initialize scheduler: {e}")
         raise
@@ -122,14 +164,16 @@ async def shutdown_global_scheduler() -> None:
 
     Should be called during application shutdown (lifespan context).
     """
-    global _global_scheduler, _scheduler_initialized
+    _set_scheduler_state = _get_scheduler_state_setter()
 
-    if _global_scheduler is not None:
-        await _global_scheduler.stop(wait=True)
+    with _scheduler_lock:
+        scheduler = _scheduler_instance
+        if scheduler is not None:
+            _set_scheduler_state(None, False)
+
+    if scheduler is not None:
+        await scheduler.stop(wait=True)
         logger.info("Global scheduler stopped")
-
-    _global_scheduler = None
-    _scheduler_initialized = False
 
 
 def get_global_scheduler() -> Optional[AdvancedScheduler]:
@@ -139,7 +183,8 @@ def get_global_scheduler() -> Optional[AdvancedScheduler]:
     Returns:
         The AdvancedScheduler instance, or None if not initialized.
     """
-    return _global_scheduler
+    with _scheduler_lock:
+        return _scheduler_instance
 
 
 def is_scheduler_initialized() -> bool:
@@ -149,7 +194,29 @@ def is_scheduler_initialized() -> bool:
     Returns:
         True if scheduler is initialized and running.
     """
-    return _scheduler_initialized and _global_scheduler is not None
+    with _scheduler_lock:
+        return _scheduler_initialized and _scheduler_instance is not None
+
+
+def reset_scheduler_state() -> None:
+    """Reset scheduler state for testing."""
+    _set_scheduler_state = _get_scheduler_state_setter()
+    with _scheduler_lock:
+        _set_scheduler_state(None, False)
+    logger.debug("Scheduler state reset")
+
+
+def _get_scheduler_state_setter():
+    """Get setter function for scheduler state (avoids global keyword)."""
+
+    def set_state(instance: Optional[AdvancedScheduler], initialized: bool) -> None:
+        # Rebind module-level variables
+        import casare_rpa.infrastructure.orchestrator.scheduling as mod
+
+        mod._scheduler_instance = instance
+        mod._scheduler_initialized = initialized
+
+    return set_state
 
 
 __all__ = [
@@ -179,27 +246,46 @@ __all__ = [
     "BlackoutPeriod",
     "CalendarConfig",
     "BusinessCalendar",
-    # Advanced Scheduler
+    # Scheduling Strategies (extracted)
+    "CRON_ALIASES",
+    "CronExpressionParser",
+    "SchedulingStrategy",
+    "CronSchedulingStrategy",
+    "IntervalSchedulingStrategy",
+    "OneTimeSchedulingStrategy",
+    "EventDrivenStrategy",
+    "DependencySchedulingStrategy",
+    # Schedule Optimizer (extracted)
+    "RateLimitConfig",
+    "SlidingWindowRateLimiter",
+    "ExecutionOptimizer",
+    "PriorityQueue",
+    # Conflict Resolver (extracted)
+    "DependencyConfig",
+    "DependencyTracker",
+    "CompletionRecord",
+    "ConflictResolver",
+    "DependencyGraphValidator",
+    # SLA Monitor (extracted)
+    "SLAConfig",
+    "SLAStatus",
+    "SLAMonitor",
+    "SLAAggregator",
+    "ExecutionMetrics",
+    "SLAReport",
+    # Advanced Scheduler (orchestrator)
     "ScheduleType",
     "ScheduleStatus",
-    "SLAStatus",
     "EventType",
-    "CRON_ALIASES",
-    "SLAConfig",
-    "RateLimitConfig",
-    "DependencyConfig",
     "ConditionalConfig",
     "CatchUpConfig",
     "EventTriggerConfig",
     "AdvancedSchedule",
-    "CronExpressionParser",
-    "SlidingWindowRateLimiter",
-    "DependencyTracker",
-    "SLAMonitor",
     "AdvancedScheduler",
     # Global Scheduler Functions
     "init_global_scheduler",
     "shutdown_global_scheduler",
     "get_global_scheduler",
     "is_scheduler_initialized",
+    "reset_scheduler_state",
 ]

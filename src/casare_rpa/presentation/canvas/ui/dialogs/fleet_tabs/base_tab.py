@@ -20,7 +20,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, QTimer
 
-from .constants import TAB_WIDGET_BASE_STYLE, REFRESH_INTERVALS
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
+    TAB_WIDGET_BASE_STYLE,
+    REFRESH_INTERVALS,
+)
 
 
 class BaseTabWidget(QWidget):

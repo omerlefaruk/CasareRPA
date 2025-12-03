@@ -2,7 +2,7 @@
 Visual Nodes - Rest Api
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.rest_api.nodes import (
     VisualHttpRequestNode,
     VisualSetHttpHeadersNode,
     VisualHttpAuthNode,

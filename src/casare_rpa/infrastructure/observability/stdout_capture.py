@@ -151,17 +151,17 @@ class _CallbackWriter:
         return getattr(self._original, "errors", None)
 
 
-# Global capture instance (set by presentation layer)
-_global_capture: Optional[OutputCapture] = None
+# Module-level capture instance with thread-safe management
+_capture_instance: Optional[OutputCapture] = None
 
 
 def _cleanup_on_exit() -> None:
     """Cleanup handler registered with atexit to restore streams on exit."""
-    global _global_capture
     with _global_lock:
-        if _global_capture:
-            _global_capture.stop()
-            _global_capture = None
+        _local_capture = _capture_instance
+        if _local_capture:
+            _local_capture.stop()
+            globals()["_capture_instance"] = None
 
 
 # Register cleanup handler
@@ -173,7 +173,7 @@ def set_output_callbacks(
     stderr_callback: Optional[Callable[[str], None]] = None,
 ) -> None:
     """
-    Set global stdout/stderr callbacks (thread-safe).
+    Set stdout/stderr callbacks (thread-safe).
 
     Called by ExecutionController to wire output to Terminal tab.
 
@@ -181,26 +181,36 @@ def set_output_callbacks(
         stdout_callback: Called with each line of stdout
         stderr_callback: Called with each line of stderr
     """
-    global _global_capture
-
     with _global_lock:
         # Stop existing capture
-        if _global_capture:
-            _global_capture.stop()
+        _local_capture = _capture_instance
+        if _local_capture:
+            _local_capture.stop()
 
         # Create and start new capture
-        _global_capture = OutputCapture(stdout_callback, stderr_callback)
-        _global_capture.start()
+        _new_capture = OutputCapture(stdout_callback, stderr_callback)
+        _new_capture.start()
+        globals()["_capture_instance"] = _new_capture
 
 
 def remove_output_callbacks() -> None:
-    """Remove global output callbacks and restore original streams (thread-safe)."""
-    global _global_capture
-
+    """Remove output callbacks and restore original streams (thread-safe)."""
     with _global_lock:
-        if _global_capture:
-            _global_capture.stop()
-            _global_capture = None
+        _local_capture = _capture_instance
+        if _local_capture:
+            _local_capture.stop()
+            globals()["_capture_instance"] = None
+
+
+def get_output_capture() -> Optional[OutputCapture]:
+    """
+    Get the current output capture instance (if any).
+
+    Returns:
+        Current OutputCapture or None
+    """
+    with _global_lock:
+        return _capture_instance
 
 
 @contextmanager

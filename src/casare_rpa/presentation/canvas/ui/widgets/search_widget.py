@@ -20,7 +20,8 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeyEvent
 
 from loguru import logger
-from ..base_widget import BaseWidget
+
+from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
 class SearchWidget(BaseWidget):
@@ -98,7 +99,9 @@ class SearchWidget(BaseWidget):
 
         # Results count label
         self._results_label = QLabel("0 results")
-        self._results_label.setStyleSheet("color: #888888; font-size: 10px; padding: 2px;")
+        self._results_label.setStyleSheet(
+            "color: #888888; font-size: 10px; padding: 2px;"
+        )
         layout.addWidget(self._results_label)
 
         # Results list

@@ -11,16 +11,16 @@ Modules:
     - http_auth: Authentication nodes (Bearer, Basic, API Key)
 """
 
-from .http_base import HttpBaseNode
-from .http_basic import HttpRequestNode
-from .http_advanced import (
+from casare_rpa.nodes.http.http_base import HttpBaseNode
+from casare_rpa.nodes.http.http_basic import HttpRequestNode
+from casare_rpa.nodes.http.http_advanced import (
     SetHttpHeadersNode,
     ParseJsonResponseNode,
     HttpDownloadFileNode,
     HttpUploadFileNode,
     BuildUrlNode,
 )
-from .http_auth import HttpAuthNode
+from casare_rpa.nodes.http.http_auth import HttpAuthNode
 
 __all__ = [
     # Base class

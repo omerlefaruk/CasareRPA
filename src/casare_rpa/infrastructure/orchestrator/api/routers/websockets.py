@@ -25,7 +25,11 @@ from casare_rpa.infrastructure.orchestrator.api.auth import (
     get_robot_authenticator,
     JWT_DEV_MODE,
 )
-from ..models import LiveJobUpdate, RobotStatusUpdate, QueueMetricsUpdate
+from casare_rpa.infrastructure.orchestrator.api.models import (
+    LiveJobUpdate,
+    QueueMetricsUpdate,
+    RobotStatusUpdate,
+)
 
 # WebSocket send timeout (seconds)
 WS_SEND_TIMEOUT = 1.0

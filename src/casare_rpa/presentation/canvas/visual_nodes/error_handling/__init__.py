@@ -5,7 +5,7 @@ NOTE: VisualTryNode has been moved to control_flow package
 as part of the Try/Catch/Finally composite pattern.
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.error_handling.nodes import (
     VisualRetryNode,
     VisualRetrySuccessNode,
     VisualRetryFailNode,

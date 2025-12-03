@@ -18,7 +18,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QTextCursor
 
 from loguru import logger
-from ..base_widget import BaseWidget
+
+from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
 
 
 class OutputConsoleWidget(BaseWidget):

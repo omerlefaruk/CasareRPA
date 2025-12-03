@@ -27,7 +27,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 
 from loguru import logger
-from ..widgets.robot_override_widget import RobotOverrideWidget
+
+from casare_rpa.presentation.canvas.ui.widgets.robot_override_widget import (
+    RobotOverrideWidget,
+)
 
 if TYPE_CHECKING:
     from NodeGraphQt import BaseNode

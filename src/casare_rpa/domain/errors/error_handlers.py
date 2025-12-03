@@ -24,28 +24,25 @@ Architecture:
 """
 
 # Re-export from new modules for backward compatibility
-from .types import (
-    ErrorCategory,
-    ErrorSeverity,
-    ErrorClassification,
-    RecoveryAction,
-)
-
-from .context import (
+from casare_rpa.domain.errors.context import (
     ErrorContext,
     RecoveryDecision,
 )
-
-from .handlers import (
+from casare_rpa.domain.errors.handlers import (
     ErrorHandler,
     NodeErrorHandler,
 )
-
-from .registry import (
-    ErrorHandlerRegistry,
+from casare_rpa.domain.errors.registry import (
     CustomErrorHandlerFunc,
+    ErrorHandlerRegistry,
     get_error_handler_registry,
     reset_error_handler_registry,
+)
+from casare_rpa.domain.errors.types import (
+    ErrorCategory,
+    ErrorClassification,
+    ErrorSeverity,
+    RecoveryAction,
 )
 
 

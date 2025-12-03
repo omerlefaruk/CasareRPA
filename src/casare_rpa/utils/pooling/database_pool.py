@@ -259,6 +259,7 @@ class DatabaseConnectionPool:
                 min_size=self._min_size,
                 max_size=self._max_size,
                 max_inactive_connection_lifetime=self._idle_timeout,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
                 **self._extra_options,
             )
         else:
@@ -271,6 +272,7 @@ class DatabaseConnectionPool:
                 min_size=self._min_size,
                 max_size=self._max_size,
                 max_inactive_connection_lifetime=self._idle_timeout,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
                 **self._extra_options,
             )
 

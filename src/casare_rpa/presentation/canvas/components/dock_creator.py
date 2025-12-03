@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from ..ui.panels import BottomPanelDock
     from ..ui.panels.variable_inspector_dock import VariableInspectorDock
     from ..ui.panels.properties_panel import PropertiesPanel
-    from ..ui.panels.node_library_panel import NodeLibraryPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
     from ..ui.widgets.execution_timeline import ExecutionTimeline
@@ -212,53 +211,6 @@ class DockCreator:
 
         logger.info("Execution Timeline dock created")
         return execution_timeline_dock, execution_timeline
-
-    def create_node_library_panel(self) -> "NodeLibraryPanel":
-        """
-        Create the Node Library Panel for browsing and adding nodes.
-
-        Features:
-        - Tree view of all nodes organized by category
-        - Search/filter functionality
-        - Drag-and-drop to canvas
-        - Double-click to create at center
-
-        Returns:
-            Created NodeLibraryPanel instance
-        """
-        from ..ui.panels.node_library_panel import NodeLibraryPanel
-
-        mw = self._main_window
-        node_library = NodeLibraryPanel(mw)
-
-        # Connect signals
-        node_library.node_requested.connect(mw._on_node_library_create)
-
-        # Add to main window (left side)
-        mw.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, node_library)
-
-        # Connect dock state changes to auto-save
-        node_library.dockLocationChanged.connect(mw._schedule_ui_state_save)
-        node_library.visibilityChanged.connect(mw._schedule_ui_state_save)
-        node_library.topLevelChanged.connect(mw._schedule_ui_state_save)
-
-        # Add toggle action to View menu
-        try:
-            view_menu = self._find_view_menu()
-            if view_menu:
-                toggle_action = node_library.toggleViewAction()
-                toggle_action.setText("&Node Library")
-                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+N"))
-                view_menu.addAction(toggle_action)
-                mw.action_toggle_node_library = toggle_action
-        except RuntimeError as e:
-            logger.warning(f"Could not add Node Library to View menu: {e}")
-
-        # Initially visible
-        node_library.show()
-
-        logger.info("Node Library Panel created")
-        return node_library
 
     def create_debug_panel(
         self, debug_controller: Optional["DebugController"] = None

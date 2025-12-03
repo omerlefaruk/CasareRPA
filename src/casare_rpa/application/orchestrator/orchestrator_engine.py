@@ -19,11 +19,14 @@ from casare_rpa.domain.orchestrator.entities import (
     Schedule,
     ScheduleFrequency,
 )
-from .services.job_queue_manager import JobQueue
-from .services.scheduling_coordinator import JobScheduler, calculate_next_run
+from casare_rpa.application.orchestrator.services.job_queue_manager import JobQueue
+from casare_rpa.application.orchestrator.services.scheduling_coordinator import (
+    JobScheduler,
+    calculate_next_run,
+)
 
 try:
-    from .services.dispatcher_service import (
+    from casare_rpa.application.orchestrator.services.dispatcher_service import (
         JobDispatcher,
         LoadBalancingStrategy,
         RobotPool,

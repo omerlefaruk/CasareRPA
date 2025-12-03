@@ -231,7 +231,6 @@ class ListSliceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "separator",
@@ -241,6 +240,7 @@ class ListSliceNode(BaseNode):
         tooltip="Separator to use when joining items",
     ),
 )
+@executable_node
 class ListJoinNode(BaseNode):
     """Node that joins a list into a string."""
 
@@ -273,7 +273,6 @@ class ListJoinNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "reverse",
@@ -290,6 +289,7 @@ class ListJoinNode(BaseNode):
         tooltip="Dot-separated path to sort by (for dict items)",
     ),
 )
+@executable_node
 class ListSortNode(BaseNode):
     """Node that sorts a list."""
 
@@ -414,7 +414,6 @@ class ListUniqueNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "condition",
@@ -526,7 +525,6 @@ class ListFilterNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "transform",
@@ -617,7 +615,6 @@ class ListMapNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "operation",
@@ -728,7 +725,6 @@ class ListReduceNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "depth",
@@ -739,6 +735,7 @@ class ListReduceNode(BaseNode):
         tooltip="How many levels to flatten",
     ),
 )
+@executable_node
 class ListFlattenNode(BaseNode):
     """Node that flattens a nested list."""
 

@@ -5,20 +5,20 @@ Provides nodes for reading, creating, and modifying Google Documents
 via the Google Docs API v1.
 """
 
-from .docs_base import DocsBaseNode
-from .docs_read import (
+from casare_rpa.nodes.google.docs.docs_base import DocsBaseNode
+from casare_rpa.nodes.google.docs.docs_read import (
+    DocsExportNode,
     DocsGetDocumentNode,
     DocsGetTextNode,
-    DocsExportNode,
 )
-from .docs_write import (
-    DocsCreateDocumentNode,
-    DocsInsertTextNode,
+from casare_rpa.nodes.google.docs.docs_write import (
     DocsAppendTextNode,
-    DocsReplaceTextNode,
-    DocsInsertTableNode,
-    DocsInsertImageNode,
     DocsApplyStyleNode,
+    DocsCreateDocumentNode,
+    DocsInsertImageNode,
+    DocsInsertTableNode,
+    DocsInsertTextNode,
+    DocsReplaceTextNode,
 )
 
 __all__ = [

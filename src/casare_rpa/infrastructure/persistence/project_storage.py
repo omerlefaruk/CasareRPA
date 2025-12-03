@@ -11,14 +11,14 @@ from typing import List
 import orjson
 from loguru import logger
 
-from ...domain.entities.project import (
-    Project,
-    VariablesFile,
+from casare_rpa.domain.entities.project import (
     CredentialBindingsFile,
+    Project,
     ProjectsIndex,
     VariableScope,
+    VariablesFile,
 )
-from ...utils.config import (
+from casare_rpa.config import (
     PROJECTS_INDEX_FILE,
     GLOBAL_VARIABLES_FILE,
     GLOBAL_CREDENTIALS_FILE,
@@ -518,8 +518,8 @@ class ProjectStorage:
             ValueError: If strict validation fails
             FileNotFoundError: If file doesn't exist
         """
-        from ...domain.entities.workflow import WorkflowSchema
-        from ...utils.workflow.workflow_migration import (
+        from casare_rpa.domain.entities.workflow import WorkflowSchema
+        from casare_rpa.utils.workflow.workflow_migration import (
             migrate_workflow_ids,
             needs_migration,
         )
@@ -535,7 +535,7 @@ class ProjectStorage:
 
             # Optionally validate
             if validate_on_load:
-                from ...domain.validation import validate_workflow
+                from casare_rpa.domain.validation import validate_workflow
 
                 result = validate_workflow(data)
 

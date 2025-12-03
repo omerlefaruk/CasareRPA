@@ -39,28 +39,36 @@ from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from casare_rpa.infrastructure.events import (
-    get_monitoring_event_bus,
     MonitoringEventType,
+    get_monitoring_event_bus,
 )
-from .routers import auth, jobs, metrics, robots, websockets, workflows, schedules
-from .routers.websockets import (
-    on_job_status_changed,
-    on_robot_heartbeat,
-    on_queue_depth_changed,
-)
-from .dependencies import (
-    get_pool_manager,
+from casare_rpa.infrastructure.orchestrator.api.dependencies import (
     DatabasePoolManager,
+    get_pool_manager,
 )
-from .responses import (
+from casare_rpa.infrastructure.orchestrator.api.rate_limit import (
+    limiter,
+    setup_rate_limiting,
+)
+from casare_rpa.infrastructure.orchestrator.api.responses import (
     ErrorCode,
-    error_response,
     HealthResponse,
     ReadyResponse,
+    error_response,
 )
-from .rate_limit import (
-    setup_rate_limiting,
-    limiter,
+from casare_rpa.infrastructure.orchestrator.api.routers import (
+    auth,
+    jobs,
+    metrics,
+    robots,
+    schedules,
+    websockets,
+    workflows,
+)
+from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
+    on_job_status_changed,
+    on_queue_depth_changed,
+    on_robot_heartbeat,
 )
 
 # API version and startup time for health checks

@@ -10,9 +10,9 @@ from loguru import logger
 
 from casare_rpa.domain.value_objects.types import NodeId
 
-from .context import ErrorContext, RecoveryDecision
-from .handlers import ErrorHandler, NodeErrorHandler
-from .types import ErrorCategory
+from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
+from casare_rpa.domain.errors.handlers import ErrorHandler, NodeErrorHandler
+from casare_rpa.domain.errors.types import ErrorCategory
 
 
 # Type alias for custom handler functions
@@ -342,8 +342,20 @@ class ErrorHandlerRegistry:
         logger.debug("Error history cleared")
 
 
-# Global registry instance (singleton)
-_global_registry: Optional[ErrorHandlerRegistry] = None
+# Thread-safe singleton holder
+from casare_rpa.application.dependency_injection.singleton import Singleton
+
+
+def _on_create_error_registry(instance: ErrorHandlerRegistry) -> None:
+    """Callback when registry is created."""
+    logger.info("Global error handler registry created")
+
+
+_error_registry_holder = Singleton(
+    ErrorHandlerRegistry,
+    name="ErrorHandlerRegistry",
+    on_create=_on_create_error_registry,
+)
 
 
 def get_error_handler_registry() -> ErrorHandlerRegistry:
@@ -353,17 +365,12 @@ def get_error_handler_registry() -> ErrorHandlerRegistry:
     Returns:
         Global ErrorHandlerRegistry instance.
     """
-    global _global_registry
-    if _global_registry is None:
-        _global_registry = ErrorHandlerRegistry()
-        logger.info("Global error handler registry created")
-    return _global_registry
+    return _error_registry_holder.get()
 
 
 def reset_error_handler_registry() -> None:
     """Reset the global error handler registry (for testing)."""
-    global _global_registry
-    _global_registry = None
+    _error_registry_holder.reset()
     logger.debug("Global error handler registry reset")
 
 

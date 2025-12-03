@@ -484,12 +484,12 @@ class TestEmailNodeCredentials:
 
     def test_send_email_node_uses_mixin(self):
         """SendEmailNode should inherit CredentialAwareMixin."""
-        from casare_rpa.nodes.email_nodes import SendEmailNode
+        from casare_rpa.nodes.email import SendEmailNode
 
         assert issubclass(SendEmailNode, CredentialAwareMixin)
 
     def test_read_emails_node_uses_mixin(self):
         """ReadEmailsNode should inherit CredentialAwareMixin."""
-        from casare_rpa.nodes.email_nodes import ReadEmailsNode
+        from casare_rpa.nodes.email import ReadEmailsNode
 
         assert issubclass(ReadEmailsNode, CredentialAwareMixin)

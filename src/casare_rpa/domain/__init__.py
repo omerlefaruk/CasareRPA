@@ -5,6 +5,7 @@ This layer contains:
 - Entities: Core business objects (Workflow, Node, Connection)
 - Services: Domain services (validation, dependency analysis)
 - Ports: Interfaces for adapters (dependency inversion)
+- Protocols: Protocol interfaces for dependency inversion
 - Decorators: Node class decorators (executable_node)
 - Credentials: Credential resolution for nodes (CredentialAwareMixin)
 
@@ -22,9 +23,16 @@ from casare_rpa.domain.credentials import (
     BOT_TOKEN_PROP,
     resolve_node_credential,
 )
+from casare_rpa.domain.protocols import (
+    CredentialProviderProtocol,
+    ExecutionContextProtocol,
+    ResolvedCredentialData,
+)
 
 __all__ = [
+    # Decorators
     "executable_node",
+    # Credential mixin and props
     "CredentialAwareMixin",
     "CREDENTIAL_NAME_PROP",
     "API_KEY_PROP",
@@ -32,4 +40,8 @@ __all__ = [
     "PASSWORD_PROP",
     "BOT_TOKEN_PROP",
     "resolve_node_credential",
+    # Protocols for dependency inversion
+    "CredentialProviderProtocol",
+    "ExecutionContextProtocol",
+    "ResolvedCredentialData",
 ]

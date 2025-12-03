@@ -29,7 +29,7 @@ import signal
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 # Suppress Qt DPI awareness warning - must be set before Qt imports.
 os.environ.setdefault("QT_LOGGING_RULES", "qt.qpa.window=false")
@@ -43,8 +43,28 @@ from rich.table import Table
 from rich.live import Live
 from rich.text import Text
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from multiple locations
+# Priority (highest to lowest):
+# 1. Install directory (.env next to executable) - for frozen apps
+# 2. AppData/CasareRPA/.env (Windows installer location)
+# 3. Current working directory (.env)
+
+# For frozen apps (PyInstaller exe), load from exe directory FIRST with override=True
+if getattr(sys, "frozen", False):
+    _exe_dir = Path(sys.executable).parent
+    _exe_env = _exe_dir / ".env"
+    if _exe_env.exists():
+        load_dotenv(_exe_env, override=True)  # Override any system env vars
+
+# Try AppData location (Windows installer) - override=True for installed robots
+_appdata = os.getenv("APPDATA")
+if _appdata:
+    _appdata_env = Path(_appdata) / "CasareRPA" / ".env"
+    if _appdata_env.exists():
+        load_dotenv(_appdata_env, override=True)  # Override system env vars
+
+# Development: current directory (won't override if already set)
+load_dotenv()  # Current directory last, won't override
 
 
 app = typer.Typer(
@@ -56,13 +76,63 @@ app = typer.Typer(
 
 console = Console()
 
-# Global state for signal handling
-_shutdown_event: Optional[asyncio.Event] = None
-_agent = None
+
+class RobotCLIState:
+    """
+    Thread-safe state management for robot CLI.
+
+    Encapsulates the shutdown event and agent reference
+    that were previously global variables.
+    """
+
+    def __init__(self) -> None:
+        """Initialize CLI state."""
+        import threading
+
+        self._shutdown_event: Optional[asyncio.Event] = None
+        self._agent: Optional[Any] = None
+        self._lock = threading.Lock()
+
+    @property
+    def shutdown_event(self) -> Optional[asyncio.Event]:
+        """Get the shutdown event."""
+        return self._shutdown_event
+
+    @shutdown_event.setter
+    def shutdown_event(self, event: Optional[asyncio.Event]) -> None:
+        """Set the shutdown event."""
+        with self._lock:
+            self._shutdown_event = event
+
+    @property
+    def agent(self) -> Optional[Any]:
+        """Get the robot agent."""
+        return self._agent
+
+    @agent.setter
+    def agent(self, agent: Optional[Any]) -> None:
+        """Set the robot agent."""
+        with self._lock:
+            self._agent = agent
+
+    def trigger_shutdown(self) -> None:
+        """Trigger the shutdown event if set."""
+        event = self._shutdown_event
+        if event:
+            event.set()
+
+
+# Module-level CLI state singleton
+_cli_state = RobotCLIState()
 
 
 def _get_postgres_url() -> str:
-    """Build PostgreSQL connection URL from environment variables."""
+    """
+    Build PostgreSQL connection URL from environment variables.
+
+    For frozen apps (installed exe), returns empty string and the
+    RobotAgent will fetch credentials from Supabase Vault at runtime.
+    """
     url = (
         os.getenv("PGQUEUER_DB_URL")
         or os.getenv("DATABASE_URL")
@@ -71,6 +141,11 @@ def _get_postgres_url() -> str:
     if url:
         return url
 
+    # For frozen apps, return empty - agent.py will fetch from Vault
+    if getattr(sys, "frozen", False):
+        return ""
+
+    # Development mode: build from individual env vars
     host = os.getenv("DB_HOST", "localhost")
     port = os.getenv("DB_PORT", "5432")
     name = os.getenv("DB_NAME", "casare_rpa")
@@ -218,16 +293,14 @@ def _write_status_file(robot_id: str, status_data: dict) -> None:
 
 def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
     """Setup signal handlers for graceful shutdown."""
-    global _shutdown_event
-    _shutdown_event = asyncio.Event()
+    _cli_state.shutdown_event = asyncio.Event()
 
     def signal_handler(signum: int, frame) -> None:
         sig_name = signal.Signals(signum).name
         logger.info(f"Received {sig_name}, initiating graceful shutdown...")
         console.print(f"\n[yellow]Received {sig_name}, shutting down...[/yellow]")
 
-        if _shutdown_event:
-            loop.call_soon_threadsafe(_shutdown_event.set)
+        loop.call_soon_threadsafe(_cli_state.trigger_shutdown)
 
     # Standard signals
     signal.signal(signal.SIGTERM, signal_handler)
@@ -246,7 +319,7 @@ def _setup_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
 
             def win32_handler(ctrl_type):
                 if ctrl_type in (0, 1):  # CTRL+C or CTRL+BREAK
-                    loop.call_soon_threadsafe(_shutdown_event.set)
+                    loop.call_soon_threadsafe(_cli_state.trigger_shutdown)
                     return True
                 return False
 
@@ -266,7 +339,6 @@ async def _run_agent(
     daemon: bool = False,
 ) -> int:
     """Run the unified robot agent."""
-    global _agent, _shutdown_event
 
     from casare_rpa.robot.agent import RobotAgent, RobotConfig
 
@@ -290,31 +362,34 @@ async def _run_agent(
             poll_interval_seconds=poll_interval,
         )
 
-    _agent = RobotAgent(config)
+    agent = RobotAgent(config)
+    _cli_state.agent = agent
 
     # Write PID file
     pid_file = _write_pid_file(config.robot_id)
     logger.debug(f"PID file written: {pid_file}")
 
     try:
-        await _agent.start()
+        await agent.start()
 
         # Update status file
-        _write_status_file(config.robot_id, _agent.get_status())
+        _write_status_file(config.robot_id, agent.get_status())
 
         # Wait for shutdown signal
-        if _shutdown_event:
-            await _shutdown_event.wait()
+        shutdown_event = _cli_state.shutdown_event
+        if shutdown_event:
+            await shutdown_event.wait()
             console.print("[yellow]Graceful shutdown in progress...[/yellow]")
-            await _agent.stop()
+            await agent.stop()
             console.print("[green]Robot agent stopped successfully.[/green]")
 
         return 0
 
     except asyncio.CancelledError:
         logger.info("Agent task cancelled")
-        if _agent:
-            await _agent.stop()
+        current_agent = _cli_state.agent
+        if current_agent:
+            await current_agent.stop()
         return 0
     except Exception as e:
         logger.exception(f"Agent error: {e}")
@@ -322,7 +397,7 @@ async def _run_agent(
         return 1
     finally:
         _remove_pid_file(config.robot_id)
-        _agent = None
+        _cli_state.agent = None
 
 
 @app.command()
@@ -407,7 +482,10 @@ def start(
     # Get PostgreSQL URL
     postgres_url = _get_postgres_url()
 
-    if not postgres_url or "://:@" in postgres_url:
+    # For frozen apps, empty URL is OK - agent.py will build from DB_PASSWORD
+    is_frozen = getattr(sys, "frozen", False)
+
+    if not is_frozen and (not postgres_url or "://:@" in postgres_url):
         console.print("[red]Error: Database connection not configured.[/red]")
         console.print("\nSet environment variables in .env file:")
         console.print("  DB_HOST=localhost")
@@ -417,6 +495,11 @@ def start(
         console.print("  DB_PASSWORD=your_password")
         console.print("\nOr set POSTGRES_URL/DATABASE_URL directly.")
         raise typer.Exit(code=1)
+
+    if is_frozen and not postgres_url:
+        console.print(
+            "[dim]Frozen app: Database URL will be built from DB_PASSWORD[/dim]"
+        )
 
     # Daemon mode
     if daemon:

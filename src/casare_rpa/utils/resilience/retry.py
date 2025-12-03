@@ -8,8 +8,9 @@ timeout handling, and error classification for robust node execution.
 import asyncio
 import functools
 import random
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Optional, Set, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Set, Type, TypeVar
 from loguru import logger
 
 
@@ -85,6 +86,25 @@ def classify_error(exception: Exception) -> ErrorCategory:
 
 
 T = TypeVar("T")
+
+
+@dataclass
+class RetryResult(Generic[T]):
+    """Result of a retry operation with metadata.
+
+    Used by retry_operation() to provide detailed information about
+    retry attempts without raising exceptions on failure.
+    """
+
+    success: bool
+    value: Optional[T]
+    attempts: int
+    last_error: Optional[Exception] = None
+
+    @property
+    def failed(self) -> bool:
+        """Check if the operation failed."""
+        return not self.success
 
 
 class RetryConfig:
@@ -382,3 +402,66 @@ class RetryStats:
             "total_retry_delay": self.total_retry_delay,
             "success_rate": self.success_rate,
         }
+
+
+async def retry_operation(
+    operation: Callable[[], T],
+    max_attempts: int = 3,
+    delay_seconds: float = 1.0,
+    backoff: float = 1.0,
+    operation_name: str = "operation",
+    on_retry: Optional[Callable[[int, Exception], None]] = None,
+) -> RetryResult[T]:
+    """Execute an async operation with retry logic, returning a result object.
+
+    This function does not raise on failure - instead it returns a RetryResult
+    containing success status, value, attempt count, and any error.
+
+    Args:
+        operation: Async callable to execute (no args, use closure for params)
+        max_attempts: Maximum number of attempts (1 = no retry)
+        delay_seconds: Delay between retries in seconds
+        backoff: Multiplier for delay on each retry (1.0 = constant delay)
+        operation_name: Name for logging purposes
+        on_retry: Optional callback(attempt, exception) called before each retry
+
+    Returns:
+        RetryResult with success status, value, attempts, and last error
+
+    Example:
+        async def do_click():
+            await page.click(selector)
+            return True
+
+        result = await retry_operation(
+            do_click,
+            max_attempts=3,
+            delay_seconds=1.0,
+            operation_name="click element"
+        )
+        if result.success:
+            return {"success": True, "attempts": result.attempts}
+        else:
+            raise result.last_error
+    """
+    current_delay = delay_seconds
+    last_exception: Optional[Exception] = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            value = await operation()
+            return RetryResult(success=True, value=value, attempts=attempt)
+        except Exception as e:
+            last_exception = e
+            if attempt < max_attempts:
+                logger.warning(
+                    f"{operation_name} failed (attempt {attempt}/{max_attempts}): {e}"
+                )
+                if on_retry:
+                    on_retry(attempt, e)
+                await asyncio.sleep(current_delay)
+                current_delay *= backoff
+
+    return RetryResult(
+        success=False, value=None, attempts=max_attempts, last_error=last_exception
+    )

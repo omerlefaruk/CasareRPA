@@ -18,7 +18,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils import retry_operation
+from casare_rpa.utils.resilience import retry_operation
 from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
 
@@ -330,6 +330,27 @@ class LaunchBrowserNode(BaseNode):
                 # Set outputs
                 self.set_output_value("browser", browser)
                 self.set_output_value("page", page)
+
+                # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
+                try:
+                    from casare_rpa.domain.events import get_event_bus, Event
+                    from casare_rpa.domain.value_objects.types import EventType
+
+                    event_bus = get_event_bus()
+                    handlers = event_bus._handlers.get(EventType.BROWSER_PAGE_READY, [])
+                    logger.info(
+                        f"Publishing BROWSER_PAGE_READY (bus={id(event_bus)}, handlers={len(handlers)})"
+                    )
+                    event_bus.publish(
+                        Event(
+                            EventType.BROWSER_PAGE_READY,
+                            data={"page": page},
+                            node_id=getattr(self, "node_id", None),
+                        )
+                    )
+                    logger.info("BROWSER_PAGE_READY event published successfully")
+                except Exception as e:
+                    logger.error(f"Could not emit BROWSER_PAGE_READY event: {e}")
 
                 self.status = NodeStatus.SUCCESS
                 logger.info(

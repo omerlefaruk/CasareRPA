@@ -481,8 +481,10 @@ class TemplateLoader:
             return create_func(**kwargs)
 
 
-# Global template loader instance
-_global_loader: Optional[TemplateLoader] = None
+# Thread-safe singleton holder
+from casare_rpa.application.dependency_injection.singleton import Singleton
+
+_template_loader_holder = Singleton(TemplateLoader, name="TemplateLoader")
 
 
 def get_template_loader() -> TemplateLoader:
@@ -492,7 +494,9 @@ def get_template_loader() -> TemplateLoader:
     Returns:
         TemplateLoader instance
     """
-    global _global_loader
-    if _global_loader is None:
-        _global_loader = TemplateLoader()
-    return _global_loader
+    return _template_loader_holder.get()
+
+
+def reset_template_loader() -> None:
+    """Reset the template loader instance (for testing)."""
+    _template_loader_holder.reset()

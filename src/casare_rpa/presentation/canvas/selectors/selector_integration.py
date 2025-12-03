@@ -165,7 +165,11 @@ class SelectorIntegration(QObject):
         logger.info(f"Recording complete: {len(actions)} actions")
 
         self._is_recording = False
+        self._is_picking = False
         self.recording_complete.emit(actions)
+
+        # Also deactivate selector mode in browser
+        asyncio.ensure_future(self.selector_manager.deactivate_selector_mode())
 
     def _update_node_property(self, selector_value: str):
         """Update the target node's property with the selector"""

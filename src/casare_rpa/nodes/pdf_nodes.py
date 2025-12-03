@@ -26,7 +26,6 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "page_separator",
@@ -356,7 +355,6 @@ class MergePDFsNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "filename_pattern",
@@ -366,6 +364,7 @@ class MergePDFsNode(BaseNode):
         tooltip="Pattern for output files (use {n} for page number)",
     ),
 )
+@executable_node
 class SplitPDFNode(BaseNode):
     """
     Split a PDF into separate files, one per page.
@@ -551,7 +550,6 @@ class ExtractPDFPagesNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "dpi",

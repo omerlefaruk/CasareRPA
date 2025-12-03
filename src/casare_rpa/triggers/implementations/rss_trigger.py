@@ -24,8 +24,8 @@ except ImportError:
         "defusedxml not installed - using stdlib XML parser with limited XXE protection"
     )
 
-from ..base import BaseTrigger, TriggerStatus, TriggerType
-from ..registry import register_trigger
+from casare_rpa.triggers.base import BaseTrigger, TriggerStatus, TriggerType
+from casare_rpa.triggers.registry import register_trigger
 
 
 @register_trigger

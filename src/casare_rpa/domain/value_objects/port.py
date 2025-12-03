@@ -7,7 +7,7 @@ Port is an immutable value object representing a connection point on a node.
 import re
 from typing import Any, Optional
 
-from .types import DataType, PortDefinition, PortType
+from casare_rpa.domain.value_objects.types import DataType, PortDefinition, PortType
 
 # Valid port name pattern (alphanumeric and underscores, starting with letter or underscore)
 _PORT_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")

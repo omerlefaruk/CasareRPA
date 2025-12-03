@@ -58,7 +58,7 @@ class MenuBuilder:
         return file_menu
 
     def _create_edit_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Edit menu (11 items)."""
+        """Create Edit menu (10 items)."""
         edit_menu = menubar.addMenu("&Edit")
         edit_menu.addAction(mw.action_undo)
         edit_menu.addAction(mw.action_redo)
@@ -71,18 +71,12 @@ class MenuBuilder:
         edit_menu.addSeparator()
         edit_menu.addAction(mw.action_select_all)
         edit_menu.addAction(mw.action_find_node)
-        edit_menu.addSeparator()
-        edit_menu.addAction(mw.action_auto_connect)
+        # Auto-connect is always enabled, not user-changeable
         return edit_menu
 
     def _create_view_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create View menu (8 items)."""
+        """Create View menu."""
         view_menu = menubar.addMenu("&View")
-        view_menu.addAction(mw.action_zoom_in)
-        view_menu.addAction(mw.action_zoom_out)
-        view_menu.addAction(mw.action_zoom_reset)
-        view_menu.addAction(mw.action_fit_view)
-        view_menu.addSeparator()
         view_menu.addAction(mw.action_toggle_properties)
         view_menu.addAction(mw.action_toggle_variable_inspector)
         view_menu.addAction(mw.action_toggle_bottom_panel)
@@ -94,14 +88,12 @@ class MenuBuilder:
         return view_menu
 
     def _create_run_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Run menu (7 items)."""
+        """Create Run menu (6 items)."""
         run_menu = menubar.addMenu("&Run")
         run_menu.addAction(mw.action_run)
         run_menu.addAction(mw.action_run_all)
         run_menu.addAction(mw.action_pause)
         run_menu.addAction(mw.action_stop)
-        run_menu.addSeparator()
-        run_menu.addAction(mw.action_debug)
         run_menu.addSeparator()
         run_menu.addAction(mw.action_start_listening)
         run_menu.addAction(mw.action_stop_listening)

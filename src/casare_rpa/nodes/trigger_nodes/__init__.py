@@ -5,30 +5,35 @@ Visual trigger nodes for workflow entry points.
 Each trigger type has a corresponding node that can be placed on the canvas.
 """
 
-from .base_trigger_node import BaseTriggerNode, trigger_node
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
+    BaseTriggerNode,
+    trigger_node,
+)
 
 # Trigger node implementations (imported after definition)
-from .webhook_trigger_node import WebhookTriggerNode
-from .schedule_trigger_node import ScheduleTriggerNode
-from .file_watch_trigger_node import FileWatchTriggerNode
-from .email_trigger_node import EmailTriggerNode
-from .app_event_trigger_node import AppEventTriggerNode
-from .error_trigger_node import ErrorTriggerNode
-from .workflow_call_trigger_node import WorkflowCallTriggerNode
-from .form_trigger_node import FormTriggerNode
-from .chat_trigger_node import ChatTriggerNode
-from .rss_feed_trigger_node import RSSFeedTriggerNode
-from .sse_trigger_node import SSETriggerNode
+from casare_rpa.nodes.trigger_nodes.webhook_trigger_node import WebhookTriggerNode
+from casare_rpa.nodes.trigger_nodes.schedule_trigger_node import ScheduleTriggerNode
+from casare_rpa.nodes.trigger_nodes.file_watch_trigger_node import FileWatchTriggerNode
+from casare_rpa.nodes.trigger_nodes.email_trigger_node import EmailTriggerNode
+from casare_rpa.nodes.trigger_nodes.app_event_trigger_node import AppEventTriggerNode
+from casare_rpa.nodes.trigger_nodes.error_trigger_node import ErrorTriggerNode
+from casare_rpa.nodes.trigger_nodes.workflow_call_trigger_node import (
+    WorkflowCallTriggerNode,
+)
+from casare_rpa.nodes.trigger_nodes.form_trigger_node import FormTriggerNode
+from casare_rpa.nodes.trigger_nodes.chat_trigger_node import ChatTriggerNode
+from casare_rpa.nodes.trigger_nodes.rss_feed_trigger_node import RSSFeedTriggerNode
+from casare_rpa.nodes.trigger_nodes.sse_trigger_node import SSETriggerNode
 
 # Messaging triggers
-from .telegram_trigger_node import TelegramTriggerNode
-from .whatsapp_trigger_node import WhatsAppTriggerNode
+from casare_rpa.nodes.trigger_nodes.telegram_trigger_node import TelegramTriggerNode
+from casare_rpa.nodes.trigger_nodes.whatsapp_trigger_node import WhatsAppTriggerNode
 
 # Google triggers
-from .gmail_trigger_node import GmailTriggerNode
-from .drive_trigger_node import DriveTriggerNode
-from .sheets_trigger_node import SheetsTriggerNode
-from .calendar_trigger_node import CalendarTriggerNode
+from casare_rpa.nodes.trigger_nodes.gmail_trigger_node import GmailTriggerNode
+from casare_rpa.nodes.trigger_nodes.drive_trigger_node import DriveTriggerNode
+from casare_rpa.nodes.trigger_nodes.sheets_trigger_node import SheetsTriggerNode
+from casare_rpa.nodes.trigger_nodes.calendar_trigger_node import CalendarTriggerNode
 
 __all__ = [
     # Base

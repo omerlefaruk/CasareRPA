@@ -5,7 +5,7 @@ All visual trigger node implementations for the canvas.
 """
 
 from casare_rpa.domain.value_objects.types import DataType
-from .base import VisualTriggerNode
+from casare_rpa.presentation.canvas.visual_nodes.triggers.base import VisualTriggerNode
 
 
 class VisualWebhookTriggerNode(VisualTriggerNode):

@@ -1,11 +1,18 @@
 """
 Test fixtures for Robot Agent tests.
 
-Provides mocks for PgQueuer and DBOS components since these
-are specified in Phase 3.4 but not yet implemented.
+Provides mocks for PgQueuer and DBOS components, plus fixtures for:
+- Robot configuration (RobotConfig, RobotCapabilities)
+- Mock consumers and executors
+- Sample jobs and workflows
+- Audit logger mocks
+- Circuit breaker fixtures
 """
 
 import asyncio
+import uuid
+from pathlib import Path
+
 import pytest
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -353,3 +360,163 @@ def multiple_jobs() -> List[Job]:
         )
         for i in range(5)
     ]
+
+
+# =============================================================================
+# Additional fixtures for RobotAgent and Audit testing
+# =============================================================================
+
+
+@pytest.fixture
+def temp_log_dir(tmp_path: Path) -> Path:
+    """Create temporary log directory."""
+    log_dir = tmp_path / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
+@pytest.fixture
+def temp_checkpoint_dir(tmp_path: Path) -> Path:
+    """Create temporary checkpoint directory."""
+    checkpoint_dir = tmp_path / "checkpoints"
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    return checkpoint_dir
+
+
+@pytest.fixture
+def temp_audit_dir(tmp_path: Path) -> Path:
+    """Create temporary audit log directory."""
+    audit_dir = tmp_path / "audit"
+    audit_dir.mkdir(parents=True, exist_ok=True)
+    return audit_dir
+
+
+@pytest.fixture
+def mock_metrics_collector():
+    """Provide a mock MetricsCollector."""
+    metrics = Mock()
+    metrics.start_resource_monitoring = AsyncMock()
+    metrics.stop_resource_monitoring = AsyncMock()
+    metrics.start_job = Mock()
+    metrics.end_job = Mock()
+    metrics.record_node = Mock()
+    metrics.get_summary = Mock(
+        return_value={
+            "total_jobs": 0,
+            "successful_jobs": 0,
+            "failed_jobs": 0,
+        }
+    )
+    return metrics
+
+
+@pytest.fixture
+def mock_audit_logger():
+    """Provide a mock AuditLogger."""
+    audit = Mock()
+    audit.robot_started = Mock()
+    audit.robot_stopped = Mock()
+    audit.connection_established = Mock()
+    audit.connection_lost = Mock()
+    audit.job_started = Mock()
+    audit.job_completed = Mock()
+    audit.job_failed = Mock()
+    audit.job_cancelled = Mock()
+    audit.node_started = Mock()
+    audit.node_completed = Mock()
+    audit.node_failed = Mock()
+    audit.checkpoint_saved = Mock()
+    audit.checkpoint_restored = Mock()
+    audit.circuit_state_changed = Mock()
+    audit.log = Mock()
+    audit.get_recent = Mock(return_value=[])
+    audit.query = Mock(return_value=[])
+    return audit
+
+
+@pytest.fixture
+def mock_resource_manager():
+    """Provide a mock UnifiedResourceManager."""
+    manager = AsyncMock()
+    manager.start = AsyncMock()
+    manager.stop = AsyncMock()
+    manager.acquire_resources_for_job = AsyncMock(return_value={"browser": Mock()})
+    manager.release_resources = AsyncMock()
+    return manager
+
+
+@pytest.fixture
+def mock_db_pool():
+    """Provide a mock database pool."""
+    pool = AsyncMock()
+
+    # Create a mock connection context manager
+    mock_conn = AsyncMock()
+    mock_conn.execute = AsyncMock()
+    mock_conn.fetch = AsyncMock(return_value=[])
+    mock_conn.fetchrow = AsyncMock(return_value=None)
+
+    # Make acquire return async context manager
+    async def acquire():
+        return mock_conn
+
+    pool.acquire = MagicMock()
+    pool.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
+    pool.acquire.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    return pool
+
+
+@pytest.fixture
+def sample_job_with_workflow():
+    """Provide a sample job with a more complete workflow."""
+    return Job(
+        job_id=f"job-{uuid.uuid4().hex[:8]}",
+        workflow_id=f"wf-{uuid.uuid4().hex[:8]}",
+        workflow_name="Complete Test Workflow",
+        workflow_json="""
+        {
+            "metadata": {
+                "name": "Complete Test Workflow",
+                "version": "1.0.0",
+                "description": "A workflow for integration testing"
+            },
+            "nodes": [
+                {"id": "start", "type": "StartNode", "properties": {}},
+                {"id": "set-var", "type": "SetVariableNode", "properties": {"name": "result", "value": "success"}},
+                {"id": "log", "type": "LogNode", "properties": {"message": "{{result}}"}},
+                {"id": "end", "type": "EndNode", "properties": {}}
+            ],
+            "connections": [
+                {"from_node": "start", "from_port": "exec_out", "to_node": "set-var", "to_port": "exec_in"},
+                {"from_node": "set-var", "from_port": "exec_out", "to_node": "log", "to_port": "exec_in"},
+                {"from_node": "log", "from_port": "exec_out", "to_node": "end", "to_port": "exec_in"}
+            ]
+        }
+        """,
+        variables={"initial_value": "test"},
+        priority=5,
+    )
+
+
+@pytest.fixture
+def mock_circuit_breaker():
+    """Provide a mock CircuitBreaker."""
+    from casare_rpa.robot.circuit_breaker import CircuitState
+
+    cb = Mock()
+    cb.name = "test-circuit"
+    cb.state = CircuitState.CLOSED
+    cb.is_closed = True
+    cb.is_open = False
+    cb.call = AsyncMock(side_effect=lambda func, *args, **kwargs: func(*args, **kwargs))
+    cb.reset = AsyncMock()
+    cb.force_open = AsyncMock()
+    cb.get_status = Mock(
+        return_value={
+            "name": "test-circuit",
+            "state": "closed",
+            "failure_count": 0,
+        }
+    )
+    return cb

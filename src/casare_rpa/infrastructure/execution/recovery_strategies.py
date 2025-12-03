@@ -1051,8 +1051,20 @@ class RecoveryStrategyRegistry:
         return await strategy.execute(context, decision, execution_context)
 
 
-# Global registry instance
-_global_strategy_registry: Optional[RecoveryStrategyRegistry] = None
+# Thread-safe singleton holder
+from casare_rpa.application.dependency_injection.singleton import Singleton
+
+
+def _on_create_registry(instance: RecoveryStrategyRegistry) -> None:
+    """Callback when registry is created."""
+    logger.info("Global recovery strategy registry created")
+
+
+_strategy_registry_holder = Singleton(
+    RecoveryStrategyRegistry,
+    name="RecoveryStrategyRegistry",
+    on_create=_on_create_registry,
+)
 
 
 def get_recovery_strategy_registry() -> RecoveryStrategyRegistry:
@@ -1062,15 +1074,10 @@ def get_recovery_strategy_registry() -> RecoveryStrategyRegistry:
     Returns:
         Global RecoveryStrategyRegistry instance.
     """
-    global _global_strategy_registry
-    if _global_strategy_registry is None:
-        _global_strategy_registry = RecoveryStrategyRegistry()
-        logger.info("Global recovery strategy registry created")
-    return _global_strategy_registry
+    return _strategy_registry_holder.get()
 
 
 def reset_recovery_strategy_registry() -> None:
     """Reset the global recovery strategy registry (for testing)."""
-    global _global_strategy_registry
-    _global_strategy_registry = None
+    _strategy_registry_holder.reset()
     logger.debug("Global recovery strategy registry reset")

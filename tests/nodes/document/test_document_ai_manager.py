@@ -10,6 +10,8 @@ from casare_rpa.infrastructure.resources.document_ai_manager import (
     ExtractionResult,
     TableExtractionResult,
     ValidationResult,
+)
+from casare_rpa.infrastructure.resources.llm_resource_manager import (
     LLMConfig,
     LLMProvider,
 )

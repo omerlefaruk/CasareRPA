@@ -5,12 +5,12 @@ Modular managers for desktop automation operations.
 Each manager handles a specific domain of desktop automation.
 """
 
-from .window_manager import WindowManager
-from .mouse_controller import MouseController
-from .keyboard_controller import KeyboardController
-from .form_interactor import FormInteractor
-from .screen_capture import ScreenCapture
-from .wait_manager import WaitManager
+from casare_rpa.desktop.managers.form_interactor import FormInteractor
+from casare_rpa.desktop.managers.keyboard_controller import KeyboardController
+from casare_rpa.desktop.managers.mouse_controller import MouseController
+from casare_rpa.desktop.managers.screen_capture import ScreenCapture
+from casare_rpa.desktop.managers.wait_manager import WaitManager
+from casare_rpa.desktop.managers.window_manager import WindowManager
 
 __all__ = [
     "WindowManager",

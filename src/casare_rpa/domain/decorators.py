@@ -124,9 +124,10 @@ def node_schema(*property_defs: PropertyDef, strict: bool = False):
                         f"Invalid configuration for {cls.__name__}: {error}"
                     )
                 else:
-                    # Lenient mode: Log warning and continue (backward compatible)
-                    logger.warning(
-                        f"Config validation failed for {cls.__name__}: {error}"
+                    # Lenient mode: Log debug and continue (validation at runtime)
+                    # This is expected when nodes are created for palette display
+                    logger.debug(
+                        f"Config validation skipped for {cls.__name__}: {error}"
                     )
 
             # Update kwargs with merged config

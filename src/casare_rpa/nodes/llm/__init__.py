@@ -5,13 +5,13 @@ AI-powered nodes for language model operations.
 Supports OpenAI, Anthropic, Azure, and local models via LiteLLM.
 """
 
-from .llm_base import LLMBaseNode
-from .llm_nodes import (
-    LLMCompletionNode,
+from casare_rpa.nodes.llm.llm_base import LLMBaseNode
+from casare_rpa.nodes.llm.llm_nodes import (
     LLMChatNode,
+    LLMClassifyNode,
+    LLMCompletionNode,
     LLMExtractDataNode,
     LLMSummarizeNode,
-    LLMClassifyNode,
     LLMTranslateNode,
 )
 

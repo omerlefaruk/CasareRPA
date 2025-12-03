@@ -2,7 +2,7 @@
 Visual Nodes - System
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.system.nodes import (
     # Clipboard operations
     VisualClipboardCopyNode,
     VisualClipboardPasteNode,

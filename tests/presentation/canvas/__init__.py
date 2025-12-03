@@ -1,1 +1,1 @@
-"""Tests for canvas presentation layer."""
+"""Canvas component tests."""

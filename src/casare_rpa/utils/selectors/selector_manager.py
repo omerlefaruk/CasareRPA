@@ -8,8 +8,11 @@ from pathlib import Path
 from typing import Optional, Callable, Dict, Any, List
 from loguru import logger
 
-from .selector_generator import SmartSelectorGenerator, ElementFingerprint
-from .selector_cache import SelectorCache, get_selector_cache
+from casare_rpa.utils.selectors.selector_generator import (
+    SmartSelectorGenerator,
+    ElementFingerprint,
+)
+from casare_rpa.utils.selectors.selector_cache import SelectorCache, get_selector_cache
 
 
 class SelectorManager:

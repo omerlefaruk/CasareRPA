@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QToolBar
 
-from ..ui.icons import get_toolbar_icon
+from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class ToolbarBuilder:

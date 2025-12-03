@@ -1,6 +1,10 @@
 """Workflow serialization for Canvas."""
 
-from .workflow_serializer import WorkflowSerializer
-from .workflow_deserializer import WorkflowDeserializer
+from casare_rpa.presentation.canvas.serialization.workflow_serializer import (
+    WorkflowSerializer,
+)
+from casare_rpa.presentation.canvas.serialization.workflow_deserializer import (
+    WorkflowDeserializer,
+)
 
 __all__ = ["WorkflowSerializer", "WorkflowDeserializer"]

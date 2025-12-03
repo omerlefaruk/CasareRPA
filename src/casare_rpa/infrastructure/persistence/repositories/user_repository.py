@@ -16,7 +16,7 @@ try:
     BCRYPT_AVAILABLE = True
 except ImportError:
     BCRYPT_AVAILABLE = False
-    logger.warning("bcrypt not available. Password hashing disabled.")
+    logger.debug("bcrypt not available. Password hashing disabled.")
 
 
 class UserRepository:

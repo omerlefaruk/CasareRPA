@@ -3,24 +3,46 @@ Wait and timing nodes for synchronization.
 
 This module provides nodes for waiting: fixed delays, element waits,
 and navigation waits.
+
+Browser-related wait nodes extend BrowserBaseNode for consistent patterns:
+- Page access from context
+- Selector normalization
+- Retry logic
+- Screenshot on failure
 """
 
 import asyncio
 
+from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
+    NodeStatus,
+    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from ..utils.config import DEFAULT_NODE_TIMEOUT
-from ..utils.selectors.selector_normalizer import normalize_selector
-from loguru import logger
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_ELEMENT_STATE,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+    BROWSER_SELECTOR_STRICT,
+    BROWSER_TIMEOUT,
+    BROWSER_WAIT_UNTIL,
+)
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
+from casare_rpa.utils import safe_int
+
+
+# =============================================================================
+# WaitNode - Simple time-based wait (not browser-specific)
+# =============================================================================
 
 
 @node_schema(
@@ -38,24 +60,13 @@ class WaitNode(BaseNode):
     Wait node - pauses execution for a specified duration.
 
     Simple delay node for fixed-time waits.
+    Does NOT extend BrowserBaseNode as it doesn't require a page.
     """
 
     def __init__(
         self, node_id: str, name: str = "Wait", duration: float = 1.0, **kwargs
     ) -> None:
-        """
-        Initialize wait node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            duration: Wait duration in seconds (ignored when config provided)
-
-        Note:
-            The @node_schema decorator automatically handles default_config.
-            No manual config merging needed!
-        """
-        # Config automatically populated by @node_schema decorator
+        """Initialize wait node."""
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
         self.name = name
@@ -66,24 +77,14 @@ class WaitNode(BaseNode):
         self.add_input_port("duration", PortType.INPUT, DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute wait.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Success result after wait completes
-        """
+        """Execute wait."""
         self.status = NodeStatus.RUNNING
 
         try:
-            # Get duration from input or config
             duration = self.get_input_value("duration")
             if duration is None:
                 duration = self.config.get("duration", 1.0)
 
-            # Convert to float if it's a string
             if isinstance(duration, str):
                 duration = float(duration)
 
@@ -91,8 +92,6 @@ class WaitNode(BaseNode):
                 raise ValueError("Duration must be non-negative")
 
             logger.info(f"Waiting for {duration} seconds")
-
-            # Wait
             await asyncio.sleep(duration)
 
             self.status = NodeStatus.SUCCESS
@@ -117,67 +116,28 @@ class WaitNode(BaseNode):
         return True, ""
 
 
+# =============================================================================
+# WaitForElementNode - Browser element wait
+# =============================================================================
+
+
 @node_schema(
     PropertyDef(
         "selector",
-        PropertyType.STRING,
+        PropertyType.SELECTOR,
         default="",
-        label="Selector",
+        required=False,
+        label="Element Selector",
         tooltip="CSS or XPath selector for the element",
+        placeholder="#element-id or //div[@class='content']",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        min_value=0,
-        label="Timeout (ms)",
-        tooltip="Timeout in milliseconds",
-    ),
-    PropertyDef(
-        "state",
-        PropertyType.CHOICE,
-        default="visible",
-        choices=["visible", "hidden", "attached", "detached"],
-        label="State",
-        tooltip="Element state to wait for",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict",
-        tooltip="Require exactly one matching element",
-    ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        min_value=0,
-        label="Retry Count",
-        tooltip="Number of retries after timeout",
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        min_value=0,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in ms",
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot on Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.STRING,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot",
-    ),
+    BROWSER_TIMEOUT,
+    BROWSER_ELEMENT_STATE,
+    BROWSER_SELECTOR_STRICT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
     PropertyDef(
         "highlight_on_find",
         PropertyType.BOOLEAN,
@@ -187,22 +147,31 @@ class WaitNode(BaseNode):
     ),
 )
 @executable_node
-class WaitForElementNode(BaseNode):
+class WaitForElementNode(BrowserBaseNode):
     """
     Wait for element node - waits for an element to appear.
 
-    Waits until an element matching the selector is visible on the page.
+    Waits until an element matching the selector is in the specified state.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
         timeout: Timeout in milliseconds
-        state: Element state to wait for
+        state: Element state to wait for (visible, hidden, attached, detached)
         strict: Require exactly one match
         retry_count: Retry attempts
         retry_interval: Delay between retries
         screenshot_on_fail: Take screenshot on failure
         screenshot_path: Path for screenshot
         highlight_on_find: Highlight element when found
+
+    Inputs:
+        page: Browser page instance
+        selector: Element selector override
+
+    Outputs:
+        page: Browser page instance (passthrough)
+        found: Whether element was found (BOOLEAN)
     """
 
     def __init__(
@@ -211,115 +180,70 @@ class WaitForElementNode(BaseNode):
         name: str = "Wait For Element",
         **kwargs,
     ) -> None:
+        """Initialize wait for element node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "WaitForElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_page_passthrough_ports()
+        self.add_selector_input_port()
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute wait for element.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Success result when element appears
-        """
+        """Execute wait for element."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_parameter("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
-            selector = self.get_parameter("selector", "")
-            if not selector:
-                raise ValueError("Selector is required")
-
-            selector = context.resolve_value(selector)
-            normalized_selector = normalize_selector(selector)
-
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get wait-specific parameters
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             state = self.get_parameter("state", "visible")
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
-            highlight_on_find = self.get_parameter("highlight_on_find", False)
             strict = self.get_parameter("strict", False)
+            retry_count = safe_int(self.get_parameter("retry_count", 0), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval", 1000), 1000)
 
-            # Resolve {{variable}} patterns in screenshot_path if provided
-            if screenshot_path:
-                screenshot_path = context.resolve_value(screenshot_path)
-
-            logger.info(f"Waiting for element: {normalized_selector} (state={state})")
+            logger.info(f"Waiting for element: {selector} (state={state})")
 
             # Build wait options
-            wait_options = {
-                "timeout": timeout,
-                "state": state,
-            }
+            wait_options = {"timeout": timeout, "state": state}
             if strict:
                 wait_options["strict"] = True
 
             last_error = None
             attempts = 0
-            max_attempts = retry_count + 1  # Initial attempt + retries
+            max_attempts = retry_count + 1
 
             while attempts < max_attempts:
+                attempts += 1
                 try:
-                    attempts += 1
                     if attempts > 1:
                         logger.info(
                             f"Retry attempt {attempts - 1}/{retry_count} for element: {selector}"
                         )
 
-                    # Wait for element
-                    element = await page.wait_for_selector(
-                        normalized_selector, **wait_options
-                    )
+                    element = await page.wait_for_selector(selector, **wait_options)
 
-                    # Highlight element if requested
-                    if highlight_on_find and element:
-                        try:
-                            await element.evaluate("""
-                                el => {
-                                    const original = el.style.outline;
-                                    el.style.outline = '3px solid #00ff00';
-                                    setTimeout(() => { el.style.outline = original; }, 500);
-                                }
-                            """)
-                            await asyncio.sleep(0.5)  # Wait for highlight to show
-                        except Exception:
-                            pass  # Ignore highlight errors
+                    # Highlight if enabled
+                    await self.highlight_if_enabled(page, selector, timeout)
 
                     self.set_output_value("page", page)
                     self.set_output_value("found", True)
 
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(f"Element appeared: {selector} (attempt {attempts})")
-
-                    return {
-                        "success": True,
-                        "data": {
+                    return self.success_result(
+                        {
                             "selector": selector,
                             "state": state,
                             "attempts": attempts,
                             "found": True,
-                        },
-                        "next_nodes": ["exec_out"],
-                    }
+                        }
+                    )
 
                 except Exception as e:
                     last_error = e
@@ -327,122 +251,65 @@ class WaitForElementNode(BaseNode):
                         logger.warning(
                             f"Wait for element failed (attempt {attempts}): {e}"
                         )
-                        await asyncio.sleep(
-                            retry_interval / 1000
-                        )  # Convert ms to seconds
-                    else:
-                        # Last attempt failed
-                        break
+                        await asyncio.sleep(retry_interval / 1000)
 
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
+            # All attempts failed
+            await self.screenshot_on_failure(page, "wait_element_fail")
 
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        # Generate default path
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"wait_element_fail_{timestamp}.png"
-
-                    # Ensure directory exists
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            # Element not found after all attempts
             self.set_output_value("page", page)
             self.set_output_value("found", False)
-            raise last_error
+
+            if last_error:
+                raise last_error
+            raise RuntimeError(f"Element not found: {selector}")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
             self.set_output_value("found", False)
-            logger.error(f"Failed to wait for element: {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "data": {"found": False},
-                "next_nodes": [],
-            }
+            return self.error_result(e, {"found": False})
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         state = self.config.get("state", "visible")
-        if state not in ["visible", "hidden", "attached", "detached"]:
-            return False, f"Invalid state: {state}"
+        valid_states = ["visible", "hidden", "attached", "detached"]
+        if state not in valid_states:
+            return False, f"Invalid state: {state}. Must be one of: {valid_states}"
         return True, ""
 
 
+# =============================================================================
+# WaitForNavigationNode - Browser navigation wait
+# =============================================================================
+
+
 @node_schema(
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        min_value=0,
-        label="Timeout (ms)",
-        tooltip="Timeout in milliseconds",
-    ),
-    PropertyDef(
-        "wait_until",
-        PropertyType.CHOICE,
-        default="load",
-        choices=["load", "domcontentloaded", "networkidle"],
-        label="Wait Until",
-        tooltip="Event to wait for",
-    ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        min_value=0,
-        label="Retry Count",
-        tooltip="Number of retries after timeout",
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        min_value=0,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in ms",
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot on Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.STRING,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot",
-    ),
+    BROWSER_TIMEOUT,
+    BROWSER_WAIT_UNTIL,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
 )
 @executable_node
-class WaitForNavigationNode(BaseNode):
+class WaitForNavigationNode(BrowserBaseNode):
     """
     Wait for navigation node - waits for page navigation to complete.
 
     Waits for the page to navigate to a new URL or reload.
+    Extends BrowserBaseNode for shared page/retry patterns.
 
     Config (via @node_schema):
         timeout: Timeout in milliseconds
-        wait_until: Event to wait for
+        wait_until: Event to wait for (load, domcontentloaded, networkidle, commit)
         retry_count: Retry attempts
         retry_interval: Delay between retries
         screenshot_on_fail: Take screenshot on failure
         screenshot_path: Path for screenshot
+
+    Inputs:
+        page: Browser page instance
+
+    Outputs:
+        page: Browser page instance (passthrough)
     """
 
     def __init__(
@@ -451,78 +318,56 @@ class WaitForNavigationNode(BaseNode):
         name: str = "Wait For Navigation",
         **kwargs,
     ) -> None:
+        """Initialize wait for navigation node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "WaitForNavigationNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_page_passthrough_ports()
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute wait for navigation.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Success result when navigation completes
-        """
+        """Execute wait for navigation."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_parameter("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get navigation-specific parameters
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             wait_until = self.get_parameter("wait_until", "load")
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
-
-            # Resolve {{variable}} patterns in screenshot_path if provided
-            if screenshot_path:
-                screenshot_path = context.resolve_value(screenshot_path)
+            retry_count = safe_int(self.get_parameter("retry_count", 0), 0)
+            retry_interval = safe_int(self.get_parameter("retry_interval", 1000), 1000)
 
             logger.info(f"Waiting for navigation (wait_until={wait_until})")
 
             last_error = None
             attempts = 0
-            max_attempts = retry_count + 1  # Initial attempt + retries
+            max_attempts = retry_count + 1
 
             while attempts < max_attempts:
+                attempts += 1
                 try:
-                    attempts += 1
                     if attempts > 1:
                         logger.info(
                             f"Retry attempt {attempts - 1}/{retry_count} for navigation"
                         )
 
-                    # Wait for navigation
                     await page.wait_for_load_state(wait_until, timeout=timeout)
 
                     self.set_output_value("page", page)
 
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(f"Navigation completed (attempt {attempts})")
-
-                    return {
-                        "success": True,
-                        "data": {
+                    return self.success_result(
+                        {
                             "url": page.url,
                             "wait_until": wait_until,
                             "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
-                    }
+                        }
+                    )
 
                 except Exception as e:
                     last_error = e
@@ -530,46 +375,25 @@ class WaitForNavigationNode(BaseNode):
                         logger.warning(
                             f"Wait for navigation failed (attempt {attempts}): {e}"
                         )
-                        await asyncio.sleep(
-                            retry_interval / 1000
-                        )  # Convert ms to seconds
-                    else:
-                        # Last attempt failed
-                        break
+                        await asyncio.sleep(retry_interval / 1000)
 
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
+            # All attempts failed
+            await self.screenshot_on_failure(page, "wait_navigation_fail")
 
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        # Generate default path
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"wait_navigation_fail_{timestamp}.png"
-
-                    # Ensure directory exists
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise last_error
+            if last_error:
+                raise last_error
+            raise RuntimeError("Navigation wait failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to wait for navigation: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         wait_until = self.config.get("wait_until", "load")
-        if wait_until not in ["load", "domcontentloaded", "networkidle"]:
-            return False, f"Invalid wait_until: {wait_until}"
+        valid_states = ["load", "domcontentloaded", "networkidle", "commit"]
+        if wait_until not in valid_states:
+            return (
+                False,
+                f"Invalid wait_until: {wait_until}. Must be one of: {valid_states}",
+            )
         return True, ""

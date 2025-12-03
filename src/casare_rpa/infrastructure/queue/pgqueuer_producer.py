@@ -45,11 +45,23 @@ import asyncio
 import random
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from loguru import logger
+
+from casare_rpa.infrastructure.queue.types import (
+    DatabaseRecord,
+    DatabaseRecordList,
+    JobDetailedStatus,
+    JobId,
+    ProducerConfigStats,
+    ProducerStats,
+    QueueStats,
+    StateChangeCallback,
+    WorkflowId,
+)
 
 try:
     import asyncpg
@@ -287,17 +299,17 @@ class PgQueuerProducer:
                 "Install with: pip install asyncpg"
             )
 
-        self._config = config
+        self._config: ProducerConfig = config
         self._pool: Optional[Pool] = None
-        self._state = ProducerConnectionState.DISCONNECTED
-        self._running = False
-        self._reconnect_attempts = 0
-        self._state_callbacks: List[Callable[[ProducerConnectionState], None]] = []
-        self._lock = asyncio.Lock()
+        self._state: ProducerConnectionState = ProducerConnectionState.DISCONNECTED
+        self._running: bool = False
+        self._reconnect_attempts: int = 0
+        self._state_callbacks: List[StateChangeCallback] = []
+        self._lock: asyncio.Lock = asyncio.Lock()
 
         # Statistics
-        self._total_enqueued = 0
-        self._total_cancelled = 0
+        self._total_enqueued: int = 0
+        self._total_cancelled: int = 0
 
         logger.info(
             f"PgQueuerProducer initialized with default environment "
@@ -326,20 +338,16 @@ class PgQueuerProducer:
         """Get total number of jobs cancelled since startup."""
         return self._total_cancelled
 
-    def add_state_callback(
-        self, callback: Callable[[ProducerConnectionState], None]
-    ) -> None:
+    def add_state_callback(self, callback: StateChangeCallback) -> None:
         """
         Add a callback for connection state changes.
 
         Args:
-            callback: Function to call when state changes
+            callback: Function to call when state changes (must accept ProducerConnectionState)
         """
         self._state_callbacks.append(callback)
 
-    def remove_state_callback(
-        self, callback: Callable[[ProducerConnectionState], None]
-    ) -> None:
+    def remove_state_callback(self, callback: StateChangeCallback) -> None:
         """
         Remove a state change callback.
 
@@ -418,6 +426,7 @@ class PgQueuerProducer:
                 min_size=self._config.pool_min_size,
                 max_size=self._config.pool_max_size,
                 command_timeout=30,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
             )
 
             # Test connection
@@ -505,7 +514,7 @@ class PgQueuerProducer:
         query: str,
         *args: Any,
         max_retries: int = 3,
-    ) -> Any:
+    ) -> DatabaseRecordList:
         """
         Execute a query with automatic retry on connection failure.
 
@@ -515,7 +524,7 @@ class PgQueuerProducer:
             max_retries: Maximum retry attempts
 
         Returns:
-            Query result
+            List of database records from the query
 
         Raises:
             PostgresError: If query fails after all retries
@@ -528,8 +537,10 @@ class PgQueuerProducer:
                 raise ConnectionError("Unable to establish database connection")
 
             try:
+                assert self._pool is not None  # Guaranteed by _ensure_connection()
                 async with self._pool.acquire() as conn:
-                    return await conn.fetch(query, *args)
+                    result: Sequence[DatabaseRecord] = await conn.fetch(query, *args)
+                    return list(result)
             except asyncpg.exceptions.ConnectionDoesNotExistError:
                 logger.warning(
                     f"Connection lost, attempting reconnect (attempt {attempt + 1})"
@@ -548,7 +559,7 @@ class PgQueuerProducer:
 
     async def enqueue_job(
         self,
-        workflow_id: str,
+        workflow_id: WorkflowId,
         workflow_name: str,
         workflow_json: str,
         priority: Optional[int] = None,
@@ -680,6 +691,7 @@ class PgQueuerProducer:
         enqueued_jobs: List[EnqueuedJob] = []
 
         try:
+            assert self._pool is not None  # Guaranteed by _ensure_connection()
             async with self._pool.acquire() as conn:
                 async with conn.transaction():
                     for sub in submissions:
@@ -726,7 +738,7 @@ class PgQueuerProducer:
 
     async def cancel_job(
         self,
-        job_id: str,
+        job_id: JobId,
         reason: str = "Cancelled by orchestrator",
     ) -> bool:
         """
@@ -769,7 +781,7 @@ class PgQueuerProducer:
             logger.error(f"Failed to cancel job {job_id[:8]}...: {e}")
             raise
 
-    async def get_job_status(self, job_id: str) -> Optional[Dict[str, Any]]:
+    async def get_job_status(self, job_id: JobId) -> Optional[JobDetailedStatus]:
         """
         Get detailed status of a job.
 
@@ -789,7 +801,7 @@ class PgQueuerProducer:
                 return None
 
             row = rows[0]
-            return {
+            status: JobDetailedStatus = {
                 "job_id": str(row["id"]),
                 "status": row["status"],
                 "robot_id": row["robot_id"],
@@ -808,34 +820,37 @@ class PgQueuerProducer:
                 "retry_count": row["retry_count"],
                 "max_retries": row["max_retries"],
             }
+            return status
 
         except Exception as e:
             logger.error(f"Failed to get job status: {e}")
             return None
 
-    async def get_queue_stats(self) -> Dict[str, Any]:
+    async def get_queue_stats(self) -> QueueStats:
         """
         Get queue statistics for the last hour.
 
         Returns:
-            Dict with queue statistics
+            Typed queue statistics dictionary
         """
+        empty_stats: QueueStats = {
+            "pending_count": 0,
+            "running_count": 0,
+            "completed_count": 0,
+            "failed_count": 0,
+            "cancelled_count": 0,
+            "avg_queue_wait_seconds": 0.0,
+            "avg_execution_seconds": 0.0,
+        }
+
         try:
             rows = await self._execute_with_retry(self.SQL_GET_QUEUE_STATS)
 
             if not rows:
-                return {
-                    "pending_count": 0,
-                    "running_count": 0,
-                    "completed_count": 0,
-                    "failed_count": 0,
-                    "cancelled_count": 0,
-                    "avg_queue_wait_seconds": 0.0,
-                    "avg_execution_seconds": 0.0,
-                }
+                return empty_stats
 
             row = rows[0]
-            return {
+            stats: QueueStats = {
                 "pending_count": row["pending_count"] or 0,
                 "running_count": row["running_count"] or 0,
                 "completed_count": row["completed_count"] or 0,
@@ -844,10 +859,11 @@ class PgQueuerProducer:
                 "avg_queue_wait_seconds": float(row["avg_queue_wait_seconds"] or 0),
                 "avg_execution_seconds": float(row["avg_execution_seconds"] or 0),
             }
+            return stats
 
         except Exception as e:
             logger.error(f"Failed to get queue stats: {e}")
-            return {}
+            return empty_stats
 
     async def get_queue_depth_by_priority(self) -> Dict[int, int]:
         """
@@ -894,25 +910,27 @@ class PgQueuerProducer:
             logger.error(f"Failed to purge old jobs: {e}")
             raise
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> ProducerStats:
         """
         Get producer statistics.
 
         Returns:
-            Dict with producer stats
+            Typed producer statistics dictionary
         """
-        return {
+        config_stats: ProducerConfigStats = {
+            "default_environment": self._config.default_environment,
+            "default_priority": self._config.default_priority,
+            "default_max_retries": self._config.default_max_retries,
+        }
+        stats: ProducerStats = {
             "state": self._state.value,
             "is_connected": self.is_connected,
             "total_enqueued": self._total_enqueued,
             "total_cancelled": self._total_cancelled,
             "reconnect_attempts": self._reconnect_attempts,
-            "config": {
-                "default_environment": self._config.default_environment,
-                "default_priority": self._config.default_priority,
-                "default_max_retries": self._config.default_max_retries,
-            },
+            "config": config_stats,
         }
+        return stats
 
     async def __aenter__(self) -> "PgQueuerProducer":
         """Async context manager entry."""
@@ -921,9 +939,9 @@ class PgQueuerProducer:
 
     async def __aexit__(
         self,
-        exc_type: Any,
-        exc_val: Any,
-        exc_tb: Any,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
     ) -> bool:
         """Async context manager exit."""
         await self.stop()

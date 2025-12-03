@@ -42,26 +42,76 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    AsyncContextManager,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    runtime_checkable,
+)
 
 from loguru import logger
 
+# Optional dependency check
 try:
     import asyncpg
-    from asyncpg import Pool
-    from asyncpg.exceptions import PostgresError
 
     HAS_ASYNCPG = True
 except ImportError:
+    asyncpg = None
     HAS_ASYNCPG = False
-    asyncpg = None  # type: ignore[assignment]
-    Pool = None  # type: ignore[assignment, misc]
-    PostgresError = Exception  # type: ignore[assignment, misc]
 
+# JSON serialization (orjson preferred, stdlib fallback)
 try:
     import orjson
+
+    def _json_dumps(data: Any) -> str:
+        """Serialize to JSON using orjson."""
+        result = orjson.dumps(data)
+        return result.decode("utf-8") if isinstance(result, bytes) else str(result)
+
 except ImportError:
-    import json as orjson  # type: ignore[no-redef]
+    import json
+
+    def _json_dumps(data: Any) -> str:
+        """Serialize to JSON using stdlib."""
+        return json.dumps(data)
+
+
+class DatabaseConnection(Protocol):
+    """Protocol for async database connection."""
+
+    async def execute(self, query: str, *args: Any) -> str:
+        """Execute a query."""
+        ...
+
+    async def fetch(self, query: str, *args: Any) -> List[Any]:
+        """Fetch multiple rows."""
+        ...
+
+    async def fetchrow(self, query: str, *args: Any) -> Optional[Any]:
+        """Fetch a single row."""
+        ...
+
+    def transaction(self) -> AsyncContextManager[Any]:
+        """Start a transaction."""
+        ...
+
+
+@runtime_checkable
+class DatabasePool(Protocol):
+    """Protocol for async database connection pool."""
+
+    def acquire(self) -> AsyncContextManager[DatabaseConnection]:
+        """Acquire a connection from the pool."""
+        ...
+
+    async def close(self) -> None:
+        """Close the pool and all connections."""
+        ...
 
 
 # Retry schedule: exponential backoff delays in seconds
@@ -328,7 +378,7 @@ class DLQManager:
             )
 
         self._config = config
-        self._pool: Optional[Pool] = None
+        self._pool: Optional[DatabasePool] = None
         self._running = False
 
         # Pre-format SQL with table names
@@ -363,16 +413,37 @@ class DLQManager:
         """Check if manager is running."""
         return self._running and self._pool is not None
 
+    def _get_pool(self) -> DatabasePool:
+        """
+        Get the database pool with type narrowing.
+
+        Returns:
+            The database pool
+
+        Raises:
+            ConnectionError: If pool is not available
+        """
+        if self._pool is None:
+            raise ConnectionError("DLQManager not connected to database")
+        return self._pool
+
     async def start(self) -> None:
         """
         Start the DLQ Manager and establish database connection.
 
         Raises:
-            PostgresError: If database connection fails
+            RuntimeError: If asyncpg is not available
+            Exception: If database connection fails
         """
         if self._running:
             logger.warning("DLQManager already running")
             return
+
+        # Runtime check with type narrowing
+        if asyncpg is None:
+            raise RuntimeError(
+                "asyncpg is required for DLQManager. Install with: pip install asyncpg"
+            )
 
         try:
             self._pool = await asyncpg.create_pool(
@@ -380,6 +451,7 @@ class DLQManager:
                 min_size=self._config.pool_min_size,
                 max_size=self._config.pool_max_size,
                 command_timeout=30,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
             )
 
             await self._ensure_dlq_table()
@@ -409,8 +481,7 @@ class DLQManager:
 
     async def _ensure_dlq_table(self) -> None:
         """Create the DLQ table if it doesn't exist."""
-        if not self._pool:
-            return
+        pool = self._get_pool()
 
         create_table_sql = f"""
             CREATE TABLE IF NOT EXISTS {self._config.dlq_table} (
@@ -441,7 +512,7 @@ class DLQManager:
             ON {self._config.dlq_table}(reprocessed_at) WHERE reprocessed_at IS NULL;
         """
 
-        async with self._pool.acquire() as conn:
+        async with pool.acquire() as conn:
             await conn.execute(create_table_sql)
 
         logger.debug(f"DLQ table '{self._config.dlq_table}' ensured")
@@ -487,10 +558,9 @@ class DLQManager:
 
         Raises:
             ConnectionError: If database connection is not available
-            PostgresError: If database operation fails
+            Exception: If database operation fails
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        self._get_pool()  # Validate connection is available
 
         now = datetime.now(timezone.utc)
 
@@ -522,11 +592,12 @@ class DLQManager:
         Returns:
             RetryResult with retry details
         """
+        pool = self._get_pool()
         base_delay, delay_with_jitter = self.calculate_backoff_delay(job.retry_count)
         next_retry_count = job.retry_count + 1
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 result = await conn.fetchrow(
                     self._sql_requeue,
                     next_retry_count,
@@ -589,13 +660,14 @@ class DLQManager:
         Returns:
             RetryResult with DLQ entry ID
         """
+        pool = self._get_pool()
         error_details_json = (
-            _serialize_json(job.error_details) if job.error_details else "{}"
+            _json_dumps(job.error_details) if job.error_details else "{}"
         )
-        variables_json = _serialize_json(job.variables) if job.variables else "{}"
+        variables_json = _json_dumps(job.variables) if job.variables else "{}"
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 async with conn.transaction():
                     # Insert into DLQ
                     dlq_result = await conn.fetchrow(
@@ -656,11 +728,10 @@ class DLQManager:
         Returns:
             List of DLQ entries
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        pool = self._get_pool()
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 rows = await conn.fetch(
                     self._sql_list_dlq,
                     workflow_id,
@@ -689,11 +760,10 @@ class DLQManager:
         Returns:
             DLQEntry if found, None otherwise
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        pool = self._get_pool()
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 row = await conn.fetchrow(
                     self._sql_get_entry,
                     uuid.UUID(entry_id),
@@ -726,11 +796,10 @@ class DLQManager:
         Returns:
             New job ID if successful, None if entry not found or already reprocessed
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        pool = self._get_pool()
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 result = await conn.fetchrow(
                     self._sql_reprocess,
                     uuid.UUID(entry_id),
@@ -767,11 +836,10 @@ class DLQManager:
         Returns:
             Dict with 'total' and 'pending' counts
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        pool = self._get_pool()
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 row = await conn.fetchrow(
                     self._sql_count,
                     workflow_id,
@@ -799,11 +867,10 @@ class DLQManager:
         Returns:
             Number of entries purged
         """
-        if not self._pool:
-            raise ConnectionError("DLQManager not connected to database")
+        pool = self._get_pool()
 
         try:
-            async with self._pool.acquire() as conn:
+            async with pool.acquire() as conn:
                 results = await conn.fetch(
                     self._sql_purge,
                     f"{older_than_days} days",
@@ -835,14 +902,6 @@ class DLQManager:
         """Async context manager exit."""
         await self.stop()
         return False
-
-
-def _serialize_json(data: Any) -> str:
-    """Serialize data to JSON string."""
-    if hasattr(orjson, "dumps"):
-        result = orjson.dumps(data)
-        return result.decode("utf-8") if isinstance(result, bytes) else result
-    return orjson.dumps(data)
 
 
 def _row_to_dlq_entry(row: Any) -> DLQEntry:

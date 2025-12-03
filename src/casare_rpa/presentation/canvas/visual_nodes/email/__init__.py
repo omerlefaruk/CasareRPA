@@ -2,7 +2,7 @@
 Visual Nodes - Email
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.email.nodes import (
     VisualSendEmailNode,
     VisualReadEmailsNode,
     VisualGetEmailContentNode,

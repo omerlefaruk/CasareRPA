@@ -392,7 +392,7 @@ from casare_rpa.nodes.http import (
 )
 
 # Email nodes
-from casare_rpa.nodes.email_nodes import (
+from casare_rpa.nodes.email import (
     SendEmailNode,
     ReadEmailsNode,
     GetEmailContentNode,
@@ -449,7 +449,7 @@ from casare_rpa.nodes.random_nodes import (
 )
 
 # System nodes
-from casare_rpa.nodes.system_nodes import (
+from casare_rpa.nodes.system import (
     ClipboardCopyNode,
     ClipboardPasteNode,
     ClipboardClearNode,

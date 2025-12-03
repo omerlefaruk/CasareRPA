@@ -75,6 +75,73 @@ except ImportError:
     PSUTIL_AVAILABLE = False
 
 
+# Supabase project configuration
+_SUPABASE_PROJECT_REF = "znaauaswqmurwfglantv"
+_SUPABASE_URL = f"https://{_SUPABASE_PROJECT_REF}.supabase.co"
+_SUPABASE_POOLER_REGION = "aws-1-eu-central-1"
+
+
+def _mask_url(url: str) -> str:
+    """Mask password in database URL for logging."""
+    if not url:
+        return "(empty)"
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        if parsed.password:
+            masked = url.replace(parsed.password, "****")
+            return masked
+        return url
+    except Exception:
+        return "(invalid URL)"
+
+
+def _log_config_source(url: str, source: str) -> None:
+    """Log configuration source with masked credentials."""
+    logger.info(f"Database URL source: {source}")
+    logger.info(f"Database URL: {_mask_url(url)}")
+    logger.info(f"Frozen app: {getattr(sys, 'frozen', False)}")
+
+
+async def _fetch_database_url_from_env() -> str:
+    """
+    Build database URL from DB_PASSWORD environment variable.
+
+    For Supabase, the database password is set in:
+    Project Settings → Database → Database password
+
+    Returns:
+        PostgreSQL connection URL, or empty string if DB_PASSWORD not set
+    """
+    # Get database password from environment
+    db_password = os.getenv("DB_PASSWORD", "")
+    if not db_password:
+        logger.warning("DB_PASSWORD not set in environment")
+        return ""
+
+    # Build transaction pooler URL (IPv4 compatible)
+    url = (
+        f"postgresql://postgres.{_SUPABASE_PROJECT_REF}:{db_password}"
+        f"@{_SUPABASE_POOLER_REGION}.pooler.supabase.com:6543/postgres"
+    )
+
+    _log_config_source(url, "DB_PASSWORD environment variable")
+    return url
+
+
+def _get_default_postgres_url() -> str:
+    """
+    Get default postgres URL for frozen apps.
+
+    Note: For frozen apps, this returns empty string. The actual URL is fetched
+    asynchronously from Supabase Vault during agent initialization.
+    """
+    # For frozen apps, vault fetch happens async in _initialize_components
+    # Return empty to signal that async fetch is needed
+    return ""
+
+
 class AgentState(Enum):
     """Robot agent lifecycle state."""
 
@@ -168,10 +235,15 @@ class RobotConfig:
         return cls(
             robot_id=os.getenv("CASARE_ROBOT_ID"),
             robot_name=os.getenv("CASARE_ROBOT_NAME"),
-            postgres_url=os.getenv("POSTGRES_URL", os.getenv("DATABASE_URL", "")),
-            supabase_url=os.getenv("SUPABASE_URL", ""),
+            postgres_url=os.getenv("POSTGRES_URL", os.getenv("DATABASE_URL", ""))
+            or _get_default_postgres_url(),
+            supabase_url=os.getenv("SUPABASE_URL", "")
+            or "https://znaauaswqmurwfglantv.supabase.co",
             supabase_key=os.getenv("SUPABASE_KEY", ""),
-            environment=os.getenv("CASARE_ENVIRONMENT", "default"),
+            environment=os.getenv(
+                "CASARE_ENVIRONMENT",
+                "production" if getattr(sys, "frozen", False) else "default",
+            ),
             batch_size=int(os.getenv("CASARE_BATCH_SIZE", "1")),
             poll_interval_seconds=float(os.getenv("CASARE_POLL_INTERVAL", "1.0")),
             heartbeat_interval_seconds=float(
@@ -589,6 +661,21 @@ class RobotAgent:
 
     async def _init_components(self) -> None:
         """Initialize all agent components."""
+        # Fetch database URL from environment if not set and frozen app
+        if not self.config.postgres_url and getattr(sys, "frozen", False):
+            logger.info(
+                "Frozen app detected, building database URL from DB_PASSWORD..."
+            )
+            db_url = await _fetch_database_url_from_env()
+            if db_url:
+                self.config.postgres_url = db_url
+            else:
+                logger.warning(
+                    "DB_PASSWORD not set, continuing without database connection"
+                )
+        elif self.config.postgres_url:
+            _log_config_source(self.config.postgres_url, "environment variable")
+
         # Import here to avoid circular imports and allow lazy loading
         try:
             from casare_rpa.infrastructure.queue import PgQueuerConsumer, ConsumerConfig

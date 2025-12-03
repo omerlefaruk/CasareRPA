@@ -33,7 +33,6 @@ from casare_rpa.domain.value_objects.types import (
 )
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "header_name",
@@ -136,7 +135,6 @@ class SetHttpHeadersNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "path",
@@ -154,6 +152,7 @@ class SetHttpHeadersNode(BaseNode):
         tooltip="Default value if path not found",
     ),
 )
+@executable_node
 class ParseJsonResponseNode(BaseNode):
     """
     Parse JSON response and extract data using JSONPath-like expressions.
@@ -264,7 +263,6 @@ class ParseJsonResponseNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "url",
@@ -485,7 +483,6 @@ class HttpDownloadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "url",
@@ -715,7 +712,6 @@ class HttpUploadFileNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "base_url",

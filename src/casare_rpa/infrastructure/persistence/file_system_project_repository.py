@@ -20,8 +20,7 @@ from casare_rpa.domain.entities.project import (
     VariableScope,
 )
 from casare_rpa.domain.repositories import ProjectRepository
-
-from .project_storage import ProjectStorage
+from casare_rpa.infrastructure.persistence.project_storage import ProjectStorage
 
 
 class FileSystemProjectRepository(ProjectRepository):

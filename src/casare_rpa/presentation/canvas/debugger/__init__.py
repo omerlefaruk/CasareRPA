@@ -9,7 +9,7 @@ Note: DebugExecutor is in casare_rpa.infrastructure.execution.debug_executor
       to maintain proper layer separation (Infrastructure layer handles execution).
 """
 
-from .debug_controller import (
+from casare_rpa.presentation.canvas.debugger.debug_controller import (
     DebugController,
     Breakpoint,
     BreakpointType,

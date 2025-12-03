@@ -5,8 +5,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Dict, Any
 
+from casare_rpa.domain.orchestrator.entities.job import JobPriority
 from casare_rpa.utils.datetime_helpers import parse_datetime
-from .job import JobPriority
 
 
 class ScheduleFrequency(Enum):

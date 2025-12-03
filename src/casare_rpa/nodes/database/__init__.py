@@ -19,7 +19,7 @@ Usage:
 """
 
 # Re-export from sql_nodes
-from .sql_nodes import (
+from casare_rpa.nodes.database.sql_nodes import (
     # Driver availability flags
     AIOSQLITE_AVAILABLE,
     ASYNCPG_AVAILABLE,
@@ -38,7 +38,7 @@ from .sql_nodes import (
 )
 
 # Re-export from database_utils
-from .database_utils import (
+from casare_rpa.nodes.database.database_utils import (
     TableExistsNode,
     GetTableColumnsNode,
 )

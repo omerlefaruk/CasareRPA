@@ -543,8 +543,8 @@ The Orchestrator Engine provides programmatic access:
 #### OrchestratorEngine
 
 ```python
-from casare_rpa.orchestrator.engine import OrchestratorEngine
-from casare_rpa.orchestrator.models import JobPriority
+from casare_rpa.infrastructure.orchestrator.server import OrchestratorEngine
+from casare_rpa.infrastructure.orchestrator.api.models import JobPriority
 
 # Initialize
 engine = OrchestratorEngine(
@@ -605,7 +605,7 @@ robot = await engine.register_robot(
 #### Create Schedule
 
 ```python
-from casare_rpa.orchestrator.models import ScheduleFrequency
+from casare_rpa.infrastructure.orchestrator.api.models import ScheduleFrequency
 
 schedule = await engine.create_schedule(
     name="Daily Report",

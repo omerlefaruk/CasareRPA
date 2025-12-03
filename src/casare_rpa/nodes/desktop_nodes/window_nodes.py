@@ -4,703 +4,437 @@ Desktop Window Management Nodes
 Nodes for resizing, moving, and managing Windows desktop windows.
 """
 
-import asyncio
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode as Node
-from casare_rpa.domain.decorators import executable_node
-from casare_rpa.domain.value_objects.types import NodeStatus
-from casare_rpa.nodes.utils.type_converters import safe_int
-from ...desktop import DesktopContext
+from casare_rpa.domain.decorators import executable_node, node_schema
+from casare_rpa.domain.value_objects.types import PortType, DataType
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
 
-# Default timeout for window operations (in seconds)
-DEFAULT_WINDOW_TIMEOUT = 10
+from casare_rpa.nodes.desktop_nodes.desktop_base import DesktopNodeBase
+from casare_rpa.nodes.desktop_nodes.properties import (
+    TIMEOUT_PROP,
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+    BRING_TO_FRONT_PROP,
+    WINDOW_STATE_PROP,
+)
 
 
+# Window-specific PropertyDef constants
+WIDTH_PROP = PropertyDef(
+    "width",
+    PropertyType.INTEGER,
+    default=800,
+    min_value=1,
+    label="Width",
+    tooltip="Window width in pixels",
+    tab="properties",
+)
+
+HEIGHT_PROP = PropertyDef(
+    "height",
+    PropertyType.INTEGER,
+    default=600,
+    min_value=1,
+    label="Height",
+    tooltip="Window height in pixels",
+    tab="properties",
+)
+
+POSITION_X_PROP = PropertyDef(
+    "x",
+    PropertyType.INTEGER,
+    default=100,
+    label="X Position",
+    tooltip="Window X position from left",
+    tab="properties",
+)
+
+POSITION_Y_PROP = PropertyDef(
+    "y",
+    PropertyType.INTEGER,
+    default=100,
+    label="Y Position",
+    tooltip="Window Y position from top",
+    tab="properties",
+)
+
+
+class WindowNodeBase(DesktopNodeBase):
+    """
+    Base class for window operation nodes.
+
+    Provides common window handling patterns.
+    """
+
+    def get_window_from_input(self) -> Any:
+        """
+        Get window from input port.
+
+        Returns:
+            Window object
+
+        Raises:
+            ValueError: If window not provided
+        """
+        window = self.get_input_value("window")
+        if not window:
+            raise ValueError("Window input is required")
+        return window
+
+
+@node_schema(
+    WIDTH_PROP,
+    HEIGHT_PROP,
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+    BRING_TO_FRONT_PROP,
+)
 @executable_node
-class ResizeWindowNode(Node):
+class ResizeWindowNode(WindowNodeBase):
     """
     Resize a Windows desktop window.
 
     Changes the dimensions of a window to specified width and height.
+
+    Config (via @node_schema):
+        width: Target width in pixels (default: 800)
+        height: Target height in pixels (default: 600)
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+        bring_to_front: Bring window to front before operation (default: False)
+
+    Inputs:
+        window: Desktop window object
+        width: Target width (overrides config)
+        height: Target height (overrides config)
+
+    Outputs:
+        success: Whether the resize succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Resize Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Resize Window",
     ):
-        """
-        Initialize Resize Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "width": 800,
-            "height": 600,
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-            "bring_to_front": False,  # Bring window to front before operation
-            "verify_resize": False,  # Verify window was actually resized
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "ResizeWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("width", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("height", PortType.INPUT, DataType.INTEGER)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - resize window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-        width = self.get_input_value("width") or self.config.get("width", 800)
-        height = self.get_input_value("height") or self.config.get("height", 600)
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
-        bring_to_front = self.config.get("bring_to_front", False)
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - resize window."""
+        window = self.get_window_from_input()
+        width = self.get_parameter("width", context)
+        height = self.get_parameter("height", context)
+        bring_to_front = self.get_parameter("bring_to_front", context)
 
         logger.info(f"[{self.name}] Resizing window to {width}x{height}")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_resize():
+            if bring_to_front:
+                try:
+                    desktop_ctx.bring_to_front(window)
+                except Exception:
+                    pass
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
+            desktop_ctx.resize_window(window, int(width), int(height))
+            return self.success_result()
 
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                # Bring window to front if requested
-                if bring_to_front:
-                    try:
-                        desktop_ctx.bring_to_front(window)
-                    except Exception:
-                        pass  # Ignore bring to front errors
-
-                success = desktop_ctx.resize_window(window, int(width), int(height))
-
-                logger.info(
-                    f"[{self.name}] Window resized successfully (attempt {attempts})"
-                )
-
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
-
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Resize failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = f"Failed to resize window after {attempts} attempts: {last_error}"
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)
+        return await self.execute_with_retry(
+            do_resize, context, operation_name="resize window"
+        )
 
 
+@node_schema(
+    POSITION_X_PROP,
+    POSITION_Y_PROP,
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+    BRING_TO_FRONT_PROP,
+)
 @executable_node
-class MoveWindowNode(Node):
+class MoveWindowNode(WindowNodeBase):
     """
     Move a Windows desktop window.
 
     Moves a window to specified screen coordinates.
+
+    Config (via @node_schema):
+        x: Target X position (default: 100)
+        y: Target Y position (default: 100)
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+        bring_to_front: Bring window to front before operation (default: False)
+
+    Inputs:
+        window: Desktop window object
+        x: Target X position (overrides config)
+        y: Target Y position (overrides config)
+
+    Outputs:
+        success: Whether the move succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Move Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Move Window",
     ):
-        """
-        Initialize Move Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "x": 100,
-            "y": 100,
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-            "bring_to_front": False,  # Bring window to front before operation
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "MoveWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("x", PortType.INPUT, DataType.INTEGER)
         self.add_input_port("y", PortType.INPUT, DataType.INTEGER)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - move window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-        x = self.get_input_value("x") or self.config.get("x", 100)
-        y = self.get_input_value("y") or self.config.get("y", 100)
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
-        bring_to_front = self.config.get("bring_to_front", False)
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - move window."""
+        window = self.get_window_from_input()
+        x = self.get_parameter("x", context)
+        y = self.get_parameter("y", context)
+        bring_to_front = self.get_parameter("bring_to_front", context)
 
         logger.info(f"[{self.name}] Moving window to ({x}, {y})")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_move():
+            if bring_to_front:
+                try:
+                    desktop_ctx.bring_to_front(window)
+                except Exception:
+                    pass
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
+            desktop_ctx.move_window(window, int(x), int(y))
+            return self.success_result()
 
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                # Bring window to front if requested
-                if bring_to_front:
-                    try:
-                        desktop_ctx.bring_to_front(window)
-                    except Exception:
-                        pass  # Ignore bring to front errors
-
-                success = desktop_ctx.move_window(window, int(x), int(y))
-
-                logger.info(
-                    f"[{self.name}] Window moved successfully (attempt {attempts})"
-                )
-
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
-
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Move failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = f"Failed to move window after {attempts} attempts: {last_error}"
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)
+        return await self.execute_with_retry(
+            do_move, context, operation_name="move window"
+        )
 
 
+@node_schema(
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+)
 @executable_node
-class MaximizeWindowNode(Node):
+class MaximizeWindowNode(WindowNodeBase):
     """
     Maximize a Windows desktop window.
 
     Maximizes a window to fill the screen.
+
+    Config (via @node_schema):
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+
+    Inputs:
+        window: Desktop window object
+
+    Outputs:
+        success: Whether the maximize succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Maximize Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Maximize Window",
     ):
-        """
-        Initialize Maximize Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "MaximizeWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
-
-        # Output ports
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - maximize window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - maximize window."""
+        window = self.get_window_from_input()
 
         logger.info(f"[{self.name}] Maximizing window")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_maximize():
+            desktop_ctx.maximize_window(window)
+            return self.success_result()
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
-
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                success = desktop_ctx.maximize_window(window)
-
-                logger.info(
-                    f"[{self.name}] Window maximized successfully (attempt {attempts})"
-                )
-
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
-
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Maximize failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = f"Failed to maximize window after {attempts} attempts: {last_error}"
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)
+        return await self.execute_with_retry(
+            do_maximize, context, operation_name="maximize window"
+        )
 
 
+@node_schema(
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+)
 @executable_node
-class MinimizeWindowNode(Node):
+class MinimizeWindowNode(WindowNodeBase):
     """
     Minimize a Windows desktop window.
 
     Minimizes a window to the taskbar.
+
+    Config (via @node_schema):
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+
+    Inputs:
+        window: Desktop window object
+
+    Outputs:
+        success: Whether the minimize succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Minimize Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Minimize Window",
     ):
-        """
-        Initialize Minimize Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "MinimizeWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
-
-        # Output ports
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - minimize window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - minimize window."""
+        window = self.get_window_from_input()
 
         logger.info(f"[{self.name}] Minimizing window")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_minimize():
+            desktop_ctx.minimize_window(window)
+            return self.success_result()
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
-
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                success = desktop_ctx.minimize_window(window)
-
-                logger.info(
-                    f"[{self.name}] Window minimized successfully (attempt {attempts})"
-                )
-
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
-
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Minimize failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = f"Failed to minimize window after {attempts} attempts: {last_error}"
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)
+        return await self.execute_with_retry(
+            do_minimize, context, operation_name="minimize window"
+        )
 
 
+@node_schema(
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+)
 @executable_node
-class RestoreWindowNode(Node):
+class RestoreWindowNode(WindowNodeBase):
     """
     Restore a Windows desktop window.
 
     Restores a window to normal state from maximized or minimized.
+
+    Config (via @node_schema):
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+
+    Inputs:
+        window: Desktop window object
+
+    Outputs:
+        success: Whether the restore succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Restore Window"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Restore Window",
     ):
-        """
-        Initialize Restore Window node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "RestoreWindowNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
-
-        # Output ports
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - restore window.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - restore window."""
+        window = self.get_window_from_input()
 
         logger.info(f"[{self.name}] Restoring window")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_restore():
+            desktop_ctx.restore_window(window)
+            return self.success_result()
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
-
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                success = desktop_ctx.restore_window(window)
-
-                logger.info(
-                    f"[{self.name}] Window restored successfully (attempt {attempts})"
-                )
-
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
-
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Restore failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = f"Failed to restore window after {attempts} attempts: {last_error}"
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)
+        return await self.execute_with_retry(
+            do_restore, context, operation_name="restore window"
+        )
 
 
 @executable_node
-class GetWindowPropertiesNode(Node):
+class GetWindowPropertiesNode(WindowNodeBase):
     """
     Get properties of a Windows desktop window.
 
-    Returns comprehensive information about a window including title, size, position, state, etc.
+    Returns comprehensive information about a window including title,
+    size, position, state, etc.
+
+    Inputs:
+        window: Desktop window object
+
+    Outputs:
+        properties: Dictionary of all window properties
+        title: Window title
+        x: X position
+        y: Y position
+        width: Window width
+        height: Window height
+        state: Window state (normal/maximized/minimized)
+        is_maximized: Whether window is maximized
+        is_minimized: Whether window is minimized
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Window Properties"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Get Window Properties",
     ):
-        """
-        Initialize Get Window Properties node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        if config is None:
-            config = {}
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "GetWindowPropertiesNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
-
-        # Output ports
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_output_port("properties", PortType.OUTPUT, DataType.DICT)
         self.add_output_port("title", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("x", PortType.OUTPUT, DataType.INTEGER)
@@ -711,29 +445,13 @@ class GetWindowPropertiesNode(Node):
         self.add_output_port("is_maximized", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("is_minimized", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - get window properties.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with window properties
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-
-        if not window:
-            raise ValueError("Window input is required")
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - get window properties."""
+        window = self.get_window_from_input()
 
         logger.info(f"[{self.name}] Getting window properties")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
-
-        desktop_ctx = context.desktop_context
+        desktop_ctx = self.get_desktop_context(context)
 
         try:
             properties = desktop_ctx.get_window_properties(window)
@@ -742,167 +460,89 @@ class GetWindowPropertiesNode(Node):
                 f"[{self.name}] Got window properties: {properties.get('title', 'Unknown')}"
             )
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "properties": properties,
-                "title": properties.get("title", ""),
-                "x": properties.get("x", 0),
-                "y": properties.get("y", 0),
-                "width": properties.get("width", 0),
-                "height": properties.get("height", 0),
-                "state": properties.get("state", "unknown"),
-                "is_maximized": properties.get("is_maximized", False),
-                "is_minimized": properties.get("is_minimized", False),
-                "next_nodes": ["exec_out"],
-            }
+            return self.success_result(
+                properties=properties,
+                title=properties.get("title", ""),
+                x=properties.get("x", 0),
+                y=properties.get("y", 0),
+                width=properties.get("width", 0),
+                height=properties.get("height", 0),
+                state=properties.get("state", "unknown"),
+                is_maximized=properties.get("is_maximized", False),
+                is_minimized=properties.get("is_minimized", False),
+            )
 
         except Exception as e:
-            error_msg = f"Failed to get window properties: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "get window properties")
 
 
+@node_schema(
+    WINDOW_STATE_PROP,
+    RETRY_COUNT_PROP,
+    RETRY_INTERVAL_PROP,
+)
 @executable_node
-class SetWindowStateNode(Node):
+class SetWindowStateNode(WindowNodeBase):
     """
     Set the state of a Windows desktop window.
 
-    Sets window state to normal, maximized, minimized, or hidden.
+    Sets window state to normal, maximized, or minimized.
+
+    Config (via @node_schema):
+        state: Target state (normal/maximized/minimized) (default: "normal")
+        retry_count: Number of retries on failure (default: 0)
+        retry_interval: Delay between retries (default: 1.0 seconds)
+
+    Inputs:
+        window: Desktop window object
+        state: Target state (overrides config)
+
+    Outputs:
+        success: Whether the state change succeeded
     """
 
-    # Node metadata
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Set Window State"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Set Window State",
     ):
-        """
-        Initialize Set Window State node.
-
-        Args:
-            node_id: Unique node identifier
-            config: Node configuration
-            name: Display name for the node
-        """
-        default_config = {
-            "state": "normal",  # normal, maximized, minimized
-            "timeout": DEFAULT_WINDOW_TIMEOUT,  # Timeout in seconds
-            "retry_count": 0,  # Number of retries on failure
-            "retry_interval": 1.0,  # Delay between retries in seconds
-        }
-        if config is None:
-            config = {}
-        # Merge with defaults
-        for key, value in default_config.items():
-            if key not in config:
-                config[key] = value
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "SetWindowStateNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        from casare_rpa.domain.value_objects.types import PortType, DataType
-
-        # Input ports
-        self.add_input_port(
-            "window", PortType.INPUT, DataType.ANY
-        )  # Desktop window object
-        self.add_input_port(
-            "state", PortType.INPUT, DataType.STRING
-        )  # normal, maximized, minimized
-
-        # Output ports
+        self.add_input_port("window", PortType.INPUT, DataType.ANY)
+        self.add_input_port("state", PortType.INPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - set window state.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get inputs
-        window = self.get_input_value("window")
-        state = self.get_input_value("state") or self.config.get("state", "normal")
-
-        if not window:
-            raise ValueError("Window input is required")
-
-        # Resolve {{variable}} patterns in state
-        if hasattr(context, "resolve_value") and state:
-            state = context.resolve_value(state)
-
-        # Get retry options
-        retry_count = safe_int(self.config.get("retry_count"), 0)
-        retry_interval = float(self.config.get("retry_interval", 1.0))
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - set window state."""
+        window = self.get_window_from_input()
+        state = self.get_parameter("window_state", context)
 
         logger.info(f"[{self.name}] Setting window state to '{state}'")
 
-        # Get desktop context
-        if not hasattr(context, "desktop_context"):
-            context.desktop_context = DesktopContext()
+        desktop_ctx = self.get_desktop_context(context)
 
-        desktop_ctx = context.desktop_context
+        async def do_set_state():
+            state_lower = str(state).lower().strip()
 
-        last_error = None
-        attempts = 0
-        max_attempts = retry_count + 1
-
-        while attempts < max_attempts:
-            try:
-                attempts += 1
-                if attempts > 1:
-                    logger.info(
-                        f"[{self.name}] Retry attempt {attempts - 1}/{retry_count}"
-                    )
-
-                state_lower = state.lower().strip()
-
-                if state_lower == "maximized":
-                    success = desktop_ctx.maximize_window(window)
-                elif state_lower == "minimized":
-                    success = desktop_ctx.minimize_window(window)
-                elif state_lower in ("normal", "restored"):
-                    success = desktop_ctx.restore_window(window)
-                else:
-                    raise ValueError(
-                        f"Invalid state: '{state}'. Use 'normal', 'maximized', or 'minimized'."
-                    )
-
-                logger.info(
-                    f"[{self.name}] Window state set to '{state}' successfully (attempt {attempts})"
+            if state_lower == "maximized":
+                desktop_ctx.maximize_window(window)
+            elif state_lower == "minimized":
+                desktop_ctx.minimize_window(window)
+            elif state_lower in ("normal", "restored"):
+                desktop_ctx.restore_window(window)
+            else:
+                raise ValueError(
+                    f"Invalid state: '{state}'. Use 'normal', 'maximized', or 'minimized'."
                 )
 
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": success,
-                    "attempts": attempts,
-                    "next_nodes": ["exec_out"],
-                }
+            return self.success_result()
 
-            except Exception as e:
-                last_error = e
-                if attempts < max_attempts:
-                    logger.warning(
-                        f"[{self.name}] Set state failed (attempt {attempts}): {e}"
-                    )
-                    await asyncio.sleep(retry_interval)
-                else:
-                    break
-
-        error_msg = (
-            f"Failed to set window state after {attempts} attempts: {last_error}"
+        return await self.execute_with_retry(
+            do_set_state, context, operation_name=f"set window state to '{state}'"
         )
-        logger.error(f"[{self.name}] {error_msg}")
-        self.status = NodeStatus.ERROR
-        raise RuntimeError(error_msg)

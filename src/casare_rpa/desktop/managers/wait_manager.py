@@ -13,8 +13,8 @@ from typing import Any, Dict, Optional
 import uiautomation as auto
 from loguru import logger
 
-from ..element import DesktopElement
-from ..selector import find_element as selector_find_element
+from casare_rpa.desktop.element import DesktopElement
+from casare_rpa.desktop.selector import find_element as selector_find_element
 
 
 class WaitManager:

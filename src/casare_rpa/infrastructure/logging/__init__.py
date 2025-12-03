@@ -7,8 +7,8 @@ Includes:
 - LogCleanup: Scheduled job for 30-day retention enforcement
 """
 
-from .log_streaming_service import LogStreamingService
-from .log_cleanup import LogCleanupJob
+from casare_rpa.infrastructure.logging.log_cleanup import LogCleanupJob
+from casare_rpa.infrastructure.logging.log_streaming_service import LogStreamingService
 
 __all__ = [
     "LogStreamingService",

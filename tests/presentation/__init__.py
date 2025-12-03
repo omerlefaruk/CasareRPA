@@ -1,1 +1,1 @@
-"""Tests for presentation layer."""
+"""Presentation layer tests."""

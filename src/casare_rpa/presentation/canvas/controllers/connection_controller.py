@@ -12,10 +12,10 @@ from typing import Optional, Tuple, TYPE_CHECKING
 from PySide6.QtCore import Signal
 from loguru import logger
 
-from .base_controller import BaseController
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class ConnectionController(BaseController):

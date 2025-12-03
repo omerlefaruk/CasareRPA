@@ -15,13 +15,13 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 from loguru import logger
 from pydantic import ValidationError
 
-from .base_controller import BaseController
-from ....utils.config import WORKFLOWS_DIR
-from ....application.services import OrchestratorClient
-from ....infrastructure.security.workflow_schema import validate_workflow_json
+from casare_rpa.application.services import OrchestratorClient
+from casare_rpa.config import WORKFLOWS_DIR
+from casare_rpa.infrastructure.security.workflow_schema import validate_workflow_json
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class WorkflowController(BaseController):
@@ -216,6 +216,7 @@ class WorkflowController(BaseController):
         if self._current_file:
             self.workflow_saved.emit(str(self._current_file))
             self.set_modified(False)
+            self.main_window.add_to_recent_files(self._current_file)
             self.main_window.show_status(f"Saved: {self._current_file.name}", 3000)
         else:
             self.save_workflow_as()
@@ -236,10 +237,12 @@ class WorkflowController(BaseController):
         )
 
         if file_path:
+            path = Path(file_path)
             self.workflow_saved.emit(file_path)
-            self.set_current_file(Path(file_path))
+            self.set_current_file(path)
             self.set_modified(False)
-            self.main_window.show_status(f"Saved as: {Path(file_path).name}", 3000)
+            self.main_window.add_to_recent_files(path)
+            self.main_window.show_status(f"Saved as: {path.name}", 3000)
 
     def close_workflow(self) -> bool:
         """
@@ -373,7 +376,7 @@ class WorkflowController(BaseController):
 
     def _update_window_title(self) -> None:
         """Update main window title with current file and modified state."""
-        from ....utils.config import APP_NAME
+        from casare_rpa.config import APP_NAME
 
         if self._current_file:
             title = f"{self._current_file.name} - {APP_NAME}"
@@ -572,7 +575,7 @@ class WorkflowController(BaseController):
                 graph.setup_drag_drop()
             logger.info("Drag-drop import handlers configured")
         else:
-            logger.warning("Graph does not support drag-drop import")
+            logger.debug("Graph does not support drag-drop import")
 
     def check_validation_before_run(self) -> bool:
         """

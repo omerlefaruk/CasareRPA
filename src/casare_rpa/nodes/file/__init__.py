@@ -3,10 +3,22 @@ File operation nodes for CasareRPA.
 
 This package provides file system and structured data operations:
 
-File Operations (file_operations.py):
-- ReadFileNode, WriteFileNode, AppendFileNode, DeleteFileNode
-- CopyFileNode, MoveFileNode
+File Security (file_security.py):
+- PathSecurityError, validate_path_security, validate_path_security_readonly
+
+File Read (file_read_nodes.py):
+- ReadFileNode
+
+File Write (file_write_nodes.py):
+- WriteFileNode, AppendFileNode
+
+File System (file_system_nodes.py):
+- DeleteFileNode, CopyFileNode, MoveFileNode
+
+Directory (directory_nodes.py):
 - CreateDirectoryNode, ListDirectoryNode, ListFilesNode
+
+Path Info (path_nodes.py):
 - FileExistsNode, GetFileInfoNode, GetFileSizeNode
 
 Structured Data (structured_data.py):
@@ -14,59 +26,80 @@ Structured Data (structured_data.py):
 - ReadJSONFileNode, WriteJSONFileNode
 - ZipFilesNode, UnzipFilesNode
 
-Security utilities:
-- PathSecurityError, validate_path_security, validate_zip_entry
-
 Usage:
     from casare_rpa.nodes.file import ReadFileNode, ReadCSVNode
-    from casare_rpa.nodes.file.file_operations import WriteFileNode
+    from casare_rpa.nodes.file.file_write_nodes import WriteFileNode
     from casare_rpa.nodes.file.structured_data import ZipFilesNode
 """
 
-# File operations
-from .file_operations import (
+# Security utilities
+from casare_rpa.nodes.file.file_security import (
     PathSecurityError,
     validate_path_security,
-    ReadFileNode,
-    WriteFileNode,
+    validate_path_security_readonly,
+)
+
+# File read operations
+from casare_rpa.nodes.file.file_read_nodes import ReadFileNode
+
+# File write operations
+from casare_rpa.nodes.file.file_write_nodes import (
     AppendFileNode,
-    DeleteFileNode,
+    WriteFileNode,
+)
+
+# File system operations
+from casare_rpa.nodes.file.file_system_nodes import (
     CopyFileNode,
+    DeleteFileNode,
     MoveFileNode,
+)
+
+# Directory operations
+from casare_rpa.nodes.file.directory_nodes import (
     CreateDirectoryNode,
-    ListFilesNode,
     ListDirectoryNode,
+    ListFilesNode,
+)
+
+# Path info operations
+from casare_rpa.nodes.file.path_nodes import (
     FileExistsNode,
-    GetFileSizeNode,
     GetFileInfoNode,
+    GetFileSizeNode,
 )
 
 # Structured data operations
-from .structured_data import (
-    validate_zip_entry,
+from casare_rpa.nodes.file.structured_data import (
     ReadCSVNode,
-    WriteCSVNode,
     ReadJSONFileNode,
+    UnzipFilesNode,
+    validate_zip_entry,
+    WriteCSVNode,
     WriteJSONFileNode,
     ZipFilesNode,
-    UnzipFilesNode,
 )
 
 __all__ = [
     # Security utilities
     "PathSecurityError",
     "validate_path_security",
+    "validate_path_security_readonly",
     "validate_zip_entry",
-    # File operations
+    # File read operations
     "ReadFileNode",
+    # File write operations
     "WriteFileNode",
     "AppendFileNode",
+    # File system operations
     "DeleteFileNode",
     "CopyFileNode",
     "MoveFileNode",
+    # Directory operations
     "CreateDirectoryNode",
     "ListFilesNode",
     "ListDirectoryNode",
+    # Path info operations
     "FileExistsNode",
     "GetFileSizeNode",
     "GetFileInfoNode",

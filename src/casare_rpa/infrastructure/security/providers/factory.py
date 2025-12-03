@@ -9,7 +9,7 @@ from typing import Optional
 
 from loguru import logger
 
-from ..vault_client import (
+from casare_rpa.infrastructure.security.vault_client import (
     VaultProvider,
     VaultConfig,
     VaultBackend,

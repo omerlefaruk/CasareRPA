@@ -7,7 +7,7 @@ Usage:
     python -m casare_rpa.robot.cli status
 """
 
-from .cli import main
+from casare_rpa.robot.cli import main
 
 if __name__ == "__main__":
     main()

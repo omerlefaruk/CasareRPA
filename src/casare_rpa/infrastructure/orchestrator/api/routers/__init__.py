@@ -1,6 +1,14 @@
 """API routers for monitoring endpoints."""
 
-from . import auth, jobs, metrics, robots, schedules, websockets, workflows
+from casare_rpa.infrastructure.orchestrator.api.routers import (
+    auth,
+    jobs,
+    metrics,
+    robots,
+    schedules,
+    websockets,
+    workflows,
+)
 
 __all__ = [
     "auth",

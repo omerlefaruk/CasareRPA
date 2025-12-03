@@ -30,10 +30,9 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
+from casare_rpa.utils import safe_int
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "passive",
@@ -194,7 +193,6 @@ class FTPConnectNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "binary_mode",
@@ -349,7 +347,6 @@ class FTPUploadNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "binary_mode",
@@ -511,7 +508,6 @@ class FTPDownloadNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "detailed",
@@ -521,6 +517,7 @@ class FTPDownloadNode(BaseNode):
         tooltip="Get detailed file information instead of just names",
     ),
 )
+@executable_node
 class FTPListNode(BaseNode):
     """
     List contents of a directory on FTP server.
@@ -642,7 +639,6 @@ class FTPDeleteNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "parents",
@@ -652,6 +648,7 @@ class FTPDeleteNode(BaseNode):
         tooltip="Create parent directories if they don't exist",
     ),
 )
+@executable_node
 class FTPMakeDirNode(BaseNode):
     """
     Create a directory on FTP server.

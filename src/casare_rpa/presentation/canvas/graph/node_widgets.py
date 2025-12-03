@@ -425,6 +425,86 @@ class CasareViewerFontFix:
             logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
 
 
+class CasareNodeItemPaintFix:
+    """
+    Custom paint fix for NodeItem to provide VSCode-style selection border.
+
+    Replaces the default NodeItem.paint with a version that:
+    - Uses rounded corners (8px radius)
+    - Shows thick blue border (3px) when selected (#007ACC)
+    - Prevents dotted selection boxes on child items
+
+    Usage:
+        # Apply fix at module load time
+        CasareNodeItemPaintFix.apply_fix()
+    """
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Apply the custom paint fix to NodeItem."""
+        try:
+            from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+            from NodeGraphQt.qgraphics.node_base import NodeItem
+
+            def patched_paint(self, painter, option, widget):
+                """Custom paint with thicker blue border and rounded corners."""
+                # Temporarily clear selection for child items to prevent dotted boxes
+                option_copy = option.__class__(option)
+                option_copy.state &= ~option_copy.state.State_Selected
+
+                painter.save()
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+                # Get bounding rect
+                rect = self.boundingRect()
+
+                # Determine colors
+                bg_color = QColor(*self.color)
+                border_color = QColor(*self.border_color)
+
+                if self.selected:
+                    # VSCode-style selection: 3px blue border
+                    border_width = 3.0
+                    border_color = QColor(
+                        0, 122, 204, 255
+                    )  # VSCode focus border (#007ACC)
+                else:
+                    border_width = 1.0
+
+                # Create rounded rectangle path with 8px radius
+                radius = 8.0
+                path = QPainterPath()
+                path.addRoundedRect(rect, radius, radius)
+
+                # Fill background
+                painter.fillPath(path, bg_color)
+
+                # Draw border
+                pen = QPen(border_color, border_width)
+                pen.setCosmetic(self.viewer().get_zoom() < 0.0)
+                painter.strokePath(path, pen)
+
+                painter.restore()
+
+                # Draw child items without selection indicators
+                for child in self.childItems():
+                    if child.isVisible():
+                        painter.save()
+                        painter.translate(child.pos())
+                        child.paint(painter, option_copy, widget)
+                        painter.restore()
+
+            NodeItem.paint = patched_paint
+            logger.debug(
+                "CasareNodeItemPaintFix: Fixed NodeItem.paint for selection styling"
+            )
+
+        except ImportError as e:
+            logger.warning(f"CasareNodeItemPaintFix: Could not import NodeItem: {e}")
+        except Exception as e:
+            logger.warning(f"CasareNodeItemPaintFix: Could not apply fix: {e}")
+
+
 def apply_all_node_widget_fixes() -> None:
     """
     Apply all NodeGraphQt widget fixes.
@@ -438,6 +518,7 @@ def apply_all_node_widget_fixes() -> None:
     - NodeGraph._on_node_data_dropped QUrl TypeError fix
     - NodeBaseItem._add_port font handling fix
     - QGraphicsTextItem.font() -1 point size fix
+    - NodeItem.paint selection styling fix
 
     Note: CasareComboBox and CasareCheckBox fixes are applied per-widget
     via the patched __init__ methods installed below.
@@ -447,6 +528,7 @@ def apply_all_node_widget_fixes() -> None:
     CasareNodeDataDropFix.apply_fix()
     CasareNodeBaseFontFix.apply_fix()
     CasareViewerFontFix.apply_fix()
+    CasareNodeItemPaintFix.apply_fix()
     _install_widget_init_patches()
 
     logger.debug("All NodeGraphQt widget fixes applied")

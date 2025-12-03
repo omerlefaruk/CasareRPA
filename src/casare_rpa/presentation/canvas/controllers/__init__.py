@@ -40,24 +40,48 @@ Usage:
     workflow_controller.initialize()
 """
 
-from .base_controller import BaseController
-from .workflow_controller import WorkflowController
-from .execution_controller import ExecutionController
-from .node_controller import NodeController
-from .connection_controller import ConnectionController
-from .panel_controller import PanelController
-from .menu_controller import MenuController
-from .event_bus_controller import EventBusController, EventTypes, Event
-from .viewport_controller import ViewportController
-from .scheduling_controller import SchedulingController
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
+from casare_rpa.presentation.canvas.controllers.workflow_controller import (
+    WorkflowController,
+)
+from casare_rpa.presentation.canvas.controllers.execution_controller import (
+    ExecutionController,
+)
+from casare_rpa.presentation.canvas.controllers.node_controller import NodeController
+from casare_rpa.presentation.canvas.controllers.connection_controller import (
+    ConnectionController,
+)
+from casare_rpa.presentation.canvas.controllers.panel_controller import PanelController
+from casare_rpa.presentation.canvas.controllers.menu_controller import MenuController
+from casare_rpa.presentation.canvas.controllers.event_bus_controller import (
+    EventBusController,
+    EventTypes,
+    Event,
+)
+from casare_rpa.presentation.canvas.controllers.viewport_controller import (
+    ViewportController,
+)
+from casare_rpa.presentation.canvas.controllers.scheduling_controller import (
+    SchedulingController,
+)
 
 # TriggerController removed - triggers are now visual nodes
-from .ui_state_controller import UIStateController
-from .selector_controller import SelectorController
-from .preferences_controller import PreferencesController
-from .autosave_controller import AutosaveController
-from .project_controller import ProjectController
-from .robot_controller import RobotController
+from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
+    UIStateController,
+)
+from casare_rpa.presentation.canvas.controllers.selector_controller import (
+    SelectorController,
+)
+from casare_rpa.presentation.canvas.controllers.preferences_controller import (
+    PreferencesController,
+)
+from casare_rpa.presentation.canvas.controllers.autosave_controller import (
+    AutosaveController,
+)
+from casare_rpa.presentation.canvas.controllers.project_controller import (
+    ProjectController,
+)
+from casare_rpa.presentation.canvas.controllers.robot_controller import RobotController
 
 __all__ = [
     # Base

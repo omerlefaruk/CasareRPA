@@ -8,7 +8,12 @@ from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QStyle
 from PySide6.QtCore import Qt, QRect, QSize, QModelIndex
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QLinearGradient
 
-from .theme import THEME, get_status_color, get_priority_color, get_progress_color
+from casare_rpa.infrastructure.orchestrator.communication.theme import (
+    THEME,
+    get_priority_color,
+    get_progress_color,
+    get_status_color,
+)
 
 
 class ProgressBarDelegate(QStyledItemDelegate):

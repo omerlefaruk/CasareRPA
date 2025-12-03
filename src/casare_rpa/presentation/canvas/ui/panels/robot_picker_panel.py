@@ -61,6 +61,7 @@ class RobotPickerPanel(QDockWidget):
     robot_selected = Signal(str)
     execution_mode_changed = Signal(str)
     refresh_requested = Signal()
+    submit_to_cloud_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -76,6 +77,7 @@ class RobotPickerPanel(QDockWidget):
         self._execution_mode: str = "local"
         self._robots: List["Robot"] = []
         self._robot_items: Dict[str, QTreeWidgetItem] = {}
+        self._connected_to_orchestrator: bool = False
 
         self._setup_dock()
         self._setup_ui()
@@ -199,8 +201,21 @@ class RobotPickerPanel(QDockWidget):
 
         layout.addWidget(self._robot_group)
 
+        # Submit to Cloud button (below robot selection group)
+        self._submit_button = QPushButton("⬆ Submit to Cloud")
+        self._submit_button.setObjectName("submitToCloudButton")
+        self._submit_button.setToolTip(
+            "Submit current workflow to selected robot for execution"
+        )
+        self._submit_button.setMinimumHeight(36)
+        self._submit_button.clicked.connect(self._on_submit_clicked)
+        layout.addWidget(self._submit_button)
+
         # Initially disable robot selection in local mode
         self._robot_group.setEnabled(False)
+
+        # Update submit button state
+        self._update_submit_button_state()
 
         # Add stretch at bottom
         layout.addStretch()
@@ -302,6 +317,24 @@ class RobotPickerPanel(QDockWidget):
             QPushButton:pressed {
                 background: #2d2d2d;
             }
+            QPushButton#submitToCloudButton {
+                background: #2a6a4a;
+                border: 1px solid #3a8a5a;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            QPushButton#submitToCloudButton:hover {
+                background: #3a8a5a;
+                border-color: #4aaa6a;
+            }
+            QPushButton#submitToCloudButton:pressed {
+                background: #1a5a3a;
+            }
+            QPushButton#submitToCloudButton:disabled {
+                background: #3d3d3d;
+                border-color: #4a4a4a;
+                color: #888888;
+            }
             QLabel {
                 color: #e0e0e0;
             }
@@ -320,6 +353,7 @@ class RobotPickerPanel(QDockWidget):
             self._execution_mode = "cloud"
             self._robot_group.setEnabled(True)
 
+        self._update_submit_button_state()
         self.execution_mode_changed.emit(self._execution_mode)
         logger.debug(f"Execution mode changed to: {self._execution_mode}")
 
@@ -377,12 +411,14 @@ class RobotPickerPanel(QDockWidget):
         selected_items = self._robot_tree.selectedItems()
         if not selected_items:
             self._selected_robot_id = None
+            self._update_submit_button_state()
             return
 
         item = selected_items[0]
         robot_id = item.data(0, Qt.ItemDataRole.UserRole)
         if robot_id and robot_id != self._selected_robot_id:
             self._selected_robot_id = robot_id
+            self._update_submit_button_state()
             self.robot_selected.emit(robot_id)
             logger.debug(f"Robot selected: {robot_id}")
 
@@ -398,6 +434,47 @@ class RobotPickerPanel(QDockWidget):
         """Handle refresh button click."""
         self.refresh_requested.emit()
         logger.debug("Robot list refresh requested")
+
+    def _on_submit_clicked(self) -> None:
+        """Handle submit to cloud button click."""
+        if self._can_submit():
+            self.submit_to_cloud_requested.emit()
+            logger.debug(
+                f"Submit to cloud requested for robot: {self._selected_robot_id}"
+            )
+
+    def _can_submit(self) -> bool:
+        """Check if submission is currently allowed."""
+        return (
+            self._execution_mode == "cloud"
+            and self._selected_robot_id is not None
+            and self._connected_to_orchestrator
+        )
+
+    def _update_submit_button_state(self) -> None:
+        """Update submit button enabled state and tooltip based on current conditions."""
+        can_submit = self._can_submit()
+        self._submit_button.setEnabled(can_submit)
+
+        # Update tooltip based on why button might be disabled
+        if self._execution_mode != "cloud":
+            self._submit_button.setToolTip(
+                "Switch to 'Submit to Cloud' mode to submit workflows"
+            )
+        elif not self._connected_to_orchestrator:
+            self._submit_button.setToolTip(
+                "Not connected to orchestrator. Click Refresh to connect."
+            )
+        elif self._selected_robot_id is None:
+            self._submit_button.setToolTip(
+                "Select a robot from the list to submit workflow"
+            )
+        else:
+            robot = self._find_robot_by_id(self._selected_robot_id)
+            robot_name = robot.name if robot else self._selected_robot_id
+            self._submit_button.setToolTip(
+                f"Submit current workflow to '{robot_name}' for execution"
+            )
 
     def update_robots(self, robots: List["Robot"]) -> None:
         """
@@ -425,6 +502,9 @@ class RobotPickerPanel(QDockWidget):
         # Restore selection if robot still exists
         if self._selected_robot_id and self._selected_robot_id in self._robot_items:
             self._robot_items[self._selected_robot_id].setSelected(True)
+
+        # Update submit button state
+        self._update_submit_button_state()
 
         logger.debug(f"Robot tree updated with {len(robots)} robots")
 
@@ -571,3 +651,63 @@ class RobotPickerPanel(QDockWidget):
     def refresh(self) -> None:
         """Trigger a refresh of the robot list."""
         self._on_refresh_clicked()
+
+    def set_connected(self, connected: bool) -> None:
+        """
+        Set orchestrator connection status.
+
+        Args:
+            connected: True if connected to orchestrator
+        """
+        self._connected_to_orchestrator = connected
+        self._update_submit_button_state()
+        logger.debug(f"Orchestrator connection status: {connected}")
+
+    def is_connected(self) -> bool:
+        """
+        Get orchestrator connection status.
+
+        Returns:
+            True if connected to orchestrator
+        """
+        return self._connected_to_orchestrator
+
+    def set_submitting(self, submitting: bool) -> None:
+        """
+        Set submit button state during submission.
+
+        Args:
+            submitting: True to show submitting state
+        """
+        self._submit_button.setEnabled(not submitting)
+        if submitting:
+            self._submit_button.setText("⬆ Submitting...")
+        else:
+            self._submit_button.setText("⬆ Submit to Cloud")
+            self._update_submit_button_state()
+
+    def show_submit_result(self, success: bool, message: str) -> None:
+        """
+        Show result of job submission.
+
+        Args:
+            success: Whether submission succeeded
+            message: Result message (job ID or error)
+        """
+        if success:
+            self._status_label.setText(f"✓ Submitted: {message}")
+            self._status_label.setStyleSheet("color: #4CAF50; font-size: 11px;")
+        else:
+            self._status_label.setText(f"✗ Failed: {message}")
+            self._status_label.setStyleSheet("color: #F44336; font-size: 11px;")
+
+        # Reset status after 5 seconds
+        from PySide6.QtCore import QTimer
+
+        QTimer.singleShot(5000, self._reset_status_label)
+
+    def _reset_status_label(self) -> None:
+        """Reset status label to default."""
+        available = sum(1 for r in self._robots if r.is_available)
+        self._status_label.setText(f"{available} robots available")
+        self._status_label.setStyleSheet("color: #888888; font-size: 11px;")

@@ -141,7 +141,7 @@ class SelectorController(BaseController):
         except Exception as e:
             logger.error(f"Failed to start recording: {e}")
 
-    def stop_recording(self) -> None:
+    async def stop_recording(self) -> None:
         """Stop workflow recording mode."""
         if not self._selector_integration:
             logger.error("Selector integration not initialized")
@@ -150,8 +150,7 @@ class SelectorController(BaseController):
         logger.info("Stopping workflow recording")
 
         try:
-            if hasattr(self._selector_integration, "stop_recording"):
-                self._selector_integration.stop_recording()
+            await self._selector_integration.stop_selector_mode()
             self.picker_stopped.emit()
         except Exception as e:
             logger.error(f"Failed to stop recording: {e}")

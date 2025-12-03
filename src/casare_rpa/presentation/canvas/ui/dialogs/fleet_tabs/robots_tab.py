@@ -31,7 +31,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QBrush
 
-from .constants import ROBOT_STATUS_COLORS
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
+    ROBOT_STATUS_COLORS,
+)
 
 
 if TYPE_CHECKING:

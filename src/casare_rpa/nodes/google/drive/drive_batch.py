@@ -194,7 +194,6 @@ def _parse_batch_response(response_text: str, boundary: str) -> List[Dict[str, A
     return results
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "continue_on_error",
@@ -204,6 +203,7 @@ def _parse_batch_response(response_text: str, boundary: str) -> List[Dict[str, A
         tooltip="Continue deleting remaining files if one fails",
     ),
 )
+@executable_node
 class DriveBatchDeleteNode(BaseNode):
     """
     Delete multiple Google Drive files in a batch operation.
@@ -333,7 +333,6 @@ class DriveBatchDeleteNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "continue_on_error",
@@ -343,6 +342,7 @@ class DriveBatchDeleteNode(BaseNode):
         tooltip="Continue moving remaining files if one fails",
     ),
 )
+@executable_node
 class DriveBatchMoveNode(BaseNode):
     """
     Move multiple Google Drive files to a folder in a batch operation.
@@ -544,7 +544,6 @@ class DriveBatchMoveNode(BaseNode):
             return await response.json()
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "continue_on_error",
@@ -561,6 +560,7 @@ class DriveBatchMoveNode(BaseNode):
         tooltip="Keep original file names (otherwise appends ' - Copy')",
     ),
 )
+@executable_node
 class DriveBatchCopyNode(BaseNode):
     """
     Copy multiple Google Drive files to a folder in a batch operation.

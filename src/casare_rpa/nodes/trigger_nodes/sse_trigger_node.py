@@ -9,9 +9,11 @@ from typing import Any, Dict, Optional
 from casare_rpa.domain.decorators import node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType
+from casare_rpa.nodes.trigger_nodes.base_trigger_node import (
+    BaseTriggerNode,
+    trigger_node,
+)
 from casare_rpa.triggers.base import TriggerType
-
-from .base_trigger_node import BaseTriggerNode, trigger_node
 
 
 @node_schema(

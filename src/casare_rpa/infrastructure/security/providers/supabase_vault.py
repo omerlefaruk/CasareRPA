@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from ..vault_client import (
+from casare_rpa.infrastructure.security.vault_client import (
     VaultProvider,
     VaultConfig,
     SecretValue,
@@ -82,6 +82,7 @@ class SupabaseVaultProvider(VaultProvider):
                 min_size=1,
                 max_size=10,
                 command_timeout=30.0,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
             )
 
             # Verify vault extension is available
@@ -132,7 +133,7 @@ class SupabaseVaultProvider(VaultProvider):
     def _build_postgres_url(self) -> str:
         """Build Postgres connection URL from Supabase config."""
         # Supabase URL format: https://project-ref.supabase.co
-        # Postgres format: postgres://postgres:password@db.project-ref.supabase.co:5432/postgres
+        # Postgres format: postgres://postgres.project-ref:password@pooler.supabase.com:6543/postgres
         url = self._config.supabase_url
         key = self._config.supabase_key.get_secret_value()
 
@@ -142,9 +143,11 @@ class SupabaseVaultProvider(VaultProvider):
             host = url.replace("https://", "").replace("http://", "")
             # Convert to db host
             project_ref = host.split(".")[0]
-            db_host = f"db.{project_ref}.supabase.co"
 
-            return f"postgres://postgres.{project_ref}:{key}@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+            # Use EU central region pooler for IPv4 compatibility
+            # Format: postgres://postgres.PROJECT_REF:PASSWORD@REGION.pooler.supabase.com:6543/postgres
+            pooler_region = "aws-1-eu-central-1"  # EU region
+            return f"postgres://postgres.{project_ref}:{key}@{pooler_region}.pooler.supabase.com:6543/postgres"
 
         # Fallback: assume it's already a postgres URL
         return url

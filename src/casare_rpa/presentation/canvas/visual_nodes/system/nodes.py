@@ -4,7 +4,7 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 from casare_rpa.domain.value_objects.types import DataType
 
 # Import logic layer nodes
-from casare_rpa.nodes.system_nodes import (
+from casare_rpa.nodes.system import (
     ClipboardCopyNode,
     ClipboardPasteNode,
     ClipboardClearNode,

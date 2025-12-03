@@ -17,12 +17,12 @@
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-; Pre-configured Supabase settings (baked into installer)
+; Pre-configured Supabase settings
 !define SUPABASE_PROJECT_REF "znaauaswqmurwfglantv"
 !define SUPABASE_URL "https://${SUPABASE_PROJECT_REF}.supabase.co"
-; Using Connection Pooler (IPv4) - aws-1-eu-central-1
-!define DATABASE_HOST "aws-1-eu-central-1.pooler.supabase.com"
-!define DATABASE_USER "postgres.${SUPABASE_PROJECT_REF}"
+
+; Database password (pre-configured for Supabase)
+!define DB_PASSWORD "6729Raumafu."
 
 ; Build output directory (set by build script)
 !ifndef DIST_DIR
@@ -47,27 +47,16 @@ RequestExecutionLevel admin
 ; Modern UI Configuration
 ; -----------------------------------------------------------------------------
 !define MUI_ABORTWARNING
-; Icons disabled - placeholder file. Uncomment when valid .ico is available:
-; !define MUI_ICON "assets\casarerpa.ico"
-; !define MUI_UNICON "assets\casarerpa.ico"
 
 ; -----------------------------------------------------------------------------
 ; Variables
 ; -----------------------------------------------------------------------------
-Var DB_PASSWORD
-Var API_KEY
 Var ROBOT_NAME
 
 ; Custom page handles
 Var Dialog
-Var PasswordLabel
-Var PasswordText
-Var ApiKeyLabel
-Var ApiKeyText
 Var RobotNameLabel
 Var RobotNameText
-Var TestButton
-Var TestResult
 
 ; -----------------------------------------------------------------------------
 ; Installer Pages
@@ -102,10 +91,10 @@ Page custom ConfigurationPage ConfigurationPageLeave
 !insertmacro CASARE_VERSION_INFO "${PRODUCT_NAME}" "CasareRPA Robot Agent for VM Deployment"
 
 ; -----------------------------------------------------------------------------
-; Configuration Page (Custom)
+; Configuration Page (Custom) - Only Robot Name needed
 ; -----------------------------------------------------------------------------
 Function ConfigurationPage
-  !insertmacro MUI_HEADER_TEXT "Robot Configuration" "Enter your Supabase credentials and robot settings"
+  !insertmacro MUI_HEADER_TEXT "Robot Configuration" "Enter your robot name"
 
   nsDialogs::Create 1018
   Pop $Dialog
@@ -115,78 +104,26 @@ Function ConfigurationPage
   ${EndIf}
 
   ; Description
-  ${NSD_CreateLabel} 0 0 100% 30u "This robot will connect to the CasareRPA cloud orchestrator.$\nEnter your Supabase database password and robot API key."
-  Pop $0
-
-  ; Supabase info (read-only)
-  ${NSD_CreateLabel} 0 40u 100% 12u "Supabase Project: ${SUPABASE_PROJECT_REF}"
-  Pop $0
-
-  ; Database Password
-  ${NSD_CreateLabel} 0 60u 100u 12u "Database Password:"
-  Pop $PasswordLabel
-
-  ${NSD_CreatePassword} 105u 58u 195u 14u ""
-  Pop $PasswordText
-
-  ; API Key
-  ${NSD_CreateLabel} 0 82u 100u 12u "Robot API Key:"
-  Pop $ApiKeyLabel
-
-  ${NSD_CreatePassword} 105u 80u 195u 14u ""
-  Pop $ApiKeyText
-
-  ${NSD_CreateLabel} 0 96u 300u 12u "(Get API key from: python deploy/auto_setup.py setup)"
+  ${NSD_CreateLabel} 0 0 100% 36u "This robot connects to CasareRPA Supabase cloud.$\n$\nProject: ${SUPABASE_PROJECT_REF}$\n$\nDatabase connection is pre-configured."
   Pop $0
 
   ; Robot Name
-  ${NSD_CreateLabel} 0 116u 100u 12u "Robot Name:"
+  ${NSD_CreateLabel} 0 50u 100u 12u "Robot Name:"
   Pop $RobotNameLabel
 
   ; Get computer name as default
   ReadEnvStr $0 COMPUTERNAME
-  ${NSD_CreateText} 105u 114u 195u 14u "$0-Robot"
+  ${NSD_CreateText} 105u 48u 195u 14u "$0-Robot"
   Pop $RobotNameText
 
-  ; Test button
-  ${NSD_CreateButton} 0 140u 100u 20u "Test Connection"
-  Pop $TestButton
-  ${NSD_OnClick} $TestButton TestDatabaseConnection
-
-  ; Test result
-  ${NSD_CreateLabel} 110u 144u 190u 12u ""
-  Pop $TestResult
+  ${NSD_CreateLabel} 0 68u 300u 12u "(This name identifies the robot in the orchestrator)"
+  Pop $0
 
   nsDialogs::Show
 FunctionEnd
 
-Function TestDatabaseConnection
-  ${NSD_GetText} $PasswordText $DB_PASSWORD
-
-  ${If} $DB_PASSWORD == ""
-    ${NSD_SetText} $TestResult "Enter password first"
-    Return
-  ${EndIf}
-
-  ; Basic validation
-  StrLen $0 $DB_PASSWORD
-  ${If} $0 < 8
-    ${NSD_SetText} $TestResult "Password too short"
-    Return
-  ${EndIf}
-
-  ${NSD_SetText} $TestResult "Password format OK"
-FunctionEnd
-
 Function ConfigurationPageLeave
-  ${NSD_GetText} $PasswordText $DB_PASSWORD
-  ${NSD_GetText} $ApiKeyText $API_KEY
   ${NSD_GetText} $RobotNameText $ROBOT_NAME
-
-  ${If} $DB_PASSWORD == ""
-    MessageBox MB_OK|MB_ICONEXCLAMATION "Database password is required!"
-    Abort
-  ${EndIf}
 
   ${If} $ROBOT_NAME == ""
     MessageBox MB_OK|MB_ICONEXCLAMATION "Robot name is required!"
@@ -205,71 +142,75 @@ Section "Robot Agent" SEC_ROBOT
   ; Copy application files
   File /r "${DIST_DIR}\*.*"
 
-  ; Check for Python and install Playwright browsers via pip
-  DetailPrint "Setting up Playwright browsers..."
+  ; Install Playwright browsers using bundled playwright command
+  DetailPrint "Installing Playwright browser (Chromium)..."
+  DetailPrint "This may take a few minutes on first install..."
 
-  ; Try to find Python in PATH or common locations
-  nsExec::ExecToLog 'cmd /c "python --version"'
+  ; Use the bundled playwright module to install chromium
+  ; The frozen app includes playwright, we just need to install the browser binary
+  nsExec::ExecToLog 'cmd /c "cd /d "$INSTDIR" && "$INSTDIR\CasareRPA-Robot.exe" --help >nul 2>&1"'
+  Pop $0
+
+  ; Try using system Python's playwright if available (more reliable for browser install)
+  nsExec::ExecToLog 'cmd /c "playwright install chromium"'
   Pop $0
   ${If} $0 == 0
-    DetailPrint "Python found. Installing Playwright..."
-    nsExec::ExecToLog 'cmd /c "pip install playwright && playwright install chromium"'
+    DetailPrint "Playwright Chromium browser installed successfully"
+  ${Else}
+    ; Fallback: Try with python -m playwright
+    nsExec::ExecToLog 'cmd /c "python -m playwright install chromium"'
     Pop $0
     ${If} $0 == 0
-      DetailPrint "Playwright browsers installed successfully"
+      DetailPrint "Playwright Chromium browser installed successfully"
     ${Else}
-      DetailPrint "Warning: Playwright install failed. You may need to run manually:"
-      DetailPrint "  pip install playwright && playwright install chromium"
+      DetailPrint ""
+      DetailPrint "WARNING: Playwright browser install failed."
+      DetailPrint "Browser automation will not work until you run:"
+      DetailPrint "  playwright install chromium"
+      DetailPrint ""
+      MessageBox MB_OK|MB_ICONINFORMATION "Playwright browser installation failed.$\n$\nTo enable browser automation, open a terminal and run:$\n  playwright install chromium"
     ${EndIf}
-  ${Else}
-    DetailPrint "Python not found. Browser automation will require manual setup."
-    DetailPrint "After installing Python, run: pip install playwright && playwright install chromium"
   ${EndIf}
 
   ; Create config directories (from common.nsh)
   !insertmacro CASARE_CREATE_CONFIG_DIRS
 
-  ; Write .env file with configuration
+  ; =========================================================================
+  ; Create .env file with database configuration
+  ; =========================================================================
+  DetailPrint "Writing configuration to .env file..."
+
+  ; Write to AppData location (primary - robot loads from here)
   FileOpen $0 "$APPDATA\CasareRPA\.env" w
   FileWrite $0 "# CasareRPA Robot Configuration$\r$\n"
   FileWrite $0 "# Generated by installer$\r$\n"
+  FileWrite $0 "# Supabase Project: ${SUPABASE_PROJECT_REF}$\r$\n"
   FileWrite $0 "$\r$\n"
-  FileWrite $0 "# Supabase PostgreSQL$\r$\n"
-  FileWrite $0 "DATABASE_URL=postgresql://${DATABASE_USER}:$DB_PASSWORD@${DATABASE_HOST}:5432/postgres$\r$\n"
-  FileWrite $0 "POSTGRES_URL=postgresql://${DATABASE_USER}:$DB_PASSWORD@${DATABASE_HOST}:5432/postgres$\r$\n"
-  FileWrite $0 "PGQUEUER_DB_URL=postgresql://${DATABASE_USER}:$DB_PASSWORD@${DATABASE_HOST}:5432/postgres$\r$\n"
+  FileWrite $0 "# Database Password (pre-configured)$\r$\n"
+  FileWrite $0 "DB_PASSWORD=${DB_PASSWORD}$\r$\n"
   FileWrite $0 "$\r$\n"
-  FileWrite $0 "# Supabase$\r$\n"
+  FileWrite $0 "# Supabase API (optional)$\r$\n"
   FileWrite $0 "SUPABASE_URL=${SUPABASE_URL}$\r$\n"
   FileWrite $0 "$\r$\n"
-  FileWrite $0 "# Robot$\r$\n"
+  FileWrite $0 "# Robot Configuration$\r$\n"
   FileWrite $0 "ROBOT_NAME=$ROBOT_NAME$\r$\n"
-  ${If} $API_KEY != ""
-    FileWrite $0 "ROBOT_API_KEY=$API_KEY$\r$\n"
-  ${EndIf}
   FileWrite $0 "ROBOT_ENVIRONMENT=production$\r$\n"
+  FileWrite $0 "CASARE_ENVIRONMENT=production$\r$\n"
   FileWrite $0 "$\r$\n"
   FileWrite $0 "# Logging$\r$\n"
   FileWrite $0 "LOG_LEVEL=INFO$\r$\n"
   FileClose $0
 
-  ; Copy .env to install directory too (backup)
+  ; Also copy to install directory (backup, also loaded by frozen exe)
   CopyFiles "$APPDATA\CasareRPA\.env" "$INSTDIR\.env"
 
-  ; Create start script
-  FileOpen $0 "$INSTDIR\start-robot.bat" w
-  FileWrite $0 "@echo off$\r$\n"
-  FileWrite $0 "cd /d %~dp0$\r$\n"
-  FileWrite $0 "echo Starting CasareRPA Robot: $ROBOT_NAME$\r$\n"
-  FileWrite $0 "CasareRPA-Robot.exe start --name $ROBOT_NAME$\r$\n"
-  FileWrite $0 "pause$\r$\n"
-  FileClose $0
+  DetailPrint "Configuration saved to $APPDATA\CasareRPA\.env"
 
-  ; Create shortcuts
+  ; Create shortcuts (run exe directly - it loads .env automatically)
   CreateDirectory "$SMPROGRAMS\CasareRPA"
-  CreateShortCut "$SMPROGRAMS\CasareRPA\Start Robot.lnk" "$INSTDIR\start-robot.bat" "" "$INSTDIR\CasareRPA-Robot.exe"
+  CreateShortCut "$SMPROGRAMS\CasareRPA\Start Robot.lnk" "$INSTDIR\CasareRPA-Robot.exe" "start --name $ROBOT_NAME" "$INSTDIR\CasareRPA-Robot.exe"
   CreateShortCut "$SMPROGRAMS\CasareRPA\Uninstall Robot.lnk" "$INSTDIR\Uninstall.exe"
-  CreateShortCut "$DESKTOP\CasareRPA Robot.lnk" "$INSTDIR\start-robot.bat" "" "$INSTDIR\CasareRPA-Robot.exe"
+  CreateShortCut "$DESKTOP\CasareRPA Robot.lnk" "$INSTDIR\CasareRPA-Robot.exe" "start --name $ROBOT_NAME" "$INSTDIR\CasareRPA-Robot.exe"
 
   ; Register uninstaller
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -289,8 +230,8 @@ Section "Robot Agent" SEC_ROBOT
 SectionEnd
 
 Section "Start with Windows" SEC_AUTOSTART
-  ; Add to startup
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "CasareRPA-Robot" '"$INSTDIR\start-robot.bat"'
+  ; Add to startup (run exe directly)
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "CasareRPA-Robot" '"$INSTDIR\CasareRPA-Robot.exe" start --name $ROBOT_NAME'
 SectionEnd
 
 ; -----------------------------------------------------------------------------
@@ -324,8 +265,6 @@ Function .onInit
   ; Check Windows version (from common.nsh)
   !insertmacro CASARE_CHECK_WINDOWS
 
-  StrCpy $DB_PASSWORD ""
-  StrCpy $API_KEY ""
   StrCpy $ROBOT_NAME ""
 FunctionEnd
 

@@ -5,8 +5,12 @@ Provides secure WebSocket-based tunnel for on-premises robots
 to connect to cloud control plane with mTLS authentication.
 """
 
-from .agent_tunnel import AgentTunnel, TunnelConfig, TunnelState
-from .mtls import MTLSConfig, CertificateManager
+from casare_rpa.infrastructure.tunnel.agent_tunnel import (
+    AgentTunnel,
+    TunnelConfig,
+    TunnelState,
+)
+from casare_rpa.infrastructure.tunnel.mtls import MTLSConfig, CertificateManager
 
 __all__ = [
     "AgentTunnel",

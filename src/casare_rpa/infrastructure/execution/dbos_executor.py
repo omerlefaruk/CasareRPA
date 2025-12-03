@@ -220,6 +220,7 @@ class DBOSWorkflowExecutor:
                     min_size=1,
                     max_size=3,
                     command_timeout=60.0,
+                    statement_cache_size=0,  # Required for pgbouncer/Supabase
                 )
                 await self._ensure_checkpoint_table()
                 logger.info("Checkpoint storage connected")

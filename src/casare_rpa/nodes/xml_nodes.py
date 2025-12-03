@@ -28,7 +28,7 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
+from casare_rpa.utils import safe_int
 
 
 @executable_node
@@ -105,7 +105,6 @@ class ParseXMLNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "encoding",
@@ -115,6 +114,7 @@ class ParseXMLNode(BaseNode):
         tooltip="File encoding (e.g., utf-8, latin-1)",
     ),
 )
+@executable_node
 class ReadXMLFileNode(BaseNode):
     """
     Read and parse an XML file.
@@ -186,7 +186,6 @@ class ReadXMLFileNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "encoding",
@@ -547,7 +546,6 @@ class GetXMLAttributeNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "include_attributes",
@@ -564,6 +562,7 @@ class GetXMLAttributeNode(BaseNode):
         tooltip="Key name for element text content in JSON",
     ),
 )
+@executable_node
 class XMLToJsonNode(BaseNode):
     """
     Convert XML to JSON.
@@ -652,7 +651,6 @@ class XMLToJsonNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "root_tag",
@@ -669,6 +667,7 @@ class XMLToJsonNode(BaseNode):
         tooltip="Format XML output with indentation",
     ),
 )
+@executable_node
 class JsonToXMLNode(BaseNode):
     """
     Convert JSON to XML.

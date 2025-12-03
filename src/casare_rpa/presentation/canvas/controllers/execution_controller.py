@@ -149,6 +149,11 @@ class ExecutionController(BaseController):
             self._event_bus.subscribe(
                 EventType.WORKFLOW_STOPPED, self._on_workflow_stopped
             )
+            # Subscribe to browser events to enable picker/recorder
+            self._event_bus.subscribe(
+                EventType.BROWSER_PAGE_READY, self._on_browser_page_ready
+            )
+            logger.info(f"Subscribed to BROWSER_PAGE_READY (bus={id(self._event_bus)})")
 
             # Subscribe all events to log viewer if available
             log_viewer = self.main_window.get_log_viewer()
@@ -372,6 +377,16 @@ class ExecutionController(BaseController):
                 visual_node.update_status("running")
                 logger.debug(f"Node {node_id} visual status: running")
 
+            # Update execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline:
+                node_name = (
+                    event_data.get("node_name", node_id)
+                    if isinstance(event_data, dict)
+                    else node_id
+                )
+                timeline.add_event(node_id, node_name, "started")
+
     def _on_node_completed(self, event) -> None:
         """
         Handle NODE_COMPLETED event from EventBus.
@@ -406,6 +421,17 @@ class ExecutionController(BaseController):
                 ):
                     visual_node.update_execution_time(execution_time_sec)
                 logger.debug(f"Node {node_id} visual status: success")
+
+            # Update execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline and isinstance(event_data, dict):
+                node_name = event_data.get("node_name", node_id)
+                duration_ms = None
+                if execution_time_sec is not None:
+                    duration_ms = execution_time_sec * 1000
+                timeline.add_event(
+                    node_id, node_name, "completed", duration_ms=duration_ms
+                )
 
             # Forward output to Output Tab and History Tab
             bottom_panel = self.main_window.get_bottom_panel()
@@ -454,6 +480,14 @@ class ExecutionController(BaseController):
                 visual_node.update_status("error")
                 logger.error(f"Node {node_id} error: {error}")
 
+            # Update execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline and isinstance(event_data, dict):
+                node_name = event_data.get("node_name", node_id)
+                timeline.add_event(
+                    node_id, node_name, "error", error_message=str(error)
+                )
+
             # Add to history
             bottom_panel = self.main_window.get_bottom_panel()
             if bottom_panel and isinstance(event_data, dict):
@@ -479,6 +513,11 @@ class ExecutionController(BaseController):
         Also sets workflow result and exports variables to Output Tab.
         """
         logger.info("Workflow execution completed (EventBus)")
+
+        # End execution timeline
+        timeline = self.main_window.get_execution_timeline()
+        if timeline:
+            timeline.end_execution()
 
         # Set workflow result in Output Tab
         bottom_panel = self.main_window.get_bottom_panel()
@@ -521,6 +560,11 @@ class ExecutionController(BaseController):
         )
         logger.error(f"Workflow error (EventBus): {error}")
 
+        # End execution timeline
+        timeline = self.main_window.get_execution_timeline()
+        if timeline:
+            timeline.end_execution()
+
         # Set workflow result in Output Tab
         bottom_panel = self.main_window.get_bottom_panel()
         if bottom_panel:
@@ -546,6 +590,49 @@ class ExecutionController(BaseController):
         self._is_running = False
         self._is_paused = False
         self._update_execution_actions(running=False)
+        # Disable browser picker/recorder when workflow stops
+        self.main_window.set_browser_running(False)
+
+    def _on_browser_page_ready(self, event) -> None:
+        """
+        Handle BROWSER_PAGE_READY event from EventBus.
+
+        Enables picker and recorder actions when browser is launched.
+        Also initializes the selector controller with the page.
+
+        Note: This may be called from a background thread, so we use
+        QTimer.singleShot to ensure UI updates happen on the main thread.
+        """
+        from PySide6.QtCore import QTimer
+
+        logger.info("Browser page ready event received - scheduling UI update")
+
+        # Extract page from event data
+        event_data = event.data if hasattr(event, "data") else {}
+        page = event_data.get("page") if isinstance(event_data, dict) else None
+
+        # Schedule UI update on main thread
+        def enable_browser_actions():
+            logger.info("Enabling picker/recorder on main thread")
+            self.main_window.set_browser_running(True)
+
+            # Initialize selector controller with the page
+            if page and hasattr(self.main_window, "_selector_controller"):
+                selector_ctrl = self.main_window._selector_controller
+                if selector_ctrl:
+                    import asyncio
+
+                    try:
+                        asyncio.create_task(selector_ctrl.initialize_for_page(page))
+                    except RuntimeError:
+                        # No event loop running - try to get one
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            asyncio.ensure_future(
+                                selector_ctrl.initialize_for_page(page)
+                            )
+
+        QTimer.singleShot(0, enable_browser_actions)
 
     def _build_node_index(self) -> None:
         """
@@ -640,6 +727,11 @@ class ExecutionController(BaseController):
 
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
+
+            # Start execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline:
+                timeline.start_execution()
 
             self._is_paused = False
             self.execution_started.emit()
@@ -750,6 +842,11 @@ class ExecutionController(BaseController):
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
 
+            # Start execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline:
+                timeline.start_execution()
+
             self._is_paused = False
             self.run_to_node_requested.emit(target_node_id)
             self.execution_started.emit()
@@ -838,6 +935,11 @@ class ExecutionController(BaseController):
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
 
+            # Start execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline:
+                timeline.start_execution()
+
             self._is_paused = False
             self.run_single_node_requested.emit(target_node_id)
             self.execution_started.emit()
@@ -903,6 +1005,11 @@ class ExecutionController(BaseController):
 
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
+
+            # Start execution timeline
+            timeline = self.main_window.get_execution_timeline()
+            if timeline:
+                timeline.start_execution()
 
             self._is_paused = False
             self.execution_started.emit()

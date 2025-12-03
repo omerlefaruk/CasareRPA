@@ -94,7 +94,7 @@ Get-Process python | Where-Object { $_.CommandLine -like "*orchestrator*" }
 
 1. **Verify Orchestrator is running**
    ```powershell
-   python -m casare_rpa.orchestrator.main
+   python -m casare_rpa.infrastructure.orchestrator.server
    ```
 
 2. **Check firewall rules**

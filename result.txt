@@ -1,4 +1,0 @@
-SUCCESS!
-Visual: VisualMergeNode
-ID: casare_rpa.control_flow.VisualMergeNode
-CasareRPA: MergeNode

@@ -2,7 +2,7 @@
 Visual Nodes - Desktop Automation
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.desktop_automation.nodes import (
     VisualLaunchApplicationNode,
     VisualCloseApplicationNode,
     VisualActivateWindowNode,

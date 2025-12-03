@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 import uiautomation as auto
 
-from .element import DesktopElement
+from casare_rpa.desktop.element import DesktopElement
 
 
 def parse_selector(selector: Dict[str, Any]) -> Dict[str, Any]:

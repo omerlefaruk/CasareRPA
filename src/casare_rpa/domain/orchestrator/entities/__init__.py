@@ -1,10 +1,17 @@
 """Orchestrator domain entities."""
 
-from .robot import Robot, RobotStatus, RobotCapability
-from .job import Job, JobStatus, JobPriority
-from .workflow import Workflow, WorkflowStatus
-from .schedule import Schedule, ScheduleFrequency
-from .dashboard_metrics import DashboardMetrics, JobHistoryEntry
+from casare_rpa.domain.orchestrator.entities.dashboard_metrics import (
+    DashboardMetrics,
+    JobHistoryEntry,
+)
+from casare_rpa.domain.orchestrator.entities.job import Job, JobPriority, JobStatus
+from casare_rpa.domain.orchestrator.entities.robot import (
+    Robot,
+    RobotCapability,
+    RobotStatus,
+)
+from casare_rpa.domain.orchestrator.entities.schedule import Schedule, ScheduleFrequency
+from casare_rpa.domain.orchestrator.entities.workflow import Workflow, WorkflowStatus
 
 __all__ = [
     "Robot",

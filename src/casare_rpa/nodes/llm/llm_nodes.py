@@ -18,8 +18,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.llm_resource_manager import LLMResourceManager
-
-from .llm_base import LLMBaseNode
+from casare_rpa.nodes.llm.llm_base import LLMBaseNode
 
 
 class LLMCompletionNode(LLMBaseNode):

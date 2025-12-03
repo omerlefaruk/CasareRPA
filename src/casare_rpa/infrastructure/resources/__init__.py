@@ -3,61 +3,63 @@ CasareRPA - Infrastructure Resources
 Resource managers for external infrastructure (browser, desktop, LLM, etc.).
 """
 
-from .browser_resource_manager import BrowserResourceManager
-from .llm_resource_manager import (
-    LLMResourceManager,
-    LLMConfig,
-    LLMProvider,
-    LLMResponse,
-    LLMUsageMetrics,
+from casare_rpa.infrastructure.resources.browser_resource_manager import (
+    BrowserResourceManager,
 )
-from .document_ai_manager import (
+from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
-    DocumentType,
     DocumentClassification,
+    DocumentType,
     ExtractionResult,
     TableExtractionResult,
     ValidationResult,
 )
-from .telegram_client import (
+from casare_rpa.infrastructure.resources.google_calendar_client import (
+    Calendar,
+    CalendarConfig,
+    CalendarEvent,
+    FreeBusyInfo,
+    GoogleCalendarAPIError,
+    GoogleCalendarClient,
+)
+from casare_rpa.infrastructure.resources.google_client import (
+    SCOPES as GOOGLE_SCOPES,
+    GoogleAPIClient,
+    GoogleAPIError,
+    GoogleAuthError,
+    GoogleConfig,
+    GoogleCredentials,
+    GoogleQuotaError,
+    GoogleScope,
+    create_google_client,
+)
+from casare_rpa.infrastructure.resources.google_docs_client import (
+    DocumentStyle,
+    ExportFormat as DocsExportFormat,
+    GoogleDocsAPIError,
+    GoogleDocsClient,
+    GoogleDocsConfig,
+    GoogleDocument,
+)
+from casare_rpa.infrastructure.resources.llm_resource_manager import (
+    LLMConfig,
+    LLMProvider,
+    LLMResourceManager,
+    LLMResponse,
+    LLMUsageMetrics,
+)
+from casare_rpa.infrastructure.resources.telegram_client import (
+    TelegramAPIError,
     TelegramClient,
     TelegramConfig,
     TelegramMessage,
-    TelegramAPIError,
 )
-from .whatsapp_client import (
+from casare_rpa.infrastructure.resources.whatsapp_client import (
+    WhatsAppAPIError,
     WhatsAppClient,
     WhatsAppConfig,
     WhatsAppMessage,
     WhatsAppTemplate,
-    WhatsAppAPIError,
-)
-from .google_client import (
-    GoogleAPIClient,
-    GoogleConfig,
-    GoogleCredentials,
-    GoogleScope,
-    GoogleAPIError,
-    GoogleAuthError,
-    GoogleQuotaError,
-    SCOPES as GOOGLE_SCOPES,
-    create_google_client,
-)
-from .google_docs_client import (
-    GoogleDocsClient,
-    GoogleDocsConfig,
-    GoogleDocument,
-    GoogleDocsAPIError,
-    ExportFormat as DocsExportFormat,
-    DocumentStyle,
-)
-from .google_calendar_client import (
-    GoogleCalendarClient,
-    GoogleCalendarAPIError,
-    CalendarConfig,
-    CalendarEvent,
-    Calendar,
-    FreeBusyInfo,
 )
 
 __all__ = [

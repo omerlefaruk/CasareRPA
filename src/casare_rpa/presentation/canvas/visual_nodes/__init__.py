@@ -5,14 +5,14 @@ All visual nodes organized into categories for better navigation.
 """
 
 # Basic (3 nodes)
-from .basic import (
+from casare_rpa.presentation.canvas.visual_nodes.basic import (
     VisualStartNode,
     VisualEndNode,
     VisualCommentNode,
 )
 
 # Browser (18 nodes)
-from .browser import (
+from casare_rpa.presentation.canvas.visual_nodes.browser import (
     VisualLaunchBrowserNode,
     VisualCloseBrowserNode,
     VisualNewTabNode,
@@ -34,7 +34,7 @@ from .browser import (
 )
 
 # Control Flow (16 nodes)
-from .control_flow import (
+from casare_rpa.presentation.canvas.visual_nodes.control_flow import (
     VisualIfNode,
     VisualForLoopNode,
     VisualForLoopStartNode,
@@ -54,7 +54,7 @@ from .control_flow import (
 )
 
 # Database (10 nodes)
-from .database import (
+from casare_rpa.presentation.canvas.visual_nodes.database import (
     VisualDatabaseConnectNode,
     VisualExecuteQueryNode,
     VisualExecuteNonQueryNode,
@@ -68,7 +68,7 @@ from .database import (
 )
 
 # Data Operations (40 nodes) - NEW
-from .data_operations import (
+from casare_rpa.presentation.canvas.visual_nodes.data_operations import (
     # Data operations
     VisualConcatenateNode,
     VisualFormatStringNode,
@@ -107,7 +107,7 @@ from .data_operations import (
 )
 
 # Desktop Automation (36 nodes)
-from .desktop_automation import (
+from casare_rpa.presentation.canvas.visual_nodes.desktop_automation import (
     VisualLaunchApplicationNode,
     VisualCloseApplicationNode,
     VisualActivateWindowNode,
@@ -147,7 +147,7 @@ from .desktop_automation import (
 )
 
 # Email (8 nodes)
-from .email import (
+from casare_rpa.presentation.canvas.visual_nodes.email import (
     VisualSendEmailNode,
     VisualReadEmailsNode,
     VisualGetEmailContentNode,
@@ -159,7 +159,7 @@ from .email import (
 )
 
 # Error Handling (9 nodes - TryNode moved to control_flow)
-from .error_handling import (
+from casare_rpa.presentation.canvas.visual_nodes.error_handling import (
     VisualRetryNode,
     VisualRetrySuccessNode,
     VisualRetryFailNode,
@@ -172,7 +172,7 @@ from .error_handling import (
 )
 
 # File Operations (40 nodes)
-from .file_operations import (
+from casare_rpa.presentation.canvas.visual_nodes.file_operations import (
     VisualReadFileNode,
     VisualWriteFileNode,
     VisualAppendFileNode,
@@ -216,7 +216,7 @@ from .file_operations import (
 )
 
 # Scripts (5 nodes)
-from .scripts import (
+from casare_rpa.presentation.canvas.visual_nodes.scripts import (
     VisualRunPythonScriptNode,
     VisualRunPythonFileNode,
     VisualEvalExpressionNode,
@@ -225,7 +225,7 @@ from .scripts import (
 )
 
 # System (13 nodes)
-from .system import (
+from casare_rpa.presentation.canvas.visual_nodes.system import (
     # Clipboard operations
     VisualClipboardCopyNode,
     VisualClipboardPasteNode,
@@ -246,7 +246,7 @@ from .system import (
 )
 
 # Utility (26 nodes)
-from .utility import (
+from casare_rpa.presentation.canvas.visual_nodes.utility import (
     VisualRandomNumberNode,
     VisualRandomChoiceNode,
     VisualRandomStringNode,
@@ -276,7 +276,7 @@ from .utility import (
 )
 
 # Office Automation (12 nodes)
-from .office_automation import (
+from casare_rpa.presentation.canvas.visual_nodes.office_automation import (
     VisualExcelOpenNode,
     VisualExcelReadCellNode,
     VisualExcelWriteCellNode,
@@ -292,7 +292,7 @@ from .office_automation import (
 )
 
 # REST API (7 nodes)
-from .rest_api import (
+from casare_rpa.presentation.canvas.visual_nodes.rest_api import (
     VisualHttpRequestNode,
     VisualSetHttpHeadersNode,
     VisualHttpAuthNode,
@@ -303,14 +303,14 @@ from .rest_api import (
 )
 
 # Variable (3 nodes)
-from .variable import (
+from casare_rpa.presentation.canvas.visual_nodes.variable import (
     VisualSetVariableNode,
     VisualGetVariableNode,
     VisualIncrementVariableNode,
 )
 
 # Triggers (17 nodes)
-from .triggers import (
+from casare_rpa.presentation.canvas.visual_nodes.triggers import (
     VisualWebhookTriggerNode,
     VisualScheduleTriggerNode,
     VisualFileWatchTriggerNode,
@@ -333,7 +333,7 @@ from .triggers import (
 )
 
 # AI/ML (6 nodes)
-from .ai_ml import (
+from casare_rpa.presentation.canvas.visual_nodes.ai_ml import (
     VisualLLMCompletionNode,
     VisualLLMChatNode,
     VisualLLMExtractDataNode,
@@ -343,7 +343,7 @@ from .ai_ml import (
 )
 
 # Document AI (5 nodes)
-from .document import (
+from casare_rpa.presentation.canvas.visual_nodes.document import (
     VisualClassifyDocumentNode,
     VisualExtractFormNode,
     VisualExtractInvoiceNode,
@@ -352,7 +352,7 @@ from .document import (
 )
 
 # Messaging (16 nodes)
-from .messaging import (
+from casare_rpa.presentation.canvas.visual_nodes.messaging import (
     # Telegram - Send (4)
     VisualTelegramSendMessageNode,
     VisualTelegramSendPhotoNode,
@@ -375,7 +375,7 @@ from .messaging import (
 )
 
 # Google Workspace (77 nodes = 65 + 12 Calendar)
-from .google import (
+from casare_rpa.presentation.canvas.visual_nodes.google import (
     # Calendar - Event operations (8)
     VisualCalendarListEventsNode,
     VisualCalendarGetEventNode,
@@ -445,15 +445,13 @@ from .google import (
     VisualDocsCreateDocumentNode,
     VisualDocsGetDocumentNode,
     VisualDocsGetContentNode,
-    # Docs - Text operations (3)
+    # Docs - Text operations (2)
     VisualDocsInsertTextNode,
-    VisualDocsDeleteContentNode,
     VisualDocsReplaceTextNode,
-    # Docs - Formatting (4)
+    # Docs - Formatting (3)
     VisualDocsInsertTableNode,
     VisualDocsInsertImageNode,
     VisualDocsUpdateStyleNode,
-    VisualDocsBatchUpdateNode,
     # Drive - File operations (7)
     VisualDriveUploadFileNode,
     VisualDriveDownloadFileNode,
@@ -853,15 +851,13 @@ __all__ = [
     "VisualDocsCreateDocumentNode",
     "VisualDocsGetDocumentNode",
     "VisualDocsGetContentNode",
-    # google - Docs Text (3)
+    # google - Docs Text (2)
     "VisualDocsInsertTextNode",
-    "VisualDocsDeleteContentNode",
     "VisualDocsReplaceTextNode",
-    # google - Docs Formatting (4)
+    # google - Docs Formatting (3)
     "VisualDocsInsertTableNode",
     "VisualDocsInsertImageNode",
     "VisualDocsUpdateStyleNode",
-    "VisualDocsBatchUpdateNode",
     # google - Drive File (7)
     "VisualDriveUploadFileNode",
     "VisualDriveDownloadFileNode",

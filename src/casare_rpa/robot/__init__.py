@@ -26,26 +26,27 @@ Usage:
 """
 
 # New unified agent (recommended)
-from .agent import (
-    RobotAgent,
-    RobotConfig,
-    RobotCapabilities as UnifiedRobotCapabilities,
-    AgentState as UnifiedAgentState,
+from casare_rpa.robot.agent import (
     AgentCheckpoint,
+    AgentState as UnifiedAgentState,
+    RobotAgent,
+    RobotCapabilities as UnifiedRobotCapabilities,
+    RobotConfig,
     run_agent,
 )
 
-# Legacy imports (deprecated - for backward compatibility)
-from .distributed_agent import (
-    DistributedRobotAgent,
-    DistributedRobotConfig,
-    RobotCapabilities,
-    RobotRegistration,
-    AgentState,
+# Audit
+from casare_rpa.robot.audit import (
+    AuditEntry,
+    AuditEventType,
+    AuditLogger,
+    AuditSeverity,
+    get_audit_logger,
+    init_audit_logger,
 )
 
 # Circuit breaker
-from .circuit_breaker import (
+from casare_rpa.robot.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
     CircuitBreakerOpenError,
@@ -55,24 +56,27 @@ from .circuit_breaker import (
     get_circuit_breaker_registry,
 )
 
+# Legacy imports (deprecated - for backward compatibility)
+from casare_rpa.robot.distributed_agent import (
+    AgentState,
+    DistributedRobotAgent,
+    DistributedRobotConfig,
+    RobotCapabilities,
+    RobotRegistration,
+)
+
 # Metrics
-from .metrics import (
-    MetricsCollector,
+from casare_rpa.robot.metrics import (
     JobMetrics,
+    MetricsCollector,
     NodeMetrics,
     ResourceSnapshot,
     get_metrics_collector,
 )
 
-# Audit
-from .audit import (
-    AuditLogger,
-    AuditEntry,
-    AuditEventType,
-    AuditSeverity,
-    get_audit_logger,
-    init_audit_logger,
-)
+# Note: coordination.py has been removed. For fleet coordination functionality, use:
+# - infrastructure/orchestrator/scheduling/job_assignment.py - JobAssignmentEngine
+# - infrastructure/orchestrator/scheduling/state_affinity.py - StateAffinityManager
 
 __all__ = [
     # Unified agent (recommended)

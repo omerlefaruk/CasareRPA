@@ -19,10 +19,10 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_docs_client import (
-    GoogleDocsClient,
     ExportFormat,
+    GoogleDocsClient,
 )
-from .docs_base import DocsBaseNode
+from casare_rpa.nodes.google.docs.docs_base import DocsBaseNode
 
 
 # ============================================================================

@@ -5,10 +5,10 @@ Intelligent Document Processing (IDP) nodes for automated extraction,
 classification, and validation of business documents.
 """
 
-from .document_nodes import (
+from casare_rpa.nodes.document.document_nodes import (
     ClassifyDocumentNode,
-    ExtractInvoiceNode,
     ExtractFormNode,
+    ExtractInvoiceNode,
     ExtractTableNode,
     ValidateExtractionNode,
 )

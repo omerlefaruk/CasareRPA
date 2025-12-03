@@ -28,25 +28,13 @@ from .components import (
     ToolbarBuilder,
     StatusBarManager,
     DockCreator,
+    FleetDashboardManager,
 )
+from .initializers import UIComponentInitializer, ControllerRegistrar
 from loguru import logger
 
-# Import controllers for MVC architecture
-from .controllers import (
-    WorkflowController,
-    ExecutionController,
-    NodeController,
-    ConnectionController,
-    PanelController,
-    MenuController,
-    EventBusController,
-    ViewportController,
-    SchedulingController,
-    UIStateController,
-    SelectorController,
-    ProjectController,
-    RobotController,
-)
+# Import controllers for type hints
+from .controllers import SelectorController
 
 
 class MainWindow(QMainWindow):
@@ -100,9 +88,6 @@ class MainWindow(QMainWindow):
         self._minimap: Optional[Minimap] = None
         self._central_widget: Optional[QWidget] = None
 
-        # Debug components
-        self._debug_toolbar: Optional["DebugToolbar"] = None
-
         # Validation components
         self._validation_timer: Optional["QTimer"] = None
         self._auto_validate: bool = True
@@ -113,7 +98,6 @@ class MainWindow(QMainWindow):
         self._variable_inspector_dock: Optional["VariableInspectorDock"] = None
         self._properties_panel: Optional["PropertiesPanel"] = None
         self._debug_panel: Optional["DebugPanel"] = None
-        self._node_library_panel: Optional["NodeLibraryPanel"] = None
         self._process_mining_panel = None  # ProcessMiningPanel
         self._robot_picker_panel = None  # RobotPickerPanel
         self._command_palette: Optional["CommandPalette"] = None
@@ -130,20 +114,20 @@ class MainWindow(QMainWindow):
         self._performance_dashboard: Optional["QDialog"] = None
         self._fleet_dashboard_dialog: Optional["QDialog"] = None
 
-        # Controllers (MVC architecture)
-        self._workflow_controller: Optional[WorkflowController] = None
-        self._execution_controller: Optional[ExecutionController] = None
-        self._node_controller: Optional[NodeController] = None
-        self._connection_controller: Optional[ConnectionController] = None
-        self._panel_controller: Optional[PanelController] = None
-        self._menu_controller: Optional[MenuController] = None
-        self._event_bus_controller: Optional[EventBusController] = None
-        self._viewport_controller: Optional[ViewportController] = None
-        self._scheduling_controller: Optional[SchedulingController] = None
-        self._ui_state_controller: Optional[UIStateController] = None
+        # Controllers (MVC architecture) - initialized by ControllerRegistrar
+        self._workflow_controller = None
+        self._execution_controller = None
+        self._node_controller = None
+        self._connection_controller = None
+        self._panel_controller = None
+        self._menu_controller = None
+        self._event_bus_controller = None
+        self._viewport_controller = None
+        self._scheduling_controller = None
+        self._ui_state_controller = None
         self._selector_controller: Optional[SelectorController] = None
-        self._project_controller: Optional[ProjectController] = None
-        self._robot_controller: Optional[RobotController] = None
+        self._project_controller = None
+        self._robot_controller = None
 
         # Component managers (extracted from MainWindow)
         self._action_manager = ActionManager(self)
@@ -151,6 +135,9 @@ class MainWindow(QMainWindow):
         self._toolbar_builder = ToolbarBuilder(self)
         self._status_bar_manager = StatusBarManager(self)
         self._dock_creator = DockCreator(self)
+        self._fleet_dashboard_manager = FleetDashboardManager(self)
+        self._ui_initializer = UIComponentInitializer(self)
+        self._controller_registrar = ControllerRegistrar(self)
 
         # === CRITICAL TIER (immediate) ===
         self._setup_window()
@@ -257,46 +244,6 @@ class MainWindow(QMainWindow):
 
     # ==================== Normal Tier Loading ====================
 
-    def _setup_validation_timer(self) -> None:
-        """Setup validation timer for debounced real-time validation."""
-        self._validation_timer = QTimer(self)
-        self._validation_timer.setSingleShot(True)
-        self._validation_timer.setInterval(500)
-        self._validation_timer.timeout.connect(self._do_deferred_validation)
-
-    def _create_debug_components(self) -> None:
-        """Create debug toolbar and debug panel."""
-        from .ui.toolbars.debug_toolbar import DebugToolbar
-
-        self._debug_toolbar = DebugToolbar(self)
-        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self._debug_toolbar)
-
-        # Connect debug toolbar signals
-        self._debug_toolbar.debug_mode_toggled.connect(self._on_debug_mode_toggled)
-        self._debug_toolbar.step_requested.connect(self._on_debug_step_over)
-        self._debug_toolbar.continue_requested.connect(self._on_debug_continue)
-        self._debug_toolbar.stop_requested.connect(self._on_stop_workflow)
-        self._debug_toolbar.toggle_breakpoint_requested.connect(
-            self._on_toggle_breakpoint
-        )
-        self._debug_toolbar.clear_breakpoints_requested.connect(
-            self._on_clear_breakpoints
-        )
-
-        # Create debug panel (Call Stack, Watch, Breakpoints)
-        self._debug_panel = self._dock_creator.create_debug_panel()
-
-        # Create process mining panel (AI-powered process discovery)
-        self._process_mining_panel = self._dock_creator.create_process_mining_panel()
-
-        try:
-            view_menu = self._find_view_menu()
-            if view_menu:
-                view_menu.addSeparator()
-                view_menu.addAction(self._debug_toolbar.toggleViewAction())
-        except RuntimeError:
-            pass  # View menu already deleted
-
     def _find_view_menu(self):
         """Get the View menu (stored reference or fallback search)."""
         # Use stored reference if available
@@ -314,52 +261,19 @@ class MainWindow(QMainWindow):
 
     def ensure_normal_components_loaded(self) -> None:
         """Ensure NORMAL tier components are loaded (idempotent)."""
-        if not self._normal_components_loaded:
-            self._load_normal_components()
+        self._ui_initializer.ensure_normal_components_loaded()
+        self._normal_components_loaded = self._ui_initializer.is_normal_loaded
 
     def showEvent(self, event) -> None:
         """Handle window show event - load NORMAL tier components."""
         super().showEvent(event)
-        if not self._normal_components_loaded:
-            QTimer.singleShot(100, self._load_normal_components)
+        if not self._ui_initializer.is_normal_loaded:
+            self._ui_initializer.schedule_deferred_load(100)
 
     def _load_normal_components(self) -> None:
         """Load NORMAL tier components after window is shown."""
-        if self._normal_components_loaded:
-            return
-
-        import time
-
-        start_time = time.perf_counter()
-
-        logger.debug("MainWindow: Loading normal tier components...")
-
-        # Create panels and docks via DockCreator
-        self._node_library_panel = self._dock_creator.create_node_library_panel()
-        self._bottom_panel = self._dock_creator.create_bottom_panel()
-        self._variable_inspector_dock = (
-            self._dock_creator.create_variable_inspector_dock()
-        )
-        self._properties_panel = self._dock_creator.create_properties_panel()
-        dock, timeline = self._dock_creator.create_execution_timeline_dock()
-        self._execution_timeline_dock = dock
-        self._execution_timeline = timeline
-
-        self._create_debug_components()
-        self._setup_validation_timer()
-
-        # Create robot picker panel with robot controller
-        self._robot_picker_panel = self._dock_creator.create_robot_picker_panel(
-            self._robot_controller
-        )
-
-        self._normal_components_loaded = True
-
-        if self._ui_state_controller:
-            self._ui_state_controller.restore_state()
-
-        elapsed = (time.perf_counter() - start_time) * 1000
-        logger.info(f"MainWindow: Normal tier components loaded in {elapsed:.2f}ms")
+        self._ui_initializer.load_normal_components()
+        self._normal_components_loaded = self._ui_initializer.is_normal_loaded
 
     # ==================== Panel Toggle Handlers ====================
 
@@ -738,9 +652,6 @@ class MainWindow(QMainWindow):
     def get_process_mining_panel(self):
         return self._process_mining_panel
 
-    def get_debug_toolbar(self) -> Optional["DebugToolbar"]:
-        return self._debug_toolbar if hasattr(self, "_debug_toolbar") else None
-
     def get_variable_inspector(self):
         return self._variable_inspector_dock
 
@@ -992,13 +903,6 @@ class MainWindow(QMainWindow):
         if self._execution_controller:
             self._execution_controller.clear_breakpoints()
 
-    def _on_node_library_create(self, node_type: str, identifier: str) -> None:
-        """Handle node creation request from node library panel."""
-        if self._node_controller:
-            # Create node at canvas center
-            self._node_controller.create_node_at_center(node_type, identifier)
-            logger.debug(f"Created node from library: {node_type}")
-
     def _on_select_nearest_node(self) -> None:
         if self._node_controller:
             self._node_controller.select_nearest_node()
@@ -1120,12 +1024,12 @@ class MainWindow(QMainWindow):
 
     def _on_toggle_recording(self, checked: bool) -> None:
         if self._selector_controller:
-            if checked:
-                import asyncio
+            import asyncio
 
+            if checked:
                 asyncio.create_task(self._selector_controller.start_recording())
             else:
-                self._selector_controller.stop_recording()
+                asyncio.create_task(self._selector_controller.stop_recording())
 
     def _on_open_desktop_selector_builder(self) -> None:
         if self._menu_controller:
@@ -1176,686 +1080,8 @@ class MainWindow(QMainWindow):
     # ==================== Fleet Dashboard ====================
 
     def _on_fleet_dashboard(self) -> None:
-        """Open the fleet management dashboard dialog."""
-        from casare_rpa.presentation.canvas.ui.dialogs import FleetDashboardDialog
-
-        self._fleet_dashboard_dialog = FleetDashboardDialog(self)
-        self._fleet_dashboard_dialog.refresh_requested.connect(
-            self._on_fleet_refresh_requested
-        )
-        self._fleet_dashboard_dialog.robot_edited.connect(self._on_fleet_robot_edited)
-        self._fleet_dashboard_dialog.robot_deleted.connect(self._on_fleet_robot_deleted)
-        self._fleet_dashboard_dialog.job_cancelled.connect(self._on_fleet_job_cancelled)
-        self._fleet_dashboard_dialog.job_retried.connect(self._on_fleet_job_retried)
-        self._fleet_dashboard_dialog.schedule_enabled_changed.connect(
-            self._on_fleet_schedule_toggled
-        )
-        self._fleet_dashboard_dialog.schedule_edited.connect(
-            self._on_fleet_schedule_edited
-        )
-        self._fleet_dashboard_dialog.schedule_deleted.connect(
-            self._on_fleet_schedule_deleted
-        )
-        self._fleet_dashboard_dialog.schedule_run_now.connect(
-            self._on_fleet_schedule_run_now
-        )
-
-        # Check connection and trigger initial refresh
-        self._fleet_check_connection_and_refresh()
-
-        self._fleet_dashboard_dialog.show()
-        logger.info("Fleet Dashboard opened")
-
-    def _fleet_check_connection_and_refresh(self) -> None:
-        """Check orchestrator connection status and trigger initial refresh."""
-        import asyncio
-
-        async def connect_and_refresh():
-            """Async connection and refresh."""
-            # Try to connect to orchestrator via robot controller
-            if self._robot_controller:
-                try:
-                    connected = await self._robot_controller.connect_to_orchestrator()
-                    if connected:
-                        url = self._robot_controller.orchestrator_url or "Orchestrator"
-                        self._fleet_dashboard_dialog.set_connection_status(
-                            True, f"Connected to {url}"
-                        )
-                        self._fleet_dashboard_dialog.set_status("Refreshing data...")
-                        await self._fleet_refresh_all_data()
-                        return
-                except Exception as e:
-                    logger.warning(f"Failed to connect to orchestrator: {e}")
-
-            # Fall back to local mode
-            self._fleet_dashboard_dialog.set_connection_status(False, "Local Mode")
-            self._fleet_dashboard_dialog.set_status(
-                "Using local storage (orchestrator not available)"
-            )
-            await self._fleet_refresh_all_data()
-
-        asyncio.create_task(connect_and_refresh())
-
-    async def _fleet_refresh_all_data(self) -> None:
-        """Refresh all fleet dashboard data from orchestrator/local services."""
-        from PySide6.QtWidgets import QMessageBox
-
-        if (
-            not hasattr(self, "_fleet_dashboard_dialog")
-            or not self._fleet_dashboard_dialog
-        ):
-            return
-
-        try:
-            # Get robots data
-            robots = await self._fleet_get_robots()
-            if self._fleet_dashboard_dialog:
-                self._fleet_dashboard_dialog.update_robots(robots)
-                self._fleet_dashboard_dialog.update_api_keys_robots(
-                    [{"id": r.id, "name": r.name} for r in robots]
-                )
-
-            # Get jobs data
-            jobs = await self._fleet_get_jobs()
-            if self._fleet_dashboard_dialog:
-                self._fleet_dashboard_dialog.update_jobs(jobs)
-
-            # Get schedules data
-            schedules = await self._fleet_get_schedules()
-            if self._fleet_dashboard_dialog:
-                self._fleet_dashboard_dialog.update_schedules(schedules)
-
-            # Get analytics data
-            analytics = await self._fleet_get_analytics(robots, jobs)
-            if self._fleet_dashboard_dialog:
-                self._fleet_dashboard_dialog.update_analytics(analytics)
-                self._fleet_dashboard_dialog.set_status("Data refreshed successfully")
-
-        except Exception as e:
-            logger.error(f"Failed to refresh fleet data: {e}")
-            if self._fleet_dashboard_dialog:
-                self._fleet_dashboard_dialog.set_status(f"Refresh failed: {e}")
-            QMessageBox.warning(
-                self,
-                "Refresh Failed",
-                f"Failed to refresh fleet data:\n{e}",
-            )
-
-    async def _fleet_get_robots(self) -> list:
-        """Get robots from robot controller or local repository."""
-        if self._robot_controller:
-            await self._robot_controller.refresh_robots()
-            return self._robot_controller.robots
-        return []
-
-    async def _fleet_get_jobs(self) -> list:
-        """Get jobs from orchestrator API or local storage."""
-        try:
-            # Try orchestrator API first via robot controller's client
-            if self._robot_controller and self._robot_controller.is_connected:
-                client = self._robot_controller._orchestrator_client
-                if client:
-                    job_data_list = await client.get_jobs(limit=100)
-                    return [
-                        {
-                            "id": j.id,
-                            "workflow_name": j.workflow_name,
-                            "robot_name": j.robot_name,
-                            "status": j.status,
-                            "progress": j.progress,
-                            "created_at": str(j.created_at) if j.created_at else "",
-                            "started_at": str(j.started_at) if j.started_at else "",
-                            "completed_at": str(j.completed_at)
-                            if j.completed_at
-                            else "",
-                        }
-                        for j in job_data_list
-                    ]
-
-            # Fall back to local storage
-            from casare_rpa.infrastructure.orchestrator.persistence import (
-                LocalJobRepository,
-                LocalStorageRepository,
-            )
-
-            storage = LocalStorageRepository()
-            repo = LocalJobRepository(storage)
-            jobs = await repo.get_all()
-            return [
-                {
-                    "id": j.id,
-                    "workflow_name": getattr(j, "workflow_name", ""),
-                    "robot_name": getattr(j, "robot_name", ""),
-                    "status": j.status.value
-                    if hasattr(j.status, "value")
-                    else j.status,
-                    "progress": getattr(j, "progress", 0),
-                    "created_at": str(getattr(j, "created_at", "")),
-                    "started_at": str(getattr(j, "started_at", "")),
-                    "completed_at": str(getattr(j, "completed_at", "")),
-                }
-                for j in jobs
-            ]
-        except Exception as e:
-            logger.warning(f"Failed to get jobs: {e}")
-            return []
-
-    async def _fleet_get_schedules(self) -> list:
-        """Get schedules from scheduling controller or storage."""
-        if self._scheduling_controller:
-            schedules = self._scheduling_controller.get_schedules()
-            return [
-                {
-                    "id": getattr(s, "id", str(i)),
-                    "name": getattr(s, "name", ""),
-                    "workflow_name": getattr(s, "workflow_name", ""),
-                    "cron_expression": getattr(s, "cron_expression", ""),
-                    "enabled": getattr(s, "enabled", True),
-                    "next_run": str(getattr(s, "next_run", "")),
-                    "last_run": str(getattr(s, "last_run", "")),
-                }
-                for i, s in enumerate(schedules)
-            ]
-        return []
-
-    async def _fleet_get_analytics(self, robots: list, jobs: list) -> dict:
-        """Get analytics from orchestrator API or generate locally."""
-        from collections import Counter
-
-        # Try orchestrator API first
-        if self._robot_controller and self._robot_controller.is_connected:
-            client = self._robot_controller._orchestrator_client
-            if client:
-                try:
-                    analytics = await client.get_analytics(days=7)
-                    fleet_metrics = await client.get_fleet_metrics()
-
-                    return {
-                        "total_robots": fleet_metrics.get("total_robots", len(robots)),
-                        "robots_by_status": {
-                            "online": fleet_metrics.get("active_robots", 0),
-                            "busy": fleet_metrics.get("busy_robots", 0),
-                            "offline": fleet_metrics.get("offline_robots", 0),
-                        },
-                        "total_jobs": len(jobs),
-                        "jobs_by_status": analytics.get("job_status_distribution", {}),
-                        "jobs_completed_today": analytics.get("jobs_completed", 0),
-                        "jobs_failed_today": analytics.get("jobs_failed", 0),
-                        "success_rate": analytics.get("success_rate", 0),
-                        "avg_duration_ms": analytics.get("avg_duration_ms", 0),
-                        "queue_depth": fleet_metrics.get("queue_depth", 0),
-                    }
-                except Exception as e:
-                    logger.warning(f"Failed to get analytics from API: {e}")
-
-        # Fall back to local calculation
-        robot_statuses = Counter(
-            r.status.value if hasattr(r.status, "value") else str(r.status)
-            for r in robots
-        )
-        job_statuses = Counter(j.get("status", "unknown") for j in jobs)
-
-        return {
-            "total_robots": len(robots),
-            "robots_by_status": dict(robot_statuses),
-            "total_jobs": len(jobs),
-            "jobs_by_status": dict(job_statuses),
-            "jobs_completed_today": sum(
-                1 for j in jobs if j.get("status") == "completed"
-            ),
-            "jobs_failed_today": sum(1 for j in jobs if j.get("status") == "failed"),
-        }
-
-    def _on_fleet_refresh_requested(self) -> None:
-        """Handle fleet dashboard refresh request."""
-        import asyncio
-
-        logger.debug("Fleet dashboard refresh requested")
-        asyncio.create_task(self._fleet_refresh_all_data())
-
-    def _on_fleet_robot_edited(self, robot_id: str, robot_data: dict) -> None:
-        """Handle robot edit from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Robot edited: {robot_id}")
-        asyncio.create_task(self._fleet_update_robot(robot_id, robot_data))
-
-    async def _fleet_update_robot(self, robot_id: str, robot_data: dict) -> None:
-        """Update robot via orchestrator API or local service."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            # First try HTTP API if orchestrator is configured
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if config_manager.config_exists():
-                config = config_manager.load()
-                if config.orchestrator.url:
-                    base_url = config.orchestrator.url.replace(
-                        "ws://", "http://"
-                    ).replace("wss://", "https://")
-                    base_url = base_url.rstrip("/ws").rstrip("/")
-
-                    async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.patch(
-                            f"{base_url}/robots/{robot_id}",
-                            json=robot_data,
-                            headers={
-                                "Authorization": f"Bearer {config.orchestrator.api_key}"
-                            },
-                        )
-                        response.raise_for_status()
-
-                    logger.info(f"Robot {robot_id} updated via API")
-                    self.show_status("Robot updated successfully", 3000)
-                    await self._fleet_refresh_all_data()
-                    return
-
-            # Fall back to local message
-            QMessageBox.information(
-                self, "Local Mode", "Robot editing requires orchestrator connection"
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to update robot via API: {e}")
-            QMessageBox.warning(
-                self, "Update Failed", f"API error: {e.response.status_code}"
-            )
-        except ImportError:
-            logger.debug("httpx not available")
-            QMessageBox.information(
-                self, "Local Mode", "Robot editing requires orchestrator connection"
-            )
-        except Exception as e:
-            logger.error(f"Failed to update robot: {e}")
-            QMessageBox.warning(self, "Update Failed", f"Failed to update robot:\n{e}")
-
-    def _on_fleet_robot_deleted(self, robot_id: str) -> None:
-        """Handle robot deletion from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Robot deleted: {robot_id}")
-        asyncio.create_task(self._fleet_delete_robot(robot_id))
-
-    async def _fleet_delete_robot(self, robot_id: str) -> None:
-        """Delete robot via orchestrator API or local service."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if config_manager.config_exists():
-                config = config_manager.load()
-                if config.orchestrator.url:
-                    base_url = config.orchestrator.url.replace(
-                        "ws://", "http://"
-                    ).replace("wss://", "https://")
-                    base_url = base_url.rstrip("/ws").rstrip("/")
-
-                    async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.delete(
-                            f"{base_url}/robots/{robot_id}",
-                            headers={
-                                "Authorization": f"Bearer {config.orchestrator.api_key}"
-                            },
-                        )
-                        response.raise_for_status()
-
-                    logger.info(f"Robot {robot_id} deleted via API")
-                    self.show_status("Robot deleted successfully", 3000)
-                    await self._fleet_refresh_all_data()
-                    return
-
-            QMessageBox.information(
-                self, "Local Mode", "Robot deletion requires orchestrator connection"
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to delete robot via API: {e}")
-            QMessageBox.warning(
-                self, "Delete Failed", f"API error: {e.response.status_code}"
-            )
-        except ImportError:
-            logger.debug("httpx not available")
-            QMessageBox.information(
-                self, "Local Mode", "Robot deletion requires orchestrator connection"
-            )
-        except Exception as e:
-            logger.error(f"Failed to delete robot: {e}")
-            QMessageBox.warning(self, "Delete Failed", f"Failed to delete robot:\n{e}")
-
-    def _on_fleet_job_cancelled(self, job_id: str) -> None:
-        """Handle job cancellation from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Job cancelled: {job_id}")
-        asyncio.create_task(self._fleet_cancel_job(job_id))
-
-    async def _fleet_cancel_job(self, job_id: str) -> None:
-        """Cancel job via orchestrator API or local service."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if config_manager.config_exists():
-                config = config_manager.load()
-                if config.orchestrator.url:
-                    base_url = config.orchestrator.url.replace(
-                        "ws://", "http://"
-                    ).replace("wss://", "https://")
-                    base_url = base_url.rstrip("/ws").rstrip("/")
-
-                    async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.post(
-                            f"{base_url}/jobs/{job_id}/cancel",
-                            json={"reason": "Cancelled by user"},
-                            headers={
-                                "Authorization": f"Bearer {config.orchestrator.api_key}"
-                            },
-                        )
-                        response.raise_for_status()
-
-                    logger.info(f"Job {job_id} cancelled via API")
-                    self.show_status("Job cancelled successfully", 3000)
-                    await self._fleet_refresh_all_data()
-                    return
-
-            QMessageBox.information(
-                self, "Local Mode", "Job cancellation requires orchestrator connection"
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to cancel job via API: {e}")
-            QMessageBox.warning(
-                self, "Cancel Failed", f"API error: {e.response.status_code}"
-            )
-        except ImportError:
-            logger.debug("httpx not available")
-            QMessageBox.information(
-                self, "Local Mode", "Job cancellation requires orchestrator connection"
-            )
-        except Exception as e:
-            logger.error(f"Failed to cancel job: {e}")
-            QMessageBox.warning(self, "Cancel Failed", f"Failed to cancel job:\n{e}")
-
-    def _on_fleet_job_retried(self, job_id: str) -> None:
-        """Handle job retry from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Job retried: {job_id}")
-        asyncio.create_task(self._fleet_retry_job(job_id))
-
-    async def _fleet_retry_job(self, job_id: str) -> None:
-        """Retry failed job via orchestrator API or local service."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if config_manager.config_exists():
-                config = config_manager.load()
-                if config.orchestrator.url:
-                    base_url = config.orchestrator.url.replace(
-                        "ws://", "http://"
-                    ).replace("wss://", "https://")
-                    base_url = base_url.rstrip("/ws").rstrip("/")
-
-                    async with httpx.AsyncClient(timeout=30.0) as client:
-                        response = await client.post(
-                            f"{base_url}/jobs/{job_id}/retry",
-                            headers={
-                                "Authorization": f"Bearer {config.orchestrator.api_key}"
-                            },
-                        )
-                        response.raise_for_status()
-                        result = response.json()
-
-                    new_job_id = result.get("job_id", "unknown")
-                    logger.info(f"Job {job_id} retried as new job {new_job_id}")
-                    self.show_status(f"Job queued for retry: {new_job_id}", 3000)
-                    await self._fleet_refresh_all_data()
-                    return
-
-            QMessageBox.information(
-                self, "Local Mode", "Job retry requires orchestrator connection"
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Failed to retry job via API: {e}")
-            QMessageBox.warning(
-                self, "Retry Failed", f"API error: {e.response.status_code}"
-            )
-        except ImportError:
-            logger.debug("httpx not available")
-            QMessageBox.information(
-                self, "Local Mode", "Job retry requires orchestrator connection"
-            )
-        except Exception as e:
-            logger.error(f"Failed to retry job: {e}")
-            QMessageBox.warning(self, "Retry Failed", f"Failed to retry job:\n{e}")
-
-    def _on_fleet_schedule_toggled(self, schedule_id: str, enabled: bool) -> None:
-        """Handle schedule enable/disable from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Schedule {schedule_id} enabled={enabled}")
-        asyncio.create_task(self._fleet_toggle_schedule(schedule_id, enabled))
-
-    async def _fleet_toggle_schedule(self, schedule_id: str, enabled: bool) -> None:
-        """Toggle schedule enabled state via orchestrator API."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if not config_manager.config_exists():
-                raise ValueError("No orchestrator configuration found")
-
-            config = config_manager.load()
-            if not config.orchestrator.url:
-                raise ValueError("No orchestrator URL configured")
-
-            # Convert WebSocket URL to HTTP URL for API calls
-            base_url = config.orchestrator.url.replace("ws://", "http://").replace(
-                "wss://", "https://"
-            )
-            # Remove /ws path if present
-            base_url = base_url.rstrip("/ws").rstrip("/")
-
-            endpoint = "enable" if enabled else "disable"
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.put(
-                    f"{base_url}/schedules/{schedule_id}/{endpoint}",
-                    headers={"Authorization": f"Bearer {config.orchestrator.api_key}"},
-                )
-                response.raise_for_status()
-
-            action = "enabled" if enabled else "disabled"
-            logger.info(f"Schedule {schedule_id} {action}")
-            self.show_status(f"Schedule {action} successfully", 3000)
-            await self._fleet_refresh_all_data()
-
-        except ImportError:
-            # Fall back to local scheduling controller
-            if self._scheduling_controller:
-                schedules = self._scheduling_controller.get_schedules()
-                for schedule in schedules:
-                    if getattr(schedule, "id", None) == schedule_id:
-                        schedule.enabled = enabled
-                        self.show_status(
-                            f"Schedule {'enabled' if enabled else 'disabled'}", 3000
-                        )
-                        await self._fleet_refresh_all_data()
-                        return
-            QMessageBox.information(
-                self, "Local Mode", "Schedule toggle requires orchestrator connection"
-            )
-        except Exception as e:
-            logger.error(f"Failed to toggle schedule: {e}")
-            QMessageBox.warning(
-                self, "Toggle Failed", f"Failed to toggle schedule:\n{e}"
-            )
-
-    def _on_fleet_schedule_edited(self, schedule_id: str) -> None:
-        """Handle schedule edit from fleet dashboard."""
-        from PySide6.QtWidgets import QMessageBox
-
-        logger.info(f"Schedule edit requested: {schedule_id}")
-
-        # Open schedule edit dialog
-        if self._scheduling_controller:
-            schedules = self._scheduling_controller.get_schedules()
-            for schedule in schedules:
-                if getattr(schedule, "id", None) == schedule_id:
-                    self._scheduling_controller.manage_schedules()
-                    return
-
-        QMessageBox.information(
-            self,
-            "Edit Schedule",
-            f"Opening schedule editor for: {schedule_id}\n\n"
-            "Use the Schedule Manager to edit this schedule.",
-        )
-        if self._scheduling_controller:
-            self._scheduling_controller.manage_schedules()
-
-    def _on_fleet_schedule_deleted(self, schedule_id: str) -> None:
-        """Handle schedule deletion from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Schedule deleted: {schedule_id}")
-        asyncio.create_task(self._fleet_delete_schedule(schedule_id))
-
-    async def _fleet_delete_schedule(self, schedule_id: str) -> None:
-        """Delete schedule via orchestrator API or local service."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if not config_manager.config_exists():
-                raise ValueError("No orchestrator configuration found")
-
-            config = config_manager.load()
-            if not config.orchestrator.url:
-                raise ValueError("No orchestrator URL configured")
-
-            # Convert WebSocket URL to HTTP URL
-            base_url = config.orchestrator.url.replace("ws://", "http://").replace(
-                "wss://", "https://"
-            )
-            base_url = base_url.rstrip("/ws").rstrip("/")
-
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.delete(
-                    f"{base_url}/schedules/{schedule_id}",
-                    headers={"Authorization": f"Bearer {config.orchestrator.api_key}"},
-                )
-                response.raise_for_status()
-
-            logger.info(f"Schedule {schedule_id} deleted")
-            self.show_status("Schedule deleted successfully", 3000)
-            await self._fleet_refresh_all_data()
-
-        except ImportError:
-            # Fall back to local scheduling controller
-            if self._scheduling_controller:
-                success = self._scheduling_controller.delete_schedule(schedule_id)
-                if success:
-                    self.show_status("Schedule deleted successfully", 3000)
-                    await self._fleet_refresh_all_data()
-                else:
-                    QMessageBox.warning(
-                        self, "Delete Failed", "Failed to delete schedule"
-                    )
-            else:
-                QMessageBox.information(
-                    self,
-                    "Local Mode",
-                    "Schedule deletion requires orchestrator connection",
-                )
-        except Exception as e:
-            logger.error(f"Failed to delete schedule: {e}")
-            QMessageBox.warning(
-                self, "Delete Failed", f"Failed to delete schedule:\n{e}"
-            )
-
-    def _on_fleet_schedule_run_now(self, schedule_id: str) -> None:
-        """Handle schedule run now from fleet dashboard."""
-        import asyncio
-
-        logger.info(f"Schedule run now: {schedule_id}")
-        asyncio.create_task(self._fleet_run_schedule_now(schedule_id))
-
-    async def _fleet_run_schedule_now(self, schedule_id: str) -> None:
-        """Trigger immediate schedule execution via orchestrator API."""
-        from PySide6.QtWidgets import QMessageBox
-
-        try:
-            import httpx
-
-            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
-
-            config_manager = ClientConfigManager()
-            if not config_manager.config_exists():
-                raise ValueError("No orchestrator configuration found")
-
-            config = config_manager.load()
-            if not config.orchestrator.url:
-                raise ValueError("No orchestrator URL configured")
-
-            # Convert WebSocket URL to HTTP URL
-            base_url = config.orchestrator.url.replace("ws://", "http://").replace(
-                "wss://", "https://"
-            )
-            base_url = base_url.rstrip("/ws").rstrip("/")
-
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.put(
-                    f"{base_url}/schedules/{schedule_id}/trigger",
-                    headers={"Authorization": f"Bearer {config.orchestrator.api_key}"},
-                )
-                response.raise_for_status()
-                result = response.json()
-
-            job_id = result.get("job_id", "unknown")
-            logger.info(f"Schedule {schedule_id} triggered, job_id={job_id}")
-            self.show_status(f"Schedule triggered, job queued: {job_id}", 3000)
-            await self._fleet_refresh_all_data()
-
-        except ImportError:
-            # Fall back to local scheduling controller
-            if self._scheduling_controller:
-                schedules = self._scheduling_controller.get_schedules()
-                for schedule in schedules:
-                    if getattr(schedule, "id", None) == schedule_id:
-                        self._scheduling_controller.run_scheduled_workflow(schedule)
-                        return
-            QMessageBox.information(
-                self,
-                "Local Mode",
-                "Schedule execution requires orchestrator connection",
-            )
-        except Exception as e:
-            logger.error(f"Failed to trigger schedule: {e}")
-            QMessageBox.warning(
-                self, "Trigger Failed", f"Failed to trigger schedule:\n{e}"
-            )
+        """Open the fleet management dashboard dialog (delegated to manager)."""
+        self._fleet_dashboard_manager.open_dashboard()
 
     # ==================== Window Events ====================
 
@@ -1869,34 +1095,14 @@ class MainWindow(QMainWindow):
             event.ignore()
 
     def _cleanup_controllers(self) -> None:
-        logger.info("Cleaning up controllers...")
+        """Clean up all controllers via registrar."""
+        self._controller_registrar.cleanup_all()
 
-        controllers = [
-            self._workflow_controller,
-            self._execution_controller,
-            self._node_controller,
-            self._connection_controller,
-            self._panel_controller,
-            self._menu_controller,
-            self._event_bus_controller,
-            self._viewport_controller,
-            self._scheduling_controller,
-            self._ui_state_controller,
-            self._project_controller,
-            self._robot_controller,
-        ]
-
-        for controller in controllers:
-            if controller:
-                try:
-                    controller.cleanup()
-                except Exception as e:
-                    logger.error(
-                        f"Error cleaning up controller {controller.__class__.__name__}: {e}"
-                    )
+        # Cleanup UI initializer
+        if self._ui_initializer:
+            self._ui_initializer.cleanup()
 
         ComponentFactory.clear()
-        logger.info("Controllers cleaned up")
 
     # ==================== UI State ====================
 
@@ -1914,33 +1120,8 @@ class MainWindow(QMainWindow):
     # ==================== Controller Initialization ====================
 
     def _init_controllers(self) -> None:
-        logger.info("Initializing MainWindow-specific controllers...")
-
-        self._connection_controller = ConnectionController(self)
-        self._panel_controller = PanelController(self)
-        self._menu_controller = MenuController(self)
-        self._event_bus_controller = EventBusController(self)
-        self._viewport_controller = ViewportController(self)
-        self._scheduling_controller = SchedulingController(self)
-        self._ui_state_controller = UIStateController(self)
-        self._project_controller = ProjectController(self)
-        self._robot_controller = RobotController(self)
-
-        self._workflow_controller = None
-        self._execution_controller = None
-        self._node_controller = None
-
-        self._connection_controller.initialize()
-        self._panel_controller.initialize()
-        self._menu_controller.initialize()
-        self._event_bus_controller.initialize()
-        self._viewport_controller.initialize()
-        self._scheduling_controller.initialize()
-        self._ui_state_controller.initialize()
-        self._project_controller.initialize()
-        self._robot_controller.initialize()
-
-        logger.info("MainWindow-specific controllers initialized successfully")
+        """Initialize MainWindow-specific controllers via registrar."""
+        self._controller_registrar.register_all()
 
     def set_controllers(
         self,
@@ -1949,108 +1130,12 @@ class MainWindow(QMainWindow):
         node_controller,
         selector_controller: Optional[SelectorController] = None,
     ) -> None:
-        self._workflow_controller = workflow_controller
-        self._execution_controller = execution_controller
-        self._node_controller = node_controller
-        self._selector_controller = selector_controller
-
-        self._connect_controller_signals()
-        self._update_actions()  # Re-enable actions now that controllers are set
-        logger.info("Controllers injected and connected to MainWindow")
-
-    def _connect_controller_signals(self) -> None:
-        logger.debug("Connecting controller signals...")
-
-        self._workflow_controller.workflow_created.connect(
-            lambda: self.workflow_new.emit()
-        )
-        self._workflow_controller.workflow_loaded.connect(
-            lambda path: self.workflow_open.emit(path)
-        )
-        self._workflow_controller.workflow_saved.connect(
-            lambda path: logger.info(f"Workflow saved: {path}")
-        )
-        self._workflow_controller.workflow_imported.connect(
-            lambda path: self.workflow_import.emit(path)
-        )
-        self._workflow_controller.workflow_imported_json.connect(
-            lambda json_str: self.workflow_import_json.emit(json_str)
-        )
-        self._workflow_controller.workflow_exported.connect(
-            lambda path: self.workflow_export_selected.emit(path)
-        )
-        self._workflow_controller.current_file_changed.connect(
-            lambda file: self._on_current_file_changed(file)
-        )
-        self._workflow_controller.modified_changed.connect(
-            lambda modified: self._on_modified_changed(modified)
+        """Set externally created controllers (from app.py) via registrar."""
+        self._controller_registrar.set_external_controllers(
+            workflow_controller,
+            execution_controller,
+            node_controller,
+            selector_controller,
         )
 
-        self._execution_controller.execution_started.connect(
-            lambda: self._on_execution_started()
-        )
-        self._execution_controller.execution_paused.connect(
-            lambda: logger.info("Execution paused")
-        )
-        self._execution_controller.execution_resumed.connect(
-            lambda: logger.info("Execution resumed")
-        )
-        self._execution_controller.execution_stopped.connect(
-            lambda: self._on_execution_stopped()
-        )
-        self._execution_controller.execution_completed.connect(
-            lambda: self._on_execution_completed()
-        )
-        self._execution_controller.execution_error.connect(
-            lambda error: self._on_execution_error(error)
-        )
-        self._execution_controller.run_to_node_requested.connect(
-            lambda node_id: self.workflow_run_to_node.emit(node_id)
-        )
-        self._execution_controller.run_single_node_requested.connect(
-            lambda node_id: self.workflow_run_single_node.emit(node_id)
-        )
-
-        self._node_controller.node_selected.connect(
-            lambda node_id: logger.debug(f"Node selected: {node_id}")
-        )
-        self._node_controller.node_deselected.connect(
-            lambda node_id: logger.debug(f"Node deselected: {node_id}")
-        )
-
-        self._panel_controller.bottom_panel_toggled.connect(
-            lambda visible: logger.debug(f"Bottom panel toggled: {visible}")
-        )
-
-        logger.debug("Controller signals connected")
-
-    def _on_current_file_changed(self, file: Optional[Path]) -> None:
-        pass
-
-    def _on_modified_changed(self, modified: bool) -> None:
-        pass
-
-    def _on_execution_started(self) -> None:
-        self.action_run.setEnabled(False)
-        self.action_pause.setEnabled(True)
-        self.action_pause.setChecked(False)
-        self.action_stop.setEnabled(True)
-        self.statusBar().showMessage("Workflow execution started...", 0)
-
-    def _on_execution_stopped(self) -> None:
-        self.action_run.setEnabled(True)
-        self.action_pause.setEnabled(False)
-        self.action_stop.setEnabled(False)
-        self.statusBar().showMessage("Workflow execution stopped", 3000)
-
-    def _on_execution_completed(self) -> None:
-        self.action_run.setEnabled(True)
-        self.action_pause.setEnabled(False)
-        self.action_stop.setEnabled(False)
-        self.statusBar().showMessage("Workflow execution completed", 3000)
-
-    def _on_execution_error(self, error: str) -> None:
-        self.action_run.setEnabled(True)
-        self.action_pause.setEnabled(False)
-        self.action_stop.setEnabled(False)
-        self.statusBar().showMessage(f"Execution error: {error}", 5000)
+    # Signal handlers are now in ControllerRegistrar

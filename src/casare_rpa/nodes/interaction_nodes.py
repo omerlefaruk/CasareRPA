@@ -3,25 +3,46 @@ Interaction nodes for element manipulation.
 
 This module provides nodes for interacting with page elements:
 clicking, typing, selecting, etc.
+
+All nodes extend BrowserBaseNode for consistent patterns:
+- Page access from context
+- Selector normalization
+- Retry logic
+- Screenshot on failure
 """
 
-import asyncio
+from typing import Any
 
+from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
+    NodeStatus,
+    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils import retry_operation, safe_int
-from ..utils.config import DEFAULT_NODE_TIMEOUT
-from ..utils.selectors.selector_normalizer import normalize_selector
-from loguru import logger
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_FORCE,
+    BROWSER_NO_WAIT_AFTER,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+    BROWSER_SELECTOR_STRICT,
+    BROWSER_TIMEOUT,
+)
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
+from casare_rpa.utils import safe_int
+from casare_rpa.utils.resilience import retry_operation
+
+
+# =============================================================================
+# ClickElementNode
+# =============================================================================
 
 
 @node_schema(
@@ -29,19 +50,12 @@ from loguru import logger
         "selector",
         PropertyType.SELECTOR,
         default="",
-        required=False,  # Can come from input port
+        required=False,
         label="Element Selector",
         tooltip="CSS or XPath selector for the element to click",
         placeholder="#button-id or //button[@name='submit']",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        label="Timeout (ms)",
-        tooltip="Maximum time to wait for element in milliseconds",
-        min_value=0,
-    ),
+    BROWSER_TIMEOUT,
     PropertyDef(
         "button",
         PropertyType.CHOICE,
@@ -66,13 +80,7 @@ from loguru import logger
         tooltip="Delay between mousedown and mouseup in milliseconds",
         min_value=0,
     ),
-    PropertyDef(
-        "force",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Force Click",
-        tooltip="Bypass actionability checks",
-    ),
+    BROWSER_FORCE,
     PropertyDef(
         "position_x",
         PropertyType.FLOAT,
@@ -95,13 +103,7 @@ from loguru import logger
         label="Modifier Keys",
         tooltip="Modifier keys to hold during click",
     ),
-    PropertyDef(
-        "no_wait_after",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="No Wait After",
-        tooltip="Skip waiting for navigations after click",
-    ),
+    BROWSER_NO_WAIT_AFTER,
     PropertyDef(
         "trial",
         PropertyType.BOOLEAN,
@@ -109,36 +111,10 @@ from loguru import logger
         label="Trial Mode",
         tooltip="Perform actionability checks without clicking",
     ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-        min_value=0,
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in milliseconds",
-        min_value=0,
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot On Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.FILE_PATH,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot (auto-generated if empty)",
-    ),
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
     PropertyDef(
         "highlight_before_click",
         PropertyType.BOOLEAN,
@@ -148,11 +124,12 @@ from loguru import logger
     ),
 )
 @executable_node
-class ClickElementNode(BaseNode):
+class ClickElementNode(BrowserBaseNode):
     """
     Click element node - clicks on a page element.
 
     Finds an element by selector and performs a click action.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
@@ -183,200 +160,126 @@ class ClickElementNode(BaseNode):
         self,
         node_id: str,
         name: str = "Click Element",
-        selector: str = "",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
-        """
-        Initialize click element node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            selector: CSS or XPath selector (ignored when config provided)
-            timeout: Timeout in milliseconds (ignored when config provided)
-
-        Note:
-            The @node_schema decorator automatically handles default_config.
-        """
-        # Config auto-merged by @node_schema decorator
+        """Initialize click element node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "ClickElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_page_passthrough_ports()
+        self.add_selector_input_port()
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute element click.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with success status
-        """
+        """Execute element click."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_input_value("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
-            # NEW: Unified parameter accessor
-            selector = self.get_parameter("selector")
-            if not selector:
-                raise ValueError("Selector is required")
-
-            # Resolve {{variable}} patterns in selector
-            selector = context.resolve_value(selector)
-
-            # Normalize selector to work with Playwright (handles XPath, CSS, ARIA, etc.)
-            normalized_selector = normalize_selector(selector)
-
-            # Get all parameters using unified accessor
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get click-specific parameters
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             button = self.get_parameter("button", "left")
-            click_count = self.get_parameter("click_count", 1)
-            delay = self.get_parameter("delay", 0)
+            click_count = safe_int(self.get_parameter("click_count", 1), 1)
+            delay = safe_int(self.get_parameter("delay", 0), 0)
             force = self.get_parameter("force", False)
             position_x = self.get_parameter("position_x")
             position_y = self.get_parameter("position_y")
             modifiers = self.get_parameter("modifiers", [])
             no_wait_after = self.get_parameter("no_wait_after", False)
             trial = self.get_parameter("trial", False)
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
-            highlight_before_click = self.get_parameter("highlight_before_click", False)
 
-            # Type conversions
-            timeout = safe_int(timeout, DEFAULT_NODE_TIMEOUT * 1000)
-            click_count = safe_int(click_count, 1)
-            delay = safe_int(delay, 0)
-            retry_count = safe_int(retry_count, 0)
-            retry_interval = safe_int(retry_interval, 1000)
-
-            logger.info(f"Clicking element: {normalized_selector}")
+            logger.info(f"Clicking element: {selector}")
 
             # Build click options
-            click_options = {"timeout": timeout}
-
-            if button and button != "left":
-                click_options["button"] = button
-
-            if click_count > 1:
-                click_options["click_count"] = click_count
-
-            if delay > 0:
-                click_options["delay"] = delay
-
-            if force:
-                click_options["force"] = True
-
-            if position_x is not None and position_y is not None:
-                try:
-                    click_options["position"] = {
-                        "x": float(position_x),
-                        "y": float(position_y),
-                    }
-                except (ValueError, TypeError):
-                    pass
-
-            if modifiers:
-                click_options["modifiers"] = modifiers
-
-            if no_wait_after:
-                click_options["no_wait_after"] = True
-
-            if trial:
-                click_options["trial"] = True
+            click_options = self._build_click_options(
+                timeout=timeout,
+                button=button,
+                click_count=click_count,
+                delay=delay,
+                force=force,
+                position_x=position_x,
+                position_y=position_y,
+                modifiers=modifiers,
+                no_wait_after=no_wait_after,
+                trial=trial,
+            )
 
             logger.debug(f"Click options: {click_options}")
 
-            async def perform_click():
-                # Highlight element before clicking if requested
-                if highlight_before_click:
-                    try:
-                        element = await page.wait_for_selector(
-                            normalized_selector, timeout=timeout
-                        )
-                        if element:
-                            await element.evaluate("""
-                                el => {
-                                    const original = el.style.outline;
-                                    el.style.outline = '3px solid #ff0000';
-                                    setTimeout(() => { el.style.outline = original; }, 300);
-                                }
-                            """)
-                            await asyncio.sleep(0.3)
-                    except Exception:
-                        pass
-
-                # Click element
-                await page.click(normalized_selector, **click_options)
+            async def perform_click() -> bool:
+                await self.highlight_if_enabled(page, selector, timeout)
+                await page.click(selector, **click_options)
                 return True
 
             result = await retry_operation(
                 perform_click,
-                max_attempts=retry_count + 1,
-                delay_seconds=retry_interval / 1000,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
                 operation_name=f"click {selector}",
             )
 
             if result.success:
                 self.set_output_value("page", page)
-                self.status = NodeStatus.SUCCESS
-                logger.info(
-                    f"Element clicked successfully: {selector} (attempt {result.attempts})"
+                return self.success_result(
+                    {"selector": selector, "attempts": result.attempts}
                 )
-                return {
-                    "success": True,
-                    "data": {"selector": selector, "attempts": result.attempts},
-                    "next_nodes": ["exec_out"],
-                }
 
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
-
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"click_fail_{timestamp}.png"
-
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise result.last_error
+            # Handle failure
+            await self.screenshot_on_failure(page, "click_fail")
+            raise result.last_error or RuntimeError("Click failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to click element: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        # Schema handles validation via @node_schema decorator
-        return True, ""
+    def _build_click_options(
+        self,
+        timeout: int,
+        button: str,
+        click_count: int,
+        delay: int,
+        force: bool,
+        position_x: Any,
+        position_y: Any,
+        modifiers: list,
+        no_wait_after: bool,
+        trial: bool,
+    ) -> dict:
+        """Build Playwright click options dictionary."""
+        options: dict = {"timeout": timeout}
+
+        if button and button != "left":
+            options["button"] = button
+        if click_count > 1:
+            options["click_count"] = click_count
+        if delay > 0:
+            options["delay"] = delay
+        if force:
+            options["force"] = True
+        if position_x is not None and position_y is not None:
+            try:
+                options["position"] = {"x": float(position_x), "y": float(position_y)}
+            except (ValueError, TypeError):
+                pass
+        if modifiers:
+            options["modifiers"] = modifiers
+        if no_wait_after:
+            options["no_wait_after"] = True
+        if trial:
+            options["trial"] = True
+
+        return options
+
+
+# =============================================================================
+# TypeTextNode
+# =============================================================================
 
 
 @node_schema(
@@ -384,7 +287,7 @@ class ClickElementNode(BaseNode):
         "selector",
         PropertyType.SELECTOR,
         default="",
-        required=False,  # Can come from input port
+        required=False,
         label="Input Selector",
         tooltip="CSS or XPath selector for the input element",
         placeholder="#email or //input[@name='username']",
@@ -393,7 +296,7 @@ class ClickElementNode(BaseNode):
         "text",
         PropertyType.STRING,
         default="",
-        required=False,  # Can come from input port
+        required=False,
         label="Text",
         tooltip="Text to type into the input field",
         placeholder="Text to enter...",
@@ -406,14 +309,7 @@ class ClickElementNode(BaseNode):
         tooltip="Delay between keystrokes in milliseconds",
         min_value=0,
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        label="Timeout (ms)",
-        tooltip="Element wait timeout in milliseconds",
-        min_value=0,
-    ),
+    BROWSER_TIMEOUT,
     PropertyDef(
         "clear_first",
         PropertyType.BOOLEAN,
@@ -428,27 +324,9 @@ class ClickElementNode(BaseNode):
         label="Press Sequentially",
         tooltip="Use type() for character-by-character (overrides delay)",
     ),
-    PropertyDef(
-        "force",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Force",
-        tooltip="Bypass actionability checks",
-    ),
-    PropertyDef(
-        "no_wait_after",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="No Wait After",
-        tooltip="Skip waiting for navigations",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict",
-        tooltip="Require exactly one matching element",
-    ),
+    BROWSER_FORCE,
+    BROWSER_NO_WAIT_AFTER,
+    BROWSER_SELECTOR_STRICT,
     PropertyDef(
         "press_enter_after",
         PropertyType.BOOLEAN,
@@ -463,43 +341,18 @@ class ClickElementNode(BaseNode):
         label="Press Tab After",
         tooltip="Press Tab key after typing",
     ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-        min_value=0,
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in milliseconds",
-        min_value=0,
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot On Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.FILE_PATH,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot (auto-generated if empty)",
-    ),
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
 )
 @executable_node
-class TypeTextNode(BaseNode):
+class TypeTextNode(BrowserBaseNode):
     """
     Type text node - types text into an input field.
 
     Finds an input element and types the specified text.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
@@ -531,79 +384,37 @@ class TypeTextNode(BaseNode):
         self,
         node_id: str,
         name: str = "Type Text",
-        selector: str = "",
-        text: str = "",
-        delay: int = 0,
         **kwargs,
     ) -> None:
-        """
-        Initialize type text node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            selector: CSS or XPath selector (ignored when config provided)
-            text: Text to type (ignored when config provided)
-            delay: Delay between keystrokes (ignored when config provided)
-
-        Note:
-            The @node_schema decorator automatically handles default_config.
-        """
-        # Config auto-merged by @node_schema decorator
+        """Initialize type text node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "TypeTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
+        self.add_page_passthrough_ports()
+        self.add_selector_input_port()
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute text typing.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with success status
-        """
+        """Execute text typing."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_input_value("page")
-            if page is None:
-                page = context.get_active_page()
-
-            if page is None:
-                raise ValueError("No page instance found")
-
-            # NEW: Unified parameter accessor
-            selector = self.get_parameter("selector")
-            if not selector:
-                raise ValueError("Selector is required")
-
-            # Resolve {{variable}} patterns in selector
-            selector = context.resolve_value(selector)
-
-            # Normalize selector to work with Playwright
-            normalized_selector = normalize_selector(selector)
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
             # Get text parameter (allow empty string)
-            text = self.get_parameter("text", "")
-            if text is None:
-                text = ""
-
-            # Resolve {{variable}} patterns in text
+            text = self.get_parameter("text", "") or ""
             text = context.resolve_value(text)
 
-            # Get all other parameters
-            delay = self.get_parameter("delay", 0)
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get type-specific parameters
+            delay = safe_int(self.get_parameter("delay", 0), 0)
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             clear_first = self.get_parameter("clear_first", True)
             press_sequentially = self.get_parameter("press_sequentially", False)
             force = self.get_parameter("force", False)
@@ -611,47 +422,28 @@ class TypeTextNode(BaseNode):
             strict = self.get_parameter("strict", False)
             press_enter_after = self.get_parameter("press_enter_after", False)
             press_tab_after = self.get_parameter("press_tab_after", False)
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
 
-            # Type conversions
-            delay = safe_int(delay, 0)
-            timeout = safe_int(timeout, DEFAULT_NODE_TIMEOUT * 1000)
-            retry_count = safe_int(retry_count, 0)
-            retry_interval = safe_int(retry_interval, 1000)
-
-            logger.info(f"Typing text into element: {normalized_selector}")
+            logger.info(f"Typing text into element: {selector}")
 
             # Build fill/type options
-            fill_options = {"timeout": timeout}
-            if force:
-                fill_options["force"] = True
-            if no_wait_after:
-                fill_options["no_wait_after"] = True
-            if strict:
-                fill_options["strict"] = True
+            fill_options = self._build_fill_options(
+                timeout=timeout,
+                force=force,
+                no_wait_after=no_wait_after,
+                strict=strict,
+            )
 
-            async def perform_type():
-                # Type text - use fill() for immediate input, type() for character-by-character with delay
+            async def perform_type() -> bool:
                 if delay > 0 or press_sequentially:
-                    # Clear the field first if configured, then type with delay
                     if clear_first:
-                        await page.fill(normalized_selector, "", **fill_options)
+                        await page.fill(selector, "", **fill_options)
                     type_delay = delay if delay > 0 else 50
-                    await page.type(
-                        normalized_selector, text, delay=type_delay, timeout=timeout
-                    )
+                    await page.type(selector, text, delay=type_delay, timeout=timeout)
                 else:
-                    # Use fill() for immediate input (faster)
-                    await page.fill(normalized_selector, text, **fill_options)
+                    await page.fill(selector, text, **fill_options)
 
-                # Press Enter after if requested
                 if press_enter_after:
                     await page.keyboard.press("Enter")
-
-                # Press Tab after if requested
                 if press_tab_after:
                     await page.keyboard.press("Tab")
 
@@ -659,59 +451,48 @@ class TypeTextNode(BaseNode):
 
             result = await retry_operation(
                 perform_type,
-                max_attempts=retry_count + 1,
-                delay_seconds=retry_interval / 1000,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
                 operation_name=f"type text into {selector}",
             )
 
             if result.success:
                 self.set_output_value("page", page)
-                self.status = NodeStatus.SUCCESS
-                logger.info(
-                    f"Text typed successfully: {selector} (attempt {result.attempts})"
-                )
-                return {
-                    "success": True,
-                    "data": {
+                return self.success_result(
+                    {
                         "selector": selector,
                         "text_length": len(text),
                         "attempts": result.attempts,
-                    },
-                    "next_nodes": ["exec_out"],
-                }
+                    }
+                )
 
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
-
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"type_text_fail_{timestamp}.png"
-
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise result.last_error
+            await self.screenshot_on_failure(page, "type_text_fail")
+            raise result.last_error or RuntimeError("Type text failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to type text: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        # Schema handles validation via @node_schema decorator
-        return True, ""
+    def _build_fill_options(
+        self,
+        timeout: int,
+        force: bool,
+        no_wait_after: bool,
+        strict: bool,
+    ) -> dict:
+        """Build Playwright fill options dictionary."""
+        options: dict = {"timeout": timeout}
+        if force:
+            options["force"] = True
+        if no_wait_after:
+            options["no_wait_after"] = True
+        if strict:
+            options["strict"] = True
+        return options
+
+
+# =============================================================================
+# SelectDropdownNode
+# =============================================================================
 
 
 @node_schema(
@@ -719,7 +500,7 @@ class TypeTextNode(BaseNode):
         "selector",
         PropertyType.SELECTOR,
         default="",
-        required=False,  # Can come from input port
+        required=False,
         label="Select Selector",
         tooltip="CSS or XPath selector for the select element",
         placeholder="#country or //select[@name='region']",
@@ -728,40 +509,15 @@ class TypeTextNode(BaseNode):
         "value",
         PropertyType.STRING,
         default="",
-        required=False,  # Can come from input port
+        required=False,
         label="Value",
         tooltip="Value, label, or index to select",
         placeholder="Option value, label, or index",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        label="Timeout (ms)",
-        tooltip="Maximum time to wait in milliseconds",
-        min_value=0,
-    ),
-    PropertyDef(
-        "force",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Force",
-        tooltip="Bypass actionability checks",
-    ),
-    PropertyDef(
-        "no_wait_after",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="No Wait After",
-        tooltip="Skip waiting for navigations after selection",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict",
-        tooltip="Require exactly one matching element",
-    ),
+    BROWSER_TIMEOUT,
+    BROWSER_FORCE,
+    BROWSER_NO_WAIT_AFTER,
+    BROWSER_SELECTOR_STRICT,
     PropertyDef(
         "select_by",
         PropertyType.CHOICE,
@@ -770,43 +526,18 @@ class TypeTextNode(BaseNode):
         label="Select By",
         tooltip="Selection method (value, label, or index)",
     ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-        min_value=0,
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in milliseconds",
-        min_value=0,
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot On Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.FILE_PATH,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot (auto-generated if empty)",
-    ),
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
 )
 @executable_node
-class SelectDropdownNode(BaseNode):
+class SelectDropdownNode(BrowserBaseNode):
     """
     Select dropdown node - selects an option from a dropdown.
 
     Finds a select element and chooses an option by value, label, or index.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
@@ -834,179 +565,103 @@ class SelectDropdownNode(BaseNode):
         self,
         node_id: str,
         name: str = "Select Dropdown",
-        selector: str = "",
-        value: str = "",
-        timeout: int = DEFAULT_NODE_TIMEOUT * 1000,
         **kwargs,
     ) -> None:
-        """
-        Initialize select dropdown node.
-
-        Args:
-            node_id: Unique identifier for this node
-            name: Display name for the node
-            selector: CSS or XPath selector (ignored when config provided)
-            value: Value or label to select (ignored when config provided)
-            timeout: Timeout in milliseconds (ignored when config provided)
-
-        Note:
-            The @node_schema decorator automatically handles default_config.
-        """
-        # Config auto-merged by @node_schema decorator
+        """Initialize select dropdown node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "SelectDropdownNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
+        self.add_page_passthrough_ports()
+        self.add_selector_input_port()
         self.add_input_port("value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute dropdown selection.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with success status
-        """
+        """Execute dropdown selection."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_input_value("page")
-            if page is None:
-                page = context.get_active_page()
-
-            if page is None:
-                raise ValueError("No page instance found")
-
-            # NEW: Unified parameter accessor
-            selector = self.get_parameter("selector")
-            if not selector:
-                raise ValueError("Selector is required")
-
-            # Resolve {{variable}} patterns in selector
-            selector = context.resolve_value(selector)
-
-            # Normalize selector to work with Playwright
-            normalized_selector = normalize_selector(selector)
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
             # Get value parameter
             value = self.get_parameter("value")
             if not value:
                 raise ValueError("Value is required")
-
-            # Resolve {{variable}} patterns in value
             value = context.resolve_value(value)
 
-            # Get all other parameters
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            # Get select-specific parameters
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             force = self.get_parameter("force", False)
             no_wait_after = self.get_parameter("no_wait_after", False)
             strict = self.get_parameter("strict", False)
             select_by = self.get_parameter("select_by", "value")
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
-
-            # Type conversions
-            timeout = safe_int(timeout, DEFAULT_NODE_TIMEOUT * 1000)
-            retry_count = safe_int(retry_count, 0)
-            retry_interval = safe_int(retry_interval, 1000)
 
             logger.info(
-                f"Selecting dropdown option: {normalized_selector} = {value} (by={select_by})"
+                f"Selecting dropdown option: {selector} = {value} (by={select_by})"
             )
 
             # Build select options
-            select_options = {"timeout": timeout}
+            select_options = self._build_select_options(
+                timeout=timeout,
+                force=force,
+                no_wait_after=no_wait_after,
+                strict=strict,
+            )
 
-            if force:
-                select_options["force"] = True
-
-            if no_wait_after:
-                select_options["no_wait_after"] = True
-
-            if strict:
-                select_options["strict"] = True
-
-            logger.debug(f"Select options: {select_options}")
-
-            async def perform_select():
-                # Select option based on select_by mode
+            async def perform_select() -> bool:
                 if select_by == "index":
                     await page.select_option(
-                        normalized_selector, index=int(value), **select_options
+                        selector, index=int(value), **select_options
                     )
                 elif select_by == "label":
-                    await page.select_option(
-                        normalized_selector, label=value, **select_options
-                    )
-                else:  # value (default)
-                    await page.select_option(
-                        normalized_selector, value=value, **select_options
-                    )
+                    await page.select_option(selector, label=value, **select_options)
+                else:
+                    await page.select_option(selector, value=value, **select_options)
                 return True
 
             result = await retry_operation(
                 perform_select,
-                max_attempts=retry_count + 1,
-                delay_seconds=retry_interval / 1000,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
                 operation_name=f"select dropdown {selector}",
             )
 
             if result.success:
                 self.set_output_value("page", page)
-                self.status = NodeStatus.SUCCESS
-                logger.info(
-                    f"Dropdown selected successfully: {selector} (attempt {result.attempts})"
-                )
-                return {
-                    "success": True,
-                    "data": {
+                return self.success_result(
+                    {
                         "selector": selector,
                         "value": value,
                         "select_by": select_by,
                         "attempts": result.attempts,
-                    },
-                    "next_nodes": ["exec_out"],
-                }
+                    }
+                )
 
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
-
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"select_dropdown_fail_{timestamp}.png"
-
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise result.last_error
+            await self.screenshot_on_failure(page, "select_dropdown_fail")
+            raise result.last_error or RuntimeError("Select dropdown failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to select dropdown: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        # Schema handles validation via @node_schema decorator
-        return True, ""
+    def _build_select_options(
+        self,
+        timeout: int,
+        force: bool,
+        no_wait_after: bool,
+        strict: bool,
+    ) -> dict:
+        """Build Playwright select options dictionary."""
+        options: dict = {"timeout": timeout}
+        if force:
+            options["force"] = True
+        if no_wait_after:
+            options["no_wait_after"] = True
+        if strict:
+            options["strict"] = True
+        return options

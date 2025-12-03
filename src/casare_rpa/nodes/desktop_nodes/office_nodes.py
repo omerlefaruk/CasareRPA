@@ -22,7 +22,7 @@ try:
     HAS_WIN32COM = True
 except ImportError:
     HAS_WIN32COM = False
-    logger.warning("win32com not available - install pywin32 for Office automation")
+    logger.debug("win32com not available - install pywin32 for Office automation")
 
 
 # ============================================================================

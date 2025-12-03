@@ -11,7 +11,12 @@ from typing import Any, Dict, List, Optional
 
 from casare_rpa.domain.value_objects.types import ErrorCode, NodeId
 
-from .types import ErrorCategory, ErrorClassification, ErrorSeverity, RecoveryAction
+from casare_rpa.domain.errors.types import (
+    ErrorCategory,
+    ErrorClassification,
+    ErrorSeverity,
+    RecoveryAction,
+)
 
 
 @dataclass

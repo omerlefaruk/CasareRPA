@@ -6,7 +6,7 @@ This module provides use cases for the orchestrator:
 - Local execution without cloud orchestration
 """
 
-from .use_cases import (
+from casare_rpa.application.orchestrator.use_cases import (
     ExecuteJobUseCase,
     SubmitJobUseCase,
     ExecuteLocalUseCase,

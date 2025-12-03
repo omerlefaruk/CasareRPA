@@ -17,7 +17,7 @@ import websockets
 from websockets.client import WebSocketClientProtocol
 from loguru import logger
 
-from .mtls import MTLSConfig
+from casare_rpa.infrastructure.tunnel.mtls import MTLSConfig
 
 
 class TunnelState(Enum):

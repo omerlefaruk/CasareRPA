@@ -2,7 +2,7 @@
 Visual Nodes - Data Operations
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.data_operations.nodes import (
     # Data operations
     VisualConcatenateNode,
     VisualFormatStringNode,

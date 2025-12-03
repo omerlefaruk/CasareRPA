@@ -19,7 +19,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
-from .sheets_base import SheetsBaseNode
+from casare_rpa.nodes.google.sheets.sheets_base import SheetsBaseNode
 
 
 # ============================================================================

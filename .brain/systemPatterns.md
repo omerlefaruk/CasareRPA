@@ -100,6 +100,96 @@ class MyCustomNode(BaseNode):
 @async_node               # For async-only nodes (if needed)
 ```
 
+## 2.5 BrowserBaseNode Pattern (Browser Nodes)
+
+All Playwright-based browser nodes extend `BrowserBaseNode` for consistent:
+- Page access from context
+- Selector normalization (XPath, CSS, ARIA)
+- Retry logic
+- Screenshot on failure
+
+### Location
+```
+src/casare_rpa/nodes/browser/
+├── __init__.py           # Package exports
+├── browser_base.py       # BrowserBaseNode base class
+└── property_constants.py # Reusable PropertyDef constants
+```
+
+### Using BrowserBaseNode
+```python
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_TIMEOUT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+    BROWSER_SELECTOR_STRICT,
+)
+
+@node_schema(
+    PropertyDef("selector", PropertyType.SELECTOR, ...),
+    BROWSER_TIMEOUT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+)
+@executable_node
+class MyBrowserNode(BrowserBaseNode):
+    def __init__(self, node_id: str, name: str = "My Node", **kwargs):
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config, name=name)
+        self.node_type = "MyBrowserNode"
+
+    def _define_ports(self):
+        self.add_page_passthrough_ports()  # page in/out
+        self.add_selector_input_port()      # selector input
+
+    async def execute(self, context):
+        try:
+            page = self.get_page(context)           # From base
+            selector = self.get_normalized_selector(context)  # From base
+
+            async def perform_action():
+                await page.click(selector)
+                return True
+
+            result = await retry_operation(...)
+            if result.success:
+                return self.success_result({"selector": selector})
+
+            await self.screenshot_on_failure(page, "action_fail")  # From base
+            raise result.last_error
+
+        except Exception as e:
+            return self.error_result(e)  # From base
+```
+
+### Common PropertyDef Constants
+| Constant | Type | Default | Purpose |
+|----------|------|---------|---------|
+| `BROWSER_TIMEOUT` | INTEGER | 30000ms | Max wait time |
+| `BROWSER_RETRY_COUNT` | INTEGER | 0 | Retry attempts |
+| `BROWSER_RETRY_INTERVAL` | INTEGER | 1000ms | Delay between retries |
+| `BROWSER_SCREENSHOT_ON_FAIL` | BOOLEAN | False | Take screenshot on error |
+| `BROWSER_SCREENSHOT_PATH` | FILE_PATH | "" | Screenshot save path |
+| `BROWSER_SELECTOR_STRICT` | BOOLEAN | False | Require single match |
+| `BROWSER_WAIT_UNTIL` | CHOICE | "load" | Navigation wait state |
+| `BROWSER_ELEMENT_STATE` | CHOICE | "visible" | Element state to wait for |
+
+### BrowserBaseNode Helper Methods
+- `get_page(context)` - Get page from port or context
+- `get_normalized_selector(context)` - Resolve vars + normalize
+- `execute_with_retry(operation, ...)` - Retry wrapper
+- `screenshot_on_failure(page, prefix)` - Conditional screenshot
+- `highlight_if_enabled(page, selector)` - Debug highlighting
+- `add_page_passthrough_ports()` - Add page in/out ports
+- `add_selector_input_port()` - Add selector input port
+- `success_result(data)` - Build success ExecutionResult
+- `error_result(error)` - Build error ExecutionResult
+
 ## 3. Testing Patterns by Layer
 
 ### Domain Tests (NO mocks)
@@ -612,6 +702,87 @@ async def test_my_chain(chain_executor):
     assert result.status == ExecutionStatus.COMPLETED
 ```
 
+## 11. Event Bus Pattern
+
+### Two Event Bus Systems
+
+| System | Location | Purpose | Features |
+|--------|----------|---------|----------|
+| **Domain** | `domain/events.py` | Execution events (Robot/Orchestrator) | Simple, sync, `emit()`, no Qt deps |
+| **Presentation** | `presentation/canvas/events/` | UI events (Canvas) | Thread-safe, caching, metrics, Qt bridge |
+
+### Event Naming Convention
+Format: `{SCOPE}_{ACTION}_{STATE?}`
+- **Scopes**: NODE, WORKFLOW, EXECUTION, CONNECTION, PORT, VARIABLE, PROJECT, TRIGGER
+- **Actions**: START, COMPLETE, FAIL, SKIP, CREATE, ADD, UPDATE, REMOVE
+- **States**: _ED (completed), _ING (in-progress)
+
+### Usage Patterns
+
+**Domain EventBus (Simple):**
+```python
+from casare_rpa.domain.events import get_event_bus, Event
+from casare_rpa.domain.value_objects.types import EventType
+
+event_bus = get_event_bus()
+
+# Subscribe
+event_bus.subscribe(EventType.NODE_COMPLETED, handler)
+
+# Emit (convenience method)
+event_bus.emit(EventType.NODE_STARTED, {"node_id": "n1"}, node_id="n1")
+```
+
+**Presentation EventBus (Rich):**
+```python
+from casare_rpa.presentation.canvas.events import (
+    EventBus, Event, EventType, EventPriority, EventFilter,
+    start_domain_bridge,
+)
+from casare_rpa.presentation.canvas.events.event_contracts import NodeAddedData
+
+event_bus = EventBus()
+
+# Type-safe event data
+data: NodeAddedData = {"node_id": "n1", "node_type": "ClickElementNode"}
+event = Event(type=EventType.NODE_ADDED, source="Controller", data=data)
+event_bus.publish(event)
+
+# Filtered subscription
+filter = EventFilter(categories=[EventCategory.EXECUTION])
+event_bus.subscribe_filtered(filter, handler)
+
+# Start domain bridge (in MainWindow init)
+bridge = start_domain_bridge()
+```
+
+### Domain-to-Presentation Bridge
+```python
+# Maps domain events to presentation events
+from casare_rpa.presentation.canvas.events import DomainEventBridge
+
+bridge = DomainEventBridge()
+bridge.start()  # Subscribe to domain events
+# ...
+bridge.stop()   # Cleanup
+```
+
+### Event Contracts (TypedDict)
+```python
+from casare_rpa.presentation.canvas.events.event_contracts import (
+    NodeExecutionStartedData,
+    WorkflowSavedData,
+    ExecutionCompletedData,
+)
+
+# Type-safe event creation
+data: NodeExecutionStartedData = {
+    "node_id": "node_123",
+    "node_type": "ClickElementNode",
+    "node_name": "Click Login"
+}
+```
+
 ---
 **Quick Commands:**
 - Run tests: `pytest tests/ -v`
@@ -626,4 +797,4 @@ async def test_my_chain(chain_executor):
 - Coding standards: `.brain/projectRules.md`
 - Feature plans: `.brain/plans/{feature}.md`
 
-*Last updated: 2025-11-30*
+*Last updated: 2025-12-03*
