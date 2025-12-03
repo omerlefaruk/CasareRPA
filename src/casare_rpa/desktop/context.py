@@ -17,14 +17,14 @@ from typing import Any, Dict, List, Optional, Union
 from loguru import logger
 import uiautomation as auto
 
-from .element import DesktopElement
-from .managers.window_manager import WindowManager
-from .managers.mouse_controller import MouseController
-from .managers.keyboard_controller import KeyboardController
-from .managers.form_interactor import FormInteractor
-from .managers.screen_capture import ScreenCapture
-from .managers.wait_manager import WaitManager
-from .selector import find_element as selector_find_element
+from casare_rpa.desktop.element import DesktopElement
+from casare_rpa.desktop.managers.form_interactor import FormInteractor
+from casare_rpa.desktop.managers.keyboard_controller import KeyboardController
+from casare_rpa.desktop.managers.mouse_controller import MouseController
+from casare_rpa.desktop.managers.screen_capture import ScreenCapture
+from casare_rpa.desktop.managers.wait_manager import WaitManager
+from casare_rpa.desktop.managers.window_manager import WindowManager
+from casare_rpa.desktop.selector import find_element as selector_find_element
 
 
 def _run_async(coro):

@@ -20,10 +20,10 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.telegram_client import TelegramClient
-from .telegram_base import TelegramBaseNode
+from casare_rpa.nodes.messaging.telegram.telegram_base import TelegramBaseNode
 
 # Import reusable definitions from telegram_send
-from .telegram_send import (
+from casare_rpa.nodes.messaging.telegram.telegram_send import (
     TELEGRAM_BOT_TOKEN,
     TELEGRAM_CREDENTIAL_NAME,
     TELEGRAM_CHAT_ID,

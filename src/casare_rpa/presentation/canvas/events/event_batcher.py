@@ -31,9 +31,9 @@ from typing import Dict, List, Set
 from PySide6.QtCore import QTimer
 from loguru import logger
 
-from .event_bus import EventBus
-from .event import Event
-from .event_types import EventType
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_types import EventType
 
 # Maximum pending events per type before overflow warning
 MAX_PENDING_EVENTS = 10000

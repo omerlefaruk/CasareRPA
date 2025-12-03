@@ -95,3 +95,6 @@ dist2/
 installer/output/
 *.exe
 nul
+
+.gemini/
+gha-creds-*.json

@@ -11,13 +11,13 @@ from typing import Optional, TYPE_CHECKING
 from PySide6.QtCore import QTimer, Signal
 from loguru import logger
 
-from .base_controller import BaseController
-from ..events.event_bus import EventBus
-from ..events.event import Event
-from ..events.event_types import EventType
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event import Event
+from casare_rpa.presentation.canvas.events.event_types import EventType
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class AutosaveController(BaseController):

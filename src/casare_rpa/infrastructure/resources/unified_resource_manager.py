@@ -529,6 +529,7 @@ class DatabasePool:
                 min_size=2,
                 max_size=self.max_size,
                 command_timeout=30,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
             )
             self._started = True
             logger.info(f"Database pool started (max_size={self.max_size})")

@@ -13,22 +13,41 @@ Base classes and utilities:
 - GoogleAPIClient: Async client with OAuth2 and rate limiting
 """
 
-from .google_base import (
+from casare_rpa.nodes.google.google_base import (
+    # Base classes
     GoogleBaseNode,
+    GmailBaseNode as GoogleGmailBaseNode,  # Alias to avoid conflict with gmail/ package
+    DocsBaseNode as GoogleDocsBaseNode,
+    SheetsBaseNode as GoogleSheetsBaseNode,
+    DriveBaseNode as GoogleDriveBaseNode,
+    CalendarBaseNode as GoogleCalendarBaseNode,
+    # Client and credentials
     GoogleAPIClient,
     GoogleCredentials,
+    # Errors
     GoogleAPIError,
     GoogleAuthError,
     GoogleQuotaError,
+    # Scopes
     SCOPES,
     get_gmail_scopes,
     get_sheets_scopes,
     get_docs_scopes,
     get_drive_scopes,
+    get_calendar_scopes,
+    # PropertyDef constants
+    GOOGLE_CREDENTIAL_NAME,
+    GOOGLE_ACCESS_TOKEN,
+    GOOGLE_REFRESH_TOKEN,
+    GOOGLE_SERVICE_ACCOUNT_JSON,
+    GOOGLE_TIMEOUT,
+    GOOGLE_MAX_RETRIES,
+    GOOGLE_CREDENTIAL_PROPERTIES,
+    GOOGLE_COMMON_PROPERTIES,
 )
 
 # Gmail nodes from gmail/ subpackage (standalone OAuth implementation)
-from .gmail import (
+from casare_rpa.nodes.google.gmail import (
     GmailBaseNode,
     # Send operations (new standalone)
     GmailSendEmailNode,
@@ -45,7 +64,7 @@ from .gmail import (
 
 # Legacy gmail_nodes.py imports (require pre-authenticated google_client)
 # Note: Some nodes are shadowed by gmail/ subpackage versions above
-from .gmail_nodes import (
+from casare_rpa.nodes.google.gmail_nodes import (
     # GmailSendEmailNode,  # Shadowed by gmail/ subpackage
     # GmailSendWithAttachmentNode,  # Shadowed by gmail/ subpackage
     # GmailCreateDraftNode,  # Shadowed by gmail/ subpackage
@@ -73,7 +92,7 @@ from .gmail_nodes import (
     GmailBatchDeleteNode,
 )
 
-from .sheets import (
+from casare_rpa.nodes.google.sheets import (
     # Base
     SheetsBaseNode,
     # Read nodes (6)
@@ -105,7 +124,7 @@ from .sheets import (
     SheetsBatchClearNode,
 )
 
-from .docs_nodes import (
+from casare_rpa.nodes.google.docs_nodes import (
     # Document operations (legacy - require pre-authenticated google_client)
     DocsCreateDocumentNode,
     DocsGetDocumentNode,
@@ -122,7 +141,7 @@ from .docs_nodes import (
 )
 
 # Standalone Docs nodes from docs/ subpackage (with own OAuth handling)
-from .docs import (
+from casare_rpa.nodes.google.docs import (
     DocsBaseNode,
     # Read operations (standalone)
     DocsGetDocumentNode as DocsGetDocumentStandaloneNode,
@@ -138,7 +157,7 @@ from .docs import (
     DocsApplyStyleNode,
 )
 
-from .drive_nodes import (
+from casare_rpa.nodes.google.drive_nodes import (
     # File operations
     DriveUploadFileNode,
     DriveDownloadFileNode,
@@ -166,7 +185,7 @@ from .drive_nodes import (
 )
 
 # Calendar nodes from calendar/ subpackage
-from .calendar import (
+from casare_rpa.nodes.google.calendar import (
     # Base
     CalendarBaseNode,
     # Event nodes (8)
@@ -186,18 +205,36 @@ from .calendar import (
 )
 
 __all__ = [
-    # Base classes and utilities
+    # Base classes (unified from google_base)
     "GoogleBaseNode",
+    "GoogleGmailBaseNode",
+    "GoogleDocsBaseNode",
+    "GoogleSheetsBaseNode",
+    "GoogleDriveBaseNode",
+    "GoogleCalendarBaseNode",
+    # Client and credentials
     "GoogleAPIClient",
     "GoogleCredentials",
+    # Errors
     "GoogleAPIError",
     "GoogleAuthError",
     "GoogleQuotaError",
+    # Scopes
     "SCOPES",
     "get_gmail_scopes",
     "get_sheets_scopes",
     "get_docs_scopes",
     "get_drive_scopes",
+    "get_calendar_scopes",
+    # PropertyDef constants
+    "GOOGLE_CREDENTIAL_NAME",
+    "GOOGLE_ACCESS_TOKEN",
+    "GOOGLE_REFRESH_TOKEN",
+    "GOOGLE_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_TIMEOUT",
+    "GOOGLE_MAX_RETRIES",
+    "GOOGLE_CREDENTIAL_PROPERTIES",
+    "GOOGLE_COMMON_PROPERTIES",
     # Gmail - Base (from gmail/ subpackage)
     "GmailBaseNode",
     # Gmail - Send operations (5 from gmail/ subpackage)

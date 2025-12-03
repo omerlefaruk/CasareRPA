@@ -24,17 +24,19 @@ from loguru import logger
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from ..models import (
-    FleetMetrics,
-    RobotSummary,
-    RobotMetrics,
-    JobSummary,
-    JobDetails,
-    AnalyticsSummary,
+from casare_rpa.infrastructure.orchestrator.api.dependencies import (
+    get_metrics_collector,
+)
+from casare_rpa.infrastructure.orchestrator.api.models import (
     ActivityEvent,
     ActivityResponse,
+    AnalyticsSummary,
+    FleetMetrics,
+    JobDetails,
+    JobSummary,
+    RobotMetrics,
+    RobotSummary,
 )
-from ..dependencies import get_metrics_collector
 from casare_rpa.infrastructure.observability.metrics import (
     get_metrics_exporter,
     MetricsSnapshot,

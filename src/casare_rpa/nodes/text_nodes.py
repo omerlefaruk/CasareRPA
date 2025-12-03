@@ -29,10 +29,9 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
+from casare_rpa.utils import safe_int
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "max_split",
@@ -42,6 +41,7 @@ from casare_rpa.nodes.utils.type_converters import safe_int
         tooltip="Maximum number of splits (-1 for unlimited)",
     ),
 )
+@executable_node
 class TextSplitNode(BaseNode):
     """
     Split a string into a list.
@@ -112,7 +112,6 @@ class TextSplitNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "count",
@@ -150,6 +149,7 @@ class TextSplitNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@executable_node
 class TextReplaceNode(BaseNode):
     """
     Replace occurrences in a string.
@@ -244,7 +244,6 @@ class TextReplaceNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "mode",
@@ -262,6 +261,7 @@ class TextReplaceNode(BaseNode):
         tooltip="Characters to trim (default: whitespace)",
     ),
 )
+@executable_node
 class TextTrimNode(BaseNode):
     """
     Trim whitespace from a string.
@@ -327,7 +327,6 @@ class TextTrimNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "case",
@@ -338,6 +337,7 @@ class TextTrimNode(BaseNode):
         tooltip="Case transformation to apply",
     ),
 )
+@executable_node
 class TextCaseNode(BaseNode):
     """
     Change the case of a string.
@@ -399,7 +399,6 @@ class TextCaseNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "mode",
@@ -417,6 +416,7 @@ class TextCaseNode(BaseNode):
         tooltip="Character to use for padding",
     ),
 )
+@executable_node
 class TextPadNode(BaseNode):
     """
     Pad a string to a certain length.
@@ -544,7 +544,6 @@ class TextSubstringNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "case_sensitive",
@@ -554,6 +553,7 @@ class TextSubstringNode(BaseNode):
         tooltip="Case-sensitive search",
     ),
 )
+@executable_node
 class TextContainsNode(BaseNode):
     """
     Check if a string contains a substring.
@@ -627,7 +627,6 @@ class TextContainsNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "case_sensitive",
@@ -637,6 +636,7 @@ class TextContainsNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@executable_node
 class TextStartsWithNode(BaseNode):
     """
     Check if a string starts with a prefix.
@@ -698,7 +698,6 @@ class TextStartsWithNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "case_sensitive",
@@ -708,6 +707,7 @@ class TextStartsWithNode(BaseNode):
         tooltip="Case-sensitive check",
     ),
 )
+@executable_node
 class TextEndsWithNode(BaseNode):
     """
     Check if a string ends with a suffix.
@@ -769,7 +769,6 @@ class TextEndsWithNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "mode",
@@ -794,6 +793,7 @@ class TextEndsWithNode(BaseNode):
         tooltip="Keep line endings when splitting",
     ),
 )
+@executable_node
 class TextLinesNode(BaseNode):
     """
     Split text into lines or join lines into text.
@@ -914,7 +914,6 @@ class TextReverseNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "mode",
@@ -932,6 +931,7 @@ class TextReverseNode(BaseNode):
         tooltip="Exclude whitespace from character count",
     ),
 )
+@executable_node
 class TextCountNode(BaseNode):
     """
     Count characters, words, or lines in text.
@@ -1015,7 +1015,6 @@ class TextCountNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "separator",
@@ -1025,6 +1024,7 @@ class TextCountNode(BaseNode):
         tooltip="Separator to use when joining",
     ),
 )
+@executable_node
 class TextJoinNode(BaseNode):
     """
     Join a list of strings with a separator.
@@ -1086,7 +1086,6 @@ class TextJoinNode(BaseNode):
         return True, ""
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "all_matches",
@@ -1117,6 +1116,7 @@ class TextJoinNode(BaseNode):
         tooltip=". matches newlines",
     ),
 )
+@executable_node
 class TextExtractNode(BaseNode):
     """
     Extract text using regex with capture groups.

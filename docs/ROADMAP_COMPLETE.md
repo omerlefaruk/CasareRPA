@@ -2026,7 +2026,7 @@ cp .env.example .env
 # Edit .env with your settings
 
 # 7. Start orchestrator (development mode)
-python -m casare_rpa.orchestrator --config config/orchestrator.yaml
+python -m casare_rpa.infrastructure.orchestrator.server --config config/orchestrator.yaml
 
 # 8. Start robot agent
 python -m casare_rpa.robot start --config config/robot.yaml

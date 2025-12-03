@@ -17,7 +17,7 @@ from casare_rpa.infrastructure.observability.metrics import (
     get_metrics_collector as get_rpa_metrics,
 )
 from casare_rpa.infrastructure.analytics.metrics_aggregator import MetricsAggregator
-from .adapters import MonitoringDataAdapter
+from casare_rpa.infrastructure.orchestrator.api.adapters import MonitoringDataAdapter
 
 
 @dataclass
@@ -37,6 +37,30 @@ class DatabaseConfig:
     @classmethod
     def from_env(cls) -> "DatabaseConfig":
         """Create config from environment variables."""
+        import urllib.parse
+
+        db_url = os.getenv("DATABASE_URL")
+        if db_url:
+            try:
+                parsed = urllib.parse.urlparse(db_url)
+                return cls(
+                    host=parsed.hostname or "localhost",
+                    port=parsed.port or 5432,
+                    database=parsed.path.lstrip("/") or "postgres",
+                    user=parsed.username or "postgres",
+                    password=parsed.password or "",
+                    min_size=int(os.getenv("DB_POOL_MIN_SIZE", "2")),
+                    max_size=int(os.getenv("DB_POOL_MAX_SIZE", "10")),
+                    command_timeout=float(os.getenv("DB_COMMAND_TIMEOUT", "60.0")),
+                    max_inactive_connection_lifetime=float(
+                        os.getenv("DB_MAX_INACTIVE_LIFETIME", "300.0")
+                    ),
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to parse DATABASE_URL: {e}. Falling back to individual vars."
+                )
+
         return cls(
             host=os.getenv("DB_HOST", "localhost"),
             port=int(os.getenv("DB_PORT", "5432")),
@@ -115,6 +139,7 @@ class DatabasePoolManager:
                     max_size=self._config.max_size,
                     command_timeout=self._config.command_timeout,
                     max_inactive_connection_lifetime=self._config.max_inactive_connection_lifetime,
+                    statement_cache_size=0,  # Required for Supabase Transaction Mode (Supavisor)
                 )
 
                 # Verify pool is working

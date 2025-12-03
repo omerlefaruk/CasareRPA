@@ -12,9 +12,9 @@ from typing import Any, Dict, List, Optional, Set
 
 from loguru import logger
 
-from ..base import BaseTriggerConfig, TriggerType
-from ..registry import register_trigger
-from .google_trigger_base import GoogleTriggerBase
+from casare_rpa.triggers.base import BaseTriggerConfig, TriggerType
+from casare_rpa.triggers.registry import register_trigger
+from casare_rpa.triggers.implementations.google_trigger_base import GoogleTriggerBase
 
 
 @register_trigger

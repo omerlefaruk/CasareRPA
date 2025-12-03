@@ -22,14 +22,16 @@ from PySide6.QtGui import QFont
 
 from loguru import logger
 
-from .fleet_tabs import (
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs import (
     RobotsTabWidget,
     JobsTabWidget,
     SchedulesTabWidget,
     AnalyticsTabWidget,
     ApiKeysTabWidget,
 )
-from ..widgets.tenant_selector import TenantSelectorWidget
+from casare_rpa.presentation.canvas.ui.widgets.tenant_selector import (
+    TenantSelectorWidget,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.orchestrator.entities.robot import Robot

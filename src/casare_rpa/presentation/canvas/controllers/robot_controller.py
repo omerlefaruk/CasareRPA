@@ -13,10 +13,10 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
-from .base_controller import BaseController
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
     from casare_rpa.domain.orchestrator.entities.robot import Robot, RobotCapability
     from casare_rpa.infrastructure.orchestrator.client import OrchestratorClient
 
@@ -111,7 +111,8 @@ class RobotController(BaseController):
 
             # If still no URL, try tunnel first, then localhost
             if not self._orchestrator_url:
-                # Check CASARE_API_URL for tunnel, default to tunnel URL
+                # Check CASARE_API_URL for tunnel URL
+                # Default to api.casare.net (persistent Cloudflare tunnel)
                 self._orchestrator_url = os.getenv(
                     "CASARE_API_URL", "https://api.casare.net"
                 )
@@ -200,7 +201,7 @@ class RobotController(BaseController):
 
     def _get_orchestrator_url_list(self) -> List[str]:
         """
-        Get list of orchestrator URLs to try (tunnel + localhost).
+        Get list of orchestrator URLs to try (tunnel first, then localhost).
 
         Returns:
             List of URLs in priority order
@@ -211,8 +212,8 @@ class RobotController(BaseController):
         if self._orchestrator_url:
             urls.append(self._orchestrator_url)
 
-        # Add Cloudflare Tunnel URL
-        tunnel_url = os.getenv("CASARE_API_URL", "https://api.casare.net")
+        # Add Cloudflare Tunnel URL (priority for cloud connection)
+        tunnel_url = os.getenv("CASARE_API_URL")
         if tunnel_url and tunnel_url not in urls:
             urls.append(tunnel_url)
 
@@ -230,8 +231,8 @@ class RobotController(BaseController):
         Tries URLs in order:
         1. Provided URL (if any)
         2. Configured URL (from config.yaml or env)
-        3. Cloudflare Tunnel (https://api.casare.net)
-        4. Localhost (http://localhost:8000)
+        3. CASARE_API_URL env var (Cloudflare tunnel)
+        4. Localhost (http://localhost:8000) - fallback
 
         Args:
             url: Optional orchestrator URL (uses fallback list if None)
@@ -360,6 +361,13 @@ class RobotController(BaseController):
         panel.robot_selected.connect(self._on_panel_robot_selected)
         panel.execution_mode_changed.connect(self._on_panel_mode_changed)
         panel.refresh_requested.connect(self._on_panel_refresh_requested)
+        panel.submit_to_cloud_requested.connect(self._on_submit_to_cloud_requested)
+
+        # Keep panel updated on connection status
+        self.connection_status_changed.connect(panel.set_connected)
+
+        # Set initial connection status
+        panel.set_connected(self._connected)
 
         logger.debug("RobotPickerPanel connected to controller")
 
@@ -388,6 +396,117 @@ class RobotController(BaseController):
         import asyncio
 
         asyncio.create_task(self.refresh_robots())
+
+    def _on_submit_to_cloud_requested(self) -> None:
+        """
+        Handle submit to cloud request from panel.
+
+        Gets workflow data from main window and submits to selected robot.
+        """
+        import asyncio
+
+        asyncio.create_task(self._submit_current_workflow())
+
+    async def _submit_current_workflow(self) -> None:
+        """
+        Submit the current workflow to the selected robot.
+
+        Gets workflow data from the main window and calls submit_job.
+        Updates panel with submission status.
+        """
+        if not self._panel:
+            return
+
+        if not self._selected_robot_id:
+            self._panel.show_submit_result(False, "No robot selected")
+            return
+
+        # Show submitting state
+        self._panel.set_submitting(True)
+
+        try:
+            # Get workflow data from main window
+            workflow_data = self._get_workflow_data()
+            if not workflow_data:
+                self._panel.set_submitting(False)
+                self._panel.show_submit_result(False, "No workflow data available")
+                return
+
+            # Get variables if available
+            variables = self._get_workflow_variables()
+
+            # Submit job
+            job_id = await self.submit_job(
+                workflow_data=workflow_data,
+                variables=variables,
+                robot_id=self._selected_robot_id,
+            )
+
+            self._panel.set_submitting(False)
+
+            if job_id:
+                self._panel.show_submit_result(True, job_id)
+                logger.info(f"Workflow submitted to cloud: job_id={job_id}")
+            else:
+                self._panel.show_submit_result(False, "Submission failed")
+
+        except Exception as e:
+            logger.error(f"Failed to submit workflow: {e}")
+            self._panel.set_submitting(False)
+            self._panel.show_submit_result(False, str(e))
+
+    def _get_workflow_data(self) -> Optional[dict]:
+        """
+        Get current workflow data from main window.
+
+        Returns:
+            Workflow data dict or None if not available
+        """
+        try:
+            # Try using the workflow data provider
+            if hasattr(self.main_window, "_get_workflow_data"):
+                return self.main_window._get_workflow_data()
+
+            # Try getting from workflow controller
+            if hasattr(self.main_window, "_workflow_controller"):
+                wf_controller = self.main_window._workflow_controller
+                if wf_controller and hasattr(wf_controller, "get_workflow_data"):
+                    return wf_controller.get_workflow_data()
+
+            logger.warning("Could not get workflow data from main window")
+            return None
+
+        except Exception as e:
+            logger.error(f"Error getting workflow data: {e}")
+            return None
+
+    def _get_workflow_variables(self) -> Optional[dict]:
+        """
+        Get current workflow variables from main window.
+
+        Returns:
+            Variables dict or None if not available
+        """
+        try:
+            # Try getting from project controller
+            if hasattr(self.main_window, "_project_controller"):
+                proj_controller = self.main_window._project_controller
+                if proj_controller and hasattr(
+                    proj_controller, "get_current_variables"
+                ):
+                    return proj_controller.get_current_variables()
+
+            # Try getting from workflow controller
+            if hasattr(self.main_window, "_workflow_controller"):
+                wf_controller = self.main_window._workflow_controller
+                if wf_controller and hasattr(wf_controller, "get_variables"):
+                    return wf_controller.get_variables()
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error getting workflow variables: {e}")
+            return None
 
     # ==================== Public Methods ====================
 
@@ -598,24 +717,76 @@ class RobotController(BaseController):
             # Submit via orchestrator API
             import aiohttp
 
+            # Get API key for authentication - try multiple sources
+            api_key = None
+
+            # 1. Try from orchestrator client config (already authenticated)
+            if self._orchestrator_client and self._orchestrator_client.config:
+                api_key = self._orchestrator_client.config.api_key
+
+            # 2. Try from config.yaml
+            if not api_key:
+                api_key = self._get_api_key_from_config()
+
+            # 3. Try from environment variable
+            if not api_key:
+                api_key = os.getenv("ORCHESTRATOR_API_KEY")
+
+            headers = {"Content-Type": "application/json"}
+            if api_key:
+                headers["Authorization"] = f"Bearer {api_key}"
+            else:
+                logger.warning(
+                    "No API key configured. Set ORCHESTRATOR_API_KEY env var or "
+                    "configure in Settings > Orchestrator."
+                )
+
             async with aiohttp.ClientSession() as session:
+                # Extract workflow name from data or use default
+                workflow_name = (
+                    workflow_data.get("metadata", {}).get("name")
+                    or workflow_data.get("name")
+                    or "Untitled Workflow"
+                )
+
+                # Build payload matching WorkflowSubmissionRequest schema
+                payload = {
+                    "workflow_name": workflow_name,
+                    "workflow_json": workflow_data,
+                    "trigger_type": "manual",
+                    "execution_mode": "lan",
+                    "priority": 10,
+                    "metadata": {
+                        "robot_id": target_robot_id,
+                        "variables": variables or {},
+                    },
+                }
+
                 async with session.post(
                     f"{self._orchestrator_url}/api/v1/workflows",
-                    json={
-                        "workflow_data": workflow_data,
-                        "variables": variables or {},
-                        "robot_id": target_robot_id,
-                        "trigger_type": "manual",
-                    },
+                    headers=headers,
+                    json=payload,
                 ) as resp:
-                    if resp.status == 200:
+                    if resp.status in (200, 201):
                         data = await resp.json()
-                        job_id = data.get("job_id")
+                        job_id = data.get("job_id") or data.get("data", {}).get(
+                            "job_id"
+                        )
                         logger.info(
                             f"Job submitted: {job_id} to robot {target_robot_id}"
                         )
                         self.job_submitted.emit(job_id)
                         return job_id
+                    elif resp.status == 401:
+                        # Authentication error - provide helpful message
+                        error_detail = (
+                            "Authentication required. To fix:\n"
+                            "1. Start orchestrator with: JWT_DEV_MODE=true python manage.py orchestrator start\n"
+                            "2. Or set ORCHESTRATOR_API_KEY environment variable\n"
+                            "3. Or login via the Orchestrator Dashboard"
+                        )
+                        logger.error(f"Auth error: {error_detail}")
+                        raise Exception("Authentication required - see log for details")
                     else:
                         error = await resp.text()
                         raise Exception(f"API error: {resp.status} - {error}")

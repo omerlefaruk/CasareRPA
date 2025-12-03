@@ -14,10 +14,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from .llm_resource_manager import (
-    LLMResourceManager,
-    LLMConfig,
+from casare_rpa.infrastructure.resources.llm_resource_manager import (
     ImageContent,
+    LLMConfig,
+    LLMResourceManager,
 )
 
 

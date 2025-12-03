@@ -9,6 +9,10 @@ Design:
 - Standard PropertyDef constants for common credential types
 - Fallback hierarchy: vault → project binding → direct parameter → environment
 
+Architecture Note:
+This module uses domain protocols (ExecutionContextProtocol, CredentialProviderProtocol)
+to maintain domain layer purity. The infrastructure layer provides implementations.
+
 Usage:
     from casare_rpa.domain.credentials import (
         CredentialAwareMixin,
@@ -37,18 +41,29 @@ Usage:
 from __future__ import annotations
 
 import os
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, Protocol, cast
 
 from loguru import logger
 
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.protocols.credential_protocols import (
+    CredentialProviderProtocol,
+    ExecutionContextProtocol,
+    ResolvedCredentialData,
+)
 
-if TYPE_CHECKING:
-    from casare_rpa.infrastructure.execution import ExecutionContext
-    from casare_rpa.infrastructure.security.credential_provider import (
-        ResolvedCredential,
-        VaultCredentialProvider,
-    )
+
+class HasGetParameter(Protocol):
+    """Protocol for objects that have a get_parameter method.
+
+    NOTE: This is for type checking only. Do NOT use as a base class for mixins
+    that need to be combined with other classes (e.g., BaseNode). Protocol
+    classes have special __init__ behavior that breaks super().__init__() chains.
+    """
+
+    def get_parameter(self, name: str, default: Any = None) -> Any:
+        """Get parameter value by name."""
+        ...
 
 
 # =============================================================================
@@ -211,6 +226,14 @@ class CredentialAwareMixin:
     4. Environment variable
     5. Context variable
 
+    Architecture Note:
+    Uses ExecutionContextProtocol to maintain domain purity. The actual
+    ExecutionContext from infrastructure layer implements this protocol.
+
+    IMPORTANT: This mixin requires the mixing class to implement `get_parameter(name, default)`.
+    BaseNode provides this implementation. The mixin does NOT inherit from HasGetParameter
+    Protocol to avoid breaking super().__init__() chains in MRO.
+
     Usage:
         class MyNode(CredentialAwareMixin, BaseNode):
             async def execute(self, context):
@@ -223,9 +246,20 @@ class CredentialAwareMixin:
                 )
     """
 
+    def get_parameter(self, name: str, default: Any = None) -> Any:
+        """
+        Get parameter value by name.
+
+        This method must be provided by the class this mixin is mixed with.
+        BaseNode provides this implementation.
+        """
+        raise NotImplementedError(
+            "CredentialAwareMixin must be used with a class that implements get_parameter"
+        )
+
     async def resolve_credential(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContextProtocol,
         credential_name_param: str = "credential_name",
         direct_param: Optional[str] = None,
         env_var: Optional[str] = None,
@@ -259,7 +293,7 @@ class CredentialAwareMixin:
             ValueError: If required=True and credential not found
         """
         # 1. Try vault lookup via credential_name
-        cred_name = self.get_parameter(credential_name_param, "")  # type: ignore
+        cred_name = self.get_parameter(credential_name_param, "")
         if cred_name:
             cred_name = context.resolve_value(cred_name)
             if cred_name:
@@ -272,12 +306,12 @@ class CredentialAwareMixin:
 
         # 2. Try direct parameter
         if direct_param:
-            value = self.get_parameter(direct_param, "")  # type: ignore
+            value = self.get_parameter(direct_param, "")
             if value:
-                value = context.resolve_value(value)
-                if value:
+                resolved_value = context.resolve_value(value)
+                if resolved_value:
                     logger.debug(f"Using direct parameter: {direct_param}")
-                    return value
+                    return str(resolved_value)
 
         # 3. Try context variable
         if context_var:
@@ -312,7 +346,7 @@ class CredentialAwareMixin:
 
     async def resolve_username_password(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContextProtocol,
         credential_name_param: str = "credential_name",
         username_param: str = "username",
         password_param: str = "password",
@@ -337,7 +371,7 @@ class CredentialAwareMixin:
         password = None
 
         # 1. Try vault lookup
-        cred_name = self.get_parameter(credential_name_param, "")  # type: ignore
+        cred_name = self.get_parameter(credential_name_param, "")
         if cred_name:
             cred_name = context.resolve_value(cred_name)
             if cred_name:
@@ -352,8 +386,8 @@ class CredentialAwareMixin:
                         return username, password
 
         # 2. Try direct parameters
-        username = self.get_parameter(username_param, "")  # type: ignore
-        password = self.get_parameter(password_param, "")  # type: ignore
+        username = self.get_parameter(username_param, "")
+        password = self.get_parameter(password_param, "")
 
         if username:
             username = context.resolve_value(username)
@@ -384,7 +418,7 @@ class CredentialAwareMixin:
 
     async def resolve_oauth_credentials(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContextProtocol,
         credential_name_param: str = "credential_name",
         client_id_param: str = "client_id",
         client_secret_param: str = "client_secret",
@@ -409,7 +443,7 @@ class CredentialAwareMixin:
         client_secret = None
 
         # 1. Try vault lookup
-        cred_name = self.get_parameter(credential_name_param, "")  # type: ignore
+        cred_name = self.get_parameter(credential_name_param, "")
         if cred_name:
             cred_name = context.resolve_value(cred_name)
             if cred_name:
@@ -424,8 +458,8 @@ class CredentialAwareMixin:
                         return client_id, client_secret
 
         # 2. Try direct parameters
-        client_id = self.get_parameter(client_id_param, "")  # type: ignore
-        client_secret = self.get_parameter(client_secret_param, "")  # type: ignore
+        client_id = self.get_parameter(client_id_param, "")
+        client_secret = self.get_parameter(client_secret_param, "")
 
         if client_id:
             client_id = context.resolve_value(client_id)
@@ -458,7 +492,7 @@ class CredentialAwareMixin:
 
     async def _get_from_vault(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContextProtocol,
         credential_name: str,
         field: str,
     ) -> Optional[str]:
@@ -499,9 +533,9 @@ class CredentialAwareMixin:
 
     async def _get_full_credential(
         self,
-        context: "ExecutionContext",
+        context: ExecutionContextProtocol,
         credential_name: str,
-    ) -> Optional["ResolvedCredential"]:
+    ) -> Optional[ResolvedCredentialData]:
         """
         Get full resolved credential from vault.
 
@@ -539,45 +573,42 @@ class CredentialAwareMixin:
             return None
 
     async def _get_credential_provider(
-        self, context: "ExecutionContext"
-    ) -> Optional["VaultCredentialProvider"]:
+        self, context: ExecutionContextProtocol
+    ) -> Optional[CredentialProviderProtocol]:
         """
         Get credential provider from context.
 
-        Lazily initializes provider if not present.
+        The credential provider must be injected into the context by the
+        infrastructure layer (typically in ExecutionContext initialization).
+        Domain layer does NOT create infrastructure instances.
+
+        Resolution order:
+        1. Check context._credential_provider attribute
+        2. Check context.resources["credential_provider"]
+
+        Returns:
+            CredentialProviderProtocol instance or None if not available
         """
-        # Check if provider exists in context
-        if hasattr(context, "_credential_provider") and context._credential_provider:
-            return context._credential_provider
+        # Check if provider exists in context as direct attribute
+        if hasattr(context, "_credential_provider"):
+            provider = getattr(context, "_credential_provider", None)
+            if provider is not None:
+                return cast(CredentialProviderProtocol, provider)
 
         # Try to get from context resources
-        if hasattr(context, "resources") and "credential_provider" in context.resources:
-            return context.resources["credential_provider"]
+        if hasattr(context, "resources"):
+            resources = context.resources
+            if "credential_provider" in resources:
+                return cast(
+                    CredentialProviderProtocol, resources["credential_provider"]
+                )
 
-        # Try to create provider
-        try:
-            from casare_rpa.infrastructure.security.credential_provider import (
-                VaultCredentialProvider,
-            )
-
-            provider = VaultCredentialProvider()
-            await provider.initialize()
-
-            # Register project bindings if available
-            if context.has_project_context and context.project_context:
-                bindings = context.project_context.get_credential_bindings()
-                if bindings:
-                    provider.register_bindings(bindings)
-
-            # Store in context for reuse
-            if hasattr(context, "resources"):
-                context.resources["credential_provider"] = provider
-
-            return provider
-
-        except Exception as e:
-            logger.debug(f"Could not create credential provider: {e}")
-            return None
+        # No provider available - infrastructure layer should inject it
+        logger.debug(
+            "No credential provider found in context. "
+            "Ensure infrastructure layer initializes the provider."
+        )
+        return None
 
 
 # =============================================================================
@@ -586,7 +617,7 @@ class CredentialAwareMixin:
 
 
 async def resolve_node_credential(
-    context: "ExecutionContext",
+    context: ExecutionContextProtocol,
     node: Any,
     credential_name_param: str = "credential_name",
     direct_param: Optional[str] = None,
@@ -623,7 +654,7 @@ async def resolve_node_credential(
                     if cred:
                         value = getattr(cred, credential_field, None)
                         if value:
-                            return value
+                            return str(value)
                         if cred.data and credential_field in cred.data:
                             return str(cred.data[credential_field])
                 except Exception as e:
@@ -631,9 +662,11 @@ async def resolve_node_credential(
 
     # Try direct parameter
     if direct_param:
-        value = node.get_parameter(direct_param, "")
-        if value:
-            return context.resolve_value(value)
+        param_value = node.get_parameter(direct_param, "")
+        if param_value:
+            resolved = context.resolve_value(param_value)
+            if resolved:
+                return str(resolved)
 
     # Try environment
     if env_var:
@@ -648,26 +681,30 @@ async def resolve_node_credential(
 
 
 async def _get_provider(
-    context: "ExecutionContext",
-) -> Optional["VaultCredentialProvider"]:
-    """Get or create credential provider from context."""
-    if hasattr(context, "resources") and "credential_provider" in context.resources:
-        return context.resources["credential_provider"]
+    context: ExecutionContextProtocol,
+) -> Optional[CredentialProviderProtocol]:
+    """
+    Get credential provider from context.
 
-    try:
-        from casare_rpa.infrastructure.security.credential_provider import (
-            VaultCredentialProvider,
+    The credential provider must be injected into the context by the
+    infrastructure layer. Domain layer does NOT create infrastructure instances.
+
+    Returns:
+        CredentialProviderProtocol instance or None if not available
+    """
+    # Check direct attribute first
+    if hasattr(context, "_credential_provider"):
+        provider = getattr(context, "_credential_provider", None)
+        if provider is not None:
+            return cast(CredentialProviderProtocol, provider)
+
+    # Check resources dict
+    if hasattr(context, "resources") and "credential_provider" in context.resources:
+        return cast(
+            CredentialProviderProtocol, context.resources["credential_provider"]
         )
 
-        provider = VaultCredentialProvider()
-        await provider.initialize()
-
-        if hasattr(context, "resources"):
-            context.resources["credential_provider"] = provider
-
-        return provider
-    except Exception:
-        return None
+    return None
 
 
 __all__ = [

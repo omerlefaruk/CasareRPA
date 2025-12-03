@@ -4,7 +4,9 @@ from typing import List, Optional
 
 from casare_rpa.domain.orchestrator.entities import Job, JobStatus
 from casare_rpa.domain.orchestrator.repositories import JobRepository
-from .local_storage_repository import LocalStorageRepository
+from casare_rpa.infrastructure.orchestrator.persistence.local_storage_repository import (
+    LocalStorageRepository,
+)
 
 
 class LocalJobRepository(JobRepository):

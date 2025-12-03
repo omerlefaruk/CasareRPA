@@ -3,34 +3,57 @@ Data extraction nodes for retrieving information from pages.
 
 This module provides nodes for extracting data: text content,
 attributes, screenshots, and page information.
+
+All nodes extend BrowserBaseNode for consistent patterns:
+- Page access from context
+- Selector normalization
+- Retry logic
+- Screenshot on failure
 """
 
-import asyncio
+import os
+from datetime import datetime
 from pathlib import Path
 
+from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
-    NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
+    NodeStatus,
+    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from ..utils.config import DEFAULT_NODE_TIMEOUT
-from ..utils.selectors.selector_normalizer import normalize_selector
-from loguru import logger
+from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
+from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+    BROWSER_SELECTOR_STRICT,
+    BROWSER_TIMEOUT,
+)
+from casare_rpa.config import DEFAULT_NODE_TIMEOUT
+from casare_rpa.utils import safe_int
+from casare_rpa.utils.resilience import retry_operation
+
+
+# =============================================================================
+# ExtractTextNode
+# =============================================================================
 
 
 @node_schema(
     PropertyDef(
         "selector",
-        PropertyType.STRING,
+        PropertyType.SELECTOR,
         default="",
-        label="Selector",
+        required=False,
+        label="Element Selector",
         tooltip="CSS or XPath selector for the element",
+        placeholder="#content or //p[@class='text']",
     ),
     PropertyDef(
         "variable_name",
@@ -39,14 +62,7 @@ from loguru import logger
         label="Variable Name",
         tooltip="Name of variable to store result",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        min_value=0,
-        label="Timeout (ms)",
-        tooltip="Timeout in milliseconds",
-    ),
+    BROWSER_TIMEOUT,
     PropertyDef(
         "use_inner_text",
         PropertyType.BOOLEAN,
@@ -54,13 +70,7 @@ from loguru import logger
         label="Use Inner Text",
         tooltip="True = innerText (visible text), False = textContent (all text)",
     ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict",
-        tooltip="Require exactly one matching element",
-    ),
+    BROWSER_SELECTOR_STRICT,
     PropertyDef(
         "trim_whitespace",
         PropertyType.BOOLEAN,
@@ -68,43 +78,18 @@ from loguru import logger
         label="Trim Whitespace",
         tooltip="Trim leading/trailing whitespace from result",
     ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        min_value=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        min_value=0,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in ms",
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot on Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.STRING,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot",
-    ),
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
 )
 @executable_node
-class ExtractTextNode(BaseNode):
+class ExtractTextNode(BrowserBaseNode):
     """
     Extract text node - extracts text content from an element.
 
     Finds an element and retrieves its text content.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
@@ -117,6 +102,13 @@ class ExtractTextNode(BaseNode):
         retry_interval: Delay between retries
         screenshot_on_fail: Take screenshot on failure
         screenshot_path: Path for screenshot
+
+    Inputs:
+        page: Browser page instance
+        selector: Element selector override
+
+    Outputs:
+        text: Extracted text content
     """
 
     def __init__(
@@ -125,165 +117,103 @@ class ExtractTextNode(BaseNode):
         name: str = "Extract Text",
         **kwargs,
     ) -> None:
+        """Initialize extract text node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "ExtractTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
+        self.add_page_input_port()
+        self.add_selector_input_port()
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute text extraction.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with extracted text
-        """
+        """Execute text extraction."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_parameter("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
-            selector = self.get_parameter("selector", "")
-            if not selector:
-                raise ValueError("Selector is required")
-
-            selector = context.resolve_value(selector)
-            normalized_selector = normalize_selector(selector)
-
+            # Get extraction-specific parameters
             variable_name = self.get_parameter("variable_name", "extracted_text")
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
             use_inner_text = self.get_parameter("use_inner_text", False)
             trim_whitespace = self.get_parameter("trim_whitespace", True)
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
+            strict = self.get_parameter("strict", False)
 
             logger.info(
-                f"Extracting text from element: {normalized_selector} (use_inner_text={use_inner_text})"
+                f"Extracting text from element: {selector} (use_inner_text={use_inner_text})"
             )
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
+            async def perform_extraction() -> str:
+                locator = page.locator(selector)
+                if strict:
+                    locator = locator.first
 
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for extract text: {selector}"
-                        )
+                if use_inner_text:
+                    text = await locator.inner_text(timeout=timeout)
+                else:
+                    text = await locator.text_content(timeout=timeout)
 
-                    # Use locator API for better timeout support
-                    locator = page.locator(normalized_selector)
+                if trim_whitespace and text:
+                    text = text.strip()
 
-                    # Apply strict mode if configured
-                    if self.get_parameter("strict", False):
-                        locator = locator.first  # Ensures exactly one element
+                return text or ""
 
-                    # Extract text using appropriate method
-                    if use_inner_text:
-                        # innerText returns visible text only (respects CSS display/visibility)
-                        text = await locator.inner_text(timeout=timeout)
-                    else:
-                        # textContent returns all text including hidden elements
-                        text = await locator.text_content(timeout=timeout)
+            result = await retry_operation(
+                perform_extraction,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
+                operation_name=f"extract text from {selector}",
+            )
 
-                    # Trim whitespace if configured
-                    if trim_whitespace and text:
-                        text = text.strip()
+            if result.success:
+                text = result.value
+                context.set_variable(variable_name, text)
+                self.set_output_value("text", text)
 
-                    # Store in variable
-                    context.set_variable(variable_name, text)
-
-                    # Set output
-                    self.set_output_value("text", text)
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Text extracted successfully: {len(text) if text else 0} characters (attempt {attempts})"
-                    )
-
-                    return {
-                        "success": True,
-                        "data": {
-                            "text": text,
-                            "variable": variable_name,
-                            "use_inner_text": use_inner_text,
-                            "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
+                return self.success_result(
+                    {
+                        "text": text,
+                        "variable": variable_name,
+                        "use_inner_text": use_inner_text,
+                        "attempts": result.attempts,
                     }
+                )
 
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(f"Extract text failed (attempt {attempts}): {e}")
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
-
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
-
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"extract_text_fail_{timestamp}.png"
-
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise last_error
+            await self.screenshot_on_failure(page, "extract_text_fail")
+            raise result.last_error or RuntimeError("Extract text failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to extract text: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        return True, ""
+
+# =============================================================================
+# GetAttributeNode
+# =============================================================================
 
 
 @node_schema(
     PropertyDef(
         "selector",
-        PropertyType.STRING,
+        PropertyType.SELECTOR,
         default="",
-        label="Selector",
+        required=False,
+        label="Element Selector",
         tooltip="CSS or XPath selector for the element",
+        placeholder="#element or //a[@class='link']",
     ),
     PropertyDef(
         "attribute",
         PropertyType.STRING,
         default="",
         label="Attribute",
-        tooltip="Attribute name to retrieve",
+        tooltip="Attribute name to retrieve (e.g., href, src, data-id)",
     ),
     PropertyDef(
         "variable_name",
@@ -292,58 +222,20 @@ class ExtractTextNode(BaseNode):
         label="Variable Name",
         tooltip="Name of variable to store result",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        min_value=0,
-        label="Timeout (ms)",
-        tooltip="Timeout in milliseconds",
-    ),
-    PropertyDef(
-        "strict",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Strict",
-        tooltip="Require exactly one matching element",
-    ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        min_value=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        min_value=0,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in ms",
-    ),
-    PropertyDef(
-        "screenshot_on_fail",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Screenshot on Fail",
-        tooltip="Take screenshot on failure",
-    ),
-    PropertyDef(
-        "screenshot_path",
-        PropertyType.STRING,
-        default="",
-        label="Screenshot Path",
-        tooltip="Path for failure screenshot",
-    ),
+    BROWSER_TIMEOUT,
+    BROWSER_SELECTOR_STRICT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
 )
 @executable_node
-class GetAttributeNode(BaseNode):
+class GetAttributeNode(BrowserBaseNode):
     """
     Get attribute node - retrieves an attribute value from an element.
 
     Finds an element and gets the specified attribute value.
+    Extends BrowserBaseNode for shared page/selector/retry patterns.
 
     Config (via @node_schema):
         selector: CSS or XPath selector
@@ -355,6 +247,14 @@ class GetAttributeNode(BaseNode):
         retry_interval: Delay between retries
         screenshot_on_fail: Take screenshot on failure
         screenshot_path: Path for screenshot
+
+    Inputs:
+        page: Browser page instance
+        selector: Element selector override
+        attribute: Attribute name override
+
+    Outputs:
+        value: Attribute value
     """
 
     def __init__(
@@ -363,162 +263,100 @@ class GetAttributeNode(BaseNode):
         name: str = "Get Attribute",
         **kwargs,
     ) -> None:
+        """Initialize get attribute node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "GetAttributeNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_input_port("selector", PortType.INPUT, DataType.STRING)
+        self.add_page_input_port()
+        self.add_selector_input_port()
         self.add_input_port("attribute", PortType.INPUT, DataType.STRING)
         self.add_output_port("value", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute attribute retrieval.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with attribute value
-        """
+        """Execute attribute retrieval."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_parameter("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
+            selector = self.get_normalized_selector(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
-            selector = self.get_parameter("selector", "")
-            if not selector:
-                raise ValueError("Selector is required")
-
+            # Get attribute name
             attribute = self.get_parameter("attribute", "")
             if not attribute:
                 raise ValueError("Attribute name is required")
-
-            selector = context.resolve_value(selector)
             attribute = context.resolve_value(attribute)
-            normalized_selector = normalize_selector(selector)
 
+            # Get other parameters
             variable_name = self.get_parameter("variable_name", "attribute_value")
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
-            screenshot_on_fail = self.get_parameter("screenshot_on_fail", False)
-            screenshot_path = self.get_parameter("screenshot_path", "")
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
+            strict = self.get_parameter("strict", False)
 
-            logger.info(
-                f"Getting attribute '{attribute}' from element: {normalized_selector}"
+            logger.info(f"Getting attribute '{attribute}' from element: {selector}")
+
+            async def perform_get_attribute() -> str:
+                locator = page.locator(selector)
+                if strict:
+                    locator = locator.first
+
+                value = await locator.get_attribute(attribute, timeout=timeout)
+                return value or ""
+
+            result = await retry_operation(
+                perform_get_attribute,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
+                operation_name=f"get attribute {attribute} from {selector}",
             )
 
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
+            if result.success:
+                value = result.value
+                context.set_variable(variable_name, value)
+                self.set_output_value("value", value)
 
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for get attribute: {selector}"
-                        )
-
-                    # Use locator API for better timeout support
-                    locator = page.locator(normalized_selector)
-
-                    # Apply strict mode if configured
-                    if self.get_parameter("strict", False):
-                        locator = locator.first  # Ensures exactly one element
-
-                    # Get attribute with timeout
-                    value = await locator.get_attribute(attribute, timeout=timeout)
-
-                    # Store in variable
-                    context.set_variable(variable_name, value)
-
-                    # Set output
-                    self.set_output_value("value", value)
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(
-                        f"Attribute retrieved successfully: {attribute} = {value} (attempt {attempts})"
-                    )
-
-                    return {
-                        "success": True,
-                        "data": {
-                            "attribute": attribute,
-                            "value": value,
-                            "variable": variable_name,
-                            "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
+                return self.success_result(
+                    {
+                        "attribute": attribute,
+                        "value": value,
+                        "variable": variable_name,
+                        "attempts": result.attempts,
                     }
+                )
 
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(
-                            f"Get attribute failed (attempt {attempts}): {e}"
-                        )
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
-
-            # All attempts failed - take screenshot if requested
-            if screenshot_on_fail and page:
-                try:
-                    import os
-                    from datetime import datetime
-
-                    if screenshot_path:
-                        path = screenshot_path
-                    else:
-                        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        path = f"get_attribute_fail_{timestamp}.png"
-
-                    dir_path = os.path.dirname(path)
-                    if dir_path:
-                        os.makedirs(dir_path, exist_ok=True)
-
-                    await page.screenshot(path=path)
-                    logger.info(f"Failure screenshot saved: {path}")
-                except Exception as ss_error:
-                    logger.warning(f"Failed to take screenshot: {ss_error}")
-
-            raise last_error
+            await self.screenshot_on_failure(page, "get_attribute_fail")
+            raise result.last_error or RuntimeError("Get attribute failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to get attribute: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
 
-    def _validate_config(self) -> tuple[bool, str]:
-        """Validate node configuration."""
-        return True, ""
+
+# =============================================================================
+# ScreenshotNode
+# =============================================================================
 
 
 @node_schema(
     PropertyDef(
         "file_path",
-        PropertyType.STRING,
+        PropertyType.FILE_PATH,
         default="",
         label="File Path",
         tooltip="Path where screenshot will be saved",
+        placeholder="screenshots/capture.png",
     ),
     PropertyDef(
         "selector",
-        PropertyType.STRING,
+        PropertyType.SELECTOR,
         default="",
-        label="Selector",
+        required=False,
+        label="Element Selector",
         tooltip="Optional selector for element screenshot",
+        placeholder="#element or leave empty for full page",
     ),
     PropertyDef(
         "full_page",
@@ -527,21 +365,14 @@ class GetAttributeNode(BaseNode):
         label="Full Page",
         tooltip="Whether to capture full scrollable page",
     ),
-    PropertyDef(
-        "timeout",
-        PropertyType.INTEGER,
-        default=DEFAULT_NODE_TIMEOUT * 1000,
-        min_value=0,
-        label="Timeout (ms)",
-        tooltip="Timeout in milliseconds",
-    ),
+    BROWSER_TIMEOUT,
     PropertyDef(
         "type",
         PropertyType.CHOICE,
         default="png",
         choices=["png", "jpeg"],
         label="Image Type",
-        tooltip="Image type: png or jpeg",
+        tooltip="Image format: png or jpeg",
     ),
     PropertyDef(
         "quality",
@@ -558,7 +389,7 @@ class GetAttributeNode(BaseNode):
         default="device",
         choices=["css", "device"],
         label="Scale",
-        tooltip="css or device scale",
+        tooltip="Image scale: css or device",
     ),
     PropertyDef(
         "animations",
@@ -566,7 +397,7 @@ class GetAttributeNode(BaseNode):
         default="allow",
         choices=["allow", "disabled"],
         label="Animations",
-        tooltip="allow or disabled animations",
+        tooltip="Allow or disable animations during capture",
     ),
     PropertyDef(
         "omit_background",
@@ -581,31 +412,18 @@ class GetAttributeNode(BaseNode):
         default="hide",
         choices=["hide", "initial"],
         label="Caret",
-        tooltip="hide or initial - whether to hide text caret",
+        tooltip="Whether to hide text caret",
     ),
-    PropertyDef(
-        "retry_count",
-        PropertyType.INTEGER,
-        default=0,
-        min_value=0,
-        label="Retry Count",
-        tooltip="Number of retries on failure",
-    ),
-    PropertyDef(
-        "retry_interval",
-        PropertyType.INTEGER,
-        default=1000,
-        min_value=0,
-        label="Retry Interval (ms)",
-        tooltip="Delay between retries in ms",
-    ),
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
 )
 @executable_node
-class ScreenshotNode(BaseNode):
+class ScreenshotNode(BrowserBaseNode):
     """
     Screenshot node - captures a screenshot of the page or element.
 
     Takes a screenshot and saves it to a file.
+    Extends BrowserBaseNode for shared page/retry patterns.
 
     Config (via @node_schema):
         file_path: Path where screenshot will be saved
@@ -620,6 +438,14 @@ class ScreenshotNode(BaseNode):
         caret: hide or initial
         retry_count: Retry attempts
         retry_interval: Delay between retries
+
+    Inputs:
+        page: Browser page instance
+        file_path: Screenshot file path override
+
+    Outputs:
+        file_path: Path where screenshot was saved
+        attachment_file: List containing file path (for attachments)
     """
 
     def __init__(
@@ -628,206 +454,167 @@ class ScreenshotNode(BaseNode):
         name: str = "Screenshot",
         **kwargs,
     ) -> None:
+        """Initialize screenshot node."""
         config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name=name)
         self.node_type = "ScreenshotNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
+        self.add_page_input_port()
         self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
         self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        """
-        Execute screenshot capture.
-
-        Args:
-            context: Execution context for the workflow
-
-        Returns:
-            Result with screenshot file path
-        """
+        """Execute screenshot capture."""
         self.status = NodeStatus.RUNNING
 
         try:
-            page = self.get_parameter("page")
-            if page is None:
-                page = context.get_active_page()
+            page = self.get_page(context)
 
-            if page is None:
-                raise ValueError("No page instance found")
-
+            # Get file path
             file_path = self.get_parameter("file_path", "")
             if not file_path:
                 raise ValueError("File path is required")
-
             file_path = context.resolve_value(file_path)
+            file_path = self._normalize_file_path(file_path)
 
-            # Clean up and normalize file path
-            import os
-            from datetime import datetime
-
-            # Remove quotes that might be in the path
-            file_path = file_path.strip().strip('"').strip("'")
-
-            # Get the image type for extension
-            img_type = self.get_parameter("type", "png")
-            ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
-
-            # If path is a directory (ends with separator or is existing dir), auto-generate filename
-            if (
-                file_path.endswith(os.sep)
-                or file_path.endswith("/")
-                or file_path.endswith("\\")
-            ):
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
-            elif os.path.isdir(file_path):
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
-
-            # Normalize path and ensure it's absolute
-            file_path = os.path.normpath(file_path)
-            if not os.path.isabs(file_path):
-                file_path = os.path.abspath(file_path)
-
-            # Create parent directory if it doesn't exist
-            parent_dir = os.path.dirname(file_path)
-            if parent_dir and not os.path.exists(parent_dir):
-                os.makedirs(parent_dir, exist_ok=True)
-                logger.info(f"Created directory: {parent_dir}")
-
-            selector = self.get_parameter("selector")
+            # Get screenshot options
+            selector = self.get_optional_normalized_selector(context)
             full_page = self.get_parameter("full_page", False)
-
-            # Resolve {{variable}} patterns in selector if present
-            if selector:
-                selector = context.resolve_value(selector)
-
-            timeout = self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000)
-            retry_count = self.get_parameter("retry_count", 0)
-            retry_interval = self.get_parameter("retry_interval", 1000)
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
 
             logger.info(f"Taking screenshot: {file_path}")
 
             # Build screenshot options
-            screenshot_options = {"path": file_path, "timeout": timeout}
+            screenshot_options = self._build_screenshot_options(timeout)
 
-            # Image type (png or jpeg)
-            if img_type and img_type in ("png", "jpeg"):
-                screenshot_options["type"] = img_type
-
-            # JPEG quality (0-100)
-            quality = self.get_parameter("quality")
-            if quality is not None and quality != "" and img_type == "jpeg":
-                try:
-                    screenshot_options["quality"] = int(quality)
-                except (ValueError, TypeError):
-                    pass
-
-            # Scale (css or device)
-            scale = self.get_parameter("scale", "device")
-            if scale and scale in ("css", "device"):
-                screenshot_options["scale"] = scale
-
-            # Animations (allow or disabled)
-            animations = self.get_parameter("animations", "allow")
-            if animations and animations in ("allow", "disabled"):
-                screenshot_options["animations"] = animations
-
-            # Omit background (PNG transparency)
-            if self.get_parameter("omit_background", False) and img_type == "png":
-                screenshot_options["omit_background"] = True
-
-            # Caret visibility (hide or initial)
-            caret = self.get_parameter("caret", "hide")
-            if caret and caret in ("hide", "initial"):
-                screenshot_options["caret"] = caret
-
-            logger.debug(f"Screenshot options: {screenshot_options}")
-
-            last_error = None
-            attempts = 0
-            max_attempts = retry_count + 1
-
-            while attempts < max_attempts:
-                try:
-                    attempts += 1
-                    if attempts > 1:
-                        logger.info(
-                            f"Retry attempt {attempts - 1}/{retry_count} for screenshot"
+            async def perform_screenshot() -> str:
+                if selector:
+                    locator = page.locator(selector)
+                    element_options = {
+                        k: v
+                        for k, v in screenshot_options.items()
+                        if k
+                        in (
+                            "path",
+                            "timeout",
+                            "type",
+                            "quality",
+                            "scale",
+                            "animations",
+                            "omit_background",
+                            "caret",
                         )
-
-                    # Take screenshot
-                    if selector:
-                        # Normalize selector for Playwright
-                        normalized_selector = normalize_selector(selector)
-                        locator = page.locator(normalized_selector)
-                        # For element screenshots, remove options not supported by locator.screenshot
-                        element_options = {
-                            k: v
-                            for k, v in screenshot_options.items()
-                            if k
-                            in (
-                                "path",
-                                "timeout",
-                                "type",
-                                "quality",
-                                "scale",
-                                "animations",
-                                "omit_background",
-                                "caret",
-                            )
-                        }
-                        await locator.screenshot(**element_options)
-                    else:
-                        screenshot_options["full_page"] = full_page
-                        await page.screenshot(**screenshot_options)
-
-                    # Set output
-                    self.set_output_value("file_path", file_path)
-                    self.set_output_value("attachment_file", [file_path])
-
-                    self.status = NodeStatus.SUCCESS
-                    logger.info(f"Screenshot saved: {file_path} (attempt {attempts})")
-
-                    return {
-                        "success": True,
-                        "data": {
-                            "file_path": file_path,
-                            "full_page": full_page,
-                            "element": bool(
-                                selector
-                            ),  # True if selector is non-empty string
-                            "type": img_type,
-                            "attempts": attempts,
-                        },
-                        "next_nodes": ["exec_out"],
                     }
+                    await locator.screenshot(**element_options)
+                else:
+                    screenshot_options["full_page"] = full_page
+                    await page.screenshot(**screenshot_options)
+                return file_path
 
-                except Exception as e:
-                    last_error = e
-                    if attempts < max_attempts:
-                        logger.warning(f"Screenshot failed (attempt {attempts}): {e}")
-                        await asyncio.sleep(retry_interval / 1000)
-                    else:
-                        break
+            result = await retry_operation(
+                perform_screenshot,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
+                operation_name="screenshot capture",
+            )
 
-            raise last_error
+            if result.success:
+                self.set_output_value("file_path", file_path)
+                self.set_output_value("attachment_file", [file_path])
+
+                img_type = self.get_parameter("type", "png")
+                return self.success_result(
+                    {
+                        "file_path": file_path,
+                        "full_page": full_page,
+                        "element": bool(selector),
+                        "type": img_type,
+                        "attempts": result.attempts,
+                    }
+                )
+
+            raise result.last_error or RuntimeError("Screenshot failed")
 
         except Exception as e:
-            self.status = NodeStatus.ERROR
-            logger.error(f"Failed to take screenshot: {e}")
-            return {"success": False, "error": str(e), "next_nodes": []}
+            return self.error_result(e)
+
+    def _normalize_file_path(self, file_path: str) -> str:
+        """Normalize and prepare the screenshot file path."""
+        file_path = file_path.strip().strip('"').strip("'")
+
+        img_type = self.get_parameter("type", "png")
+        ext = f".{img_type}" if img_type in ("png", "jpeg") else ".png"
+
+        # If path is a directory, auto-generate filename
+        if (
+            file_path.endswith(os.sep)
+            or file_path.endswith("/")
+            or file_path.endswith("\\")
+        ):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
+        elif os.path.isdir(file_path):
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            file_path = os.path.join(file_path, f"screenshot_{timestamp}{ext}")
+
+        file_path = os.path.normpath(file_path)
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(file_path)
+
+        # Create parent directory
+        parent_dir = os.path.dirname(file_path)
+        if parent_dir and not os.path.exists(parent_dir):
+            os.makedirs(parent_dir, exist_ok=True)
+            logger.info(f"Created directory: {parent_dir}")
+
+        return file_path
+
+    def _build_screenshot_options(self, timeout: int) -> dict:
+        """Build Playwright screenshot options dictionary."""
+        file_path = self.get_parameter("file_path", "")
+        file_path = file_path.strip().strip('"').strip("'")
+        file_path = self._normalize_file_path(file_path)
+
+        options: dict = {"path": file_path, "timeout": timeout}
+
+        img_type = self.get_parameter("type", "png")
+        if img_type in ("png", "jpeg"):
+            options["type"] = img_type
+
+        quality = self.get_parameter("quality")
+        if quality is not None and quality != "" and img_type == "jpeg":
+            try:
+                options["quality"] = int(quality)
+            except (ValueError, TypeError):
+                pass
+
+        scale = self.get_parameter("scale", "device")
+        if scale in ("css", "device"):
+            options["scale"] = scale
+
+        animations = self.get_parameter("animations", "allow")
+        if animations in ("allow", "disabled"):
+            options["animations"] = animations
+
+        if self.get_parameter("omit_background", False) and img_type == "png":
+            options["omit_background"] = True
+
+        caret = self.get_parameter("caret", "hide")
+        if caret in ("hide", "initial"):
+            options["caret"] = caret
+
+        return options
 
     def _validate_config(self) -> tuple[bool, str]:
         """Validate node configuration."""
         file_path = self.config.get("file_path", "")
         if file_path:
-            # Check if path is valid
             try:
                 Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             except Exception as e:

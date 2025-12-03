@@ -94,10 +94,10 @@ from casare_rpa.domain.value_objects.types import (
     PortType,
 )
 
-from .sql_nodes import (
-    DatabaseConnection,
-    AIOSQLITE_AVAILABLE,
+from casare_rpa.nodes.database.sql_nodes import (
     AIOMYSQL_AVAILABLE,
+    AIOSQLITE_AVAILABLE,
+    DatabaseConnection,
 )
 
 # Import aiomysql for DictCursor if available

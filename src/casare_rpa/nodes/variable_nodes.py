@@ -181,7 +181,6 @@ class SetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "variable_name",
@@ -199,6 +198,7 @@ class SetVariableNode(BaseNode):
         tooltip="Default value if variable not found",
     ),
 )
+@executable_node
 class GetVariableNode(BaseNode):
     """
     Get variable node - retrieves a value from the execution context.
@@ -275,7 +275,6 @@ class GetVariableNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "variable_name",
@@ -293,6 +292,7 @@ class GetVariableNode(BaseNode):
         tooltip="Amount to increment by",
     ),
 )
+@executable_node
 class IncrementVariableNode(BaseNode):
     """
     Increment variable node - increments a numeric variable.

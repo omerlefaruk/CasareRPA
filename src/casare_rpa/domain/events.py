@@ -116,9 +116,17 @@ class EventBus:
             try:
                 handler(event)
             except Exception as e:
-                logger.error(f"Error in event handler for {event.event_type.name}: {e}")
+                # Avoid logging LOG_MESSAGE events to prevent re-entrancy deadlock
+                if event.event_type != EventType.LOG_MESSAGE:
+                    logger.error(
+                        f"Error in event handler for {event.event_type.name}: {e}"
+                    )
 
-        logger.debug(f"Event published: {event}")
+        # Avoid logging LOG_MESSAGE events to prevent re-entrancy deadlock
+        # (UILoguruSink publishes LOG_MESSAGE which would trigger this log,
+        # causing loguru internal lock deadlock)
+        if event.event_type != EventType.LOG_MESSAGE:
+            logger.debug(f"Event published: {event}")
 
     def emit(
         self,
@@ -193,29 +201,51 @@ class EventBus:
         )
 
 
-# Global event bus instance (singleton pattern)
-_global_event_bus: Optional[EventBus] = None
+# Module-level singleton with thread-safe lazy initialization
+import threading
+
+_event_bus_instance: Optional[EventBus] = None
+_event_bus_lock = threading.Lock()
+
+
+def _get_event_bus_singleton() -> EventBus:
+    """Get or create the event bus singleton with double-checked locking."""
+    _local_instance = _event_bus_instance
+    if _local_instance is None:
+        with _event_bus_lock:
+            _local_instance = _event_bus_instance
+            if _local_instance is None:
+                _local_instance = EventBus()
+                globals()["_event_bus_instance"] = _local_instance
+                logger.info("Event bus created")
+    return _local_instance
 
 
 def get_event_bus() -> EventBus:
     """
-    Get the global event bus instance (singleton).
+    Get the event bus instance (singleton).
+
+    Thread-safe lazy initialization.
 
     Returns:
-        Global EventBus instance
+        EventBus instance
     """
-    global _global_event_bus
-    if _global_event_bus is None:
-        _global_event_bus = EventBus()
-        logger.info("Global event bus created")
-    return _global_event_bus
+    return _get_event_bus_singleton()
 
 
 def reset_event_bus() -> None:
-    """Reset the global event bus (primarily for testing)."""
-    global _global_event_bus
-    _global_event_bus = None
-    logger.debug("Global event bus reset")
+    """
+    Reset the event bus singleton (primarily for testing).
+
+    Thread-safe cleanup of the singleton.
+    """
+    with _event_bus_lock:
+        _local_instance = _event_bus_instance
+        if _local_instance is not None:
+            _local_instance.clear_handlers()
+            _local_instance.clear_history()
+        globals()["_event_bus_instance"] = None
+    logger.debug("Event bus reset")
 
 
 class EventLogger:

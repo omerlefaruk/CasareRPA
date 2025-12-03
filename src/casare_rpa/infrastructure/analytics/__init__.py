@@ -3,24 +3,81 @@ CasareRPA Infrastructure: Analytics Module
 
 Provides metrics aggregation, historical analysis, and reporting capabilities
 for workflow execution monitoring and optimization.
+
+Architecture:
+- metrics_aggregator.py: Facade for analytics API
+- aggregation_strategies.py: Strategy pattern for different aggregation types
+- metric_calculators.py: Business logic calculators
+- metric_storage.py: Storage adapters
+- bottleneck_detector.py: Bottleneck analysis
+- execution_analyzer.py: Execution pattern analysis
+- process_mining.py: Process mining capabilities
 """
 
+# Metrics Aggregator (facade)
 from casare_rpa.infrastructure.analytics.metrics_aggregator import (
     MetricsAggregator,
-    AggregationPeriod,
-    TimeSeriesDataPoint,
+    get_metrics_aggregator,
+)
+
+# Metric Models (public API data classes)
+from casare_rpa.infrastructure.analytics.metric_models import (
+    ExecutionDistribution,
     WorkflowMetrics,
     RobotPerformanceMetrics,
-    ExecutionDistribution,
+    AnalyticsReport,
     BottleneckAnalysis,
     EfficiencyScore,
     CostAnalysis,
     SLACompliance,
     ComparativeAnalysis,
-    AnalyticsReport,
-    get_metrics_aggregator,
 )
 
+# Aggregation Strategies
+from casare_rpa.infrastructure.analytics.aggregation_strategies import (
+    AggregationPeriod,
+    TimeSeriesDataPoint,
+    AggregationStrategy,
+    TimeBasedAggregationStrategy,
+    StatisticalAggregationStrategy,
+    DimensionalAggregationStrategy,
+    RollingWindowAggregationStrategy,
+    AggregationStrategyFactory,
+    StatisticalResult,
+    DimensionalBucket,
+    RollingWindowResult,
+)
+
+# Metric Calculators
+from casare_rpa.infrastructure.analytics.metric_calculators import (
+    EfficiencyScoreCalculator,
+    EfficiencyScoreResult,
+    CostAnalysisCalculator,
+    CostAnalysisResult,
+    SLAComplianceCalculator,
+    SLAComplianceResult,
+    BottleneckAnalysisCalculator,
+    BottleneckAnalysisResult,
+    VersionComparisonCalculator,
+    VersionComparisonResult,
+)
+
+# Metric Storage
+from casare_rpa.infrastructure.analytics.metric_storage import (
+    JobRecord,
+    WorkflowMetricsData,
+    RobotMetricsData,
+    MetricStorage,
+    InMemoryJobRecordStorage,
+    WorkflowMetricsCache,
+    RobotMetricsCache,
+    ErrorTrackingStorage,
+    HealingMetricsStorage,
+    QueueDepthStorage,
+    MetricsStorageManager,
+)
+
+# Bottleneck Detector
 from casare_rpa.infrastructure.analytics.bottleneck_detector import (
     BottleneckDetector,
     BottleneckInfo,
@@ -30,6 +87,7 @@ from casare_rpa.infrastructure.analytics.bottleneck_detector import (
     NodeExecutionStats,
 )
 
+# Execution Analyzer
 from casare_rpa.infrastructure.analytics.execution_analyzer import (
     ExecutionAnalyzer,
     ExecutionAnalysisResult,
@@ -41,6 +99,7 @@ from casare_rpa.infrastructure.analytics.execution_analyzer import (
     TrendDirection,
 )
 
+# Process Mining
 from casare_rpa.infrastructure.analytics.process_mining import (
     ProcessMiner,
     ProcessEventLog,
@@ -61,7 +120,7 @@ from casare_rpa.infrastructure.analytics.process_mining import (
 )
 
 __all__ = [
-    # Metrics Aggregator
+    # Metrics Aggregator (facade)
     "MetricsAggregator",
     "AggregationPeriod",
     "TimeSeriesDataPoint",
@@ -75,6 +134,39 @@ __all__ = [
     "ComparativeAnalysis",
     "AnalyticsReport",
     "get_metrics_aggregator",
+    # Aggregation Strategies
+    "AggregationStrategy",
+    "TimeBasedAggregationStrategy",
+    "StatisticalAggregationStrategy",
+    "DimensionalAggregationStrategy",
+    "RollingWindowAggregationStrategy",
+    "AggregationStrategyFactory",
+    "StatisticalResult",
+    "DimensionalBucket",
+    "RollingWindowResult",
+    # Metric Calculators
+    "EfficiencyScoreCalculator",
+    "EfficiencyScoreResult",
+    "CostAnalysisCalculator",
+    "CostAnalysisResult",
+    "SLAComplianceCalculator",
+    "SLAComplianceResult",
+    "BottleneckAnalysisCalculator",
+    "BottleneckAnalysisResult",
+    "VersionComparisonCalculator",
+    "VersionComparisonResult",
+    # Metric Storage
+    "JobRecord",
+    "WorkflowMetricsData",
+    "RobotMetricsData",
+    "MetricStorage",
+    "InMemoryJobRecordStorage",
+    "WorkflowMetricsCache",
+    "RobotMetricsCache",
+    "ErrorTrackingStorage",
+    "HealingMetricsStorage",
+    "QueueDepthStorage",
+    "MetricsStorageManager",
     # Bottleneck Detector
     "BottleneckDetector",
     "BottleneckInfo",

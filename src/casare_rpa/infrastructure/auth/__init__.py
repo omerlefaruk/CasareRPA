@@ -28,11 +28,11 @@ Usage:
         # Proceed with authentication
 """
 
-from .robot_api_keys import (
-    RobotApiKey,
-    RobotApiKeyService,
-    RobotApiKeyError,
+from casare_rpa.infrastructure.auth.robot_api_keys import (
     ApiKeyValidationResult,
+    RobotApiKey,
+    RobotApiKeyError,
+    RobotApiKeyService,
     generate_api_key_raw,
     hash_api_key,
 )

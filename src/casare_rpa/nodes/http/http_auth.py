@@ -203,7 +203,6 @@ class HttpAuthNode(CredentialAwareMixin, BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "client_id",
@@ -256,6 +255,7 @@ class HttpAuthNode(CredentialAwareMixin, BaseNode):
         tooltip="Enable PKCE (Proof Key for Code Exchange) for enhanced security",
     ),
 )
+@executable_node
 class OAuth2AuthorizeNode(BaseNode):
     """
     Build OAuth 2.0 authorization URL for user authentication.
@@ -386,7 +386,6 @@ class OAuth2AuthorizeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "client_id",
@@ -430,6 +429,7 @@ class OAuth2AuthorizeNode(BaseNode):
         tooltip="OAuth 2.0 grant type",
     ),
 )
+@executable_node
 class OAuth2TokenExchangeNode(BaseNode):
     """
     Exchange OAuth 2.0 authorization code for access token.
@@ -607,7 +607,6 @@ class OAuth2TokenExchangeNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "port",
@@ -635,6 +634,7 @@ class OAuth2TokenExchangeNode(BaseNode):
         tooltip="URL path for the callback",
     ),
 )
+@executable_node
 class OAuth2CallbackServerNode(BaseNode):
     """
     Start a local server to receive OAuth 2.0 callback.
@@ -809,7 +809,6 @@ class OAuth2CallbackServerNode(BaseNode):
             return {"success": False, "error": error_msg, "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "introspection_url",
@@ -833,6 +832,7 @@ class OAuth2CallbackServerNode(BaseNode):
         tooltip="Client secret for introspection authentication",
     ),
 )
+@executable_node
 class OAuth2TokenValidateNode(BaseNode):
     """
     Validate an OAuth 2.0 access token using introspection endpoint.

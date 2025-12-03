@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from loguru import logger
 
-from ..value_objects.types import NodeId, ExecutionMode
+from casare_rpa.domain.value_objects.types import ExecutionMode, NodeId
 
 if TYPE_CHECKING:
-    from ...project.project_context import ProjectContext
+    from casare_rpa.project.project_context import ProjectContext
 
 
 class ExecutionState:

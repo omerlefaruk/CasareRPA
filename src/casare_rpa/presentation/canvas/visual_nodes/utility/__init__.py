@@ -2,7 +2,7 @@
 Visual Nodes - Utility
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
     # Random operations
     VisualRandomNumberNode,
     VisualRandomChoiceNode,

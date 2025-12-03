@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal
 
-from .variables_panel import VariablesPanel
+from casare_rpa.presentation.canvas.ui.panels.variables_panel import VariablesPanel
 
 
 class VariablesTab(QWidget):

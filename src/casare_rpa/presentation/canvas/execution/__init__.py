@@ -1,5 +1,7 @@
 """Workflow execution for Canvas."""
 
-from .canvas_workflow_runner import CanvasWorkflowRunner
+from casare_rpa.presentation.canvas.execution.canvas_workflow_runner import (
+    CanvasWorkflowRunner,
+)
 
 __all__ = ["CanvasWorkflowRunner"]

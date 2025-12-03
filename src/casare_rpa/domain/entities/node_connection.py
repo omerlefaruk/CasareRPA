@@ -5,7 +5,7 @@ Represents a connection between two node ports in a workflow.
 
 from typing import Dict
 
-from ..value_objects.types import NodeId, PortId
+from casare_rpa.domain.value_objects.types import NodeId, PortId
 
 
 class NodeConnection:
@@ -116,4 +116,6 @@ class NodeConnection:
 
     def __hash__(self) -> int:
         """Hash based on connection endpoints."""
-        return hash((self._source_node, self._source_port, self._target_node, self._target_port))
+        return hash(
+            (self._source_node, self._source_port, self._target_node, self._target_port)
+        )

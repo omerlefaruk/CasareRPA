@@ -93,7 +93,7 @@ C4Context
 
 ```python
 # Token generation (from resilience.py)
-from casare_rpa.orchestrator.resilience import SecurityManager
+from casare_rpa.infrastructure.orchestrator.resilience import SecurityManager
 
 security = SecurityManager(
     secret_key="secure-random-key",

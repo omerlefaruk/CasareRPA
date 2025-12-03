@@ -98,11 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Breakpoint management
   - REPL console
   - Execution snapshots
-- **Node Library Panel** (`ui/panels/node_library_panel.py`) - NEW
-  - Searchable tree view of all 240+ nodes
-  - Category-based organization with icons
-  - Drag-and-drop to canvas
-  - Double-click to create at center
 - **Toolbar Icons** (`ui/icons.py`) - NEW
   - Theme-aware Qt standard icons (QStyle.StandardPixmap)
   - No external icon assets required
@@ -120,7 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `DockCreator` now creates Node Library Panel and Debug Panel
+- `DockCreator` now creates Debug Panel
 - `MainToolbar` and `DebugToolbar` use themed icons
 - Shortcut conflicts resolved across action_factory, action_manager, toolbars
 - MainWindow integrates debug handlers (_on_debug_mode_toggled, etc.)
@@ -134,6 +129,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased]
+
+### Fixed (2025-12-04)
+
+- **Preferences Dialog** - Connected to SettingsManager for persistent settings
+  - Now loads current settings when opened
+  - Saves settings on Apply/OK to `config/settings.json`
+  - Added all preference categories to SettingsManager defaults (general, autosave, editor, performance)
+
+### Removed (2025-12-04)
+
+- **Node Library Panel** - Removed dockable panel; replaced by tab menu for node creation
+  - Deleted `ui/panels/node_library_panel.py` (654 lines)
+  - Removed from dock_creator.py, main_window.py, ui_component_initializer.py
+- **Debug Toolbar** - Removed separate debug toolbar from main window
+  - Deleted `ui/toolbars/debug_toolbar.py` (284 lines)
+  - Debug panel still available for debugging features
+- **Zoom Toolbar & Menu Items** - Removed zoom controls from toolbar and View menu
+  - Deleted `ui/toolbars/zoom_toolbar.py` (246 lines)
+  - Removed zoom_in, zoom_out, zoom_reset, fit_view actions and menu items
 
 ### Robot Execution Improvements (2025-11-30)
 

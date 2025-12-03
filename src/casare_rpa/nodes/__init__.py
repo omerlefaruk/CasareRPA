@@ -13,6 +13,23 @@ __version__ = "0.1.0"
 
 # Type hints for IDE support - these don't actually import at runtime
 if TYPE_CHECKING:
+    # Browser base classes and utilities
+    from .browser import (
+        BrowserBaseNode,
+        get_page_from_context,
+        take_failure_screenshot,
+        BROWSER_TIMEOUT,
+        BROWSER_RETRY_COUNT,
+        BROWSER_RETRY_INTERVAL,
+        BROWSER_SCREENSHOT_ON_FAIL,
+        BROWSER_SCREENSHOT_PATH,
+        BROWSER_SELECTOR,
+        BROWSER_SELECTOR_STRICT,
+        BROWSER_WAIT_UNTIL,
+        BROWSER_FORCE,
+        BROWSER_NO_WAIT_AFTER,
+        BROWSER_HIGHLIGHT,
+    )
     from .basic_nodes import StartNode, EndNode, CommentNode
     from .browser_nodes import (
         LaunchBrowserNode,
@@ -139,7 +156,7 @@ if TYPE_CHECKING:
         ZipFilesNode,
         UnzipFilesNode,
     )
-    from .email_nodes import (
+    from casare_rpa.nodes.email import (
         SendEmailNode,
         ReadEmailsNode,
         GetEmailContentNode,
@@ -202,7 +219,7 @@ if TYPE_CHECKING:
         TextJoinNode,
         TextExtractNode,
     )
-    from .system_nodes import (
+    from .system import (
         ClipboardCopyNode,
         ClipboardPasteNode,
         ClipboardClearNode,
@@ -403,19 +420,23 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ValidateNode": "utility_nodes",
     "TransformNode": "utility_nodes",
     "LogNode": "utility_nodes",
+    # File system nodes - read operations
+    "ReadFileNode": "file.file_read_nodes",
+    # File system nodes - write operations
+    "WriteFileNode": "file.file_write_nodes",
+    "AppendFileNode": "file.file_write_nodes",
     # File system nodes - file operations
-    "ReadFileNode": "file.file_operations",
-    "WriteFileNode": "file.file_operations",
-    "AppendFileNode": "file.file_operations",
-    "DeleteFileNode": "file.file_operations",
-    "CopyFileNode": "file.file_operations",
-    "MoveFileNode": "file.file_operations",
-    "CreateDirectoryNode": "file.file_operations",
-    "ListDirectoryNode": "file.file_operations",
-    "ListFilesNode": "file.file_operations",
-    "FileExistsNode": "file.file_operations",
-    "GetFileSizeNode": "file.file_operations",
-    "GetFileInfoNode": "file.file_operations",
+    "DeleteFileNode": "file.file_system_nodes",
+    "CopyFileNode": "file.file_system_nodes",
+    "MoveFileNode": "file.file_system_nodes",
+    # File system nodes - directory operations
+    "CreateDirectoryNode": "file.directory_nodes",
+    "ListDirectoryNode": "file.directory_nodes",
+    "ListFilesNode": "file.directory_nodes",
+    # File system nodes - path info operations
+    "FileExistsNode": "file.path_nodes",
+    "GetFileSizeNode": "file.path_nodes",
+    "GetFileInfoNode": "file.path_nodes",
     # File system nodes - structured data
     "ReadCSVNode": "file.structured_data",
     "WriteCSVNode": "file.structured_data",
@@ -423,15 +444,17 @@ _NODE_REGISTRY: Dict[str, str] = {
     "WriteJSONFileNode": "file.structured_data",
     "ZipFilesNode": "file.structured_data",
     "UnzipFilesNode": "file.structured_data",
-    # Email nodes
-    "SendEmailNode": "email_nodes",
-    "ReadEmailsNode": "email_nodes",
-    "GetEmailContentNode": "email_nodes",
-    "SaveAttachmentNode": "email_nodes",
-    "FilterEmailsNode": "email_nodes",
-    "MarkEmailNode": "email_nodes",
-    "DeleteEmailNode": "email_nodes",
-    "MoveEmailNode": "email_nodes",
+    # Email nodes - send operations
+    "SendEmailNode": "email.send_nodes",
+    # Email nodes - receive/read operations
+    "ReadEmailsNode": "email.receive_nodes",
+    "GetEmailContentNode": "email.receive_nodes",
+    "FilterEmailsNode": "email.receive_nodes",
+    # Email nodes - IMAP management
+    "SaveAttachmentNode": "email.imap_nodes",
+    "MarkEmailNode": "email.imap_nodes",
+    "DeleteEmailNode": "email.imap_nodes",
+    "MoveEmailNode": "email.imap_nodes",
     # HTTP/REST API nodes
     "HttpRequestNode": "http.http_basic",
     # HTTP/REST API nodes - advanced operations
@@ -483,20 +506,23 @@ _NODE_REGISTRY: Dict[str, str] = {
     "TextCountNode": "text_nodes",
     "TextJoinNode": "text_nodes",
     "TextExtractNode": "text_nodes",
-    # System nodes (Clipboard, Dialogs, Terminal, Services)
-    "ClipboardCopyNode": "system_nodes",
-    "ClipboardPasteNode": "system_nodes",
-    "ClipboardClearNode": "system_nodes",
-    "MessageBoxNode": "system_nodes",
-    "InputDialogNode": "system_nodes",
-    "TooltipNode": "system_nodes",
-    "RunCommandNode": "system_nodes",
-    "RunPowerShellNode": "system_nodes",
-    "GetServiceStatusNode": "system_nodes",
-    "StartServiceNode": "system_nodes",
-    "StopServiceNode": "system_nodes",
-    "RestartServiceNode": "system_nodes",
-    "ListServicesNode": "system_nodes",
+    # System nodes - Clipboard operations
+    "ClipboardCopyNode": "system.clipboard_nodes",
+    "ClipboardPasteNode": "system.clipboard_nodes",
+    "ClipboardClearNode": "system.clipboard_nodes",
+    # System nodes - Dialog operations
+    "MessageBoxNode": "system.dialog_nodes",
+    "InputDialogNode": "system.dialog_nodes",
+    "TooltipNode": "system.dialog_nodes",
+    # System nodes - Command execution
+    "RunCommandNode": "system.command_nodes",
+    "RunPowerShellNode": "system.command_nodes",
+    # System nodes - Windows Services
+    "GetServiceStatusNode": "system.service_nodes",
+    "StartServiceNode": "system.service_nodes",
+    "StopServiceNode": "system.service_nodes",
+    "RestartServiceNode": "system.service_nodes",
+    "ListServicesNode": "system.service_nodes",
     # Script nodes
     "RunPythonScriptNode": "script_nodes",
     "RunPythonFileNode": "script_nodes",
@@ -563,6 +589,20 @@ _NODE_REGISTRY: Dict[str, str] = {
     "DriveTriggerNode": "trigger_nodes.drive_trigger_node",
     "SheetsTriggerNode": "trigger_nodes.sheets_trigger_node",
     "CalendarTriggerNode": "trigger_nodes.calendar_trigger_node",
+    # Google Calendar nodes - Event operations
+    "CalendarListEventsNode": "google.calendar.calendar_events",
+    "CalendarGetEventNode": "google.calendar.calendar_events",
+    "CalendarCreateEventNode": "google.calendar.calendar_events",
+    "CalendarUpdateEventNode": "google.calendar.calendar_events",
+    "CalendarDeleteEventNode": "google.calendar.calendar_events",
+    "CalendarQuickAddNode": "google.calendar.calendar_events",
+    "CalendarMoveEventNode": "google.calendar.calendar_events",
+    "CalendarGetFreeBusyNode": "google.calendar.calendar_events",
+    # Google Calendar nodes - Management operations
+    "CalendarListCalendarsNode": "google.calendar.calendar_manage",
+    "CalendarGetCalendarNode": "google.calendar.calendar_manage",
+    "CalendarCreateCalendarNode": "google.calendar.calendar_manage",
+    "CalendarDeleteCalendarNode": "google.calendar.calendar_manage",
     # Telegram messaging nodes - Send
     "TelegramSendMessageNode": "messaging.telegram.telegram_send",
     "TelegramSendPhotoNode": "messaging.telegram.telegram_send",
@@ -612,6 +652,9 @@ _NODE_REGISTRY: Dict[str, str] = {
     "GmailBatchSendNode": "google.gmail_nodes",
     "GmailBatchModifyNode": "google.gmail_nodes",
     "GmailBatchDeleteNode": "google.gmail_nodes",
+    "GmailReplyToEmailNode": "google.gmail.gmail_send",
+    "GmailForwardEmailNode": "google.gmail.gmail_send",
+    "GmailGetAttachmentNode": "google.gmail.gmail_read",
     # Sheets nodes (from google.sheets_nodes)
     "SheetsGetCellNode": "google.sheets_nodes",
     "SheetsSetCellNode": "google.sheets_nodes",

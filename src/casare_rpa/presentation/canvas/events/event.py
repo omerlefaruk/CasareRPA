@@ -30,7 +30,7 @@ from datetime import datetime
 from enum import Enum
 import time
 
-from .event_types import EventType, EventCategory
+from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
 
 
 class EventPriority(Enum):

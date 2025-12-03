@@ -4,41 +4,51 @@ Desktop Element Interaction Nodes
 Nodes for finding and interacting with Windows desktop UI elements.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
+
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode as Node
 from casare_rpa.domain.decorators import executable_node, node_schema
-from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import NodeStatus, PortType, DataType
 
-
-@executable_node
-@node_schema(
-    PropertyDef(
-        "selector",
-        PropertyType.JSON,
-        required=False,
-        label="Selector",
-        tooltip="Element selector dictionary with 'strategy' and 'value'",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for element",
-    ),
-    PropertyDef(
-        "throw_on_not_found",
-        PropertyType.BOOLEAN,
-        default=True,
-        label="Throw on Not Found",
-        tooltip="Raise error if element is not found",
-    ),
+from casare_rpa.nodes.desktop_nodes.desktop_base import (
+    DesktopNodeBase,
+    ElementInteractionMixin,
 )
-class FindElementNode(Node):
+from casare_rpa.nodes.desktop_nodes.properties import (
+    SELECTOR_PROP,
+    TIMEOUT_PROP,
+    THROW_ON_NOT_FOUND_PROP,
+    SIMULATE_PROP,
+    X_OFFSET_PROP,
+    Y_OFFSET_PROP,
+    TEXT_PROP,
+    CLEAR_FIRST_PROP,
+    INTERVAL_PROP,
+    VARIABLE_NAME_PROP,
+)
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+
+
+# Custom property for property_name (specific to GetElementPropertyNode)
+PROPERTY_NAME_PROP = PropertyDef(
+    "property_name",
+    PropertyType.STRING,
+    default="Name",
+    required=True,
+    label="Property Name",
+    tooltip="Name of the property to get (e.g., Name, Value, IsEnabled)",
+    tab="properties",
+)
+
+
+@node_schema(
+    SELECTOR_PROP,
+    TIMEOUT_PROP,
+    THROW_ON_NOT_FOUND_PROP,
+)
+@executable_node
+class FindElementNode(DesktopNodeBase):
     """
     Find a desktop UI element within a window.
 
@@ -58,48 +68,31 @@ class FindElementNode(Node):
         found: Boolean indicating if element was found
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Find Element"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Find Element",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "FindElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-
-        # Output ports
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - find element.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with element and found status
-        """
-        # Get inputs
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - find element."""
         window = self.get_input_value("window")
         selector = self.get_parameter("selector", context)
-
-        # Get configuration
         timeout = self.get_parameter("timeout", context)
         throw_on_not_found = self.get_parameter("throw_on_not_found", context)
 
-        # Validate inputs
         if not window:
             error_msg = "Window is required. Connect a window from Launch Application or Activate Window node."
             logger.error(f"[{self.name}] {error_msg}")
@@ -116,18 +109,11 @@ class FindElementNode(Node):
         logger.debug(f"[{self.name}] Timeout: {timeout}s")
 
         try:
-            # Find element
             element = window.find_child(selector, timeout=timeout)
 
             if element:
                 logger.info(f"[{self.name}] Found element: {element}")
-                self.status = NodeStatus.SUCCESS
-                return {
-                    "success": True,
-                    "element": element,
-                    "found": True,
-                    "next_nodes": ["exec_out"],
-                }
+                return self.success_result(element=element, found=True)
             else:
                 if throw_on_not_found:
                     error_msg = f"Element not found with selector: {selector}"
@@ -138,61 +124,21 @@ class FindElementNode(Node):
                     logger.warning(
                         f"[{self.name}] Element not found, but throw_on_not_found is False"
                     )
-                    self.status = NodeStatus.SUCCESS
-                    return {
-                        "success": True,
-                        "element": None,
-                        "found": False,
-                        "next_nodes": ["exec_out"],
-                    }
+                    return self.success_result(element=None, found=False)
 
         except Exception as e:
-            error_msg = f"Failed to find element: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "find element")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "selector",
-        PropertyType.JSON,
-        required=False,
-        label="Selector",
-        tooltip="Element selector dictionary (if element not provided directly)",
-    ),
-    PropertyDef(
-        "simulate",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Simulate",
-        tooltip="Use simulated click (programmatic) vs physical mouse click",
-    ),
-    PropertyDef(
-        "x_offset",
-        PropertyType.INTEGER,
-        default=0,
-        label="X Offset",
-        tooltip="Horizontal offset from element center",
-    ),
-    PropertyDef(
-        "y_offset",
-        PropertyType.INTEGER,
-        default=0,
-        label="Y Offset",
-        tooltip="Vertical offset from element center",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for element (if finding by selector)",
-    ),
+    SELECTOR_PROP,
+    SIMULATE_PROP,
+    X_OFFSET_PROP,
+    Y_OFFSET_PROP,
+    TIMEOUT_PROP,
 )
-class ClickElementNode(Node):
+@executable_node
+class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Click a desktop UI element.
 
@@ -214,63 +160,40 @@ class ClickElementNode(Node):
         success: Whether the click succeeded
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Click Element"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Click Element",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "ClickElementNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - click element.
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - click element."""
+        desktop_ctx = self.get_desktop_context(context)
+        timeout = self.get_parameter("timeout", context)
 
-        Args:
-            context: Execution context
+        try:
+            element = await self.find_element_from_inputs(context, desktop_ctx, timeout)
+        except ValueError as e:
+            logger.error(f"[{self.name}] {e}")
+            self.status = NodeStatus.ERROR
+            raise
+        except RuntimeError as e:
+            logger.error(f"[{self.name}] {e}")
+            self.status = NodeStatus.ERROR
+            raise
 
-        Returns:
-            Dictionary with success status
-        """
-        # Get element - directly or via window+selector
-        element = self.get_input_value("element")
-
-        if not element:
-            window = self.get_input_value("window")
-            selector = self.get_parameter("selector", context)
-
-            if not window or not selector:
-                error_msg = "Must provide 'element' or both 'window' and 'selector'"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise ValueError(error_msg)
-
-            timeout = self.get_parameter("timeout", context)
-            logger.info(f"[{self.name}] Finding element with selector: {selector}")
-
-            element = window.find_child(selector, timeout=timeout)
-            if not element:
-                error_msg = f"Element not found with selector: {selector}"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise RuntimeError(error_msg)
-
-        # Get configuration
         simulate = self.get_parameter("simulate", context)
         x_offset = self.get_parameter("x_offset", context)
         y_offset = self.get_parameter("y_offset", context)
@@ -281,61 +204,22 @@ class ClickElementNode(Node):
         )
 
         try:
-            # Perform click
             element.click(simulate=simulate, x_offset=x_offset, y_offset=y_offset)
-
             logger.info(f"[{self.name}] Click successful")
-            self.status = NodeStatus.SUCCESS
-            return {"success": True, "next_nodes": ["exec_out"]}
-
+            return self.success_result()
         except Exception as e:
-            error_msg = f"Failed to click element: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "click element")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "text",
-        PropertyType.STRING,
-        default="",
-        label="Text",
-        tooltip="Text to type into the element",
-    ),
-    PropertyDef(
-        "selector",
-        PropertyType.JSON,
-        required=False,
-        label="Selector",
-        tooltip="Element selector (if element not provided directly)",
-    ),
-    PropertyDef(
-        "clear_first",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Clear First",
-        tooltip="Clear existing text before typing",
-    ),
-    PropertyDef(
-        "interval",
-        PropertyType.FLOAT,
-        default=0.01,
-        min_value=0.0,
-        label="Interval (seconds)",
-        tooltip="Delay between keystrokes",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for element (if finding by selector)",
-    ),
+    TEXT_PROP,
+    SELECTOR_PROP,
+    CLEAR_FIRST_PROP,
+    INTERVAL_PROP,
+    TIMEOUT_PROP,
 )
-class TypeTextNode(Node):
+@executable_node
+class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Type text into a desktop UI element.
 
@@ -358,41 +242,27 @@ class TypeTextNode(Node):
         success: Whether the operation succeeded
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Type Text"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Type Text",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "TypeTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-
-        # Output ports
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - type text.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with success status
-        """
-        # Get text to type
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - type text."""
         text = self.get_parameter("text", context)
 
         if not text:
@@ -401,30 +271,16 @@ class TypeTextNode(Node):
             self.status = NodeStatus.ERROR
             raise ValueError(error_msg)
 
-        # Get element - directly or via window+selector
-        element = self.get_input_value("element")
+        desktop_ctx = self.get_desktop_context(context)
+        timeout = self.get_parameter("timeout", context)
 
-        if not element:
-            window = self.get_input_value("window")
-            selector = self.get_parameter("selector", context)
+        try:
+            element = await self.find_element_from_inputs(context, desktop_ctx, timeout)
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"[{self.name}] {e}")
+            self.status = NodeStatus.ERROR
+            raise
 
-            if not window or not selector:
-                error_msg = "Must provide 'element' or both 'window' and 'selector'"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise ValueError(error_msg)
-
-            timeout = self.get_parameter("timeout", context)
-            logger.info(f"[{self.name}] Finding element with selector: {selector}")
-
-            element = window.find_child(selector, timeout=timeout)
-            if not element:
-                error_msg = f"Element not found with selector: {selector}"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise RuntimeError(error_msg)
-
-        # Get configuration
         clear_first = self.get_parameter("clear_first", context)
         interval = self.get_parameter("interval", context)
 
@@ -434,46 +290,20 @@ class TypeTextNode(Node):
         )
 
         try:
-            # Type text
             element.type_text(text=text, clear_first=clear_first, interval=interval)
-
             logger.info(f"[{self.name}] Text typed successfully")
-            self.status = NodeStatus.SUCCESS
-            return {"success": True, "next_nodes": ["exec_out"]}
-
+            return self.success_result()
         except Exception as e:
-            error_msg = f"Failed to type text: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "type text")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "selector",
-        PropertyType.JSON,
-        required=False,
-        label="Selector",
-        tooltip="Element selector (if element not provided directly)",
-    ),
-    PropertyDef(
-        "variable_name",
-        PropertyType.STRING,
-        default="",
-        label="Variable Name",
-        tooltip="Store text in this context variable",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for element (if finding by selector)",
-    ),
+    SELECTOR_PROP,
+    VARIABLE_NAME_PROP,
+    TIMEOUT_PROP,
 )
-class GetElementTextNode(Node):
+@executable_node
+class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get text content from a desktop UI element.
 
@@ -494,74 +324,48 @@ class GetElementTextNode(Node):
         element: The element object
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Element Text"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Get Element Text",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "GetElementTextNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
-
-        # Output ports
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - get element text.
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - get element text."""
+        desktop_ctx = self.get_desktop_context(context)
+        timeout = self.get_parameter("timeout", context)
 
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with text and element
-        """
-        # Get element - directly or via window+selector
-        element = self.get_input_value("element")
-
-        if not element:
-            window = self.get_input_value("window")
-            selector = self.get_parameter("selector", context)
-
-            if not window or not selector:
-                error_msg = "Must provide 'element' or both 'window' and 'selector'"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise ValueError(error_msg)
-
-            timeout = self.get_parameter("timeout", context)
-            logger.info(f"[{self.name}] Finding element with selector: {selector}")
-
-            element = window.find_child(selector, timeout=timeout)
-            if not element:
-                error_msg = f"Element not found with selector: {selector}"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise RuntimeError(error_msg)
+        try:
+            element = await self.find_element_from_inputs(context, desktop_ctx, timeout)
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"[{self.name}] {e}")
+            self.status = NodeStatus.ERROR
+            raise
 
         logger.info(f"[{self.name}] Getting text from element: {element}")
 
         try:
-            # Get text
             text = element.get_text()
 
-            logger.info(
-                f"[{self.name}] Got text: '{text[:50]}...' ({len(text)} chars)"
+            log_text = (
+                f"'{text[:50]}...' ({len(text)} chars)"
                 if len(text) > 50
-                else f"[{self.name}] Got text: '{text}'"
+                else f"'{text}'"
             )
+            logger.info(f"[{self.name}] Got text: {log_text}")
 
             # Store in context variable if specified
             variable_name = self.get_parameter("variable_name", context)
@@ -569,48 +373,18 @@ class GetElementTextNode(Node):
                 context.set_variable(variable_name, text)
                 logger.debug(f"[{self.name}] Stored text in variable: {variable_name}")
 
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "text": text,
-                "element": element,
-                "next_nodes": ["exec_out"],
-            }
-
+            return self.success_result(text=text, element=element)
         except Exception as e:
-            error_msg = f"Failed to get element text: {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, "get element text")
 
 
-@executable_node
 @node_schema(
-    PropertyDef(
-        "property_name",
-        PropertyType.STRING,
-        default="Name",
-        required=True,
-        label="Property Name",
-        tooltip="Name of the property to get (e.g., Name, Value, IsEnabled)",
-    ),
-    PropertyDef(
-        "selector",
-        PropertyType.JSON,
-        required=False,
-        label="Selector",
-        tooltip="Element selector (if element not provided directly)",
-    ),
-    PropertyDef(
-        "timeout",
-        PropertyType.FLOAT,
-        default=5.0,
-        min_value=0.1,
-        label="Timeout (seconds)",
-        tooltip="Maximum time to wait for element (if finding by selector)",
-    ),
+    PROPERTY_NAME_PROP,
+    SELECTOR_PROP,
+    TIMEOUT_PROP,
 )
-class GetElementPropertyNode(Node):
+@executable_node
+class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
     """
     Get a property value from a desktop UI element.
 
@@ -632,87 +406,46 @@ class GetElementPropertyNode(Node):
         element: The element object
     """
 
-    __identifier__ = "casare_rpa.nodes.desktop"
     NODE_NAME = "Get Element Property"
 
     def __init__(
         self,
-        node_id: str = None,
-        config: Dict[str, Any] = None,
+        node_id: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
         name: str = "Get Element Property",
     ):
-        super().__init__(node_id, config)
-        self.name = name
+        super().__init__(node_id, config, name)
         self.node_type = "GetElementPropertyNode"
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        # Input ports
         self.add_input_port("element", PortType.INPUT, DataType.ANY)
         self.add_input_port("window", PortType.INPUT, DataType.ANY)
         self.add_input_port("selector", PortType.INPUT, DataType.ANY)
         self.add_input_port("property_name", PortType.INPUT, DataType.STRING)
-
-        # Output ports
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
 
-    async def execute(self, context) -> Dict[str, Any]:
-        """
-        Execute the node - get element property.
-
-        Args:
-            context: Execution context
-
-        Returns:
-            Dictionary with property value and element
-        """
-        # Get property name
+    async def execute(self, context: Any) -> Dict[str, Any]:
+        """Execute the node - get element property."""
         property_name = self.get_parameter("property_name", context)
+        desktop_ctx = self.get_desktop_context(context)
+        timeout = self.get_parameter("timeout", context)
 
-        # Get element - directly or via window+selector
-        element = self.get_input_value("element")
-
-        if not element:
-            window = self.get_input_value("window")
-            selector = self.get_parameter("selector", context)
-
-            if not window or not selector:
-                error_msg = "Must provide 'element' or both 'window' and 'selector'"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise ValueError(error_msg)
-
-            timeout = self.get_parameter("timeout", context)
-            logger.info(f"[{self.name}] Finding element with selector: {selector}")
-
-            element = window.find_child(selector, timeout=timeout)
-            if not element:
-                error_msg = f"Element not found with selector: {selector}"
-                logger.error(f"[{self.name}] {error_msg}")
-                self.status = NodeStatus.ERROR
-                raise RuntimeError(error_msg)
+        try:
+            element = await self.find_element_from_inputs(context, desktop_ctx, timeout)
+        except (ValueError, RuntimeError) as e:
+            logger.error(f"[{self.name}] {e}")
+            self.status = NodeStatus.ERROR
+            raise
 
         logger.info(
             f"[{self.name}] Getting property '{property_name}' from element: {element}"
         )
 
         try:
-            # Get property
             value = element.get_property(property_name)
-
             logger.info(f"[{self.name}] Got property '{property_name}': {value}")
-
-            self.status = NodeStatus.SUCCESS
-            return {
-                "success": True,
-                "value": value,
-                "element": element,
-                "next_nodes": ["exec_out"],
-            }
-
+            return self.success_result(value=value, element=element)
         except Exception as e:
-            error_msg = f"Failed to get element property '{property_name}': {e}"
-            logger.error(f"[{self.name}] {error_msg}")
-            self.status = NodeStatus.ERROR
-            raise RuntimeError(error_msg)
+            self.handle_error(e, f"get element property '{property_name}'")

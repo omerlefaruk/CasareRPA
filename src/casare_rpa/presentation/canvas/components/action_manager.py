@@ -170,22 +170,6 @@ class ActionManager:
         )
 
         # === VIEW ACTIONS ===
-        mw.action_zoom_in = self._create_action(
-            "zoom_in", "Zoom &In", QKeySequence.StandardKey.ZoomIn, "Zoom in"
-        )
-
-        mw.action_zoom_out = self._create_action(
-            "zoom_out", "Zoom &Out", QKeySequence.StandardKey.ZoomOut, "Zoom out"
-        )
-
-        mw.action_zoom_reset = self._create_action(
-            "zoom_reset", "&Reset Zoom", QKeySequence("Ctrl+0"), "Reset zoom to 100%"
-        )
-
-        mw.action_fit_view = self._create_action(
-            "fit_view", "&Fit to View", QKeySequence("Ctrl+1"), "Fit all nodes in view"
-        )
-
         mw.action_toggle_properties = self._create_action(
             "toggle_properties",
             "&Properties Panel",
@@ -268,14 +252,6 @@ class ActionManager:
             "Stop workflow execution (F7)",
             mw._on_stop_workflow,
             enabled=False,
-        )
-
-        mw.action_debug = self._create_action(
-            "debug",
-            "Debug",
-            QKeySequence("Ctrl+F5"),
-            "Debug workflow with breakpoints (Ctrl+F5)",
-            mw._on_debug_workflow,
         )
 
         mw.action_start_listening = self._create_action(
@@ -494,10 +470,6 @@ class ActionManager:
             "paste": mw.action_paste,
             "delete": mw.action_delete,
             "select_all": mw.action_select_all,
-            "zoom_in": mw.action_zoom_in,
-            "zoom_out": mw.action_zoom_out,
-            "zoom_reset": mw.action_zoom_reset,
-            "fit_view": mw.action_fit_view,
             "run": mw.action_run,
             "pause": mw.action_pause,
             "stop": mw.action_stop,

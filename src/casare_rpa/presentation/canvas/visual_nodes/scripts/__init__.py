@@ -2,7 +2,7 @@
 Visual Nodes - Scripts
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.scripts.nodes import (
     VisualRunPythonScriptNode,
     VisualRunPythonFileNode,
     VisualEvalExpressionNode,

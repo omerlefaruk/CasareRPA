@@ -7,12 +7,12 @@
 - Major components: Canvas Designer (UI), Robot Agent (execution), Orchestrator API (FastAPI), Monitoring Dashboard (React/Vite).
 
 ## Key Developer Workflows
-- **Run Canvas Designer:** `python run.py`
-- **Run Robot Agent:** `python -m casare_rpa.robot start`
-- **Run Orchestrator API:** `python -m casare_rpa.infrastructure.orchestrator.api.main`
+- **Run Canvas Designer:** `python manage.py canvas`
+- **Run Robot Agent:** `python manage.py robot start`
+- **Run Orchestrator API:** `python manage.py orchestrator start`
 - **Run All Tests:** `pytest tests/ -v`
 - **Build Installer:** `python installer/build_dev_installer.py`
-- **Dashboard Dev Server:** `npm run dev` in `monitoring-dashboard/`
+- **Dashboard Dev Server:** `python manage.py dashboard`
 
 ## Project-Specific Conventions
 - **Type hints required**; all I/O is async/await.
@@ -44,6 +44,7 @@
 - **Installer:** Built with PyInstaller + Inno Setup; see `installer/README.md`.
 
 ## References
+- [GEMINI.md](../GEMINI.md) — **Primary context for AI Agents** (Architecture & CLI)
 - [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) — architecture details
 - [tests/integration/README.md](../tests/integration/README.md) — integration test patterns & known gaps
 - [src/casare_rpa/presentation/canvas/ui/README.md](../src/casare_rpa/presentation/canvas/ui/README.md) — UI component conventions

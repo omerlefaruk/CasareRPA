@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from loguru import logger
 
-from .config import HOTKEYS_FILE
+from casare_rpa.config import HOTKEYS_FILE
 
 
 # Default hotkeys configuration
@@ -116,8 +116,10 @@ class HotkeySettings:
         return self._hotkeys.copy()
 
 
-# Global instance
-_hotkey_settings: Optional[HotkeySettings] = None
+# Thread-safe singleton holder
+from casare_rpa.application.dependency_injection.singleton import Singleton
+
+_hotkey_settings_holder = Singleton(HotkeySettings, name="HotkeySettings")
 
 
 def get_hotkey_settings() -> HotkeySettings:
@@ -127,7 +129,9 @@ def get_hotkey_settings() -> HotkeySettings:
     Returns:
         Global HotkeySettings instance
     """
-    global _hotkey_settings
-    if _hotkey_settings is None:
-        _hotkey_settings = HotkeySettings()
-    return _hotkey_settings
+    return _hotkey_settings_holder.get()
+
+
+def reset_hotkey_settings() -> None:
+    """Reset the hotkey settings instance (for testing)."""
+    _hotkey_settings_holder.reset()

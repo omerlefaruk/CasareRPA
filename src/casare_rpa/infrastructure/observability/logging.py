@@ -257,25 +257,25 @@ class UILoguruSink:
             sys.stderr.write(f"UI log sink error: {e}\n")
 
 
-# Module-level lock for global state
-_global_lock = threading.Lock()
+# Module-level lock for state management
+_log_sink_lock = threading.Lock()
 
-# Global UI sink instance (set by presentation layer)
+# Module-level UI sink instance
 _ui_log_sink: Optional[UILoguruSink] = None
 _ui_sink_handler_id: Optional[int] = None
 
 
 def _cleanup_on_exit() -> None:
     """Cleanup handler registered with atexit to remove sink on exit."""
-    global _ui_log_sink, _ui_sink_handler_id
-    with _global_lock:
-        if _ui_sink_handler_id is not None:
+    with _log_sink_lock:
+        _handler_id = _ui_sink_handler_id
+        if _handler_id is not None:
             try:
-                logger.remove(_ui_sink_handler_id)
+                logger.remove(_handler_id)
             except ValueError:
                 pass
-            _ui_sink_handler_id = None
-        _ui_log_sink = None
+            globals()["_ui_sink_handler_id"] = None
+        globals()["_ui_log_sink"] = None
 
 
 # Register cleanup handler
@@ -295,40 +295,51 @@ def set_ui_log_callback(
         callback: Function(level, message, module, timestamp) to receive logs
         min_level: Minimum log level to forward
     """
-    global _ui_log_sink, _ui_sink_handler_id
-
-    with _global_lock:
+    with _log_sink_lock:
         # Remove existing handler if present
-        if _ui_sink_handler_id is not None:
+        _handler_id = _ui_sink_handler_id
+        if _handler_id is not None:
             try:
-                logger.remove(_ui_sink_handler_id)
+                logger.remove(_handler_id)
             except ValueError:
                 pass  # Handler already removed
-            _ui_sink_handler_id = None
+            globals()["_ui_sink_handler_id"] = None
 
         # Create and add new sink
-        _ui_log_sink = UILoguruSink(callback, min_level)
-        _ui_sink_handler_id = logger.add(
-            _ui_log_sink,
+        _new_sink = UILoguruSink(callback, min_level)
+        _new_handler_id = logger.add(
+            _new_sink,
             format="{message}",
             level=min_level,
         )
+        globals()["_ui_log_sink"] = _new_sink
+        globals()["_ui_sink_handler_id"] = _new_handler_id
     logger.debug(f"UI log callback registered (min_level={min_level})")
 
 
 def remove_ui_log_callback() -> None:
     """Remove the UI log callback (thread-safe)."""
-    global _ui_log_sink, _ui_sink_handler_id
-
-    with _global_lock:
-        if _ui_sink_handler_id is not None:
+    with _log_sink_lock:
+        _handler_id = _ui_sink_handler_id
+        if _handler_id is not None:
             try:
-                logger.remove(_ui_sink_handler_id)
+                logger.remove(_handler_id)
             except ValueError:
                 pass
-            _ui_sink_handler_id = None
-        _ui_log_sink = None
+            globals()["_ui_sink_handler_id"] = None
+        globals()["_ui_log_sink"] = None
     logger.debug("UI log callback removed")
+
+
+def get_ui_log_sink() -> Optional[UILoguruSink]:
+    """
+    Get the current UI log sink (if any).
+
+    Returns:
+        Current UILoguruSink or None
+    """
+    with _log_sink_lock:
+        return _ui_log_sink
 
 
 def create_trace_context_format() -> str:

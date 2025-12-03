@@ -370,8 +370,12 @@ class UpdateManager:
 # CONVENIENCE FUNCTIONS
 # =============================================================================
 
-# Global manager instance
-_update_manager: Optional[UpdateManager] = None
+# Module-level singleton with thread-safe lazy initialization
+import threading
+
+_update_manager_instance: Optional[UpdateManager] = None
+_update_manager_lock = threading.Lock()
+_update_manager_version: Optional[str] = None
 
 
 def get_update_manager(
@@ -379,7 +383,9 @@ def get_update_manager(
     **kwargs,
 ) -> UpdateManager:
     """
-    Get or create the global update manager instance.
+    Get or create the update manager instance.
+
+    Thread-safe singleton accessor.
 
     Args:
         current_version: Current app version (required on first call)
@@ -388,11 +394,28 @@ def get_update_manager(
     Returns:
         UpdateManager instance
     """
-    global _update_manager
+    _local_instance = _update_manager_instance
+    if _local_instance is not None:
+        return _local_instance
 
-    if _update_manager is None:
-        if current_version is None:
-            raise ValueError("current_version required on first call")
-        _update_manager = UpdateManager(current_version, **kwargs)
+    with _update_manager_lock:
+        _local_instance = _update_manager_instance
+        if _local_instance is None:
+            if current_version is None:
+                raise ValueError("current_version required on first call")
+            _local_instance = UpdateManager(current_version, **kwargs)
+            globals()["_update_manager_instance"] = _local_instance
+            globals()["_update_manager_version"] = current_version
 
-    return _update_manager
+    return _local_instance
+
+
+def reset_update_manager() -> None:
+    """
+    Reset the update manager singleton (for testing).
+
+    Clears the singleton so it will be recreated on next access.
+    """
+    with _update_manager_lock:
+        globals()["_update_manager_instance"] = None
+        globals()["_update_manager_version"] = None

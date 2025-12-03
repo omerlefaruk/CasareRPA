@@ -9,7 +9,12 @@ from typing import Dict, List, Optional, Type
 
 from loguru import logger
 
-from .base import BaseTrigger, BaseTriggerConfig, TriggerType, TriggerEventCallback
+from casare_rpa.triggers.base import (
+    BaseTrigger,
+    BaseTriggerConfig,
+    TriggerType,
+    TriggerEventCallback,
+)
 
 
 class TriggerRegistry:

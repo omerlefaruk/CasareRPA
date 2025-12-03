@@ -21,24 +21,22 @@ Management Nodes (4):
 - CalendarDeleteCalendarNode: Delete a calendar
 """
 
-from .calendar_base import CalendarBaseNode
-
-from .calendar_events import (
-    CalendarListEventsNode,
-    CalendarGetEventNode,
+from casare_rpa.nodes.google.calendar.calendar_base import CalendarBaseNode
+from casare_rpa.nodes.google.calendar.calendar_events import (
     CalendarCreateEventNode,
-    CalendarUpdateEventNode,
     CalendarDeleteEventNode,
-    CalendarQuickAddNode,
-    CalendarMoveEventNode,
+    CalendarGetEventNode,
     CalendarGetFreeBusyNode,
+    CalendarListEventsNode,
+    CalendarMoveEventNode,
+    CalendarQuickAddNode,
+    CalendarUpdateEventNode,
 )
-
-from .calendar_manage import (
-    CalendarListCalendarsNode,
-    CalendarGetCalendarNode,
+from casare_rpa.nodes.google.calendar.calendar_manage import (
     CalendarCreateCalendarNode,
     CalendarDeleteCalendarNode,
+    CalendarGetCalendarNode,
+    CalendarListCalendarsNode,
 )
 
 __all__ = [

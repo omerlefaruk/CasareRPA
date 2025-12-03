@@ -73,12 +73,12 @@ class VisualDocsGetDocumentNode(VisualNode):
 
 
 class VisualDocsGetContentNode(VisualNode):
-    """Visual representation of DocsGetContentNode."""
+    """Visual representation of DocsGetTextNode (gets document content)."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Get Content"
     NODE_CATEGORY = "google/docs"
-    CASARE_NODE_CLASS = "DocsGetContentNode"
+    CASARE_NODE_CLASS = "DocsGetTextNode"
 
     def __init__(self) -> None:
         super().__init__()
@@ -281,12 +281,12 @@ class VisualDocsInsertImageNode(VisualNode):
 
 
 class VisualDocsUpdateStyleNode(VisualNode):
-    """Visual representation of DocsUpdateStyleNode."""
+    """Visual representation of DocsApplyStyleNode (updates text styling)."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Update Style"
     NODE_CATEGORY = "google/docs"
-    CASARE_NODE_CLASS = "DocsUpdateStyleNode"
+    CASARE_NODE_CLASS = "DocsApplyStyleNode"
 
     def __init__(self) -> None:
         super().__init__()

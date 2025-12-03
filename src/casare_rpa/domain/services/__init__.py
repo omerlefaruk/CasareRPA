@@ -4,16 +4,16 @@ CasareRPA - Domain Services
 Domain services contain business logic that doesn't naturally fit in entities or value objects.
 """
 
-from .execution_orchestrator import ExecutionOrchestrator
-from .project_context import ProjectContext
-from .variable_resolver import (
+from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
+from casare_rpa.domain.services.project_context import ProjectContext
+from casare_rpa.domain.services.variable_resolver import (
     VARIABLE_PATTERN,
     resolve_variables,
     resolve_dict_variables,
     extract_variable_names,
     has_variables,
 )
-from ..validation import (
+from casare_rpa.domain.validation import (
     ValidationSeverity,
     ValidationIssue,
     ValidationResult,

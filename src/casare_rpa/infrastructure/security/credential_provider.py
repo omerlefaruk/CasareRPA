@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from .vault_client import (
+from casare_rpa.infrastructure.security.vault_client import (
     VaultClient,
     VaultConfig,
     VaultBackend,

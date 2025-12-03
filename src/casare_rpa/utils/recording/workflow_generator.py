@@ -12,7 +12,10 @@ import uuid
 
 from loguru import logger
 
-from .browser_recorder import BrowserRecordedAction, BrowserActionType
+from casare_rpa.utils.recording.browser_recorder import (
+    BrowserRecordedAction,
+    BrowserActionType,
+)
 
 
 class RecordingWorkflowGenerator:

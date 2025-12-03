@@ -9,8 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .base import PROJECT_SCHEMA_VERSION, generate_scenario_id
-from .settings import ScenarioExecutionSettings
+from casare_rpa.domain.entities.project.base import (
+    PROJECT_SCHEMA_VERSION,
+    generate_scenario_id,
+)
+from casare_rpa.domain.entities.project.settings import ScenarioExecutionSettings
 
 
 @dataclass

@@ -12,7 +12,7 @@ from loguru import logger
 from pydantic import ValidationError
 
 from casare_rpa.infrastructure.security.workflow_schema import validate_workflow_json
-from casare_rpa.nodes.file.file_operations import (
+from casare_rpa.nodes.file.file_security import (
     validate_path_security_readonly,
     PathSecurityError,
 )

@@ -27,7 +27,10 @@ from casare_rpa.domain.value_objects.types import (
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
-from .file_operations import validate_path_security, PathSecurityError
+from casare_rpa.nodes.file.file_security import (
+    PathSecurityError,
+    validate_path_security,
+)
 
 
 def validate_zip_entry(zip_path: str, entry_name: str) -> Path:

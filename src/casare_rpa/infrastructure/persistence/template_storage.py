@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 import orjson
 from loguru import logger
 
-from ...domain.workflow.templates import (
+from casare_rpa.domain.workflow.templates import (
     TemplateCategory,
     WorkflowTemplate,
 )
@@ -441,7 +441,7 @@ class TemplateStorageFactory:
         Returns:
             Configured TemplateStorage instance
         """
-        from ...utils.config import CONFIG_DIR
+        from casare_rpa.config import CONFIG_DIR
 
         # Built-in templates in application directory
         import casare_rpa

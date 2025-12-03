@@ -6,7 +6,7 @@ Abstract base class for error handlers.
 
 from abc import ABC, abstractmethod
 
-from ..context import ErrorContext, RecoveryDecision
+from casare_rpa.domain.errors.context import ErrorContext, RecoveryDecision
 
 
 class ErrorHandler(ABC):

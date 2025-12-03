@@ -305,7 +305,7 @@
                 Hover over an element to inspect
             </div>
             <div class="actions">
-                <div><span class="hotkey">Click</span> to select element</div>
+                <div><span class="hotkey">Ctrl+Click</span> to select element</div>
                 <div><span class="hotkey">Esc</span> to cancel</div>
                 ${state.recording ? '<div><span class="hotkey">Ctrl+R</span> stop recording</div>' : ''}
             </div>
@@ -396,6 +396,11 @@
 
     function handleClick(e) {
         if (!state.active) return;
+
+        // Require Ctrl+Click to select/record - allows normal navigation
+        if (!e.ctrlKey) {
+            return; // Let normal click pass through
+        }
 
         e.preventDefault();
         e.stopPropagation();

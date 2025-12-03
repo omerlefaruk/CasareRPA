@@ -20,14 +20,14 @@ Provides REST and WebSocket endpoints for:
 pip install -e .
 
 # Run with auto-reload
-uvicorn casare_rpa.orchestrator.api.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Production
 
 ```bash
 # Run with multiple workers
-uvicorn casare_rpa.orchestrator.api.main:app --host 0.0.0.0 --port 8000 --workers 4
+uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ## API Endpoints
@@ -161,7 +161,7 @@ Receives queue depth updates every 5 seconds:
 To broadcast real-time updates, integrate with the EventBus:
 
 ```python
-from casare_rpa.orchestrator.api.routers.websockets import (
+from casare_rpa.infrastructure.orchestrator.api.routers.websockets import (
     broadcast_job_update,
     broadcast_robot_status,
     broadcast_queue_metrics,

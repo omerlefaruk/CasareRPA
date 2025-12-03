@@ -8,16 +8,16 @@ from typing import Any, Dict, List, Set, Tuple
 
 from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
 
-from .types import ValidationResult
-from .schemas import (
-    NODE_REQUIRED_FIELDS,
+from casare_rpa.domain.validation.rules import (
+    find_entry_points_and_reachable,
+    has_circular_dependency,
+)
+from casare_rpa.domain.validation.schemas import (
     CONNECTION_REQUIRED_FIELDS,
+    NODE_REQUIRED_FIELDS,
     get_valid_node_types,
 )
-from .rules import (
-    has_circular_dependency,
-    find_entry_points_and_reachable,
-)
+from casare_rpa.domain.validation.types import ValidationResult
 
 
 # ============================================================================

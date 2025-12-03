@@ -9,18 +9,26 @@ Contains tab widgets for the Fleet Dashboard dialog:
 - ApiKeysTabWidget: API key management
 """
 
-from .constants import (
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.constants import (
     ROBOT_STATUS_COLORS,
     JOB_STATUS_COLORS,
     REFRESH_INTERVALS,
     TAB_WIDGET_BASE_STYLE,
 )
-from .base_tab import BaseTabWidget
-from .robots_tab import RobotsTabWidget
-from .jobs_tab import JobsTabWidget
-from .schedules_tab import SchedulesTabWidget
-from .analytics_tab import AnalyticsTabWidget
-from .api_keys_tab import ApiKeysTabWidget
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.base_tab import BaseTabWidget
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.robots_tab import (
+    RobotsTabWidget,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.jobs_tab import JobsTabWidget
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.schedules_tab import (
+    SchedulesTabWidget,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.analytics_tab import (
+    AnalyticsTabWidget,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.fleet_tabs.api_keys_tab import (
+    ApiKeysTabWidget,
+)
 
 __all__ = [
     # Constants

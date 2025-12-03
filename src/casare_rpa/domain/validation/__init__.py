@@ -17,14 +17,14 @@ Package Structure:
 """
 
 # Types (enums and dataclasses)
-from .types import (
+from casare_rpa.domain.validation.types import (
     ValidationSeverity,
     ValidationIssue,
     ValidationResult,
 )
 
 # Schemas (constants and type mappings)
-from .schemas import (
+from casare_rpa.domain.validation.schemas import (
     NODE_REQUIRED_FIELDS,
     CONNECTION_REQUIRED_FIELDS,
     DATA_TYPE_COMPATIBILITY,
@@ -33,7 +33,7 @@ from .schemas import (
 )
 
 # Validators (main validation functions)
-from .validators import (
+from casare_rpa.domain.validation.validators import (
     validate_workflow,
     validate_node,
     validate_connections,
@@ -41,7 +41,7 @@ from .validators import (
 )
 
 # Rules (helper functions for graph analysis)
-from .rules import (
+from casare_rpa.domain.validation.rules import (
     # Public API
     parse_connection,
     is_exec_port,

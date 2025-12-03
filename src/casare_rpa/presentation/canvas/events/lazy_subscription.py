@@ -26,8 +26,8 @@ from PySide6.QtWidgets import QWidget
 
 from loguru import logger
 
-from .event_bus import EventBus
-from .event_types import EventType
+from casare_rpa.presentation.canvas.events.event_bus import EventBus
+from casare_rpa.presentation.canvas.events.event_types import EventType
 
 
 class LazySubscription(QObject):

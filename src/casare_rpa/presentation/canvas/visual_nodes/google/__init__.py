@@ -9,7 +9,7 @@ Provides visual node representations for:
 - Calendar: Event and calendar management
 """
 
-from .calendar_nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.google.calendar_nodes import (
     # Event operations (8)
     VisualCalendarListEventsNode,
     VisualCalendarGetEventNode,
@@ -26,7 +26,7 @@ from .calendar_nodes import (
     VisualCalendarDeleteCalendarNode,
 )
 
-from .gmail_nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.google.gmail_nodes import (
     # Send operations
     VisualGmailSendEmailNode,
     VisualGmailSendWithAttachmentNode,
@@ -54,7 +54,7 @@ from .gmail_nodes import (
     VisualGmailBatchDeleteNode,
 )
 
-from .sheets_nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.google.sheets_nodes import (
     # Cell operations
     VisualSheetsGetCellNode,
     VisualSheetsSetCellNode,
@@ -83,23 +83,22 @@ from .sheets_nodes import (
     VisualSheetsBatchClearNode,
 )
 
-from .docs_nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.google.docs_nodes import (
     # Document operations
     VisualDocsCreateDocumentNode,
     VisualDocsGetDocumentNode,
     VisualDocsGetContentNode,
     # Text operations
     VisualDocsInsertTextNode,
-    VisualDocsDeleteContentNode,
     VisualDocsReplaceTextNode,
     # Formatting
     VisualDocsInsertTableNode,
     VisualDocsInsertImageNode,
     VisualDocsUpdateStyleNode,
-    VisualDocsBatchUpdateNode,
+    # NOTE: VisualDocsDeleteContentNode and VisualDocsBatchUpdateNode removed - no logic nodes exist
 )
 
-from .drive_nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
     # File operations
     VisualDriveUploadFileNode,
     VisualDriveDownloadFileNode,
@@ -194,15 +193,13 @@ __all__ = [
     "VisualDocsCreateDocumentNode",
     "VisualDocsGetDocumentNode",
     "VisualDocsGetContentNode",
-    # Docs - Text operations (3)
+    # Docs - Text operations (2)
     "VisualDocsInsertTextNode",
-    "VisualDocsDeleteContentNode",
     "VisualDocsReplaceTextNode",
-    # Docs - Formatting (4)
+    # Docs - Formatting (3)
     "VisualDocsInsertTableNode",
     "VisualDocsInsertImageNode",
     "VisualDocsUpdateStyleNode",
-    "VisualDocsBatchUpdateNode",
     # Drive - File operations (7)
     "VisualDriveUploadFileNode",
     "VisualDriveDownloadFileNode",

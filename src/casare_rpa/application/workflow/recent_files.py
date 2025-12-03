@@ -11,7 +11,7 @@ from datetime import datetime
 
 from loguru import logger
 
-from ...utils.config import CONFIG_DIR
+from casare_rpa.config import CONFIG_DIR
 
 
 class RecentFilesManager:
@@ -121,13 +121,35 @@ class RecentFilesManager:
         self._save()
 
 
-# Global instance
+# Module-level singleton with thread-safe lazy initialization
+import threading
+
 _recent_files_manager: Optional[RecentFilesManager] = None
+_manager_lock = threading.Lock()
+
+
+def _get_manager_singleton() -> RecentFilesManager:
+    """Get or create the manager singleton with double-checked locking."""
+    _local_instance = _recent_files_manager
+    if _local_instance is None:
+        with _manager_lock:
+            _local_instance = _recent_files_manager
+            if _local_instance is None:
+                _local_instance = RecentFilesManager()
+                globals()["_recent_files_manager"] = _local_instance
+    return _local_instance
 
 
 def get_recent_files_manager() -> RecentFilesManager:
-    """Get the global recent files manager instance."""
-    global _recent_files_manager
-    if _recent_files_manager is None:
-        _recent_files_manager = RecentFilesManager()
-    return _recent_files_manager
+    """Get the recent files manager instance."""
+    return _get_manager_singleton()
+
+
+def reset_recent_files_manager() -> None:
+    """
+    Reset the recent files manager singleton (for testing).
+
+    Clears the singleton so it will be recreated on next access.
+    """
+    with _manager_lock:
+        globals()["_recent_files_manager"] = None

@@ -17,7 +17,7 @@ from casare_rpa.domain.value_objects.types import (
     NodeStatus,
     ExecutionResult,
 )
-from ..utils.security.safe_eval import safe_eval, is_safe_expression
+from casare_rpa.utils.security.safe_eval import safe_eval, is_safe_expression
 
 
 @node_schema(

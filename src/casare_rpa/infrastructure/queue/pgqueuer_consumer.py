@@ -47,13 +47,23 @@ from __future__ import annotations
 
 import asyncio
 import random
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
-import uuid
+from typing import Any, Dict, List, Optional, Sequence
 
 from loguru import logger
+
+from casare_rpa.infrastructure.queue.types import (
+    ConsumerConfigStats,
+    ConsumerStats,
+    DatabaseRecord,
+    DatabaseRecordList,
+    JobId,
+    JobStatusInfo,
+    StateChangeCallback,
+)
 
 try:
     import asyncpg
@@ -319,15 +329,15 @@ class PgQueuerConsumer:
 
         validate_robot_id(config.robot_id)
 
-        self._config = config
+        self._config: ConsumerConfig = config
         self._pool: Optional[Pool] = None
-        self._state = ConnectionState.DISCONNECTED
-        self._running = False
-        self._reconnect_attempts = 0
-        self._active_jobs: Dict[str, ClaimedJob] = {}
-        self._heartbeat_task: Optional[asyncio.Task] = None
-        self._state_callbacks: List[Callable[[ConnectionState], None]] = []
-        self._lock = asyncio.Lock()
+        self._state: ConnectionState = ConnectionState.DISCONNECTED
+        self._running: bool = False
+        self._reconnect_attempts: int = 0
+        self._active_jobs: Dict[JobId, ClaimedJob] = {}
+        self._heartbeat_task: Optional[asyncio.Task[None]] = None
+        self._state_callbacks: List[StateChangeCallback] = []
+        self._lock: asyncio.Lock = asyncio.Lock()
 
         logger.info(
             f"PgQueuerConsumer initialized for robot '{config.robot_id}' "
@@ -354,18 +364,16 @@ class PgQueuerConsumer:
         """Check if consumer is connected and ready."""
         return self._state == ConnectionState.CONNECTED and self._pool is not None
 
-    def add_state_callback(self, callback: Callable[[ConnectionState], None]) -> None:
+    def add_state_callback(self, callback: StateChangeCallback) -> None:
         """
         Add a callback for connection state changes.
 
         Args:
-            callback: Function to call when state changes
+            callback: Function to call when state changes (must accept ConnectionState)
         """
         self._state_callbacks.append(callback)
 
-    def remove_state_callback(
-        self, callback: Callable[[ConnectionState], None]
-    ) -> None:
+    def remove_state_callback(self, callback: StateChangeCallback) -> None:
         """
         Remove a state change callback.
 
@@ -454,6 +462,7 @@ class PgQueuerConsumer:
                 min_size=self._config.pool_min_size,
                 max_size=self._config.pool_max_size,
                 command_timeout=30,
+                statement_cache_size=0,  # Required for pgbouncer/Supabase
             )
 
             # Test connection
@@ -538,7 +547,7 @@ class PgQueuerConsumer:
         query: str,
         *args: Any,
         max_retries: int = 3,
-    ) -> Any:
+    ) -> DatabaseRecordList:
         """
         Execute a query with automatic retry on connection failure.
 
@@ -548,7 +557,7 @@ class PgQueuerConsumer:
             max_retries: Maximum retry attempts
 
         Returns:
-            Query result
+            List of database records from the query
 
         Raises:
             PostgresError: If query fails after all retries
@@ -561,8 +570,10 @@ class PgQueuerConsumer:
                 raise ConnectionError("Unable to establish database connection")
 
             try:
+                assert self._pool is not None  # Guaranteed by _ensure_connection()
                 async with self._pool.acquire() as conn:
-                    return await conn.fetch(query, *args)
+                    result: Sequence[DatabaseRecord] = await conn.fetch(query, *args)
+                    return list(result)
             except asyncpg.exceptions.ConnectionDoesNotExistError:
                 logger.warning(
                     f"Connection lost, attempting reconnect (attempt {attempt + 1})"
@@ -667,7 +678,7 @@ class PgQueuerConsumer:
 
     async def extend_lease(
         self,
-        job_id: str,
+        job_id: JobId,
         extension_seconds: Optional[int] = None,
     ) -> bool:
         """
@@ -711,7 +722,7 @@ class PgQueuerConsumer:
 
     async def complete_job(
         self,
-        job_id: str,
+        job_id: JobId,
         result: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
@@ -760,7 +771,7 @@ class PgQueuerConsumer:
 
     async def fail_job(
         self,
-        job_id: str,
+        job_id: JobId,
         error_message: str,
     ) -> tuple[bool, bool]:
         """
@@ -820,7 +831,7 @@ class PgQueuerConsumer:
             logger.error(f"Failed to mark job {job_id[:8]}... as failed: {e}")
             raise
 
-    async def release_job(self, job_id: str) -> bool:
+    async def release_job(self, job_id: JobId) -> bool:
         """
         Release a job back to the queue without completing or failing it.
 
@@ -902,7 +913,7 @@ class PgQueuerConsumer:
             logger.error(f"Failed to requeue timed-out jobs: {e}")
             raise
 
-    async def get_job_status(self, job_id: str) -> Optional[Dict[str, Any]]:
+    async def get_job_status(self, job_id: JobId) -> Optional[JobStatusInfo]:
         """
         Get current status of a job.
 
@@ -922,7 +933,7 @@ class PgQueuerConsumer:
                 return None
 
             row = rows[0]
-            return {
+            status_info: JobStatusInfo = {
                 "id": str(row["id"]),
                 "status": row["status"],
                 "robot_id": row["robot_id"],
@@ -930,6 +941,7 @@ class PgQueuerConsumer:
                 if row["visible_after"]
                 else None,
             }
+            return status_info
 
         except Exception as e:
             logger.error(f"Failed to get job status: {e}")
@@ -967,14 +979,19 @@ class PgQueuerConsumer:
 
         logger.debug("Heartbeat loop stopped")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> ConsumerStats:
         """
         Get consumer statistics.
 
         Returns:
-            Dict with consumer stats
+            Typed consumer statistics dictionary
         """
-        return {
+        config_stats: ConsumerConfigStats = {
+            "batch_size": self._config.batch_size,
+            "visibility_timeout_seconds": self._config.visibility_timeout_seconds,
+            "heartbeat_interval_seconds": self._config.heartbeat_interval_seconds,
+        }
+        stats: ConsumerStats = {
             "robot_id": self._config.robot_id,
             "environment": self._config.environment,
             "state": self._state.value,
@@ -982,12 +999,9 @@ class PgQueuerConsumer:
             "active_jobs": self.active_job_count,
             "active_job_ids": list(self._active_jobs.keys()),
             "reconnect_attempts": self._reconnect_attempts,
-            "config": {
-                "batch_size": self._config.batch_size,
-                "visibility_timeout_seconds": self._config.visibility_timeout_seconds,
-                "heartbeat_interval_seconds": self._config.heartbeat_interval_seconds,
-            },
+            "config": config_stats,
         }
+        return stats
 
     async def __aenter__(self) -> "PgQueuerConsumer":
         """Async context manager entry."""
@@ -996,9 +1010,9 @@ class PgQueuerConsumer:
 
     async def __aexit__(
         self,
-        exc_type: Any,
-        exc_val: Any,
-        exc_tb: Any,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
     ) -> bool:
         """Async context manager exit."""
         await self.stop()

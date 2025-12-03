@@ -18,10 +18,10 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMessageBox
 from loguru import logger
 
-from .base_controller import BaseController
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 if TYPE_CHECKING:
-    from ..main_window import MainWindow
+    from casare_rpa.presentation.canvas.main_window import MainWindow
 
 
 class MenuController(BaseController):
@@ -59,6 +59,8 @@ class MenuController(BaseController):
         super().initialize()
         logger.info("MenuController initialized")
         self._collect_actions()
+        # Populate recent files menu on startup
+        self.update_recent_files_menu()
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -134,14 +136,101 @@ class MenuController(BaseController):
         logger.info("Opening preferences dialog")
 
         from ..ui.dialogs.preferences_dialog import PreferencesDialog
+        from ....utils.settings_manager import get_settings_manager
         from PySide6.QtWidgets import QDialog
 
-        dialog = PreferencesDialog(self.main_window)
+        # Get current settings
+        settings_manager = get_settings_manager()
+        current_prefs = self._get_all_preferences(settings_manager)
+
+        dialog = PreferencesDialog(preferences=current_prefs, parent=self.main_window)
+
+        # Connect preferences_changed signal to save settings
+        dialog.preferences_changed.connect(
+            lambda prefs: self._save_preferences(settings_manager, prefs)
+        )
+
         if dialog.exec() == QDialog.DialogCode.Accepted:
             logger.info("Preferences saved")
             # Emit signal so app can update settings
             if hasattr(self.main_window, "preferences_saved"):
                 self.main_window.preferences_saved.emit()
+
+    def _get_all_preferences(self, settings_manager) -> dict:
+        """Get all preferences from settings manager."""
+        return {
+            # General
+            "theme": settings_manager.get("ui.theme", "Dark"),
+            "language": settings_manager.get("general.language", "English"),
+            "restore_session": settings_manager.get("general.restore_session", True),
+            "check_updates": settings_manager.get("general.check_updates", True),
+            # Autosave
+            "autosave_enabled": settings_manager.get("autosave.enabled", True),
+            "autosave_interval": settings_manager.get("autosave.interval_minutes", 5),
+            "create_backups": settings_manager.get("autosave.create_backups", True),
+            "max_backups": settings_manager.get("autosave.max_backups", 5),
+            # Editor
+            "show_grid": settings_manager.get("editor.show_grid", True),
+            "snap_to_grid": settings_manager.get("editor.snap_to_grid", True),
+            "grid_size": settings_manager.get("editor.grid_size", 20),
+            "auto_align": settings_manager.get("editor.auto_align", False),
+            "show_node_ids": settings_manager.get("editor.show_node_ids", False),
+            "connection_style": settings_manager.get(
+                "editor.connection_style", "Curved"
+            ),
+            "show_port_labels": settings_manager.get("editor.show_port_labels", True),
+            # Performance
+            "enable_antialiasing": settings_manager.get(
+                "performance.antialiasing", True
+            ),
+            "enable_shadows": settings_manager.get("performance.shadows", False),
+            "fps_limit": settings_manager.get("performance.fps_limit", 60),
+            "max_undo_steps": settings_manager.get("performance.max_undo_steps", 100),
+            "cache_size": settings_manager.get("performance.cache_size_mb", 200),
+        }
+
+    def _save_preferences(self, settings_manager, prefs: dict) -> None:
+        """Save preferences to settings manager."""
+        # General
+        settings_manager.set("ui.theme", prefs.get("theme", "Dark"))
+        settings_manager.set("general.language", prefs.get("language", "English"))
+        settings_manager.set(
+            "general.restore_session", prefs.get("restore_session", True)
+        )
+        settings_manager.set("general.check_updates", prefs.get("check_updates", True))
+        # Autosave
+        settings_manager.set("autosave.enabled", prefs.get("autosave_enabled", True))
+        settings_manager.set(
+            "autosave.interval_minutes", prefs.get("autosave_interval", 5)
+        )
+        settings_manager.set(
+            "autosave.create_backups", prefs.get("create_backups", True)
+        )
+        settings_manager.set("autosave.max_backups", prefs.get("max_backups", 5))
+        # Editor
+        settings_manager.set("editor.show_grid", prefs.get("show_grid", True))
+        settings_manager.set("editor.snap_to_grid", prefs.get("snap_to_grid", True))
+        settings_manager.set("editor.grid_size", prefs.get("grid_size", 20))
+        settings_manager.set("editor.auto_align", prefs.get("auto_align", False))
+        settings_manager.set("editor.show_node_ids", prefs.get("show_node_ids", False))
+        settings_manager.set(
+            "editor.connection_style", prefs.get("connection_style", "Curved")
+        )
+        settings_manager.set(
+            "editor.show_port_labels", prefs.get("show_port_labels", True)
+        )
+        # Performance
+        settings_manager.set(
+            "performance.antialiasing", prefs.get("enable_antialiasing", True)
+        )
+        settings_manager.set("performance.shadows", prefs.get("enable_shadows", False))
+        settings_manager.set("performance.fps_limit", prefs.get("fps_limit", 60))
+        settings_manager.set(
+            "performance.max_undo_steps", prefs.get("max_undo_steps", 100)
+        )
+        settings_manager.set("performance.cache_size_mb", prefs.get("cache_size", 200))
+
+        logger.info("Preferences saved to settings manager")
 
     def open_performance_dashboard(self) -> None:
         """Open the performance dashboard dialog."""
@@ -295,7 +384,7 @@ class MenuController(BaseController):
         logger.info("Showing about dialog")
 
         try:
-            from ....utils.config import APP_NAME, APP_VERSION
+            from casare_rpa.config import APP_NAME, APP_VERSION
 
             QMessageBox.about(
                 self.main_window,
@@ -438,7 +527,7 @@ class MenuController(BaseController):
             import webbrowser
 
             # Try local docs first, then online
-            from ....utils.config import DOCS_DIR
+            from casare_rpa.config import DOCS_DIR
 
             local_docs = DOCS_DIR / "index.html"
             if local_docs.exists():
@@ -519,7 +608,7 @@ class MenuController(BaseController):
         logger.info("Checking for updates")
 
         try:
-            from ....utils.config import APP_VERSION
+            from casare_rpa.config import APP_VERSION
 
             # This is a placeholder implementation
             # In a real implementation, this would check a server for updates

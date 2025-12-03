@@ -178,7 +178,10 @@ class VisualErrorRecoveryNode(VisualNode):
 
 
 class VisualLogErrorNode(VisualNode):
-    """Visual representation of LogErrorNode."""
+    """Visual representation of LogErrorNode.
+
+    Widgets auto-generated from LogErrorNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Log Error"
@@ -187,14 +190,13 @@ class VisualLogErrorNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Log Error node."""
         super().__init__()
-        self.create_property(
-            "level",
-            "error",
-            items=["debug", "info", "warning", "error", "critical"],
-            widget_type=3,
-            tab="config",
-        )
-        self.create_property("include_stack_trace", False, widget_type=1, tab="config")
+        # Widgets (level, include_stack_trace) auto-generated from @node_schema
+
+    def get_node_class(self):
+        """Return the CasareRPA node class for schema lookup."""
+        from casare_rpa.nodes.error_handling_nodes import LogErrorNode
+
+        return LogErrorNode
 
     def setup_ports(self) -> None:
         """Setup ports."""

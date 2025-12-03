@@ -13,8 +13,7 @@ from typing import Any
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, PortType
-
-from .http_base import HttpBaseNode
+from casare_rpa.nodes.http.http_base import HttpBaseNode
 
 
 # Common property definitions to reduce duplication
@@ -95,7 +94,6 @@ PARAMS_PROPERTY = PropertyDef(
 )
 
 
-@executable_node
 @node_schema(
     URL_PROPERTY,
     PropertyDef(
@@ -144,6 +142,7 @@ PARAMS_PROPERTY = PropertyDef(
         tooltip="Force specific response encoding (optional)",
     ),
 )
+@executable_node
 class HttpRequestNode(HttpBaseNode):
     """
     Generic HTTP request node supporting all HTTP methods.

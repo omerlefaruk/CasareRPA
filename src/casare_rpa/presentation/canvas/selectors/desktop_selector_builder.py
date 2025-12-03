@@ -29,15 +29,21 @@ from loguru import logger
 
 import uiautomation as auto
 from casare_rpa.desktop.element import DesktopElement
-from .element_picker import activate_element_picker
-from .element_tree_widget import ElementTreeWidget
-from .selector_strategy import (
+from casare_rpa.presentation.canvas.selectors.element_picker import (
+    activate_element_picker,
+)
+from casare_rpa.presentation.canvas.selectors.element_tree_widget import (
+    ElementTreeWidget,
+)
+from casare_rpa.presentation.canvas.selectors.selector_strategy import (
     generate_selectors,
     SelectorStrategy,
     filter_best_selectors,
     validate_selector_uniqueness,
 )
-from .selector_validator import SelectorValidator
+from casare_rpa.presentation.canvas.selectors.selector_validator import (
+    SelectorValidator,
+)
 
 
 class DesktopSelectorBuilder(QDialog):

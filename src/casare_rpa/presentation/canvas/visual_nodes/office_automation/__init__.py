@@ -2,7 +2,7 @@
 Visual Nodes - Office Automation
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.office_automation.nodes import (
     VisualExcelOpenNode,
     VisualExcelReadCellNode,
     VisualExcelWriteCellNode,

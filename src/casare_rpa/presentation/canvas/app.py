@@ -15,9 +15,14 @@ from PySide6.QtCore import Qt
 from qasync import QEventLoop
 from loguru import logger
 
-from .main_window import MainWindow
-from .graph.node_graph_widget import NodeGraphWidget
-from .controllers import (
+from casare_rpa.config import setup_logging, APP_NAME
+from casare_rpa.nodes.file.file_security import (
+    validate_path_security,
+    PathSecurityError,
+)
+from casare_rpa.presentation.canvas.main_window import MainWindow
+from casare_rpa.presentation.canvas.graph.node_graph_widget import NodeGraphWidget
+from casare_rpa.presentation.canvas.controllers import (
     WorkflowController,
     ExecutionController,
     NodeController,
@@ -25,12 +30,7 @@ from .controllers import (
     PreferencesController,
     AutosaveController,
 )
-from ...utils.config import setup_logging, APP_NAME
-from ...utils.playwright_setup import ensure_playwright_ready
-from ...nodes.file.file_operations import (
-    validate_path_security,
-    PathSecurityError,
-)
+from casare_rpa.utils.playwright_setup import ensure_playwright_ready
 
 
 class CasareRPAApp:

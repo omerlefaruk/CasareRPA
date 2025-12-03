@@ -17,10 +17,11 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
 )
-from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.utils.type_converters import safe_int
-from ..utils.config import DEFAULT_PAGE_LOAD_TIMEOUT
 from loguru import logger
+
+from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.utils import safe_int
+from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
 
 
 @node_schema(

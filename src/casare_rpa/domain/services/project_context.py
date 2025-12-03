@@ -9,11 +9,11 @@ across global, project, and scenario levels.
 from typing import Any, Dict, Optional
 from loguru import logger
 
-from ..entities.project import (
+from casare_rpa.domain.entities.project import (
+    CredentialBindingsFile,
     Project,
     Scenario,
     VariablesFile,
-    CredentialBindingsFile,
 )
 
 

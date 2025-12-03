@@ -15,19 +15,17 @@ Architecture:
   - WaitManager: Wait for elements, windows, conditions
 """
 
-from .context import DesktopContext
-from .element import DesktopElement
-from .selector import parse_selector, find_element, find_elements
-
-# Export managers for direct async usage
-from .managers import (
-    WindowManager,
-    MouseController,
-    KeyboardController,
+from casare_rpa.desktop.context import DesktopContext
+from casare_rpa.desktop.element import DesktopElement
+from casare_rpa.desktop.managers import (
     FormInteractor,
+    KeyboardController,
+    MouseController,
     ScreenCapture,
     WaitManager,
+    WindowManager,
 )
+from casare_rpa.desktop.selector import find_element, find_elements, parse_selector
 
 __all__ = [
     # Main facade

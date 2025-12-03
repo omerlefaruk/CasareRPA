@@ -17,7 +17,6 @@ from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, Por
 from casare_rpa.infrastructure.execution import ExecutionContext
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "separator",
@@ -27,6 +26,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         tooltip="Separator to insert between strings",
     ),
 )
+@executable_node
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
 
@@ -90,7 +90,6 @@ class FormatStringNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "ignore_case",
@@ -176,7 +175,6 @@ class RegexMatchNode(BaseNode):
             return {"success": False, "error": str(e), "next_nodes": []}
 
 
-@executable_node
 @node_schema(
     PropertyDef(
         "ignore_case",

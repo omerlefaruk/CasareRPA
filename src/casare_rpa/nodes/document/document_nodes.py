@@ -18,6 +18,8 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.resources.document_ai_manager import (
     DocumentAIManager,
+)
+from casare_rpa.infrastructure.resources.llm_resource_manager import (
     LLMConfig,
     LLMProvider,
 )

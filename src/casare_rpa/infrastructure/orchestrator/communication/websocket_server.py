@@ -20,8 +20,16 @@ except ImportError:
     HAS_WEBSOCKETS = False
     logger.warning("websockets not installed. Server features disabled.")
 
-from .protocol import Message, MessageType, MessageBuilder
-from .models import Robot, RobotStatus, Job
+from casare_rpa.infrastructure.orchestrator.communication.models import (
+    Job,
+    Robot,
+    RobotStatus,
+)
+from casare_rpa.infrastructure.orchestrator.communication.protocol import (
+    Message,
+    MessageBuilder,
+    MessageType,
+)
 
 
 class RobotConnection:

@@ -2,7 +2,7 @@
 Visual Nodes - File Operations
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.file_operations.nodes import (
     VisualReadFileNode,
     VisualWriteFileNode,
     VisualAppendFileNode,

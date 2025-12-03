@@ -11,7 +11,7 @@ __version__ = "0.1.0"
 __author__ = "CasareRPA Team"
 __license__ = "MIT"
 
-from .utils import APP_NAME, APP_VERSION, setup_logging
+from casare_rpa.config import APP_NAME, APP_VERSION, setup_logging
 
 __all__ = [
     "__version__",

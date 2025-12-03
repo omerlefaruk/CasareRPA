@@ -2,7 +2,7 @@
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
-from casare_rpa.nodes.email_nodes import (
+from casare_rpa.nodes.email import (
     SendEmailNode,
     ReadEmailsNode,
     GetEmailContentNode,

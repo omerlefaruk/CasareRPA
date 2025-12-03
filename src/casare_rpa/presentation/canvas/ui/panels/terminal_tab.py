@@ -10,7 +10,9 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal, Slot
 from loguru import logger
 
-from ..widgets.output_console_widget import OutputConsoleWidget
+from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
+    OutputConsoleWidget,
+)
 
 
 class TerminalTab(QWidget):

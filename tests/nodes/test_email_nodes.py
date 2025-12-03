@@ -17,7 +17,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.nodes.email_nodes import (
+from casare_rpa.nodes.email import (
     SendEmailNode,
     ReadEmailsNode,
     GetEmailContentNode,
@@ -26,8 +26,8 @@ from casare_rpa.nodes.email_nodes import (
     MarkEmailNode,
     DeleteEmailNode,
     MoveEmailNode,
-    _decode_header_value,
-    _parse_email_message,
+    decode_header_value,
+    parse_email_message,
 )
 
 
@@ -997,29 +997,29 @@ class TestSendEmailNodeEncoding:
 class TestEmailHelperFunctions:
     """Tests for email helper functions."""
 
-    def test_decode_header_value_plain(self) -> None:
+    def testdecode_header_value_plain(self) -> None:
         """Test decoding plain header value."""
-        result = _decode_header_value("Simple Subject")
+        result = decode_header_value("Simple Subject")
         assert result == "Simple Subject"
 
-    def test_decode_header_value_empty(self) -> None:
+    def testdecode_header_value_empty(self) -> None:
         """Test decoding empty header."""
-        result = _decode_header_value("")
+        result = decode_header_value("")
         assert result == ""
 
-    def test_decode_header_value_none(self) -> None:
+    def testdecode_header_value_none(self) -> None:
         """Test decoding None header."""
-        result = _decode_header_value(None)
+        result = decode_header_value(None)
         assert result == ""
 
-    def test_parse_email_message_simple(self) -> None:
+    def testparse_email_message_simple(self) -> None:
         """Test parsing simple email message."""
         msg = MIMEText("Test body content")
         msg["Subject"] = "Test Subject"
         msg["From"] = "sender@test.com"
         msg["To"] = "recipient@test.com"
 
-        parsed = _parse_email_message(msg)
+        parsed = parse_email_message(msg)
 
         assert parsed["subject"] == "Test Subject"
         assert parsed["from"] == "sender@test.com"
@@ -1027,7 +1027,7 @@ class TestEmailHelperFunctions:
         assert parsed["body_text"] == "Test body content"
         assert parsed["has_attachments"] is False
 
-    def test_parse_email_message_multipart(self) -> None:
+    def testparse_email_message_multipart(self) -> None:
         """Test parsing multipart email message."""
         msg = MIMEMultipart()
         msg["Subject"] = "Multipart Test"
@@ -1037,13 +1037,13 @@ class TestEmailHelperFunctions:
         msg.attach(MIMEText("Plain text body", "plain"))
         msg.attach(MIMEText("<p>HTML body</p>", "html"))
 
-        parsed = _parse_email_message(msg)
+        parsed = parse_email_message(msg)
 
         assert parsed["subject"] == "Multipart Test"
         assert "Plain text body" in parsed["body_text"]
         assert "<p>HTML body</p>" in parsed["body_html"]
 
-    def test_parse_email_message_with_attachment(self) -> None:
+    def testparse_email_message_with_attachment(self) -> None:
         """Test parsing email with attachment."""
         msg = MIMEMultipart()
         msg["Subject"] = "With Attachment"
@@ -1057,7 +1057,7 @@ class TestEmailHelperFunctions:
         attachment["Content-Disposition"] = 'attachment; filename="document.pdf"'
         msg.attach(attachment)
 
-        parsed = _parse_email_message(msg)
+        parsed = parse_email_message(msg)
 
         assert parsed["has_attachments"] is True
         assert len(parsed["attachments"]) == 1

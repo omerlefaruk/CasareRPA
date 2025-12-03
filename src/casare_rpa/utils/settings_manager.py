@@ -7,7 +7,7 @@ import orjson
 from typing import Any, Optional
 from loguru import logger
 
-from .config import CONFIG_DIR
+from casare_rpa.config import CONFIG_DIR
 
 
 class SettingsManager:
@@ -18,13 +18,36 @@ class SettingsManager:
     """
 
     DEFAULT_SETTINGS = {
+        "general": {
+            "language": "English",
+            "restore_session": True,
+            "check_updates": True,
+        },
         "autosave": {
             "enabled": True,
-            "interval_minutes": 5,  # Auto-save every 5 minutes
+            "interval_minutes": 5,
+            "create_backups": True,
+            "max_backups": 5,
         },
         "ui": {
-            "theme": "dark",
+            "theme": "Dark",
             "show_minimap": True,
+        },
+        "editor": {
+            "show_grid": True,
+            "snap_to_grid": True,
+            "grid_size": 20,
+            "auto_align": False,
+            "show_node_ids": False,
+            "connection_style": "Curved",
+            "show_port_labels": True,
+        },
+        "performance": {
+            "antialiasing": True,
+            "shadows": False,
+            "fps_limit": 60,
+            "max_undo_steps": 100,
+            "cache_size_mb": 200,
         },
     }
 
@@ -160,8 +183,10 @@ class SettingsManager:
         self.set("autosave.interval_minutes", minutes)
 
 
-# Global settings manager instance
-_settings_manager: Optional[SettingsManager] = None
+# Thread-safe singleton holder
+from casare_rpa.application.dependency_injection.singleton import Singleton
+
+_settings_manager_holder = Singleton(SettingsManager, name="SettingsManager")
 
 
 def get_settings_manager() -> SettingsManager:
@@ -171,7 +196,9 @@ def get_settings_manager() -> SettingsManager:
     Returns:
         SettingsManager instance
     """
-    global _settings_manager
-    if _settings_manager is None:
-        _settings_manager = SettingsManager()
-    return _settings_manager
+    return _settings_manager_holder.get()
+
+
+def reset_settings_manager() -> None:
+    """Reset the settings manager instance (for testing)."""
+    _settings_manager_holder.reset()

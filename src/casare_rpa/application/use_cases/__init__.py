@@ -4,13 +4,26 @@ CasareRPA - Application Use Cases
 Use cases coordinate domain logic and infrastructure to implement application features.
 """
 
-from .execute_workflow import ExecuteWorkflowUseCase, ExecutionSettings
-from .validate_workflow import (
+from casare_rpa.application.use_cases.execute_workflow import ExecuteWorkflowUseCase
+from casare_rpa.application.use_cases.execution_state_manager import (
+    ExecutionSettings,
+    ExecutionStateManager,
+)
+from casare_rpa.application.use_cases.node_executor import (
+    NodeExecutor,
+    NodeExecutorWithTryCatch,
+    NodeExecutionResult,
+)
+from casare_rpa.application.use_cases.variable_resolver import (
+    VariableResolver,
+    TryCatchErrorHandler,
+)
+from casare_rpa.application.use_cases.validate_workflow import (
     ValidateWorkflowUseCase,
     ValidationResult,
     ValidationIssue,
 )
-from .project_management import (
+from casare_rpa.application.use_cases.project_management import (
     # Result types
     ProjectResult,
     ScenarioResult,
@@ -33,6 +46,12 @@ __all__ = [
     # Workflow use cases
     "ExecuteWorkflowUseCase",
     "ExecutionSettings",
+    "ExecutionStateManager",
+    "NodeExecutor",
+    "NodeExecutorWithTryCatch",
+    "NodeExecutionResult",
+    "VariableResolver",
+    "TryCatchErrorHandler",
     "ValidateWorkflowUseCase",
     "ValidationResult",
     "ValidationIssue",

@@ -2,7 +2,7 @@
 Visual Nodes - Basic
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.basic.nodes import (
     VisualStartNode,
     VisualEndNode,
     VisualCommentNode,

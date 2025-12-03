@@ -116,7 +116,7 @@ def test_execute_when_element_not_found_retries_three_times(self):
 # tests/unit/domain/test_job.py
 import pytest
 from datetime import datetime
-from casare_rpa.orchestrator.models import Job, JobStatus, JobPriority
+from casare_rpa.infrastructure.orchestrator.api.models import Job, JobStatus, JobPriority
 
 class TestJob:
     """Unit tests for Job entity."""
@@ -183,8 +183,8 @@ class TestJob:
 # tests/unit/application/test_submit_job_use_case.py
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from casare_rpa.orchestrator.engine import OrchestratorEngine
-from casare_rpa.orchestrator.models import Job, JobPriority
+from casare_rpa.infrastructure.orchestrator.server import OrchestratorEngine
+from casare_rpa.infrastructure.orchestrator.api.models import Job, JobPriority
 
 class TestSubmitJob:
     """Unit tests for job submission."""
@@ -245,8 +245,8 @@ class TestSubmitJob:
 ```python
 # tests/unit/domain/test_job_state_machine.py
 import pytest
-from casare_rpa.orchestrator.job_queue import JobStateMachine, JobStateError
-from casare_rpa.orchestrator.models import Job, JobStatus
+from casare_rpa.infrastructure.orchestrator.scheduling.job_assignment import JobStateMachine, JobStateError
+from casare_rpa.infrastructure.orchestrator.api.models import Job, JobStatus
 
 class TestJobStateMachine:
     """Unit tests for job state machine."""
@@ -306,8 +306,8 @@ class TestJobStateMachine:
 # tests/integration/test_orchestrator_robot.py
 import pytest
 import asyncio
-from casare_rpa.orchestrator.server import OrchestratorServer
-from casare_rpa.orchestrator.protocol import MessageBuilder
+from casare_rpa.infrastructure.orchestrator.server import OrchestratorServer
+from casare_rpa.infrastructure.orchestrator.communication.websocket_server import MessageBuilder
 
 class TestOrchestratorRobotCommunication:
     """Integration tests for orchestrator-robot communication."""
@@ -388,8 +388,8 @@ class TestOrchestratorRobotCommunication:
 ```python
 # tests/integration/test_job_queue.py
 import pytest
-from casare_rpa.orchestrator.job_queue import JobQueue
-from casare_rpa.orchestrator.models import Job, JobStatus, JobPriority, Robot
+from casare_rpa.infrastructure.queue.pgqueuer_consumer import JobQueue
+from casare_rpa.infrastructure.orchestrator.api.models import Job, JobStatus, JobPriority, Robot
 
 class TestJobQueueIntegration:
     """Integration tests for job queue."""
@@ -489,7 +489,7 @@ class TestJobQueueIntegration:
 # tests/e2e/test_workflow_execution.py
 import pytest
 import asyncio
-from casare_rpa.orchestrator.engine import OrchestratorEngine
+from casare_rpa.infrastructure.orchestrator.server import OrchestratorEngine
 from casare_rpa.robot.agent import RobotAgent
 
 class TestWorkflowExecution:

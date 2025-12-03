@@ -6,40 +6,40 @@ Split from monolithic project.py for maintainability.
 """
 
 # Base constants and utilities
-from .base import (
+from casare_rpa.domain.entities.project.base import (
     PROJECT_SCHEMA_VERSION,
     generate_project_id,
     generate_scenario_id,
 )
 
-# Variable classes (uses unified Variable from domain.entities.variable)
-from .variables import (
-    VariableScope,
-    VariableType,
-    ProjectVariable,  # Alias for Variable
-    VariablesFile,
-)
-
 # Credential classes
-from .credentials import (
+from casare_rpa.domain.entities.project.credentials import (
     CredentialBinding,
     CredentialBindingsFile,
 )
 
+# Index classes
+from casare_rpa.domain.entities.project.index import (
+    ProjectIndexEntry,
+    ProjectsIndex,
+)
+
+# Main entities
+from casare_rpa.domain.entities.project.project import Project
+from casare_rpa.domain.entities.project.scenario import Scenario
+
 # Settings classes
-from .settings import (
+from casare_rpa.domain.entities.project.settings import (
     ProjectSettings,
     ScenarioExecutionSettings,
 )
 
-# Main entities
-from .project import Project
-from .scenario import Scenario
-
-# Index classes
-from .index import (
-    ProjectIndexEntry,
-    ProjectsIndex,
+# Variable classes (uses unified Variable from domain.entities.variable)
+from casare_rpa.domain.entities.project.variables import (
+    ProjectVariable,  # Alias for Variable
+    VariableScope,
+    VariablesFile,
+    VariableType,
 )
 
 __all__ = [

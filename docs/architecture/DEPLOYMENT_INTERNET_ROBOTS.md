@@ -160,12 +160,12 @@ server {
 
 **Option B - FastAPI SSL Support**:
 ```python
-# src/casare_rpa/orchestrator/api/main.py
+# src/casare_rpa/infrastructure/orchestrator/api/main.py
 import uvicorn
 
 if __name__ == "__main__":
     uvicorn.run(
-        "casare_rpa.orchestrator.api.main:app",
+        "casare_rpa.infrastructure.orchestrator.api.main:app",
         host="0.0.0.0",
         port=8443,
         ssl_keyfile="/path/to/privkey.pem",

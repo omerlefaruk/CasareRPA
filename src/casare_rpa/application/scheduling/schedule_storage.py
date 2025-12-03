@@ -10,7 +10,7 @@ from typing import List, Optional, Dict, Any
 
 from loguru import logger
 
-from casare_rpa.presentation.canvas.ui.dialogs.schedule_dialog import WorkflowSchedule
+from casare_rpa.domain.entities import WorkflowSchedule
 
 
 class ScheduleStorage:
@@ -234,29 +234,53 @@ class ScheduleStorage:
         return [s for s in self.get_all_schedules() if s.workflow_path == workflow_path]
 
 
-# Singleton instance
+# Module-level singleton with thread-safe lazy initialization
+import threading
+
 _storage_instance: Optional[ScheduleStorage] = None
+_storage_lock = threading.Lock()
+
+
+def _get_storage_singleton() -> ScheduleStorage:
+    """Get or create the storage singleton with double-checked locking."""
+    _local_instance = _storage_instance
+    if _local_instance is None:
+        with _storage_lock:
+            _local_instance = _storage_instance
+            if _local_instance is None:
+                _local_instance = ScheduleStorage()
+                globals()["_storage_instance"] = _local_instance
+    return _local_instance
 
 
 def get_schedule_storage() -> ScheduleStorage:
     """
-    Get the global schedule storage instance.
+    Get the schedule storage instance.
 
     Returns:
         ScheduleStorage singleton instance
     """
-    global _storage_instance
-    if _storage_instance is None:
-        _storage_instance = ScheduleStorage()
-    return _storage_instance
+    return _get_storage_singleton()
 
 
 def set_schedule_storage(storage: ScheduleStorage) -> None:
     """
-    Set the global schedule storage instance (for testing).
+    Set the schedule storage instance (for testing).
+
+    Thread-safe replacement of the singleton.
 
     Args:
         storage: ScheduleStorage instance to use
     """
-    global _storage_instance
-    _storage_instance = storage
+    with _storage_lock:
+        globals()["_storage_instance"] = storage
+
+
+def reset_schedule_storage() -> None:
+    """
+    Reset the schedule storage singleton (for testing).
+
+    Clears the singleton so it will be recreated on next access.
+    """
+    with _storage_lock:
+        globals()["_storage_instance"] = None

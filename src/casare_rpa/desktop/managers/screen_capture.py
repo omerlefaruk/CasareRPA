@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from loguru import logger
 
-from ..element import DesktopElement
+from casare_rpa.desktop.element import DesktopElement
 
 
 class ScreenCapture:

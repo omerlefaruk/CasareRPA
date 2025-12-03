@@ -5,13 +5,18 @@ Coordinates workflow execution across domain and infrastructure layers.
 This use case orchestrates workflow execution by:
 - Using ExecutionOrchestrator (domain) for routing decisions
 - Using ExecutionContext (infrastructure) for execution and resources
+- Using helper services for node execution, state management, and data transfer
 - Emitting events via EventBus for progress tracking
-- Handling async execution and errors
 
 Architecture:
 - Domain logic: ExecutionOrchestrator makes routing decisions
 - Infrastructure: ExecutionContext manages Playwright resources
 - Application: This class coordinates them and publishes events
+
+Refactored: Extracted helper services for Single Responsibility:
+- ExecutionStateManager: State tracking, progress, pause/resume
+- NodeExecutor: Node execution with metrics and lifecycle events
+- VariableResolver: Data transfer between nodes, port validation
 """
 
 import asyncio
@@ -19,13 +24,27 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 from loguru import logger
 
-from ...domain.entities.workflow import WorkflowSchema
-from ...domain.services.execution_orchestrator import ExecutionOrchestrator
+from casare_rpa.domain.entities.workflow import WorkflowSchema
+from casare_rpa.domain.events import EventBus
+from casare_rpa.domain.services.execution_orchestrator import ExecutionOrchestrator
+from casare_rpa.domain.value_objects.types import EventType, NodeId
 from casare_rpa.infrastructure.execution import ExecutionContext
-from casare_rpa.domain.events import EventBus, Event
-from casare_rpa.domain.value_objects.types import EventType, NodeId, NodeStatus
-from ...utils.performance.performance_metrics import get_metrics
-from ...utils.workflow.workflow_loader import NODE_TYPE_MAP
+from casare_rpa.utils.performance.performance_metrics import get_metrics
+from casare_rpa.utils.workflow.workflow_loader import NODE_TYPE_MAP
+
+# Import extracted helper services
+from casare_rpa.application.use_cases.execution_state_manager import (
+    ExecutionSettings,
+    ExecutionStateManager,
+)
+from casare_rpa.application.use_cases.node_executor import (
+    NodeExecutor,
+    NodeExecutorWithTryCatch,
+)
+from casare_rpa.application.use_cases.variable_resolver import (
+    VariableResolver,
+    TryCatchErrorHandler,
+)
 
 
 def _create_node_from_dict(node_data: dict) -> Any:
@@ -52,31 +71,6 @@ def _create_node_from_dict(node_data: dict) -> Any:
     return node_class(node_id=node_id, config=config)
 
 
-class ExecutionSettings:
-    """Execution settings value object."""
-
-    def __init__(
-        self,
-        continue_on_error: bool = False,
-        node_timeout: float = 120.0,
-        target_node_id: Optional[NodeId] = None,
-        single_node: bool = False,
-    ) -> None:
-        """
-        Initialize execution settings.
-
-        Args:
-            continue_on_error: If True, continue workflow on node errors
-            node_timeout: Timeout for individual node execution in seconds
-            target_node_id: Optional target node for Run-To-Node (F4) or Run-Single-Node (F5)
-            single_node: If True, execute only target_node_id (F5 mode)
-        """
-        self.continue_on_error = continue_on_error
-        self.node_timeout = node_timeout
-        self.target_node_id = target_node_id
-        self.single_node = single_node
-
-
 class ExecuteWorkflowUseCase:
     """
     Application use case for executing workflows.
@@ -86,6 +80,7 @@ class ExecuteWorkflowUseCase:
     - Domain: Workflow schema for node/connection data
     - Infrastructure: ExecutionContext for resources and variables
     - Infrastructure: EventBus for progress notifications
+    - Services: ExecutionStateManager, NodeExecutor, VariableResolver
     """
 
     def __init__(
@@ -124,42 +119,61 @@ class ExecuteWorkflowUseCase:
         # Domain services
         self.orchestrator = ExecutionOrchestrator(workflow)
 
-        # Infrastructure components (created during execution)
-        self.context: Optional[ExecutionContext] = None
-
         # Pause/resume support
         self.pause_event = pause_event or asyncio.Event()
         self.pause_event.set()  # Initially not paused
 
-        # Execution tracking
-        self.executed_nodes: Set[NodeId] = set()
-        self.current_node_id: Optional[NodeId] = None
-        self.start_time: Optional[datetime] = None
-        self.end_time: Optional[datetime] = None
-        self._stop_requested = False
+        # State management (extracted service)
+        self.state_manager = ExecutionStateManager(
+            workflow=workflow,
+            orchestrator=self.orchestrator,
+            event_bus=event_bus,
+            settings=self.settings,
+            pause_event=self.pause_event,
+        )
 
-        # Run-To-Node support
-        self._target_reached = False
-        self._subgraph_nodes: Optional[Set[NodeId]] = None
+        # Infrastructure components (created during execution)
+        self.context: Optional[ExecutionContext] = None
 
         # Node instance cache (for dict-based workflows)
         self._node_instances: Dict[str, Any] = {}
 
-        # Execution error tracking
-        self._execution_failed = False
-        self._execution_error: Optional[str] = None
+        # Helper services (initialized during execution)
+        self._node_executor: Optional[NodeExecutorWithTryCatch] = None
+        self._variable_resolver: Optional[VariableResolver] = None
+        self._error_handler: Optional[TryCatchErrorHandler] = None
 
-        # Calculate subgraph if target node is specified
-        if self.settings.target_node_id:
-            if self.settings.single_node:
-                # F5 mode: only execute the target node
-                self._subgraph_nodes = {self.settings.target_node_id}
-                logger.info(
-                    f"Single node mode: executing only {self.settings.target_node_id}"
-                )
-            else:
-                # F4 mode: execute up to target node
-                self._calculate_subgraph()
+    # ========================================================================
+    # BACKWARD COMPATIBILITY - Delegate to state manager
+    # ========================================================================
+
+    @property
+    def executed_nodes(self) -> Set[NodeId]:
+        """Get executed nodes set."""
+        return self.state_manager.executed_nodes
+
+    @property
+    def current_node_id(self) -> Optional[NodeId]:
+        """Get current node ID."""
+        return self.state_manager.current_node_id
+
+    @property
+    def start_time(self) -> Optional[datetime]:
+        """Get start time."""
+        return self.state_manager.start_time
+
+    @property
+    def end_time(self) -> Optional[datetime]:
+        """Get end time."""
+        return self.state_manager.end_time
+
+    def stop(self) -> None:
+        """Stop workflow execution."""
+        self.state_manager.stop()
+
+    # ========================================================================
+    # NODE INSTANCE MANAGEMENT
+    # ========================================================================
 
     def _get_node_instance(self, node_id: str) -> Any:
         """
@@ -196,410 +210,9 @@ class ExecuteWorkflowUseCase:
         self._node_instances[node_id] = node
         return node
 
-    def _calculate_subgraph(self) -> None:
-        """Calculate subgraph for Run-To-Node execution."""
-        if not self.settings.target_node_id:
-            return
-
-        start_node_id = self.orchestrator.find_start_node()
-        if not start_node_id:
-            logger.error("Cannot calculate subgraph: no StartNode found")
-            return
-
-        # Check if target is reachable
-        if not self.orchestrator.is_reachable(
-            start_node_id, self.settings.target_node_id
-        ):
-            logger.error(
-                f"Target node {self.settings.target_node_id} is not reachable from StartNode"
-            )
-            return
-
-        # Calculate the subgraph
-        self._subgraph_nodes = self.orchestrator.calculate_execution_path(
-            start_node_id, self.settings.target_node_id
-        )
-
-        logger.info(
-            f"Subgraph calculated: {len(self._subgraph_nodes)} nodes to execute"
-        )
-
-    def _should_execute_node(self, node_id: NodeId) -> bool:
-        """
-        Check if a node should be executed based on subgraph filtering.
-
-        Args:
-            node_id: Node ID to check
-
-        Returns:
-            True if node should be executed
-        """
-        if self._subgraph_nodes is None:
-            return True  # No subgraph filter - execute all nodes
-
-        return node_id in self._subgraph_nodes
-
-    def _emit_event(self, event_type: EventType, data: Dict[str, Any]) -> None:
-        """
-        Emit an event to the event bus.
-
-        Args:
-            event_type: Type of event
-            data: Event data payload
-        """
-        if self.event_bus:
-            event = Event(
-                event_type=event_type,
-                data=data,
-                node_id=self.current_node_id,
-            )
-            self.event_bus.publish(event)
-
-    def _calculate_progress(self) -> float:
-        """
-        Calculate execution progress as percentage.
-
-        Returns:
-            Progress percentage (0-100)
-        """
-        total = (
-            len(self._subgraph_nodes)
-            if self._subgraph_nodes
-            else len(self.workflow.nodes)
-        )
-        if total == 0:
-            return 0.0
-        return (len(self.executed_nodes) / total) * 100
-
-    async def _execute_node_once(self, node: Any) -> Dict[str, Any]:
-        """
-        Execute a single node once (internal method for retry wrapper).
-
-        Args:
-            node: The node to execute
-
-        Returns:
-            Execution result dictionary
-
-        Raises:
-            Exception: If execution fails
-        """
-        try:
-            result = await asyncio.wait_for(
-                node.execute(self.context), timeout=self.settings.node_timeout
-            )
-            return result or {"success": False, "error": "No result returned"}
-        except asyncio.TimeoutError:
-            raise asyncio.TimeoutError(
-                f"Node {node.node_id} timed out after {self.settings.node_timeout}s"
-            )
-
-    async def _execute_node(self, node: Any) -> tuple[bool, Optional[Dict[str, Any]]]:
-        """
-        Execute a single node with error handling.
-
-        Args:
-            node: The node instance to execute
-
-        Returns:
-            Tuple of (success: bool, result: dict)
-        """
-        # Check if node is disabled (bypassed)
-        if node.config.get("_disabled", False):
-            logger.info(f"Node {node.node_id} is disabled - bypassing execution")
-            node.status = NodeStatus.SUCCESS
-
-            self._emit_event(
-                EventType.NODE_COMPLETED,
-                {
-                    "node_id": node.node_id,
-                    "node_type": node.__class__.__name__,
-                    "bypassed": True,
-                    "execution_time": 0,
-                    "progress": self._calculate_progress(),
-                },
-            )
-
-            return True, {"success": True, "bypassed": True}
-
-        self.current_node_id = node.node_id
-        node.status = NodeStatus.RUNNING
-
-        # Track execution path in context state
-        self.context.set_current_node(node.node_id)
-
-        self._emit_event(
-            EventType.NODE_STARTED,
-            {"node_id": node.node_id, "node_type": node.__class__.__name__},
-        )
-
-        # Record start time
-        import time
-
-        start_time = time.time()
-
-        # Record metrics
-        node_type = node.__class__.__name__
-        get_metrics().record_node_start(node_type, node.node_id)
-
-        try:
-            # Validate node before execution
-            # validate() returns tuple (is_valid: bool, error_message: Optional[str])
-            is_valid, validation_error = node.validate()
-            if not is_valid:
-                error_msg = validation_error or "Validation failed"
-                logger.error(f"Node validation failed: {node.node_id} - {error_msg}")
-                node.status = NodeStatus.ERROR
-                self._emit_event(
-                    EventType.NODE_ERROR,
-                    {"node_id": node.node_id, "error": error_msg},
-                )
-                return False, None
-
-            # Execute the node
-            result = await self._execute_node_once(node)
-
-            # Update debug info
-            execution_time = time.time() - start_time
-            node.execution_count += 1
-            node.last_execution_time = execution_time
-            node.last_output = result
-
-            # Handle None result explicitly
-            if result is None:
-                result = {
-                    "success": False,
-                    "error": f"Node {node.node_id} ({node_type}) returned None instead of result dict",
-                }
-                logger.error(result["error"])
-
-            # Handle result
-            if result.get("success", False):
-                node.status = NodeStatus.SUCCESS
-                self.executed_nodes.add(node.node_id)
-
-                # Validate output ports have values after successful execution
-                self._validate_output_ports(node, result)
-
-                self._emit_event(
-                    EventType.NODE_COMPLETED,
-                    {
-                        "node_id": node.node_id,
-                        "message": result.get("data", {}).get("message", "Completed"),
-                        "progress": self._calculate_progress(),
-                        "execution_time": execution_time,
-                    },
-                )
-
-                # Record successful execution in metrics
-                get_metrics().record_node_complete(
-                    node_type, node.node_id, execution_time * 1000, success=True
-                )
-                return True, result
-            else:
-                node.status = NodeStatus.ERROR
-                error_msg = result.get("error", "Unknown error")
-                self._emit_event(
-                    EventType.NODE_ERROR,
-                    {
-                        "node_id": node.node_id,
-                        "error": error_msg,
-                        "execution_time": execution_time,
-                    },
-                )
-                logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
-
-                # Record failed execution in metrics
-                get_metrics().record_node_complete(
-                    node_type, node.node_id, execution_time * 1000, success=False
-                )
-                return False, result
-
-        except Exception as e:
-            node.status = NodeStatus.ERROR
-            error_msg = str(e)
-            execution_time = time.time() - start_time
-
-            # Check if we're inside a try block - capture error for catch
-            error_captured = self._capture_try_block_error(
-                error_msg, type(e).__name__, e
-            )
-
-            if not error_captured:
-                self._emit_event(
-                    EventType.NODE_ERROR,
-                    {
-                        "node_id": node.node_id,
-                        "error": error_msg,
-                        "execution_time": execution_time,
-                    },
-                )
-                logger.exception(f"Exception during node execution: {node.node_id}")
-            else:
-                logger.info(
-                    f"Exception captured by try block: {node.node_id} - {error_msg}"
-                )
-
-            # Record exception in metrics
-            get_metrics().record_node_complete(
-                node_type, node.node_id, execution_time * 1000, success=False
-            )
-
-            # If error was captured by try block, return success with special marker
-            if error_captured:
-                return True, {"success": True, "error_captured": True}
-            return False, None
-
-    def _transfer_data(self, connection: Any) -> None:
-        """
-        Transfer data from source port to target port.
-
-        Args:
-            connection: The connection defining source and target
-        """
-        try:
-            source_node = self._get_node_instance(connection.source_node)
-            target_node = self._get_node_instance(connection.target_node)
-        except ValueError:
-            return
-
-        # Get value from source output port
-        value = source_node.get_output_value(connection.source_port)
-
-        # Set value to target input port
-        if value is not None:
-            target_node.set_input_value(connection.target_port, value)
-
-            # Log data transfers (non-exec) for debugging
-            if "exec" not in connection.source_port.lower():
-                logger.info(
-                    f"Data: {connection.source_port} -> {connection.target_port} = {repr(value)[:80]}"
-                )
-        else:
-            # Log warning when data transfer fails due to missing output value
-            if "exec" not in connection.source_port.lower():
-                logger.warning(
-                    f"Data transfer skipped: source node {source_node.node_id} "
-                    f"({type(source_node).__name__}) port '{connection.source_port}' has no value"
-                )
-
-    def _validate_output_ports(self, node: Any, result: dict) -> bool:
-        """
-        Validate that required output ports have values after execution.
-
-        Logs warnings for output ports that have no value after successful execution.
-        This helps detect silent failures where nodes succeed but don't produce expected data.
-
-        Args:
-            node: The executed node instance
-            result: The execution result dictionary
-
-        Returns:
-            True (validation is informational, doesn't block execution)
-        """
-        # Skip validation for control flow nodes (only have exec ports)
-        control_flow_nodes = (
-            "IfNode",
-            "ForLoopStartNode",
-            "ForLoopEndNode",
-            "WhileLoopNode",
-            "WhileEndNode",
-            "TryCatchNode",
-            "TryEndNode",
-            "CatchNode",
-            "CatchEndNode",
-            "FinallyNode",
-            "FinallyEndNode",
-            "ForkNode",
-            "JoinNode",
-            "StartNode",
-            "EndNode",
-            "ParallelForEachNode",
-        )
-        node_type_name = type(node).__name__
-        if node_type_name in control_flow_nodes:
-            return True
-
-        # Check if node has output_ports attribute
-        if not hasattr(node, "output_ports"):
-            return True
-
-        # Filter to data output ports (exclude exec ports)
-        # node.output_ports is a Dict[str, Port], so iterate over values()
-        output_ports = [
-            p
-            for p in node.output_ports.values()
-            if not p.name.startswith("exec") and not p.name.startswith("_exec")
-        ]
-
-        if not output_ports:
-            return True  # No data ports to validate
-
-        # Validate each output port has a value
-        for port in output_ports:
-            value = node.get_output_value(port.name)
-            if value is None:
-                logger.warning(
-                    f"Node {node.node_id} ({node_type_name}) output port "
-                    f"'{port.name}' has no value after successful execution"
-                )
-
-        return True
-
-    def _capture_try_block_error(
-        self, error_msg: str, error_type: str, exception: Exception
-    ) -> bool:
-        """
-        Check if we're inside a try block and capture the error if so.
-
-        Args:
-            error_msg: Error message
-            error_type: Error type/class name
-            exception: The original exception
-
-        Returns:
-            True if error was captured by a try block, False otherwise
-        """
-        if not self.context:
-            return False
-
-        # Find active try state(s) in context variables
-        import traceback
-
-        stack_trace = "".join(
-            traceback.format_exception(
-                type(exception), exception, exception.__traceback__
-            )
-        )
-
-        for key, value in list(self.context.variables.items()):
-            if key.endswith("_try_state") and isinstance(value, dict):
-                # Found an active try block - capture the error
-                value["error"] = True
-                value["error_type"] = error_type
-                value["error_message"] = error_msg
-                value["stack_trace"] = stack_trace
-                logger.debug(f"Error captured in try block: {key}")
-                return True
-
-        return False
-
-    def _find_active_try_catch_id(self) -> Optional[str]:
-        """
-        Find the catch node ID for the most recent active try block.
-
-        Returns:
-            Catch node ID if found, None otherwise
-        """
-        if not self.context:
-            return None
-
-        for key, value in self.context.variables.items():
-            if key.endswith("_try_state") and isinstance(value, dict):
-                if value.get("error") and value.get("catch_id"):
-                    return value.get("catch_id")
-
-        return None
+    # ========================================================================
+    # MAIN EXECUTION
+    # ========================================================================
 
     async def execute(self, run_all: bool = False) -> bool:
         """
@@ -612,9 +225,7 @@ class ExecuteWorkflowUseCase:
         Returns:
             True if workflow completed successfully, False otherwise
         """
-        self.start_time = datetime.now()
-        self._stop_requested = False
-        self.executed_nodes.clear()
+        self.state_manager.start_execution()
 
         # Create execution context
         self.context = ExecutionContext(
@@ -624,13 +235,25 @@ class ExecuteWorkflowUseCase:
             pause_event=self.pause_event,
         )
 
-        self._emit_event(
+        # Initialize helper services
+        self._error_handler = TryCatchErrorHandler(self.context)
+        self._variable_resolver = VariableResolver(
+            workflow=self.workflow,
+            node_getter=self._get_node_instance,
+        )
+        self._node_executor = NodeExecutorWithTryCatch(
+            context=self.context,
+            event_bus=self.event_bus,
+            node_timeout=self.settings.node_timeout,
+            progress_calculator=self.state_manager.calculate_progress,
+            error_capturer=self._error_handler.capture_error,
+        )
+
+        self.state_manager.emit_event(
             EventType.WORKFLOW_STARTED,
             {
                 "workflow_name": self.workflow.metadata.name,
-                "total_nodes": len(self._subgraph_nodes)
-                if self._subgraph_nodes
-                else len(self.workflow.nodes),
+                "total_nodes": self.state_manager.total_nodes,
             },
         )
 
@@ -668,90 +291,19 @@ class ExecuteWorkflowUseCase:
                 # Execute workflow sequentially
                 await self._execute_from_node(start_node_id)
 
-            # Check for execution failure
-            if self._execution_failed:
-                self.end_time = datetime.now()
-                duration = (self.end_time - self.start_time).total_seconds()
-
-                self._emit_event(
-                    EventType.WORKFLOW_ERROR,
-                    {
-                        "error": self._execution_error or "Execution failed",
-                        "executed_nodes": len(self.executed_nodes),
-                    },
-                )
-
-                logger.error(f"Workflow execution failed: {self._execution_error}")
-
-                # Record workflow failure for performance dashboard
-                get_metrics().record_workflow_complete(
-                    self.workflow.metadata.name, duration * 1000, success=False
-                )
-                return False
-
-            # Check if completed successfully
-            if self._stop_requested:
-                self.end_time = datetime.now()
-                duration = (self.end_time - self.start_time).total_seconds()
-
-                self._emit_event(
-                    EventType.WORKFLOW_STOPPED,
-                    {
-                        "executed_nodes": len(self.executed_nodes),
-                        "total_nodes": len(self.workflow.nodes),
-                    },
-                )
-
-                logger.info("Workflow execution stopped by user")
-
-                # Record stopped workflow as failed for metrics
-                get_metrics().record_workflow_complete(
-                    self.workflow.metadata.name, duration * 1000, success=False
-                )
-                return False
-            else:
-                self.end_time = datetime.now()
-                duration = (self.end_time - self.start_time).total_seconds()
-
-                # Mark execution state as completed
-                self.context._state.mark_completed()
-
-                # Export final variables for Output tab display
-                # Filter out internal variables (starting with _)
-                final_variables = {
-                    k: v
-                    for k, v in self.context.variables.items()
-                    if not k.startswith("_")
-                }
-
-                self._emit_event(
-                    EventType.WORKFLOW_COMPLETED,
-                    {
-                        "executed_nodes": len(self.executed_nodes),
-                        "total_nodes": len(self.workflow.nodes),
-                        "duration": duration,
-                        "variables": final_variables,
-                    },
-                )
-
-                logger.info(
-                    f"Workflow completed successfully in {duration:.2f}s "
-                    f"({len(self.executed_nodes)} nodes)"
-                )
-
-                # Record workflow completion for performance dashboard
-                get_metrics().record_workflow_complete(
-                    self.workflow.metadata.name, duration * 1000, success=True
-                )
-                return True
+            # Handle completion status
+            return self._finalize_execution()
 
         except Exception as e:
-            self.end_time = datetime.now()
-            duration = (self.end_time - self.start_time).total_seconds()
+            self.state_manager.mark_completed()
+            duration = self.state_manager.duration
 
-            self._emit_event(
+            self.state_manager.emit_event(
                 EventType.WORKFLOW_ERROR,
-                {"error": str(e), "executed_nodes": len(self.executed_nodes)},
+                {
+                    "error": str(e),
+                    "executed_nodes": len(self.state_manager.executed_nodes),
+                },
             )
 
             logger.exception("Workflow execution failed with exception")
@@ -772,15 +324,87 @@ class ExecuteWorkflowUseCase:
                 except Exception as cleanup_error:
                     logger.error(f"Error during context cleanup: {cleanup_error}")
 
-            self.current_node_id = None
+            self.state_manager.set_current_node(None)
+
+    def _finalize_execution(self) -> bool:
+        """
+        Finalize execution and emit completion events.
+
+        Returns:
+            True if execution completed successfully, False otherwise
+        """
+        self.state_manager.mark_completed()
+        duration = self.state_manager.duration
+
+        # Check for execution failure
+        if self.state_manager.is_failed:
+            self.state_manager.emit_event(
+                EventType.WORKFLOW_ERROR,
+                {
+                    "error": self.state_manager.execution_error or "Execution failed",
+                    "executed_nodes": len(self.state_manager.executed_nodes),
+                },
+            )
+            logger.error(
+                f"Workflow execution failed: {self.state_manager.execution_error}"
+            )
+
+            get_metrics().record_workflow_complete(
+                self.workflow.metadata.name, duration * 1000, success=False
+            )
+            return False
+
+        # Check if stopped by user
+        if self.state_manager.is_stopped:
+            self.state_manager.emit_event(
+                EventType.WORKFLOW_STOPPED,
+                {
+                    "executed_nodes": len(self.state_manager.executed_nodes),
+                    "total_nodes": len(self.workflow.nodes),
+                },
+            )
+            logger.info("Workflow execution stopped by user")
+
+            get_metrics().record_workflow_complete(
+                self.workflow.metadata.name, duration * 1000, success=False
+            )
+            return False
+
+        # Success
+        self.context._state.mark_completed()
+
+        # Export final variables for Output tab display
+        final_variables = {
+            k: v for k, v in self.context.variables.items() if not k.startswith("_")
+        }
+
+        self.state_manager.emit_event(
+            EventType.WORKFLOW_COMPLETED,
+            {
+                "executed_nodes": len(self.state_manager.executed_nodes),
+                "total_nodes": len(self.workflow.nodes),
+                "duration": duration,
+                "variables": final_variables,
+            },
+        )
+
+        logger.info(
+            f"Workflow completed successfully in {duration:.2f}s "
+            f"({len(self.state_manager.executed_nodes)} nodes)"
+        )
+
+        get_metrics().record_workflow_complete(
+            self.workflow.metadata.name, duration * 1000, success=True
+        )
+        return True
+
+    # ========================================================================
+    # SINGLE NODE EXECUTION
+    # ========================================================================
 
     async def _execute_single_node(self, node_id: NodeId) -> None:
         """
         Execute a single node in isolation (F5 mode).
-
-        This method executes only the specified node, using any existing
-        data from previous executions stored in the context. Useful for
-        re-running a node with the same inputs.
 
         Args:
             node_id: Node ID to execute
@@ -793,24 +417,24 @@ class ExecuteWorkflowUseCase:
         except ValueError as e:
             error_msg = f"Node {node_id} not found in workflow: {e}"
             logger.error(error_msg)
-            self._execution_failed = True
-            self._execution_error = error_msg
+            self.state_manager.mark_failed(error_msg)
             return
 
-        # Transfer data from connected input ports (use existing data if available)
-        for connection in self.workflow.connections:
-            if connection.target_node == node_id:
-                self._transfer_data(connection)
+        # Transfer data from connected input ports
+        self._variable_resolver.transfer_inputs_to_node(node_id)
 
         # Execute the node
-        success, result = await self._execute_node(node)
+        result = await self._node_executor.execute(node)
 
-        if not success:
+        if not result.success:
             error_msg = f"Node {node_id} execution failed"
-            self._execution_failed = True
-            self._execution_error = (
-                result.get("error", error_msg) if result else error_msg
+            self.state_manager.mark_failed(
+                result.result.get("error", error_msg) if result.result else error_msg
             )
+
+    # ========================================================================
+    # SEQUENTIAL EXECUTION
+    # ========================================================================
 
     async def _execute_from_node(self, start_node_id: NodeId) -> None:
         """
@@ -819,29 +443,30 @@ class ExecuteWorkflowUseCase:
         Args:
             start_node_id: Node ID to start execution from
         """
-        # Queue of nodes to execute
         nodes_to_execute: List[NodeId] = [start_node_id]
 
-        while nodes_to_execute and not self._stop_requested:
+        while nodes_to_execute and not self.state_manager.is_stopped:
             # CHECKPOINT: Wait if paused
-            await self._pause_checkpoint()
+            await self.state_manager.pause_checkpoint()
 
             # Check stop signal after resuming from pause
-            if self._stop_requested:
+            if self.state_manager.is_stopped:
                 break
 
             current_node_id = nodes_to_execute.pop(0)
 
             # Skip if already executed (except for loops)
             is_loop_node = self.orchestrator.is_control_flow_node(current_node_id)
-            if current_node_id in self.executed_nodes and not is_loop_node:
+            if (
+                current_node_id in self.state_manager.executed_nodes
+                and not is_loop_node
+            ):
                 continue
 
             # Skip nodes not in subgraph (Run-To-Node filtering)
-            if not self._should_execute_node(current_node_id):
+            if not self.state_manager.should_execute_node(current_node_id):
                 logger.debug(f"Skipping node {current_node_id} (not in subgraph)")
-                # Emit NODE_SKIPPED event for nodes filtered by subgraph
-                self._emit_event(
+                self.state_manager.emit_event(
                     EventType.NODE_SKIPPED,
                     {
                         "node_id": current_node_id,
@@ -851,113 +476,178 @@ class ExecuteWorkflowUseCase:
                 )
                 continue
 
-            # Get node instance (handles both dict and object nodes)
+            # Get node instance
             try:
                 node = self._get_node_instance(current_node_id)
             except ValueError as e:
                 error_msg = f"Node {current_node_id} not found in workflow: {e}"
                 logger.error(error_msg)
                 if not self.settings.continue_on_error:
-                    self._execution_failed = True
-                    self._execution_error = error_msg
+                    self.state_manager.mark_failed(error_msg)
                     break
                 continue
 
             # Transfer data from connected input ports
-            for connection in self.workflow.connections:
-                if connection.target_node == current_node_id:
-                    self._transfer_data(connection)
+            self._variable_resolver.transfer_inputs_to_node(current_node_id)
 
             # Execute the node
-            success, result = await self._execute_node(node)
+            exec_result = await self._node_executor.execute(node)
 
-            if not success:
-                # Check if error was captured by a try block (non-exception error)
-                error_msg = (
-                    result.get("error", "Unknown error") if result else "Unknown error"
-                )
-                error_captured = self._capture_try_block_error(
-                    error_msg, "ExecutionError", Exception(error_msg)
-                )
-
-                if error_captured:
-                    # Route to catch node
-                    catch_id = self._find_active_try_catch_id()
-                    if catch_id:
-                        logger.info(
-                            f"Node error captured by try block, routing to catch: {catch_id}"
-                        )
-                        nodes_to_execute.insert(0, catch_id)
-                        continue
-                elif self.settings.continue_on_error:
-                    logger.warning(
-                        f"Node {current_node_id} failed but continue_on_error is enabled"
-                    )
-                else:
-                    error_msg = f"Node {current_node_id} execution failed"
-                    logger.warning(
-                        f"Stopping workflow due to node error: {current_node_id}"
-                    )
-                    self._execution_failed = True
-                    self._execution_error = (
-                        result.get("error", error_msg) if result else error_msg
-                    )
-                    break
-
-            # Check if target node was reached (Run-To-Node feature)
-            if success and self.settings.target_node_id == current_node_id:
-                self._target_reached = True
-                logger.info(
-                    f"Target node {current_node_id} reached - execution complete"
-                )
+            if not exec_result.success:
+                # Handle failure with try-catch support
+                if self._handle_execution_failure(
+                    current_node_id, exec_result.result, nodes_to_execute
+                ):
+                    continue
                 break
 
-            # Handle special execution result keys
-            if result:
-                # Handle loop_back_to (ForLoop/WhileLoop end nodes)
-                if "loop_back_to" in result:
-                    loop_start_id = result["loop_back_to"]
-                    logger.debug(f"Loop back to: {loop_start_id}")
-                    nodes_to_execute.insert(0, loop_start_id)
+            # Mark node as executed
+            self.state_manager.mark_node_executed(current_node_id)
+
+            # Validate output ports
+            if exec_result.result:
+                self._variable_resolver.validate_output_ports(node, exec_result.result)
+
+            # Check if target node was reached (Run-To-Node feature)
+            if self.state_manager.mark_target_reached(current_node_id):
+                break
+
+            # Handle special execution results
+            if exec_result.result:
+                next_nodes = self._handle_special_results(
+                    current_node_id, exec_result, nodes_to_execute
+                )
+                if next_nodes is not None:
                     continue
 
-                # Handle route_to_catch (TryEnd node when error occurred)
-                if "route_to_catch" in result:
-                    catch_id = result["route_to_catch"]
-                    if catch_id:
-                        logger.info(f"Routing to catch node: {catch_id}")
-                        nodes_to_execute.insert(0, catch_id)
-                        continue
-
-                # Handle error_captured (exception caught by try block)
-                if result.get("error_captured"):
-                    catch_id = self._find_active_try_catch_id()
-                    if catch_id:
-                        logger.info(f"Error captured - routing to catch: {catch_id}")
-                        nodes_to_execute.insert(0, catch_id)
-                        continue
-
-            # Handle parallel execution (ForkNode)
-            if result and "parallel_branches" in result:
-                await self._execute_parallel_branches(result)
-                # After parallel execution, continue to JoinNode
-                join_id = result.get("paired_join_id")
-                if join_id:
-                    nodes_to_execute.insert(0, join_id)
-                continue
-
-            # Handle parallel foreach batch (ParallelForEachNode)
-            if result and "parallel_foreach_batch" in result:
-                await self._execute_parallel_foreach_batch(result, current_node_id)
-                # Loop back to ParallelForEachNode for next batch
-                nodes_to_execute.insert(0, current_node_id)
-                continue
-
             # Get next nodes based on execution result
-            next_node_ids = self.orchestrator.get_next_nodes(current_node_id, result)
-
-            # Add next nodes to queue
+            next_node_ids = self.orchestrator.get_next_nodes(
+                current_node_id, exec_result.result
+            )
             nodes_to_execute.extend(next_node_ids)
+
+    def _handle_execution_failure(
+        self,
+        node_id: NodeId,
+        result: Optional[Dict[str, Any]],
+        nodes_to_execute: List[NodeId],
+    ) -> bool:
+        """
+        Handle node execution failure with try-catch support.
+
+        Args:
+            node_id: Node ID that failed
+            result: Execution result
+            nodes_to_execute: Queue of nodes to execute
+
+        Returns:
+            True if execution should continue (error captured), False to stop
+        """
+        # Check if error was captured by a try block
+        error_captured = self._error_handler.capture_from_result(result, node_id)
+
+        if error_captured:
+            # Route to catch node
+            catch_id = self._error_handler.find_catch_node_id()
+            if catch_id:
+                logger.info(
+                    f"Node error captured by try block, routing to catch: {catch_id}"
+                )
+                nodes_to_execute.insert(0, catch_id)
+                return True
+
+        if self.settings.continue_on_error:
+            logger.warning(f"Node {node_id} failed but continue_on_error is enabled")
+            return True
+
+        # Stop execution
+        error_msg = result.get("error", "Unknown error") if result else "Unknown error"
+        logger.warning(f"Stopping workflow due to node error: {node_id}")
+        self.state_manager.mark_failed(error_msg)
+        return False
+
+    def _handle_special_results(
+        self,
+        current_node_id: NodeId,
+        exec_result: Any,
+        nodes_to_execute: List[NodeId],
+    ) -> Optional[bool]:
+        """
+        Handle special execution result keys.
+
+        Args:
+            current_node_id: Current node ID
+            exec_result: Execution result
+            nodes_to_execute: Queue of nodes to execute
+
+        Returns:
+            True if special handling applied (continue loop), None otherwise
+        """
+        result = exec_result.result
+        if not result:
+            return None
+
+        # Handle loop_back_to (ForLoop/WhileLoop end nodes)
+        if "loop_back_to" in result:
+            loop_start_id = result["loop_back_to"]
+            logger.debug(f"Loop back to: {loop_start_id}")
+            nodes_to_execute.insert(0, loop_start_id)
+            return True
+
+        # Handle route_to_catch (TryEnd node when error occurred)
+        if "route_to_catch" in result:
+            catch_id = result["route_to_catch"]
+            if catch_id:
+                logger.info(f"Routing to catch node: {catch_id}")
+                nodes_to_execute.insert(0, catch_id)
+                return True
+
+        # Handle error_captured (exception caught by try block)
+        if result.get("error_captured") or exec_result.error_captured:
+            catch_id = self._error_handler.find_catch_node_id()
+            if catch_id:
+                logger.info(f"Error captured - routing to catch: {catch_id}")
+                nodes_to_execute.insert(0, catch_id)
+                return True
+
+        # Handle parallel execution (ForkNode)
+        if "parallel_branches" in result:
+            asyncio.create_task(
+                self._execute_parallel_branches_async(result, nodes_to_execute)
+            )
+            return True
+
+        # Handle parallel foreach batch (ParallelForEachNode)
+        if "parallel_foreach_batch" in result:
+            asyncio.create_task(
+                self._execute_parallel_foreach_batch_async(
+                    result, current_node_id, nodes_to_execute
+                )
+            )
+            return True
+
+        return None
+
+    async def _execute_parallel_branches_async(
+        self, fork_result: Dict[str, Any], nodes_to_execute: List[NodeId]
+    ) -> None:
+        """Execute parallel branches and update queue."""
+        await self._execute_parallel_branches(fork_result)
+        # After parallel execution, continue to JoinNode
+        join_id = fork_result.get("paired_join_id")
+        if join_id:
+            nodes_to_execute.insert(0, join_id)
+
+    async def _execute_parallel_foreach_batch_async(
+        self,
+        foreach_result: Dict[str, Any],
+        current_node_id: str,
+        nodes_to_execute: List[NodeId],
+    ) -> None:
+        """Execute parallel foreach batch and loop back."""
+        await self._execute_parallel_foreach_batch(foreach_result, current_node_id)
+        # Loop back to ParallelForEachNode for next batch
+        nodes_to_execute.insert(0, current_node_id)
 
     # ========================================================================
     # PARALLEL EXECUTION SUPPORT
@@ -980,7 +670,7 @@ class ExecuteWorkflowUseCase:
         """
         logger.info(f"Starting {len(start_nodes)} parallel workflows")
 
-        self._emit_event(
+        self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {"message": f"Starting {len(start_nodes)} parallel workflows"},
         )
@@ -1031,7 +721,7 @@ class ExecuteWorkflowUseCase:
             f"Parallel workflows completed: {success_count} success, {error_count} errors"
         )
 
-        self._emit_event(
+        self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {
                 "message": "Parallel workflows completed",
@@ -1042,8 +732,9 @@ class ExecuteWorkflowUseCase:
 
         # Mark as failed if ALL workflows failed
         if success_count == 0 and error_count > 0:
-            self._execution_failed = True
-            self._execution_error = f"All {error_count} parallel workflows failed"
+            self.state_manager.mark_failed(
+                f"All {error_count} parallel workflows failed"
+            )
 
     async def _execute_from_node_with_context(
         self, start_node_id: NodeId, context: ExecutionContext
@@ -1062,12 +753,20 @@ class ExecuteWorkflowUseCase:
         nodes_to_execute: List[NodeId] = [start_node_id]
         executed_in_workflow: Set[NodeId] = set()
 
-        while nodes_to_execute and not self._stop_requested:
+        # Create temporary node executor for this context
+        temp_executor = NodeExecutor(
+            context=context,
+            event_bus=self.event_bus,
+            node_timeout=self.settings.node_timeout,
+            progress_calculator=self.state_manager.calculate_progress,
+        )
+
+        while nodes_to_execute and not self.state_manager.is_stopped:
             # CHECKPOINT: Wait if paused
             if not self.pause_event.is_set():
                 await self.pause_event.wait()
 
-            if self._stop_requested:
+            if self.state_manager.is_stopped:
                 break
 
             current_node_id = nodes_to_execute.pop(0)
@@ -1085,28 +784,12 @@ class ExecuteWorkflowUseCase:
                 break
 
             # Transfer data from connected input ports
-            for connection in self.workflow.connections:
-                if connection.target_node == current_node_id:
-                    self._transfer_data(connection)
+            self._variable_resolver.transfer_inputs_to_node(current_node_id)
 
             # Execute node with the provided context
-            try:
-                context.set_current_node(current_node_id)
-                result = await asyncio.wait_for(
-                    node.execute(context), timeout=self.settings.node_timeout
-                )
-            except asyncio.TimeoutError:
-                logger.error(
-                    f"Node {current_node_id} timed out after {self.settings.node_timeout}s"
-                )
-                break
-            except Exception as e:
-                logger.error(f"Node {current_node_id} failed: {e}")
-                if not self.settings.continue_on_error:
-                    break
-                continue
+            exec_result = await temp_executor.execute(node)
 
-            if not result or not result.get("success", False):
+            if not exec_result.success:
                 if not self.settings.continue_on_error:
                     break
                 continue
@@ -1114,14 +797,15 @@ class ExecuteWorkflowUseCase:
             executed_in_workflow.add(current_node_id)
 
             # Handle special result keys
-            if result:
-                if "loop_back_to" in result:
-                    loop_start_id = result["loop_back_to"]
-                    nodes_to_execute.insert(0, loop_start_id)
-                    continue
+            if exec_result.result and "loop_back_to" in exec_result.result:
+                loop_start_id = exec_result.result["loop_back_to"]
+                nodes_to_execute.insert(0, loop_start_id)
+                continue
 
             # Get next nodes
-            next_node_ids = self.orchestrator.get_next_nodes(current_node_id, result)
+            next_node_ids = self.orchestrator.get_next_nodes(
+                current_node_id, exec_result.result
+            )
             nodes_to_execute.extend(next_node_ids)
 
     async def _execute_parallel_branches(self, fork_result: Dict[str, Any]) -> None:
@@ -1150,7 +834,7 @@ class ExecuteWorkflowUseCase:
             f"Executing {len(branches)} parallel branches (fail_fast={fail_fast})"
         )
 
-        self._emit_event(
+        self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {
                 "message": f"Starting {len(branches)} parallel branches",
@@ -1193,8 +877,6 @@ class ExecuteWorkflowUseCase:
 
         # Execute all branches concurrently
         if fail_fast:
-            # With fail_fast, we use gather with return_exceptions=False
-            # so first exception cancels others
             try:
                 tasks = [execute_branch(port) for port in branches]
                 results = await asyncio.gather(*tasks)
@@ -1202,7 +884,6 @@ class ExecuteWorkflowUseCase:
                 logger.error(f"Parallel execution failed (fail_fast): {e}")
                 results = [(branches[0], {"_error": str(e)}, False)]
         else:
-            # Without fail_fast, capture all results including errors
             tasks = [execute_branch(port) for port in branches]
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -1231,7 +912,7 @@ class ExecuteWorkflowUseCase:
             f"Parallel branches completed: {success_count} success, {error_count} errors"
         )
 
-        self._emit_event(
+        self.state_manager.emit_event(
             EventType.WORKFLOW_PROGRESS,
             {
                 "message": "Parallel branches completed",
@@ -1258,7 +939,14 @@ class ExecuteWorkflowUseCase:
         nodes_to_execute = [start_node_id]
         executed_in_branch: Set[str] = set()
 
-        while nodes_to_execute and not self._stop_requested:
+        # Create temporary executor for branch context
+        branch_executor = NodeExecutor(
+            context=branch_context,
+            event_bus=self.event_bus,
+            node_timeout=self.settings.node_timeout,
+        )
+
+        while nodes_to_execute and not self.state_manager.is_stopped:
             current_node_id = nodes_to_execute.pop(0)
 
             # Stop at JoinNode - don't execute it in branch
@@ -1277,36 +965,26 @@ class ExecuteWorkflowUseCase:
                 break
 
             # Transfer data from connected input ports
-            for connection in self.workflow.connections:
-                if connection.target_node == current_node_id:
-                    self._transfer_data(connection)
+            self._variable_resolver.transfer_inputs_to_node(current_node_id)
 
             # Execute node with branch context
-            try:
-                result = await asyncio.wait_for(
-                    node.execute(branch_context), timeout=self.settings.node_timeout
-                )
-            except asyncio.TimeoutError:
-                logger.error(f"Node {current_node_id} timed out in branch")
-                break
-            except Exception as e:
-                logger.error(f"Node {current_node_id} failed in branch: {e}")
+            exec_result = await branch_executor.execute(node)
+
+            if not exec_result.success:
+                logger.warning(f"Node {current_node_id} failed in branch")
                 break
 
             executed_in_branch.add(current_node_id)
 
-            # Handle result
-            if not result or not result.get("success", False):
-                logger.warning(f"Node {current_node_id} failed in branch")
-                break
-
-            # Get next nodes (don't handle special parallel keys in branches)
-            if "loop_back_to" in result:
-                loop_start_id = result["loop_back_to"]
+            # Handle loop_back_to
+            if exec_result.result and "loop_back_to" in exec_result.result:
+                loop_start_id = exec_result.result["loop_back_to"]
                 nodes_to_execute.insert(0, loop_start_id)
                 continue
 
-            next_node_ids = self.orchestrator.get_next_nodes(current_node_id, result)
+            next_node_ids = self.orchestrator.get_next_nodes(
+                current_node_id, exec_result.result
+            )
             nodes_to_execute.extend(next_node_ids)
 
     async def _execute_parallel_foreach_batch(
@@ -1364,7 +1042,7 @@ class ExecuteWorkflowUseCase:
                 foreach_node.set_output_value("current_item", item)
                 foreach_node.set_output_value("current_index", index)
 
-                # Execute body chain for this item (until we loop back or hit terminal)
+                # Execute body chain for this item
                 await asyncio.wait_for(
                     self._execute_item_body(
                         body_node_id, item_context, foreach_node_id
@@ -1425,8 +1103,6 @@ class ExecuteWorkflowUseCase:
         """
         Execute the body chain for a single item in ParallelForEach.
 
-        Executes until reaching a terminal node or looping back to foreach.
-
         Args:
             start_node_id: First node in the body chain
             item_context: Isolated context for this item
@@ -1435,6 +1111,13 @@ class ExecuteWorkflowUseCase:
         nodes_to_execute = [start_node_id]
         executed: Set[str] = set()
         max_nodes = 100  # Safety limit
+
+        # Create executor for item context
+        item_executor = NodeExecutor(
+            context=item_context,
+            event_bus=self.event_bus,
+            node_timeout=self.settings.node_timeout,
+        )
 
         while nodes_to_execute and len(executed) < max_nodes:
             current_node_id = nodes_to_execute.pop(0)
@@ -1452,55 +1135,28 @@ class ExecuteWorkflowUseCase:
                 break
 
             # Transfer data
-            for connection in self.workflow.connections:
-                if connection.target_node == current_node_id:
-                    self._transfer_data(connection)
+            self._variable_resolver.transfer_inputs_to_node(current_node_id)
 
             # Execute
-            try:
-                result = await node.execute(item_context)
-            except Exception as e:
-                logger.error(f"Item body node {current_node_id} failed: {e}")
+            exec_result = await item_executor.execute(node)
+
+            if not exec_result.success:
                 break
 
             executed.add(current_node_id)
 
-            if not result or not result.get("success", False):
-                break
-
             # Handle loop_back_to
-            if "loop_back_to" in result:
-                loop_id = result["loop_back_to"]
+            if exec_result.result and "loop_back_to" in exec_result.result:
+                loop_id = exec_result.result["loop_back_to"]
                 if loop_id != foreach_node_id:
                     nodes_to_execute.insert(0, loop_id)
                 continue
 
             # Get next nodes
-            next_ids = self.orchestrator.get_next_nodes(current_node_id, result)
+            next_ids = self.orchestrator.get_next_nodes(
+                current_node_id, exec_result.result
+            )
             nodes_to_execute.extend(next_ids)
-
-    def stop(self) -> None:
-        """Stop workflow execution."""
-        self._stop_requested = True
-        logger.info("Workflow stop requested")
-
-    async def _pause_checkpoint(self) -> None:
-        """
-        Pause checkpoint - wait if pause_event is cleared.
-
-        This method should be called between nodes and optionally
-        during long-running node operations to support pause/resume.
-        """
-        if not self.pause_event.is_set():
-            logger.info("Workflow paused at checkpoint")
-            self._emit_event(
-                EventType.WORKFLOW_PAUSED, {"current_node": self.current_node_id}
-            )
-            await self.pause_event.wait()  # Block until resumed
-            logger.info("Workflow resumed from pause")
-            self._emit_event(
-                EventType.WORKFLOW_RESUMED, {"current_node": self.current_node_id}
-            )
 
     def __repr__(self) -> str:
         """String representation."""

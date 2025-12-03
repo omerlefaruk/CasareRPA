@@ -5,7 +5,7 @@ Value objects are immutable objects defined by their attributes rather than iden
 Includes type definitions, ports, and other immutable domain concepts.
 """
 
-from .log_entry import (
+from casare_rpa.domain.value_objects.log_entry import (
     LogLevel,
     LogEntry,
     LogBatch,
@@ -15,8 +15,8 @@ from .log_entry import (
     MAX_LOG_BATCH_SIZE,
     OFFLINE_BUFFER_SIZE,
 )
-from .port import Port
-from .types import (
+from casare_rpa.domain.value_objects.port import Port
+from casare_rpa.domain.value_objects.types import (
     Connection,
     DataType,
     ErrorCode,

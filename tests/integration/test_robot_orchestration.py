@@ -53,20 +53,251 @@ from casare_rpa.application.orchestrator.services.job_queue_manager import (
     JobQueue,
     JobStateMachine,
 )
-from casare_rpa.robot.coordination import (
-    RobotCoordinator,
-    InMemoryCoordinationRepository,
-    LoadBalancer,
-    LoadBalancingStrategy,
-    RobotRegistration,
-    RobotCapabilities,
-    RobotMetrics,
-    JobRequirements,
-    RobotHealthStatus,
-    ScalingConfig,
-    AutoScalingEvaluator,
-    ScalingAction,
-)
+
+
+# =============================================================================
+# COORDINATION MOCK CLASSES (self-contained for integration tests)
+# =============================================================================
+# These replace the deprecated casare_rpa.robot.coordination module.
+# For production use, see infrastructure/orchestrator/scheduling/job_assignment.py
+
+
+class LoadBalancingStrategy(Enum):
+    """Load balancing strategy options for robot selection."""
+
+    ROUND_ROBIN = "round_robin"
+    LEAST_BUSY = "least_busy"
+    CAPABILITY_BASED = "capability_based"
+    WEIGHTED = "weighted"
+
+
+class ScalingAction(Enum):
+    """Actions that auto-scaler can recommend."""
+
+    NONE = "none"
+    SCALE_UP = "scale_up"
+    SCALE_DOWN = "scale_down"
+
+
+@dataclass
+class RobotCapabilities:
+    """Robot capabilities for job matching."""
+
+    max_concurrent_jobs: int = 1
+    has_browser: bool = False
+    has_gpu: bool = False
+    tags: List[str] = field(default_factory=list)
+
+
+@dataclass
+class RobotMetrics:
+    """Runtime metrics for a robot."""
+
+    current_jobs: int = 0
+    cpu_percent: float = 0.0
+    memory_percent: float = 0.0
+
+
+@dataclass
+class RobotRegistration:
+    """Registration info for a robot."""
+
+    robot_id: str
+    name: str
+    capabilities: RobotCapabilities = field(default_factory=RobotCapabilities)
+
+
+@dataclass
+class RobotState:
+    """Internal state of a registered robot."""
+
+    registration: RobotRegistration
+    metrics: RobotMetrics = field(default_factory=RobotMetrics)
+    last_heartbeat: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @property
+    def robot_id(self) -> str:
+        """Convenience property to access robot_id from registration."""
+        return self.registration.robot_id
+
+
+@dataclass
+class JobRequirements:
+    """Requirements for a job to be assigned."""
+
+    requires_gpu: bool = False
+    required_tags: List[str] = field(default_factory=list)
+
+
+@dataclass
+class ScalingDecision:
+    """Result of auto-scaling evaluation."""
+
+    action: ScalingAction
+    target_count: int = 0
+    reason: str = ""
+
+
+class InMemoryCoordinationRepository:
+    """In-memory storage for robot coordination state."""
+
+    def __init__(self):
+        self._robots: Dict[str, RobotState] = {}
+        self._lock = asyncio.Lock()
+
+    async def save_robot(self, state: RobotState) -> None:
+        async with self._lock:
+            self._robots[state.registration.robot_id] = state
+
+    async def get_robot(self, robot_id: str) -> Optional[RobotState]:
+        async with self._lock:
+            return self._robots.get(robot_id)
+
+    async def get_all_robots(self) -> List[RobotState]:
+        async with self._lock:
+            return list(self._robots.values())
+
+    async def delete_robot(self, robot_id: str) -> None:
+        async with self._lock:
+            self._robots.pop(robot_id, None)
+
+
+class RobotCoordinator:
+    """
+    Mock coordinator for robot fleet management in integration tests.
+
+    For production use, see infrastructure/orchestrator/scheduling/job_assignment.py
+    which provides JobAssignmentEngine with full capability matching and scoring.
+    """
+
+    def __init__(self, repository: InMemoryCoordinationRepository):
+        self._repo = repository
+        self._round_robin_index = 0
+        self._running = False
+
+    async def start(self) -> None:
+        """Start the coordinator."""
+        self._running = True
+
+    async def stop(self) -> None:
+        """Stop the coordinator."""
+        self._running = False
+
+    async def register_robot(self, registration: RobotRegistration) -> None:
+        """Register a new robot."""
+        state = RobotState(registration=registration)
+        await self._repo.save_robot(state)
+
+    async def unregister_robot(self, robot_id: str) -> None:
+        """Unregister a robot."""
+        await self._repo.delete_robot(robot_id)
+
+    async def heartbeat(self, robot_id: str, metrics: RobotMetrics) -> None:
+        """Update robot metrics from heartbeat."""
+        state = await self._repo.get_robot(robot_id)
+        if state:
+            state.metrics = metrics
+            state.last_heartbeat = datetime.now(timezone.utc)
+            await self._repo.save_robot(state)
+
+    async def select_robot_for_job(
+        self,
+        requirements: Optional[JobRequirements] = None,
+        strategy: LoadBalancingStrategy = LoadBalancingStrategy.LEAST_BUSY,
+    ) -> Optional[RobotState]:
+        """Select best robot for a job based on strategy."""
+        robots = await self._repo.get_all_robots()
+        if not robots:
+            return None
+
+        # Filter by requirements
+        if requirements:
+            robots = self._filter_by_requirements(robots, requirements)
+            if not robots:
+                return None
+
+        # Filter by capacity
+        available = [
+            r
+            for r in robots
+            if r.metrics.current_jobs < r.registration.capabilities.max_concurrent_jobs
+        ]
+        if not available:
+            return None
+
+        # Apply strategy
+        if strategy == LoadBalancingStrategy.LEAST_BUSY:
+            return min(available, key=lambda r: r.metrics.current_jobs)
+        elif strategy == LoadBalancingStrategy.ROUND_ROBIN:
+            self._round_robin_index = (self._round_robin_index + 1) % len(available)
+            return available[self._round_robin_index]
+        elif strategy == LoadBalancingStrategy.CAPABILITY_BASED:
+            return available[0]
+        elif strategy == LoadBalancingStrategy.WEIGHTED:
+            weights = [
+                r.registration.capabilities.max_concurrent_jobs for r in available
+            ]
+            return random.choices(available, weights=weights)[0]
+
+        return available[0]
+
+    def _filter_by_requirements(
+        self, robots: List[RobotState], requirements: JobRequirements
+    ) -> List[RobotState]:
+        """Filter robots by job requirements."""
+        result = []
+        for robot in robots:
+            caps = robot.registration.capabilities
+
+            if requirements.requires_gpu and not caps.has_gpu:
+                continue
+
+            if requirements.required_tags:
+                if not all(tag in caps.tags for tag in requirements.required_tags):
+                    continue
+
+            result.append(robot)
+
+        return result
+
+    async def evaluate_scaling(self, queue_depth: int = 0) -> ScalingDecision:
+        """Evaluate whether to scale the robot pool."""
+        robots = await self._repo.get_all_robots()
+        if not robots:
+            return ScalingDecision(
+                action=ScalingAction.SCALE_UP,
+                target_count=1,
+                reason="No robots available",
+            )
+
+        total_capacity = sum(
+            r.registration.capabilities.max_concurrent_jobs for r in robots
+        )
+        total_used = sum(r.metrics.current_jobs for r in robots)
+
+        if total_capacity == 0:
+            return ScalingDecision(action=ScalingAction.NONE, reason="No capacity")
+
+        utilization = total_used / total_capacity
+
+        if utilization > 0.8 or queue_depth > 5:
+            return ScalingDecision(
+                action=ScalingAction.SCALE_UP,
+                target_count=len(robots) + 1,
+                reason=f"High utilization ({utilization:.0%}) or queue depth ({queue_depth})",
+            )
+
+        if utilization < 0.2 and len(robots) > 1:
+            return ScalingDecision(
+                action=ScalingAction.SCALE_DOWN,
+                target_count=len(robots) - 1,
+                reason=f"Low utilization ({utilization:.0%})",
+            )
+
+        return ScalingDecision(
+            action=ScalingAction.NONE,
+            reason=f"Utilization normal ({utilization:.0%})",
+        )
 
 
 # =============================================================================

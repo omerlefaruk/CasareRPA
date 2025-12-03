@@ -182,13 +182,38 @@ class MigrationRuleRegistry:
         ]
 
 
-# Global rule registry
-_rule_registry = MigrationRuleRegistry()
+# Module-level singleton with thread-safe lazy initialization
+import threading
+
+_rule_registry_instance: Optional[MigrationRuleRegistry] = None
+_rule_registry_lock = threading.Lock()
+
+
+def _get_registry_singleton() -> MigrationRuleRegistry:
+    """Get or create the registry singleton with double-checked locking."""
+    _local_instance = _rule_registry_instance
+    if _local_instance is None:
+        with _rule_registry_lock:
+            _local_instance = _rule_registry_instance
+            if _local_instance is None:
+                _local_instance = MigrationRuleRegistry()
+                globals()["_rule_registry_instance"] = _local_instance
+    return _local_instance
 
 
 def get_rule_registry() -> MigrationRuleRegistry:
-    """Get the global migration rule registry."""
-    return _rule_registry
+    """Get the migration rule registry."""
+    return _get_registry_singleton()
+
+
+def reset_rule_registry() -> None:
+    """
+    Reset the migration rule registry (for testing).
+
+    Clears the singleton so it will be recreated on next access.
+    """
+    with _rule_registry_lock:
+        globals()["_rule_registry_instance"] = None
 
 
 def register_migration_rule(
@@ -217,7 +242,7 @@ def register_migration_rule(
             transformer=func,
             description=description,
         )
-        _rule_registry.register(rule)
+        get_rule_registry().register(rule)
         return func
 
     return decorator

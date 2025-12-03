@@ -20,7 +20,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.whatsapp_client import WhatsAppClient
-from .whatsapp_base import WhatsAppBaseNode
+from casare_rpa.nodes.messaging.whatsapp.whatsapp_base import WhatsAppBaseNode
 
 
 # ============================================================================

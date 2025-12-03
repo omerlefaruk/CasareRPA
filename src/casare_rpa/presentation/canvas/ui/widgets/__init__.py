@@ -4,11 +4,18 @@ UI Widgets Module.
 Reusable widget components for the CasareRPA Canvas application.
 """
 
-from .variable_editor_widget import VariableEditorWidget
-from .output_console_widget import OutputConsoleWidget
-from .search_widget import SearchWidget
-from .robot_override_widget import RobotOverrideWidget, ROBOT_CAPABILITIES
-from .ai_settings_widget import (
+from casare_rpa.presentation.canvas.ui.widgets.variable_editor_widget import (
+    VariableEditorWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
+    OutputConsoleWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.search_widget import SearchWidget
+from casare_rpa.presentation.canvas.ui.widgets.robot_override_widget import (
+    RobotOverrideWidget,
+    ROBOT_CAPABILITIES,
+)
+from casare_rpa.presentation.canvas.ui.widgets.ai_settings_widget import (
     AISettingsWidget,
     LLM_MODELS,
     PROVIDER_TO_CATEGORY,
@@ -16,7 +23,10 @@ from .ai_settings_widget import (
     get_llm_credentials,
     detect_provider_from_model,
 )
-from .tenant_selector import TenantSelectorWidget, TenantFilterWidget
+from casare_rpa.presentation.canvas.ui.widgets.tenant_selector import (
+    TenantSelectorWidget,
+    TenantFilterWidget,
+)
 
 __all__ = [
     "VariableEditorWidget",

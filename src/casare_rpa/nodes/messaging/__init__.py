@@ -6,7 +6,7 @@ Nodes for messaging platform integrations:
 - WhatsApp Business Cloud API
 """
 
-from .telegram import (
+from casare_rpa.nodes.messaging.telegram import (
     TelegramSendMessageNode,
     TelegramSendPhotoNode,
     TelegramSendDocumentNode,
@@ -17,7 +17,7 @@ from .telegram import (
     TelegramAnswerCallbackNode,
     TelegramGetUpdatesNode,
 )
-from .whatsapp import (
+from casare_rpa.nodes.messaging.whatsapp import (
     WhatsAppSendMessageNode,
     WhatsAppSendTemplateNode,
     WhatsAppSendImageNode,

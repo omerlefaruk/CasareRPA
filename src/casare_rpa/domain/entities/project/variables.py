@@ -9,8 +9,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from .base import PROJECT_SCHEMA_VERSION
-from ..variable import Variable
+from casare_rpa.domain.entities.project.base import PROJECT_SCHEMA_VERSION
+from casare_rpa.domain.entities.variable import Variable
 
 # Re-export Variable as ProjectVariable for backward compatibility
 ProjectVariable = Variable

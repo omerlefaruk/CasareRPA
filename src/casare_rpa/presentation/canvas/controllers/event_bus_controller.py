@@ -14,7 +14,7 @@ from datetime import datetime
 from PySide6.QtCore import Signal
 from loguru import logger
 
-from .base_controller import BaseController
+from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 
 
 @dataclass

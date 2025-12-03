@@ -12,24 +12,24 @@ Module Structure:
 """
 
 # Import from new modular structure
-from .types import (
+from casare_rpa.domain.errors.types import (
     ErrorCategory,
     ErrorSeverity,
     ErrorClassification,
     RecoveryAction,
 )
 
-from .context import (
+from casare_rpa.domain.errors.context import (
     ErrorContext,
     RecoveryDecision,
 )
 
-from .handlers import (
+from casare_rpa.domain.errors.handlers import (
     ErrorHandler,
     NodeErrorHandler,
 )
 
-from .registry import (
+from casare_rpa.domain.errors.registry import (
     ErrorHandlerRegistry,
     CustomErrorHandlerFunc,
     get_error_handler_registry,

@@ -2,7 +2,7 @@
 Visual Nodes - Control Flow
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.control_flow.nodes import (
     VisualIfNode,
     VisualForLoopNode,
     VisualForLoopStartNode,

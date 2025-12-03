@@ -4,7 +4,11 @@ Presentation Services for CasareRPA Canvas.
 Contains service classes that bridge infrastructure components to the UI layer.
 """
 
-from .websocket_bridge import (
+from casare_rpa.presentation.canvas.services.trigger_event_handler import (
+    QtTriggerEventHandler,
+    create_trigger_event_handler,
+)
+from casare_rpa.presentation.canvas.services.websocket_bridge import (
     WebSocketBridge,
     RobotStatusUpdate,
     JobStatusUpdate,
@@ -13,6 +17,10 @@ from .websocket_bridge import (
 )
 
 __all__ = [
+    # Trigger handling
+    "QtTriggerEventHandler",
+    "create_trigger_event_handler",
+    # WebSocket bridge
     "WebSocketBridge",
     "RobotStatusUpdate",
     "JobStatusUpdate",

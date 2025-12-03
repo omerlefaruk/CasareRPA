@@ -14,7 +14,7 @@ Independent of: Presentation
 """
 
 # Agent exports (lazy import to avoid circular dependencies)
-from .agent import (
+from casare_rpa.infrastructure.agent import (
     RobotConfig,
     RobotAgent,
     JobExecutor,
@@ -25,7 +25,7 @@ from .agent import (
 )
 
 # Auth exports
-from .auth import (
+from casare_rpa.infrastructure.auth import (
     RobotApiKey,
     RobotApiKeyService,
     RobotApiKeyError,
@@ -35,7 +35,7 @@ from .auth import (
 )
 
 # Tunnel exports
-from .tunnel import (
+from casare_rpa.infrastructure.tunnel import (
     AgentTunnel,
     TunnelConfig,
     TunnelState,

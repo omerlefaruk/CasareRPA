@@ -96,6 +96,7 @@ class EventType(Enum):
     WORKFLOW_PROGRESS = auto()  # Workflow progress update (e.g., parallel execution)
     VARIABLE_SET = auto()  # Variable was set in context
     LOG_MESSAGE = auto()  # Log message emitted
+    BROWSER_PAGE_READY = auto()  # Browser page is ready for selector/recording
 
 
 class ErrorCode(Enum):

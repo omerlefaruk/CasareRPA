@@ -10,24 +10,24 @@ Supabase Realtime channels:
 Implements a hybrid poll+subscribe model for resilience.
 """
 
-from .supabase_realtime import (
+from casare_rpa.infrastructure.realtime.supabase_realtime import (
+    # Channel types
+    ChannelState,
+    ChannelType,
+    # Handlers
+    ControlCommandPayload,
+    JobInsertedPayload,
+    PresenceState,
     # Client
     RealtimeClient,
     RealtimeConfig,
+    # Errors
+    RealtimeConnectionError,
     RealtimeConnectionState,
-    # Channel types
-    ChannelType,
-    ChannelState,
-    # Handlers
-    JobInsertedPayload,
-    ControlCommandPayload,
-    PresenceState,
+    RealtimeSubscriptionError,
     RobotPresenceInfo,
     # Subscription manager
     SubscriptionManager,
-    # Errors
-    RealtimeConnectionError,
-    RealtimeSubscriptionError,
 )
 
 __all__ = [

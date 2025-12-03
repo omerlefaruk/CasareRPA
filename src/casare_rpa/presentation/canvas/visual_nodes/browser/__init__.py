@@ -2,7 +2,7 @@
 Visual Nodes - Browser
 """
 
-from .nodes import (
+from casare_rpa.presentation.canvas.visual_nodes.browser.nodes import (
     VisualLaunchBrowserNode,
     VisualCloseBrowserNode,
     VisualNewTabNode,

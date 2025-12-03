@@ -15,9 +15,9 @@ from typing import Any, Callable, Dict, List, Optional
 
 from loguru import logger
 
-from .robot_config import RobotConfig
-from .heartbeat_service import HeartbeatService
-from .job_executor import JobExecutor
+from casare_rpa.infrastructure.agent.heartbeat_service import HeartbeatService
+from casare_rpa.infrastructure.agent.job_executor import JobExecutor
+from casare_rpa.infrastructure.agent.robot_config import RobotConfig
 
 
 class RobotAgentError(Exception):

@@ -14,7 +14,7 @@ Provides enterprise security features:
 Integrates with workflow execution for transparent credential injection.
 """
 
-from .vault_client import (
+from casare_rpa.infrastructure.security.vault_client import (
     VaultClient,
     VaultConfig,
     VaultBackend,
@@ -28,19 +28,19 @@ from .vault_client import (
     AuditEvent,
     AuditEventType,
 )
-from .providers import (
+from casare_rpa.infrastructure.security.providers import (
     HashiCorpVaultProvider,
     SupabaseVaultProvider,
     EncryptedSQLiteProvider,
     create_vault_provider,
 )
-from .credential_provider import (
+from casare_rpa.infrastructure.security.credential_provider import (
     VaultCredentialProvider,
     ResolvedCredential,
     create_credential_resolver,
     resolve_credentials_for_node,
 )
-from .rotation import (
+from casare_rpa.infrastructure.security.rotation import (
     SecretRotationManager,
     RotationPolicy,
     RotationFrequency,
@@ -49,7 +49,7 @@ from .rotation import (
     RotationHook,
     setup_rotation_for_credentials,
 )
-from .rbac import (
+from casare_rpa.infrastructure.security.rbac import (
     # Enums
     SystemRole,
     ResourceType,
@@ -76,7 +76,7 @@ from .rbac import (
     create_authorization_service,
     get_default_permissions,
 )
-from .tenancy import (
+from casare_rpa.infrastructure.security.tenancy import (
     # Enums
     TenantStatus,
     SubscriptionTier,

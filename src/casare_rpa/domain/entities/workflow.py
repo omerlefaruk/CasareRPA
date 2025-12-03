@@ -8,17 +8,17 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from loguru import logger
 
 if TYPE_CHECKING:
-    from ...domain.validation import ValidationResult
+    from casare_rpa.domain.validation import ValidationResult
 
-from ..value_objects.types import (
+from casare_rpa.domain.entities.node_connection import NodeConnection
+from casare_rpa.domain.entities.variable import Variable
+from casare_rpa.domain.entities.workflow_metadata import WorkflowMetadata
+from casare_rpa.domain.value_objects.types import (
     NodeId,
-    SerializedNode,
     SerializedFrame,
+    SerializedNode,
     SerializedWorkflow,
 )
-from .workflow_metadata import WorkflowMetadata
-from .node_connection import NodeConnection
-from .variable import Variable
 
 # Backward compatibility alias
 VariableDefinition = Variable

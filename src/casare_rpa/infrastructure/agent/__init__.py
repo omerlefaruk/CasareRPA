@@ -21,10 +21,10 @@ Usage:
     await agent.start()
 """
 
-from .robot_config import RobotConfig, ConfigurationError
-from .robot_agent import RobotAgent, RobotAgentError
-from .job_executor import JobExecutor, JobExecutionError
-from .heartbeat_service import HeartbeatService
+from casare_rpa.infrastructure.agent.heartbeat_service import HeartbeatService
+from casare_rpa.infrastructure.agent.job_executor import JobExecutionError, JobExecutor
+from casare_rpa.infrastructure.agent.robot_agent import RobotAgent, RobotAgentError
+from casare_rpa.infrastructure.agent.robot_config import ConfigurationError, RobotConfig
 
 __all__ = [
     # Configuration
