@@ -26,6 +26,7 @@ from casare_rpa.presentation.canvas.ui.panels.log_viewer_panel import LogViewerP
 from casare_rpa.presentation.canvas.ui.panels.process_mining_panel import (
     ProcessMiningPanel,
 )
+from casare_rpa.presentation.canvas.ui.panels.analytics_panel import AnalyticsPanel
 from casare_rpa.presentation.canvas.ui.panels.robot_picker_panel import RobotPickerPanel
 
 # TriggersTab removed - triggers are now visual nodes
@@ -39,6 +40,7 @@ __all__ = [
     "BottomPanelDock",
     "LogViewerPanel",
     "ProcessMiningPanel",
+    "AnalyticsPanel",
     "RobotPickerPanel",
     # Tabs
     "HistoryTab",
