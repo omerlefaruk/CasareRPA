@@ -1,106 +1,80 @@
-# CasareRPA Cloud Orchestrator - Render Blueprint
-# https://render.com/docs/blueprint-spec
+# CasareRPA Cloud Orchestrator - Render.com Configuration
+# https://render.com/docs/deploy-docker
 #
 # DEPLOYMENT:
-#   1. Fork/push repository to GitHub
-#   2. Go to https://dashboard.render.com/blueprints
-#   3. Click "New Blueprint Instance"
-#   4. Connect your repository
-#   5. Select this render.yaml file
-#   6. Set secrets in dashboard: API_SECRET, SUPABASE_URL, SUPABASE_KEY
-#   7. Deploy
+#   1. Push this file to GitHub
+#   2. Create new Blueprint on Render dashboard
+#   3. Connect GitHub repo
+#   4. Select this blueprint (render.yaml)
+#   5. Render will auto-create:
+#      - PostgreSQL database
+#      - Web service with Docker image
+#   6. Set environment variables in dashboard as needed
 #
-# DATABASE_URL and REDIS_URL are auto-populated from services below.
+# Note: Render reads render.yaml for all configuration
 
 services:
-  # ==========================================================================
-  # Orchestrator Web Service
-  # ==========================================================================
+  - type: redis
+    name: casare-redis
+    region: oregon  # or closest to you
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+  - type: pserv
+    name: casare-db
+    runtime: postgres
+    plan: starter
+    region: oregon
+    databaseName: casare_rpa
+    user: casare
+    version: "16"
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: "Allow all (restrict in production)"
+
   - type: web
     name: casare-orchestrator
     runtime: docker
-    dockerfilePath: ./deploy/docker/Dockerfile
-    dockerContext: .
-    dockerTarget: orchestrator-cloud
-
-    # Instance configuration
-    plan: starter  # starter, standard, pro
-    region: oregon  # oregon, ohio, frankfurt, singapore
-
-    # Scaling (Render Pro feature)
-    scaling:
-      minInstances: 1
-      maxInstances: 3
-      targetMemoryPercent: 80
-      targetCPUPercent: 70
-
-    # Health check
-    healthCheckPath: /health
-
-    # Environment variables
+    plan: starter
+    region: oregon
+    dockerfile: ./deploy/docker/Dockerfile
+    dockerCommand: "uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host 0.0.0.0 --port $PORT --workers 2"
+    buildArgsFile: ./deploy/platforms/render-build-args.txt
     envVars:
-      # Server
-      - key: PORT
-        value: 8000
       - key: HOST
         value: "0.0.0.0"
       - key: WORKERS
-        value: "1"
-
-      # Database (auto-populated from database service)
-      - key: DATABASE_URL
-        fromDatabase:
-          name: casare-db
-          property: connectionString
-
-      # Redis (auto-populated from Redis service)
-      - key: REDIS_URL
-        fromService:
-          name: casare-redis
-          type: redis
-          property: connectionString
-
-      # Security (set in Render dashboard)
-      - key: API_SECRET
-        sync: false  # Must be set manually
-
-      # Supabase (optional)
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_KEY
-        sync: false
-
-      # CORS
-      - key: CORS_ORIGINS
-        value: "*"
-
-      # Timeouts
+        value: "2"
+      - key: CASARE_ENV
+        value: production
+      - key: CASARE_LOG_LEVEL
+        value: INFO
       - key: ROBOT_HEARTBEAT_TIMEOUT
         value: "90"
       - key: JOB_TIMEOUT_DEFAULT
         value: "3600"
-
-  # ==========================================================================
-  # PostgreSQL Database
-  # ==========================================================================
-  - type: pserv
-    name: casare-db
-    runtime: postgresql
-    plan: starter  # starter, standard, pro
-    region: oregon
-
-    databaseName: casare_rpa
-    user: casare
-
-    # Backup configuration (Pro feature)
-    # backupSchedule: "@daily"
-    # backupRetention: 7
-
-  # ==========================================================================
-  # Redis (Optional - for high-scale queue)
-  # ==========================================================================
-  - type: redis
-    name: casare-redis
-    plan: starter  # starter, standard, pro
-    region: oregon
-    maxmemoryPolicy: allkeys-lru
+      - key: WS_PING_INTERVAL
+        value: "30"
+      - key: CORS_ORIGINS
+        value: "*"
+      # Database URL injected from PostgreSQL service
+      - key: DATABASE_URL
+        fromDatabase:
+          name: casare-db
+          property: connectionString
+      # Redis URL injected from Redis service
+      - key: REDIS_URL
+        fromService:
+          name: casare-redis
+          property: connectionString
+      # Secrets (set in Render dashboard)
+      - key: JWT_SECRET_KEY
+        scope: RUN_AND_BUILD
+      - key: API_SECRET
+        scope: RUN_AND_BUILD
+    healthCheckPath: /health/live
+    healthCheckTimeout: 10
+    healthCheckPollInterval: 30
+    routes:
+      - path: /
+        service: casare-orchestrator
