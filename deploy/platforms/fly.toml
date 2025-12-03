@@ -50,47 +50,29 @@ kill_timeout = "30s"
   processes = ["app"]
 
   [http_service.concurrency]
-    type = "connections"
-    hard_limit = 100
-    soft_limit = 80
+    type = "requests"
+    hard_limit = 1000
+    soft_limit = 800
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    timeout = "5s"
+    status_code = 200
+    type = "http"
+    method = "get"
+    path = "/health/live"
 
 # =============================================================================
-# Health Checks
+# Processes
 # =============================================================================
-[[services.http_checks]]
-  interval = "30s"
-  timeout = "10s"
-  grace_period = "10s"
-  method = "GET"
-  path = "/health"
-  protocol = "http"
-
-# =============================================================================
-# VM Configuration
-# =============================================================================
-[[vm]]
-  size = "shared-cpu-1x"  # shared-cpu-1x, shared-cpu-2x, dedicated-cpu-1x
-  memory = "512mb"
-
-  [vm.scaling]
-    min = 1
-    max = 3
+[processes]
+  app = "uvicorn casare_rpa.infrastructure.orchestrator.api.main:app --host $HOST --port $PORT --workers $WORKERS"
 
 # =============================================================================
 # Metrics
 # =============================================================================
 [metrics]
-  port = 9091
+  port = 9090
+  handlers = ["prometheus_client"]
   path = "/metrics"
-
-# =============================================================================
-# Secrets (set via fly secrets set)
-# =============================================================================
-# Required:
-#   API_SECRET    - Admin API authentication
-#   DATABASE_URL  - Auto-populated by fly pg attach
-#
-# Optional:
-#   SUPABASE_URL  - Supabase project URL
-#   SUPABASE_KEY  - Supabase anon key
-#   REDIS_URL     - Upstash Redis URL
