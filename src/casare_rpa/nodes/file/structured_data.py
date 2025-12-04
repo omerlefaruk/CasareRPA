@@ -563,9 +563,12 @@ class ZipFilesNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("source_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("files", PortType.INPUT, DataType.LIST)
-        self.add_input_port("base_dir", PortType.INPUT, DataType.STRING)
+        # source_path, files, base_dir are optional - node can work with any combination
+        self.add_input_port(
+            "source_path", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("files", PortType.INPUT, DataType.LIST, required=False)
+        self.add_input_port("base_dir", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("zip_path", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)

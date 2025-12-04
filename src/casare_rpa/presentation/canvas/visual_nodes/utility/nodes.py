@@ -10,7 +10,11 @@ from casare_rpa.domain.value_objects.types import DataType
 
 
 class VisualRandomNumberNode(VisualNode):
-    """Visual representation of RandomNumberNode."""
+    """Visual representation of RandomNumberNode.
+
+    Widgets are auto-generated from RandomNumberNode's @node_schema decorator.
+    min_value/max_value are input ports, not schema properties.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random Number"
@@ -18,9 +22,10 @@ class VisualRandomNumberNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
+        # min_value and max_value are NOT in schema, they're port inputs
         self.add_text_input("min_value", "Min", text="0", tab="properties")
         self.add_text_input("max_value", "Max", text="100", tab="properties")
-        self.add_checkbox("integer_only", "Integer Only", state=False, tab="properties")
+        # integer_only IS in schema - auto-generated
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -31,18 +36,14 @@ class VisualRandomNumberNode(VisualNode):
 
 
 class VisualRandomChoiceNode(VisualNode):
-    """Visual representation of RandomChoiceNode."""
+    """Visual representation of RandomChoiceNode.
+
+    Widgets are auto-generated from RandomChoiceNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random Choice"
     NODE_CATEGORY = "utility/random"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("count", "Count", text="1", tab="properties")
-        self.add_checkbox(
-            "allow_duplicates", "Allow Duplicates", state=True, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -53,7 +54,11 @@ class VisualRandomChoiceNode(VisualNode):
 
 
 class VisualRandomStringNode(VisualNode):
-    """Visual representation of RandomStringNode."""
+    """Visual representation of RandomStringNode.
+
+    Widgets are auto-generated from RandomStringNode's @node_schema decorator.
+    length is an input port, not a schema property.
+    """
 
     __identifier__ = "casare_rpa.utility"
     NODE_NAME = "Random String"
@@ -61,15 +66,10 @@ class VisualRandomStringNode(VisualNode):
 
     def __init__(self) -> None:
         super().__init__()
+        # length is NOT in schema, it's a port input
         self.add_text_input("length", "Length", text="10", tab="properties")
-        self.add_checkbox(
-            "include_uppercase", "Uppercase", state=True, tab="properties"
-        )
-        self.add_checkbox(
-            "include_lowercase", "Lowercase", state=True, tab="properties"
-        )
-        self.add_checkbox("include_digits", "Digits", state=True, tab="properties")
-        self.add_checkbox("include_special", "Special", state=False, tab="properties")
+        # include_uppercase, include_lowercase, include_digits, include_special
+        # ARE in schema - auto-generated
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

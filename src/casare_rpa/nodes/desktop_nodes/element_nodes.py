@@ -173,9 +173,10 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
+        # Can target by element directly OR by window+selector - all optional but one path needed
+        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
@@ -255,9 +256,10 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
+        # Can target by element directly OR by window+selector - all optional but one path needed
+        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -337,9 +339,10 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
+        # Can target by element directly OR by window+selector - all optional but one path needed
+        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("text", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)
 
@@ -419,9 +422,10 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("element", PortType.INPUT, DataType.ANY)
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("selector", PortType.INPUT, DataType.ANY)
+        # Can target by element directly OR by window+selector - all optional but one path needed
+        self.add_input_port("element", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("selector", PortType.INPUT, DataType.ANY, required=False)
         self.add_input_port("property_name", PortType.INPUT, DataType.STRING)
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("element", PortType.OUTPUT, DataType.ANY)

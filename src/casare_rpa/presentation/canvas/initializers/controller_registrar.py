@@ -33,7 +33,6 @@ if TYPE_CHECKING:
         MenuController,
         EventBusController,
         ViewportController,
-        SchedulingController,
         UIStateController,
         SelectorController,
         ProjectController,
@@ -55,7 +54,7 @@ class ControllerRegistrar:
     Controller Categories:
     1. MainWindow-specific: Created and owned by MainWindow
        - ConnectionController, PanelController, MenuController
-       - EventBusController, ViewportController, SchedulingController
+       - EventBusController, ViewportController
        - UIStateController, ProjectController, RobotController
 
     2. External: Created by app.py and injected
@@ -96,7 +95,6 @@ class ControllerRegistrar:
             MenuController,
             EventBusController,
             ViewportController,
-            SchedulingController,
             UIStateController,
             ProjectController,
             RobotController,
@@ -108,7 +106,6 @@ class ControllerRegistrar:
         mw._menu_controller = MenuController(mw)
         mw._event_bus_controller = EventBusController(mw)
         mw._viewport_controller = ViewportController(mw)
-        mw._scheduling_controller = SchedulingController(mw)
         mw._ui_state_controller = UIStateController(mw)
         mw._project_controller = ProjectController(mw)
         mw._robot_controller = RobotController(mw)
@@ -139,7 +136,6 @@ class ControllerRegistrar:
         mw._viewport_controller.initialize()
 
         # Feature controllers
-        mw._scheduling_controller.initialize()
         mw._ui_state_controller.initialize()
         mw._project_controller.initialize()
         mw._robot_controller.initialize()
@@ -341,7 +337,6 @@ class ControllerRegistrar:
             mw._menu_controller,
             mw._event_bus_controller,
             mw._viewport_controller,
-            mw._scheduling_controller,
             mw._ui_state_controller,
             mw._project_controller,
             mw._robot_controller,

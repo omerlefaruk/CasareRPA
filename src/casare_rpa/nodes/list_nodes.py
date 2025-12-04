@@ -205,8 +205,9 @@ class ListSliceNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("start", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("end", PortType.INPUT, DataType.INTEGER)
+        # start defaults to 0, end defaults to None (end of list)
+        self.add_input_port("start", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("end", PortType.INPUT, DataType.INTEGER, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -252,7 +253,10 @@ class ListJoinNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("separator", PortType.INPUT, DataType.STRING)
+        # separator defaults to ", "
+        self.add_input_port(
+            "separator", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -301,8 +305,9 @@ class ListSortNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("reverse", PortType.INPUT, DataType.BOOLEAN)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        # reverse defaults to False, key_path defaults to ""
+        self.add_input_port("reverse", PortType.INPUT, DataType.BOOLEAN, required=False)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -455,9 +460,12 @@ class ListFilterNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("condition", PortType.INPUT, DataType.STRING)
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        # condition defaults to "is_not_none", value is optional, key_path defaults to ""
+        self.add_input_port(
+            "condition", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("removed", PortType.OUTPUT, DataType.LIST)
 
@@ -563,8 +571,11 @@ class ListMapNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("transform", PortType.INPUT, DataType.STRING)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
+        # transform defaults to "to_string", key_path defaults to ""
+        self.add_input_port(
+            "transform", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -654,9 +665,12 @@ class ListReduceNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("operation", PortType.INPUT, DataType.STRING)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("initial", PortType.INPUT, DataType.ANY)
+        # operation defaults to "sum", key_path defaults to "", initial is optional
+        self.add_input_port(
+            "operation", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("initial", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

@@ -101,7 +101,8 @@ class DictGetNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_input_port("dict", PortType.INPUT, DataType.DICT)
         self.add_input_port("key", PortType.INPUT, DataType.STRING)
-        self.add_input_port("default", PortType.INPUT, DataType.ANY)
+        # default is optional - returns None if key not found
+        self.add_input_port("default", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
 
@@ -364,12 +365,13 @@ class CreateDictNode(BaseNode):
         self.node_type = "CreateDictNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("key_1", PortType.INPUT, DataType.STRING)
-        self.add_input_port("value_1", PortType.INPUT, DataType.ANY)
-        self.add_input_port("key_2", PortType.INPUT, DataType.STRING)
-        self.add_input_port("value_2", PortType.INPUT, DataType.ANY)
-        self.add_input_port("key_3", PortType.INPUT, DataType.STRING)
-        self.add_input_port("value_3", PortType.INPUT, DataType.ANY)
+        # All keys/values are optional - can create empty or partial dicts
+        self.add_input_port("key_1", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("value_1", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("key_2", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("value_2", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port("key_3", PortType.INPUT, DataType.STRING, required=False)
+        self.add_input_port("value_3", PortType.INPUT, DataType.ANY, required=False)
         self.add_output_port("dict", PortType.OUTPUT, DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

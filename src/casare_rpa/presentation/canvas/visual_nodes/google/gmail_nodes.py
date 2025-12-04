@@ -10,54 +10,15 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 
 
 class VisualGmailSendEmailNode(VisualNode):
-    """Visual representation of GmailSendEmailNode."""
+    """Visual representation of GmailSendEmailNode.
+
+    Widgets are auto-generated from GmailSendEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailSendEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-            placeholder_text="OAuth credential name",
-        )
-        # Properties tab
-        self.add_text_input(
-            "to",
-            "To",
-            text="",
-            tab="properties",
-            placeholder_text="recipient@example.com",
-        )
-        self.add_text_input(
-            "cc", "CC", text="", tab="properties", placeholder_text="cc@example.com"
-        )
-        self.add_text_input(
-            "bcc", "BCC", text="", tab="properties", placeholder_text="bcc@example.com"
-        )
-        self.add_text_input(
-            "subject",
-            "Subject",
-            text="",
-            tab="properties",
-            placeholder_text="Email subject",
-        )
-        self.add_text_input(
-            "body",
-            "Body",
-            text="",
-            tab="properties",
-            placeholder_text="Email body content",
-        )
-        self.add_combo_menu(
-            "body_type", "Body Type", items=["text", "html"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -72,30 +33,15 @@ class VisualGmailSendEmailNode(VisualNode):
 
 
 class VisualGmailSendWithAttachmentNode(VisualNode):
-    """Visual representation of GmailSendWithAttachmentNode."""
+    """Visual representation of GmailSendWithAttachmentNode.
+
+    Widgets are auto-generated from GmailSendWithAttachmentNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send With Attachment"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailSendWithAttachmentNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "to",
-            "To",
-            text="",
-            tab="properties",
-            placeholder_text="recipient@example.com",
-        )
-        self.add_text_input("subject", "Subject", text="", tab="properties")
-        self.add_text_input("body", "Body", text="", tab="properties")
-        self.add_combo_menu(
-            "body_type", "Body Type", items=["text", "html"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -111,26 +57,15 @@ class VisualGmailSendWithAttachmentNode(VisualNode):
 
 
 class VisualGmailReplyToEmailNode(VisualNode):
-    """Visual representation of GmailReplyToEmailNode."""
+    """Visual representation of GmailReplyToEmailNode.
+
+    Widgets are auto-generated from GmailReplyToEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Reply To Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailReplyToEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "message_id", "Original Message ID", text="", tab="properties"
-        )
-        self.add_text_input("body", "Reply Body", text="", tab="properties")
-        self.add_combo_menu(
-            "body_type", "Body Type", items=["text", "html"], tab="properties"
-        )
-        self.add_checkbox("reply_all", "Reply All", state=False, tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -144,29 +79,15 @@ class VisualGmailReplyToEmailNode(VisualNode):
 
 
 class VisualGmailForwardEmailNode(VisualNode):
-    """Visual representation of GmailForwardEmailNode."""
+    """Visual representation of GmailForwardEmailNode.
+
+    Widgets are auto-generated from GmailForwardEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Forward Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailForwardEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
-        self.add_text_input(
-            "to",
-            "Forward To",
-            text="",
-            tab="properties",
-            placeholder_text="forward@example.com",
-        )
-        self.add_text_input(
-            "additional_text", "Additional Text", text="", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -179,24 +100,15 @@ class VisualGmailForwardEmailNode(VisualNode):
 
 
 class VisualGmailCreateDraftNode(VisualNode):
-    """Visual representation of GmailCreateDraftNode."""
+    """Visual representation of GmailCreateDraftNode.
+
+    Widgets are auto-generated from GmailCreateDraftNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Create Draft"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailCreateDraftNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("to", "To", text="", tab="properties")
-        self.add_text_input("subject", "Subject", text="", tab="properties")
-        self.add_text_input("body", "Body", text="", tab="properties")
-        self.add_combo_menu(
-            "body_type", "Body Type", items=["text", "html"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -211,19 +123,15 @@ class VisualGmailCreateDraftNode(VisualNode):
 
 
 class VisualGmailSendDraftNode(VisualNode):
-    """Visual representation of GmailSendDraftNode."""
+    """Visual representation of GmailSendDraftNode.
+
+    Widgets are auto-generated from GmailSendDraftNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send Draft"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailSendDraftNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("draft_id", "Draft ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -241,22 +149,15 @@ class VisualGmailSendDraftNode(VisualNode):
 
 
 class VisualGmailGetEmailNode(VisualNode):
-    """Visual representation of GmailGetEmailNode."""
+    """Visual representation of GmailGetEmailNode.
+
+    Widgets are auto-generated from GmailGetEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailGetEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
-        self.add_combo_menu(
-            "format", "Format", items=["full", "metadata", "minimal"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -275,26 +176,15 @@ class VisualGmailGetEmailNode(VisualNode):
 
 
 class VisualGmailListEmailsNode(VisualNode):
-    """Visual representation of GmailListEmailsNode."""
+    """Visual representation of GmailListEmailsNode.
+
+    Widgets are auto-generated from GmailListEmailsNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: List Emails"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailListEmailsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("max_results", "Max Results", text="10", tab="properties")
-        self.add_text_input(
-            "label_ids",
-            "Label IDs",
-            text="INBOX",
-            tab="properties",
-            placeholder_text="INBOX, UNREAD",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -309,26 +199,15 @@ class VisualGmailListEmailsNode(VisualNode):
 
 
 class VisualGmailSearchEmailsNode(VisualNode):
-    """Visual representation of GmailSearchEmailsNode."""
+    """Visual representation of GmailSearchEmailsNode.
+
+    Widgets are auto-generated from GmailSearchEmailsNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Search Emails"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailSearchEmailsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "query",
-            "Query",
-            text="",
-            tab="properties",
-            placeholder_text="from:example@gmail.com subject:test",
-        )
-        self.add_text_input("max_results", "Max Results", text="10", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -343,19 +222,15 @@ class VisualGmailSearchEmailsNode(VisualNode):
 
 
 class VisualGmailGetThreadNode(VisualNode):
-    """Visual representation of GmailGetThreadNode."""
+    """Visual representation of GmailGetThreadNode.
+
+    Widgets are auto-generated from GmailGetThreadNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Thread"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailGetThreadNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("thread_id", "Thread ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -369,27 +244,15 @@ class VisualGmailGetThreadNode(VisualNode):
 
 
 class VisualGmailGetAttachmentNode(VisualNode):
-    """Visual representation of GmailGetAttachmentNode."""
+    """Visual representation of GmailGetAttachmentNode.
+
+    Widgets are auto-generated from GmailGetAttachmentNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Attachment"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailGetAttachmentNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
-        self.add_text_input("attachment_id", "Attachment ID", text="", tab="properties")
-        self.add_text_input(
-            "save_path",
-            "Save Path",
-            text="",
-            tab="properties",
-            placeholder_text="C:/Downloads/attachment.pdf",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -409,19 +272,15 @@ class VisualGmailGetAttachmentNode(VisualNode):
 
 
 class VisualGmailModifyLabelsNode(VisualNode):
-    """Visual representation of GmailModifyLabelsNode."""
+    """Visual representation of GmailModifyLabelsNode.
+
+    Widgets are auto-generated from GmailModifyLabelsNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Modify Labels"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailModifyLabelsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -435,19 +294,15 @@ class VisualGmailModifyLabelsNode(VisualNode):
 
 
 class VisualGmailMoveToTrashNode(VisualNode):
-    """Visual representation of GmailMoveToTrashNode."""
+    """Visual representation of GmailMoveToTrashNode.
+
+    Widgets are auto-generated from GmailMoveToTrashNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Move to Trash"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailMoveToTrashNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -458,19 +313,15 @@ class VisualGmailMoveToTrashNode(VisualNode):
 
 
 class VisualGmailMarkAsReadNode(VisualNode):
-    """Visual representation of GmailMarkAsReadNode."""
+    """Visual representation of GmailMarkAsReadNode.
+
+    Widgets are auto-generated from GmailMarkAsReadNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Mark as Read"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailMarkAsReadNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -481,19 +332,15 @@ class VisualGmailMarkAsReadNode(VisualNode):
 
 
 class VisualGmailMarkAsUnreadNode(VisualNode):
-    """Visual representation of GmailMarkAsUnreadNode."""
+    """Visual representation of GmailMarkAsUnreadNode.
+
+    Widgets are auto-generated from GmailMarkAsUnreadNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Mark as Unread"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailMarkAsUnreadNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -504,22 +351,15 @@ class VisualGmailMarkAsUnreadNode(VisualNode):
 
 
 class VisualGmailStarEmailNode(VisualNode):
-    """Visual representation of GmailStarEmailNode."""
+    """Visual representation of GmailStarEmailNode.
+
+    Widgets are auto-generated from GmailStarEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Star Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailStarEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
-        self.add_checkbox(
-            "star", "Star (uncheck to unstar)", state=True, tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -531,19 +371,15 @@ class VisualGmailStarEmailNode(VisualNode):
 
 
 class VisualGmailArchiveEmailNode(VisualNode):
-    """Visual representation of GmailArchiveEmailNode."""
+    """Visual representation of GmailArchiveEmailNode.
+
+    Widgets are auto-generated from GmailArchiveEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Archive Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailArchiveEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -554,19 +390,15 @@ class VisualGmailArchiveEmailNode(VisualNode):
 
 
 class VisualGmailDeleteEmailNode(VisualNode):
-    """Visual representation of GmailDeleteEmailNode."""
+    """Visual representation of GmailDeleteEmailNode.
+
+    Widgets are auto-generated from GmailDeleteEmailNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Delete Email"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailDeleteEmailNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("message_id", "Message ID", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -582,18 +414,15 @@ class VisualGmailDeleteEmailNode(VisualNode):
 
 
 class VisualGmailBatchSendNode(VisualNode):
-    """Visual representation of GmailBatchSendNode."""
+    """Visual representation of GmailBatchSendNode.
+
+    Widgets are auto-generated from GmailBatchSendNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Send"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailBatchSendNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -607,18 +436,15 @@ class VisualGmailBatchSendNode(VisualNode):
 
 
 class VisualGmailBatchModifyNode(VisualNode):
-    """Visual representation of GmailBatchModifyNode."""
+    """Visual representation of GmailBatchModifyNode.
+
+    Widgets are auto-generated from GmailBatchModifyNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Modify"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailBatchModifyNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -632,18 +458,15 @@ class VisualGmailBatchModifyNode(VisualNode):
 
 
 class VisualGmailBatchDeleteNode(VisualNode):
-    """Visual representation of GmailBatchDeleteNode."""
+    """Visual representation of GmailBatchDeleteNode.
+
+    Widgets are auto-generated from GmailBatchDeleteNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Delete"
     NODE_CATEGORY = "google/gmail"
     CASARE_NODE_CLASS = "GmailBatchDeleteNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

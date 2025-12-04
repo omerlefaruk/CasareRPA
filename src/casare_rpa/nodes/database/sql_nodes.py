@@ -599,7 +599,8 @@ class ExecuteQueryNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("query", PortType.INPUT, DataType.STRING)
-        self.add_input_port("parameters", PortType.INPUT, DataType.LIST)
+        # Parameters are optional - queries may not need them
+        self.add_input_port("parameters", PortType.INPUT, DataType.LIST, required=False)
 
         self.add_output_port("results", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
@@ -832,7 +833,8 @@ class ExecuteNonQueryNode(BaseNode):
     def _define_ports(self) -> None:
         self.add_input_port("connection", PortType.INPUT, DataType.ANY)
         self.add_input_port("query", PortType.INPUT, DataType.STRING)
-        self.add_input_port("parameters", PortType.INPUT, DataType.LIST)
+        # Parameters are optional - queries may not need them
+        self.add_input_port("parameters", PortType.INPUT, DataType.LIST, required=False)
 
         self.add_output_port("rows_affected", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("last_insert_id", PortType.OUTPUT, DataType.INTEGER)

@@ -325,14 +325,6 @@ class ActionManager:
         )
         mw.action_auto_connect.setChecked(True)  # Enabled by default
 
-        mw.action_schedule = self._create_action(
-            "schedule",
-            "&Schedule...",
-            QKeySequence("Ctrl+H"),
-            "Schedule this workflow to run automatically",
-            mw._on_schedule_workflow,
-        )
-
         # === HELP ACTIONS ===
         mw.action_documentation = self._create_action(
             "documentation",

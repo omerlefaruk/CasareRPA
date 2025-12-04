@@ -48,15 +48,14 @@ from casare_rpa.nodes.data_operation_nodes import (
 
 
 class VisualConcatenateNode(VisualNode):
-    """Visual representation of ConcatenateNode."""
+    """Visual representation of ConcatenateNode.
+
+    Widgets are auto-generated from ConcatenateNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Concatenate Strings"
     NODE_CATEGORY = "data_operations/string"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("separator", "Separator", text="", tab="properties")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -125,20 +124,14 @@ class VisualRegexReplaceNode(VisualNode):
 
 
 class VisualMathOperationNode(VisualNode):
-    """Visual representation of MathOperationNode."""
+    """Visual representation of MathOperationNode.
+
+    Widgets are auto-generated from MathOperationNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Math Operation"
     NODE_CATEGORY = "data_operations/math"
-
-    def __init__(self):
-        super().__init__()
-        self.add_combo_menu(
-            "operation",
-            "Operation",
-            items=["add", "subtract", "multiply", "divide", "power", "modulo"],
-            tab="inputs",
-        )
 
     def setup_ports(self):
         """Setup ports."""
@@ -153,27 +146,14 @@ class VisualMathOperationNode(VisualNode):
 
 
 class VisualComparisonNode(VisualNode):
-    """Visual representation of ComparisonNode."""
+    """Visual representation of ComparisonNode.
+
+    Widgets are auto-generated from ComparisonNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Compare Values"
     NODE_CATEGORY = "data_operations/math"
-
-    def __init__(self):
-        super().__init__()
-        self.add_combo_menu(
-            "operator",
-            "Operator",
-            items=[
-                "equals (==)",
-                "not equals (!=)",
-                "greater than (>)",
-                "less than (<)",
-                "greater or equal (>=)",
-                "less or equal (<=)",
-            ],
-            tab="inputs",
-        )
 
     def setup_ports(self):
         """Setup ports."""
@@ -344,15 +324,14 @@ class VisualListSliceNode(VisualNode):
 
 
 class VisualListJoinNode(VisualNode):
-    """Visual representation of ListJoinNode."""
+    """Visual representation of ListJoinNode.
+
+    Widgets are auto-generated from ListJoinNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Join"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_text_input("separator", "Separator", text="", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -367,16 +346,14 @@ class VisualListJoinNode(VisualNode):
 
 
 class VisualListSortNode(VisualNode):
-    """Visual representation of ListSortNode."""
+    """Visual representation of ListSortNode.
+
+    Widgets are auto-generated from ListSortNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Sort"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_checkbox("reverse", "Reverse", state=False, tab="config")
-        self.add_text_input("key_path", "Key Path", text="", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -427,33 +404,14 @@ class VisualListUniqueNode(VisualNode):
 
 
 class VisualListFilterNode(VisualNode):
-    """Visual representation of ListFilterNode."""
+    """Visual representation of ListFilterNode.
+
+    Widgets are auto-generated from ListFilterNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Filter"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_combo_menu(
-            "condition",
-            "Condition",
-            items=[
-                "equals",
-                "not_equals",
-                "contains",
-                "starts_with",
-                "ends_with",
-                "greater_than",
-                "less_than",
-                "is_not_none",
-                "is_none",
-                "is_truthy",
-                "is_falsy",
-            ],
-            tab="config",
-        )
-        self.add_text_input("key_path", "Key Path", text="", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -471,30 +429,14 @@ class VisualListFilterNode(VisualNode):
 
 
 class VisualListMapNode(VisualNode):
-    """Visual representation of ListMapNode."""
+    """Visual representation of ListMapNode.
+
+    Widgets are auto-generated from ListMapNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Map"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_combo_menu(
-            "transform",
-            "Transform",
-            items=[
-                "get_property",
-                "to_string",
-                "to_int",
-                "to_float",
-                "to_upper",
-                "to_lower",
-                "trim",
-                "length",
-            ],
-            tab="config",
-        )
-        self.add_text_input("key_path", "Key Path", text="", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -510,32 +452,14 @@ class VisualListMapNode(VisualNode):
 
 
 class VisualListReduceNode(VisualNode):
-    """Visual representation of ListReduceNode."""
+    """Visual representation of ListReduceNode.
+
+    Widgets are auto-generated from ListReduceNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Reduce"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_combo_menu(
-            "operation",
-            "Operation",
-            items=[
-                "sum",
-                "product",
-                "min",
-                "max",
-                "avg",
-                "count",
-                "first",
-                "last",
-                "join",
-            ],
-            tab="config",
-        )
-        self.add_text_input("key_path", "Key Path", text="", tab="config")
-        self.add_text_input("separator", "Separator (join)", text=",", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -551,15 +475,14 @@ class VisualListReduceNode(VisualNode):
 
 
 class VisualListFlattenNode(VisualNode):
-    """Visual representation of ListFlattenNode."""
+    """Visual representation of ListFlattenNode.
+
+    Widgets are auto-generated from ListFlattenNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "List Flatten"
     NODE_CATEGORY = "data_operations/list"
-
-    def __init__(self):
-        super().__init__()
-        self.add_text_input("depth", "Depth", text="1", tab="config")
 
     def setup_ports(self):
         """Setup ports."""
@@ -754,15 +677,14 @@ class VisualCreateDictNode(VisualNode):
 
 
 class VisualDictToJsonNode(VisualNode):
-    """Visual representation of DictToJsonNode."""
+    """Visual representation of DictToJsonNode.
+
+    Widgets are auto-generated from DictToJsonNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.data_operations"
     NODE_NAME = "Dict to JSON"
     NODE_CATEGORY = "data_operations/dict"
-
-    def __init__(self):
-        super().__init__()
-        self.add_text_input("indent", "Indent", text="2", tab="config")
 
     def setup_ports(self):
         """Setup ports."""

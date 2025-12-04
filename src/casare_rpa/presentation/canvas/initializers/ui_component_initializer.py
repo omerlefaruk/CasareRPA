@@ -138,6 +138,9 @@ class UIComponentInitializer:
         # Create process mining panel (AI-powered process discovery)
         mw._process_mining_panel = mw._dock_creator.create_process_mining_panel()
 
+        # Create analytics panel (bottleneck detection, execution analysis)
+        mw._analytics_panel = mw._dock_creator.create_analytics_panel()
+
     def _setup_validation_timer(self) -> None:
         """
         Setup validation timer for debounced real-time validation.

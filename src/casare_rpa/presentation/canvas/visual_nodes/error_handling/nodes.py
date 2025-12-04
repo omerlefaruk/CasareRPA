@@ -10,22 +10,14 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 
 
 class VisualRetryNode(VisualNode):
-    """Visual representation of RetryNode."""
+    """Visual representation of RetryNode.
+
+    Widgets are auto-generated from RetryNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Retry"
     NODE_CATEGORY = "error_handling/retry"
-
-    def __init__(self) -> None:
-        """Initialize Retry node."""
-        super().__init__()
-        self.add_text_input("max_attempts", "Max Attempts", text="3", tab="properties")
-        self.add_text_input(
-            "initial_delay", "Initial Delay (s)", text="1.0", tab="properties"
-        )
-        self.add_text_input(
-            "backoff_multiplier", "Backoff Multiplier", text="2.0", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -44,10 +36,6 @@ class VisualRetrySuccessNode(VisualNode):
     NODE_NAME = "Retry Success"
     NODE_CATEGORY = "error_handling/retry"
 
-    def __init__(self) -> None:
-        """Initialize RetrySuccess node."""
-        super().__init__()
-
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
@@ -61,10 +49,6 @@ class VisualRetryFailNode(VisualNode):
     NODE_NAME = "Retry Fail"
     NODE_CATEGORY = "error_handling/retry"
 
-    def __init__(self) -> None:
-        """Initialize RetryFail node."""
-        super().__init__()
-
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
@@ -73,18 +57,14 @@ class VisualRetryFailNode(VisualNode):
 
 
 class VisualThrowErrorNode(VisualNode):
-    """Visual representation of ThrowErrorNode."""
+    """Visual representation of ThrowErrorNode.
+
+    Widgets are auto-generated from ThrowErrorNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Throw Error"
     NODE_CATEGORY = "error_handling/try_catch"
-
-    def __init__(self) -> None:
-        """Initialize ThrowError node."""
-        super().__init__()
-        self.add_text_input(
-            "error_message", "Error Message", text="Custom error", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -94,26 +74,14 @@ class VisualThrowErrorNode(VisualNode):
 
 
 class VisualWebhookNotifyNode(VisualNode):
-    """Visual representation of WebhookNotifyNode."""
+    """Visual representation of WebhookNotifyNode.
+
+    Widgets are auto-generated from WebhookNotifyNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Webhook Notify"
     NODE_CATEGORY = "error_handling/logging"
-
-    def __init__(self) -> None:
-        """Initialize Webhook Notify node."""
-        super().__init__()
-        self.add_text_input("webhook_url", "Webhook URL", text="", tab="inputs")
-        self.add_text_input(
-            "message", "Message", text="Error notification from CasareRPA", tab="inputs"
-        )
-        self.create_property(
-            "format",
-            "generic",
-            items=["generic", "slack", "discord", "teams"],
-            widget_type=3,
-            tab="config",
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -133,10 +101,6 @@ class VisualOnErrorNode(VisualNode):
     NODE_NAME = "On Error"
     NODE_CATEGORY = "error_handling/try_catch"
 
-    def __init__(self) -> None:
-        """Initialize On Error node."""
-        super().__init__()
-
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
@@ -150,23 +114,14 @@ class VisualOnErrorNode(VisualNode):
 
 
 class VisualErrorRecoveryNode(VisualNode):
-    """Visual representation of ErrorRecoveryNode."""
+    """Visual representation of ErrorRecoveryNode.
+
+    Widgets are auto-generated from ErrorRecoveryNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Error Recovery"
     NODE_CATEGORY = "error_handling/retry"
-
-    def __init__(self) -> None:
-        """Initialize Error Recovery node."""
-        super().__init__()
-        self.create_property(
-            "strategy",
-            "stop",
-            items=["stop", "continue", "retry", "restart", "fallback"],
-            widget_type=3,
-            tab="config",
-        )
-        self.add_text_input("max_retries", "Max Retries", text="3", tab="config")
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -187,11 +142,6 @@ class VisualLogErrorNode(VisualNode):
     NODE_NAME = "Log Error"
     NODE_CATEGORY = "error_handling/logging"
 
-    def __init__(self) -> None:
-        """Initialize Log Error node."""
-        super().__init__()
-        # Widgets (level, include_stack_trace) auto-generated from @node_schema
-
     def get_node_class(self):
         """Return the CasareRPA node class for schema lookup."""
         from casare_rpa.nodes.error_handling_nodes import LogErrorNode
@@ -209,18 +159,14 @@ class VisualLogErrorNode(VisualNode):
 
 
 class VisualAssertNode(VisualNode):
-    """Visual representation of AssertNode."""
+    """Visual representation of AssertNode.
+
+    Widgets are auto-generated from AssertNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.error_handling"
     NODE_NAME = "Assert"
     NODE_CATEGORY = "error_handling/try_catch"
-
-    def __init__(self) -> None:
-        """Initialize Assert node."""
-        super().__init__()
-        self.add_text_input(
-            "message", "Assertion Message", text="Assertion failed", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         """Setup ports."""

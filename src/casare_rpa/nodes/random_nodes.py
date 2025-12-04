@@ -57,8 +57,9 @@ class RandomNumberNode(BaseNode):
         self.node_type = "RandomNumberNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("min_value", PortType.INPUT, DataType.FLOAT)
-        self.add_input_port("max_value", PortType.INPUT, DataType.FLOAT)
+        # min/max have defaults 0 and 100
+        self.add_input_port("min_value", PortType.INPUT, DataType.FLOAT, required=False)
+        self.add_input_port("max_value", PortType.INPUT, DataType.FLOAT, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.FLOAT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
@@ -251,7 +252,8 @@ class RandomStringNode(BaseNode):
         self.node_type = "RandomStringNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("length", PortType.INPUT, DataType.INTEGER)
+        # length has default 8
+        self.add_input_port("length", PortType.INPUT, DataType.INTEGER, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:

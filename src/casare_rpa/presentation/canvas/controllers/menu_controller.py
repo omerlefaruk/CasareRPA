@@ -282,16 +282,6 @@ class MenuController(BaseController):
         if hasattr(mw, "action_find_node"):
             self._actions["find_node"] = mw.action_find_node
 
-        # View actions
-        if hasattr(mw, "action_zoom_in"):
-            self._actions["zoom_in"] = mw.action_zoom_in
-        if hasattr(mw, "action_zoom_out"):
-            self._actions["zoom_out"] = mw.action_zoom_out
-        if hasattr(mw, "action_zoom_reset"):
-            self._actions["zoom_reset"] = mw.action_zoom_reset
-        if hasattr(mw, "action_fit_view"):
-            self._actions["fit_view"] = mw.action_fit_view
-
         # Run actions
         if hasattr(mw, "action_run"):
             self._actions["run"] = mw.action_run
@@ -527,9 +517,10 @@ class MenuController(BaseController):
             import webbrowser
 
             # Try local docs first, then online
-            from casare_rpa.config import DOCS_DIR
+            from casare_rpa.config import PROJECT_ROOT
 
-            local_docs = DOCS_DIR / "index.html"
+            # MkDocs builds to site/ directory at project root
+            local_docs = PROJECT_ROOT / "site" / "index.html"
             if local_docs.exists():
                 webbrowser.open(local_docs.as_uri())
             else:

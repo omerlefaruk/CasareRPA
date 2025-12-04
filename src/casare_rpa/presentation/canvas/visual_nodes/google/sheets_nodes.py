@@ -10,29 +10,15 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 
 
 class VisualSheetsGetCellNode(VisualNode):
-    """Visual representation of SheetsGetCellNode."""
+    """Visual representation of SheetsGetCellNode.
+
+    Widgets are auto-generated from SheetsGetCellNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Get Cell"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsGetCellNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id",
-            "Spreadsheet ID",
-            text="",
-            tab="properties",
-            placeholder_text="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
-        self.add_text_input(
-            "cell", "Cell", text="A1", tab="properties", placeholder_text="A1"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -46,23 +32,15 @@ class VisualSheetsGetCellNode(VisualNode):
 
 
 class VisualSheetsSetCellNode(VisualNode):
-    """Visual representation of SheetsSetCellNode."""
+    """Visual representation of SheetsSetCellNode.
+
+    Widgets are auto-generated from SheetsSetCellNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Set Cell"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsSetCellNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
-        self.add_text_input("cell", "Cell", text="A1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -76,29 +54,15 @@ class VisualSheetsSetCellNode(VisualNode):
 
 
 class VisualSheetsGetRangeNode(VisualNode):
-    """Visual representation of SheetsGetRangeNode."""
+    """Visual representation of SheetsGetRangeNode.
+
+    Widgets are auto-generated from SheetsGetRangeNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Get Range"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsGetRangeNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
-        self.add_text_input(
-            "range",
-            "Range",
-            text="A1:Z100",
-            tab="properties",
-            placeholder_text="A1:C10",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -113,23 +77,15 @@ class VisualSheetsGetRangeNode(VisualNode):
 
 
 class VisualSheetsWriteRangeNode(VisualNode):
-    """Visual representation of SheetsWriteRangeNode."""
+    """Visual representation of SheetsWriteRangeNode.
+
+    Widgets are auto-generated from SheetsWriteRangeNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Write Range"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsWriteRangeNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
-        self.add_text_input("range", "Start Cell", text="A1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -145,23 +101,15 @@ class VisualSheetsWriteRangeNode(VisualNode):
 
 
 class VisualSheetsClearRangeNode(VisualNode):
-    """Visual representation of SheetsClearRangeNode."""
+    """Visual representation of SheetsClearRangeNode.
+
+    Widgets are auto-generated from SheetsClearRangeNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Clear Range"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsClearRangeNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
-        self.add_text_input("range", "Range", text="A1:Z100", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -179,19 +127,15 @@ class VisualSheetsClearRangeNode(VisualNode):
 
 
 class VisualSheetsCreateSpreadsheetNode(VisualNode):
-    """Visual representation of SheetsCreateSpreadsheetNode."""
+    """Visual representation of SheetsCreateSpreadsheetNode.
+
+    Widgets are auto-generated from SheetsCreateSpreadsheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Create Spreadsheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsCreateSpreadsheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input("title", "Title", text="New Spreadsheet", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -205,21 +149,15 @@ class VisualSheetsCreateSpreadsheetNode(VisualNode):
 
 
 class VisualSheetsGetSpreadsheetNode(VisualNode):
-    """Visual representation of SheetsGetSpreadsheetNode."""
+    """Visual representation of SheetsGetSpreadsheetNode.
+
+    Widgets are auto-generated from SheetsGetSpreadsheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Get Spreadsheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsGetSpreadsheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -234,24 +172,15 @@ class VisualSheetsGetSpreadsheetNode(VisualNode):
 
 
 class VisualSheetsAddSheetNode(VisualNode):
-    """Visual representation of SheetsAddSheetNode."""
+    """Visual representation of SheetsAddSheetNode.
+
+    Widgets are auto-generated from SheetsAddSheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Add Sheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsAddSheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input(
-            "sheet_name", "Sheet Name", text="New Sheet", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -264,22 +193,15 @@ class VisualSheetsAddSheetNode(VisualNode):
 
 
 class VisualSheetsDeleteSheetNode(VisualNode):
-    """Visual representation of SheetsDeleteSheetNode."""
+    """Visual representation of SheetsDeleteSheetNode.
+
+    Widgets are auto-generated from SheetsDeleteSheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Delete Sheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsDeleteSheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -291,25 +213,15 @@ class VisualSheetsDeleteSheetNode(VisualNode):
 
 
 class VisualSheetsDuplicateSheetNode(VisualNode):
-    """Visual representation of SheetsDuplicateSheetNode."""
+    """Visual representation of SheetsDuplicateSheetNode.
+
+    Widgets are auto-generated from SheetsDuplicateSheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Duplicate Sheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsDuplicateSheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Source Sheet ID", text="0", tab="properties")
-        self.add_text_input(
-            "new_sheet_name", "New Sheet Name", text="Copy", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -323,23 +235,15 @@ class VisualSheetsDuplicateSheetNode(VisualNode):
 
 
 class VisualSheetsRenameSheetNode(VisualNode):
-    """Visual representation of SheetsRenameSheetNode."""
+    """Visual representation of SheetsRenameSheetNode.
+
+    Widgets are auto-generated from SheetsRenameSheetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Rename Sheet"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsRenameSheetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input("new_name", "New Name", text="", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -357,22 +261,15 @@ class VisualSheetsRenameSheetNode(VisualNode):
 
 
 class VisualSheetsAppendRowNode(VisualNode):
-    """Visual representation of SheetsAppendRowNode."""
+    """Visual representation of SheetsAppendRowNode.
+
+    Widgets are auto-generated from SheetsAppendRowNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Append Row"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsAppendRowNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -385,26 +282,15 @@ class VisualSheetsAppendRowNode(VisualNode):
 
 
 class VisualSheetsInsertRowNode(VisualNode):
-    """Visual representation of SheetsInsertRowNode."""
+    """Visual representation of SheetsInsertRowNode.
+
+    Widgets are auto-generated from SheetsInsertRowNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Insert Row"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsInsertRowNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input(
-            "row_index", "Row Index (0-based)", text="0", tab="properties"
-        )
-        self.add_text_input("num_rows", "Number of Rows", text="1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -418,26 +304,15 @@ class VisualSheetsInsertRowNode(VisualNode):
 
 
 class VisualSheetsDeleteRowNode(VisualNode):
-    """Visual representation of SheetsDeleteRowNode."""
+    """Visual representation of SheetsDeleteRowNode.
+
+    Widgets are auto-generated from SheetsDeleteRowNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Delete Row"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsDeleteRowNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input(
-            "start_row", "Start Row (0-based)", text="0", tab="properties"
-        )
-        self.add_text_input("num_rows", "Number of Rows", text="1", tab="properties")
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -451,28 +326,15 @@ class VisualSheetsDeleteRowNode(VisualNode):
 
 
 class VisualSheetsInsertColumnNode(VisualNode):
-    """Visual representation of SheetsInsertColumnNode."""
+    """Visual representation of SheetsInsertColumnNode.
+
+    Widgets are auto-generated from SheetsInsertColumnNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Insert Column"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsInsertColumnNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input(
-            "column_index", "Column Index (0-based)", text="0", tab="properties"
-        )
-        self.add_text_input(
-            "num_columns", "Number of Columns", text="1", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -486,28 +348,15 @@ class VisualSheetsInsertColumnNode(VisualNode):
 
 
 class VisualSheetsDeleteColumnNode(VisualNode):
-    """Visual representation of SheetsDeleteColumnNode."""
+    """Visual representation of SheetsDeleteColumnNode.
+
+    Widgets are auto-generated from SheetsDeleteColumnNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Delete Column"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsDeleteColumnNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input(
-            "start_column", "Start Column (0-based)", text="0", tab="properties"
-        )
-        self.add_text_input(
-            "num_columns", "Number of Columns", text="1", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -526,44 +375,15 @@ class VisualSheetsDeleteColumnNode(VisualNode):
 
 
 class VisualSheetsFormatCellsNode(VisualNode):
-    """Visual representation of SheetsFormatCellsNode."""
+    """Visual representation of SheetsFormatCellsNode.
+
+    Widgets are auto-generated from SheetsFormatCellsNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Format Cells"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsFormatCellsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input("start_row", "Start Row", text="0", tab="properties")
-        self.add_text_input("end_row", "End Row", text="1", tab="properties")
-        self.add_text_input("start_column", "Start Column", text="0", tab="properties")
-        self.add_text_input("end_column", "End Column", text="1", tab="properties")
-        # Format options
-        self.add_checkbox("bold", "Bold", state=False, tab="formatting")
-        self.add_checkbox("italic", "Italic", state=False, tab="formatting")
-        self.add_text_input("font_size", "Font Size", text="10", tab="formatting")
-        self.add_text_input(
-            "background_color",
-            "Background (R,G,B)",
-            text="",
-            tab="formatting",
-            placeholder_text="255,255,0",
-        )
-        self.add_text_input(
-            "text_color",
-            "Text Color (R,G,B)",
-            text="",
-            tab="formatting",
-            placeholder_text="0,0,0",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -575,27 +395,15 @@ class VisualSheetsFormatCellsNode(VisualNode):
 
 
 class VisualSheetsAutoResizeNode(VisualNode):
-    """Visual representation of SheetsAutoResizeNode."""
+    """Visual representation of SheetsAutoResizeNode.
+
+    Widgets are auto-generated from SheetsAutoResizeNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Auto Resize"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsAutoResizeNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
-        self.add_text_input("sheet_id", "Sheet ID", text="0", tab="properties")
-        self.add_text_input("start_index", "Start Index", text="0", tab="properties")
-        self.add_text_input("end_index", "End Index", text="26", tab="properties")
-        self.add_combo_menu(
-            "dimension", "Dimension", items=["COLUMNS", "ROWS"], tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -614,21 +422,15 @@ class VisualSheetsAutoResizeNode(VisualNode):
 
 
 class VisualSheetsBatchUpdateNode(VisualNode):
-    """Visual representation of SheetsBatchUpdateNode."""
+    """Visual representation of SheetsBatchUpdateNode.
+
+    Widgets are auto-generated from SheetsBatchUpdateNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Batch Update"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsBatchUpdateNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -643,21 +445,15 @@ class VisualSheetsBatchUpdateNode(VisualNode):
 
 
 class VisualSheetsBatchGetNode(VisualNode):
-    """Visual representation of SheetsBatchGetNode."""
+    """Visual representation of SheetsBatchGetNode.
+
+    Widgets are auto-generated from SheetsBatchGetNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Batch Get"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsBatchGetNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -670,21 +466,15 @@ class VisualSheetsBatchGetNode(VisualNode):
 
 
 class VisualSheetsBatchClearNode(VisualNode):
-    """Visual representation of SheetsBatchClearNode."""
+    """Visual representation of SheetsBatchClearNode.
+
+    Widgets are auto-generated from SheetsBatchClearNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Sheets: Batch Clear"
     NODE_CATEGORY = "google/sheets"
     CASARE_NODE_CLASS = "SheetsBatchClearNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input(
-            "credential_name", "Credential", text="google", tab="connection"
-        )
-        self.add_text_input(
-            "spreadsheet_id", "Spreadsheet ID", text="", tab="properties"
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

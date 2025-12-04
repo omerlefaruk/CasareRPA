@@ -97,7 +97,7 @@ class AnalyticsPanel(QDockWidget):
         super().__init__("Analytics", parent)
         self.setObjectName("AnalyticsDock")
 
-        self._api_base_url = "http://localhost:8000/api/v1"
+        self._api_base_url = self._get_orchestrator_url()
         self._current_workflow: Optional[str] = None
         self._api_thread: Optional[QThread] = None
         self._api_worker: Optional[ApiWorker] = None
@@ -107,7 +107,76 @@ class AnalyticsPanel(QDockWidget):
         self._apply_styles()
         self._setup_refresh_timer()
 
-        logger.debug("AnalyticsPanel initialized")
+        logger.debug(f"AnalyticsPanel initialized with API URL: {self._api_base_url}")
+
+    def _get_orchestrator_url(self) -> str:
+        """
+        Get orchestrator URL from config or environment.
+
+        Priority:
+        1. config.yaml orchestrator.url (tunnel URL)
+        2. CASARE_API_URL environment variable (tunnel URL)
+        3. ORCHESTRATOR_URL environment variable
+        4. CLOUDFLARE_TUNNEL_URL environment variable
+        5. Default localhost:8000
+
+        Returns:
+            Base API URL for orchestrator
+        """
+        import os
+
+        # Try config.yaml first (has tunnel URL)
+        try:
+            from casare_rpa.presentation.setup.config_manager import ClientConfigManager
+
+            config_manager = ClientConfigManager()
+            if config_manager.config_exists():
+                config = config_manager.load()
+                url = config.orchestrator.url
+                if url:
+                    # Config stores WebSocket URL (ws://), convert to HTTP
+                    if url.startswith("ws://"):
+                        url = url.replace("ws://", "http://")
+                    elif url.startswith("wss://"):
+                        url = url.replace("wss://", "https://")
+                    logger.debug(f"Analytics using orchestrator URL from config: {url}")
+                    return f"{url}/api/v1"
+        except Exception as e:
+            logger.debug(f"Could not read config.yaml for analytics: {e}")
+
+        # Try CASARE_API_URL first (tunnel URL from platform startup)
+        casare_api_url = os.getenv("CASARE_API_URL")
+        if casare_api_url:
+            logger.debug(f"Analytics using CASARE_API_URL: {casare_api_url}")
+            return f"{casare_api_url}/api/v1"
+
+        # Try ORCHESTRATOR_URL
+        orchestrator_url = os.getenv("ORCHESTRATOR_URL")
+        if orchestrator_url:
+            logger.debug(f"Analytics using ORCHESTRATOR_URL: {orchestrator_url}")
+            return f"{orchestrator_url}/api/v1"
+
+        # Try CLOUDFLARE_TUNNEL_URL
+        tunnel_url = os.getenv("CLOUDFLARE_TUNNEL_URL")
+        if tunnel_url:
+            logger.debug(f"Analytics using CLOUDFLARE_TUNNEL_URL: {tunnel_url}")
+            return f"{tunnel_url}/api/v1"
+
+        # Default fallback
+        logger.debug("Analytics using default localhost URL")
+        return "http://localhost:8000/api/v1"
+
+    def set_api_url(self, url: str) -> None:
+        """
+        Set the API base URL dynamically.
+
+        Args:
+            url: Base URL for orchestrator (e.g., https://tunnel.example.com)
+        """
+        if not url.endswith("/api/v1"):
+            url = f"{url}/api/v1"
+        self._api_base_url = url
+        logger.info(f"Analytics API URL updated to: {url}")
 
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
@@ -492,12 +561,6 @@ class AnalyticsPanel(QDockWidget):
         """Handle hide event."""
         super().hideEvent(event)
         self._refresh_timer.stop()
-
-    def set_api_url(self, url: str) -> None:
-        """Set the API base URL."""
-        self._api_base_url = url.rstrip("/")
-        self._api_url_label.setText(self._api_base_url)
-        self._check_api_connection()
 
     def _check_api_connection(self) -> None:
         """Check if API is reachable."""
