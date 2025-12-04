@@ -1,16 +1,20 @@
 # CasareRPA Complete Architecture Roadmap
 **Project Aether: Enterprise-Grade Distributed RPA Platform**
 
-**Status**: Phases 1-6 Complete, Phase 7+ In Progress
+**Status**: Phases 1-7 Complete (87%), Phase 8 In Progress
 **Goal**: Production-ready distributed RPA with durable execution, multi-robot coordination, and enterprise security
-**Last Updated**: 2025-12-01
+**Last Updated**: 2025-12-04
 
 ### Recent Additions (v3.1.0)
+- ✅ **FastAPI Orchestrator API** - REST API with Swagger docs on port 8000
+- ✅ **Analytics Panel** - Bottleneck detection, execution timeline
 - ✅ **OAuth 2.0 Nodes** - Complete OAuth flow automation with PKCE support
 - ✅ **Debug Panel** - Call stack, watch expressions, breakpoints, REPL console
 - ✅ **Node Library Panel** - Searchable tree view with drag-and-drop
-- ✅ **VS Code-like Shortcuts** - Standardized keyboard shortcuts (F5, F9, F10)
+- ✅ **VS Code-like Shortcuts** - F8 (local), Ctrl+F5 (robot), Ctrl+Shift+F5 (submit)
 - ✅ **Toolbar Icons** - Theme-aware Qt standard icons
+- ✅ **Centralized Dock Creator** - Unified dock widget creation
+- ✅ **In-memory Queue Fallback** - Development without PostgreSQL
 
 ---
 
@@ -2122,6 +2126,7 @@ This roadmap transforms CasareRPA from a local automation tool into an **enterpr
 
 ---
 
-**Last Updated**: 2025-11-30
+**Last Updated**: 2025-12-04
 **Maintained By**: Project Aether Team
+**Platform Version**: v3.1.0
 **Status**: 7/8 phases complete (87%)
