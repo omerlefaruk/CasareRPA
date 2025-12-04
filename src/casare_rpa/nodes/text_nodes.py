@@ -66,7 +66,10 @@ class TextSplitNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("separator", PortType.INPUT, DataType.STRING)
+        # separator is optional - defaults to whitespace splitting
+        self.add_input_port(
+            "separator", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
         self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
 
@@ -507,8 +510,9 @@ class TextSubstringNode(BaseNode):
 
     def _define_ports(self) -> None:
         self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("start", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("end", PortType.INPUT, DataType.INTEGER)
+        # start defaults to 0, end defaults to None (end of string)
+        self.add_input_port("start", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("end", PortType.INPUT, DataType.INTEGER, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("length", PortType.OUTPUT, DataType.INTEGER)
 

@@ -21,7 +21,6 @@ if TYPE_CHECKING:
         MenuController,
         NodeController,
         PanelController,
-        SchedulingController,
         UIStateController,
         ViewportController,
         WorkflowController,
@@ -73,7 +72,6 @@ class ControllerSignalBridge(QObject):
         menu_controller: Optional["MenuController"] = None,
         event_bus_controller: Optional["EventBusController"] = None,
         viewport_controller: Optional["ViewportController"] = None,
-        scheduling_controller: Optional["SchedulingController"] = None,
         ui_state_controller: Optional["UIStateController"] = None,
     ) -> None:
         """
@@ -88,10 +86,10 @@ class ControllerSignalBridge(QObject):
             menu_controller: Menu/dialog management controller
             event_bus_controller: EventBus integration controller
             viewport_controller: Viewport/zoom management controller
-            scheduling_controller: Workflow scheduling controller
             ui_state_controller: UI state persistence controller
 
-        Note: Triggers are now visual nodes on the canvas (not a controller).
+        Note: Triggers and scheduling are now visual nodes on the canvas
+              and handled via orchestrator API (not controllers).
         """
         logger.debug("ControllerSignalBridge: Connecting controller signals...")
 

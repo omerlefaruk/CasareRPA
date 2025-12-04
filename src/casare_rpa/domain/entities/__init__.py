@@ -15,10 +15,8 @@ from casare_rpa.domain.entities.variable import (
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.execution_state import ExecutionState, ExecutionContext
 from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
-from casare_rpa.domain.entities.workflow_schedule import (
-    WorkflowSchedule,
-    ScheduleFrequency,
-)
+
+# WorkflowSchedule removed - use Schedule Trigger node instead
 from casare_rpa.domain.entities.project import (
     # Constants
     PROJECT_SCHEMA_VERSION,
@@ -73,7 +71,4 @@ __all__ = [
     "Tenant",
     "TenantId",
     "TenantSettings",
-    # Schedule entities
-    "WorkflowSchedule",
-    "ScheduleFrequency",
 ]

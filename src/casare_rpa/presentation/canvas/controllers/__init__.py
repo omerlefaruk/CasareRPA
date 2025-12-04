@@ -16,8 +16,7 @@ Architecture:
     - MenuController: Menu/action management (shortcuts, recent files)
     - EventBusController: Centralized event routing and coordination
     - ViewportController: Canvas viewport, minimap, zoom, and frame management
-    - SchedulingController: Workflow scheduling and schedule management
-    - (Triggers are now visual nodes - see visual_nodes/triggers/)
+    - (Triggers and scheduling are now visual nodes - see visual_nodes/triggers/)
     - UIStateController: UI state persistence (window geometry, panels, recent files)
     - SelectorController: Element selector/picker (browser, desktop)
     - PreferencesController: Settings and preferences management
@@ -29,7 +28,6 @@ Usage:
         ExecutionController,
         NodeController,
         ViewportController,
-        SchedulingController,
         UIStateController,
         SelectorController,
         PreferencesController,
@@ -61,11 +59,8 @@ from casare_rpa.presentation.canvas.controllers.event_bus_controller import (
 from casare_rpa.presentation.canvas.controllers.viewport_controller import (
     ViewportController,
 )
-from casare_rpa.presentation.canvas.controllers.scheduling_controller import (
-    SchedulingController,
-)
 
-# TriggerController removed - triggers are now visual nodes
+# TriggerController and SchedulingController removed - use trigger nodes instead
 from casare_rpa.presentation.canvas.controllers.ui_state_controller import (
     UIStateController,
 )
@@ -95,7 +90,6 @@ __all__ = [
     "MenuController",
     "EventBusController",
     "ViewportController",
-    "SchedulingController",
     "UIStateController",
     "SelectorController",
     "PreferencesController",

@@ -123,7 +123,6 @@ class MainWindow(QMainWindow):
         self._menu_controller = None
         self._event_bus_controller = None
         self._viewport_controller = None
-        self._scheduling_controller = None
         self._ui_state_controller = None
         self._selector_controller: Optional[SelectorController] = None
         self._project_controller = None
@@ -222,10 +221,6 @@ class MainWindow(QMainWindow):
         cp.register_action(self.action_delete, "Edit")
         cp.register_action(self.action_select_all, "Edit")
         cp.register_action(self.action_find_node, "Edit")
-        cp.register_action(self.action_zoom_in, "View")
-        cp.register_action(self.action_zoom_out, "View")
-        cp.register_action(self.action_zoom_reset, "View")
-        cp.register_action(self.action_fit_view, "View")
         cp.register_action(self.action_toggle_bottom_panel, "View")
         cp.register_action(self.action_toggle_minimap, "View")
         cp.register_action(self.action_run, "Run", "Execute workflow")
@@ -240,7 +235,6 @@ class MainWindow(QMainWindow):
         cp.register_action(
             self.action_desktop_selector_builder, "Automation", "Pick desktop element"
         )
-        cp.register_action(self.action_schedule, "Automation", "Schedule workflow")
 
     # ==================== Normal Tier Loading ====================
 
@@ -597,10 +591,6 @@ class MainWindow(QMainWindow):
     def viewport_controller(self):
         return getattr(self, "_viewport_controller", None)
 
-    @property
-    def scheduling_controller(self):
-        return getattr(self, "_scheduling_controller", None)
-
     # Backward-compatible getters
     def get_graph(self):
         return self.graph
@@ -628,9 +618,6 @@ class MainWindow(QMainWindow):
 
     def get_viewport_controller(self):
         return self.viewport_controller
-
-    def get_scheduling_controller(self):
-        return self.scheduling_controller
 
     def get_project_controller(self):
         return self._project_controller
@@ -1042,18 +1029,6 @@ class MainWindow(QMainWindow):
     def set_browser_running(self, running: bool) -> None:
         self.action_pick_selector.setEnabled(running)
         self.action_record_workflow.setEnabled(running)
-
-    def _on_schedule_workflow(self) -> None:
-        if self._scheduling_controller:
-            self._scheduling_controller.schedule_workflow()
-
-    def _on_manage_schedules(self) -> None:
-        if self._scheduling_controller:
-            self._scheduling_controller.manage_schedules()
-
-    def _on_run_scheduled_workflow(self, schedule) -> None:
-        if self._scheduling_controller:
-            self._scheduling_controller.run_scheduled_workflow(schedule)
 
     # ==================== Project Management ====================
 

@@ -274,24 +274,6 @@ class CasareRPAApp:
         self._main_window.action_duplicate.triggered.connect(self._on_duplicate_nodes)
         self._main_window.action_select_all.triggered.connect(graph.select_all)
 
-        # View operations
-        self._main_window.action_zoom_in.triggered.connect(self._node_graph.zoom_in)
-        self._main_window.action_zoom_out.triggered.connect(self._node_graph.zoom_out)
-        self._main_window.action_zoom_reset.triggered.connect(
-            self._node_graph.reset_zoom
-        )
-        self._main_window.action_fit_view.triggered.connect(
-            self._node_graph.center_on_nodes
-        )
-
-        # Debug toolbar connections
-        debug_toolbar = self._main_window.get_debug_toolbar()
-        if debug_toolbar:
-            debug_toolbar.debug_mode_toggled.connect(self._on_debug_mode_toggled)
-            debug_toolbar.step_mode_toggled.connect(self._on_step_mode_toggled)
-            debug_toolbar.step_requested.connect(self._on_debug_step)
-            debug_toolbar.continue_requested.connect(self._on_debug_continue)
-
         logger.debug("UI signals connected")
 
     def _get_all_controllers(self) -> list:

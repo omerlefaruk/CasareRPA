@@ -1,13 +1,8 @@
 """
 Scheduling application layer.
 
-Provides scheduling storage and management functionality.
+Note: The external Schedule menu/dialog has been removed.
+Use the Schedule Trigger node in workflows instead.
 """
 
-from casare_rpa.application.scheduling.schedule_storage import (
-    ScheduleStorage,
-    get_schedule_storage,
-    set_schedule_storage,
-)
-
-__all__ = ["ScheduleStorage", "get_schedule_storage", "set_schedule_storage"]
+__all__: list = []

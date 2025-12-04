@@ -12,7 +12,6 @@ from loguru import logger
 if TYPE_CHECKING:
     from ..main_window import MainWindow
     from ..controllers.robot_controller import RobotController
-    from ..controllers.scheduling_controller import SchedulingController
     from ..ui.dialogs.fleet_dashboard_dialog import FleetDashboardDialog
 
 
@@ -46,10 +45,6 @@ class FleetDashboardManager:
     @property
     def _robot_controller(self) -> Optional["RobotController"]:
         return self._main_window._robot_controller
-
-    @property
-    def _scheduling_controller(self) -> Optional["SchedulingController"]:
-        return self._main_window._scheduling_controller
 
     def open_dashboard(self) -> None:
         """Open the fleet management dashboard dialog."""
@@ -189,21 +184,28 @@ class FleetDashboardManager:
             return []
 
     async def _get_schedules(self) -> List[Dict[str, Any]]:
-        """Get schedules from scheduling controller or storage."""
-        if self._scheduling_controller:
-            schedules = self._scheduling_controller.get_schedules()
-            return [
-                {
-                    "id": getattr(s, "id", str(i)),
-                    "name": getattr(s, "name", ""),
-                    "workflow_name": getattr(s, "workflow_name", ""),
-                    "cron_expression": getattr(s, "cron_expression", ""),
-                    "enabled": getattr(s, "enabled", True),
-                    "next_run": str(getattr(s, "next_run", "")),
-                    "last_run": str(getattr(s, "last_run", "")),
-                }
-                for i, s in enumerate(schedules)
-            ]
+        """Get schedules from orchestrator API."""
+        try:
+            if self._robot_controller and self._robot_controller.is_connected:
+                client = self._robot_controller._orchestrator_client
+                if client:
+                    # Schedules are now managed via orchestrator API
+                    # and trigger nodes in workflows
+                    schedule_data = await client.get_schedules()
+                    return [
+                        {
+                            "id": s.id,
+                            "name": getattr(s, "name", ""),
+                            "workflow_name": getattr(s, "workflow_name", ""),
+                            "cron_expression": getattr(s, "cron_expression", ""),
+                            "enabled": getattr(s, "enabled", True),
+                            "next_run": str(getattr(s, "next_run", "")),
+                            "last_run": str(getattr(s, "last_run", "")),
+                        }
+                        for s in schedule_data
+                    ]
+        except Exception as e:
+            logger.warning(f"Failed to get schedules: {e}")
         return []
 
     async def _get_analytics(
@@ -508,20 +510,11 @@ class FleetDashboardManager:
             await self._refresh_all_data()
 
         except ImportError:
-            if self._scheduling_controller:
-                schedules = self._scheduling_controller.get_schedules()
-                for schedule in schedules:
-                    if getattr(schedule, "id", None) == schedule_id:
-                        schedule.enabled = enabled
-                        self._main_window.show_status(
-                            f"Schedule {'enabled' if enabled else 'disabled'}", 3000
-                        )
-                        await self._refresh_all_data()
-                        return
             QMessageBox.information(
                 self._main_window,
                 "Local Mode",
-                "Schedule toggle requires orchestrator connection",
+                "Schedule toggle requires orchestrator connection.\n"
+                "Use Schedule Trigger nodes in workflows for local scheduling.",
             )
         except Exception as e:
             logger.error(f"Failed to toggle schedule: {e}")
@@ -537,21 +530,13 @@ class FleetDashboardManager:
 
         logger.info(f"Schedule edit requested: {schedule_id}")
 
-        if self._scheduling_controller:
-            schedules = self._scheduling_controller.get_schedules()
-            for schedule in schedules:
-                if getattr(schedule, "id", None) == schedule_id:
-                    self._scheduling_controller.manage_schedules()
-                    return
-
         QMessageBox.information(
             self._main_window,
             "Edit Schedule",
-            f"Opening schedule editor for: {schedule_id}\n\n"
-            "Use the Schedule Manager to edit this schedule.",
+            f"Schedule ID: {schedule_id}\n\n"
+            "Schedules are managed via orchestrator API or\n"
+            "Schedule Trigger nodes in workflows.",
         )
-        if self._scheduling_controller:
-            self._scheduling_controller.manage_schedules()
 
     def _on_schedule_deleted(self, schedule_id: str) -> None:
         """Handle schedule deletion from fleet dashboard."""
@@ -594,21 +579,12 @@ class FleetDashboardManager:
             await self._refresh_all_data()
 
         except ImportError:
-            if self._scheduling_controller:
-                success = self._scheduling_controller.delete_schedule(schedule_id)
-                if success:
-                    self._main_window.show_status("Schedule deleted successfully", 3000)
-                    await self._refresh_all_data()
-                else:
-                    QMessageBox.warning(
-                        self._main_window, "Delete Failed", "Failed to delete schedule"
-                    )
-            else:
-                QMessageBox.information(
-                    self._main_window,
-                    "Local Mode",
-                    "Schedule deletion requires orchestrator connection",
-                )
+            QMessageBox.information(
+                self._main_window,
+                "Local Mode",
+                "Schedule deletion requires orchestrator connection.\n"
+                "Use Schedule Trigger nodes in workflows for local scheduling.",
+            )
         except Exception as e:
             logger.error(f"Failed to delete schedule: {e}")
             QMessageBox.warning(
@@ -662,16 +638,11 @@ class FleetDashboardManager:
             await self._refresh_all_data()
 
         except ImportError:
-            if self._scheduling_controller:
-                schedules = self._scheduling_controller.get_schedules()
-                for schedule in schedules:
-                    if getattr(schedule, "id", None) == schedule_id:
-                        self._scheduling_controller.run_scheduled_workflow(schedule)
-                        return
             QMessageBox.information(
                 self._main_window,
                 "Local Mode",
-                "Schedule execution requires orchestrator connection",
+                "Schedule execution requires orchestrator connection.\n"
+                "Use Schedule Trigger nodes in workflows for local scheduling.",
             )
         except Exception as e:
             logger.error(f"Failed to trigger schedule: {e}")

@@ -40,15 +40,14 @@ class VisualRunPythonScriptNode(VisualNode):
 
 
 class VisualRunPythonFileNode(VisualNode):
-    """Visual representation of RunPythonFileNode."""
+    """Visual representation of RunPythonFileNode.
+
+    Widgets are auto-generated from RunPythonFileNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Run Python File"
     NODE_CATEGORY = "scripts"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="300", tab="properties")
 
     def get_node_class(self) -> type:
         return RunPythonFileNode
@@ -85,15 +84,14 @@ class VisualEvalExpressionNode(VisualNode):
 
 
 class VisualRunBatchScriptNode(VisualNode):
-    """Visual representation of RunBatchScriptNode."""
+    """Visual representation of RunBatchScriptNode.
+
+    Widgets are auto-generated from RunBatchScriptNode's @node_schema decorator.
+    """
 
     __identifier__ = "casare_rpa.scripts"
     NODE_NAME = "Run Batch Script"
     NODE_CATEGORY = "scripts"
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.add_text_input("timeout", "Timeout (s)", text="300", tab="properties")
 
     def get_node_class(self) -> type:
         return RunBatchScriptNode

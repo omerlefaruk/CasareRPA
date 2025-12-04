@@ -366,14 +366,15 @@ class DateTimeAddNode(BaseNode):
         self.node_type = "DateTimeAddNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("datetime", PortType.INPUT, DataType.ANY)
-        self.add_input_port("years", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("months", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("weeks", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("days", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("hours", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("minutes", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("seconds", PortType.INPUT, DataType.INTEGER)
+        self.add_input_port("datetime", PortType.INPUT, DataType.ANY, required=False)
+        # All time components are optional with default 0
+        self.add_input_port("years", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("months", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("weeks", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("days", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("hours", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("minutes", PortType.INPUT, DataType.INTEGER, required=False)
+        self.add_input_port("seconds", PortType.INPUT, DataType.INTEGER, required=False)
         self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
         self.add_output_port("timestamp", PortType.OUTPUT, DataType.FLOAT)
 

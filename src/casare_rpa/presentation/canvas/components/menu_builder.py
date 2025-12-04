@@ -100,15 +100,13 @@ class MenuBuilder:
         return run_menu
 
     def _create_automation_menu(self, menubar, mw: "MainWindow") -> QMenu:
-        """Create Automation menu (6 items)."""
+        """Create Automation menu (5 items)."""
         automation_menu = menubar.addMenu("&Automation")
         automation_menu.addAction(mw.action_validate)
         automation_menu.addSeparator()
         automation_menu.addAction(mw.action_record_workflow)
         automation_menu.addAction(mw.action_pick_selector)
         automation_menu.addAction(mw.action_desktop_selector_builder)
-        automation_menu.addSeparator()
-        automation_menu.addAction(mw.action_schedule)
         return automation_menu
 
     def _create_help_menu(self, menubar, mw: "MainWindow") -> QMenu:

@@ -21,10 +21,7 @@ from casare_rpa.presentation.canvas.ui.dialogs.template_browser_dialog import (
 )
 
 # Trigger dialogs removed - triggers are now visual nodes
-from casare_rpa.presentation.canvas.ui.dialogs.schedule_dialog import (
-    ScheduleDialog,
-    ScheduleManagerDialog,
-)
+# Schedule dialogs removed - use Schedule Trigger node instead
 from casare_rpa.presentation.canvas.ui.dialogs.update_dialog import (
     UpdateDialog,
     UpdateNotificationWidget,
@@ -45,8 +42,6 @@ __all__ = [
     "PreferencesDialog",
     "RecordingPreviewDialog",
     "TemplateBrowserDialog",
-    "ScheduleDialog",
-    "ScheduleManagerDialog",
     "UpdateDialog",
     "UpdateNotificationWidget",
     "ProjectManagerDialog",

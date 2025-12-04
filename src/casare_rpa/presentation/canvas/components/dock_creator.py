@@ -410,6 +410,12 @@ class DockCreator:
         analytics_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
         analytics_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
 
+        # Connect to robot controller to update URL when connected
+        if hasattr(mw, "_robot_controller") and mw._robot_controller:
+            mw._robot_controller.connection_status_changed.connect(
+                lambda connected: self._update_analytics_url(analytics_panel, connected)
+            )
+
         # Add toggle action to View menu
         try:
             view_menu = self._find_view_menu()
@@ -429,6 +435,20 @@ class DockCreator:
             "Analytics Panel created with Bottlenecks, Execution, Timeline tabs"
         )
         return analytics_panel
+
+    def _update_analytics_url(
+        self, analytics_panel: "AnalyticsPanel", connected: bool
+    ) -> None:
+        """Update analytics panel URL when robot controller connects."""
+        if not connected:
+            return
+
+        mw = self._main_window
+        if hasattr(mw, "_robot_controller") and mw._robot_controller:
+            url = mw._robot_controller.orchestrator_url
+            if url:
+                analytics_panel.set_api_url(url)
+                logger.debug(f"Analytics panel URL updated to: {url}")
 
     def _find_view_menu(self):
         """Get the View menu from MainWindow (stored reference)."""

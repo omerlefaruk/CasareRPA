@@ -70,8 +70,13 @@ class LaunchApplicationNode(DesktopNodeBase):
     def _define_ports(self) -> None:
         """Define node ports."""
         self.add_input_port("application_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("arguments", PortType.INPUT, DataType.STRING)
-        self.add_input_port("working_directory", PortType.INPUT, DataType.STRING)
+        # arguments and working_directory are optional
+        self.add_input_port(
+            "arguments", PortType.INPUT, DataType.STRING, required=False
+        )
+        self.add_input_port(
+            "working_directory", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
         self.add_output_port("process_id", PortType.OUTPUT, DataType.INTEGER)
         self.add_output_port("window_title", PortType.OUTPUT, DataType.STRING)
@@ -212,9 +217,14 @@ class CloseApplicationNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("process_id", PortType.INPUT, DataType.INTEGER)
-        self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
+        # Can identify app by window, process_id, or window_title - any one is sufficient
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port(
+            "process_id", PortType.INPUT, DataType.INTEGER, required=False
+        )
+        self.add_input_port(
+            "window_title", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
 
     async def execute(self, context: Any) -> Dict[str, Any]:
@@ -286,8 +296,11 @@ class ActivateWindowNode(DesktopNodeBase):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("window", PortType.INPUT, DataType.ANY)
-        self.add_input_port("window_title", PortType.INPUT, DataType.STRING)
+        # Can identify window by either window handle or title - one is required
+        self.add_input_port("window", PortType.INPUT, DataType.ANY, required=False)
+        self.add_input_port(
+            "window_title", PortType.INPUT, DataType.STRING, required=False
+        )
         self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
         self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
 
