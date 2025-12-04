@@ -4,8 +4,8 @@
 
 CasareRPA follows **Clean Architecture** principles with clear separation of concerns across multiple layers. This document describes the architectural structure, layer responsibilities, dependency rules, and migration patterns.
 
-**Version**: 3.1
-**Last Updated**: 2025-12-01
+**Version**: 3.2
+**Last Updated**: 2025-12-04
 
 ---
 
@@ -356,18 +356,30 @@ async def test_browser_resource_manager():
 
 ## Migration Status
 
-### v3.0 Migration - COMPLETE ✅
+### v3.1 - COMPLETE ✅
 
-All phases of the clean architecture migration have been completed:
+All phases of the clean architecture migration and enterprise features have been completed:
 
+**Clean Architecture (v3.0)**:
 - ✅ Domain layer with entities, value objects, and services
 - ✅ Application layer with use cases and orchestration
 - ✅ Infrastructure layer with API, persistence, and security
-- ✅ Presentation layer with Canvas and Orchestrator UI
+- ✅ Presentation layer with Canvas UI (PySide6)
 - ✅ Legacy compatibility layers removed
 - ✅ All imports updated to clean architecture paths
-- ✅ 3,480+ tests with comprehensive coverage
-- ✅ Orchestrator refactored to clean architecture
+
+**Enterprise Features (v3.1)**:
+- ✅ FastAPI Orchestrator REST API with Swagger docs
+- ✅ PostgreSQL job queue via PgQueuer (18k+ jobs/sec)
+- ✅ In-memory queue fallback for development
+- ✅ React monitoring dashboard with real-time WebSocket updates
+- ✅ Distributed robot agent execution
+- ✅ Analytics infrastructure (bottleneck detection, process mining)
+- ✅ Three execution modes (Local, Robot, Submit)
+- ✅ OAuth 2.0 automation nodes
+- ✅ Debug Panel with breakpoints and watch expressions
+- ✅ Node Library Panel with search
+- ✅ VS Code-like keyboard shortcuts
 
 ---
 
@@ -448,4 +460,4 @@ For the project roadmap, see [ROADMAP_COMPLETE.md](ROADMAP_COMPLETE.md).
 
 ---
 
-**Last Updated**: 2025-11-30
+**Last Updated**: 2025-12-04
