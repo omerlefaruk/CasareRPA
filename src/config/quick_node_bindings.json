@@ -1,0 +1,101 @@
+{
+  "enabled": false,
+  "bindings": [
+    {
+      "key": "b",
+      "node_type": "LaunchBrowserNode",
+      "display_name": "Launch Browser",
+      "category": "browser"
+    },
+    {
+      "key": "u",
+      "node_type": "GoToURLNode",
+      "display_name": "Go To URL",
+      "category": "browser"
+    },
+    {
+      "key": "c",
+      "node_type": "ClickElementNode",
+      "display_name": "Click Element",
+      "category": "browser"
+    },
+    {
+      "key": "t",
+      "node_type": "TypeTextNode",
+      "display_name": "Type Text",
+      "category": "browser"
+    },
+    {
+      "key": "n",
+      "node_type": "NewTabNode",
+      "display_name": "New Tab",
+      "category": "browser"
+    },
+    {
+      "key": "r",
+      "node_type": "RefreshPageNode",
+      "display_name": "Refresh Page",
+      "category": "browser"
+    },
+    {
+      "key": "e",
+      "node_type": "ExtractTextNode",
+      "display_name": "Extract Text",
+      "category": "browser"
+    },
+    {
+      "key": "a",
+      "node_type": "GetAttributeNode",
+      "display_name": "Get Attribute",
+      "category": "browser"
+    },
+    {
+      "key": "w",
+      "node_type": "WaitNode",
+      "display_name": "Wait",
+      "category": "browser"
+    },
+    {
+      "key": "q",
+      "node_type": "WaitForElementNode",
+      "display_name": "Wait For Element",
+      "category": "browser"
+    },
+    {
+      "key": "i",
+      "node_type": "IfNode",
+      "display_name": "If Condition",
+      "category": "flow"
+    },
+    {
+      "key": "l",
+      "node_type": "ForLoopStartNode",
+      "display_name": "For Loop",
+      "category": "flow"
+    },
+    {
+      "key": "d",
+      "node_type": "LaunchApplicationNode",
+      "display_name": "Launch Application",
+      "category": "desktop"
+    },
+    {
+      "key": "m",
+      "node_type": "MessageBoxNode",
+      "display_name": "Message Box",
+      "category": "interaction"
+    },
+    {
+      "key": "z",
+      "node_type": "MergeNode",
+      "display_name": "Merge",
+      "category": "other"
+    },
+    {
+      "key": "s",
+      "node_type": "SetVariableNode",
+      "display_name": "Set Variable",
+      "category": "variables"
+    }
+  ]
+}

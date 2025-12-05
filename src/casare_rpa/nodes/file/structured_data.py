@@ -119,11 +119,11 @@ class ReadCSVNode(BaseNode):
         self.node_type = "ReadCSVNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("data", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("headers", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING, required=False)
+        self.add_output_port("data", DataType.LIST)
+        self.add_output_port("headers", DataType.LIST)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -259,13 +259,13 @@ class WriteCSVNode(BaseNode):
         self.node_type = "WriteCSVNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("data", PortType.INPUT, DataType.LIST)
-        self.add_input_port("headers", PortType.INPUT, DataType.LIST)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("row_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING, required=False)
+        self.add_input_port("data", DataType.LIST, required=False)
+        self.add_input_port("headers", DataType.LIST, required=False)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
+        self.add_output_port("row_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -282,8 +282,10 @@ class WriteCSVNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns
             file_path = context.resolve_value(file_path)
+            data = context.resolve_value(data) or []
+            headers = context.resolve_value(headers) if headers else None
 
             path = Path(file_path)
             if path.parent:
@@ -361,9 +363,9 @@ class ReadJSONFileNode(BaseNode):
         self.node_type = "ReadJSONFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("data", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING, required=False)
+        self.add_output_port("data", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -444,11 +446,11 @@ class WriteJSONFileNode(BaseNode):
         self.node_type = "WriteJSONFileNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("file_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("data", PortType.INPUT, DataType.ANY)
-        self.add_output_port("file_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("file_path", DataType.STRING, required=False)
+        self.add_input_port("data", DataType.ANY, required=False)
+        self.add_output_port("file_path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -464,8 +466,9 @@ class WriteJSONFileNode(BaseNode):
             if not file_path:
                 raise ValueError("file_path is required")
 
-            # Resolve {{variable}} patterns in file_path
+            # Resolve {{variable}} patterns in file_path and data
             file_path = context.resolve_value(file_path)
+            data = context.resolve_value(data)
 
             path = Path(file_path)
             if path.parent:
@@ -562,17 +565,15 @@ class ZipFilesNode(BaseNode):
         self.node_type = "ZipFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
+        self.add_input_port("zip_path", DataType.STRING, required=False)
         # source_path, files, base_dir are optional - node can work with any combination
-        self.add_input_port(
-            "source_path", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("files", PortType.INPUT, DataType.LIST, required=False)
-        self.add_input_port("base_dir", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("zip_path", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("attachment_file", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("source_path", DataType.STRING, required=False)
+        self.add_input_port("files", DataType.LIST, required=False)
+        self.add_input_port("base_dir", DataType.STRING, required=False)
+        self.add_output_port("zip_path", DataType.STRING)
+        self.add_output_port("attachment_file", DataType.LIST)
+        self.add_output_port("file_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -734,12 +735,12 @@ class UnzipFilesNode(BaseNode):
         self.node_type = "UnzipFilesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("zip_path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("extract_to", PortType.INPUT, DataType.STRING)
-        self.add_output_port("extract_to", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("zip_path", DataType.STRING, required=False)
+        self.add_input_port("extract_to", DataType.STRING, required=False)
+        self.add_output_port("extract_to", DataType.STRING)
+        self.add_output_port("files", DataType.LIST)
+        self.add_output_port("file_count", DataType.INTEGER)
+        self.add_output_port("success", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

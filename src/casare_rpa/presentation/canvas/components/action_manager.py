@@ -85,6 +85,14 @@ class ActionManager:
             mw.close,
         )
 
+        mw.action_migrate_workflow = self._create_action(
+            "migrate_workflow",
+            "&Migrate Version...",
+            QKeySequence("Ctrl+Shift+M"),
+            "Migrate workflow between versions",
+            mw._on_migrate_workflow,
+        )
+
         # === EDIT ACTIONS ===
         mw.action_undo = self._create_action(
             "undo",
@@ -143,13 +151,45 @@ class ActionManager:
             mw._on_find_node,
         )
 
+        mw.action_rename_node = self._create_action(
+            "rename_node",
+            "&Rename Node",
+            QKeySequence("F2"),
+            "Rename selected node (F2)",
+            mw._on_rename_node,
+        )
+
         # === NUMPAD HOTKEYS ===
+        mw.action_toggle_collapse_nearest = self._create_action(
+            "toggle_collapse_nearest",
+            "&Collapse/Expand Nearest",
+            QKeySequence("1"),
+            "Collapse/expand nearest node to mouse cursor (1)",
+            mw._on_toggle_collapse_nearest,
+        )
+
+        mw.action_select_nearest = self._create_action(
+            "select_nearest",
+            "Select &Nearest Node",
+            QKeySequence("2"),
+            "Select the nearest node to mouse cursor (2)",
+            mw._on_select_nearest_node,
+        )
+
         mw.action_get_exec_out = self._create_action(
             "get_exec_out",
             "Get &Exec Out",
             QKeySequence("3"),
             "Get nearest node's exec_out port (3)",
             mw._on_get_exec_out,
+        )
+
+        mw.action_toggle_disable = self._create_action(
+            "toggle_disable",
+            "&Disable Node",
+            QKeySequence("4"),
+            "Disable/enable nearest node to mouse (4)",
+            mw._on_toggle_disable_node,
         )
 
         mw.action_disable_all_selected = self._create_action(
@@ -170,22 +210,20 @@ class ActionManager:
         )
 
         # === VIEW ACTIONS ===
-        mw.action_toggle_properties = self._create_action(
-            "toggle_properties",
-            "&Properties Panel",
-            QKeySequence("Ctrl+P"),
-            "Show/hide properties panel",
-            mw._on_toggle_properties,
-            checkable=True,
+        mw.action_focus_view = self._create_action(
+            "focus_view",
+            "&Focus View",
+            QKeySequence("F"),
+            "Zoom to selected node and center it (F)",
+            mw._on_focus_view,
         )
 
-        mw.action_toggle_variable_inspector = self._create_action(
-            "toggle_variable_inspector",
-            "&Variables Panel",
-            QKeySequence("Ctrl+Shift+V"),
-            "Show/hide variables panel",
-            mw._on_toggle_variable_inspector,
-            checkable=True,
+        mw.action_home_all = self._create_action(
+            "home_all",
+            "&Home All",
+            QKeySequence("G"),
+            "Fit all nodes in view (G)",
+            mw._on_home_all,
         )
 
         mw.action_toggle_bottom_panel = self._create_action(
@@ -254,6 +292,22 @@ class ActionManager:
             enabled=False,
         )
 
+        mw.action_run_to_node = self._create_action(
+            "run_to_node",
+            "Run To Node",
+            QKeySequence("Ctrl+F4"),
+            "Execute workflow up to selected node (Ctrl+F4)",
+            mw._on_run_to_node,
+        )
+
+        mw.action_run_single_node = self._create_action(
+            "run_single_node",
+            "Run This Node",
+            QKeySequence("Ctrl+F10"),
+            "Re-run only the selected node with existing inputs (Ctrl+F10)",
+            mw._on_run_single_node,
+        )
+
         mw.action_start_listening = self._create_action(
             "start_listening",
             "Start Listening",
@@ -282,29 +336,29 @@ class ActionManager:
 
         mw.action_record_workflow = self._create_action(
             "record_workflow",
-            "&Record Actions",
+            "Record &Browser",
             QKeySequence("Ctrl+R"),
-            "Record browser interactions",
-            mw._on_toggle_recording,
+            "Record browser interactions as workflow",
+            mw._on_toggle_browser_recording,
             enabled=False,
             checkable=True,
         )
 
         mw.action_pick_selector = self._create_action(
             "pick_selector",
-            "Pick &Browser Element",
+            "Pick &Element",
             QKeySequence("Ctrl+Shift+E"),
-            "Pick an element from the browser",
-            mw._on_pick_selector,
-            enabled=False,
+            "Pick element (Browser, Desktop, OCR, Image)",
+            mw._on_pick_element,
         )
 
+        # Legacy: kept for backward compatibility
         mw.action_desktop_selector_builder = self._create_action(
             "desktop_selector_builder",
             "Pick &Desktop Element",
             QKeySequence("Ctrl+Shift+D"),
-            "Build desktop element selectors",
-            mw._on_open_desktop_selector_builder,
+            "Pick desktop element (legacy)",
+            mw._on_pick_element_desktop,
         )
 
         mw.action_create_frame = self._create_action(
@@ -324,6 +378,28 @@ class ActionManager:
             checkable=True,
         )
         mw.action_auto_connect.setChecked(True)  # Enabled by default
+
+        mw.action_quick_node_mode = self._create_action(
+            "quick_node_mode",
+            "&Quick Node Mode",
+            QKeySequence("Ctrl+Shift+Q"),
+            "Toggle hotkey-based quick node creation (Ctrl+Shift+Q)",
+            mw._on_toggle_quick_node_mode,
+            checkable=True,
+        )
+        # Sync checkbox with actual QuickNodeManager state (loaded from settings)
+        if hasattr(mw, "_quick_node_manager") and mw._quick_node_manager:
+            mw.action_quick_node_mode.setChecked(mw._quick_node_manager.is_enabled())
+        else:
+            mw.action_quick_node_mode.setChecked(True)
+
+        mw.action_quick_node_config = self._create_action(
+            "quick_node_config",
+            "Quick Node &Hotkeys...",
+            QKeySequence("Ctrl+Alt+Q"),
+            "Configure quick node hotkey bindings (Ctrl+Alt+Q)",
+            mw._on_open_quick_node_config,
+        )
 
         # === HELP ACTIONS ===
         mw.action_documentation = self._create_action(
@@ -462,14 +538,21 @@ class ActionManager:
             "paste": mw.action_paste,
             "delete": mw.action_delete,
             "select_all": mw.action_select_all,
+            "rename_node": mw.action_rename_node,
             "run": mw.action_run,
+            "run_to_node": mw.action_run_to_node,
+            "run_single_node": mw.action_run_single_node,
             "pause": mw.action_pause,
             "stop": mw.action_stop,
             "create_frame": mw.action_create_frame,
             "auto_connect": mw.action_auto_connect,
+            "select_nearest": mw.action_select_nearest,
             "get_exec_out": mw.action_get_exec_out,
+            "toggle_disable": mw.action_toggle_disable,
             "disable_all_selected": mw.action_disable_all_selected,
             "toggle_panel": mw.action_toggle_panel,
+            "focus_view": mw.action_focus_view,
+            "home_all": mw.action_home_all,
         }
 
         for action_name, action in action_map.items():

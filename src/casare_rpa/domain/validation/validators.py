@@ -338,6 +338,9 @@ def _validate_workflow_semantics(
         )
         return
 
+    # Check for duplicate node_ids (critical for execution)
+    _check_duplicate_node_ids(nodes, result)
+
     # Check for circular dependencies
     if has_circular_dependency(nodes, connections):
         result.add_error(
@@ -370,6 +373,62 @@ def _validate_workflow_semantics(
             f"Some nodes are not reachable: {', '.join(list(visible_unreachable)[:5])}{'...' if len(visible_unreachable) > 5 else ''}",
             suggestion="Connect these nodes to the workflow or remove them",
         )
+
+
+def _check_duplicate_node_ids(
+    nodes: Dict[str, Dict[str, Any]],
+    result: ValidationResult,
+) -> None:
+    """
+    Check for duplicate node_id values across all nodes.
+
+    This is a critical error because duplicate node_ids cause execution failures -
+    the engine cannot distinguish which node to run.
+
+    Args:
+        nodes: Dictionary of node data (graph_id -> node_data)
+        result: ValidationResult to add issues to
+    """
+    # Build mapping of node_id -> list of graph_ids that have it
+    node_id_to_graph_ids: Dict[str, List[str]] = {}
+
+    for graph_id, node_data in nodes.items():
+        # Get the node_id - check multiple locations:
+        # 1. Top-level node_id (WorkflowSerializer format)
+        # 2. custom.node_id (NodeGraphQt raw serialization format)
+        node_id = node_data.get("node_id", "")
+        if not node_id:
+            custom = node_data.get("custom", {})
+            node_id = custom.get("node_id", "")
+
+        if not node_id:
+            continue  # Skip nodes without node_id
+
+        if node_id not in node_id_to_graph_ids:
+            node_id_to_graph_ids[node_id] = []
+        node_id_to_graph_ids[node_id].append(graph_id)
+
+    # Find duplicates
+    for node_id, graph_ids in node_id_to_graph_ids.items():
+        if len(graph_ids) > 1:
+            # Get node names for better error message
+            node_names = []
+            for gid in graph_ids[:5]:  # Limit to first 5
+                node_data = nodes[gid]
+                # Check multiple locations for name
+                name = node_data.get("name") or node_data.get("display_name") or gid
+                node_names.append(name)
+
+            names_str = ", ".join(node_names)
+            if len(graph_ids) > 5:
+                names_str += f" (+{len(graph_ids) - 5} more)"
+
+            result.add_error(
+                "DUPLICATE_NODE_ID",
+                f"Duplicate node_id '{node_id}' found in {len(graph_ids)} nodes: {names_str}",
+                location=f"node:{graph_ids[0]}",  # Link to first duplicate
+                suggestion="Use 'Repair' button to auto-fix duplicate IDs",
+            )
 
 
 __all__ = [

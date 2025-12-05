@@ -14,8 +14,49 @@ from loguru import logger
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
+
+
+def _strip_var_wrapper(value: str) -> str:
+    """Strip {{}} wrapper from variable reference if present."""
+    value = value.strip()
+    if value.startswith("{{") and value.endswith("}}"):
+        return value[2:-2].strip()
+    return value
+
+
+def _resolve_list_param(
+    node: BaseNode,
+    context: ExecutionContext,
+    port_name: str = "list",
+    param_name: str = "list",
+) -> Any:
+    """Resolve a list parameter from input port, parameter, or variable reference.
+
+    Priority:
+    1. Input port value (from connection)
+    2. Parameter value (direct list)
+    3. Variable reference (string -> context.get_variable)
+    """
+    # Try input port first
+    value = node.get_input_value(port_name)
+    if value is not None:
+        return value
+
+    # Try parameter
+    param = node.get_parameter(param_name, [])
+
+    # If it's a string, treat as variable reference
+    if isinstance(param, str) and param:
+        var_name = _strip_var_wrapper(param)
+        resolved = context.get_variable(var_name)
+        if resolved is not None:
+            return resolved
+        # Return empty list if variable not found
+        return []
+
+    return param
 
 
 @executable_node
@@ -29,10 +70,10 @@ class CreateListNode(BaseNode):
         self.node_type = "CreateListNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("item_1", PortType.INPUT, DataType.ANY)
-        self.add_input_port("item_2", PortType.INPUT, DataType.ANY)
-        self.add_input_port("item_3", PortType.INPUT, DataType.ANY)
-        self.add_output_port("list", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("item_1", DataType.ANY, required=False)
+        self.add_input_port("item_2", DataType.ANY, required=False)
+        self.add_input_port("item_3", DataType.ANY, required=False)
+        self.add_output_port("list", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -40,7 +81,18 @@ class CreateListNode(BaseNode):
 
             for i in range(1, 4):
                 key = f"item_{i}"
-                val = self.get_parameter(key)
+                # Try input port first, then parameter
+                val = self.get_input_value(key)
+                if val is None:
+                    param = self.get_parameter(key)
+                    # If string, resolve as variable reference
+                    if isinstance(param, str) and param:
+                        val = context.get_variable(param)
+                        if val is None:
+                            val = param  # Use literal string if not a variable
+                    else:
+                        val = param
+
                 if val is not None:
                     result.append(val)
 
@@ -63,14 +115,25 @@ class ListGetItemNode(BaseNode):
         self.node_type = "ListGetItemNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("index", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("item", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_input_port("index", DataType.INTEGER, required=False)
+        self.add_output_port("item", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            idx = int(self.get_parameter("index", 0))
+            lst = _resolve_list_param(self, context)
+
+            # Resolve index from port or parameter
+            idx = self.get_input_value("index")
+            if idx is None:
+                idx_param = self.get_parameter("index", 0)
+                if isinstance(idx_param, str) and idx_param:
+                    resolved = context.get_variable(idx_param)
+                    idx = int(resolved) if resolved is not None else 0
+                else:
+                    idx = int(idx_param) if idx_param is not None else 0
+            else:
+                idx = int(idx)
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -101,12 +164,13 @@ class ListLengthNode(BaseNode):
         self.node_type = "ListLengthNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_output_port("length", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_output_port("length", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
+            lst = _resolve_list_param(self, context)
+
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
 
@@ -130,14 +194,23 @@ class ListAppendNode(BaseNode):
         self.node_type = "ListAppendNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("item", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_input_port("item", DataType.ANY, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            item = self.get_parameter("item")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve item from port or parameter
+            item = self.get_input_value("item")
+            if item is None:
+                item_param = self.get_parameter("item")
+                if isinstance(item_param, str) and item_param:
+                    resolved = context.get_variable(item_param)
+                    item = resolved if resolved is not None else item_param
+                else:
+                    item = item_param
 
             if not isinstance(lst, list):
                 lst = list(lst) if isinstance(lst, tuple) else [lst]
@@ -164,15 +237,24 @@ class ListContainsNode(BaseNode):
         self.node_type = "ListContainsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("item", PortType.INPUT, DataType.ANY)
-        self.add_output_port("contains", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("index", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_input_port("item", DataType.ANY, required=False)
+        self.add_output_port("contains", DataType.BOOLEAN)
+        self.add_output_port("index", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            item = self.get_parameter("item")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve item from port or parameter
+            item = self.get_input_value("item")
+            if item is None:
+                item_param = self.get_parameter("item")
+                if isinstance(item_param, str) and item_param:
+                    resolved = context.get_variable(item_param)
+                    item = resolved if resolved is not None else item_param
+                else:
+                    item = item_param
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -204,17 +286,35 @@ class ListSliceNode(BaseNode):
         self.node_type = "ListSliceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # start defaults to 0, end defaults to None (end of list)
-        self.add_input_port("start", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("end", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("start", DataType.INTEGER, required=False)
+        self.add_input_port("end", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            start = self.get_parameter("start", 0)
-            end = self.get_parameter("end")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve start from port or parameter
+            start = self.get_input_value("start")
+            if start is None:
+                start_param = self.get_parameter("start", 0)
+                if isinstance(start_param, str) and start_param:
+                    resolved = context.get_variable(start_param)
+                    start = int(resolved) if resolved is not None else 0
+                else:
+                    start = start_param
+
+            # Resolve end from port or parameter
+            end = self.get_input_value("end")
+            if end is None:
+                end_param = self.get_parameter("end")
+                if isinstance(end_param, str) and end_param:
+                    resolved = context.get_variable(end_param)
+                    end = int(resolved) if resolved is not None else None
+                else:
+                    end = end_param
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -252,17 +352,25 @@ class ListJoinNode(BaseNode):
         self.node_type = "ListJoinNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # separator defaults to ", "
-        self.add_input_port(
-            "separator", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("separator", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            separator = self.get_parameter("separator", ", ")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve separator from port or parameter
+            separator = self.get_input_value("separator")
+            if separator is None:
+                sep_param = self.get_parameter("separator", ", ")
+                if isinstance(sep_param, str):
+                    # Check if it's a variable reference (no literal commas/spaces)
+                    resolved = context.get_variable(sep_param)
+                    separator = str(resolved) if resolved is not None else sep_param
+                else:
+                    separator = str(sep_param) if sep_param else ", "
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -304,17 +412,35 @@ class ListSortNode(BaseNode):
         self.node_type = "ListSortNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # reverse defaults to False, key_path defaults to ""
-        self.add_input_port("reverse", PortType.INPUT, DataType.BOOLEAN, required=False)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("reverse", DataType.BOOLEAN, required=False)
+        self.add_input_port("key_path", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            reverse = self.get_parameter("reverse", False)
-            key_path = self.get_parameter("key_path", "")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve reverse from port or parameter
+            reverse = self.get_input_value("reverse")
+            if reverse is None:
+                rev_param = self.get_parameter("reverse", False)
+                if isinstance(rev_param, str) and rev_param:
+                    resolved = context.get_variable(rev_param)
+                    reverse = bool(resolved) if resolved is not None else False
+                else:
+                    reverse = bool(rev_param) if rev_param is not None else False
+
+            # Resolve key_path from port or parameter
+            key_path = self.get_input_value("key_path")
+            if key_path is None:
+                kp_param = self.get_parameter("key_path", "")
+                if isinstance(kp_param, str) and kp_param:
+                    resolved = context.get_variable(kp_param)
+                    key_path = str(resolved) if resolved is not None else kp_param
+                else:
+                    key_path = str(kp_param) if kp_param else ""
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -355,12 +481,12 @@ class ListReverseNode(BaseNode):
         self.node_type = "ListReverseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
+            lst = _resolve_list_param(self, context)
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -386,12 +512,12 @@ class ListUniqueNode(BaseNode):
         self.node_type = "ListUniqueNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
+            lst = _resolve_list_param(self, context)
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -459,22 +585,47 @@ class ListFilterNode(BaseNode):
         self.node_type = "ListFilterNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # condition defaults to "is_not_none", value is optional, key_path defaults to ""
-        self.add_input_port(
-            "condition", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("value", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("removed", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("condition", DataType.STRING, required=False)
+        self.add_input_port("value", DataType.ANY, required=False)
+        self.add_input_port("key_path", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.LIST)
+        self.add_output_port("removed", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            condition = self.get_parameter("condition", "is_not_none")
-            compare_value = self.get_parameter("value")
-            key_path = self.get_parameter("key_path", "")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve condition from port or parameter
+            condition = self.get_input_value("condition")
+            if condition is None:
+                cond_param = self.get_parameter("condition", "is_not_none")
+                if isinstance(cond_param, str) and cond_param:
+                    resolved = context.get_variable(cond_param)
+                    condition = str(resolved) if resolved is not None else cond_param
+                else:
+                    condition = "is_not_none"
+
+            # Resolve compare value from port or parameter
+            compare_value = self.get_input_value("value")
+            if compare_value is None:
+                val_param = self.get_parameter("value")
+                if isinstance(val_param, str) and val_param:
+                    resolved = context.get_variable(val_param)
+                    compare_value = resolved if resolved is not None else val_param
+                else:
+                    compare_value = val_param
+
+            # Resolve key_path from port or parameter
+            key_path = self.get_input_value("key_path")
+            if key_path is None:
+                kp_param = self.get_parameter("key_path", "")
+                if isinstance(kp_param, str) and kp_param:
+                    resolved = context.get_variable(kp_param)
+                    key_path = str(resolved) if resolved is not None else kp_param
+                else:
+                    key_path = ""
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -570,19 +721,35 @@ class ListMapNode(BaseNode):
         self.node_type = "ListMapNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # transform defaults to "to_string", key_path defaults to ""
-        self.add_input_port(
-            "transform", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("transform", DataType.STRING, required=False)
+        self.add_input_port("key_path", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            transform = self.get_parameter("transform", "to_string")
-            key_path = self.get_parameter("key_path", "")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve transform from port or parameter
+            transform = self.get_input_value("transform")
+            if transform is None:
+                tf_param = self.get_parameter("transform", "to_string")
+                if isinstance(tf_param, str) and tf_param:
+                    resolved = context.get_variable(tf_param)
+                    transform = str(resolved) if resolved is not None else tf_param
+                else:
+                    transform = "to_string"
+
+            # Resolve key_path from port or parameter
+            key_path = self.get_input_value("key_path")
+            if key_path is None:
+                kp_param = self.get_parameter("key_path", "")
+                if isinstance(kp_param, str) and kp_param:
+                    resolved = context.get_variable(kp_param)
+                    key_path = str(resolved) if resolved is not None else kp_param
+                else:
+                    key_path = ""
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -664,21 +831,46 @@ class ListReduceNode(BaseNode):
         self.node_type = "ListReduceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
         # operation defaults to "sum", key_path defaults to "", initial is optional
-        self.add_input_port(
-            "operation", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("key_path", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("initial", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("operation", DataType.STRING, required=False)
+        self.add_input_port("key_path", DataType.STRING, required=False)
+        self.add_input_port("initial", DataType.ANY, required=False)
+        self.add_output_port("result", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            operation = self.get_parameter("operation", "sum")
-            key_path = self.get_parameter("key_path", "")
-            initial = self.get_parameter("initial")
+            lst = _resolve_list_param(self, context)
+
+            # Resolve operation from port or parameter
+            operation = self.get_input_value("operation")
+            if operation is None:
+                op_param = self.get_parameter("operation", "sum")
+                if isinstance(op_param, str) and op_param:
+                    resolved = context.get_variable(op_param)
+                    operation = str(resolved) if resolved is not None else op_param
+                else:
+                    operation = "sum"
+
+            # Resolve key_path from port or parameter
+            key_path = self.get_input_value("key_path")
+            if key_path is None:
+                kp_param = self.get_parameter("key_path", "")
+                if isinstance(kp_param, str) and kp_param:
+                    resolved = context.get_variable(kp_param)
+                    key_path = str(resolved) if resolved is not None else kp_param
+                else:
+                    key_path = ""
+
+            # Resolve initial from port or parameter
+            initial = self.get_input_value("initial")
+            if initial is None:
+                init_param = self.get_parameter("initial")
+                if isinstance(init_param, str) and init_param:
+                    resolved = context.get_variable(init_param)
+                    initial = resolved if resolved is not None else init_param
+                else:
+                    initial = init_param
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")
@@ -760,14 +952,25 @@ class ListFlattenNode(BaseNode):
         self.node_type = "ListFlattenNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("list", PortType.INPUT, DataType.LIST)
-        self.add_input_port("depth", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
+        self.add_input_port("list", DataType.LIST, required=False)
+        self.add_input_port("depth", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.LIST)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            lst = self.get_parameter("list", [])
-            depth = int(self.get_parameter("depth", 1))
+            lst = _resolve_list_param(self, context)
+
+            # Resolve depth from port or parameter
+            depth = self.get_input_value("depth")
+            if depth is None:
+                depth_param = self.get_parameter("depth", 1)
+                if isinstance(depth_param, str) and depth_param:
+                    resolved = context.get_variable(depth_param)
+                    depth = int(resolved) if resolved is not None else 1
+                else:
+                    depth = int(depth_param) if depth_param is not None else 1
+            else:
+                depth = int(depth)
 
             if not isinstance(lst, (list, tuple)):
                 raise ValueError("Input is not a list")

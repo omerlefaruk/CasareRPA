@@ -61,8 +61,6 @@ class PreferencesController(BaseController):
         )
         self._event_bus.subscribe(EventType.THEME_CHANGED, self._on_theme_changed_event)
 
-        logger.info("PreferencesController initialized")
-
     def cleanup(self) -> None:
         """Clean up resources."""
         # Unsubscribe from events

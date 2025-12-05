@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal
 
 from casare_rpa.presentation.canvas.ui.panels.variables_panel import VariablesPanel
+from casare_rpa.presentation.canvas.theme import THEME
 
 
 class VariablesTab(QWidget):
@@ -39,6 +40,17 @@ class VariablesTab(QWidget):
 
         # Connect signals
         self._panel.variables_changed.connect(self.variables_changed.emit)
+
+        # Apply consistent background styling
+        self._apply_styles()
+
+    def _apply_styles(self) -> None:
+        """Apply VSCode Dark+ theme styling."""
+        self.setStyleSheet(f"""
+            VariablesTab, QWidget, QStackedWidget, QFrame {{
+                background-color: {THEME.bg_panel};
+            }}
+        """)
 
     def get_variables(self) -> Dict[str, Dict[str, Any]]:
         """Get current variables."""

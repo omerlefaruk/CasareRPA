@@ -12,7 +12,7 @@ load time by calling apply_all_node_widget_fixes().
 from typing import Optional
 
 from PySide6.QtCore import QEvent, Qt, Signal
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QLineEdit, QTextEdit, QVBoxLayout, QWidget
 
 from loguru import logger
 from NodeGraphQt import NodeGraph
@@ -39,6 +39,31 @@ from casare_rpa.presentation.canvas.graph.node_widgets import (
     apply_all_node_widget_fixes,
 )
 from casare_rpa.presentation.canvas.graph.selection_manager import SelectionManager
+
+# ============================================================================
+# CRITICAL: Disable NodeGraphQt item caching to prevent zoom/pan glitches
+# ============================================================================
+# NodeGraphQt uses DeviceCoordinateCache which causes rendering artifacts
+# when zooming/panning because cached images become stale. We patch the
+# constant to NoCache (value 0) before any items are created.
+from PySide6.QtWidgets import QGraphicsItem
+
+_NO_CACHE = QGraphicsItem.CacheMode.NoCache
+
+# Patch all NodeGraphQt modules that use ITEM_CACHE_MODE
+try:
+    import NodeGraphQt.qgraphics.node_abstract as _node_abstract
+    import NodeGraphQt.qgraphics.node_base as _node_base
+    import NodeGraphQt.qgraphics.pipe as _pipe
+    import NodeGraphQt.qgraphics.port as _port
+
+    _node_abstract.ITEM_CACHE_MODE = _NO_CACHE
+    _node_base.ITEM_CACHE_MODE = _NO_CACHE
+    _pipe.ITEM_CACHE_MODE = _NO_CACHE
+    _port.ITEM_CACHE_MODE = _NO_CACHE
+    logger.debug("Disabled NodeGraphQt item caching to prevent zoom/pan glitches")
+except Exception as e:
+    logger.warning(f"Failed to patch NodeGraphQt cache mode: {e}")
 
 # Import connection validator for strict type checking
 try:
@@ -102,7 +127,6 @@ class NodeGraphWidget(QWidget):
         self._culler = ViewportCullingManager(cell_size=500, margin=200)
         self._culler.set_enabled(True)
         self._setup_viewport_culling()
-        logger.info("Viewport culling enabled for performance optimization")
 
         # Create selection manager
         self._selection = SelectionManager(self._graph, self)
@@ -216,10 +240,12 @@ class NodeGraphWidget(QWidget):
                 self._graph.session_changed.connect(self._on_session_changed)
 
             # Install viewport update timer for smooth culling during pan/zoom
+            # Use 33ms (~30 FPS) instead of 16ms (~60 FPS) to reduce CPU overhead
+            # while still providing smooth visual updates
             from PySide6.QtCore import QTimer
 
             self._viewport_update_timer = QTimer(self)
-            self._viewport_update_timer.setInterval(16)  # ~60 FPS
+            self._viewport_update_timer.setInterval(33)  # ~30 FPS (reduced from 60 FPS)
             self._viewport_update_timer.timeout.connect(self._update_viewport_culling)
             self._viewport_update_timer.start()
 
@@ -228,13 +254,31 @@ class NodeGraphWidget(QWidget):
             logger.warning(f"Could not setup viewport culling: {e}")
 
     def _on_culling_node_created(self, node) -> None:
-        """Register newly created node with culler."""
+        """Register newly created node with culler and update variable picker context."""
         try:
             if hasattr(node, "view") and node.view:
                 rect = node.view.sceneBoundingRect()
                 self._culler.register_node(node.id, node.view, rect)
         except Exception as e:
             logger.debug(f"Could not register node for culling: {e}")
+
+        # Update variable picker context for all widgets in the node
+        self._update_variable_picker_context(node)
+
+    def _update_variable_picker_context(self, node) -> None:
+        """
+        Update variable picker context for all VariableAwareLineEdit widgets in a node.
+
+        This enables upstream variable detection in the variable picker popup.
+        """
+        try:
+            from casare_rpa.presentation.canvas.graph.node_widgets import (
+                update_node_context_for_widgets,
+            )
+
+            update_node_context_for_widgets(node)
+        except Exception as e:
+            logger.debug(f"Could not update variable picker context: {e}")
 
     def _on_culling_nodes_deleted(self, node_ids) -> None:
         """Unregister deleted nodes from culler."""
@@ -372,9 +416,6 @@ class NodeGraphWidget(QWidget):
         try:
             # Always set - don't check hasattr, just assign directly
             viewer._PIPE_ITEM = CasarePipe
-            logger.info(
-                "Custom CasarePipe class registered for connection labels and node insertion"
-            )
         except Exception as e:
             logger.warning(f"Could not register custom pipe: {e}")
 
@@ -416,38 +457,19 @@ class NodeGraphWidget(QWidget):
             QGraphicsView.OptimizationFlag.IndirectPainting, True
         )
 
-        # Smart viewport updates (only redraw changed regions)
+        # Full viewport updates - prevents glitches during zoom/pan
+        # Note: SmartViewportUpdate/MinimalViewportUpdate + CacheBackground causes
+        # rendering artifacts because cached content doesn't invalidate on transforms
         viewer.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.SmartViewportUpdate
+            QGraphicsView.ViewportUpdateMode.FullViewportUpdate
         )
 
-        # Enable caching for static content
-        viewer.setCacheMode(QGraphicsView.CacheMode.CacheBackground)
+        # Disable background caching - incompatible with zoom/pan transforms
+        viewer.setCacheMode(QGraphicsView.CacheModeFlag(0))
 
         # High refresh rate optimizations
         viewer.viewport().setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         viewer.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
-
-        # Detect and adapt to screen refresh rate
-        screen = (
-            viewer.screen() if hasattr(viewer, "screen") else viewer.window().screen()
-        )
-        refresh_rate = screen.refreshRate()
-        logger.info(f"Display refresh rate detected: {refresh_rate}Hz")
-
-        # Configure frame timing based on refresh rate
-        if refresh_rate >= 120:
-            # High refresh rate display - prioritize low latency
-            viewer.setViewportUpdateMode(
-                QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
-            )
-            logger.info("Optimized for high refresh rate (120+ Hz)")
-        elif refresh_rate >= 60:
-            # Standard display - balance quality and performance
-            viewer.setViewportUpdateMode(
-                QGraphicsView.ViewportUpdateMode.SmartViewportUpdate
-            )
-            logger.info("Optimized for standard refresh rate (60 Hz)")
 
         # GPU-accelerated rendering (with automatic fallback to CPU)
         try:
@@ -472,10 +494,6 @@ class NodeGraphWidget(QWidget):
 
             # Set as default format for future widgets
             QSurfaceFormat.setDefaultFormat(gl_format)
-
-            logger.info(
-                f"GPU-accelerated rendering enabled (vsync disabled for {refresh_rate}Hz)"
-            )
         except Exception as e:
             logger.warning(f"GPU rendering unavailable, using CPU rendering: {e}")
             # Continue with default CPU-based QPainter rendering
@@ -609,11 +627,33 @@ class NodeGraphWidget(QWidget):
         Returns:
             True if event was handled, False otherwise
         """
+        # Clear focus from text widgets when mouse enters canvas
+        # This prevents numpad shortcuts (1-6) from typing into focused widgets
+        if event.type() == QEvent.Type.Enter:
+            focus_widget = QApplication.focusWidget()
+            if isinstance(focus_widget, (QLineEdit, QTextEdit)):
+                # Check if focus widget is inside a node (embedded in graphics scene)
+                # We only clear focus for widgets embedded in the canvas, not the properties panel
+                parent = focus_widget.parent()
+                while parent:
+                    if hasattr(parent, "scene") and callable(parent.scene):
+                        # Widget is in a QGraphicsProxyWidget - clear focus
+                        focus_widget.clearFocus()
+                        break
+                    parent = getattr(parent, "parent", lambda: None)()
+
         # Capture right-click position BEFORE context menu is shown
         # We intercept MouseButtonPress with RightButton to capture position early
         if event.type() == event.Type.MouseButtonPress:
             if event.button() == Qt.MouseButton.RightButton:
                 viewer = self._graph.viewer()
+
+                # Cancel live connection on right-click
+                if hasattr(viewer, "_LIVE_PIPE") and viewer._LIVE_PIPE.isVisible():
+                    viewer.end_live_connection()
+                    logger.debug("Right-click - cancelled live connection")
+                    return True
+
                 # Capture the position where right-click occurred
                 if hasattr(event, "globalPos"):
                     global_pos = event.globalPos()
@@ -699,6 +739,14 @@ class NodeGraphWidget(QWidget):
                         logger.debug("Tab menu cancelled - ending live connection")
 
                 return True  # Event handled
+
+            # Handle Escape key to cancel live connection
+            if key_event.key() == Qt.Key.Key_Escape:
+                viewer = self._graph.viewer()
+                if hasattr(viewer, "_LIVE_PIPE") and viewer._LIVE_PIPE.isVisible():
+                    viewer.end_live_connection()
+                    logger.debug("ESC pressed - cancelled live connection")
+                    return True
 
             # Handle X key or Delete key to delete selected frames
             # Note: X key (88) and Delete key
@@ -803,6 +851,10 @@ class NodeGraphWidget(QWidget):
 
         NodeGraphQt emits node_created for each pasted node.
         We intercept this to detect and fix duplicate IDs.
+
+        IMPORTANT: We use a deferred check (QTimer.singleShot) because NodeGraphQt
+        restores properties AFTER the node_created signal fires. The deferred check
+        runs after the current event loop iteration, ensuring properties are restored.
         """
         try:
             if hasattr(self._graph, "node_created"):
@@ -816,11 +868,11 @@ class NodeGraphWidget(QWidget):
         Handle node creation/paste events.
 
         - Handles composite nodes (e.g., For Loop creates Start + End)
-        - Detects pasted nodes with duplicate IDs and regenerates them
+        - Schedules deferred duplicate ID check after properties are restored
         - Syncs visual node properties to casare_node.config after paste
         This prevents self-connection errors from copy/paste operations.
         """
-        from casare_rpa.utils.id_generator import generate_node_id
+        from PySide6.QtCore import QTimer
 
         # Check if this is a composite node that creates multiple nodes
         visual_class = node.__class__
@@ -831,58 +883,148 @@ class NodeGraphWidget(QWidget):
             self._handle_composite_node_creation(node)
             return
 
-        # Get current node_id property
+        # CRITICAL: Use deferred check because NodeGraphQt restores properties
+        # AFTER the node_created signal fires during paste/duplicate operations.
+        # QTimer.singleShot(0, ...) runs after the current event loop iteration,
+        # ensuring all properties have been restored from the clipboard/serialization.
+        QTimer.singleShot(0, lambda: self._deferred_duplicate_check(node))
+
+    def _deferred_duplicate_check(self, node) -> None:
+        """
+        Deferred duplicate ID check after properties are fully restored.
+
+        This runs after the event loop iteration, ensuring NodeGraphQt has
+        finished restoring properties from paste/duplicate operations.
+
+        Args:
+            node: The newly created/pasted visual node
+        """
+        from casare_rpa.utils.id_generator import generate_node_id
+
+        # Verify node still exists (might have been deleted)
+        if node not in self._graph.all_nodes():
+            return
+
+        # Get current node_id property (now should be restored if pasted)
         current_id = node.get_property("node_id")
+
+        # Get or create casare_node
+        casare_node = self._ensure_casare_node(node)
+
+        if not casare_node:
+            logger.warning(
+                f"Could not get/create casare_node for {node.name()} - "
+                f"node may not execute correctly"
+            )
+            return
+
+        # If current_id is empty, this is a fresh node creation - ensure ID is set
         if not current_id:
-            return  # New node creation handled by factory
+            # Sync casare_node's ID to the visual property
+            node.set_property("node_id", casare_node.node_id)
+            logger.debug(f"Set node_id for new node: {casare_node.node_id}")
+        else:
+            # Check if this ID is a duplicate (from paste/duplicate operation)
+            is_duplicate = self._check_for_duplicate_id(node, current_id)
 
-        # Get casare_node for operations
-        casare_node = (
-            node.get_casare_node() if hasattr(node, "get_casare_node") else None
-        )
+            if is_duplicate:
+                # Generate new unique ID
+                node_type = (
+                    getattr(casare_node, "node_type", None)
+                    or type(casare_node).__name__
+                )
+                new_id = generate_node_id(node_type)
 
-        # Check if another node already has this ID (duplicate from paste)
-        is_paste = False
-        for other_node in self._graph.all_nodes():
-            if (
-                other_node is not node
-                and other_node.get_property("node_id") == current_id
-            ):
-                is_paste = True
-                # Duplicate detected - regenerate ID
-                if casare_node:
-                    # Get node type for ID generation
-                    node_type = (
-                        casare_node.node_type
-                        if hasattr(casare_node, "node_type")
-                        else "Node"
+                # Update both locations synchronously
+                casare_node.node_id = new_id
+                node.set_property("node_id", new_id)
+
+                logger.info(f"Regenerated duplicate node ID: {current_id} -> {new_id}")
+            else:
+                # Not a duplicate, but ensure casare_node has the same ID as visual property
+                if casare_node.node_id != current_id:
+                    casare_node.node_id = current_id
+                    logger.debug(
+                        f"Synced casare_node ID to visual property: {current_id}"
                     )
-                    new_id = generate_node_id(node_type)
-
-                    # Update both locations synchronously
-                    casare_node.node_id = new_id
-                    node.set_property("node_id", new_id)
-
-                    # Verify sync succeeded
-                    verify_id = node.get_property("node_id")
-                    if verify_id != new_id:
-                        logger.error(
-                            f"Property update failed for {node.name()}: "
-                            f"expected {new_id}, got {verify_id}"
-                        )
-                    else:
-                        logger.info(
-                            f"Regenerated duplicate node ID: {current_id} -> {new_id}"
-                        )
-                break
 
         # CRITICAL: Always sync visual node properties to casare_node.config
         # This ensures pasted nodes retain their configured values for:
         # - Same-canvas paste (duplicate ID detected)
         # - Cross-canvas paste (no duplicate, but config needs sync)
         # - Workflow load (deserializer sets properties, need sync to config)
+        self._sync_visual_properties_to_casare_node(node, casare_node)
+
+    def _ensure_casare_node(self, node):
+        """
+        Ensure the visual node has a linked casare_node, creating one if needed.
+
+        Args:
+            node: The visual node
+
+        Returns:
+            The casare_node instance or None if creation failed
+        """
+        # Try to get existing casare_node
+        casare_node = (
+            node.get_casare_node() if hasattr(node, "get_casare_node") else None
+        )
+
         if casare_node:
-            self._sync_visual_properties_to_casare_node(node, casare_node)
+            return casare_node
+
+        # No casare_node - try to create one
+        try:
+            from casare_rpa.presentation.canvas.graph.node_registry import (
+                get_node_factory,
+                get_casare_node_mapping,
+            )
+
+            # Check if this visual node type has a casare_node mapping
+            mapping = get_casare_node_mapping()
+            if type(node) not in mapping:
+                # Visual-only node (e.g., comment, sticky note) - no casare_node needed
+                logger.debug(
+                    f"Visual-only node {type(node).__name__} - no casare_node needed"
+                )
+                return None
+
+            factory = get_node_factory()
+            casare_node = factory.create_casare_node(node)
+
+            if casare_node:
+                logger.info(
+                    f"Created missing casare_node for {node.name()}: {casare_node.node_id}"
+                )
+            else:
+                logger.error(f"Failed to create casare_node for {node.name()}")
+
+            return casare_node
+
+        except Exception as e:
+            logger.error(f"Error creating casare_node for {node.name()}: {e}")
+            return None
+
+    def _check_for_duplicate_id(self, node, node_id: str) -> bool:
+        """
+        Check if another node already has the same node_id.
+
+        Args:
+            node: The node to check
+            node_id: The node_id to check for duplicates
+
+        Returns:
+            True if another node has the same ID, False otherwise
+        """
+        for other_node in self._graph.all_nodes():
+            if other_node is node:
+                continue
+
+            other_id = other_node.get_property("node_id")
+            if other_id == node_id:
+                return True
+
+        return False
 
     def _sync_visual_properties_to_casare_node(self, visual_node, casare_node) -> None:
         """
@@ -1048,7 +1190,6 @@ class NodeGraphWidget(QWidget):
             if len(parts) >= 1:
                 node_type = parts[0]
                 identifier = parts[1] if len(parts) > 1 else ""
-                logger.info(f"Dropped node from library: {node_type}")
                 self._create_node_at_position(node_type, identifier, position)
                 event.acceptProposedAction()
                 return
@@ -1061,7 +1202,6 @@ class NodeGraphWidget(QWidget):
                 if len(parts) >= 2:
                     node_type = parts[1]
                     identifier = parts[2] if len(parts) > 2 else ""
-                    logger.info(f"Dropped node from library (text): {node_type}")
                     self._create_node_at_position(node_type, identifier, position)
                     event.acceptProposedAction()
                     return
@@ -1072,7 +1212,6 @@ class NodeGraphWidget(QWidget):
                 if url.isLocalFile():
                     file_path = url.toLocalFile()
                     if file_path.lower().endswith(".json"):
-                        logger.info(f"Dropped workflow file: {file_path}")
                         if self._import_file_callback:
                             self._import_file_callback(file_path, position)
                         event.acceptProposedAction()
@@ -1087,7 +1226,6 @@ class NodeGraphWidget(QWidget):
 
                     data = orjson.loads(text)
                     if "nodes" in data:
-                        logger.info("Dropped workflow JSON text")
                         if self._import_callback:
                             self._import_callback(data, position)
                         event.acceptProposedAction()

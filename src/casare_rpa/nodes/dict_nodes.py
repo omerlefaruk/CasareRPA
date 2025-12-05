@@ -29,12 +29,14 @@ class JsonParseNode(BaseNode):
         self.node_type = "JsonParseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("json_string", PortType.INPUT, DataType.STRING)
-        self.add_output_port("data", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("json_string", DataType.STRING, required=False)
+        self.add_output_port("data", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             json_str = self.get_parameter("json_string", "")
+            # Resolve {{variable}} patterns
+            json_str = context.resolve_value(json_str) if json_str else ""
             if not json_str:
                 raise ValueError("Empty JSON string")
 
@@ -58,14 +60,17 @@ class GetPropertyNode(BaseNode):
         self.node_type = "GetPropertyNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("object", PortType.INPUT, DataType.DICT)
-        self.add_input_port("property_path", PortType.INPUT, DataType.STRING)
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("object", DataType.DICT, required=False)
+        self.add_input_port("property_path", DataType.STRING, required=False)
+        self.add_output_port("value", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             obj = self.get_parameter("object", {})
             path = self.get_parameter("property_path", "")
+            # Resolve {{variable}} patterns
+            obj = context.resolve_value(obj) if obj else {}
+            path = context.resolve_value(path) if path else ""
 
             if not isinstance(obj, dict):
                 raise ValueError("Input is not a dictionary")
@@ -99,18 +104,21 @@ class DictGetNode(BaseNode):
         self.node_type = "DictGetNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_input_port("key", PortType.INPUT, DataType.STRING)
-        # default is optional - returns None if key not found
-        self.add_input_port("default", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_input_port("key", DataType.STRING, required=False)
+        self.add_input_port("default", DataType.ANY, required=False)
+        self.add_output_port("value", DataType.ANY)
+        self.add_output_port("found", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             default = self.get_parameter("default")
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
+            key = context.resolve_value(key) if key else ""
+            default = context.resolve_value(default) if default is not None else None
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -142,16 +150,20 @@ class DictSetNode(BaseNode):
         self.node_type = "DictSetNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_input_port("key", PortType.INPUT, DataType.STRING)
-        self.add_input_port("value", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_input_port("key", DataType.STRING, required=False)
+        self.add_input_port("value", DataType.ANY, required=False)
+        self.add_output_port("result", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
             value = self.get_parameter("value")
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
+            key = context.resolve_value(key) if key else ""
+            value = context.resolve_value(value)
 
             if not isinstance(d, dict):
                 d = {}
@@ -181,15 +193,18 @@ class DictRemoveNode(BaseNode):
         self.node_type = "DictRemoveNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_input_port("key", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("removed_value", PortType.OUTPUT, DataType.ANY)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_input_port("key", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.DICT)
+        self.add_output_port("removed_value", DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
+            key = context.resolve_value(key) if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -221,14 +236,17 @@ class DictMergeNode(BaseNode):
         self.node_type = "DictMergeNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict_1", PortType.INPUT, DataType.DICT)
-        self.add_input_port("dict_2", PortType.INPUT, DataType.DICT)
-        self.add_output_port("result", PortType.OUTPUT, DataType.DICT)
+        self.add_input_port("dict_1", DataType.DICT, required=False)
+        self.add_input_port("dict_2", DataType.DICT, required=False)
+        self.add_output_port("result", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d1 = self.get_parameter("dict_1", {})
             d2 = self.get_parameter("dict_2", {})
+            # Resolve {{variable}} patterns
+            d1 = context.resolve_value(d1) if d1 else {}
+            d2 = context.resolve_value(d2) if d2 else {}
 
             if not isinstance(d1, dict):
                 d1 = {}
@@ -256,13 +274,15 @@ class DictKeysNode(BaseNode):
         self.node_type = "DictKeysNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_output_port("keys", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_output_port("keys", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -294,13 +314,15 @@ class DictValuesNode(BaseNode):
         self.node_type = "DictValuesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_output_port("values", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_output_port("values", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -332,14 +354,17 @@ class DictHasKeyNode(BaseNode):
         self.node_type = "DictHasKeyNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_input_port("key", PortType.INPUT, DataType.STRING)
-        self.add_output_port("has_key", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_input_port("key", DataType.STRING, required=False)
+        self.add_output_port("has_key", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
             key = self.get_parameter("key", "")
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
+            key = context.resolve_value(key) if key else ""
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")
@@ -366,13 +391,13 @@ class CreateDictNode(BaseNode):
 
     def _define_ports(self) -> None:
         # All keys/values are optional - can create empty or partial dicts
-        self.add_input_port("key_1", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("value_1", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("key_2", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("value_2", PortType.INPUT, DataType.ANY, required=False)
-        self.add_input_port("key_3", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port("value_3", PortType.INPUT, DataType.ANY, required=False)
-        self.add_output_port("dict", PortType.OUTPUT, DataType.DICT)
+        self.add_input_port("key_1", DataType.STRING, required=False)
+        self.add_input_port("value_1", DataType.ANY, required=False)
+        self.add_input_port("key_2", DataType.STRING, required=False)
+        self.add_input_port("value_2", DataType.ANY, required=False)
+        self.add_input_port("key_3", DataType.STRING, required=False)
+        self.add_input_port("value_3", DataType.ANY, required=False)
+        self.add_output_port("dict", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
@@ -381,6 +406,9 @@ class CreateDictNode(BaseNode):
             for i in range(1, 4):
                 key = self.get_parameter(f"key_{i}")
                 value = self.get_parameter(f"value_{i}")
+                # Resolve {{variable}} patterns
+                key = context.resolve_value(key) if key else None
+                value = context.resolve_value(value) if value is not None else None
                 if key is not None and key != "":
                     result[key] = value
 
@@ -427,14 +455,16 @@ class DictToJsonNode(BaseNode):
         self.node_type = "DictToJsonNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_input_port("indent", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("json_string", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_input_port("indent", DataType.INTEGER, required=False)
+        self.add_output_port("json_string", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
             indent = self.get_parameter("indent")
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
 
             if indent is not None:
                 indent = int(indent)
@@ -473,13 +503,15 @@ class DictItemsNode(BaseNode):
         self.node_type = "DictItemsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("dict", PortType.INPUT, DataType.DICT)
-        self.add_output_port("items", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("dict", DataType.DICT, required=False)
+        self.add_output_port("items", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
             d = self.get_parameter("dict", {})
+            # Resolve {{variable}} patterns
+            d = context.resolve_value(d) if d else {}
 
             if not isinstance(d, dict):
                 raise ValueError("Input is not a dictionary")

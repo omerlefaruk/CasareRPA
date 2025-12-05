@@ -57,10 +57,42 @@ class MenuController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
-        logger.info("MenuController initialized")
         self._collect_actions()
         # Populate recent files menu on startup
         self.update_recent_files_menu()
+
+    def _show_styled_message(
+        self,
+        title: str,
+        text: str,
+        info: str = "",
+        icon: QMessageBox.Icon = QMessageBox.Icon.Warning,
+    ) -> None:
+        """Show a styled QMessageBox matching UI Explorer theme."""
+        msg = QMessageBox(self.main_window)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        if info:
+            msg.setInformativeText(info)
+        msg.setIcon(icon)
+        msg.setStyleSheet("""
+            QMessageBox { background: #252526; }
+            QMessageBox QLabel { color: #D4D4D4; font-size: 12px; }
+            QPushButton {
+                background: #2D2D30;
+                border: 1px solid #454545;
+                border-radius: 4px;
+                padding: 0 16px;
+                color: #D4D4D4;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 32px;
+                min-width: 80px;
+            }
+            QPushButton:hover { background: #2A2D2E; border-color: #007ACC; color: white; }
+            QPushButton:default { background: #007ACC; border-color: #007ACC; color: white; }
+        """)
+        msg.exec()
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -304,8 +336,6 @@ class MenuController(BaseController):
         if hasattr(mw, "action_schedule"):
             self._actions["schedule"] = mw.action_schedule
 
-        logger.info(f"Collected {len(self._actions)} actions")
-
     def _reload_hotkeys(self) -> None:
         """Reload hotkeys from settings."""
         from ....utils.hotkey_settings import get_hotkey_settings
@@ -333,10 +363,7 @@ class MenuController(BaseController):
         # Check if file exists
         path = Path(file_path)
         if not path.exists():
-            from PySide6.QtWidgets import QMessageBox
-
-            QMessageBox.warning(
-                self.main_window,
+            self._show_styled_message(
                 "File Not Found",
                 f"The file no longer exists:\n{file_path}",
             )
@@ -395,10 +422,10 @@ class MenuController(BaseController):
             self.about_dialog_shown.emit()
         except Exception as e:
             logger.error(f"Failed to show about dialog: {e}")
-            QMessageBox.critical(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 f"Failed to show about dialog:\n{str(e)}",
+                icon=QMessageBox.Icon.Critical,
             )
 
     # ==================== Desktop Selector Builder ====================
@@ -427,10 +454,10 @@ class MenuController(BaseController):
             self.desktop_selector_shown.emit()
         except Exception as e:
             logger.error(f"Failed to open desktop selector builder: {e}")
-            QMessageBox.critical(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 f"Failed to open Desktop Selector Builder:\n{str(e)}",
+                icon=QMessageBox.Icon.Critical,
             )
 
     # ==================== Recent Files Management ====================
@@ -497,8 +524,7 @@ class MenuController(BaseController):
             self.recent_files_cleared.emit()
         except Exception as e:
             logger.error(f"Failed to clear recent files: {e}")
-            QMessageBox.warning(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 f"Failed to clear recent files:\n{str(e)}",
             )
@@ -530,8 +556,7 @@ class MenuController(BaseController):
             self.main_window.show_status("Documentation opened in browser", 3000)
         except Exception as e:
             logger.error(f"Failed to open documentation: {e}")
-            QMessageBox.warning(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 f"Failed to open documentation:\n{str(e)}",
             )
@@ -582,10 +607,10 @@ class MenuController(BaseController):
 
             shortcuts_text += "</table>"
 
-            QMessageBox.information(
-                self.main_window,
+            self._show_styled_message(
                 "Keyboard Shortcuts",
                 shortcuts_text,
+                icon=QMessageBox.Icon.Information,
             )
         except Exception as e:
             logger.error(f"Failed to show keyboard shortcuts: {e}")
@@ -603,18 +628,17 @@ class MenuController(BaseController):
 
             # This is a placeholder implementation
             # In a real implementation, this would check a server for updates
-            QMessageBox.information(
-                self.main_window,
+            self._show_styled_message(
                 "Check for Updates",
                 f"<p>Current version: <b>{APP_VERSION}</b></p>"
                 f"<p>You are running the latest version.</p>"
                 f"<p><i>Note: Automatic update checking is not yet implemented.</i></p>",
+                icon=QMessageBox.Icon.Information,
             )
             self.main_window.show_status("Update check complete", 3000)
         except Exception as e:
             logger.error(f"Failed to check for updates: {e}")
-            QMessageBox.warning(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 f"Failed to check for updates:\n{str(e)}",
             )

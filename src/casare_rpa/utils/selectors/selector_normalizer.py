@@ -1,10 +1,28 @@
 """
 Selector Normalizer - Ensures selectors work with Playwright
-Handles XPath, CSS, ARIA, data attributes, text selectors, etc.
+Handles XPath, CSS, ARIA, data attributes, text selectors, XML format, wildcards, etc.
 """
 
 from typing import Tuple
 from loguru import logger
+
+from casare_rpa.utils.selectors.wildcard_selector import WildcardSelector
+
+
+def _build_itext_xpath(text: str, element: str = "*") -> str:
+    """
+    Build case-insensitive text XPath using translate().
+
+    Args:
+        text: Text to search for
+        element: Element tag (default: * for any)
+
+    Returns:
+        XPath like //*[contains(translate(., 'TEXT', 'text'), 'text')]
+    """
+    upper = text.upper()
+    lower = text.lower()
+    return f"//{element}[contains(translate(., '{upper}', '{lower}'), '{lower}')]"
 
 
 def normalize_selector(selector: str) -> str:
@@ -16,6 +34,7 @@ def normalize_selector(selector: str) -> str:
     - CSS: default (no prefix) - #id, .class, [attr], tag, etc.
     - Text: 'text=...' prefix
     - ARIA: [aria-label="..."] or role attributes
+    - itext: 'itext=...' case-insensitive text (converted to XPath)
 
     Args:
         selector: Raw selector string (XPath, CSS, ARIA, data-attr, etc.)
@@ -29,11 +48,50 @@ def normalize_selector(selector: str) -> str:
         '#myId' -> '#myId'  (CSS, no change)
         '[data-testid="btn"]' -> '[data-testid="btn"]'  (CSS, no change)
         'text=Click me' -> 'text=Click me'  (text selector, no change)
+        'itext=Start' -> '//*[contains(translate(...), 'start')]'  (case-insensitive)
+        'itext=button:Start' -> '//button[contains(translate(...), 'start')]'
     """
     if not selector or not isinstance(selector, str):
         return selector
 
     selector = selector.strip()
+
+    # 0. UiPath-style XML selector: <webctrl .../> or <input id='x' />
+    if selector.startswith("<"):
+        from casare_rpa.utils.selectors.selector_manager import parse_xml_selector
+
+        parsed, sel_type = parse_xml_selector(selector)
+        logger.debug(
+            f"Converting XML selector to {sel_type}: {selector[:50]}... -> {parsed[:50]}..."
+        )
+        # Recursively normalize the parsed result
+        return normalize_selector(parsed)
+
+    # 0.5. Wildcard patterns: btn-*, #user-*, .nav-*-item, [name=field*]
+    if WildcardSelector.has_wildcard(selector):
+        normalized = WildcardSelector.parse(selector)
+        if normalized != selector:
+            logger.debug(f"Expanded wildcard selector: {selector} -> {normalized}")
+            # Recursively normalize in case the result needs further processing
+            return normalize_selector(normalized)
+
+    # 1. Case-insensitive text selector: itext=Text or itext=tag:Text
+    if selector.startswith("itext="):
+        value = selector[6:]  # Remove 'itext=' prefix
+        if ":" in value:
+            # Format: itext=button:Start -> //button[contains(...)]
+            element, text = value.split(":", 1)
+            element = element.strip() or "*"
+            text = text.strip()
+        else:
+            element = "*"
+            text = value.strip()
+
+        if text:
+            normalized = _build_itext_xpath(text, element)
+            logger.debug(f"Converting itext selector: {selector} -> {normalized}")
+            return normalized
+        return selector
 
     # 1. Already has xpath= prefix - keep as is
     if selector.startswith("xpath="):
@@ -104,7 +162,7 @@ def detect_selector_type(selector: str) -> str:
         selector: The selector string
 
     Returns:
-        One of: 'xpath', 'css', 'text', 'unknown'
+        One of: 'xpath', 'css', 'text', 'itext', 'wildcard', 'unknown'
     """
     if not selector:
         return "unknown"
@@ -115,6 +173,10 @@ def detect_selector_type(selector: str) -> str:
         return "xpath"
     if selector.startswith("text="):
         return "text"
+    if selector.startswith("itext="):
+        return "itext"
+    if WildcardSelector.has_wildcard(selector):
+        return "wildcard"
     if selector.startswith("//") or (
         selector.startswith("/") and not selector.startswith("/[")
     ):

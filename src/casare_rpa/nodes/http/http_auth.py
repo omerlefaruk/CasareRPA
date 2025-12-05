@@ -81,7 +81,7 @@ HTTP_PASSWORD_PROP = PropertyDef(
     ),
 )
 @executable_node
-class HttpAuthNode(CredentialAwareMixin, BaseNode):
+class HttpAuthNode(BaseNode, CredentialAwareMixin):
     """
     Configure HTTP authentication headers.
 
@@ -117,15 +117,15 @@ class HttpAuthNode(CredentialAwareMixin, BaseNode):
         self.node_type = "HttpAuthNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("credential_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("auth_type", PortType.INPUT, DataType.STRING)
-        self.add_input_port("token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("username", PortType.INPUT, DataType.STRING)
-        self.add_input_port("password", PortType.INPUT, DataType.STRING)
-        self.add_input_port("api_key_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("base_headers", PortType.INPUT, DataType.DICT)
+        self.add_input_port("credential_name", DataType.STRING, required=False)
+        self.add_input_port("auth_type", DataType.STRING, required=False)
+        self.add_input_port("token", DataType.STRING, required=False)
+        self.add_input_port("username", DataType.STRING, required=False)
+        self.add_input_port("password", DataType.STRING, required=False)
+        self.add_input_port("api_key_name", DataType.STRING, required=False)
+        self.add_input_port("base_headers", DataType.DICT, required=False)
 
-        self.add_output_port("headers", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("headers", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING

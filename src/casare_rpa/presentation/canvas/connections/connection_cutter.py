@@ -293,109 +293,123 @@ class ConnectionCutter(QObject):
                     if intersects:
                         logger.info(f"Cut intersects with: {class_name}")
 
-                        # Try multiple ways to get the ports
-                        input_port = None
-                        output_port = None
+                        # Get view-level port items from pipe
+                        input_port_item = None
+                        output_port_item = None
 
-                        # Method 1: Direct attributes
                         if hasattr(item, "input_port"):
-                            input_port = item.input_port
+                            input_port_item = item.input_port
                         if hasattr(item, "output_port"):
-                            output_port = item.output_port
+                            output_port_item = item.output_port
 
-                        # Method 2: Method calls
-                        if input_port is None and hasattr(item, "get_input_port"):
-                            input_port = item.get_input_port()
-                        if output_port is None and hasattr(item, "get_output_port"):
-                            output_port = item.get_output_port()
-
-                        # Method 3: port property
-                        if hasattr(item, "port"):
-                            port = item.port
-                            logger.debug(f"Item has port attr: {port}")
-
-                        if input_port and output_port:
-                            pipes_to_cut.append((output_port, input_port, item))
+                        if input_port_item and output_port_item:
+                            pipes_to_cut.append(
+                                (output_port_item, input_port_item, item)
+                            )
                             logger.info(f"Found pipe to cut: {class_name}")
                         else:
                             logger.warning(
-                                f"Pipe {class_name} has no ports: in={input_port}, out={output_port}"
+                                f"Pipe {class_name} has no ports: "
+                                f"in={input_port_item}, out={output_port_item}"
                             )
-                            # Log available attributes
-                            attrs = [
-                                a
-                                for a in dir(item)
-                                if not a.startswith("_") and "port" in a.lower()
-                            ]
-                            logger.debug(f"Port-related attrs: {attrs}")
 
             if pipe_classes_found:
                 logger.debug(f"Pipe classes in scene: {pipe_classes_found}")
 
             logger.info(f"Found {len(pipes_to_cut)} pipes to cut")
 
-            # Disconnect the pipes
-            for output_port, input_port, pipe_item in pipes_to_cut:
+            # Disconnect the pipes using MODEL-LEVEL ports (not view-level)
+            # This is critical - view-level disconnect doesn't update model state
+            for output_port_item, input_port_item, pipe_item in pipes_to_cut:
                 try:
-                    # Handle case where ports might be strings (port names) or Port objects
-                    # Get port names for logging
-                    out_name = (
-                        output_port.name()
-                        if hasattr(output_port, "name") and callable(output_port.name)
-                        else str(output_port)
-                    )
-                    in_name = (
-                        input_port.name()
-                        if hasattr(input_port, "name") and callable(input_port.name)
-                        else str(input_port)
-                    )
+                    # Get port names from view-level port items
+                    out_name = self._get_port_name(output_port_item)
+                    in_name = self._get_port_name(input_port_item)
 
-                    # If ports are strings, we can't disconnect directly - try deleting the pipe
-                    if isinstance(output_port, str) or isinstance(input_port, str):
-                        # Try to delete the pipe item directly from scene
-                        if pipe_item and hasattr(pipe_item, "delete"):
-                            pipe_item.delete()
-                            cut_count += 1
-                            logger.info(
-                                f"Cut connection (pipe delete): {out_name} -> {in_name}"
-                            )
-                        elif pipe_item and pipe_item.scene():
-                            pipe_item.scene().removeItem(pipe_item)
-                            cut_count += 1
-                            logger.info(
-                                f"Cut connection (scene remove): {out_name} -> {in_name}"
-                            )
+                    if not out_name or not in_name:
+                        logger.warning(
+                            f"Could not get port names: out={out_name}, in={in_name}"
+                        )
                         continue
 
-                    # Try to disconnect using port methods
-                    output_port.disconnect_from(input_port)
+                    # Get node items from port items via parentItem()
+                    source_node_item = (
+                        output_port_item.parentItem()
+                        if hasattr(output_port_item, "parentItem")
+                        else None
+                    )
+                    target_node_item = (
+                        input_port_item.parentItem()
+                        if hasattr(input_port_item, "parentItem")
+                        else None
+                    )
+
+                    if not source_node_item or not target_node_item:
+                        logger.warning("Could not get node items from port items")
+                        continue
+
+                    # Get node IDs from the view items
+                    source_node_id = (
+                        source_node_item.id if hasattr(source_node_item, "id") else None
+                    )
+                    target_node_id = (
+                        target_node_item.id if hasattr(target_node_item, "id") else None
+                    )
+
+                    if not source_node_id or not target_node_id:
+                        logger.warning("Could not get node IDs from node items")
+                        continue
+
+                    # Find MODEL-level nodes by ID using graph.all_nodes()
+                    source_node = None
+                    target_node = None
+
+                    for model_node in self._graph.all_nodes():
+                        node_id = (
+                            model_node.id()
+                            if callable(model_node.id)
+                            else model_node.id
+                        )
+                        if node_id == source_node_id:
+                            source_node = model_node
+                        elif node_id == target_node_id:
+                            target_node = model_node
+
+                        if source_node and target_node:
+                            break
+
+                    if not source_node or not target_node:
+                        logger.warning(
+                            f"Could not find model nodes: "
+                            f"source={source_node_id}, target={target_node_id}"
+                        )
+                        continue
+
+                    # Get MODEL-level ports using node's get_input/get_output methods
+                    source_port = source_node.get_output(out_name)
+                    target_port = target_node.get_input(in_name)
+
+                    if not source_port:
+                        logger.warning(
+                            f"Could not get output port '{out_name}' from source node"
+                        )
+                        continue
+                    if not target_port:
+                        logger.warning(
+                            f"Could not get input port '{in_name}' from target node"
+                        )
+                        continue
+
+                    # Disconnect using MODEL-level ports
+                    source_port.disconnect_from(target_port)
                     cut_count += 1
                     logger.info(f"Cut connection: {out_name} -> {in_name}")
+
                 except Exception as e:
-                    # Try alternative disconnect method
-                    try:
-                        if not isinstance(input_port, str) and not isinstance(
-                            output_port, str
-                        ):
-                            input_port.disconnect_from(output_port)
-                            cut_count += 1
-                            out_name = (
-                                output_port.name()
-                                if hasattr(output_port, "name")
-                                and callable(output_port.name)
-                                else str(output_port)
-                            )
-                            in_name = (
-                                input_port.name()
-                                if hasattr(input_port, "name")
-                                and callable(input_port.name)
-                                else str(input_port)
-                            )
-                            logger.info(
-                                f"Cut connection (reverse): {out_name} -> {in_name}"
-                            )
-                    except Exception as e2:
-                        logger.error(f"Failed to disconnect: {e}, {e2}")
+                    logger.error(f"Failed to disconnect: {e}")
+                    import traceback
+
+                    logger.debug(traceback.format_exc())
 
             # If no pipes found via scene items, try iterating through nodes
             if len(pipes_to_cut) == 0:
@@ -409,6 +423,23 @@ class ConnectionCutter(QObject):
             logger.error(traceback.format_exc())
 
         return cut_count
+
+    def _get_port_name(self, port_item) -> Optional[str]:
+        """Get the name of a port from a port view item."""
+        if port_item is None:
+            return None
+
+        # Method 1: name() method (most common)
+        if hasattr(port_item, "name"):
+            if callable(port_item.name):
+                return port_item.name()
+            return str(port_item.name)
+
+        # Method 2: _name attribute
+        if hasattr(port_item, "_name"):
+            return str(port_item._name)
+
+        return None
 
     def _cut_via_node_iteration(self, cut_segments: List[QLineF]) -> int:
         """

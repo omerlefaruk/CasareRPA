@@ -1,0 +1,404 @@
+{
+  "metadata": {
+    "name": "Untitled Workflow",
+    "description": "",
+    "version": "1.0.0",
+    "author": "",
+    "created_at": "2025-12-05T18:58:47.084286",
+    "modified_at": "2025-12-05T18:58:47.084289"
+  },
+  "nodes": {
+    "LaunchBrowserNode_59e94eb8": {
+      "node_id": "LaunchBrowserNode_59e94eb8",
+      "node_type": "LaunchBrowserNode",
+      "position": [
+        20.55971669738426,
+        324.4927296067492
+      ],
+      "config": {
+        "url": "rpachallenge.com",
+        "browser_type": "chromium",
+        "headless": false,
+        "do_not_close": true,
+        "slow_mo": "0",
+        "channel": "",
+        "viewport_width": "1280",
+        "viewport_height": "720",
+        "user_agent": "",
+        "locale": "",
+        "timezone_id": "",
+        "color_scheme": "light",
+        "ignore_https_errors": false,
+        "proxy_server": "",
+        "retry_count": "0",
+        "retry_interval": "2000",
+        "window_wait": "100",
+        "status": "success"
+      },
+      "name": "Launch Browser"
+    },
+    "ClickElementNode_980f9b3a": {
+      "node_id": "ClickElementNode_980f9b3a",
+      "node_type": "ClickElementNode",
+      "position": [
+        350.38977594235325,
+        335.67154553477064
+      ],
+      "config": {
+        "selector": "itext=button:START",
+        "fast_mode": true,
+        "timeout": "30000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": true,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "success"
+      },
+      "name": "Click Element"
+    },
+    "FormFieldNode_d36bd205": {
+      "node_id": "FormFieldNode_d36bd205",
+      "node_type": "FormFieldNode",
+      "position": [
+        780.3279249074855,
+        321.9158036456813
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='First Name' />\n<nav up='1' />\n<webctrl selector='<input id='AThp6' class='ng-pristine ng-invalid ng-touched' />' />",
+        "value": "first",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "first"
+    },
+    "FormFieldNode_44075c35": {
+      "node_id": "FormFieldNode_44075c35",
+      "node_type": "FormFieldNode",
+      "position": [
+        1213.5940842831308,
+        324.9878428478604
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Last Name' />\n<nav up='1' />\n<webctrl selector='<input id='2ubZZ' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "last",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "last"
+    },
+    "ClickElementNode_e93101e6": {
+      "node_id": "ClickElementNode_e93101e6",
+      "node_type": "ClickElementNode",
+      "position": [
+        4203.815994241182,
+        297.2839239270569
+      ],
+      "config": {
+        "selector": "input[value=\"Submit\"]\n",
+        "fast_mode": true,
+        "timeout": "30000",
+        "button": "left",
+        "click_count": "1",
+        "delay": "0",
+        "force": true,
+        "position_x": "0.0",
+        "position_y": "0.0",
+        "modifiers": [],
+        "no_wait_after": false,
+        "trial": false,
+        "retry_count": "0",
+        "retry_interval": "1000",
+        "screenshot_on_fail": false,
+        "screenshot_path": "",
+        "highlight_before_click": false,
+        "anchor_config": "",
+        "status": "success",
+        "_disabled": true
+      },
+      "name": "submit"
+    },
+    "FormFieldNode_33199cbd": {
+      "node_id": "FormFieldNode_33199cbd",
+      "node_type": "FormFieldNode",
+      "position": [
+        1634.423622313959,
+        319.15356794848753
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Phone Number' />\n<nav up='1' />\n<webctrl selector='<input id='9diHM' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "phone",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "phone 1"
+    },
+    "FormFieldNode_9a6b0638": {
+      "node_id": "FormFieldNode_9a6b0638",
+      "node_type": "FormFieldNode",
+      "position": [
+        2074.929780484144,
+        303.4771922128936
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Address' />\n<nav up='1' />\n<webctrl selector='<input id='B9gwf' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "adress",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "adress 1"
+    },
+    "FormFieldNode_1bc5fba5": {
+      "node_id": "FormFieldNode_1bc5fba5",
+      "node_type": "FormFieldNode",
+      "position": [
+        2532.202062910145,
+        309.06365817877366
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Email' />\n<nav up='1' />\n<webctrl selector='<input id='FdcvZ' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "email",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "email"
+    },
+    "FormFieldNode_e80e7438": {
+      "node_id": "FormFieldNode_e80e7438",
+      "node_type": "FormFieldNode",
+      "position": [
+        2991.9977610163787,
+        307.01813155187807
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Role in Company' />\n<nav up='1' />\n<webctrl selector='<input id='l1Th2' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "roleInComapny",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "roleInComapny"
+    },
+    "FormFieldNode_c4b78ce8": {
+      "node_id": "FormFieldNode_c4b78ce8",
+      "node_type": "FormFieldNode",
+      "position": [
+        3419.0513328767042,
+        297.7467900402117
+      ],
+      "config": {
+        "selector": "<webctrl tag='LABEL' aaname='Company Name' />\n<nav up='1' />\n<webctrl selector='<input id='ViB9p' class='ng-untouched ng-pristine ng-invalid' />' />",
+        "value": "companyName",
+        "field_type": "text",
+        "clear_first": false,
+        "status": "success"
+      },
+      "name": "companyName"
+    },
+    "FormFillerNode_81dfac2b": {
+      "node_id": "FormFillerNode_81dfac2b",
+      "node_type": "FormFillerNode",
+      "position": [
+        3855.428012892263,
+        292.2862814042477
+      ],
+      "config": {
+        "form_selector": "form",
+        "field_mapping": "",
+        "fast_mode": true,
+        "auto_submit": false,
+        "clear_first": true,
+        "wait_between_fields": "0",
+        "timeout": "5000",
+        "status": "success"
+      },
+      "name": "Form Filler"
+    }
+  },
+  "connections": [
+    {
+      "source_node": "LaunchBrowserNode_59e94eb8",
+      "source_port": "exec_out",
+      "target_node": "ClickElementNode_980f9b3a",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "LaunchBrowserNode_59e94eb8",
+      "source_port": "page",
+      "target_node": "ClickElementNode_980f9b3a",
+      "target_port": "page"
+    },
+    {
+      "source_node": "ClickElementNode_980f9b3a",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_d36bd205",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "ClickElementNode_980f9b3a",
+      "source_port": "page",
+      "target_node": "FormFieldNode_d36bd205",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_d36bd205",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_44075c35",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_d36bd205",
+      "source_port": "page",
+      "target_node": "FormFieldNode_44075c35",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_d36bd205",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_44075c35",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_44075c35",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_33199cbd",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_44075c35",
+      "source_port": "page",
+      "target_node": "FormFieldNode_33199cbd",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_44075c35",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_33199cbd",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_33199cbd",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_9a6b0638",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_33199cbd",
+      "source_port": "page",
+      "target_node": "FormFieldNode_9a6b0638",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_33199cbd",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_9a6b0638",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_9a6b0638",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_1bc5fba5",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_9a6b0638",
+      "source_port": "page",
+      "target_node": "FormFieldNode_1bc5fba5",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_9a6b0638",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_1bc5fba5",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_1bc5fba5",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_e80e7438",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_1bc5fba5",
+      "source_port": "page",
+      "target_node": "FormFieldNode_e80e7438",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_1bc5fba5",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_e80e7438",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_e80e7438",
+      "source_port": "exec_out",
+      "target_node": "FormFieldNode_c4b78ce8",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_e80e7438",
+      "source_port": "page",
+      "target_node": "FormFieldNode_c4b78ce8",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_e80e7438",
+      "source_port": "fields_out",
+      "target_node": "FormFieldNode_c4b78ce8",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_c4b78ce8",
+      "source_port": "exec_out",
+      "target_node": "FormFillerNode_81dfac2b",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "FormFieldNode_c4b78ce8",
+      "source_port": "page",
+      "target_node": "FormFillerNode_81dfac2b",
+      "target_port": "page"
+    },
+    {
+      "source_node": "FormFieldNode_c4b78ce8",
+      "source_port": "fields_out",
+      "target_node": "FormFillerNode_81dfac2b",
+      "target_port": "fields_in"
+    },
+    {
+      "source_node": "FormFieldNode_c4b78ce8",
+      "source_port": "field",
+      "target_node": "FormFillerNode_81dfac2b",
+      "target_port": "field_mapping"
+    },
+    {
+      "source_node": "FormFillerNode_81dfac2b",
+      "source_port": "exec_out",
+      "target_node": "ClickElementNode_e93101e6",
+      "target_port": "exec_in"
+    }
+  ],
+  "variables": {},
+  "frames": [],
+  "settings": {
+    "stop_on_error": true,
+    "timeout": 120,
+    "retry_count": 0
+  }
+}

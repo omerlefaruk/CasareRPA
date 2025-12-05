@@ -52,7 +52,6 @@ class ViewportController(BaseController):
     def initialize(self) -> None:
         """Initialize controller resources and connections."""
         super().initialize()
-        logger.info("ViewportController initialized")
 
     def cleanup(self) -> None:
         """Clean up controller resources."""
@@ -237,6 +236,90 @@ class ViewportController(BaseController):
                 logger.debug("Viewport fitted to selection")
             except Exception as e:
                 logger.error(f"Failed to fit viewport: {e}")
+
+    def focus_view(self) -> None:
+        """
+        Focus/frame selected node(s) - like Nuke/Houdini's F key.
+
+        Frames the selected node(s) in the center of the viewport.
+        """
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        try:
+            selected_nodes = graph.selected_nodes()
+            if not selected_nodes:
+                return
+
+            viewer = graph.viewer()
+            if not viewer:
+                return
+
+            # Calculate bounding rect of all selected nodes
+            from PySide6.QtCore import QRectF, Qt
+
+            combined_rect = QRectF()
+            for node in selected_nodes:
+                if hasattr(node, "view") and node.view:
+                    node_rect = node.view.sceneBoundingRect()
+                    if combined_rect.isNull():
+                        combined_rect = node_rect
+                    else:
+                        combined_rect = combined_rect.united(node_rect)
+
+            if combined_rect.isNull():
+                return
+
+            # Fit view to the combined rect with generous padding (less zoom)
+            # Use symmetric padding to keep node perfectly centered
+            padding = 200
+            padded_rect = combined_rect.adjusted(-padding, -padding, padding, padding)
+
+            # fitInView centers on the rect - use the padded rect for zoom level
+            # but center on the actual node center for perfect centering
+            viewer.fitInView(padded_rect, Qt.AspectRatioMode.KeepAspectRatio)
+
+            # Re-center explicitly on the node center (not the padded rect center)
+            node_center = combined_rect.center()
+            viewer.centerOn(node_center.x(), node_center.y())
+
+            logger.debug(f"Framed {len(selected_nodes)} node(s) at center")
+
+        except Exception as e:
+            logger.error(f"Failed to focus view: {e}")
+
+    def home_all(self) -> None:
+        """
+        Home all: fit all nodes in view regardless of selection.
+
+        Temporarily selects all nodes, fits view, then restores original selection.
+        """
+        graph = self._get_graph()
+        if not graph:
+            return
+
+        try:
+            all_nodes = graph.all_nodes()
+            if not all_nodes:
+                logger.debug("No nodes to home")
+                return
+
+            # Save current selection
+            originally_selected = graph.selected_nodes()
+
+            # Select all, fit, then restore selection
+            graph.select_all()
+            graph.fit_to_selection()
+            graph.clear_selection()
+
+            # Restore original selection
+            for node in originally_selected:
+                node.set_selected(True)
+
+            logger.debug(f"Home all: fitted {len(all_nodes)} nodes")
+        except Exception as e:
+            logger.error(f"Failed to home all: {e}")
 
     def center_on_node(self, node_id: str) -> None:
         """

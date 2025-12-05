@@ -26,6 +26,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_ANCHOR_CONFIG,
     BROWSER_FORCE,
     BROWSER_NO_WAIT_AFTER,
     BROWSER_RETRY_COUNT,
@@ -54,6 +55,15 @@ from casare_rpa.utils.resilience import retry_operation
         label="Element Selector",
         tooltip="CSS or XPath selector for the element to click",
         placeholder="#button-id or //button[@name='submit']",
+        essential=True,  # Show when collapsed
+    ),
+    PropertyDef(
+        "fast_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Fast Mode",
+        tooltip="Optimize for speed: skip waits, force action, reduced timeout",
+        essential=True,  # Show when collapsed
     ),
     BROWSER_TIMEOUT,
     PropertyDef(
@@ -122,6 +132,7 @@ from casare_rpa.utils.resilience import retry_operation
         label="Highlight Element",
         tooltip="Highlight element before clicking",
     ),
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class ClickElementNode(BrowserBaseNode):
@@ -180,6 +191,9 @@ class ClickElementNode(BrowserBaseNode):
             page = self.get_page(context)
             selector = self.get_normalized_selector(context)
 
+            # Check for fast mode - optimizes for speed over reliability
+            fast_mode = self.get_parameter("fast_mode", False)
+
             # Get click-specific parameters
             timeout = safe_int(
                 self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
@@ -194,6 +208,15 @@ class ClickElementNode(BrowserBaseNode):
             modifiers = self.get_parameter("modifiers", [])
             no_wait_after = self.get_parameter("no_wait_after", False)
             trial = self.get_parameter("trial", False)
+
+            # Fast mode overrides for maximum speed
+            if fast_mode:
+                timeout = min(timeout, 5000)  # Cap at 5 seconds
+                force = True  # Skip actionability checks
+                no_wait_after = True  # Skip navigation waits
+                logger.debug(
+                    f"Fast mode enabled: timeout={timeout}ms, force=True, no_wait_after=True"
+                )
 
             logger.info(f"Clicking element: {selector}")
 
@@ -213,10 +236,34 @@ class ClickElementNode(BrowserBaseNode):
 
             logger.debug(f"Click options: {click_options}")
 
+            # Track healing info for result
+            healing_tier = "original"
+            final_selector = selector
+
             async def perform_click() -> bool:
-                await self.highlight_if_enabled(page, selector, timeout)
-                await page.click(selector, **click_options)
-                return True
+                nonlocal healing_tier, final_selector
+
+                # First try with healing fallback
+                try:
+                    (
+                        element,
+                        final_selector,
+                        healing_tier,
+                    ) = await self.find_element_with_healing(
+                        page, selector, timeout, param_name="selector"
+                    )
+                    await self.highlight_if_enabled(page, final_selector, timeout)
+                    await element.click(**click_options)
+                    return True
+                except Exception as healing_error:
+                    # If healing also fails, fall back to direct click (original behavior)
+                    # This allows Playwright's built-in waiting to have a chance
+                    logger.debug(
+                        f"Healing failed, trying direct click: {healing_error}"
+                    )
+                    await self.highlight_if_enabled(page, selector, timeout)
+                    await page.click(selector, **click_options)
+                    return True
 
             result = await retry_operation(
                 perform_click,
@@ -227,9 +274,15 @@ class ClickElementNode(BrowserBaseNode):
 
             if result.success:
                 self.set_output_value("page", page)
-                return self.success_result(
-                    {"selector": selector, "attempts": result.attempts}
-                )
+                result_data = {
+                    "selector": selector,
+                    "final_selector": final_selector,
+                    "attempts": result.attempts,
+                    "healing_tier": healing_tier,
+                }
+                if healing_tier != "original":
+                    logger.info(f"Click succeeded with healing: {healing_tier} tier")
+                return self.success_result(result_data)
 
             # Handle failure
             await self.screenshot_on_failure(page, "click_fail")
@@ -262,9 +315,14 @@ class ClickElementNode(BrowserBaseNode):
             options["delay"] = delay
         if force:
             options["force"] = True
+        # Only set position if explicitly configured (not default 0,0)
+        # Position (0,0) means top-left corner which is rarely intended
         if position_x is not None and position_y is not None:
             try:
-                options["position"] = {"x": float(position_x), "y": float(position_y)}
+                px, py = float(position_x), float(position_y)
+                # Skip if both are 0 (default/unset) - let Playwright click center
+                if px != 0.0 or py != 0.0:
+                    options["position"] = {"x": px, "y": py}
             except (ValueError, TypeError):
                 pass
         if modifiers:
@@ -291,6 +349,7 @@ class ClickElementNode(BrowserBaseNode):
         label="Input Selector",
         tooltip="CSS or XPath selector for the input element",
         placeholder="#email or //input[@name='username']",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "text",
@@ -300,6 +359,15 @@ class ClickElementNode(BrowserBaseNode):
         label="Text",
         tooltip="Text to type into the input field",
         placeholder="Text to enter...",
+        essential=True,  # Show when collapsed
+    ),
+    PropertyDef(
+        "fast_mode",
+        PropertyType.BOOLEAN,
+        default=False,
+        label="Fast Mode",
+        tooltip="Optimize for speed: skip waits, force action, reduced timeout (best for form filling)",
+        essential=True,  # Show when collapsed - important for users
     ),
     PropertyDef(
         "delay",
@@ -345,6 +413,7 @@ class ClickElementNode(BrowserBaseNode):
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class TypeTextNode(BrowserBaseNode):
@@ -409,7 +478,10 @@ class TypeTextNode(BrowserBaseNode):
             text = self.get_parameter("text", "") or ""
             text = context.resolve_value(text)
 
-            # Get type-specific parameters
+            # Check for fast mode - optimizes for speed over reliability
+            fast_mode = self.get_parameter("fast_mode", False)
+
+            # Get type-specific parameters with fast mode overrides
             delay = safe_int(self.get_parameter("delay", 0), 0)
             timeout = safe_int(
                 self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
@@ -423,6 +495,16 @@ class TypeTextNode(BrowserBaseNode):
             press_enter_after = self.get_parameter("press_enter_after", False)
             press_tab_after = self.get_parameter("press_tab_after", False)
 
+            # Fast mode overrides for maximum speed
+            if fast_mode:
+                timeout = min(timeout, 5000)  # Cap at 5 seconds
+                force = True  # Skip actionability checks
+                no_wait_after = True  # Skip navigation waits
+                clear_first = False  # Skip clearing (assume empty fields)
+                logger.debug(
+                    f"Fast mode enabled: timeout={timeout}ms, force=True, no_wait_after=True"
+                )
+
             logger.info(f"Typing text into element: {selector}")
 
             # Build fill/type options
@@ -433,14 +515,56 @@ class TypeTextNode(BrowserBaseNode):
                 strict=strict,
             )
 
+            # Track healing info
+            healing_tier = "original"
+            final_selector = selector
+
+            # Track if we navigated from label to input
+            label_nav_method = "original"
+
             async def perform_type() -> bool:
-                if delay > 0 or press_sequentially:
-                    if clear_first:
-                        await page.fill(selector, "", **fill_options)
-                    type_delay = delay if delay > 0 else 50
-                    await page.type(selector, text, delay=type_delay, timeout=timeout)
-                else:
-                    await page.fill(selector, text, **fill_options)
+                nonlocal healing_tier, final_selector, label_nav_method
+
+                # Try with healing fallback first
+                try:
+                    (
+                        element,
+                        final_selector,
+                        healing_tier,
+                    ) = await self.find_element_with_healing(
+                        page, selector, timeout, param_name="selector"
+                    )
+
+                    # Auto-navigate from label to input if needed
+                    element, label_nav_method = await self.navigate_label_to_input(
+                        page, element, timeout
+                    )
+                    if label_nav_method != "original":
+                        logger.info(
+                            f"Auto-navigated from label to input via {label_nav_method}"
+                        )
+
+                    # Use element-based operations for better reliability
+                    if delay > 0 or press_sequentially:
+                        if clear_first:
+                            await element.fill("")
+                        type_delay = delay if delay > 0 else 50
+                        await element.type(text, delay=type_delay)
+                    else:
+                        await element.fill(text)
+
+                except Exception as healing_error:
+                    # Fall back to selector-based operations (original behavior)
+                    logger.debug(f"Healing failed, trying direct type: {healing_error}")
+                    if delay > 0 or press_sequentially:
+                        if clear_first:
+                            await page.fill(selector, "", **fill_options)
+                        type_delay = delay if delay > 0 else 50
+                        await page.type(
+                            selector, text, delay=type_delay, timeout=timeout
+                        )
+                    else:
+                        await page.fill(selector, text, **fill_options)
 
                 if press_enter_after:
                     await page.keyboard.press("Enter")
@@ -458,13 +582,23 @@ class TypeTextNode(BrowserBaseNode):
 
             if result.success:
                 self.set_output_value("page", page)
-                return self.success_result(
-                    {
-                        "selector": selector,
-                        "text_length": len(text),
-                        "attempts": result.attempts,
-                    }
-                )
+                result_data = {
+                    "selector": selector,
+                    "final_selector": final_selector,
+                    "text_length": len(text),
+                    "attempts": result.attempts,
+                    "healing_tier": healing_tier,
+                    "label_navigation": label_nav_method,
+                }
+                if healing_tier != "original":
+                    logger.info(
+                        f"Type text succeeded with healing: {healing_tier} tier"
+                    )
+                if label_nav_method != "original":
+                    logger.info(
+                        f"Type text auto-navigated from label to input: {label_nav_method}"
+                    )
+                return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "type_text_fail")
             raise result.last_error or RuntimeError("Type text failed")
@@ -504,6 +638,7 @@ class TypeTextNode(BrowserBaseNode):
         label="Select Selector",
         tooltip="CSS or XPath selector for the select element",
         placeholder="#country or //select[@name='region']",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "value",
@@ -513,6 +648,7 @@ class TypeTextNode(BrowserBaseNode):
         label="Value",
         tooltip="Value, label, or index to select",
         placeholder="Option value, label, or index",
+        essential=True,  # Show when collapsed
     ),
     BROWSER_TIMEOUT,
     BROWSER_FORCE,
@@ -530,6 +666,7 @@ class TypeTextNode(BrowserBaseNode):
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class SelectDropdownNode(BrowserBaseNode):
@@ -665,3 +802,277 @@ class SelectDropdownNode(BrowserBaseNode):
         if strict:
             options["strict"] = True
         return options
+
+
+# =============================================================================
+# ImageClickNode
+# =============================================================================
+
+
+@node_schema(
+    PropertyDef(
+        "image_template",
+        PropertyType.STRING,
+        default="",
+        required=False,
+        label="Image Template",
+        tooltip="Base64-encoded image template or healing context key",
+        placeholder="Captured from selector dialog",
+        essential=True,
+    ),
+    PropertyDef(
+        "similarity_threshold",
+        PropertyType.FLOAT,
+        default=0.8,
+        label="Similarity Threshold",
+        tooltip="Minimum match similarity (0.0-1.0)",
+        min_value=0.5,
+        max_value=1.0,
+    ),
+    PropertyDef(
+        "button",
+        PropertyType.CHOICE,
+        default="left",
+        choices=["left", "right", "middle"],
+        label="Mouse Button",
+        tooltip="Which mouse button to click",
+    ),
+    PropertyDef(
+        "click_count",
+        PropertyType.INTEGER,
+        default=1,
+        label="Click Count",
+        tooltip="Number of clicks (2 for double-click)",
+        min_value=1,
+    ),
+    PropertyDef(
+        "click_offset_x",
+        PropertyType.INTEGER,
+        default=0,
+        label="Offset X",
+        tooltip="X offset from center of matched region",
+    ),
+    PropertyDef(
+        "click_offset_y",
+        PropertyType.INTEGER,
+        default=0,
+        label="Offset Y",
+        tooltip="Y offset from center of matched region",
+    ),
+    BROWSER_TIMEOUT,
+    BROWSER_RETRY_COUNT,
+    BROWSER_RETRY_INTERVAL,
+    BROWSER_SCREENSHOT_ON_FAIL,
+    BROWSER_SCREENSHOT_PATH,
+)
+@executable_node
+class ImageClickNode(BrowserBaseNode):
+    """
+    Image click node - clicks at a location found by image/template matching.
+
+    Uses computer vision to find a template image on the page and clicks
+    at the center of the matched region. Useful when selectors are unreliable
+    or for visual elements without proper DOM structure.
+
+    Config (via @node_schema):
+        image_template: Base64-encoded image or healing context reference
+        similarity_threshold: Minimum match similarity (0.0-1.0)
+        button: Mouse button (left, right, middle)
+        click_count: Number of clicks
+        click_offset_x: X offset from match center
+        click_offset_y: Y offset from match center
+        timeout: Operation timeout in milliseconds
+        retry_count: Number of retries on failure
+        retry_interval: Delay between retries in ms
+
+    Inputs:
+        page: Browser page instance
+
+    Outputs:
+        page: Browser page instance (passthrough)
+    """
+
+    def __init__(
+        self,
+        node_id: str,
+        name: str = "Image Click",
+        **kwargs,
+    ) -> None:
+        """Initialize image click node."""
+        config = kwargs.get("config", {})
+        super().__init__(node_id, config, name=name)
+        self.node_type = "ImageClickNode"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        self.add_page_passthrough_ports()
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """Execute image-based click."""
+        self.status = NodeStatus.RUNNING
+
+        try:
+            page = self.get_page(context)
+
+            # Get parameters
+            similarity = self.get_parameter("similarity_threshold", 0.8)
+            button = self.get_parameter("button", "left")
+            click_count = safe_int(self.get_parameter("click_count", 1), 1)
+            offset_x = safe_int(self.get_parameter("click_offset_x", 0), 0)
+            offset_y = safe_int(self.get_parameter("click_offset_y", 0), 0)
+            timeout = safe_int(
+                self.get_parameter("timeout", DEFAULT_NODE_TIMEOUT * 1000),
+                DEFAULT_NODE_TIMEOUT * 1000,
+            )
+
+            # Get image template from healing context or direct parameter
+            template_bytes = await self._get_template_bytes()
+            if not template_bytes:
+                raise ValueError(
+                    "No image template available. "
+                    "Pick an element with the selector dialog first."
+                )
+
+            logger.info(
+                f"Image click: searching for template ({len(template_bytes)} bytes)"
+            )
+
+            async def perform_image_click() -> dict:
+                # Capture page screenshot
+                screenshot_bytes = await page.screenshot(type="png")
+
+                # Find template match
+                match = await self._find_template_match(
+                    screenshot_bytes, template_bytes, similarity
+                )
+
+                if not match:
+                    raise RuntimeError(
+                        f"Template not found on page (threshold: {similarity:.0%})"
+                    )
+
+                # Calculate click position
+                click_x = match["center_x"] + offset_x
+                click_y = match["center_y"] + offset_y
+
+                logger.info(
+                    f"Template found at ({match['center_x']}, {match['center_y']}) "
+                    f"with {match['similarity']:.1%} similarity, clicking at ({click_x}, {click_y})"
+                )
+
+                # Perform click at coordinates
+                await page.mouse.click(
+                    click_x,
+                    click_y,
+                    button=button,
+                    click_count=click_count,
+                )
+
+                return {
+                    "click_x": click_x,
+                    "click_y": click_y,
+                    "match_x": match["x"],
+                    "match_y": match["y"],
+                    "match_width": match["width"],
+                    "match_height": match["height"],
+                    "similarity": match["similarity"],
+                }
+
+            result = await retry_operation(
+                perform_image_click,
+                max_attempts=self.get_parameter("retry_count", 0) + 1,
+                delay_seconds=self.get_parameter("retry_interval", 1000) / 1000,
+                operation_name="image click",
+            )
+
+            if result.success:
+                self.set_output_value("page", page)
+                return self.success_result(
+                    {
+                        **result.value,
+                        "attempts": result.attempts,
+                    }
+                )
+
+            await self.screenshot_on_failure(page, "image_click_fail")
+            raise result.last_error or RuntimeError("Image click failed")
+
+        except Exception as e:
+            return self.error_result(e)
+
+    async def _get_template_bytes(self) -> bytes | None:
+        """Get template image bytes from config or healing context."""
+        import base64
+
+        # First check for direct image_template parameter (base64)
+        image_template = self.get_parameter("image_template", "")
+        if image_template and len(image_template) > 100:
+            # Looks like base64 data
+            try:
+                return base64.b64decode(image_template)
+            except Exception:
+                pass
+
+        # Check healing context from selector dialog
+        healing_context = self.get_parameter("selector_healing_context", None)
+        if healing_context and isinstance(healing_context, dict):
+            cv_template = healing_context.get("cv_template", {})
+            if cv_template and "image_base64" in cv_template:
+                try:
+                    return base64.b64decode(cv_template["image_base64"])
+                except Exception:
+                    pass
+
+        return None
+
+    async def _find_template_match(
+        self,
+        screenshot_bytes: bytes,
+        template_bytes: bytes,
+        threshold: float,
+    ) -> dict | None:
+        """Find template in screenshot using CV matching."""
+        try:
+            from casare_rpa.infrastructure.browser.healing.cv_healer import CVHealer
+
+            cv_healer = CVHealer()
+            if not cv_healer.is_available:
+                raise RuntimeError("OpenCV not available for image matching")
+
+            # Convert bytes to CV images
+            screenshot = cv_healer._bytes_to_cv_image(screenshot_bytes)
+            template = cv_healer._bytes_to_cv_image(template_bytes)
+
+            # Perform matching
+            import asyncio
+
+            loop = asyncio.get_event_loop()
+            matches = await loop.run_in_executor(
+                None,
+                cv_healer._perform_template_matching,
+                screenshot,
+                template,
+            )
+
+            # Filter by threshold and get best match
+            valid_matches = [m for m in matches if m.similarity >= threshold]
+            if not valid_matches:
+                return None
+
+            best = max(valid_matches, key=lambda m: m.similarity)
+            return {
+                "x": best.x,
+                "y": best.y,
+                "width": best.width,
+                "height": best.height,
+                "center_x": best.center_x,
+                "center_y": best.center_y,
+                "similarity": best.similarity,
+            }
+
+        except ImportError:
+            logger.error("CV matching requires opencv-python")
+            raise RuntimeError("Install opencv-python for image matching")
+        except Exception as e:
+            logger.error(f"Template matching failed: {e}")
+            return None

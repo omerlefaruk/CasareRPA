@@ -5,7 +5,7 @@ Implements singleton pattern for deferred component initialization,
 supporting the 3-tier loading strategy for startup optimization.
 
 Tier 1 (CRITICAL): Immediate - NodeGraphWidget, WorkflowController
-Tier 2 (NORMAL): showEvent - PropertiesPanel, DebugPanel, VariablesPanel
+Tier 2 (NORMAL): showEvent - DebugPanel, BottomPanel (with Variables/Output tabs)
 Tier 3 (DEFERRED): Lazy factory - OutputConsole, dialogs
 """
 
@@ -149,13 +149,3 @@ class ComponentFactory:
             Dict mapping component names to creation times in milliseconds.
         """
         return cls._creation_times.copy()
-
-    @classmethod
-    def get_cached_count(cls) -> int:
-        """
-        Get number of cached components.
-
-        Returns:
-            Number of components currently in cache.
-        """
-        return len(cls._instances)

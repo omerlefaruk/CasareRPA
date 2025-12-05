@@ -62,8 +62,6 @@ class AutosaveController(BaseController):
         self._event_bus.subscribe(EventType.WORKFLOW_OPENED, self._on_workflow_opened)
         self._event_bus.subscribe(EventType.WORKFLOW_CLOSED, self._on_workflow_closed)
 
-        logger.info("AutosaveController initialized")
-
     def cleanup(self) -> None:
         """Clean up resources."""
         # Stop timer
@@ -93,7 +91,7 @@ class AutosaveController(BaseController):
         Args:
             interval_minutes: Autosave interval in minutes
         """
-        logger.info(f"Enabling autosave: every {interval_minutes} minute(s)")
+        logger.debug(f"Enabling autosave: every {interval_minutes} minute(s)")
 
         if not self._autosave_timer:
             logger.error("Autosave timer not initialized")
@@ -135,11 +133,6 @@ class AutosaveController(BaseController):
         if was_active:
             self.enable_autosave(interval_minutes)
 
-    def trigger_autosave_now(self) -> None:
-        """Manually trigger an autosave immediately."""
-        logger.info("Manually triggering autosave")
-        self._perform_autosave()
-
     def is_enabled(self) -> bool:
         """
         Check if autosave is currently enabled.
@@ -164,12 +157,8 @@ class AutosaveController(BaseController):
         if settings.is_autosave_enabled():
             interval_minutes = settings.get_autosave_interval()
             self.enable_autosave(interval_minutes)
-            logger.info(
-                f"Autosave enabled from settings: every {interval_minutes} minute(s)"
-            )
         else:
             self.disable_autosave()
-            logger.info("Autosave disabled from settings")
 
     def _perform_autosave(self) -> None:
         """

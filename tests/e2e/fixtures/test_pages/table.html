@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2E Test Table</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 24px;
+        }
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #007ACC;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        tr:hover {
+            background: #f5f9fc;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .price {
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        .stock-high {
+            color: #2e7d32;
+        }
+        .stock-medium {
+            color: #f57c00;
+        }
+        .stock-low {
+            color: #c62828;
+        }
+        .category-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .category-electronics {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .category-furniture {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .category-clothing {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .category-food {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .controls {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .controls input,
+        .controls select {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .controls input:focus,
+        .controls select:focus {
+            outline: none;
+            border-color: #007ACC;
+        }
+        .pagination {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .pagination button:hover:not(:disabled) {
+            border-color: #007ACC;
+            color: #007ACC;
+        }
+        .pagination button.active {
+            background: #007ACC;
+            color: white;
+            border-color: #007ACC;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .summary {
+            margin-top: 16px;
+            padding: 12px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product Catalog</h1>
+
+    <!-- Table controls -->
+    <div class="controls">
+        <input
+            type="text"
+            id="search"
+            placeholder="Search products..."
+            data-testid="search-input"
+        >
+        <select id="category-filter" data-testid="category-filter">
+            <option value="">All Categories</option>
+            <option value="electronics">Electronics</option>
+            <option value="furniture">Furniture</option>
+            <option value="clothing">Clothing</option>
+            <option value="food">Food</option>
+        </select>
+        <select id="sort-by" data-testid="sort-select">
+            <option value="name">Sort by Name</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="stock">Sort by Stock</option>
+        </select>
+    </div>
+
+    <!-- Data table -->
+    <div class="table-container">
+        <table id="data-table" data-testid="data-table">
+            <thead>
+                <tr>
+                    <th data-column="id">ID</th>
+                    <th data-column="name">Product Name</th>
+                    <th data-column="category">Category</th>
+                    <th data-column="price">Price</th>
+                    <th data-column="stock">Stock</th>
+                    <th data-column="sku">SKU</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Rows populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination" data-testid="pagination">
+        <!-- Buttons populated by JavaScript -->
+    </div>
+
+    <!-- Summary -->
+    <div class="summary" id="summary" data-testid="summary">
+        Showing 0 products
+    </div>
+
+    <script>
+        // Product data
+        const products = [
+            { id: 1, name: 'Laptop Pro 15', category: 'electronics', price: 1299.99, stock: 45, sku: 'ELEC-001' },
+            { id: 2, name: 'Wireless Mouse', category: 'electronics', price: 29.99, stock: 150, sku: 'ELEC-002' },
+            { id: 3, name: 'USB-C Hub', category: 'electronics', price: 49.99, stock: 78, sku: 'ELEC-003' },
+            { id: 4, name: 'Mechanical Keyboard', category: 'electronics', price: 149.99, stock: 62, sku: 'ELEC-004' },
+            { id: 5, name: 'Office Chair Deluxe', category: 'furniture', price: 299.99, stock: 23, sku: 'FURN-001' },
+            { id: 6, name: 'Standing Desk', category: 'furniture', price: 449.99, stock: 15, sku: 'FURN-002' },
+            { id: 7, name: 'Bookshelf Oak', category: 'furniture', price: 179.99, stock: 31, sku: 'FURN-003' },
+            { id: 8, name: 'Cotton T-Shirt', category: 'clothing', price: 24.99, stock: 200, sku: 'CLTH-001' },
+            { id: 9, name: 'Denim Jeans', category: 'clothing', price: 59.99, stock: 85, sku: 'CLTH-002' },
+            { id: 10, name: 'Winter Jacket', category: 'clothing', price: 129.99, stock: 42, sku: 'CLTH-003' },
+            { id: 11, name: 'Organic Coffee Beans', category: 'food', price: 18.99, stock: 120, sku: 'FOOD-001' },
+            { id: 12, name: 'Green Tea Pack', category: 'food', price: 12.99, stock: 95, sku: 'FOOD-002' },
+            { id: 13, name: 'Dark Chocolate Bar', category: 'food', price: 4.99, stock: 250, sku: 'FOOD-003' },
+            { id: 14, name: '4K Monitor', category: 'electronics', price: 399.99, stock: 28, sku: 'ELEC-005' },
+            { id: 15, name: 'Webcam HD', category: 'electronics', price: 79.99, stock: 67, sku: 'ELEC-006' },
+            { id: 16, name: 'Ergonomic Mouse Pad', category: 'furniture', price: 29.99, stock: 88, sku: 'FURN-004' },
+            { id: 17, name: 'Silk Scarf', category: 'clothing', price: 39.99, stock: 55, sku: 'CLTH-004' },
+            { id: 18, name: 'Almonds Pack', category: 'food', price: 14.99, stock: 130, sku: 'FOOD-004' },
+            { id: 19, name: 'Bluetooth Speaker', category: 'electronics', price: 89.99, stock: 52, sku: 'ELEC-007' },
+            { id: 20, name: 'File Cabinet', category: 'furniture', price: 199.99, stock: 19, sku: 'FURN-005' },
+        ];
+
+        const ITEMS_PER_PAGE = 5;
+        let currentPage = 1;
+        let filteredProducts = [...products];
+
+        // DOM elements
+        const tableBody = document.getElementById('table-body');
+        const pagination = document.getElementById('pagination');
+        const summary = document.getElementById('summary');
+        const searchInput = document.getElementById('search');
+        const categoryFilter = document.getElementById('category-filter');
+        const sortBy = document.getElementById('sort-by');
+
+        function getCategoryClass(category) {
+            return `category-${category}`;
+        }
+
+        function getStockClass(stock) {
+            if (stock >= 100) return 'stock-high';
+            if (stock >= 30) return 'stock-medium';
+            return 'stock-low';
+        }
+
+        function formatPrice(price) {
+            return '$' + price.toFixed(2);
+        }
+
+        function renderTable() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pageProducts = filteredProducts.slice(start, end);
+
+            tableBody.innerHTML = pageProducts.map(product => `
+                <tr data-id="${product.id}">
+                    <td>${product.id}</td>
+                    <td>${product.name}</td>
+                    <td>
+                        <span class="category-badge ${getCategoryClass(product.category)}">
+                            ${product.category}
+                        </span>
+                    </td>
+                    <td class="price">${formatPrice(product.price)}</td>
+                    <td class="${getStockClass(product.stock)}">${product.stock}</td>
+                    <td>${product.sku}</td>
+                </tr>
+            `).join('');
+
+            renderPagination();
+            updateSummary();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+
+            let buttons = '';
+
+            // Previous button
+            buttons += `<button id="prev-page" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>`;
+
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                buttons += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+            }
+
+            // Next button
+            buttons += `<button id="next-page" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>`;
+
+            pagination.innerHTML = buttons;
+
+            // Add event listeners
+            document.getElementById('prev-page')?.addEventListener('click', () => goToPage(currentPage - 1));
+            document.getElementById('next-page')?.addEventListener('click', () => goToPage(currentPage + 1));
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.addEventListener('click', () => goToPage(parseInt(btn.dataset.page)));
+            });
+        }
+
+        function updateSummary() {
+            const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+            const end = Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length);
+            summary.textContent = `Showing ${start}-${end} of ${filteredProducts.length} products`;
+        }
+
+        function goToPage(page) {
+            const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable();
+        }
+
+        function filterAndSort() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const category = categoryFilter.value;
+            const sortOption = sortBy.value;
+
+            // Filter
+            filteredProducts = products.filter(product => {
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) ||
+                                      product.sku.toLowerCase().includes(searchTerm);
+                const matchesCategory = !category || product.category === category;
+                return matchesSearch && matchesCategory;
+            });
+
+            // Sort
+            switch (sortOption) {
+                case 'name':
+                    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+                    break;
+                case 'price-asc':
+                    filteredProducts.sort((a, b) => a.price - b.price);
+                    break;
+                case 'price-desc':
+                    filteredProducts.sort((a, b) => b.price - a.price);
+                    break;
+                case 'stock':
+                    filteredProducts.sort((a, b) => b.stock - a.stock);
+                    break;
+            }
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Event listeners
+        searchInput.addEventListener('input', filterAndSort);
+        categoryFilter.addEventListener('change', filterAndSort);
+        sortBy.addEventListener('change', filterAndSort);
+
+        // Expose data for testing
+        window.getTableData = function() {
+            return filteredProducts;
+        };
+
+        window.getVisibleRows = function() {
+            const rows = [];
+            tableBody.querySelectorAll('tr').forEach(row => {
+                const cells = row.querySelectorAll('td');
+                rows.push({
+                    id: parseInt(cells[0].textContent),
+                    name: cells[1].textContent,
+                    category: cells[2].textContent.trim(),
+                    price: cells[3].textContent,
+                    stock: parseInt(cells[4].textContent),
+                    sku: cells[5].textContent
+                });
+            });
+            return rows;
+        };
+
+        window.getTotalProducts = function() {
+            return products.length;
+        };
+
+        window.getFilteredCount = function() {
+            return filteredProducts.length;
+        };
+
+        // Initial render
+        renderTable();
+    </script>
+</body>
+</html>

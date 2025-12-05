@@ -85,12 +85,12 @@ class SetHttpHeadersNode(BaseNode):
         self.node_type = "SetHttpHeadersNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("base_headers", PortType.INPUT, DataType.DICT)
-        self.add_input_port("header_name", PortType.INPUT, DataType.STRING)
-        self.add_input_port("header_value", PortType.INPUT, DataType.STRING)
-        self.add_input_port("headers_json", PortType.INPUT, DataType.DICT)
+        self.add_input_port("base_headers", DataType.DICT, required=False)
+        self.add_input_port("header_name", DataType.STRING, required=False)
+        self.add_input_port("header_value", DataType.STRING, required=False)
+        self.add_input_port("headers_json", DataType.DICT, required=False)
 
-        self.add_output_port("headers", PortType.OUTPUT, DataType.DICT)
+        self.add_output_port("headers", DataType.DICT)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -179,13 +179,13 @@ class ParseJsonResponseNode(BaseNode):
         self.node_type = "ParseJsonResponseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("json_data", PortType.INPUT, DataType.ANY)
-        self.add_input_port("path", PortType.INPUT, DataType.STRING)
-        self.add_input_port("default", PortType.INPUT, DataType.ANY)
+        self.add_input_port("json_data", DataType.ANY, required=False)
+        self.add_input_port("path", DataType.STRING, required=False)
+        self.add_input_port("default", DataType.ANY, required=False)
 
-        self.add_output_port("value", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("error", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("value", DataType.ANY)
+        self.add_output_port("success", DataType.BOOLEAN)
+        self.add_output_port("error", DataType.STRING)
 
     def _extract_path(self, data: Any, path: str) -> Any:
         """Extract value from data using dot notation path."""

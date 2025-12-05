@@ -48,12 +48,17 @@ if TYPE_CHECKING:
         ClickElementNode,
         TypeTextNode,
         SelectDropdownNode,
+        ImageClickNode,
     )
     from .data_nodes import (
         ExtractTextNode,
         GetAttributeNode,
         ScreenshotNode,
     )
+    from .browser.table_scraper_node import TableScraperNode
+    from .browser.form_field_node import FormFieldNode
+    from .browser.form_filler_node import FormFillerNode
+    from .browser.detect_forms_node import DetectFormsNode
     from .wait_nodes import (
         WaitNode,
         WaitForElementNode,
@@ -341,10 +346,17 @@ _NODE_REGISTRY: Dict[str, str] = {
     "ClickElementNode": "interaction_nodes",
     "TypeTextNode": "interaction_nodes",
     "SelectDropdownNode": "interaction_nodes",
+    "ImageClickNode": "interaction_nodes",
     # Data extraction nodes
     "ExtractTextNode": "data_nodes",
     "GetAttributeNode": "data_nodes",
     "ScreenshotNode": "data_nodes",
+    # Table scraping nodes
+    "TableScraperNode": "browser.table_scraper_node",
+    # Form nodes
+    "FormFieldNode": "browser.form_field_node",
+    "FormFillerNode": "browser.form_filler_node",
+    "DetectFormsNode": "browser.detect_forms_node",
     # Wait nodes
     "WaitNode": "wait_nodes",
     "WaitForElementNode": "wait_nodes",
@@ -695,6 +707,19 @@ _NODE_REGISTRY: Dict[str, str] = {
     "DriveBatchDeleteNode": "google.drive_nodes",
     "DriveBatchMoveNode": "google.drive_nodes",
     "DriveBatchCopyNode": "google.drive_nodes",
+    # Desktop/Office automation nodes
+    "ExcelOpenNode": "desktop_nodes.office_nodes",
+    "ExcelReadCellNode": "desktop_nodes.office_nodes",
+    "ExcelWriteCellNode": "desktop_nodes.office_nodes",
+    "ExcelGetRangeNode": "desktop_nodes.office_nodes",
+    "ExcelCloseNode": "desktop_nodes.office_nodes",
+    "WordOpenNode": "desktop_nodes.office_nodes",
+    "WordGetTextNode": "desktop_nodes.office_nodes",
+    "WordReplaceTextNode": "desktop_nodes.office_nodes",
+    "WordCloseNode": "desktop_nodes.office_nodes",
+    "OutlookSendEmailNode": "desktop_nodes.office_nodes",
+    "OutlookReadEmailsNode": "desktop_nodes.office_nodes",
+    "OutlookGetInboxCountNode": "desktop_nodes.office_nodes",
 }
 
 # Cache for loaded modules and classes
@@ -818,10 +843,17 @@ __all__ = [
     "ClickElementNode",
     "TypeTextNode",
     "SelectDropdownNode",
+    "ImageClickNode",
     # Data extraction
     "ExtractTextNode",
     "GetAttributeNode",
     "ScreenshotNode",
+    # Table scraping
+    "TableScraperNode",
+    # Form nodes
+    "FormFieldNode",
+    "FormFillerNode",
+    "DetectFormsNode",
     # Wait nodes
     "WaitNode",
     "WaitForElementNode",
@@ -1080,6 +1112,19 @@ __all__ = [
     "DocsInsertTableNode",
     "DocsInsertImageNode",
     "DocsApplyStyleNode",
+    # Desktop/Office automation nodes
+    "ExcelOpenNode",
+    "ExcelReadCellNode",
+    "ExcelWriteCellNode",
+    "ExcelGetRangeNode",
+    "ExcelCloseNode",
+    "WordOpenNode",
+    "WordGetTextNode",
+    "WordReplaceTextNode",
+    "WordCloseNode",
+    "OutlookSendEmailNode",
+    "OutlookReadEmailsNode",
+    "OutlookGetInboxCountNode",
     # Utility functions
     "get_all_node_classes",
     "preload_nodes",

@@ -3,7 +3,7 @@ Node insertion on connection drop.
 
 Allows dragging a node onto an existing connection line to insert it in-between.
 Shows visual feedback (orange highlight) when node overlaps a connection.
-Automatically spaces nodes apart with 30px gaps when needed.
+Automatically spaces nodes apart with 150px gaps when needed.
 """
 
 from typing import Optional, Tuple
@@ -17,7 +17,7 @@ from loguru import logger
 
 
 # Spacing between nodes after insertion
-NODE_GAP = 50
+NODE_GAP = 100
 
 
 def _get_name(obj) -> str:
@@ -37,7 +37,7 @@ class NodeInsertManager(QObject):
     - Detects when a dragged node overlaps an exec connection
     - Highlights the connection with orange color
     - On drop, inserts the node in-between by reconnecting ports
-    - Auto-spaces nodes with 30px gaps when too close
+    - Auto-spaces nodes with 150px gaps when too close
     """
 
     node_inserted = Signal(
@@ -54,6 +54,10 @@ class NodeInsertManager(QObject):
         self._highlighted_pipe = None
         self._was_dragging = False
         self._original_pen = None  # For restoring PipeItem pen after highlight
+        self._drag_start_pos: Optional[Tuple[float, float]] = (
+            None  # Track initial position
+        )
+        self._drag_threshold = 10  # Minimum pixels to move before considering it a drag
 
         # Use a timer for polling during drag (more reliable than event filters)
         self._drag_timer = QTimer(self)
@@ -75,8 +79,6 @@ class NodeInsertManager(QObject):
 
             # Start the drag monitoring timer
             self._drag_timer.start()
-
-            logger.info("NodeInsertManager initialized successfully")
         except Exception as e:
             logger.warning(f"Could not setup node insert event filters: {e}")
 
@@ -115,14 +117,27 @@ class NodeInsertManager(QObject):
                 )
 
                 if not is_making_connection:
-                    self._dragging_node = selected_nodes[0]
-                    self._was_dragging = True
-                    self._update_highlight()
+                    node = selected_nodes[0]
+                    current_pos = node.pos()
+
+                    # Track initial position when first pressing LMB
+                    if self._drag_start_pos is None:
+                        self._drag_start_pos = current_pos
+                        # Don't highlight yet - wait for actual movement
+                    else:
+                        # Check if moved beyond threshold (actual drag, not just click)
+                        dx = abs(current_pos[0] - self._drag_start_pos[0])
+                        dy = abs(current_pos[1] - self._drag_start_pos[1])
+                        if dx > self._drag_threshold or dy > self._drag_threshold:
+                            self._dragging_node = node
+                            self._was_dragging = True
+                            self._update_highlight()
                 else:
                     # Making connection, clear any highlight
                     if self._highlighted_pipe:
                         self._clear_highlight()
                     self._dragging_node = None
+                    self._drag_start_pos = None
             else:
                 # Not dragging anymore
                 if (
@@ -131,12 +146,12 @@ class NodeInsertManager(QObject):
                     and self._dragging_node
                 ):
                     # Mouse was released while over a highlighted pipe - INSERT!
-                    logger.info(f"Inserting node {self._dragging_node.name()} on drop")
                     self._insert_node_on_pipe()
 
                 self._clear_highlight()
                 self._dragging_node = None
                 self._was_dragging = False
+                self._drag_start_pos = None
 
         except Exception as e:
             logger.error(f"Error in drag state check: {e}")
@@ -182,7 +197,9 @@ class NodeInsertManager(QObject):
                             pipe.pen() if hasattr(pipe, "pen") else None
                         )
                         if hasattr(pipe, "setPen"):
-                            orange_pen = QPen(QColor(255, 140, 0), 7)  # Thick orange
+                            orange_pen = QPen(
+                                QColor(255, 140, 0), 4
+                            )  # Orange highlight
                             pipe.setPen(orange_pen)
                             pipe.update()
 
@@ -459,33 +476,23 @@ class NodeInsertManager(QObject):
             # Find exec ports on the dragging node
             exec_in, exec_out = self._find_exec_ports(node)
 
-            logger.debug(f"Node exec ports: in={exec_in}, out={exec_out}")
-
             if not exec_in or not exec_out:
                 logger.warning(
                     f"Node {_get_name(node)} has no exec ports, cannot insert"
                 )
                 return
 
-            logger.info(
-                f"Inserting {_get_name(node)} between {_get_name(source_node)} and {_get_name(target_node)}"
-            )
-            logger.info(f"  source_port={source_port}, target_port={target_port}")
-            logger.info(f"  exec_in={exec_in}, exec_out={exec_out}")
-
             # Disconnect existing connection
             disconnected = False
             try:
                 source_port.disconnect_from(target_port)
                 disconnected = True
-                logger.info("Disconnected original pipe")
             except Exception as e:
                 logger.warning(f"Failed to disconnect (trying reverse): {e}")
                 # Try reverse
                 try:
                     target_port.disconnect_from(source_port)
                     disconnected = True
-                    logger.info("Disconnected via reverse")
                 except Exception as e2:
                     logger.error(f"Failed reverse disconnect: {e2}")
 
@@ -601,9 +608,9 @@ class NodeInsertManager(QObject):
         self, source_node: BaseNode, new_node: BaseNode, target_node: BaseNode
     ):
         """
-        Auto-space nodes to ensure equal 30px gaps between all three.
+        Auto-space nodes to ensure equal 150px gaps between all three.
 
-        Positions: source --30px-- new_node --30px-- target
+        Positions: source --150px-- new_node --150px-- target
         Source stays fixed, new_node and target are repositioned.
         """
         try:

@@ -3,8 +3,6 @@ Panel visibility and management controller.
 
 Handles all panel-related operations:
 - Bottom panel (Output, Log, Variables, Validation tabs)
-- Properties panel (right dock)
-- Variable inspector dock
 - Execution timeline dock
 - Minimap overlay
 - Panel state persistence
@@ -28,16 +26,12 @@ class PanelController(BaseController):
 
     Signals:
         bottom_panel_toggled: Emitted when bottom panel visibility changes (bool: visible)
-        properties_panel_toggled: Emitted when properties panel visibility changes (bool: visible)
-        variable_inspector_toggled: Emitted when variable inspector visibility changes (bool: visible)
         minimap_toggled: Emitted when minimap visibility changes (bool: visible)
         panel_tab_changed: Emitted when active tab changes (str: tab_name)
     """
 
     # Signals
     bottom_panel_toggled = Signal(bool)  # visible
-    properties_panel_toggled = Signal(bool)  # visible
-    variable_inspector_toggled = Signal(bool)  # visible
     minimap_toggled = Signal(bool)  # visible
     panel_tab_changed = Signal(str)  # tab_name
 
@@ -48,7 +42,6 @@ class PanelController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
-        logger.info("PanelController initialized")
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -68,34 +61,6 @@ class PanelController(BaseController):
         if dock:
             dock.setVisible(visible)
             self.bottom_panel_toggled.emit(visible)
-
-    def toggle_properties_panel(self, visible: bool) -> None:
-        """
-        Toggle properties panel visibility.
-
-        Args:
-            visible: True to show, False to hide
-        """
-        logger.debug(f"Toggling properties panel: {visible}")
-
-        dock = self.main_window.get_properties_panel()
-        if dock:
-            dock.setVisible(visible)
-            self.properties_panel_toggled.emit(visible)
-
-    def toggle_variable_inspector(self, visible: bool) -> None:
-        """
-        Toggle variable inspector visibility.
-
-        Args:
-            visible: True to show, False to hide
-        """
-        logger.debug(f"Toggling variable inspector: {visible}")
-
-        dock = self.main_window.get_variable_inspector_dock()
-        if dock:
-            dock.setVisible(visible)
-            self.variable_inspector_toggled.emit(visible)
 
     def toggle_minimap(self, visible: bool) -> None:
         """
@@ -155,19 +120,6 @@ class PanelController(BaseController):
         node_controller = self.main_window.get_node_controller()
         if node_controller:
             node_controller.navigate_to_node(node_id)
-
-    def update_variables_panel(self, variables: dict) -> None:
-        """
-        Update the variables panel with new values.
-
-        Args:
-            variables: Dictionary of variable name -> value
-        """
-        logger.debug(f"Updating variables panel: {len(variables)} variables")
-
-        inspector = self.main_window.get_variable_inspector_dock()
-        if inspector and hasattr(inspector, "update_variables"):
-            inspector.update_variables(variables)
 
     def trigger_validation(self) -> None:
         """Trigger workflow validation and update validation panel."""
@@ -277,24 +229,6 @@ class PanelController(BaseController):
             y = central_widget.height() - minimap.height() - margin
             minimap.move(x, y)
             minimap.raise_()
-
-    def show_variable_inspector(self) -> None:
-        """Show the Variable Inspector dock."""
-        dock = self.main_window.get_variable_inspector_dock()
-        if dock:
-            dock.show()
-            self.variable_inspector_toggled.emit(True)
-            if hasattr(self.main_window, "action_toggle_variable_inspector"):
-                self.main_window.action_toggle_variable_inspector.setChecked(True)
-
-    def hide_variable_inspector(self) -> None:
-        """Hide the Variable Inspector dock."""
-        dock = self.main_window.get_variable_inspector_dock()
-        if dock:
-            dock.hide()
-            self.variable_inspector_toggled.emit(False)
-            if hasattr(self.main_window, "action_toggle_variable_inspector"):
-                self.main_window.action_toggle_variable_inspector.setChecked(False)
 
     def update_status_bar_buttons(self) -> None:
         """Update status bar button states based on current panel visibility and tab."""

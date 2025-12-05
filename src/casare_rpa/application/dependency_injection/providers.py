@@ -81,7 +81,6 @@ class StorageProvider(BaseProvider):
     Manages:
     - schedule_storage: ScheduleStorage (singleton)
     - recent_files_manager: RecentFilesManager (singleton)
-    - template_loader: TemplateLoader (singleton)
     - settings_manager: SettingsManager (singleton)
     """
 
@@ -101,11 +100,6 @@ class StorageProvider(BaseProvider):
 
             return RecentFilesManager()
 
-        def template_loader_factory() -> Any:
-            from casare_rpa.utils.workflow.template_loader import TemplateLoader
-
-            return TemplateLoader()
-
         def settings_manager_factory() -> Any:
             from casare_rpa.utils.settings_manager import SettingsManager
 
@@ -117,7 +111,6 @@ class StorageProvider(BaseProvider):
         container.register_singleton(
             "recent_files_manager", factory=recent_files_factory
         )
-        container.register_singleton("template_loader", factory=template_loader_factory)
         container.register_singleton(
             "settings_manager", factory=settings_manager_factory
         )

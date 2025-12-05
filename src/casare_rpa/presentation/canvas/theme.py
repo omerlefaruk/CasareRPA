@@ -87,6 +87,7 @@ class CanvasThemeColors:
     wire_number: str = "#B5CEA8"  # Light green (number color from Dark+)
     wire_list: str = "#C586C0"  # Purple (control flow from Dark+)
     wire_dict: str = "#4EC9B0"  # Teal (type color from Dark+)
+    wire_table: str = "#569CD6"  # Blue (DataTable type)
 
     # Toolbar
     toolbar_bg: str = "#2D2D30"  # VSCode header
@@ -172,8 +173,8 @@ QMenu::item:selected {{
 
 QMenu::separator {{
     height: 1px;
-    background-color: {THEME.border};
-    margin: 6px 8px;
+    background-color: rgba(255, 255, 255, 0.15);
+    margin: 6px 10px;
 }}
 
 /* ==================== TOOLBAR ==================== */
@@ -607,6 +608,7 @@ QTextEdit, QPlainTextEdit {{
 /* ==================== LABEL ==================== */
 QLabel {{
     background: transparent;
+    background-color: transparent;
     color: {THEME.text_primary};
 }}
 
@@ -641,6 +643,40 @@ QLabel[empty-state="true"] {{
     color: {THEME.text_muted};
     font-size: 13px;
     padding: 20px;
+}}
+
+/* ==================== DIALOGS ==================== */
+QDialog {{
+    background-color: {THEME.bg_panel};
+    color: {THEME.text_primary};
+}}
+
+QMessageBox {{
+    background-color: {THEME.bg_panel};
+    color: {THEME.text_primary};
+}}
+
+QMessageBox QLabel {{
+    color: {THEME.text_primary};
+    background-color: transparent;
+}}
+
+QMessageBox QPushButton {{
+    min-width: 70px;
+}}
+
+QInputDialog {{
+    background-color: {THEME.bg_panel};
+    color: {THEME.text_primary};
+}}
+
+QInputDialog QLabel {{
+    color: {THEME.text_primary};
+}}
+
+QFileDialog {{
+    background-color: {THEME.bg_panel};
+    color: {THEME.text_primary};
 }}
 """
 

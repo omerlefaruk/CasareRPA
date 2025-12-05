@@ -60,6 +60,9 @@ class PropertyDef:
     widget_class: Optional[Type] = None
     """Custom widget class for CUSTOM type or special rendering."""
 
+    essential: bool = False
+    """Whether this property is essential (visible when node is collapsed)."""
+
     def __post_init__(self):
         """Auto-generate label if not provided."""
         if self.label is None:
@@ -218,8 +221,19 @@ class NodeSchema:
         if not isinstance(value, str):
             return value
 
-        # Handle empty strings
+        # Handle empty strings - only convert to default for non-string types
+        # Empty string is a valid value for STRING, TEXT, etc.
         if value == "":
+            if prop.type in (
+                PropertyType.STRING,
+                PropertyType.TEXT,
+                PropertyType.FILE_PATH,
+                PropertyType.DIRECTORY_PATH,
+                PropertyType.CODE,
+                PropertyType.SELECTOR,
+                PropertyType.ANY,  # ANY should preserve empty strings
+            ):
+                return value  # Keep empty string as-is
             return prop.default
 
         try:
@@ -249,3 +263,25 @@ class NodeSchema:
             if prop.name == name:
                 return prop
         return None
+
+    def get_essential_properties(self) -> List[str]:
+        """
+        Get list of essential property names.
+
+        Essential properties are shown when the node is collapsed.
+
+        Returns:
+            List of property names marked as essential
+        """
+        return [prop.name for prop in self.properties if prop.essential]
+
+    def get_collapsible_properties(self) -> List[str]:
+        """
+        Get list of collapsible (non-essential) property names.
+
+        Collapsible properties are hidden when the node is collapsed.
+
+        Returns:
+            List of property names NOT marked as essential
+        """
+        return [prop.name for prop in self.properties if not prop.essential]

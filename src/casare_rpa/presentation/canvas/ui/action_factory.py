@@ -126,14 +126,6 @@ class ActionFactory(QObject):
         self._actions["new"].setShortcut(QKeySequence.StandardKey.New)
 
         self._create_action(
-            "new_from_template",
-            "New from &Template...",
-            shortcut="Ctrl+Shift+N",
-            status_tip="Create a new workflow from a template",
-            triggered=mw._on_new_from_template,
-        )
-
-        self._create_action(
             "open",
             "&Open Workflow...",
             shortcut=None,
@@ -357,15 +349,6 @@ class ActionFactory(QObject):
             shortcut="Ctrl+`",
             status_tip="Show/hide bottom panel (Variables, Output, Log, Validation)",
             triggered=mw._on_toggle_bottom_panel,
-            checkable=True,
-        )
-
-        self._create_action(
-            "toggle_variable_inspector",
-            "Variable &Inspector",
-            shortcut="Ctrl+Shift+V",
-            status_tip="Show/hide variable inspector (real-time variable values)",
-            triggered=mw._on_toggle_variable_inspector,
             checkable=True,
         )
 

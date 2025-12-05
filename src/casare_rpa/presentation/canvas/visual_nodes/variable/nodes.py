@@ -17,6 +17,10 @@ class VisualSetVariableNode(VisualNode):
         # Widgets auto-generated from @node_schema on SetVariableNode
         # Add value widget manually (PropertyType.ANY not auto-generated)
         self.add_text_input("default_value", "Value", tab="properties")
+        # Don't collapse - users need to see the value input
+        # Must be called after widgets are added
+        self._collapsed = True  # Reset to allow set_collapsed to work
+        self.set_collapsed(False)
 
     def setup_ports(self) -> None:
         """Setup ports."""

@@ -1,10 +1,12 @@
 """
 Selector controller for element picker functionality.
 
-Handles browser and desktop element selection:
-- Desktop element picker
-- Browser element picker (via SelectorIntegration)
-- Selector management and updates
+Handles browser and desktop element selection via UnifiedSelectorDialog:
+- Browser element picking (CSS, XPath, ARIA)
+- Desktop element picking (AutomationId, Name, Path)
+- OCR text detection
+- Image/template matching
+- Healing context capture
 """
 
 from typing import Optional, TYPE_CHECKING, Any
@@ -18,13 +20,15 @@ from ..events.event_types import EventType
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
+    from playwright.async_api import Page
 
 
 class SelectorController(BaseController):
     """
     Manages element selector functionality.
 
-    Single Responsibility: Coordinate element picking and selector updates.
+    Single Responsibility: Coordinate element picking and selector updates
+    via the UnifiedSelectorDialog.
 
     Signals:
         selector_picked: Emitted when selector is picked (str: selector_value, str: selector_type)
@@ -42,6 +46,8 @@ class SelectorController(BaseController):
         super().__init__(main_window)
         self._selector_integration = None
         self._event_bus = EventBus()
+        self._browser_page: Optional["Page"] = None
+        self._unified_dialog = None
 
     def initialize(self) -> None:
         """Initialize controller and setup event subscriptions."""
@@ -64,8 +70,6 @@ class SelectorController(BaseController):
             EventType.SELECTOR_PICKER_OPENED, self._on_picker_opened_event
         )
 
-        logger.info("SelectorController initialized")
-
     def cleanup(self) -> None:
         """Clean up resources."""
         if self._selector_integration:
@@ -79,38 +83,107 @@ class SelectorController(BaseController):
     # Public API
     # =========================================================================
 
+    def show_unified_selector_dialog(
+        self,
+        target_node: Optional[Any] = None,
+        target_property: str = "selector",
+        initial_mode: str = "browser",
+    ) -> None:
+        """
+        Show the element selector dialog.
+
+        This is the main entry point for element picking.
+
+        Args:
+            target_node: Optional node to update with picked selector
+            target_property: Property name to update (default: "selector")
+            initial_mode: Which mode to show first ("browser", "desktop")
+        """
+        from ..selectors.element_selector_dialog import ElementSelectorDialog
+
+        logger.info(
+            f"Opening element selector dialog (mode={initial_mode}, "
+            f"target_node={target_node}, property={target_property}, "
+            f"browser_page_available={self._browser_page is not None})"
+        )
+
+        # Create dialog
+        dialog = ElementSelectorDialog(
+            parent=self.main_window,
+            mode=initial_mode,
+            browser_page=self._browser_page,
+            target_node=target_node,
+            property_name=target_property,
+        )
+
+        # Connect signals
+        dialog.selector_confirmed.connect(self._on_unified_selector_picked)
+
+        self.picker_started.emit()
+
+        # Publish event
+        event = Event(
+            type=EventType.SELECTOR_PICKER_OPENED,
+            source="SelectorController",
+            data={
+                "target_node": target_node,
+                "target_property": target_property,
+                "mode": initial_mode,
+            },
+        )
+        self._event_bus.publish(event)
+
+        # Show dialog (modal)
+        dialog.exec()
+
+        self.picker_stopped.emit()
+
+    def _on_unified_selector_picked(self, result) -> None:
+        """
+        Handle selector picked from unified dialog.
+
+        Args:
+            result: SelectorResult object
+        """
+        logger.info(
+            f"Unified selector picked: {result.selector_value[:50]}... "
+            f"(type: {result.selector_type})"
+        )
+
+        # Emit signal
+        self.selector_picked.emit(result.selector_value, result.selector_type)
+
+        # Publish event with full result including healing context
+        event = Event(
+            type=EventType.SELECTOR_PICKED,
+            source="SelectorController",
+            data={
+                "selector_value": result.selector_value,
+                "selector_type": result.selector_type,
+                "confidence": result.confidence,
+                "is_unique": result.is_unique,
+                "healing_context": result.healing_context,
+                "metadata": result.metadata,
+            },
+        )
+        self._event_bus.publish(event)
+
     async def start_picker(
         self, target_node: Optional[Any] = None, target_property: str = "selector"
     ) -> None:
         """
-        Start element picker mode.
+        Start element picker mode (legacy API - opens unified dialog).
 
         Args:
             target_node: Optional node to update with picked selector
             target_property: Property name to update (default: "selector")
         """
-        if not self._selector_integration:
-            logger.error("Selector integration not initialized")
-            return
-
-        logger.info(
-            f"Starting selector picker (target_node={target_node}, property={target_property})"
+        # Delegate to unified dialog
+        self.show_unified_selector_dialog(
+            target_node=target_node,
+            target_property=target_property,
+            initial_mode="browser",
         )
-
-        try:
-            await self._selector_integration.start_picking(target_node, target_property)
-            self.picker_started.emit()
-
-            # Publish event
-            event = Event(
-                type=EventType.SELECTOR_PICKER_OPENED,
-                source="SelectorController",
-                data={"target_node": target_node, "target_property": target_property},
-            )
-            self._event_bus.publish(event)
-
-        except Exception as e:
-            logger.error(f"Failed to start picker: {e}")
 
     async def stop_picker(self) -> None:
         """Stop selector picker mode."""
@@ -162,16 +235,39 @@ class SelectorController(BaseController):
         Args:
             page: Playwright Page object
         """
-        if not self._selector_integration:
-            logger.error("Selector integration not initialized")
-            return
+        # Store page for unified dialog
+        logger.info(
+            f"SelectorController.initialize_for_page called: page={page is not None}, url={getattr(page, 'url', 'N/A')}"
+        )
+        self._browser_page = page
 
-        logger.info("Initializing selector for page")
+        # Also initialize legacy integration if available
+        if self._selector_integration:
+            logger.info("Initializing selector integration for page")
+            try:
+                await self._selector_integration.initialize_for_page(page)
+                logger.info("Selector integration initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize for page: {e}")
 
-        try:
-            await self._selector_integration.initialize_for_page(page)
-        except Exception as e:
-            logger.error(f"Failed to initialize for page: {e}")
+    def set_browser_page(self, page: Any) -> None:
+        """
+        Set the browser page for selector operations (sync version).
+
+        Args:
+            page: Playwright Page object
+        """
+        self._browser_page = page
+        logger.debug("Browser page set for selector controller")
+
+    def get_browser_page(self) -> Any:
+        """
+        Get the current browser page.
+
+        Returns:
+            Playwright Page object or None if not set
+        """
+        return self._browser_page
 
     def get_selector_integration(self):
         """

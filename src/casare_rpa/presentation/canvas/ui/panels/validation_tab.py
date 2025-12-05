@@ -1,7 +1,12 @@
 """
 Validation Tab for the Bottom Panel.
 
-Provides workflow validation results display with navigation support.
+Provides workflow validation results display with improved UX:
+- Empty state with guidance
+- Color-coded severity indicators
+- Click to navigate to node
+- Auto-validate trigger
+- Clear visual hierarchy with icons
 """
 
 from typing import Optional, TYPE_CHECKING
@@ -12,12 +17,22 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTreeWidget,
     QTreeWidgetItem,
-    QPushButton,
     QLabel,
     QHeaderView,
+    QStackedWidget,
+    QApplication,
+    QMenu,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
+
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    StatusBadge,
+    get_panel_toolbar_stylesheet,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult
@@ -28,18 +43,23 @@ class ValidationTab(QWidget):
     Validation tab widget for displaying workflow validation results.
 
     Features:
+    - Empty state when no validation run
     - Tree view with errors/warnings grouped by type
     - Click to navigate to node
-    - Auto-validate on change
-    - Manual validate button
+    - Color-coded severity icons
+    - Status badge showing validation state
+    - Context menu for copy
+    - Repair button to auto-fix repairable issues
 
     Signals:
         validation_requested: Emitted when user requests manual validation
         issue_clicked: Emitted when user clicks an issue (location: str)
+        repair_requested: Emitted when user requests to repair workflow issues
     """
 
     validation_requested = Signal()
     issue_clicked = Signal(str)  # location string
+    repair_requested = Signal()  # repair workflow issues
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -58,58 +78,114 @@ class ValidationTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        # Header
-        header = QHBoxLayout()
-        header.setSpacing(8)
+        # Toolbar
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("validationToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(8, 6, 8, 6)
+        toolbar.setSpacing(12)
 
-        # Status label
-        from casare_rpa.presentation.canvas.theme import THEME
+        # Status badge
+        self._status_badge = StatusBadge("NOT RUN", "idle")
 
-        self._status_label = QLabel("No validation run")
-        self._status_label.setStyleSheet(
-            f"color: {THEME.text_muted}; font-weight: bold;"
+        # Status description
+        self._status_label = QLabel("Click 'Validate' to check workflow")
+        self._status_label.setProperty("muted", True)
+
+        # Validate button (primary)
+        validate_btn = ToolbarButton(
+            text="Validate",
+            tooltip="Validate workflow (Ctrl+Shift+V)",
+            primary=True,
         )
-
-        # Validate button
-        validate_btn = QPushButton("Validate")
-        validate_btn.setFixedSize(50, 16)
         validate_btn.clicked.connect(self.validation_requested.emit)
-        validate_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4b6eaf;
-                color: white;
+
+        # Repair button (shown when repairable issues exist)
+        self._repair_btn = ToolbarButton(
+            text="Repair",
+            tooltip="Auto-fix repairable issues (duplicate node IDs, etc.)",
+        )
+        self._repair_btn.clicked.connect(self.repair_requested.emit)
+        self._repair_btn.setVisible(False)  # Hidden until repairable issues found
+        # Style repair button with warning color
+        self._repair_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.status_warning};
+                color: #000000;
                 border: none;
-                border-radius: 2px;
-                padding: 1px 4px;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background-color: #5a7fc0;
-            }
+                border-radius: 4px;
+                padding: 4px 12px;
+                font-size: 11px;
+                font-weight: 600;
+            }}
+            QPushButton:hover {{
+                background-color: #e6a700;
+            }}
+            QPushButton:pressed {{
+                background-color: #cc9500;
+            }}
         """)
 
         # Clear button
-        clear_btn = QPushButton("Clear")
-        clear_btn.setFixedSize(40, 16)
+        clear_btn = ToolbarButton(
+            text="Clear",
+            tooltip="Clear validation results",
+        )
         clear_btn.clicked.connect(self.clear)
 
-        header.addWidget(self._status_label)
-        header.addStretch()
-        header.addWidget(validate_btn)
-        header.addWidget(clear_btn)
+        toolbar.addWidget(self._status_badge)
+        toolbar.addWidget(self._status_label)
+        toolbar.addStretch()
+        toolbar.addWidget(self._repair_btn)
+        toolbar.addWidget(validate_btn)
+        toolbar.addWidget(clear_btn)
 
-        layout.addLayout(header)
+        layout.addWidget(toolbar_widget)
 
-        # Issues tree
+        # Content area with stacked widget
+        self._content_stack = QStackedWidget()
+
+        # Empty state (index 0)
+        self._empty_state = EmptyStateWidget(
+            icon_text="",  # Checkmark/shield icon
+            title="No Validation Run",
+            description=(
+                "Workflow validation checks for:\n"
+                "- Missing required connections\n"
+                "- Invalid node configurations\n"
+                "- Circular dependencies\n\n"
+                "Click 'Validate' to check your workflow."
+            ),
+            action_text="Validate Now",
+        )
+        self._empty_state.action_clicked.connect(self.validation_requested.emit)
+        self._content_stack.addWidget(self._empty_state)
+
+        # Success state (index 1)
+        self._success_state = EmptyStateWidget(
+            icon_text="",  # Checkmark icon
+            title="Workflow Valid",
+            description="No issues found. Your workflow is ready to run.",
+        )
+        self._content_stack.addWidget(self._success_state)
+
+        # Issues tree (index 2)
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        tree_layout.setContentsMargins(8, 4, 8, 8)
+        tree_layout.setSpacing(4)
+
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Issue", "Location"])
         self._tree.setRootIsDecorated(True)
         self._tree.setAlternatingRowColors(True)
         self._tree.itemClicked.connect(self._on_item_clicked)
         self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
+        self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._tree.customContextMenuRequested.connect(self._on_context_menu)
 
         # Configure columns
         header_view = self._tree.header()
@@ -117,34 +193,54 @@ class ValidationTab(QWidget):
         header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
 
-        layout.addWidget(self._tree)
+        tree_layout.addWidget(self._tree)
 
         # Summary bar
-        self._summary_label = QLabel("")
-        self._summary_label.setStyleSheet(f"""
-            QLabel {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_muted};
-                padding: 4px 8px;
-                font-size: 9pt;
-            }}
-        """)
-        layout.addWidget(self._summary_label)
+        self._summary_widget = QWidget()
+        self._summary_widget.setObjectName("summaryBar")
+        summary_layout = QHBoxLayout(self._summary_widget)
+        summary_layout.setContentsMargins(8, 6, 8, 6)
+        summary_layout.setSpacing(12)
+
+        self._error_badge = StatusBadge("0 errors", "idle")
+        self._warning_badge = StatusBadge("0 warnings", "idle")
+
+        summary_layout.addWidget(self._error_badge)
+        summary_layout.addWidget(self._warning_badge)
+        summary_layout.addStretch()
+
+        tree_layout.addWidget(self._summary_widget)
+
+        self._content_stack.addWidget(tree_container)
+
+        layout.addWidget(self._content_stack)
+
+        # Show empty state initially
+        self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         self.setStyleSheet(f"""
+            ValidationTab, QWidget, QStackedWidget, QFrame {{
+                background-color: {THEME.bg_panel};
+            }}
+            #validationToolbar {{
+                background-color: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
             QTreeWidget {{
                 background-color: {THEME.bg_panel};
+                alternate-background-color: {THEME.bg_dark};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
-                font-family: 'Segoe UI', 'Arial', sans-serif;
-                font-size: 9pt;
+                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-size: 11px;
+                outline: none;
             }}
             QTreeWidget::item {{
-                padding: 4px;
+                padding: 6px 8px;
+                border-bottom: 1px solid {THEME.border_dark};
             }}
             QTreeWidget::item:selected {{
                 background-color: {THEME.bg_selected};
@@ -152,23 +248,34 @@ class ValidationTab(QWidget):
             QTreeWidget::item:hover {{
                 background-color: {THEME.bg_hover};
             }}
+            QTreeWidget::branch {{
+                background-color: transparent;
+            }}
+            QTreeWidget::branch:has-children:!has-siblings:closed,
+            QTreeWidget::branch:closed:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
+            QTreeWidget::branch:open:has-children:!has-siblings,
+            QTreeWidget::branch:open:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
             QHeaderView::section {{
                 background-color: {THEME.bg_header};
                 color: {THEME.text_header};
-                padding: 4px;
+                padding: 8px 10px;
                 border: none;
+                border-right: 1px solid {THEME.border_dark};
                 border-bottom: 1px solid {THEME.border_dark};
+                font-weight: 600;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
             }}
-            QPushButton {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_secondary};
-                border: 1px solid {THEME.border};
-                border-radius: 2px;
-                padding: 0px 2px;
-                font-size: 9px;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME.bg_hover};
+            #summaryBar {{
+                background-color: {THEME.bg_header};
+                border-top: 1px solid {THEME.border_dark};
             }}
         """)
 
@@ -184,10 +291,65 @@ class ValidationTab(QWidget):
         if data and data.get("location"):
             self.issue_clicked.emit(data["location"])
 
+    def _on_context_menu(self, pos) -> None:
+        """Show context menu for validation item."""
+        item = self._tree.itemAt(pos)
+        if not item:
+            return
+
+        data = item.data(0, Qt.ItemDataRole.UserRole)
+        if not data:
+            return
+
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 6px 24px 6px 12px;
+                border-radius: 3px;
+            }}
+            QMenu::item:selected {{
+                background-color: {THEME.accent_primary};
+                color: #ffffff;
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {THEME.border};
+                margin: 4px 8px;
+            }}
+        """)
+
+        # Copy message
+        copy_msg = menu.addAction("Copy Message")
+        copy_msg.triggered.connect(
+            lambda: QApplication.clipboard().setText(item.text(0))
+        )
+
+        # Copy location
+        if data.get("location"):
+            copy_loc = menu.addAction("Copy Location")
+            copy_loc.triggered.connect(
+                lambda: QApplication.clipboard().setText(data["location"])
+            )
+
+            menu.addSeparator()
+
+            # Navigate to location
+            nav_action = menu.addAction("Go to Node")
+            nav_action.triggered.connect(
+                lambda: self.issue_clicked.emit(data["location"])
+            )
+
+        menu.exec_(self._tree.mapToGlobal(pos))
+
     def _get_severity_color(self, severity: str) -> QColor:
         """Get color for severity level using VSCode Dark+ theme."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         colors = {
             "ERROR": QColor(THEME.status_error),
             "WARNING": QColor(THEME.status_warning),
@@ -195,14 +357,14 @@ class ValidationTab(QWidget):
         }
         return colors.get(severity.upper(), QColor(THEME.text_primary))
 
-    def _get_severity_prefix(self, severity: str) -> str:
-        """Get prefix for severity level."""
-        prefixes = {
-            "ERROR": "[E]",
-            "WARNING": "[W]",
-            "INFO": "[I]",
+    def _get_severity_icon(self, severity: str) -> str:
+        """Get icon prefix for severity level."""
+        icons = {
+            "ERROR": "[X]",
+            "WARNING": "[!]",
+            "INFO": "[i]",
         }
-        return prefixes.get(severity.upper(), "[?]")
+        return icons.get(severity.upper(), "[?]")
 
     # ==================== Public API ====================
 
@@ -215,6 +377,14 @@ class ValidationTab(QWidget):
         """
         self._last_result = result
         self._tree.clear()
+
+        # Check if valid with no issues
+        if result.is_valid and result.warning_count == 0:
+            self._status_badge.set_status("success", "VALID")
+            self._status_label.setText("No issues found")
+            self._status_label.setProperty("muted", False)
+            self._content_stack.setCurrentIndex(1)  # Success state
+            return
 
         # Group issues by severity
         errors = []
@@ -248,13 +418,17 @@ class ValidationTab(QWidget):
         # Update status
         self._update_status(result)
 
+        # Show tree (index 2)
+        self._content_stack.setCurrentIndex(2)
+
     def _add_issue_group(self, title: str, issues: list, severity: str) -> None:
         """Add a group of issues to the tree."""
         color = self._get_severity_color(severity)
+        icon = self._get_severity_icon(severity)
 
         # Create group item
         group = QTreeWidgetItem()
-        group.setText(0, f"{title} ({len(issues)})")
+        group.setText(0, f"{icon} {title} ({len(issues)})")
         group.setForeground(0, QBrush(color))
         group.setExpanded(True)
 
@@ -268,14 +442,21 @@ class ValidationTab(QWidget):
                 if hasattr(issue.severity, "name")
                 else str(issue.severity)
             )
-            prefix = self._get_severity_prefix(sev_name)
-            message = f"{prefix} {issue.code}: {issue.message}"
+            message = f"{issue.code}: {issue.message}"
             if issue.suggestion:
                 message += f"\n    Hint: {issue.suggestion}"
 
             item.setText(0, message)
             item.setText(1, issue.location or "")
             item.setForeground(0, QBrush(color))
+            item.setToolTip(
+                0, f"{issue.message}\n\nSuggestion: {issue.suggestion or 'None'}"
+            )
+
+            # Location column with accent color
+            if issue.location:
+                item.setForeground(1, QBrush(QColor(THEME.accent_primary)))
+                item.setToolTip(1, f"Click to navigate to: {issue.location}")
 
             # Store issue data
             item.setData(
@@ -285,6 +466,8 @@ class ValidationTab(QWidget):
                     "location": issue.location,
                     "code": issue.code,
                     "severity": sev_name,
+                    "message": issue.message,
+                    "suggestion": issue.suggestion,
                 },
             )
 
@@ -293,47 +476,83 @@ class ValidationTab(QWidget):
         self._tree.addTopLevelItem(group)
 
     def _update_status(self, result: "ValidationResult") -> None:
-        """Update status label and summary."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
+        """Update status badge and summary."""
         if result.is_valid:
             if result.warning_count > 0:
+                self._status_badge.set_status("warning", "WARNINGS")
                 self._status_label.setText(
                     f"Valid with {result.warning_count} warning(s)"
                 )
-                self._status_label.setStyleSheet(
-                    f"color: {THEME.status_warning}; font-weight: bold;"
-                )
             else:
-                self._status_label.setText("Valid")
-                self._status_label.setStyleSheet(
-                    f"color: {THEME.status_success}; font-weight: bold;"
-                )
+                self._status_badge.set_status("success", "VALID")
+                self._status_label.setText("No issues found")
         else:
-            self._status_label.setText(f"Invalid: {result.error_count} error(s)")
-            self._status_label.setStyleSheet(
-                f"color: {THEME.status_error}; font-weight: bold;"
-            )
+            self._status_badge.set_status("error", "ERRORS")
+            self._status_label.setText(f"{result.error_count} error(s) found")
 
-        # Summary
-        parts = []
+        self._status_label.setProperty("muted", False)
+
+        # Update summary badges
         if result.error_count > 0:
-            parts.append(f"{result.error_count} error(s)")
-        if result.warning_count > 0:
-            parts.append(f"{result.warning_count} warning(s)")
-
-        if parts:
-            self._summary_label.setText(" | ".join(parts))
+            self._error_badge.set_status(
+                "error",
+                f"{result.error_count} error{'s' if result.error_count != 1 else ''}",
+            )
         else:
-            self._summary_label.setText("No issues found")
+            self._error_badge.set_status("idle", "0 errors")
+
+        if result.warning_count > 0:
+            self._warning_badge.set_status(
+                "warning",
+                f"{result.warning_count} warning{'s' if result.warning_count != 1 else ''}",
+            )
+        else:
+            self._warning_badge.set_status("idle", "0 warnings")
+
+        # Show/hide repair button based on repairable issues
+        has_repairable = self._has_repairable_issues(result)
+        self._repair_btn.setVisible(has_repairable)
+
+        # Refresh styles
+        self._status_label.style().unpolish(self._status_label)
+        self._status_label.style().polish(self._status_label)
+
+    def _has_repairable_issues(self, result: "ValidationResult") -> bool:
+        """
+        Check if there are any auto-repairable issues in the validation result.
+
+        Repairable issues include:
+        - DUPLICATE_NODE_ID: Can regenerate unique IDs
+
+        Args:
+            result: ValidationResult to check
+
+        Returns:
+            True if there are repairable issues
+        """
+        repairable_codes = {"DUPLICATE_NODE_ID"}
+
+        for issue in result.issues:
+            if issue.code in repairable_codes:
+                return True
+
+        return False
 
     def clear(self) -> None:
         """Clear validation results."""
         self._tree.clear()
         self._last_result = None
-        self._status_label.setText("No validation run")
-        self._status_label.setStyleSheet("color: #888888; font-weight: bold;")
-        self._summary_label.setText("")
+        self._status_badge.set_status("idle", "NOT RUN")
+        self._status_label.setText("Click 'Validate' to check workflow")
+        self._status_label.setProperty("muted", True)
+        self._error_badge.set_status("idle", "0 errors")
+        self._warning_badge.set_status("idle", "0 warnings")
+        self._repair_btn.setVisible(False)  # Hide repair button
+        self._content_stack.setCurrentIndex(0)  # Empty state
+
+        # Refresh styles
+        self._status_label.style().unpolish(self._status_label)
+        self._status_label.style().polish(self._status_label)
 
     def get_result(self) -> Optional["ValidationResult"]:
         """Get the last validation result."""

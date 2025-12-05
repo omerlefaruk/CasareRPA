@@ -218,7 +218,7 @@ class SelectorHealer:
 
         Args:
             page: Playwright page object
-            selector: Selector for the element
+            selector: Selector for the element (CSS or XPath)
 
         Returns:
             ElementFingerprint or None if element not found
@@ -227,7 +227,23 @@ class SelectorHealer:
             fingerprint_data = await page.evaluate(
                 """
                 (selector) => {
-                    const el = document.querySelector(selector);
+                    // Detect if selector is XPath (starts with / or //)
+                    let el;
+                    if (selector.startsWith('/') || selector.startsWith('(')) {
+                        // XPath selector - use document.evaluate
+                        const result = document.evaluate(
+                            selector,
+                            document,
+                            null,
+                            XPathResult.FIRST_ORDERED_NODE_TYPE,
+                            null
+                        );
+                        el = result.singleNodeValue;
+                    } else {
+                        // CSS selector
+                        el = document.querySelector(selector);
+                    }
+
                     if (!el) return null;
 
                     const rect = el.getBoundingClientRect();

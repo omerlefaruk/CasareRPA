@@ -217,7 +217,6 @@ def _get_event_bus_singleton() -> EventBus:
             if _local_instance is None:
                 _local_instance = EventBus()
                 globals()["_event_bus_instance"] = _local_instance
-                logger.info("Event bus created")
     return _local_instance
 
 

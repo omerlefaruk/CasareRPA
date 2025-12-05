@@ -10,6 +10,7 @@ its size and improve maintainability:
 - StatusBarManager: Status bar updates (~100 lines)
 - DockCreator: Dock widget creation (~100 lines)
 - FleetDashboardManager: Fleet dashboard dialog operations (~500 lines)
+- QuickNodeManager: Hotkey-based quick node creation (~300 lines)
 """
 
 from casare_rpa.presentation.canvas.components.action_manager import ActionManager
@@ -22,6 +23,9 @@ from casare_rpa.presentation.canvas.components.dock_creator import DockCreator
 from casare_rpa.presentation.canvas.components.fleet_dashboard_manager import (
     FleetDashboardManager,
 )
+from casare_rpa.presentation.canvas.components.quick_node_manager import (
+    QuickNodeManager,
+)
 
 __all__ = [
     "ActionManager",
@@ -30,4 +34,5 @@ __all__ = [
     "StatusBarManager",
     "DockCreator",
     "FleetDashboardManager",
+    "QuickNodeManager",
 ]

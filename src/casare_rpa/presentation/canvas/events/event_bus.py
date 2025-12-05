@@ -334,9 +334,6 @@ class EventBus:
             if self._history_enabled:
                 self._history.append(event)
 
-            # Log event
-            logger.debug(f"Publishing event: {event}")
-
             # Build cache key: (event_type, source)
             # Support both "type" (presentation Event) and "event_type" (domain Event)
             source = event.source if hasattr(event, "source") and event.source else ""

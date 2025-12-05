@@ -152,6 +152,10 @@ class CasareNodeItem(NodeItem):
         self._robot_override_color = QColor(0, 150, 136)  # Teal for robot icon
         self._capability_override_color = QColor(156, 39, 176)  # Purple for capability
 
+        # Collapse state
+        self._is_collapsed = False
+        self._collapse_button_rect: Optional[QRectF] = None
+
         # Hide parent's text item to avoid double title
         if hasattr(self, "_text_item") and self._text_item:
             self._text_item.setVisible(False)
@@ -218,6 +222,9 @@ class CasareNodeItem(NodeItem):
 
         # Draw node text (name) FIRST - header bar goes behind icons
         self._draw_text(painter, rect)
+
+        # Draw collapse button in header
+        self._draw_collapse_button(painter, rect)
 
         # Draw custom icon if available
         if self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
@@ -337,12 +344,12 @@ class CasareNodeItem(NodeItem):
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 
-        # Draw badge background (lower opacity - more transparent)
+        # Draw badge background (dark gray, not pure black)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
         painter.fillPath(
-            badge_path, QBrush(QColor(0, 0, 0, 100))
-        )  # Lower opacity (100 vs 160)
+            badge_path, QBrush(QColor(30, 30, 30, 100))
+        )  # Dark gray (#1E1E1E) with transparency
 
         # Draw text (light gray, slightly transparent)
         painter.setPen(QColor(220, 220, 220, 200))
@@ -396,6 +403,75 @@ class CasareNodeItem(NodeItem):
         # Get node name
         node_name = self.name if hasattr(self, "name") else "Node"
         painter.drawText(header_rect, Qt.AlignmentFlag.AlignCenter, node_name)
+
+    def _draw_collapse_button(self, painter, rect):
+        """Draw collapse/expand button in the header."""
+        # Button dimensions
+        btn_size = 16
+        margin = 6
+        x = rect.right() - btn_size - margin
+        y = rect.top() + 5  # Centered in header
+
+        # Store button rect for click detection
+        self._collapse_button_rect = QRectF(x, y, btn_size, btn_size)
+
+        # Draw button background (subtle rounded rect)
+        btn_path = QPainterPath()
+        btn_path.addRoundedRect(self._collapse_button_rect, 3, 3)
+        painter.fillPath(btn_path, QBrush(QColor(60, 60, 65, 180)))
+
+        # Draw +/- symbol
+        painter.setPen(
+            QPen(
+                QColor(200, 200, 200), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
+            )
+        )
+
+        center_x = x + btn_size / 2
+        center_y = y + btn_size / 2
+        line_len = btn_size * 0.35
+
+        # Horizontal line (always drawn)
+        painter.drawLine(
+            QPointF(center_x - line_len, center_y),
+            QPointF(center_x + line_len, center_y),
+        )
+
+        # Vertical line (only when collapsed - shows "+")
+        if self._is_collapsed:
+            painter.drawLine(
+                QPointF(center_x, center_y - line_len),
+                QPointF(center_x, center_y + line_len),
+            )
+
+    def set_collapsed(self, collapsed: bool):
+        """Set collapsed state for visual update."""
+        self._is_collapsed = collapsed
+        self.update()
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events, including collapse button clicks."""
+        from PySide6.QtCore import Qt
+        from loguru import logger
+
+        # Check if click is on collapse button
+        # Use expanded hit area for easier clicking
+        if self._collapse_button_rect and event.button() == Qt.MouseButton.LeftButton:
+            # Expand hit area by 4px on each side for easier clicking
+            hit_rect = self._collapse_button_rect.adjusted(-4, -4, 4, 4)
+            click_pos = event.pos()
+            if hit_rect.contains(click_pos):
+                # Get the VisualNode instance via NodeGraphQt's internal _node attribute
+                node = getattr(self, "_node", None)
+                if node and hasattr(node, "toggle_collapse"):
+                    node.toggle_collapse()
+                    event.accept()
+                    return
+                else:
+                    logger.warning(f"Node not found or no toggle_collapse: {node}")
+
+        # Call parent implementation for normal behavior
+        super().mousePressEvent(event)
 
     def set_running(self, running: bool):
         """

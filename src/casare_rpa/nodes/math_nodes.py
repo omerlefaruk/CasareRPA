@@ -10,11 +10,47 @@ Provides nodes for mathematical operations including:
 import math
 from loguru import logger
 
+from typing import Any, Union
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
+
+
+def _strip_var_wrapper(value: str) -> str:
+    """Strip {{}} wrapper from variable reference if present."""
+    value = value.strip()
+    if value.startswith("{{") and value.endswith("}}"):
+        return value[2:-2].strip()
+    return value
+
+
+def _resolve_numeric_param(
+    node: BaseNode, context: ExecutionContext, param_name: str, default: float = 0
+) -> float:
+    """Resolve a numeric parameter from input port, parameter, or variable reference."""
+    # Try input port first
+    value = node.get_input_value(param_name)
+    if value is not None:
+        return float(value)
+
+    # Try parameter
+    param = node.get_parameter(param_name, default)
+
+    # If it's a string, try to resolve as variable reference
+    if isinstance(param, str):
+        var_name = _strip_var_wrapper(param)
+        resolved = context.get_variable(var_name)
+        if resolved is not None:
+            return float(resolved)
+        # Try parsing as literal number
+        try:
+            return float(param)
+        except ValueError:
+            return default
+
+    return float(param) if param is not None else default
 
 
 @node_schema(
@@ -74,9 +110,10 @@ class MathOperationNode(BaseNode):
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            a = float(self.get_parameter("a", 0))
-            b = float(self.get_parameter("b", 0))
+            a = _resolve_numeric_param(self, context, "a", 0)
+            b = _resolve_numeric_param(self, context, "b", 0)
             operation = self.get_parameter("operation", "add").lower()
+            output_var = self.get_parameter("output_var")
 
             result = 0.0
 
@@ -135,6 +172,11 @@ class MathOperationNode(BaseNode):
             round_digits = self.get_parameter("round_digits")
             if round_digits is not None:
                 result = round(result, int(round_digits))
+
+            # Store in context if output_var specified
+            if output_var:
+                context.set_variable(output_var, result)
+                logger.info(f"Math result stored in '{output_var}' = {result}")
 
             self.set_output_value("result", result)
             return {"success": True, "data": {"result": result}, "next_nodes": []}

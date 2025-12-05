@@ -52,8 +52,8 @@ class SelectorIntegration(QObject):
             target_property: Property name to update (default: "selector")
         """
         if self._is_picking or self._is_recording:
-            logger.warning("Selector mode already active")
-            return
+            logger.debug("Stopping existing selector mode before starting new one")
+            await self.stop_selector_mode()
 
         self._target_node = target_node
         self._target_property = target_property
@@ -69,8 +69,8 @@ class SelectorIntegration(QObject):
     async def start_recording(self):
         """Start workflow recording mode"""
         if self._is_picking or self._is_recording:
-            logger.warning("Selector mode already active")
-            return
+            logger.debug("Stopping existing selector mode before starting recording")
+            await self.stop_selector_mode()
 
         self._is_recording = True
 

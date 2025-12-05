@@ -10,7 +10,10 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, Slot, QTimer
 from PySide6.QtWidgets import (
+    QApplication,
+    QLineEdit,
     QMainWindow,
+    QTextEdit,
     QWidget,
 )
 
@@ -29,6 +32,7 @@ from .components import (
     StatusBarManager,
     DockCreator,
     FleetDashboardManager,
+    QuickNodeManager,
 )
 from .initializers import UIComponentInitializer, ControllerRegistrar
 from loguru import logger
@@ -46,7 +50,6 @@ class MainWindow(QMainWindow):
 
     Signals:
         workflow_new: Emitted when user requests new workflow
-        workflow_new_from_template: Emitted when user selects a template (TemplateInfo)
         workflow_open: Emitted when user requests to open workflow (str: file path)
         workflow_save: Emitted when user requests to save workflow
         workflow_save_as: Emitted when user requests save as (str: file path)
@@ -57,7 +60,6 @@ class MainWindow(QMainWindow):
     """
 
     workflow_new = Signal()
-    workflow_new_from_template = Signal(object)  # TemplateInfo
     workflow_open = Signal(str)
     workflow_save = Signal()
     workflow_save_as = Signal(str)
@@ -95,8 +97,6 @@ class MainWindow(QMainWindow):
 
         # Panels and docks
         self._bottom_panel: Optional["BottomPanelDock"] = None
-        self._variable_inspector_dock: Optional["VariableInspectorDock"] = None
-        self._properties_panel: Optional["PropertiesPanel"] = None
         self._debug_panel: Optional["DebugPanel"] = None
         self._process_mining_panel = None  # ProcessMiningPanel
         self._robot_picker_panel = None  # RobotPickerPanel
@@ -135,12 +135,14 @@ class MainWindow(QMainWindow):
         self._status_bar_manager = StatusBarManager(self)
         self._dock_creator = DockCreator(self)
         self._fleet_dashboard_manager = FleetDashboardManager(self)
+        self._quick_node_manager = QuickNodeManager(self)
         self._ui_initializer = UIComponentInitializer(self)
         self._controller_registrar = ControllerRegistrar(self)
 
         # === CRITICAL TIER (immediate) ===
         self._setup_window()
         self._action_manager.create_actions()
+        self._quick_node_manager.create_actions()  # Hotkey-based node creation
         self._menu_builder.create_menus()
         self._toolbar_builder.create_toolbar()
         self._status_bar_manager.create_status_bar()
@@ -271,14 +273,6 @@ class MainWindow(QMainWindow):
 
     # ==================== Panel Toggle Handlers ====================
 
-    def _on_toggle_variable_inspector(self, checked: bool) -> None:
-        """Handle toggle variable inspector action."""
-        if self._panel_controller:
-            if checked:
-                self._panel_controller.show_variable_inspector()
-            else:
-                self._panel_controller.hide_variable_inspector()
-
     def _on_toggle_bottom_panel(self, checked: bool) -> None:
         """Handle bottom panel toggle."""
         if self._panel_controller:
@@ -287,10 +281,19 @@ class MainWindow(QMainWindow):
             else:
                 self._panel_controller.hide_bottom_panel()
 
-    def _on_toggle_properties(self, checked: bool) -> None:
-        """Handle properties panel toggle."""
-        if self._panel_controller:
-            self._panel_controller.toggle_properties_panel(checked)
+    def _on_focus_view(self) -> None:
+        """Focus view: zoom to selected node and center it (F)."""
+        if self._is_text_widget_focused():
+            return
+        if self._viewport_controller:
+            self._viewport_controller.focus_view()
+
+    def _on_home_all(self) -> None:
+        """Home all: fit all nodes in view (G)."""
+        if self._is_text_widget_focused():
+            return
+        if self._viewport_controller:
+            self._viewport_controller.home_all()
 
     def _on_toggle_minimap(self, checked: bool) -> None:
         """Handle minimap toggle."""
@@ -309,13 +312,6 @@ class MainWindow(QMainWindow):
 
     def get_bottom_panel(self) -> Optional["BottomPanelDock"]:
         return self.bottom_panel
-
-    @property
-    def properties_panel(self) -> Optional["PropertiesPanel"]:
-        return self._properties_panel
-
-    def get_properties_panel(self) -> Optional["PropertiesPanel"]:
-        return self.properties_panel
 
     @property
     def execution_timeline(self) -> Optional["ExecutionTimeline"]:
@@ -361,24 +357,15 @@ class MainWindow(QMainWindow):
             self._bottom_panel.hide()
             self.action_toggle_bottom_panel.setChecked(False)
 
-    def show_variable_inspector(self) -> None:
-        if self._panel_controller:
-            self._panel_controller.show_variable_inspector()
-
     def show_execution_history(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.show_history_tab()
             self.action_toggle_bottom_panel.setChecked(True)
 
-    # ==================== Properties Panel ====================
-
-    def update_properties_panel(self, node) -> None:
-        if self._properties_panel:
-            self._properties_panel.set_node(node)
+    # ==================== Property Change Handler ====================
 
     def _on_property_panel_changed(self, node_id: str, prop_name: str, value) -> None:
         self.set_modified(True)
-        logger.debug(f"Property changed via panel: {node_id}.{prop_name} = {value}")
 
         graph = self.get_graph()
         if graph:
@@ -440,6 +427,129 @@ class MainWindow(QMainWindow):
         if location and location.startswith("node:"):
             self._select_node_by_id(location.split(":", 1)[1])
 
+    def _on_repair_workflow(self) -> None:
+        """
+        Repair workflow issues detected by validation.
+
+        Currently handles:
+        - DUPLICATE_NODE_ID: Regenerates unique IDs for duplicate nodes
+        """
+        from casare_rpa.utils.id_generator import generate_node_id
+
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
+            logger.warning("Cannot repair: no graph available")
+            return
+
+        graph = self._central_widget.graph
+        all_nodes = graph.all_nodes()
+
+        # Build mapping of node_id -> list of visual nodes with that ID
+        node_id_to_visual_nodes = {}
+        for visual_node in all_nodes:
+            node_id = visual_node.get_property("node_id")
+            if not node_id:
+                continue
+            if node_id not in node_id_to_visual_nodes:
+                node_id_to_visual_nodes[node_id] = []
+            node_id_to_visual_nodes[node_id].append(visual_node)
+
+        # Find and fix duplicates
+        repairs_made = 0
+        for node_id, visual_nodes in node_id_to_visual_nodes.items():
+            if len(visual_nodes) <= 1:
+                continue  # Not a duplicate
+
+            # Keep the first node with its ID, regenerate IDs for the rest
+            for visual_node in visual_nodes[1:]:
+                # Get casare_node if available
+                casare_node = (
+                    visual_node.get_casare_node()
+                    if hasattr(visual_node, "get_casare_node")
+                    else None
+                )
+
+                # Determine node type for ID generation
+                if casare_node:
+                    node_type = (
+                        getattr(casare_node, "node_type", None)
+                        or type(casare_node).__name__
+                    )
+                else:
+                    # Try to extract from node_id (e.g., "TypeTextNode_abc123" -> "TypeTextNode")
+                    node_type = node_id.rsplit("_", 1)[0] if "_" in node_id else "Node"
+
+                # Generate new unique ID
+                new_id = generate_node_id(node_type)
+
+                # Update visual node property
+                visual_node.set_property("node_id", new_id)
+
+                # Update casare_node if it exists
+                if casare_node:
+                    casare_node.node_id = new_id
+
+                logger.info(
+                    f"Repaired duplicate node ID: {node_id} -> {new_id} "
+                    f"(node: {visual_node.name()})"
+                )
+                repairs_made += 1
+
+        # Show result
+        if repairs_made > 0:
+            self.set_modified(True)
+            self.statusBar().showMessage(
+                f"Repaired {repairs_made} duplicate node ID(s)", 5000
+            )
+            # Re-run validation to show the fix worked
+            self.validate_current_workflow()
+        else:
+            self.statusBar().showMessage("No repairs needed", 3000)
+
+    def _check_duplicate_node_ids_on_graph(self, result: "ValidationResult") -> None:
+        """
+        Check for duplicate node_ids directly on the visual graph.
+
+        This is necessary because the WorkflowSerializer uses node_id as dict keys,
+        so duplicate node_ids would overwrite each other and not be visible
+        in the serialized workflow data.
+
+        Args:
+            result: ValidationResult to add issues to
+        """
+        if not self._central_widget or not hasattr(self._central_widget, "graph"):
+            return
+
+        graph = self._central_widget.graph
+        all_nodes = graph.all_nodes()
+
+        # Build mapping of node_id -> list of visual nodes with that ID
+        node_id_to_nodes = {}
+        for visual_node in all_nodes:
+            node_id = visual_node.get_property("node_id")
+            if not node_id:
+                continue
+            if node_id not in node_id_to_nodes:
+                node_id_to_nodes[node_id] = []
+            node_id_to_nodes[node_id].append(visual_node)
+
+        # Find and report duplicates
+        for node_id, visual_nodes in node_id_to_nodes.items():
+            if len(visual_nodes) <= 1:
+                continue  # Not a duplicate
+
+            # Get node names for error message
+            node_names = [n.name() for n in visual_nodes[:5]]
+            names_str = ", ".join(node_names)
+            if len(visual_nodes) > 5:
+                names_str += f" (+{len(visual_nodes) - 5} more)"
+
+            result.add_error(
+                "DUPLICATE_NODE_ID",
+                f"Duplicate node_id '{node_id}' in {len(visual_nodes)} nodes: {names_str}",
+                location=f"node:{node_id}",
+                suggestion="Use 'Repair' button to auto-fix duplicate IDs",
+            )
+
     def validate_current_workflow(self, show_panel: bool = True) -> "ValidationResult":
         from casare_rpa.domain.validation import validate_workflow, ValidationResult
 
@@ -454,6 +564,11 @@ class MainWindow(QMainWindow):
             )
         else:
             result = validate_workflow(workflow_data)
+
+        # CRITICAL: Check for duplicate node_ids directly on the visual graph
+        # The serializer uses node_id as dict key, so duplicates get overwritten
+        # and would be invisible to the standard validation
+        self._check_duplicate_node_ids_on_graph(result)
 
         validation_tab = self.get_validation_panel()
         if validation_tab:
@@ -580,10 +695,6 @@ class MainWindow(QMainWindow):
         return self._minimap
 
     @property
-    def variable_inspector_dock(self):
-        return self._variable_inspector_dock
-
-    @property
     def node_controller(self):
         return getattr(self, "_node_controller", None)
 
@@ -610,9 +721,6 @@ class MainWindow(QMainWindow):
     def get_minimap(self):
         return self.minimap
 
-    def get_variable_inspector_dock(self):
-        return self.variable_inspector_dock
-
     def get_node_controller(self):
         return self.node_controller
 
@@ -638,9 +746,6 @@ class MainWindow(QMainWindow):
 
     def get_process_mining_panel(self):
         return self._process_mining_panel
-
-    def get_variable_inspector(self):
-        return self._variable_inspector_dock
 
     def get_execution_history_viewer(self):
         return self._bottom_panel.get_history_tab() if self._bottom_panel else None
@@ -745,9 +850,6 @@ class MainWindow(QMainWindow):
     def _on_new_workflow(self) -> None:
         self._workflow_controller.new_workflow()
 
-    def _on_new_from_template(self) -> None:
-        self._workflow_controller.new_from_template()
-
     def _on_open_workflow(self) -> None:
         self._workflow_controller.open_workflow()
 
@@ -777,6 +879,53 @@ class MainWindow(QMainWindow):
     def _on_save_as_scenario(self) -> None:
         """Handle save as scenario action - emits signal for app.py to handle."""
         self.save_as_scenario_requested.emit()
+
+    def _on_migrate_workflow(self) -> None:
+        """Handle migrate workflow action - opens migration dialog."""
+        if not self._workflow_controller:
+            logger.warning("Cannot migrate: workflow controller not initialized")
+            return
+
+        # Get current workflow's version history
+        version_history = self._workflow_controller.get_version_history()
+        if not version_history:
+            from PySide6.QtWidgets import QMessageBox
+
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Migration Not Available")
+            msg.setText("This workflow has no version history.")
+            msg.setInformativeText(
+                "Save the workflow first to create an initial version."
+            )
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
+            return
+
+        # Check if there are enough versions
+        versions = version_history.list_versions()
+        if len(versions) < 2:
+            from PySide6.QtWidgets import QMessageBox
+
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Migration Not Available")
+            msg.setText("Migration requires at least 2 versions.")
+            msg.setInformativeText(f"Current workflow has {len(versions)} version(s).")
+            msg.setIcon(QMessageBox.Icon.Information)
+            msg.setStyleSheet(self._get_message_box_style())
+            msg.exec()
+            return
+
+        # Show migration dialog
+        from casare_rpa.presentation.canvas.ui.dialogs import show_migration_dialog
+
+        result = show_migration_dialog(version_history, self)
+        if result and result.success and result.migrated_data:
+            logger.info(
+                f"Migration completed: {result.from_version} → {result.to_version}"
+            )
+            # Optionally reload the workflow with migrated data
+            # self._workflow_controller.reload_from_data(result.migrated_data)
 
     def _on_run_workflow(self) -> None:
         if self._execution_controller:
@@ -890,20 +1039,62 @@ class MainWindow(QMainWindow):
         if self._execution_controller:
             self._execution_controller.clear_breakpoints()
 
+    def _is_text_widget_focused(self) -> bool:
+        """Check if a text input widget has focus (for numpad shortcut suppression)."""
+        focus_widget = QApplication.focusWidget()
+        return isinstance(focus_widget, (QLineEdit, QTextEdit))
+
     def _on_select_nearest_node(self) -> None:
+        if self._is_text_widget_focused():
+            return
         if self._node_controller:
             self._node_controller.select_nearest_node()
 
+    def _on_toggle_collapse_nearest(self) -> None:
+        """Toggle collapse/expand on nearest node (hotkey 1)."""
+        if self._is_text_widget_focused():
+            return
+        if self._node_controller:
+            self._node_controller.toggle_collapse_nearest_node()
+
     def _on_toggle_disable_node(self) -> None:
+        if self._is_text_widget_focused():
+            return
         if self._node_controller:
             self._node_controller.toggle_disable_node()
 
     def _on_disable_all_selected(self) -> None:
+        if self._is_text_widget_focused():
+            return
         if self._node_controller:
             self._node_controller.disable_all_selected()
 
+    def _on_rename_node(self) -> None:
+        """Rename selected node (F2)."""
+        if self._is_text_widget_focused():
+            return
+        graph = self.graph
+        if not graph:
+            return
+        selected = graph.selected_nodes()
+        if not selected:
+            self.show_status("No node selected", 2000)
+            return
+        node = selected[0]
+        current_name = node.name() if hasattr(node, "name") else "Node"
+        from PySide6.QtWidgets import QInputDialog
+
+        new_name, ok = QInputDialog.getText(
+            self, "Rename Node", "Enter new name:", text=current_name
+        )
+        if ok and new_name and new_name != current_name:
+            node.set_name(new_name)
+            self.show_status(f"Renamed to: {new_name}", 2000)
+
     def _on_toggle_panel(self, checked: bool) -> None:
         """Toggle bottom panel visibility (hotkey 6)."""
+        if self._is_text_widget_focused():
+            return
         if self._panel_controller:
             if checked:
                 self._panel_controller.show_bottom_panel()
@@ -917,6 +1108,8 @@ class MainWindow(QMainWindow):
 
     def _on_get_exec_out(self) -> None:
         """Get nearest node's exec_out port (hotkey 3)."""
+        if self._is_text_widget_focused():
+            return
         if self._node_controller:
             self._node_controller.get_nearest_exec_out()
 
@@ -956,6 +1149,46 @@ class MainWindow(QMainWindow):
         status = "enabled" if checked else "disabled"
         self.show_status(f"Auto-connect {status}", 2000)
         logger.debug(f"Auto-connect mode: {status}")
+
+    def _on_toggle_quick_node_mode(self, checked: bool) -> None:
+        """
+        Toggle quick node creation mode.
+
+        When enabled, single letter hotkeys create nodes at cursor position.
+        For example: 'b' creates Launch Browser, 'c' creates Click Element.
+
+        Args:
+            checked: True to enable quick node mode, False to disable
+        """
+        if self._quick_node_manager:
+            self._quick_node_manager.set_enabled(checked)
+
+        # Save preference
+        try:
+            from casare_rpa.utils.settings_manager import get_settings_manager
+
+            settings = get_settings_manager()
+            settings.set("canvas.quick_node_mode", checked)
+        except Exception as e:
+            logger.debug(f"Could not save quick node mode preference: {e}")
+
+        # Show status feedback
+        status = "enabled" if checked else "disabled"
+        self.show_status(
+            f"Quick node mode {status} (press letter keys to create nodes)", 2500
+        )
+        logger.debug(f"Quick node mode: {status}")
+
+    def get_quick_node_manager(self) -> "QuickNodeManager":
+        """Get the quick node manager instance."""
+        return self._quick_node_manager
+
+    def _on_open_quick_node_config(self) -> None:
+        """Open the Quick Node Hotkey Configuration dialog."""
+        from .ui.dialogs import QuickNodeConfigDialog
+
+        dialog = QuickNodeConfigDialog(self._quick_node_manager, self)
+        dialog.exec()
 
     def _on_open_performance_dashboard(self) -> None:
         self._menu_controller.open_performance_dashboard()
@@ -1004,30 +1237,321 @@ class MainWindow(QMainWindow):
             logger.warning("Cannot save UI layout: controller not initialized")
 
     def _on_pick_selector(self) -> None:
+        """Legacy handler - delegates to unified picker."""
+        self._on_pick_element()
+
+    def _on_pick_element(self) -> None:
+        """Show unified element selector dialog (browser mode by default)."""
         if self._selector_controller:
-            import asyncio
+            self._selector_controller.show_unified_selector_dialog(
+                target_node=None,
+                target_property="selector",
+                initial_mode="browser",
+            )
 
-            asyncio.create_task(self._selector_controller.start_picker())
-
-    def _on_toggle_recording(self, checked: bool) -> None:
+    def _on_pick_element_desktop(self) -> None:
+        """Show unified element selector dialog with desktop mode."""
         if self._selector_controller:
-            import asyncio
+            self._selector_controller.show_unified_selector_dialog(
+                target_node=None,
+                target_property="selector",
+                initial_mode="desktop",
+            )
 
-            if checked:
-                asyncio.create_task(self._selector_controller.start_recording())
-            else:
-                asyncio.create_task(self._selector_controller.stop_recording())
+    def _on_toggle_browser_recording(self, checked: bool) -> None:
+        """Toggle browser recording mode using BrowserRecorder."""
+        import asyncio
+
+        if checked:
+            asyncio.create_task(self._start_browser_recording())
+        else:
+            asyncio.create_task(self._stop_browser_recording())
+
+    async def _start_browser_recording(self) -> None:
+        """Start recording browser interactions."""
+        try:
+            # Get browser page from selector controller (set when browser launches)
+            page = None
+            if self._selector_controller:
+                page = self._selector_controller.get_browser_page()
+
+            if not page:
+                from PySide6.QtWidgets import QMessageBox
+
+                QMessageBox.warning(
+                    self,
+                    "Recording Error",
+                    "No browser page available. Please run a workflow with Open Browser first.",
+                )
+                self.action_record_workflow.setChecked(False)
+                return
+
+            # Create recorder
+            from casare_rpa.infrastructure.browser import BrowserRecorder
+
+            self._browser_recorder = BrowserRecorder(page)
+
+            # Set callback for when Escape is pressed in browser
+            def on_stop_from_browser():
+                # Schedule stop on Qt main thread
+                from PySide6.QtCore import QTimer
+
+                QTimer.singleShot(0, self._on_recording_stop_requested)
+
+            self._browser_recorder.set_callbacks(
+                on_recording_stopped=on_stop_from_browser
+            )
+
+            await self._browser_recorder.start_recording()
+
+            # Show recording panel if available
+            self._show_recording_panel()
+
+            logger.info("Browser recording started")
+
+        except Exception as e:
+            logger.error(f"Failed to start browser recording: {e}")
+            self.action_record_workflow.setChecked(False)
+
+    def _on_recording_stop_requested(self) -> None:
+        """Handle stop request from browser (Escape pressed)."""
+        # Guard against double calls
+        if getattr(self, "_recording_stop_in_progress", False):
+            return
+        self._recording_stop_in_progress = True
+
+        logger.info("Recording stop requested from browser")
+        # Uncheck button visually and directly call stop handler
+        self.action_record_workflow.blockSignals(True)
+        self.action_record_workflow.setChecked(False)
+        self.action_record_workflow.blockSignals(False)
+        # Directly call the toggle handler
+        self._on_toggle_browser_recording(False)
+
+    async def _stop_browser_recording(self) -> None:
+        """Stop browser recording and convert to workflow."""
+        try:
+            if not hasattr(self, "_browser_recorder") or not self._browser_recorder:
+                return
+
+            # Grab recorder and clear immediately to prevent double calls
+            recorder = self._browser_recorder
+            self._browser_recorder = None
+
+            actions = await recorder.stop_recording()
+
+            if actions:
+                # Convert to workflow nodes
+                from casare_rpa.infrastructure.browser import BrowserWorkflowGenerator
+
+                workflow_data = BrowserWorkflowGenerator.generate_workflow_data(actions)
+                nodes = workflow_data.get("nodes", [])
+
+                if nodes:
+                    # Show review dialog
+                    from casare_rpa.presentation.canvas.ui.dialogs import (
+                        RecordingReviewDialog,
+                    )
+
+                    dialog = RecordingReviewDialog(nodes, parent=self)
+                    dialog.accepted_with_data.connect(
+                        self._on_recording_review_accepted
+                    )
+                    dialog.exec()
+
+            logger.info(f"Recording stopped: {len(actions) if actions else 0} actions")
+
+        except Exception as e:
+            logger.error(f"Failed to stop browser recording: {e}")
+        finally:
+            # Reset the stop guard flag
+            self._recording_stop_in_progress = False
+
+    def _show_recording_panel(self) -> None:
+        """Show the browser recording panel."""
+        # Recording panel can be shown as a dock widget
+        # For now, just log - panel integration is optional
+        logger.debug("Recording panel: recording in progress...")
+
+    def _on_recording_review_accepted(
+        self, nodes_data: list, include_waits: bool
+    ) -> None:
+        """Handle accepted recording review - create nodes on canvas."""
+        if not nodes_data:
+            return
+
+        # Build final nodes list, optionally inserting Wait nodes
+        final_nodes = []
+        connections = []
+
+        for i, node in enumerate(nodes_data):
+            node_id = node.get("id", f"action_{i+1}")
+            final_nodes.append(node)
+
+            # Add wait node after each action (except last) if enabled
+            if include_waits and i < len(nodes_data) - 1:
+                # Wait time stored in config.wait_after by the dialog
+                wait_time = node.get("config", {}).get("wait_after", 500)
+                if wait_time > 0:
+                    wait_id = f"wait_{i+1}"
+                    final_nodes.append(
+                        {
+                            "id": wait_id,
+                            "type": "WaitNode",
+                            "name": f"Wait {wait_time}ms",
+                            "config": {"duration": wait_time},
+                        }
+                    )
+                    # Connect action -> wait
+                    connections.append(
+                        {
+                            "from_node": node_id,
+                            "from_port": "exec_out",
+                            "to_node": wait_id,
+                            "to_port": "exec_in",
+                        }
+                    )
+                    # Next action connects from wait
+                    next_node = nodes_data[i + 1]
+                    next_id = next_node.get("id", f"action_{i+2}")
+                    connections.append(
+                        {
+                            "from_node": wait_id,
+                            "from_port": "exec_out",
+                            "to_node": next_id,
+                            "to_port": "exec_in",
+                        }
+                    )
+            elif i < len(nodes_data) - 1:
+                # Direct connection without wait
+                next_node = nodes_data[i + 1]
+                next_id = next_node.get("id", f"action_{i+2}")
+                connections.append(
+                    {
+                        "from_node": node_id,
+                        "from_port": "exec_out",
+                        "to_node": next_id,
+                        "to_port": "exec_in",
+                    }
+                )
+
+        workflow_data = {"nodes": final_nodes, "connections": connections}
+        self._create_workflow_from_recording(workflow_data)
+
+    def _create_workflow_from_recording(self, workflow_data: dict) -> None:
+        """Add recorded browser actions to canvas, connected to Launch Browser."""
+        graph = self.get_graph()
+        if not graph:
+            return
+
+        NODE_TYPE_MAP = {
+            "ClickElementNode": "casare_rpa.interaction.VisualClickElementNode",
+            "TypeTextNode": "casare_rpa.interaction.VisualTypeTextNode",
+            "PressEnterNode": "casare_rpa.interaction.VisualTypeTextNode",  # Uses TypeText with press_enter_after
+            "SelectDropdownNode": "casare_rpa.interaction.VisualSelectDropdownNode",
+            "SelectOptionNode": "casare_rpa.interaction.VisualSelectDropdownNode",
+            "CheckboxNode": "casare_rpa.desktop.VisualCheckCheckboxNode",
+            "SendHotKeyNode": "casare_rpa.desktop.VisualSendHotKeyNode",
+            "WaitNode": "casare_rpa.wait.VisualWaitNode",
+        }
+
+        nodes_data = workflow_data.get("nodes", [])
+        connections_data = workflow_data.get("connections", [])
+        if not nodes_data:
+            return
+
+        # Find Launch Browser node to position after and connect to
+        launch_browser_node = None
+        start_x, start_y = 500, 200
+        for node in graph.all_nodes():
+            if "LaunchBrowser" in node.type_ or "Launch Browser" in node.name():
+                launch_browser_node = node
+                pos = node.pos()
+                start_x = pos[0] + 400  # Start after Launch Browser
+                start_y = pos[1]
+                break
+
+        created_nodes = {}
+        current_x = start_x
+        first_node = None
+        NODE_SPACING = 450  # ~350px node width + 100px gap
+
+        # Create nodes
+        for node_data in nodes_data:
+            node_type = node_data.get("type")
+            visual_type = NODE_TYPE_MAP.get(node_type)
+            if not visual_type:
+                continue
+
+            node = graph.create_node(visual_type, pos=[current_x, start_y])
+            if node:
+                created_nodes[node_data["id"]] = node
+                if first_node is None:
+                    first_node = node
+                # Apply config
+                for key, value in node_data.get("config", {}).items():
+                    try:
+                        node.set_property(key, value)
+                    except Exception:
+                        pass
+                # Special handling for PressEnter
+                if node_type == "PressEnterNode":
+                    try:
+                        node.set_property("text", "")
+                        node.set_property("press_enter_after", True)
+                    except Exception:
+                        pass
+                current_x += NODE_SPACING
+
+        # Connect to Launch Browser first
+        if launch_browser_node and first_node:
+            try:
+                # Connect exec
+                lb_exec = launch_browser_node.get_output("exec_out")
+                first_exec = first_node.get_input("exec_in")
+                if lb_exec and first_exec:
+                    lb_exec.connect_to(first_exec)
+                # Connect page
+                lb_page = launch_browser_node.get_output("page")
+                first_page = first_node.get_input("page")
+                if lb_page and first_page:
+                    lb_page.connect_to(first_page)
+            except Exception:
+                pass
+
+        # Connect recorded nodes to each other
+        for conn in connections_data:
+            from_node = created_nodes.get(conn.get("from_node"))
+            to_node = created_nodes.get(conn.get("to_node"))
+            if from_node and to_node:
+                try:
+                    out_port = from_node.get_output(conn.get("from_port", "exec_out"))
+                    in_port = to_node.get_input(conn.get("to_port", "exec_in"))
+                    if out_port and in_port:
+                        out_port.connect_to(in_port)
+                except Exception:
+                    pass
+
+        # Select and center
+        if created_nodes:
+            graph.clear_selection()
+            for node in created_nodes.values():
+                node.set_selected(True)
+            if hasattr(graph, "fit_to_selection"):
+                graph.fit_to_selection()
+            logger.info(f"Added {len(created_nodes)} nodes")
 
     def _on_open_desktop_selector_builder(self) -> None:
-        if self._menu_controller:
-            self._menu_controller.show_desktop_selector_builder()
+        """Legacy handler - delegates to unified picker desktop tab."""
+        self._on_pick_element_desktop()
 
     def _on_create_frame(self) -> None:
         if self._viewport_controller:
             self._viewport_controller.create_frame()
 
     def set_browser_running(self, running: bool) -> None:
-        self.action_pick_selector.setEnabled(running)
+        # Unified picker always enabled (works for desktop, OCR, image too)
+        # Only browser tab and recording need browser running
         self.action_record_workflow.setEnabled(running)
 
     # ==================== Project Management ====================
@@ -1078,6 +1602,42 @@ class MainWindow(QMainWindow):
             self._ui_initializer.cleanup()
 
         ComponentFactory.clear()
+
+    def _get_message_box_style(self) -> str:
+        """Get standard QMessageBox stylesheet matching UI Explorer."""
+        return """
+            QMessageBox {
+                background: #252526;
+            }
+            QMessageBox QLabel {
+                color: #D4D4D4;
+                font-size: 12px;
+            }
+            QPushButton {
+                background: #2D2D30;
+                border: 1px solid #454545;
+                border-radius: 4px;
+                padding: 0 16px;
+                color: #D4D4D4;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 32px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: #2A2D2E;
+                border-color: #007ACC;
+                color: white;
+            }
+            QPushButton:default {
+                background: #007ACC;
+                border-color: #007ACC;
+                color: white;
+            }
+            QPushButton:default:hover {
+                background: #1177BB;
+            }
+        """
 
     # ==================== UI State ====================
 

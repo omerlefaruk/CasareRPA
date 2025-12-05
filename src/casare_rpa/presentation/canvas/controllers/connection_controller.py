@@ -45,7 +45,6 @@ class ConnectionController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
-        logger.info("ConnectionController initialized")
 
     def cleanup(self) -> None:
         """Clean up resources."""

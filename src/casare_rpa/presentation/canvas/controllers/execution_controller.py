@@ -124,7 +124,39 @@ class ExecutionController(BaseController):
         self._setup_log_tab_bridge()
         # Setup stdout/stderr → Terminal tab bridge
         self._setup_terminal_bridge()
-        logger.info("ExecutionController initialized")
+
+    def _show_styled_message(
+        self,
+        title: str,
+        text: str,
+        info: str = "",
+        icon: QMessageBox.Icon = QMessageBox.Icon.Critical,
+    ) -> None:
+        """Show a styled QMessageBox matching UI Explorer theme."""
+        msg = QMessageBox(self.main_window)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        if info:
+            msg.setInformativeText(info)
+        msg.setIcon(icon)
+        msg.setStyleSheet("""
+            QMessageBox { background: #252526; }
+            QMessageBox QLabel { color: #D4D4D4; font-size: 12px; }
+            QPushButton {
+                background: #2D2D30;
+                border: 1px solid #454545;
+                border-radius: 4px;
+                padding: 0 16px;
+                color: #D4D4D4;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 32px;
+                min-width: 80px;
+            }
+            QPushButton:hover { background: #2A2D2E; border-color: #007ACC; color: white; }
+            QPushButton:default { background: #007ACC; border-color: #007ACC; color: white; }
+        """)
+        msg.exec()
 
     def _setup_event_bus(self) -> None:
         """
@@ -153,15 +185,12 @@ class ExecutionController(BaseController):
             self._event_bus.subscribe(
                 EventType.BROWSER_PAGE_READY, self._on_browser_page_ready
             )
-            logger.info(f"Subscribed to BROWSER_PAGE_READY (bus={id(self._event_bus)})")
 
             # Subscribe all events to log viewer if available
             log_viewer = self.main_window.get_log_viewer()
             if log_viewer and hasattr(log_viewer, "log_event"):
                 for event_type in EventType:
                     self._event_bus.subscribe(event_type, log_viewer.log_event)
-
-            logger.info("EventBus integration configured for execution feedback")
         except ImportError as e:
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
@@ -217,7 +246,6 @@ class ExecutionController(BaseController):
             # Register callback with DEBUG level to capture all logs
             # (user can filter in Log Tab dropdown)
             set_ui_log_callback(log_callback, min_level="DEBUG")
-            logger.info("Log Tab bridge configured (thread-safe)")
 
         except ImportError as e:
             logger.warning(f"Failed to setup Log Tab bridge: {e}")
@@ -271,7 +299,6 @@ class ExecutionController(BaseController):
 
             # Register callbacks
             set_output_callbacks(stdout_callback, stderr_callback)
-            logger.info("Terminal bridge configured (thread-safe)")
 
         except ImportError as e:
             logger.warning(f"Failed to setup Terminal bridge: {e}")
@@ -616,21 +643,13 @@ class ExecutionController(BaseController):
             logger.info("Enabling picker/recorder on main thread")
             self.main_window.set_browser_running(True)
 
-            # Initialize selector controller with the page
+            # Initialize selector controller with the page (sync version for reliability)
             if page and hasattr(self.main_window, "_selector_controller"):
                 selector_ctrl = self.main_window._selector_controller
                 if selector_ctrl:
-                    import asyncio
-
-                    try:
-                        asyncio.create_task(selector_ctrl.initialize_for_page(page))
-                    except RuntimeError:
-                        # No event loop running - try to get one
-                        loop = asyncio.get_event_loop()
-                        if loop.is_running():
-                            asyncio.ensure_future(
-                                selector_ctrl.initialize_for_page(page)
-                            )
+                    # Use sync version - async version can fail silently on Qt main thread
+                    selector_ctrl.set_browser_page(page)
+                    logger.info("Browser page set on selector controller")
 
         QTimer.singleShot(0, enable_browser_actions)
 
@@ -678,6 +697,28 @@ class ExecutionController(BaseController):
             if hasattr(visual_node, "update_execution_time"):
                 visual_node.update_execution_time(None)
 
+    def _sync_all_widget_values(self) -> None:
+        """
+        Force sync all widget values to casare_node.config before execution.
+
+        CRITICAL: Widgets only sync their values when editingFinished fires (on Enter
+        or focus loss). If user types a value and clicks Run without pressing Enter,
+        the value is never synced. This method forces all widgets to sync.
+        """
+        graph = self.main_window.get_graph()
+        if not graph:
+            return
+
+        for visual_node in graph.all_nodes():
+            # Force each widget to emit its current value
+            if hasattr(visual_node, "widgets"):
+                for widget_name, widget in visual_node.widgets().items():
+                    try:
+                        if hasattr(widget, "on_value_changed"):
+                            widget.on_value_changed()
+                    except Exception:
+                        pass  # Widget might not support this
+
     def run_workflow(self) -> None:
         """
         Run workflow from start to end (F3).
@@ -705,10 +746,10 @@ class ExecutionController(BaseController):
         # Check if runner is configured
         if not self._workflow_runner:
             logger.error("WorkflowRunner not configured")
-            QMessageBox.critical(
-                self.main_window,
+            self._show_styled_message(
                 "Execution Error",
-                "Workflow runner not initialized. Please restart the application.",
+                "Workflow runner not initialized.",
+                "Please restart the application.",
             )
             return
 
@@ -722,6 +763,10 @@ class ExecutionController(BaseController):
         self._is_running = True
 
         try:
+            # CRITICAL: Sync all widget values before execution
+            # Widgets only sync on Enter/focus-loss - this forces sync for any unsaved values
+            self._sync_all_widget_values()
+
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
 
@@ -823,10 +868,10 @@ class ExecutionController(BaseController):
             # Check if runner is configured
             if not self._workflow_runner:
                 logger.error("WorkflowRunner not configured")
-                QMessageBox.critical(
-                    self.main_window,
+                self._show_styled_message(
                     "Execution Error",
-                    "Workflow runner not initialized. Please restart the application.",
+                    "Workflow runner not initialized.",
+                    "Please restart the application.",
                 )
                 self._is_running = False
                 return
@@ -835,6 +880,9 @@ class ExecutionController(BaseController):
             node_name = (
                 target_node.name() if hasattr(target_node, "name") else target_node_id
             )
+
+            # CRITICAL: Sync all widget values before execution
+            self._sync_all_widget_values()
 
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
@@ -913,10 +961,10 @@ class ExecutionController(BaseController):
             # Check if runner is configured
             if not self._workflow_runner:
                 logger.error("WorkflowRunner not configured")
-                QMessageBox.critical(
-                    self.main_window,
+                self._show_styled_message(
                     "Execution Error",
-                    "Workflow runner not initialized. Please restart the application.",
+                    "Workflow runner not initialized.",
+                    "Please restart the application.",
                 )
                 self._is_running = False
                 return
@@ -925,6 +973,9 @@ class ExecutionController(BaseController):
             node_name = (
                 target_node.name() if hasattr(target_node, "name") else target_node_id
             )
+
+            # CRITICAL: Sync all widget values before execution
+            self._sync_all_widget_values()
 
             # Reset only target node visual before starting
             if hasattr(target_node, "update_status"):
@@ -989,10 +1040,10 @@ class ExecutionController(BaseController):
         # Check if runner is configured
         if not self._workflow_runner:
             logger.error("WorkflowRunner not configured")
-            QMessageBox.critical(
-                self.main_window,
+            self._show_styled_message(
                 "Execution Error",
-                "Workflow runner not initialized. Please restart the application.",
+                "Workflow runner not initialized.",
+                "Please restart the application.",
             )
             return
 
@@ -1000,6 +1051,9 @@ class ExecutionController(BaseController):
         self._is_running = True
 
         try:
+            # CRITICAL: Sync all widget values before execution
+            self._sync_all_widget_values()
+
             # Reset all node visuals before starting
             self._reset_all_node_visuals()
 
@@ -1199,8 +1253,7 @@ class ExecutionController(BaseController):
 
         if not self._workflow_runner:
             logger.error("WorkflowRunner not configured")
-            QMessageBox.critical(
-                self.main_window,
+            self._show_styled_message(
                 "Error",
                 "Workflow runner not initialized.",
             )
@@ -1209,6 +1262,9 @@ class ExecutionController(BaseController):
         # Validate before starting
         if not self._check_validation_before_run():
             return
+
+        # CRITICAL: Sync all widget values before execution
+        self._sync_all_widget_values()
 
         # Start listening asynchronously
         asyncio.create_task(self._start_listening_async())
@@ -1228,11 +1284,11 @@ class ExecutionController(BaseController):
             # Update trigger node visual to show listening state
             self._update_trigger_node_visual(listening=True)
         else:
-            QMessageBox.warning(
-                self.main_window,
+            self._show_styled_message(
                 "Trigger Error",
-                "Failed to start trigger listening.\n\n"
+                "Failed to start trigger listening.",
                 "Make sure your workflow has a trigger node (e.g., Schedule, Webhook).",
+                QMessageBox.Icon.Warning,
             )
 
     def stop_trigger_listening(self) -> None:
@@ -1329,12 +1385,11 @@ class ExecutionController(BaseController):
         if bottom_panel:
             validation_errors = bottom_panel.get_validation_errors_blocking()
             if validation_errors:
-                QMessageBox.warning(
-                    self.main_window,
+                self._show_styled_message(
                     "Validation Errors",
-                    f"The workflow has {len(validation_errors)} validation error(s) "
-                    "that must be fixed before running.\n\n"
+                    f"The workflow has {len(validation_errors)} validation error(s) that must be fixed before running.",
                     "Please check the Validation tab for details.",
+                    QMessageBox.Icon.Warning,
                 )
                 # Show validation tab
                 bottom_panel.show_validation_tab()

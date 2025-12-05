@@ -54,11 +54,10 @@ class CasarePipe(PipeItem):
             # Connection is complete - use solid line
             # Priority: insert highlight > hover > normal
             if self._insert_highlight:
-                # Bright orange highlight when node is being dragged over
-                # Much thicker and brighter for visibility
-                pen = QPen(QColor(255, 140, 0), pen_width + 5)
+                # Orange highlight when node is being dragged over
+                pen = QPen(QColor(255, 140, 0), pen_width + 2)
             elif self._hovered:
-                pen = QPen(QColor(100, 200, 255), pen_width + 1)
+                pen = QPen(QColor(100, 200, 255), pen_width + 0.5)
             else:
                 pen = QPen(self.color, pen_width)
             pen.setStyle(Qt.PenStyle.SolidLine)

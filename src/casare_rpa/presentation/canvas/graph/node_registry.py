@@ -862,7 +862,7 @@ class NodeRegistry:
         # when create_node() is called. The position will be overwritten on each
         # new right-click anyway.
 
-        logger.info(
+        logger.debug(
             f"Registered {len(ALL_VISUAL_NODE_CLASSES)} node types in context menu"
         )
 

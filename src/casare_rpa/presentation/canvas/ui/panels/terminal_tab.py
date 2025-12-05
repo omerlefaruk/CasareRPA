@@ -1,7 +1,10 @@
 """
 Terminal Tab for the Bottom Panel.
 
-Provides raw stdout/stderr output display during workflow execution.
+Provides raw stdout/stderr output display during workflow execution with improved UX:
+- Wraps OutputConsoleWidget for consistent styling
+- VSCode-style terminal experience
+- Color-coded output levels
 """
 
 from typing import Optional
@@ -10,6 +13,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 from PySide6.QtCore import Signal, Slot
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.widgets.output_console_widget import (
     OutputConsoleWidget,
 )
@@ -20,7 +24,12 @@ class TerminalTab(QWidget):
     Terminal tab widget for displaying raw output.
 
     Wraps OutputConsoleWidget to show stdout/stderr during workflow execution.
-    Provides a VSCode-style terminal experience.
+    Provides a VSCode-style terminal experience with:
+    - Empty state when no output
+    - Color-coded levels (info, warning, error, success, debug)
+    - Auto-scroll toggle
+    - Timestamp display
+    - Copy and clear functionality
 
     Signals:
         output_received: Emitted when new output is received
@@ -45,10 +54,10 @@ class TerminalTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Use OutputConsoleWidget for display
+        # Use OutputConsoleWidget for display (has its own toolbar and empty state)
         self._console = OutputConsoleWidget()
         layout.addWidget(self._console)
 
@@ -57,10 +66,8 @@ class TerminalTab(QWidget):
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         self.setStyleSheet(f"""
-            QWidget {{
+            TerminalTab, QWidget, QStackedWidget, QFrame {{
                 background-color: {THEME.bg_panel};
             }}
         """)

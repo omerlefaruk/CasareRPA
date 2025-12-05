@@ -87,12 +87,6 @@ class AutoConnectManager(QObject):
                 self._dragging_node = None
                 self._restore_context_menu()
 
-    def reset_drag_state(self):
-        """Public method to reset drag state - useful after operations that might corrupt state."""
-        self._clear_suggestions()
-        self._dragging_node = None
-        self._restore_context_menu()
-
     def _setup_event_filters(self):
         """Setup event filters to monitor node dragging."""
         try:
@@ -568,7 +562,3 @@ class AutoConnectManager(QObject):
     def set_max_distance(self, distance: float):
         """Set the maximum distance for suggesting connections."""
         self._max_distance = max(50.0, distance)
-
-    def get_max_distance(self) -> float:
-        """Get the current maximum distance for suggestions."""
-        return self._max_distance

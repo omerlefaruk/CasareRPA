@@ -84,8 +84,6 @@ class ControllerRegistrar:
             logger.warning("Controllers already registered")
             return
 
-        logger.info("Registering MainWindow-specific controllers...")
-
         mw = self._main_window
 
         # Import controllers here to avoid circular imports
@@ -119,7 +117,6 @@ class ControllerRegistrar:
         self._initialize_controllers()
 
         self._controllers_initialized = True
-        logger.info("MainWindow-specific controllers registered successfully")
 
     def _initialize_controllers(self) -> None:
         """Initialize all MainWindow-specific controllers in order."""
@@ -171,8 +168,6 @@ class ControllerRegistrar:
 
         # Re-enable actions now that controllers are set
         mw._update_actions()
-
-        logger.info("External controllers injected and connected to MainWindow")
 
     def _connect_controller_signals(self) -> None:
         """

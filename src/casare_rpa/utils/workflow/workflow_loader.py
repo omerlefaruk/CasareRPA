@@ -270,6 +270,7 @@ from casare_rpa.nodes.interaction_nodes import (
     ClickElementNode,
     TypeTextNode,
     SelectDropdownNode,
+    ImageClickNode,
 )
 
 # Data extraction nodes
@@ -278,6 +279,14 @@ from casare_rpa.nodes.data_nodes import (
     GetAttributeNode,
     ScreenshotNode,
 )
+
+# Table scraping nodes
+from casare_rpa.nodes.browser.table_scraper_node import TableScraperNode
+
+# Form nodes
+from casare_rpa.nodes.browser.form_field_node import FormFieldNode
+from casare_rpa.nodes.browser.form_filler_node import FormFillerNode
+from casare_rpa.nodes.browser.detect_forms_node import DetectFormsNode
 
 # DateTime nodes
 from casare_rpa.nodes.datetime_nodes import (
@@ -612,10 +621,17 @@ NODE_TYPE_MAP = {
     "ClickElementNode": ClickElementNode,
     "TypeTextNode": TypeTextNode,
     "SelectDropdownNode": SelectDropdownNode,
+    "ImageClickNode": ImageClickNode,
     # Data extraction nodes
     "ExtractTextNode": ExtractTextNode,
     "GetAttributeNode": GetAttributeNode,
     "ScreenshotNode": ScreenshotNode,
+    # Table scraping nodes
+    "TableScraperNode": TableScraperNode,
+    # Form nodes
+    "FormFieldNode": FormFieldNode,
+    "FormFillerNode": FormFillerNode,
+    "DetectFormsNode": DetectFormsNode,
     # DateTime nodes
     "GetCurrentDateTimeNode": GetCurrentDateTimeNode,
     "FormatDateTimeNode": FormatDateTimeNode,
