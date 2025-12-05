@@ -116,10 +116,11 @@ def group_selected_nodes(
     max_y = max(node.pos()[1] + node.view.height for node in selected_nodes)
 
     padding = 30
+    padding_top = padding * 3  # Extra space for frame title text
     x = min_x - padding
-    y = min_y - padding
+    y = min_y - padding_top
     width = max_x - min_x + padding * 2
-    height = max_y - min_y + padding * 2
+    height = max_y - min_y + padding + padding_top
 
     frame = create_frame(graph_view, title=title, position=(x, y), size=(width, height))
 

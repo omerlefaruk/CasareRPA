@@ -14,6 +14,59 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QStyle
 
 
+def _create_colored_icon(shape: str, color: str, size: int = 24) -> "QIcon":
+    """
+    Create a colored icon with specified shape.
+
+    Args:
+        shape: "play", "pause", or "stop"
+        color: Hex color string (e.g., "#4CAF50")
+        size: Icon size in pixels
+
+    Returns:
+        QIcon with the colored shape
+    """
+    from PySide6.QtCore import QPointF, QRectF, Qt
+    from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPen, QPixmap, QPolygonF
+
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    qcolor = QColor(color)
+    painter.setBrush(QBrush(qcolor))
+    painter.setPen(QPen(qcolor.darker(110), 1))
+
+    margin = size * 0.15
+    inner_size = size - 2 * margin
+
+    if shape == "play":
+        # Triangle pointing right
+        points = [
+            QPointF(margin, margin),
+            QPointF(size - margin, size / 2),
+            QPointF(margin, size - margin),
+        ]
+        painter.drawPolygon(QPolygonF(points))
+    elif shape == "pause":
+        # Two vertical bars
+        bar_width = inner_size * 0.3
+        gap = inner_size * 0.2
+        left_x = margin + (inner_size - 2 * bar_width - gap) / 2
+        painter.drawRoundedRect(QRectF(left_x, margin, bar_width, inner_size), 2, 2)
+        painter.drawRoundedRect(
+            QRectF(left_x + bar_width + gap, margin, bar_width, inner_size), 2, 2
+        )
+    elif shape == "stop":
+        # Square
+        painter.drawRoundedRect(QRectF(margin, margin, inner_size, inner_size), 3, 3)
+
+    painter.end()
+    return QIcon(pixmap)
+
+
 class ToolbarIcons:
     """
     Provides icons for toolbar actions using Qt standard icons.
@@ -102,6 +155,14 @@ class ToolbarIcons:
                 cls._style = QStyleFactory.create("Fusion")
         return cls._style
 
+    # Colored icons for execution controls (shape, color)
+    _COLORED_ICONS = {
+        "run": ("play", "#4CAF50"),  # Green
+        "pause": ("pause", "#FF9800"),  # Orange
+        "stop": ("stop", "#F44336"),  # Red
+        "resume": ("play", "#4CAF50"),  # Green
+    }
+
     @classmethod
     def get_icon(cls, name: str) -> "QIcon":
         """
@@ -115,6 +176,11 @@ class ToolbarIcons:
         """
         from PySide6.QtGui import QIcon
         from PySide6.QtWidgets import QStyle
+
+        # Check for colored icons first
+        if name in cls._COLORED_ICONS:
+            shape, color = cls._COLORED_ICONS[name]
+            return _create_colored_icon(shape, color)
 
         pixmap_name = cls._ICON_MAP.get(name)
         if not pixmap_name:

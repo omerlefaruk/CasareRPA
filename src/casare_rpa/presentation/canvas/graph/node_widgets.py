@@ -9,14 +9,27 @@ Classes:
     CasareCheckBox: Adds dark blue checkbox styling
     CasareLivePipe: Fixes draw_index_pointer text_pos bug
     CasarePipeItem: Fixes draw_path viewer None crash
+    NodeFilePathWidget: File path input with browse button
+    NodeDirectoryPathWidget: Directory path input with browse button
 """
 
 from typing import Optional
 
-from PySide6.QtGui import QColor, QTransform
-from PySide6.QtWidgets import QComboBox
+from PySide6.QtGui import QColor, QFont, QTransform
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QPushButton,
+    QFileDialog,
+    QSizePolicy,
+)
 
 from loguru import logger
+
+# Import variable picker components
+from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+    VariableAwareLineEdit,
+)
 
 # Raised z-value when combo popup is open
 COMBO_RAISED_Z = 10000
@@ -172,7 +185,7 @@ class CasareLivePipe:
                 PortTypeEnum,
             )
 
-            original_draw_index_pointer = LivePipeItem.draw_index_pointer
+            _original_draw_index_pointer = LivePipeItem.draw_index_pointer  # noqa: F841
 
             def fixed_draw_index_pointer(self, start_port, cursor_pos, color=None):
                 """Fixed version that always initializes text_pos."""
@@ -233,11 +246,10 @@ class CasareLivePipe:
 
 class CasarePipeItemFix:
     """
-    Wrapper that fixes the draw_path viewer None crash in PipeItem.
+    Wrapper that fixes PipeItem draw_path viewer None crash.
 
     The original NodeGraphQt code crashes when viewer() returns None,
     which can happen during workflow loading or undo/redo operations.
-    This wrapper adds a None check before proceeding.
 
     Usage:
         # Apply fix at module load time
@@ -253,14 +265,16 @@ class CasarePipeItemFix:
             original_draw_path = PipeItem.draw_path
 
             def fixed_draw_path(self, start_port, end_port=None, cursor_pos=None):
-                """Patched draw_path that handles viewer() returning None."""
-                # Check if viewer is available before proceeding
-                viewer = self.viewer()
-                if viewer is None:
-                    # Viewer not ready - skip drawing, will be called again later
+                """Patched draw_path with viewer None check."""
+                if not start_port:
                     return
 
-                # Call original method
+                # Check if viewer is available - prevents crash during loading/undo
+                viewer = self.viewer()
+                if viewer is None and not cursor_pos:
+                    return
+
+                # Use original implementation
                 return original_draw_path(self, start_port, end_port, cursor_pos)
 
             PipeItem.draw_path = fixed_draw_path
@@ -358,7 +372,7 @@ class CasareNodeBaseFontFix:
                 ITEM_CACHE_MODE,
             )
 
-            original_add_port = NodeItem._add_port
+            _original_add_port = NodeItem._add_port  # noqa: F841
 
             def fixed_add_port(self, port):
                 """Patched version that properly sets font point size."""
@@ -423,6 +437,43 @@ class CasareViewerFontFix:
 
         except Exception as e:
             logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
+
+
+class CasareQFontFix:
+    """
+    Fix for QFont.setPointSize being called with invalid values (-1 or 0).
+
+    NodeGraphQt and Qt internally may call setPointSize with -1 when fonts
+    are not properly initialized. This fix patches QFont.setPointSize to
+    silently correct invalid values to a reasonable default.
+
+    Usage:
+        CasareQFontFix.apply_fix()
+    """
+
+    _applied = False
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Patch QFont.setPointSize to guard against invalid values."""
+        if CasareQFontFix._applied:
+            return
+
+        try:
+            original_setPointSize = QFont.setPointSize
+
+            def safe_setPointSize(self, size: int) -> None:
+                """Set point size, correcting invalid values."""
+                if size <= 0:
+                    size = 9  # Default to 9pt for invalid sizes
+                original_setPointSize(self, size)
+
+            QFont.setPointSize = safe_setPointSize
+            CasareQFontFix._applied = True
+            logger.debug("CasareQFontFix: Patched QFont.setPointSize for -1 values")
+
+        except Exception as e:
+            logger.warning(f"CasareQFontFix: Could not apply fix: {e}")
 
 
 class CasareNodeItemPaintFix:
@@ -518,11 +569,14 @@ def apply_all_node_widget_fixes() -> None:
     - NodeGraph._on_node_data_dropped QUrl TypeError fix
     - NodeBaseItem._add_port font handling fix
     - QGraphicsTextItem.font() -1 point size fix
+    - QFont.setPointSize -1 value fix
     - NodeItem.paint selection styling fix
 
     Note: CasareComboBox and CasareCheckBox fixes are applied per-widget
     via the patched __init__ methods installed below.
     """
+    # Apply QFont fix FIRST - it patches the core Qt class
+    CasareQFontFix.apply_fix()
     CasareLivePipe.apply_fix()
     CasarePipeItemFix.apply_fix()
     CasareNodeDataDropFix.apply_fix()
@@ -569,3 +623,759 @@ def _install_widget_init_patches() -> None:
         logger.warning(f"Could not install widget init patches: {e}")
     except Exception as e:
         logger.warning(f"Error installing widget init patches: {e}")
+
+
+# =============================================================================
+# NodeFilePathWidget - File path input with browse button for NodeGraphQt
+# =============================================================================
+
+
+def create_file_path_widget(
+    name: str, label: str, file_filter: str, placeholder: str, text: str = ""
+):
+    """
+    Factory function to create a NodeFilePathWidget.
+
+    This creates a proper NodeBaseWidget subclass instance with file browse functionality.
+    Includes variable picker integration via VariableAwareLineEdit - hover to see {x} button.
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from PySide6 import QtWidgets
+    except ImportError:
+        logger.error("NodeGraphQt not available")
+        return None
+
+    # Create the container widget with horizontal layout
+    container = QtWidgets.QWidget()
+    layout = QHBoxLayout(container)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(4)
+
+    # Set explicit minimum size to ensure visibility
+    container.setMinimumHeight(26)
+    container.setMinimumWidth(160)
+    container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    # Create variable-aware line edit with {x} button for variable insertion
+    line_edit = VariableAwareLineEdit()
+    line_edit.setText(text)
+    line_edit.setPlaceholderText(placeholder)
+    line_edit.setMinimumHeight(24)
+    line_edit.setMinimumWidth(100)
+    line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    # Padding on right side accommodates the {x} variable button
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            background: #3c3c50;
+            border: 1px solid #505064;
+            border-radius: 3px;
+            color: #e6e6e6;
+            padding: 2px 28px 2px 4px;
+        }
+        QLineEdit:focus {
+            border: 1px solid #6496c8;
+        }
+    """)
+    layout.addWidget(line_edit, 1)
+
+    # Create browse button - use "..." text for guaranteed cross-platform visibility
+    browse_btn = QPushButton("...")
+    browse_btn.setFixedSize(30, 24)
+    browse_btn.setToolTip("Browse for file")
+    # Bright blue background to ensure visibility in graphics scene
+    browse_btn.setStyleSheet("""
+        QPushButton {
+            background-color: #0078d4;
+            border: 1px solid #106ebe;
+            border-radius: 3px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 0px;
+        }
+        QPushButton:hover {
+            background-color: #1a86d9;
+        }
+        QPushButton:pressed {
+            background-color: #005a9e;
+        }
+    """)
+
+    def on_browse():
+        import os
+
+        current_path = line_edit.text().strip()
+        start_dir = ""
+        if current_path:
+            if os.path.isdir(current_path):
+                start_dir = current_path
+            elif os.path.dirname(current_path):
+                parent = os.path.dirname(current_path)
+                if os.path.isdir(parent):
+                    start_dir = parent
+
+        path, _ = QFileDialog.getOpenFileName(
+            None,  # Use None for proper modal behavior
+            "Select File",
+            start_dir,
+            file_filter,
+        )
+        if path:
+            line_edit.setText(path)
+            # CRITICAL: Manually trigger value change - setText() doesn't emit editingFinished
+            # Without this, the property value is never synced to the model
+            widget.on_value_changed()
+            logger.debug(f"Selected file: {path}")
+
+    browse_btn.clicked.connect(on_browse)
+    layout.addWidget(browse_btn)
+
+    # Create NodeBaseWidget and set up
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(container)
+
+    # Force geometry update
+    container.adjustSize()
+
+    # Connect line edit changes to widget's value changed signal
+    line_edit.editingFinished.connect(widget.on_value_changed)
+
+    # Connect variable insertion to trigger value change
+    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+
+    # Store reference to line edit for get/set value
+    widget._line_edit = line_edit
+    widget._browse_btn = browse_btn
+
+    # Override get_value and set_value
+    def get_value():
+        return line_edit.text()
+
+    def set_value(value):
+        line_edit.setText(str(value) if value else "")
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+class NodeFilePathWidget:
+    """
+    File path widget for NodeGraphQt nodes.
+
+    Provides a text input with a folder browse button that opens
+    Windows Explorer to select a file.
+
+    Usage in visual node:
+        from casare_rpa.presentation.canvas.graph.node_widgets import NodeFilePathWidget
+
+        def __init__(self):
+            super().__init__()
+            # Add file path widget with Excel filter
+            widget = NodeFilePathWidget(
+                name="file_path",
+                label="Excel File",
+                file_filter="Excel Files (*.xlsx *.xls);;All Files (*.*)",
+            )
+            self.add_custom_widget(widget)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        file_filter: str = "All Files (*.*)",
+        text: str = "",
+        placeholder: str = "Select file...",
+    ):
+        """
+        Create a new NodeFilePathWidget.
+
+        Args:
+            name: Property name for the node
+            label: Label text displayed above the widget
+            file_filter: File type filter for dialog (e.g., "Excel Files (*.xlsx)")
+            text: Initial text value
+            placeholder: Placeholder text when empty
+        """
+        return create_file_path_widget(name, label, file_filter, placeholder, text)
+
+
+def create_directory_path_widget(
+    name: str, label: str, placeholder: str, text: str = ""
+):
+    """
+    Factory function to create a NodeDirectoryPathWidget.
+
+    This creates a proper NodeBaseWidget subclass instance with directory browse functionality.
+    Includes variable picker integration via VariableAwareLineEdit - hover to see {x} button.
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from PySide6 import QtWidgets
+    except ImportError:
+        logger.error("NodeGraphQt not available")
+        return None
+
+    # Create the container widget with horizontal layout
+    container = QtWidgets.QWidget()
+    layout = QHBoxLayout(container)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(4)
+
+    # Set explicit minimum size to ensure visibility
+    container.setMinimumHeight(26)
+    container.setMinimumWidth(160)
+    container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    # Create variable-aware line edit with {x} button for variable insertion
+    line_edit = VariableAwareLineEdit()
+    line_edit.setText(text)
+    line_edit.setPlaceholderText(placeholder)
+    line_edit.setMinimumHeight(24)
+    line_edit.setMinimumWidth(100)
+    line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    # Padding on right side accommodates the {x} variable button
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            background: #3c3c50;
+            border: 1px solid #505064;
+            border-radius: 3px;
+            color: #e6e6e6;
+            padding: 2px 28px 2px 4px;
+        }
+        QLineEdit:focus {
+            border: 1px solid #6496c8;
+        }
+    """)
+    layout.addWidget(line_edit, 1)
+
+    # Create browse button - use folder icon style
+    browse_btn = QPushButton("...")
+    browse_btn.setFixedSize(30, 24)
+    browse_btn.setToolTip("Browse for folder")
+    # Orange background for folder selection (differentiate from file selection)
+    browse_btn.setStyleSheet("""
+        QPushButton {
+            background-color: #d97706;
+            border: 1px solid #b45309;
+            border-radius: 3px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 0px;
+        }
+        QPushButton:hover {
+            background-color: #f59e0b;
+        }
+        QPushButton:pressed {
+            background-color: #92400e;
+        }
+    """)
+
+    def on_browse():
+        import os
+
+        current_path = line_edit.text().strip()
+        start_dir = ""
+        if current_path and os.path.isdir(current_path):
+            start_dir = current_path
+
+        path = QFileDialog.getExistingDirectory(
+            None,
+            "Select Directory",
+            start_dir,
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks,
+        )
+        if path:
+            line_edit.setText(path)
+            # CRITICAL: Manually trigger value change - setText() doesn't emit editingFinished
+            # Without this, the property value is never synced to the model
+            widget.on_value_changed()
+            logger.debug(f"Selected directory: {path}")
+
+    browse_btn.clicked.connect(on_browse)
+    layout.addWidget(browse_btn)
+
+    # Create NodeBaseWidget and set up
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(container)
+
+    # Force geometry update
+    container.adjustSize()
+
+    # Connect line edit changes to widget's value changed signal
+    line_edit.editingFinished.connect(widget.on_value_changed)
+
+    # Connect variable insertion to trigger value change
+    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+
+    # Store reference to line edit for get/set value
+    widget._line_edit = line_edit
+    widget._browse_btn = browse_btn
+
+    # Override get_value and set_value
+    def get_value():
+        return line_edit.text()
+
+    def set_value(value):
+        line_edit.setText(str(value) if value else "")
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+class NodeDirectoryPathWidget:
+    """
+    Directory path widget for NodeGraphQt nodes.
+
+    Provides a text input with a folder browse button that opens
+    a directory selection dialog.
+
+    Usage in visual node:
+        from casare_rpa.presentation.canvas.graph.node_widgets import NodeDirectoryPathWidget
+
+        def __init__(self):
+            super().__init__()
+            widget = NodeDirectoryPathWidget(
+                name="output_dir",
+                label="Output Directory",
+            )
+            self.add_custom_widget(widget)
+            widget.setParentItem(self.view)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        text: str = "",
+        placeholder: str = "Select directory...",
+    ):
+        """
+        Create a new NodeDirectoryPathWidget.
+
+        Args:
+            name: Property name for the node
+            label: Label text displayed above the widget
+            text: Initial text value
+            placeholder: Placeholder text when empty
+        """
+        return create_directory_path_widget(name, label, placeholder, text)
+
+
+# =============================================================================
+# Helper function to set node context for variable picker
+# =============================================================================
+
+
+def set_variable_picker_node_context(
+    line_edit: VariableAwareLineEdit,
+    node_widget,
+) -> None:
+    """
+    Set the node context on a VariableAwareLineEdit for upstream variable detection.
+
+    This enables the variable picker to show output variables from nodes
+    connected upstream of the current node.
+
+    Args:
+        line_edit: The VariableAwareLineEdit to configure
+        node_widget: The NodeBaseWidget containing the line edit
+
+    Note:
+        This function attempts to discover the node and graph from the widget
+        hierarchy. It should be called after the widget is added to a node.
+        If discovery fails (widget not yet in hierarchy), context will be
+        set to None and the picker will still work with workflow/system variables.
+    """
+    try:
+        # Try to discover the owning node from the widget hierarchy
+        node = None
+        graph = None
+
+        # Walk up the parent chain to find the node
+        if hasattr(node_widget, "node"):
+            node = node_widget.node
+        elif hasattr(node_widget, "_node"):
+            node = node_widget._node
+
+        if node:
+            # Get node ID
+            node_id = None
+            if hasattr(node, "get_property"):
+                node_id = node.get_property("node_id")
+            elif hasattr(node, "id") and callable(node.id):
+                node_id = node.id()
+
+            # Get graph reference
+            if hasattr(node, "graph"):
+                graph = node.graph
+
+            # Set context on line edit
+            if node_id and graph:
+                line_edit.set_node_context(node_id, graph)
+                logger.debug(f"Variable picker node context set: node_id={node_id}")
+                return
+
+        # If discovery failed, log debug message
+        logger.debug(
+            "Variable picker: Node context not available (widget not yet in hierarchy)"
+        )
+
+    except Exception as e:
+        logger.debug(f"Variable picker: Could not set node context: {e}")
+
+
+def update_node_context_for_widgets(node) -> None:
+    """
+    Update node context for all VariableAwareLineEdit widgets in a node.
+
+    Call this after a node is fully added to the graph to enable
+    upstream variable detection in all text inputs.
+
+    Args:
+        node: The visual node (VisualNode subclass) to update
+    """
+    try:
+        # Get node ID
+        node_id = None
+        if hasattr(node, "get_property"):
+            node_id = node.get_property("node_id")
+        elif hasattr(node, "id") and callable(node.id):
+            node_id = node.id()
+
+        # Get graph
+        graph = None
+        if hasattr(node, "graph"):
+            graph = node.graph
+
+        if not node_id or not graph:
+            return
+
+        # Find all widgets in the node
+        widgets = {}
+        if hasattr(node, "widgets") and callable(node.widgets):
+            widgets = node.widgets()
+
+        for widget_name, widget in widgets.items():
+            # Check if widget has a VariableAwareLineEdit
+            if hasattr(widget, "_line_edit"):
+                line_edit = widget._line_edit
+                if isinstance(line_edit, VariableAwareLineEdit):
+                    line_edit.set_node_context(node_id, graph)
+
+            # Also check for direct custom widget
+            if hasattr(widget, "get_custom_widget"):
+                custom = widget.get_custom_widget()
+                if custom and hasattr(custom, "findChildren"):
+                    # Find any VariableAwareLineEdit in the custom widget tree
+                    for child in custom.findChildren(VariableAwareLineEdit):
+                        child.set_node_context(node_id, graph)
+
+    except Exception as e:
+        logger.debug(f"Could not update node context for widgets: {e}")
+
+
+# =============================================================================
+# Selector Widget for Element Picking
+# =============================================================================
+
+
+def create_selector_widget(name: str, label: str, placeholder: str, text: str = ""):
+    """
+    Factory function to create a NodeSelectorWidget.
+
+    Creates a NodeBaseWidget with selector input and element picker button.
+    The picker button opens the Element Selector Dialog for visual element selection.
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from PySide6 import QtWidgets
+    except ImportError:
+        logger.error("NodeGraphQt not available")
+        return None
+
+    # Create the container widget with horizontal layout
+    container = QtWidgets.QWidget()
+    layout = QHBoxLayout(container)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(4)
+
+    # Set explicit minimum size
+    container.setMinimumHeight(26)
+    container.setMinimumWidth(160)
+    container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    # Create variable-aware line edit
+    line_edit = VariableAwareLineEdit()
+    line_edit.setText(text)
+    line_edit.setPlaceholderText(placeholder)
+    line_edit.setMinimumHeight(24)
+    line_edit.setMinimumWidth(100)
+    line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    # Blue-tinted styling for selectors
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            background: #3d3d3d;
+            border: 1px solid #4a4a4a;
+            border-radius: 3px;
+            color: #60a5fa;
+            padding: 2px 28px 2px 4px;
+            font-family: Consolas, monospace;
+        }
+        QLineEdit:focus {
+            border: 1px solid #3b82f6;
+        }
+    """)
+    layout.addWidget(line_edit, 1)
+
+    # Create element picker button
+    picker_btn = QPushButton("...")
+    picker_btn.setFixedSize(30, 24)
+    picker_btn.setToolTip("Click to open Element Selector")
+    # Blue background for selector picking
+    picker_btn.setStyleSheet("""
+        QPushButton {
+            background-color: #3b82f6;
+            border: 1px solid #2563eb;
+            border-radius: 3px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 0px;
+        }
+        QPushButton:hover {
+            background-color: #2563eb;
+        }
+        QPushButton:pressed {
+            background-color: #1d4ed8;
+        }
+    """)
+
+    # Store references for later
+    widget_ref = {"widget": None, "node": None}
+
+    def on_picker_click():
+        """Open Element Selector Dialog."""
+        try:
+            from casare_rpa.presentation.canvas.selectors.element_selector_dialog import (
+                ElementSelectorDialog,
+            )
+
+            # Try to get browser page from node context
+            browser_page = None
+            node = widget_ref.get("node")
+
+            if node:
+                # Try to get browser page from execution context or controller
+                if hasattr(node, "graph") and node.graph:
+                    graph = node.graph
+                    # Try to get from selector controller via main window
+                    if hasattr(graph, "_viewer") and graph._viewer:
+                        viewer = graph._viewer
+                        if hasattr(viewer, "window"):
+                            main_window = viewer.window()
+                            if main_window and hasattr(
+                                main_window, "_selector_controller"
+                            ):
+                                browser_page = (
+                                    main_window._selector_controller.get_browser_page()
+                                )
+
+            # Determine mode
+            mode = "browser" if browser_page else "desktop"
+
+            # Create and show dialog
+            dialog = ElementSelectorDialog(
+                parent=None,
+                mode=mode,
+                browser_page=browser_page,
+                initial_selector=line_edit.text(),
+                target_node=node,
+                property_name=name,
+            )
+
+            def on_selector_confirmed(result):
+                """Handle confirmed selector."""
+                if not result:
+                    return
+
+                # Special handling for image_template property
+                if name == "image_template":
+                    # Extract cv_template from healing_context
+                    image_base64 = None
+                    logger.info(
+                        "ImageTemplate: Processing result for image_template property"
+                    )
+                    logger.info(
+                        f"ImageTemplate: has healing_context={hasattr(result, 'healing_context')}"
+                    )
+
+                    if hasattr(result, "healing_context") and result.healing_context:
+                        logger.info(
+                            f"ImageTemplate: healing_context keys={list(result.healing_context.keys())}"
+                        )
+                        cv_template = result.healing_context.get("cv_template", {})
+                        if cv_template:
+                            logger.info(
+                                f"ImageTemplate: cv_template keys={list(cv_template.keys())}"
+                            )
+                            image_base64 = cv_template.get("image_base64", "")
+                            logger.info(
+                                f"ImageTemplate: image_base64 length={len(image_base64) if image_base64 else 0}"
+                            )
+                        else:
+                            logger.warning(
+                                "ImageTemplate: cv_template is empty or missing"
+                            )
+                    else:
+                        logger.warning(
+                            f"ImageTemplate: No healing_context or empty. Value={getattr(result, 'healing_context', 'N/A')}"
+                        )
+
+                    if image_base64:
+                        line_edit.setText(image_base64)
+                        if widget_ref.get("widget"):
+                            widget_ref["widget"].on_value_changed()
+                        logger.info(f"Image template set: {len(image_base64)} chars")
+                    else:
+                        # Fallback: use selector_value if no cv_template
+                        if hasattr(result, "selector_value"):
+                            line_edit.setText(result.selector_value)
+                            if widget_ref.get("widget"):
+                                widget_ref["widget"].on_value_changed()
+                        logger.warning(
+                            "No cv_template found in result, using selector_value as fallback"
+                        )
+                    return
+
+                # Standard selector handling
+                if hasattr(result, "selector_value"):
+                    line_edit.setText(result.selector_value)
+                    # Trigger value change
+                    if widget_ref.get("widget"):
+                        widget_ref["widget"].on_value_changed()
+                    logger.debug(f"Selector set: {result.selector_value[:50]}...")
+
+                    # Save anchor config if present
+                    _save_anchor_to_node(result, node, name)
+
+            dialog.selector_confirmed.connect(on_selector_confirmed)
+            dialog.exec()
+
+        except ImportError as e:
+            logger.warning(f"Element Selector Dialog not available: {e}")
+        except Exception as e:
+            logger.error(f"Failed to open Element Selector: {e}")
+
+    picker_btn.clicked.connect(on_picker_click)
+    layout.addWidget(picker_btn)
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(container)
+    widget_ref["widget"] = widget
+
+    # Force geometry update
+    container.adjustSize()
+
+    # Connect line edit changes
+    line_edit.editingFinished.connect(widget.on_value_changed)
+    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+
+    # Store references
+    widget._line_edit = line_edit
+    widget._picker_btn = picker_btn
+
+    # Override get_value and set_value
+    def get_value():
+        return line_edit.text()
+
+    def set_value(value):
+        line_edit.setText(str(value) if value else "")
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    # Method to set node reference (called after widget is added to node)
+    def set_node_ref(node):
+        widget_ref["node"] = node
+
+    widget.set_node_ref = set_node_ref
+
+    return widget
+
+
+def _save_anchor_to_node(result, node, property_name: str):
+    """Save anchor configuration to node if present in result."""
+    if not node or not result:
+        return
+
+    try:
+        if hasattr(result, "anchor") and result.anchor:
+            from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
+
+            anchor_data = result.anchor
+            config = NodeAnchorConfig(
+                enabled=True,
+                selector=getattr(anchor_data, "selector", ""),
+                position=getattr(anchor_data, "position", "near"),
+                text=getattr(anchor_data, "text_content", ""),
+                tag_name=getattr(anchor_data, "tag_name", ""),
+                stability_score=getattr(anchor_data, "stability_score", 0.0),
+                offset_x=getattr(anchor_data, "offset_x", 0),
+                offset_y=getattr(anchor_data, "offset_y", 0),
+            )
+            anchor_json = config.to_json()
+
+            # Save to node
+            if hasattr(node, "set_property"):
+                node.set_property("anchor_config", anchor_json)
+                logger.info(f"Saved anchor config to node for {property_name}")
+
+    except Exception as e:
+        logger.warning(f"Failed to save anchor config: {e}")
+
+
+class NodeSelectorWidget:
+    """
+    Selector widget for NodeGraphQt nodes.
+
+    Provides a text input with an element picker button that opens
+    the Element Selector Dialog for visual element selection.
+
+    Usage in visual node:
+        from casare_rpa.presentation.canvas.graph.node_widgets import NodeSelectorWidget
+
+        def __init__(self):
+            super().__init__()
+            widget = NodeSelectorWidget(
+                name="selector",
+                label="Element Selector",
+            )
+            self.add_custom_widget(widget)
+            widget.setParentItem(self.view)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        text: str = "",
+        placeholder: str = "Enter selector or click ...",
+    ):
+        """
+        Create a new NodeSelectorWidget.
+
+        Args:
+            name: Property name for the node
+            label: Label text displayed above the widget
+            text: Initial text value
+            placeholder: Placeholder text when empty
+        """
+        return create_selector_widget(name, label, placeholder, text)

@@ -154,6 +154,9 @@ class NodeExecutor:
         """
         Handle execution of a bypassed/disabled node.
 
+        Passes through input values to matching output ports so data flow
+        continues through disabled nodes in a chain.
+
         Args:
             node: The bypassed node
 
@@ -162,6 +165,37 @@ class NodeExecutor:
         """
         logger.info(f"Node {node.node_id} is disabled - bypassing execution")
         node.status = NodeStatus.SUCCESS
+
+        # Pass through input values to matching output ports
+        # This ensures data flows through disabled nodes in a chain
+        passthrough_count = 0
+        if hasattr(node, "input_ports") and hasattr(node, "output_ports"):
+            for port_name in node.input_ports:
+                # Skip exec ports
+                if port_name.startswith("exec"):
+                    continue
+                # Check if there's a matching output port (e.g., page -> page, fields_in -> fields_out)
+                input_value = node.get_input_value(port_name)
+                if input_value is not None:
+                    # Direct match (page -> page)
+                    if port_name in node.output_ports:
+                        node.set_output_value(port_name, input_value)
+                        passthrough_count += 1
+                        logger.debug(f"Bypass passthrough: {port_name} -> {port_name}")
+                    # fields_in -> fields_out pattern
+                    elif port_name.endswith("_in"):
+                        out_port = port_name.replace("_in", "_out")
+                        if out_port in node.output_ports:
+                            node.set_output_value(out_port, input_value)
+                            passthrough_count += 1
+                            logger.debug(
+                                f"Bypass passthrough: {port_name} -> {out_port}"
+                            )
+
+        if passthrough_count > 0:
+            logger.debug(
+                f"Bypassed node {node.node_id}: passed through {passthrough_count} values"
+            )
 
         self._emit_event(
             EventType.NODE_COMPLETED,
@@ -177,7 +211,11 @@ class NodeExecutor:
 
         return NodeExecutionResult(
             success=True,
-            result={"success": True, "bypassed": True},
+            result={
+                "success": True,
+                "bypassed": True,
+                "passthrough_count": passthrough_count,
+            },
             execution_time=0.0,
         )
 

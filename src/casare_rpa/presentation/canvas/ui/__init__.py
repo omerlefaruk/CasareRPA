@@ -7,7 +7,7 @@ This module provides a comprehensive set of UI components following
 consistent design patterns:
 
 - BaseWidget: Abstract base class for all UI components
-- Panels: Dockable panels (Properties, Debug, Variables, Minimap)
+- Panels: Dockable panels (Debug, Variables, Minimap, BottomPanel)
 - Toolbars: Action toolbars (Main, Debug, Zoom)
 - Dialogs: Modal dialogs (Node Properties, Workflow Settings, Preferences)
 - Widgets: Reusable widgets (Variable Editor, Output Console, Search)
@@ -28,10 +28,8 @@ from casare_rpa.presentation.canvas.ui.base_widget import (
 
 # Panels
 from casare_rpa.presentation.canvas.ui.panels import (
-    PropertiesPanel,
     VariablesPanel,
     MinimapPanel,
-    CollapsibleSection,
     MinimapChangeTracker,
     VARIABLE_TYPES,
     TYPE_DEFAULTS,
@@ -63,11 +61,9 @@ __all__ = [
     "BaseDockWidget",
     "BaseDialog",
     # Panels
-    "PropertiesPanel",
     "DebugPanel",
     "VariablesPanel",
     "MinimapPanel",
-    "CollapsibleSection",
     "MinimapChangeTracker",
     # Toolbars
     "MainToolbar",

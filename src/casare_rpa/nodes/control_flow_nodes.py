@@ -4,6 +4,7 @@ Control flow nodes for CasareRPA.
 This module implements conditional and loop nodes for workflow control flow.
 """
 
+import re
 from typing import Optional
 from loguru import logger
 
@@ -74,11 +75,15 @@ class IfNode(BaseNode):
                 if expression:
                     # Safely evaluate expression with context variables
                     try:
-                        if not is_safe_expression(expression):
+                        # Convert {{variable}} syntax to plain variable names
+                        # e.g., "{{x}} > 5" -> "x > 5"
+                        resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
+
+                        if not is_safe_expression(resolved_expr):
                             raise ValueError(
-                                f"Unsafe expression detected: {expression}"
+                                f"Unsafe expression detected: {resolved_expr}"
                             )
-                        condition = safe_eval(expression, context.variables)
+                        condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
                         logger.warning(
                             f"Failed to evaluate expression '{expression}': {e}"
@@ -116,6 +121,20 @@ class IfNode(BaseNode):
         choices=["items", "range"],
         label="Mode",
         tooltip="Iteration mode: 'items' for collection iteration (ForEach), 'range' for counter-based iteration",
+    ),
+    PropertyDef(
+        "list_var",
+        PropertyType.STRING,
+        default="",
+        label="List Variable",
+        tooltip="Variable name containing the list to iterate over (for 'items' mode)",
+    ),
+    PropertyDef(
+        "item_var",
+        PropertyType.STRING,
+        default="item",
+        label="Item Variable",
+        tooltip="Variable name to store current item in context",
     ),
     PropertyDef(
         "start",
@@ -211,8 +230,14 @@ class ForLoopStartNode(BaseNode):
                     items = list(range(start, end, step))
                     keys = None  # No keys for range mode
                 else:
-                    # Items mode - use input items
+                    # Items mode - use input items or list_var from context
                     items = self.get_input_value("items")
+
+                    # Try list_var from context if no port connection
+                    if items is None:
+                        list_var = self.get_parameter("list_var", "")
+                        if list_var:
+                            items = context.get_variable(list_var)
 
                     if items is None:
                         # Fallback to range if no items provided
@@ -248,6 +273,19 @@ class ForLoopStartNode(BaseNode):
             items_list = loop_state["items"]
             keys_list = loop_state.get("keys")
 
+            # Check if break was requested
+            if loop_state.get("break_requested"):
+                # Break - clean up and go to completed
+                del context.variables[loop_state_key]
+                self.status = NodeStatus.SUCCESS
+                logger.info(f"For loop exited via break after {index} iterations")
+
+                return {
+                    "success": True,
+                    "data": {"iterations": index, "break": True},
+                    "next_nodes": ["completed"],
+                }
+
             # Check if loop is complete
             if index >= len(items_list):
                 # Loop finished - clean up and go to completed
@@ -269,6 +307,14 @@ class ForLoopStartNode(BaseNode):
             self.set_output_value("current_item", current_item)
             self.set_output_value("current_index", index)
             self.set_output_value("current_key", current_key)
+
+            # Store current item in context variable (item_var)
+            item_var = self.get_parameter("item_var", "item")
+            if item_var:
+                context.set_variable(item_var, current_item)
+                if current_key is not None:
+                    context.set_variable(f"{item_var}_key", current_key)
+                context.set_variable(f"{item_var}_index", index)
 
             # Increment index for next iteration
             loop_state["index"] = index + 1
@@ -434,6 +480,19 @@ class WhileLoopStartNode(BaseNode):
             loop_state = context.variables[loop_state_key]
             iteration = loop_state["iteration"]
 
+            # Check if break was requested
+            if loop_state.get("break_requested"):
+                # Break - clean up and go to completed
+                del context.variables[loop_state_key]
+                self.status = NodeStatus.SUCCESS
+                logger.info(f"While loop exited via break after {iteration} iterations")
+
+                return {
+                    "success": True,
+                    "data": {"iterations": iteration, "break": True},
+                    "next_nodes": ["completed"],
+                }
+
             # Safety check for infinite loops
             if iteration >= max_iterations:
                 del context.variables[loop_state_key]
@@ -453,11 +512,13 @@ class WhileLoopStartNode(BaseNode):
                 expression = self.get_parameter("expression", "")
                 if expression:
                     try:
-                        if not is_safe_expression(expression):
+                        # Convert {{variable}} syntax to plain variable names
+                        resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
+                        if not is_safe_expression(resolved_expr):
                             raise ValueError(
-                                f"Unsafe expression detected: {expression}"
+                                f"Unsafe expression detected: {resolved_expr}"
                             )
-                        condition = safe_eval(expression, context.variables)
+                        condition = safe_eval(resolved_expr, context.variables)
                     except Exception as e:
                         logger.warning(
                             f"Failed to evaluate expression '{expression}': {e}"
@@ -572,6 +633,8 @@ class BreakNode(BaseNode):
         super().__init__(node_id, config)
         self.name = "Break"
         self.node_type = "BreakNode"
+        # Paired loop start node ID - set when created inside a loop
+        self.paired_loop_start_id: str = ""
 
     def _define_ports(self) -> None:
         """Define node ports."""
@@ -585,18 +648,42 @@ class BreakNode(BaseNode):
             context: Execution context
 
         Returns:
-            Result with break signal
+            Result with loop_back_to and break_requested flag
         """
         self.status = NodeStatus.RUNNING
 
         try:
-            logger.info("Break executed - loop will exit")
+            # Get the paired loop start node ID
+            loop_start_id = self.paired_loop_start_id or self.get_parameter(
+                "paired_loop_start_id", ""
+            )
+
+            if not loop_start_id:
+                logger.warning(
+                    "BreakNode has no paired loop - check loop setup. "
+                    "Continuing to exec_out."
+                )
+                self.status = NodeStatus.SUCCESS
+                return {
+                    "success": True,
+                    "control_flow": "break",
+                    "next_nodes": ["exec_out"],
+                }
+
+            # Set break flag in loop state so ForLoopStart knows to exit
+            loop_state_key = f"{loop_start_id}_loop_state"
+            if loop_state_key in context.variables:
+                context.variables[loop_state_key]["break_requested"] = True
+
+            logger.info(f"Break executed - exiting loop {loop_start_id}")
 
             self.status = NodeStatus.SUCCESS
+            # Return loop_back_to so the loop start can check for break
             return {
                 "success": True,
-                "control_flow": "break",
-                "next_nodes": ["exec_out"],
+                "data": {},
+                "next_nodes": [],
+                "loop_back_to": loop_start_id,
             }
 
         except Exception as e:
@@ -620,6 +707,8 @@ class ContinueNode(BaseNode):
         super().__init__(node_id, config)
         self.name = "Continue"
         self.node_type = "ContinueNode"
+        # Paired loop start node ID - set when created inside a loop
+        self.paired_loop_start_id: str = ""
 
     def _define_ports(self) -> None:
         """Define node ports."""
@@ -633,18 +722,38 @@ class ContinueNode(BaseNode):
             context: Execution context
 
         Returns:
-            Result with continue signal
+            Result with loop_back_to for the paired loop start
         """
         self.status = NodeStatus.RUNNING
 
         try:
-            logger.info("Continue executed - skipping to next iteration")
+            # Get the paired loop start node ID
+            loop_start_id = self.paired_loop_start_id or self.get_parameter(
+                "paired_loop_start_id", ""
+            )
+
+            if not loop_start_id:
+                logger.warning(
+                    "ContinueNode has no paired loop - check loop setup. "
+                    "Continuing to exec_out."
+                )
+                self.status = NodeStatus.SUCCESS
+                return {
+                    "success": True,
+                    "control_flow": "continue",
+                    "next_nodes": ["exec_out"],
+                }
+
+            logger.info(f"Continue executed - looping back to {loop_start_id}")
 
             self.status = NodeStatus.SUCCESS
+            # Return loop_back_to to trigger the next iteration
+            # This is the same mechanism used by ForLoopEndNode
             return {
                 "success": True,
-                "control_flow": "continue",
-                "next_nodes": ["exec_out"],
+                "data": {},
+                "next_nodes": [],
+                "loop_back_to": loop_start_id,
             }
 
         except Exception as e:
@@ -770,10 +879,12 @@ class SwitchNode(BaseNode):
             if value is None:
                 expression = self.get_parameter("expression", "")
                 if expression:
+                    # Convert {{variable}} syntax to plain variable names
+                    resolved_expr = re.sub(r"\{\{(\w+)\}\}", r"\1", expression)
                     # Safely evaluate expression with context variables
-                    if not is_safe_expression(expression):
-                        raise ValueError(f"Unsafe expression detected: {expression}")
-                    value = safe_eval(expression, context.variables)
+                    if not is_safe_expression(resolved_expr):
+                        raise ValueError(f"Unsafe expression detected: {resolved_expr}")
+                    value = safe_eval(resolved_expr, context.variables)
 
             # Convert to string for matching
             value_str = str(value) if value is not None else ""

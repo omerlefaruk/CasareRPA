@@ -173,17 +173,33 @@ class WorkflowSerializer:
             if prop_value is not None:
                 config[prop_name] = prop_value
 
-        # Check if node is disabled
-        disabled = visual_node.get_property("_disabled")
-        if disabled:
+        # Check if node is disabled - from casare_node.config (set by toggle_disable_node)
+        # Note: _disabled should already be in config from casare_node.config.copy() above
+        # This additional check is for visual node property if it exists
+        disabled_from_visual = visual_node.get_property("_disabled")
+        disabled_from_config = config.get("_disabled", False)
+
+        if disabled_from_visual and not disabled_from_config:
             config["_disabled"] = True
 
-        return {
+        # Get custom display name (if user renamed the node)
+        display_name = visual_node.name()
+        # Default name is typically "{NodeType}_1" or similar - only save if customized
+        default_prefix = node_type.replace("Node", "")
+        is_custom_name = display_name and not display_name.startswith(default_prefix)
+
+        node_dict = {
             "node_id": node_id,
             "node_type": node_type,
             "position": position,
             "config": config,
         }
+
+        # Only include name if it's a custom user-defined name
+        if is_custom_name:
+            node_dict["name"] = display_name
+
+        return node_dict
 
     def _serialize_connections(self) -> List[dict]:
         """

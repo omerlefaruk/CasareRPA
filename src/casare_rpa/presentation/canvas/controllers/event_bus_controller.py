@@ -55,7 +55,6 @@ class EventBusController(BaseController):
     def initialize(self) -> None:
         """Initialize controller."""
         super().initialize()
-        logger.info("EventBusController initialized")
 
     def cleanup(self) -> None:
         """Clean up resources."""

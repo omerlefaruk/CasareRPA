@@ -16,6 +16,7 @@ This module provides extended text manipulation nodes:
 """
 
 import re
+from typing import Any, Optional
 
 from loguru import logger
 
@@ -24,12 +25,43 @@ from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     NodeStatus,
-    PortType,
     DataType,
     ExecutionResult,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils import safe_int
+
+
+def _strip_var_wrapper(value: str) -> str:
+    """Strip {{}} wrapper from variable reference if present."""
+    value = value.strip()
+    if value.startswith("{{") and value.endswith("}}"):
+        return value[2:-2].strip()
+    return value
+
+
+def _resolve_string_param(
+    node: BaseNode, context: ExecutionContext, param_name: str, default: str = ""
+) -> str:
+    """Resolve a string parameter from input port, parameter, or variable reference."""
+    # Try input port first
+    value = node.get_input_value(param_name)
+    if value is not None:
+        return str(value)
+
+    # Try parameter
+    param = node.get_parameter(param_name, default)
+
+    # If it's a string that looks like a variable reference
+    if isinstance(param, str) and param:
+        var_name = _strip_var_wrapper(param)
+        if var_name != param:  # Had wrapper, resolve as variable
+            resolved = context.get_variable(var_name)
+            if resolved is not None:
+                return str(resolved)
+        return param
+
+    return str(param) if param is not None else default
 
 
 @node_schema(
@@ -65,13 +97,11 @@ class TextSplitNode(BaseNode):
         self.node_type = "TextSplitNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
         # separator is optional - defaults to whitespace splitting
-        self.add_input_port(
-            "separator", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_output_port("result", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("separator", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -181,11 +211,11 @@ class TextReplaceNode(BaseNode):
         self.node_type = "TextReplaceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("old_value", PortType.INPUT, DataType.STRING)
-        self.add_input_port("new_value", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("replacements", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("old_value", DataType.STRING, required=False)
+        self.add_input_port("new_value", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("replacements", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -287,8 +317,8 @@ class TextTrimNode(BaseNode):
         self.node_type = "TextTrimNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -362,8 +392,8 @@ class TextCaseNode(BaseNode):
         self.node_type = "TextCaseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -443,9 +473,9 @@ class TextPadNode(BaseNode):
         self.node_type = "TextPadNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("length", PortType.INPUT, DataType.INTEGER)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("length", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -509,12 +539,12 @@ class TextSubstringNode(BaseNode):
         self.node_type = "TextSubstringNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
         # start defaults to 0, end defaults to None (end of string)
-        self.add_input_port("start", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_input_port("end", PortType.INPUT, DataType.INTEGER, required=False)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("length", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("start", DataType.INTEGER, required=False)
+        self.add_input_port("end", DataType.INTEGER, required=False)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("length", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -582,11 +612,11 @@ class TextContainsNode(BaseNode):
         self.node_type = "TextContainsNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("search", PortType.INPUT, DataType.STRING)
-        self.add_output_port("contains", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("position", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("search", DataType.STRING, required=False)
+        self.add_output_port("contains", DataType.BOOLEAN)
+        self.add_output_port("position", DataType.INTEGER)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -663,9 +693,9 @@ class TextStartsWithNode(BaseNode):
         self.node_type = "TextStartsWithNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("prefix", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("prefix", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -734,9 +764,9 @@ class TextEndsWithNode(BaseNode):
         self.node_type = "TextEndsWithNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("suffix", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("suffix", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.BOOLEAN)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -822,9 +852,9 @@ class TextLinesNode(BaseNode):
         self.node_type = "TextLinesNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("input", PortType.INPUT, DataType.ANY)
-        self.add_output_port("result", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("input", DataType.ANY, required=False)
+        self.add_output_port("result", DataType.ANY)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -891,8 +921,8 @@ class TextReverseNode(BaseNode):
         self.node_type = "TextReverseNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -961,11 +991,11 @@ class TextCountNode(BaseNode):
         self.node_type = "TextCountNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("characters", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("words", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("lines", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_output_port("count", DataType.INTEGER)
+        self.add_output_port("characters", DataType.INTEGER)
+        self.add_output_port("words", DataType.INTEGER)
+        self.add_output_port("lines", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1050,9 +1080,9 @@ class TextJoinNode(BaseNode):
         self.node_type = "TextJoinNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("items", PortType.INPUT, DataType.LIST)
-        self.add_input_port("separator", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("items", DataType.LIST, required=False)
+        self.add_input_port("separator", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
@@ -1149,22 +1179,19 @@ class TextExtractNode(BaseNode):
         self.node_type = "TextExtractNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
-        self.add_output_port("match", PortType.OUTPUT, DataType.ANY)
-        self.add_output_port("groups", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("found", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("pattern", DataType.STRING, required=False)
+        self.add_output_port("match", DataType.ANY)
+        self.add_output_port("groups", DataType.LIST)
+        self.add_output_port("found", DataType.BOOLEAN)
+        self.add_output_port("match_count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         self.status = NodeStatus.RUNNING
 
         try:
-            text = str(self.get_input_value("text", context) or "")
-            pattern = str(self.get_input_value("pattern", context) or "")
-
-            # Resolve {{variable}} patterns in pattern
-            pattern = context.resolve_value(pattern)
+            text = _resolve_string_param(self, context, "text", "")
+            pattern = _resolve_string_param(self, context, "pattern", "")
 
             all_matches = self.get_parameter("all_matches", False)
 

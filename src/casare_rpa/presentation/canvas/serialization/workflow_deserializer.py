@@ -136,8 +136,6 @@ class WorkflowDeserializer:
         Returns:
             True if deserialized successfully, False otherwise
         """
-        logger.info("Deserializing workflow into canvas graph")
-
         try:
             # SECURITY: Validate workflow JSON against schema before processing
             # This prevents code injection and resource exhaustion attacks
@@ -163,12 +161,9 @@ class WorkflowDeserializer:
                 if visual_node:
                     node_map[node_id] = visual_node
 
-            logger.info(f"Created {len(node_map)} nodes")
-
             # Create connections
             connections_data = workflow_data.get("connections", [])
-            connection_count = self._create_connections(connections_data, node_map)
-            logger.info(f"Created {connection_count} connections")
+            self._create_connections(connections_data, node_map)
 
             # Restore variables
             variables = workflow_data.get("variables", {})
@@ -182,7 +177,6 @@ class WorkflowDeserializer:
             if node_map:
                 self._graph.center_on(list(node_map.values()))
 
-            logger.info("Workflow deserialization complete")
             return True
 
         except Exception as e:
@@ -242,6 +236,11 @@ class WorkflowDeserializer:
             config = node_data.get("config", {})
             self._apply_config(visual_node, config)
 
+            # Restore custom node name if saved
+            custom_name = node_data.get("name")
+            if custom_name:
+                visual_node.set_name(custom_name)
+
             logger.debug(f"Created node: {node_type} at {pos} with id {node_id}")
             return visual_node
 
@@ -300,11 +299,24 @@ class WorkflowDeserializer:
             custom_props = []
 
         for key, value in config.items():
-            # Skip internal/meta properties
+            # Handle internal/meta properties specially
             if key.startswith("_"):
-                # Handle disabled state
+                # Handle disabled state - set both visual and casare_node config
                 if key == "_disabled" and value:
-                    visual_node.set_disabled(True)
+                    # Visual: use opacity approach (not NodeGraphQt's giant X)
+                    if hasattr(visual_node, "view") and visual_node.view:
+                        visual_node.view.setOpacity(0.4)
+                    # CRITICAL: Also set on casare_node.config so execution skips this node
+                    if (
+                        hasattr(visual_node, "_casare_node")
+                        and visual_node._casare_node
+                    ):
+                        visual_node._casare_node.config["_disabled"] = True
+                    # Try to set on visual node property too
+                    try:
+                        visual_node.set_property("_disabled", True)
+                    except Exception:
+                        pass
                 continue
 
             # Skip node_id as it's already set

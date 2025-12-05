@@ -28,6 +28,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_ANCHOR_CONFIG,
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
@@ -82,6 +83,7 @@ from casare_rpa.utils.resilience import retry_operation
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class ExtractTextNode(BrowserBaseNode):
@@ -150,15 +152,42 @@ class ExtractTextNode(BrowserBaseNode):
                 f"Extracting text from element: {selector} (use_inner_text={use_inner_text})"
             )
 
-            async def perform_extraction() -> str:
-                locator = page.locator(selector)
-                if strict:
-                    locator = locator.first
+            # Track healing info
+            healing_tier = "original"
+            final_selector = selector
 
-                if use_inner_text:
-                    text = await locator.inner_text(timeout=timeout)
-                else:
-                    text = await locator.text_content(timeout=timeout)
+            async def perform_extraction() -> str:
+                nonlocal healing_tier, final_selector
+
+                # Try with healing fallback first
+                try:
+                    (
+                        element,
+                        final_selector,
+                        healing_tier,
+                    ) = await self.find_element_with_healing(
+                        page, selector, timeout, param_name="selector"
+                    )
+
+                    # Use element-based operations
+                    if use_inner_text:
+                        text = await element.inner_text()
+                    else:
+                        text = await element.text_content()
+
+                except Exception as healing_error:
+                    # Fall back to locator-based operations (original behavior)
+                    logger.debug(
+                        f"Healing failed, trying direct locator: {healing_error}"
+                    )
+                    locator = page.locator(selector)
+                    if strict:
+                        locator = locator.first
+
+                    if use_inner_text:
+                        text = await locator.inner_text(timeout=timeout)
+                    else:
+                        text = await locator.text_content(timeout=timeout)
 
                 if trim_whitespace and text:
                     text = text.strip()
@@ -177,14 +206,19 @@ class ExtractTextNode(BrowserBaseNode):
                 context.set_variable(variable_name, text)
                 self.set_output_value("text", text)
 
-                return self.success_result(
-                    {
-                        "text": text,
-                        "variable": variable_name,
-                        "use_inner_text": use_inner_text,
-                        "attempts": result.attempts,
-                    }
-                )
+                result_data = {
+                    "text": text,
+                    "variable": variable_name,
+                    "final_selector": final_selector,
+                    "use_inner_text": use_inner_text,
+                    "attempts": result.attempts,
+                    "healing_tier": healing_tier,
+                }
+                if healing_tier != "original":
+                    logger.info(
+                        f"Extract text succeeded with healing: {healing_tier} tier"
+                    )
+                return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "extract_text_fail")
             raise result.last_error or RuntimeError("Extract text failed")
@@ -228,6 +262,7 @@ class ExtractTextNode(BrowserBaseNode):
     BROWSER_RETRY_INTERVAL,
     BROWSER_SCREENSHOT_ON_FAIL,
     BROWSER_SCREENSHOT_PATH,
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class GetAttributeNode(BrowserBaseNode):
@@ -299,13 +334,56 @@ class GetAttributeNode(BrowserBaseNode):
 
             logger.info(f"Getting attribute '{attribute}' from element: {selector}")
 
-            async def perform_get_attribute() -> str:
-                locator = page.locator(selector)
-                if strict:
-                    locator = locator.first
+            # Track healing info
+            healing_tier = "original"
+            final_selector = selector
 
-                value = await locator.get_attribute(attribute, timeout=timeout)
-                return value or ""
+            async def perform_get_attribute() -> str:
+                nonlocal healing_tier, final_selector
+
+                # Try with healing fallback first
+                try:
+                    (
+                        element,
+                        final_selector,
+                        healing_tier,
+                    ) = await self.find_element_with_healing(
+                        page, selector, timeout, param_name="selector"
+                    )
+
+                    # Special case: "value" attribute on input elements needs input_value()
+                    # because get_attribute("value") returns the initial HTML value, not current
+                    if attribute.lower() == "value":
+                        tag_name = await element.evaluate(
+                            "el => el.tagName.toLowerCase()"
+                        )
+                        if tag_name in ("input", "textarea", "select"):
+                            value = await element.input_value()
+                            return value or ""
+
+                    # Use element-based operation for other attributes
+                    value = await element.get_attribute(attribute)
+                    return value or ""
+
+                except Exception as healing_error:
+                    # Fall back to locator-based operation (original behavior)
+                    logger.debug(
+                        f"Healing failed, trying direct locator: {healing_error}"
+                    )
+                    locator = page.locator(selector)
+                    if strict:
+                        locator = locator.first
+
+                    # Special case for value attribute on input elements
+                    if attribute.lower() == "value":
+                        try:
+                            value = await locator.input_value(timeout=timeout)
+                            return value or ""
+                        except Exception:
+                            pass  # Fall through to get_attribute
+
+                    value = await locator.get_attribute(attribute, timeout=timeout)
+                    return value or ""
 
             result = await retry_operation(
                 perform_get_attribute,
@@ -319,14 +397,19 @@ class GetAttributeNode(BrowserBaseNode):
                 context.set_variable(variable_name, value)
                 self.set_output_value("value", value)
 
-                return self.success_result(
-                    {
-                        "attribute": attribute,
-                        "value": value,
-                        "variable": variable_name,
-                        "attempts": result.attempts,
-                    }
-                )
+                result_data = {
+                    "attribute": attribute,
+                    "value": value,
+                    "variable": variable_name,
+                    "final_selector": final_selector,
+                    "attempts": result.attempts,
+                    "healing_tier": healing_tier,
+                }
+                if healing_tier != "original":
+                    logger.info(
+                        f"Get attribute succeeded with healing: {healing_tier} tier"
+                    )
+                return self.success_result(result_data)
 
             await self.screenshot_on_failure(page, "get_attribute_fail")
             raise result.last_error or RuntimeError("Get attribute failed")

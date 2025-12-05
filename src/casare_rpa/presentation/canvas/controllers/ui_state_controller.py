@@ -53,8 +53,6 @@ class UIStateController(BaseController):
     _KEY_WINDOW_STATE = "windowState"
     _KEY_BOTTOM_PANEL_VISIBLE = "bottomPanelVisible"
     _KEY_BOTTOM_PANEL_TAB = "bottomPanelTab"
-    _KEY_VARIABLE_INSPECTOR_VISIBLE = "variableInspectorVisible"
-    _KEY_PROPERTIES_PANEL_VISIBLE = "propertiesPanelVisible"
     _KEY_EXECUTION_TIMELINE_VISIBLE = "executionTimelineVisible"
     _KEY_MINIMAP_VISIBLE = "minimapVisible"
     _KEY_LAST_DIRECTORY = "lastDirectory"
@@ -119,22 +117,6 @@ class UIStateController(BaseController):
             mw.bottom_panel.dockLocationChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.visibilityChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.topLevelChanged.connect(self.schedule_auto_save)
-
-        # Variable inspector - use property accessor
-        if mw.variable_inspector_dock:
-            mw.variable_inspector_dock.dockLocationChanged.connect(
-                self.schedule_auto_save
-            )
-            mw.variable_inspector_dock.visibilityChanged.connect(
-                self.schedule_auto_save
-            )
-            mw.variable_inspector_dock.topLevelChanged.connect(self.schedule_auto_save)
-
-        # Properties panel - use property accessor
-        if mw.properties_panel:
-            mw.properties_panel.dockLocationChanged.connect(self.schedule_auto_save)
-            mw.properties_panel.visibilityChanged.connect(self.schedule_auto_save)
-            mw.properties_panel.topLevelChanged.connect(self.schedule_auto_save)
 
         # Execution timeline - use property accessor
         if mw.execution_timeline:
@@ -320,20 +302,6 @@ class UIStateController(BaseController):
                         mw.bottom_panel._tab_widget.currentIndex(),
                     )
 
-            # Variable inspector - use property accessor
-            if mw.variable_inspector_dock:
-                self._settings.setValue(
-                    self._KEY_VARIABLE_INSPECTOR_VISIBLE,
-                    mw.variable_inspector_dock.isVisible(),
-                )
-
-            # Properties panel - use property accessor
-            if mw.properties_panel:
-                self._settings.setValue(
-                    self._KEY_PROPERTIES_PANEL_VISIBLE,
-                    mw.properties_panel.isVisible(),
-                )
-
             # Execution timeline - use property accessor
             execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
             if execution_timeline_dock:
@@ -376,22 +344,6 @@ class UIStateController(BaseController):
                     tab_count = mw.bottom_panel._tab_widget.count()
                     if 0 <= tab_index < tab_count:
                         mw.bottom_panel._tab_widget.setCurrentIndex(tab_index)
-
-            # Variable inspector - use property accessor
-            if mw.variable_inspector_dock:
-                visible = self._settings.value(
-                    self._KEY_VARIABLE_INSPECTOR_VISIBLE, False, type=bool
-                )
-                mw.variable_inspector_dock.setVisible(visible)
-                if hasattr(mw, "action_toggle_variable_inspector"):
-                    mw.action_toggle_variable_inspector.setChecked(visible)
-
-            # Properties panel - use property accessor
-            if mw.properties_panel:
-                visible = self._settings.value(
-                    self._KEY_PROPERTIES_PANEL_VISIBLE, True, type=bool
-                )
-                mw.properties_panel.setVisible(visible)
 
             # Execution timeline - use property accessor
             execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)

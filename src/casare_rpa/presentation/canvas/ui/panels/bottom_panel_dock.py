@@ -1,8 +1,13 @@
 """
 Bottom Panel Dock for CasareRPA.
 
-Main dockable container with tabs for Variables, Output, Log, Validation, and History.
-Provides Power Automate/UiPath-style bottom panel functionality.
+Main dockable container with tabs for Variables, Output, Log, Validation, History, and Terminal.
+Provides Power Automate/UiPath-style bottom panel functionality with improved UX:
+
+- VSCode Dark+ theme styling
+- Tab badges showing item counts
+- Auto-switch to relevant tabs on events
+- Keyboard navigation support
 
 Note: Triggers are now visual nodes on the canvas (not a separate tab).
 """
@@ -14,9 +19,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QTabWidget,
+    QSizePolicy,
 )
 from PySide6.QtCore import Qt, Signal
 from loguru import logger
+
+from casare_rpa.presentation.canvas.theme import THEME
 
 if TYPE_CHECKING:
     from casare_rpa.domain.validation import ValidationResult
@@ -25,7 +33,7 @@ if TYPE_CHECKING:
 
 class BottomPanelDock(QDockWidget):
     """
-    Dockable bottom panel with tabs for Variables, Output, Log, Validation, and History.
+    Dockable bottom panel with tabs for Variables, Output, Log, Validation, History, and Terminal.
 
     This panel provides a Power Automate/UiPath-style interface for:
     - Variables: Global workflow variables with design/runtime modes
@@ -33,12 +41,14 @@ class BottomPanelDock(QDockWidget):
     - Log: Real-time execution logs
     - Validation: Workflow validation issues
     - History: Execution history with timing and status
+    - Terminal: Raw stdout/stderr output
 
     Note: Triggers are now visual nodes on the canvas.
 
     Signals:
         variables_changed: Emitted when variables are modified
         validation_requested: Emitted when user requests manual validation
+        repair_requested: Emitted when user requests to repair workflow issues
         issue_clicked: Emitted when a validation issue is clicked (location: str)
         navigate_to_node: Emitted when user wants to navigate to a node (node_id: str)
         history_clear_requested: Emitted when user requests to clear history
@@ -46,6 +56,7 @@ class BottomPanelDock(QDockWidget):
 
     variables_changed = Signal(dict)  # {name: VariableDefinition}
     validation_requested = Signal()
+    repair_requested = Signal()  # repair workflow issues (duplicate IDs, etc.)
     issue_clicked = Signal(str)  # location string
     navigate_to_node = Signal(str)  # node_id
     history_clear_requested = Signal()
@@ -81,7 +92,7 @@ class BottomPanelDock(QDockWidget):
         # Allow only bottom area
         self.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
 
-        # Set features (movable but not floatable)
+        # Set features (movable but not floatable for consistent layout)
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
@@ -89,6 +100,9 @@ class BottomPanelDock(QDockWidget):
 
         # Set minimum height
         self.setMinimumHeight(150)
+
+        # Allow vertical resizing
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -102,6 +116,8 @@ class BottomPanelDock(QDockWidget):
         self._tab_widget = QTabWidget()
         self._tab_widget.setTabPosition(QTabWidget.TabPosition.North)
         self._tab_widget.setDocumentMode(True)
+        self._tab_widget.setUsesScrollButtons(True)
+        self._tab_widget.setMovable(False)  # Fixed tab order for consistency
 
         # Create tabs
         self._create_tabs()
@@ -123,33 +139,48 @@ class BottomPanelDock(QDockWidget):
         self._variables_tab.variables_changed.connect(self._on_variables_changed)
         self._variables_tab.variables_changed.connect(self._update_tab_badges)
         self._tab_widget.addTab(self._variables_tab, "Variables")
+        self._tab_widget.setTabToolTip(
+            self.TAB_VARIABLES, "Workflow variables (Ctrl+Shift+V)"
+        )
 
         # Output tab
         self._output_tab = OutputTab()
         self._tab_widget.addTab(self._output_tab, "Output")
+        self._tab_widget.setTabToolTip(
+            self.TAB_OUTPUT, "Workflow outputs and return values"
+        )
 
         # Log tab
         self._log_tab = LogTab()
         self._log_tab.navigate_to_node.connect(self.navigate_to_node.emit)
         self._tab_widget.addTab(self._log_tab, "Log")
+        self._tab_widget.setTabToolTip(self.TAB_LOG, "Execution log messages")
 
         # Validation tab
         self._validation_tab = ValidationTab()
         self._validation_tab.validation_requested.connect(
             self.validation_requested.emit
         )
+        self._validation_tab.repair_requested.connect(self.repair_requested.emit)
         self._validation_tab.issue_clicked.connect(self.issue_clicked.emit)
         self._tab_widget.addTab(self._validation_tab, "Validation")
+        self._tab_widget.setTabToolTip(
+            self.TAB_VALIDATION, "Workflow validation issues (Ctrl+Shift+V)"
+        )
 
         # History tab
         self._history_tab = HistoryTab()
         self._history_tab.node_selected.connect(self.navigate_to_node.emit)
         self._history_tab.clear_requested.connect(self._on_history_clear_requested)
         self._tab_widget.addTab(self._history_tab, "History")
+        self._tab_widget.setTabToolTip(
+            self.TAB_HISTORY, "Execution history with timing"
+        )
 
         # Terminal tab (raw stdout/stderr output)
         self._terminal_tab = TerminalTab()
         self._tab_widget.addTab(self._terminal_tab, "Terminal")
+        self._tab_widget.setTabToolTip(self.TAB_TERMINAL, "Raw console output")
 
         # Note: Triggers are now visual nodes on the canvas (not a tab)
 
@@ -178,7 +209,7 @@ class BottomPanelDock(QDockWidget):
         log_title = f"Log ({log_count})" if log_count > 0 else "Log"
         self._tab_widget.setTabText(self.TAB_LOG, log_title)
 
-        # Validation tab - show error/warning count
+        # Validation tab - show error/warning count with color hint
         if hasattr(self._validation_tab, "get_issue_count"):
             error_count, warning_count = self._validation_tab.get_issue_count()
             if error_count > 0:
@@ -202,39 +233,69 @@ class BottomPanelDock(QDockWidget):
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         self.setStyleSheet(f"""
             QDockWidget {{
                 background-color: {THEME.bg_panel};
-                color: {THEME.text_secondary};
+                color: {THEME.text_primary};
             }}
             QDockWidget::title {{
                 background-color: {THEME.dock_title_bg};
-                padding: 6px;
-                text-align: left;
+                color: {THEME.dock_title_text};
+                padding: 6px 12px;
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QTabWidget {{
+                background-color: {THEME.bg_panel};
+                border: none;
             }}
             QTabWidget::pane {{
-                border: 1px solid {THEME.border_dark};
-                background: {THEME.bg_panel};
-                border-top: none;
+                background-color: {THEME.bg_panel};
+                border: none;
+                border-top: 1px solid {THEME.border_dark};
+            }}
+            QTabBar {{
+                background-color: {THEME.bg_header};
+                qproperty-drawBase: 0;
             }}
             QTabBar::tab {{
-                background: {THEME.bg_medium};
-                color: {THEME.text_secondary};
+                background-color: {THEME.bg_header};
+                color: {THEME.text_muted};
                 padding: 8px 16px;
-                border: 1px solid {THEME.border_dark};
-                border-bottom: none;
-                margin-right: 2px;
+                border: none;
+                border-bottom: 2px solid transparent;
+                font-size: 11px;
                 font-weight: 500;
+                min-width: 60px;
+            }}
+            QTabBar::tab:hover {{
+                color: {THEME.text_primary};
+                background-color: {THEME.bg_hover};
             }}
             QTabBar::tab:selected {{
-                background: {THEME.bg_panel};
                 color: {THEME.text_primary};
+                background-color: {THEME.bg_panel};
                 border-bottom: 2px solid {THEME.accent_primary};
             }}
-            QTabBar::tab:hover:!selected {{
-                background: {THEME.bg_hover};
+            QTabBar::tab:!selected {{
+                border-top: 1px solid {THEME.border_dark};
+            }}
+            QTabBar::tab:first {{
+                margin-left: 4px;
+            }}
+            QTabBar::scroller {{
+                width: 20px;
+            }}
+            QTabBar QToolButton {{
+                background-color: {THEME.bg_header};
+                border: none;
+                color: {THEME.text_secondary};
+            }}
+            QTabBar QToolButton:hover {{
+                background-color: {THEME.bg_hover};
                 color: {THEME.text_primary};
             }}
         """)
@@ -412,11 +473,17 @@ class BottomPanelDock(QDockWidget):
         """
         Set validation results.
 
+        Auto-switches to validation tab if errors are found.
+
         Args:
             result: ValidationResult to display
         """
         self._validation_tab.set_result(result)
         self._update_tab_badges()
+
+        # Auto-switch to validation tab if there are errors
+        if not result.is_valid:
+            self.show_validation_tab()
 
     def clear_validation(self) -> None:
         """Clear validation results."""

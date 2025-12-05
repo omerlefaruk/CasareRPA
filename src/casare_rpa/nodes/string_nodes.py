@@ -8,13 +8,75 @@ Provides nodes for string manipulation including:
 """
 
 import re
+from typing import Any, Dict, Optional
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
-from casare_rpa.domain.value_objects.types import DataType, ExecutionResult, PortType
+from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
+
+
+def _strip_var_wrapper(value: str) -> str:
+    """Strip {{}} wrapper from variable reference if present."""
+    value = value.strip()
+    if value.startswith("{{") and value.endswith("}}"):
+        return value[2:-2].strip()
+    return value
+
+
+def _resolve_string_param(
+    node: BaseNode, context: ExecutionContext, param_name: str, default: str = ""
+) -> str:
+    """Resolve a string parameter from input port, parameter, or variable reference."""
+    # Try input port first
+    value = node.get_input_value(param_name)
+    if value is not None:
+        return str(value)
+
+    # Try parameter
+    param = node.get_parameter(param_name, default)
+
+    # If it's a string that looks like a variable reference
+    if isinstance(param, str) and param:
+        var_name = _strip_var_wrapper(param)
+        if var_name != param:  # Had wrapper, resolve as variable
+            resolved = context.get_variable(var_name)
+            if resolved is not None:
+                return str(resolved)
+        return param
+
+    return str(param) if param is not None else default
+
+
+def _resolve_dict_param(
+    node: BaseNode,
+    context: ExecutionContext,
+    param_name: str,
+    default: Optional[Dict] = None,
+) -> Dict[str, Any]:
+    """Resolve a dict parameter from input port, parameter, or variable reference."""
+    if default is None:
+        default = {}
+
+    # Try input port first
+    value = node.get_input_value(param_name)
+    if value is not None:
+        return value if isinstance(value, dict) else default
+
+    # Try parameter
+    param = node.get_parameter(param_name, default)
+
+    # If it's a string, try to resolve as variable reference
+    if isinstance(param, str) and param:
+        var_name = _strip_var_wrapper(param)
+        resolved = context.get_variable(var_name)
+        if resolved is not None and isinstance(resolved, dict):
+            return resolved
+        return default
+
+    return param if isinstance(param, dict) else default
 
 
 @node_schema(
@@ -37,15 +99,15 @@ class ConcatenateNode(BaseNode):
         self.node_type = "ConcatenateNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("string_1", PortType.INPUT, DataType.STRING)
-        self.add_input_port("string_2", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("string_1", DataType.STRING, required=False)
+        self.add_input_port("string_2", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            s1 = str(self.get_parameter("string_1", ""))
-            s2 = str(self.get_parameter("string_2", ""))
-            separator = self.get_parameter("separator", "")
+            s1 = _resolve_string_param(self, context, "string_1", "")
+            s2 = _resolve_string_param(self, context, "string_2", "")
+            separator = _resolve_string_param(self, context, "separator", "")
 
             result = f"{s1}{separator}{s2}"
 
@@ -68,17 +130,14 @@ class FormatStringNode(BaseNode):
         self.node_type = "FormatStringNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("template", PortType.INPUT, DataType.STRING)
-        self.add_input_port("variables", PortType.INPUT, DataType.DICT)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
+        self.add_input_port("template", DataType.STRING, required=False)
+        self.add_input_port("variables", DataType.DICT, required=False)
+        self.add_output_port("result", DataType.STRING)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            template = self.get_parameter("template", "")
-            variables = self.get_parameter("variables", {})
-
-            if not isinstance(variables, dict):
-                raise ValueError("Variables input must be a dictionary")
+            template = _resolve_string_param(self, context, "template", "")
+            variables = _resolve_dict_param(self, context, "variables", {})
 
             result = template.format(**variables)
 
@@ -124,18 +183,18 @@ class RegexMatchNode(BaseNode):
         self.node_type = "RegexMatchNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
-        self.add_output_port("match_found", PortType.OUTPUT, DataType.BOOLEAN)
-        self.add_output_port("first_match", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("all_matches", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("groups", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("match_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("pattern", DataType.STRING, required=False)
+        self.add_output_port("match_found", DataType.BOOLEAN)
+        self.add_output_port("first_match", DataType.STRING)
+        self.add_output_port("all_matches", DataType.LIST)
+        self.add_output_port("groups", DataType.LIST)
+        self.add_output_port("match_count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = self.get_parameter("text", "")
-            pattern = self.get_parameter("pattern", "")
+            text = _resolve_string_param(self, context, "text", "")
+            pattern = _resolve_string_param(self, context, "pattern", "")
 
             flags = 0
             if self.get_parameter("ignore_case", False):
@@ -217,17 +276,17 @@ class RegexReplaceNode(BaseNode):
         self.node_type = "RegexReplaceNode"
 
     def _define_ports(self) -> None:
-        self.add_input_port("text", PortType.INPUT, DataType.STRING)
-        self.add_input_port("pattern", PortType.INPUT, DataType.STRING)
-        self.add_input_port("replacement", PortType.INPUT, DataType.STRING)
-        self.add_output_port("result", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_input_port("text", DataType.STRING, required=False)
+        self.add_input_port("pattern", DataType.STRING, required=False)
+        self.add_input_port("replacement", DataType.STRING, required=False)
+        self.add_output_port("result", DataType.STRING)
+        self.add_output_port("count", DataType.INTEGER)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         try:
-            text = self.get_parameter("text", "")
-            pattern = self.get_parameter("pattern", "")
-            replacement = self.get_parameter("replacement", "")
+            text = _resolve_string_param(self, context, "text", "")
+            pattern = _resolve_string_param(self, context, "pattern", "")
+            replacement = _resolve_string_param(self, context, "replacement", "")
 
             flags = 0
             if self.get_parameter("ignore_case", False):

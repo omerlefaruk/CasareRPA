@@ -113,6 +113,20 @@ BROWSER_SELECTOR_STRICT = PropertyDef(
 
 
 # =============================================================================
+# Anchor Properties (for reliable element location)
+# =============================================================================
+
+BROWSER_ANCHOR_CONFIG = PropertyDef(
+    "anchor_config",
+    PropertyType.JSON,
+    default="",
+    label="Anchor Configuration",
+    tooltip="JSON config for anchor-based element location (set via Element Selector dialog)",
+    tab="advanced",
+)
+
+
+# =============================================================================
 # Navigation Properties
 # =============================================================================
 

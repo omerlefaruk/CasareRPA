@@ -32,6 +32,7 @@ from casare_rpa.config import DEFAULT_PAGE_LOAD_TIMEOUT
         label="URL",
         placeholder="https://example.com",
         tooltip="URL to navigate to",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "timeout",
@@ -225,6 +226,26 @@ class GoToURLNode(BaseNode):
                     # Set output
                     self.set_output_value("page", page)
 
+                    # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
+                    # This is needed when browser was already open and user runs Navigate
+                    try:
+                        from casare_rpa.domain.events import get_event_bus, Event
+                        from casare_rpa.domain.value_objects.types import EventType
+
+                        event_bus = get_event_bus()
+                        event_bus.publish(
+                            Event(
+                                EventType.BROWSER_PAGE_READY,
+                                data={"page": page},
+                                node_id=getattr(self, "node_id", None),
+                            )
+                        )
+                        logger.debug(
+                            "BROWSER_PAGE_READY event published from GoToURLNode"
+                        )
+                    except Exception as e:
+                        logger.debug(f"Could not emit BROWSER_PAGE_READY event: {e}")
+
                     self.status = NodeStatus.SUCCESS
                     logger.info(
                         f"Navigation completed: {url} (status: {response.status if response else 'N/A'}, attempt {attempts})"
@@ -343,8 +364,8 @@ class GoBackNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_input_port("page", DataType.PAGE, required=False)
+        self.add_output_port("page", DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -478,8 +499,8 @@ class GoForwardNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_input_port("page", DataType.PAGE, required=False)
+        self.add_output_port("page", DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -613,8 +634,8 @@ class RefreshPageNode(BaseNode):
 
     def _define_ports(self) -> None:
         """Define node ports."""
-        self.add_input_port("page", PortType.INPUT, DataType.PAGE)
-        self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_input_port("page", DataType.PAGE, required=False)
+        self.add_output_port("page", DataType.PAGE)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """

@@ -223,7 +223,12 @@
         try {
             let cssPath = element.tagName.toLowerCase();
             if (element.id) {
-                cssPath = `#${element.id}`;
+                // CSS ID selectors cannot start with a digit - use attribute selector instead
+                if (/^[0-9]/.test(element.id)) {
+                    cssPath = `[id="${element.id}"]`;
+                } else {
+                    cssPath = `#${element.id}`;
+                }
             } else if (element.className) {
                 const classes = Array.from(element.classList)
                     .filter(c => c && !c.includes(' '))
@@ -232,6 +237,35 @@
                 if (classes) cssPath += `.${classes}`;
             }
             selectors.css = cssPath;
+
+            // Generate additional attribute-based CSS selectors for inputs
+            if (element.tagName === 'INPUT' || element.tagName === 'BUTTON') {
+                const attrSelectors = [];
+
+                // Value selector (great for submit buttons)
+                if (element.value) {
+                    attrSelectors.push(`${element.tagName.toLowerCase()}[value="${element.value}"]`);
+                }
+
+                // Type selector
+                if (element.type) {
+                    attrSelectors.push(`${element.tagName.toLowerCase()}[type="${element.type}"]`);
+                }
+
+                // Name selector
+                if (element.name) {
+                    attrSelectors.push(`${element.tagName.toLowerCase()}[name="${element.name}"]`);
+                }
+
+                // Placeholder selector
+                if (element.placeholder) {
+                    attrSelectors.push(`${element.tagName.toLowerCase()}[placeholder="${element.placeholder}"]`);
+                }
+
+                if (attrSelectors.length > 0) {
+                    selectors.cssAlternatives = attrSelectors;
+                }
+            }
         } catch (e) {
             console.error('CSS selector generation failed:', e);
         }
@@ -424,8 +458,16 @@
             updateRecordingBadge();
         } else {
             // Single selection mode - send to Python
+            console.log('[CasareRPA] Element selected:', elementInfo.tagName, 'Callback exists:', !!window.__casareRPA_onElementSelected);
             if (window.__casareRPA_onElementSelected) {
-                window.__casareRPA_onElementSelected(elementInfo);
+                console.log('[CasareRPA] Calling Python callback...');
+                window.__casareRPA_onElementSelected(elementInfo).then(() => {
+                    console.log('[CasareRPA] Python callback completed');
+                }).catch(err => {
+                    console.error('[CasareRPA] Python callback error:', err);
+                });
+            } else {
+                console.warn('[CasareRPA] No Python callback registered!');
             }
             deactivate();
         }

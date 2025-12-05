@@ -1,7 +1,14 @@
 """
 Log Tab for the Bottom Panel.
 
-Provides real-time execution log display with filtering and navigation.
+Provides real-time execution log display with improved UX:
+- Empty state guidance when no logs
+- Filtering by log level
+- Click to navigate to node
+- Auto-scroll toggle
+- Export to file
+- Context menu for copy operations
+- Color-coded log levels
 """
 
 from typing import Optional, TYPE_CHECKING
@@ -13,16 +20,26 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
-    QComboBox,
     QLabel,
     QHeaderView,
     QAbstractItemView,
     QFileDialog,
+    QStackedWidget,
+    QComboBox,
+    QApplication,
+    QMenu,
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QBrush
 from loguru import logger
+
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
 
 if TYPE_CHECKING:
     from casare_rpa.domain.events import Event
@@ -33,10 +50,13 @@ class LogTab(QWidget):
     Log tab widget for displaying execution logs.
 
     Features:
-    - Filter by log level
+    - Empty state when no logs
+    - Filter by log level (All, Debug, Info, Warning, Error, Success)
     - Click to navigate to node
     - Auto-scroll toggle
     - Export to file
+    - Context menu for copy
+    - Color-coded level indicators
 
     Signals:
         navigate_to_node: Emitted when user wants to navigate to a node
@@ -69,49 +89,106 @@ class LogTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("logToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(8, 6, 8, 6)
+        toolbar.setSpacing(12)
 
-        # Filter dropdown
-        filter_label = QLabel("Filter:")
+        # Filter label and dropdown
+        filter_label = QLabel("Level:")
         self._filter_combo = QComboBox()
-        self._filter_combo.setFixedSize(70, 16)
         self._filter_combo.addItems(
             ["All", "Debug", "Info", "Warning", "Error", "Success"]
         )
+        self._filter_combo.setFixedWidth(90)
         self._filter_combo.currentTextChanged.connect(self._on_filter_changed)
+        self._filter_combo.setToolTip("Filter logs by level")
 
-        # Auto-scroll toggle
-        self._auto_scroll_btn = QPushButton("Auto-scroll: ON")
+        # Entry count label
+        self._count_label = QLabel("0 entries")
+        self._count_label.setProperty("muted", True)
+
+        # Auto-scroll toggle button
+        self._auto_scroll_btn = ToolbarButton(
+            text="Auto-scroll",
+            tooltip="Toggle auto-scroll to latest log entry",
+        )
         self._auto_scroll_btn.setCheckable(True)
         self._auto_scroll_btn.setChecked(True)
-        self._auto_scroll_btn.setFixedSize(80, 16)
         self._auto_scroll_btn.clicked.connect(self._on_auto_scroll_toggled)
+        self._auto_scroll_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {THEME.accent_primary};
+                color: #ffffff;
+                border: none;
+                border-radius: 3px;
+                padding: 4px 12px;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.accent_hover};
+            }}
+            QPushButton:!checked {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_secondary};
+                border: 1px solid {THEME.border};
+            }}
+            QPushButton:!checked:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+        """)
 
         # Clear button
-        clear_btn = QPushButton("Clear")
-        clear_btn.setFixedSize(40, 16)
+        clear_btn = ToolbarButton(
+            text="Clear",
+            tooltip="Clear all log entries",
+        )
         clear_btn.clicked.connect(self.clear)
 
         # Export button
-        export_btn = QPushButton("Export")
-        export_btn.setFixedSize(45, 16)
+        export_btn = ToolbarButton(
+            text="Export",
+            tooltip="Export logs to file",
+        )
         export_btn.clicked.connect(self._on_export)
 
         toolbar.addWidget(filter_label)
         toolbar.addWidget(self._filter_combo)
+        toolbar.addWidget(self._count_label)
         toolbar.addStretch()
         toolbar.addWidget(self._auto_scroll_btn)
         toolbar.addWidget(clear_btn)
         toolbar.addWidget(export_btn)
 
-        layout.addLayout(toolbar)
+        layout.addWidget(toolbar_widget)
 
-        # Log table
+        # Content area with stacked widget for empty state
+        self._content_stack = QStackedWidget()
+
+        # Empty state (index 0)
+        self._empty_state = EmptyStateWidget(
+            icon_text="",  # Scroll/log icon
+            title="No Log Entries",
+            description=(
+                "Execution logs will appear here when:\n"
+                "- You run a workflow (F3)\n"
+                "- Nodes execute and emit events\n\n"
+                "Double-click a log entry to navigate to its node."
+            ),
+        )
+        self._content_stack.addWidget(self._empty_state)
+
+        # Log table (index 1)
+        table_container = QWidget()
+        table_layout = QVBoxLayout(table_container)
+        table_layout.setContentsMargins(8, 4, 8, 8)
+        table_layout.setSpacing(0)
+
         self._table = QTableWidget()
         self._table.setColumnCount(4)
         self._table.setHorizontalHeaderLabels(["Time", "Level", "Node", "Message"])
@@ -122,6 +199,9 @@ class LogTab(QWidget):
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._table.itemDoubleClicked.connect(self._on_double_click)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._table.customContextMenuRequested.connect(self._on_context_menu)
+        self._table.verticalHeader().setVisible(False)
 
         # Configure column sizing
         header = self._table.horizontalHeader()
@@ -131,63 +211,36 @@ class LogTab(QWidget):
         header.setSectionResizeMode(
             self.COL_LEVEL, QHeaderView.ResizeMode.ResizeToContents
         )
-        header.setSectionResizeMode(
-            self.COL_NODE, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_NODE, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(self.COL_MESSAGE, QHeaderView.ResizeMode.Stretch)
 
-        layout.addWidget(self._table)
+        # Set minimum column widths
+        self._table.setColumnWidth(self.COL_NODE, 100)
+
+        table_layout.addWidget(self._table)
+
+        self._content_stack.addWidget(table_container)
+
+        layout.addWidget(self._content_stack)
+
+        # Show empty state initially
+        self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         self.setStyleSheet(f"""
-            QTableWidget {{
+            LogTab, QWidget, QStackedWidget, QFrame {{
                 background-color: {THEME.bg_panel};
-                color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                gridline-color: {THEME.border_dark};
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 9pt;
             }}
-            QTableWidget::item {{
-                padding: 2px 4px;
-            }}
-            QTableWidget::item:selected {{
-                background-color: {THEME.bg_selected};
-            }}
-            QHeaderView::section {{
+            #logToolbar {{
                 background-color: {THEME.bg_header};
-                color: {THEME.text_header};
-                padding: 4px;
-                border: none;
                 border-bottom: 1px solid {THEME.border_dark};
             }}
-            QPushButton {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_secondary};
-                border: 1px solid {THEME.border};
-                border-radius: 2px;
-                padding: 0px 2px;
-                font-size: 9px;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-            }}
-            QPushButton:checked {{
-                background-color: {THEME.accent_primary};
-            }}
-            QComboBox {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_secondary};
-                border: 1px solid {THEME.border};
-                border-radius: 2px;
-                padding: 0px 2px;
-                font-size: 9px;
-            }}
-            QLabel {{
-                color: {THEME.text_secondary};
+            {get_panel_toolbar_stylesheet()}
+            {get_panel_table_stylesheet()}
+            QTableWidget {{
+                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+                font-size: 11px;
             }}
         """)
 
@@ -198,19 +251,30 @@ class LogTab(QWidget):
 
     def _apply_filter(self) -> None:
         """Apply current filter to table rows."""
+        visible_count = 0
         for row in range(self._table.rowCount()):
             level_item = self._table.item(row, self.COL_LEVEL)
             if level_item:
                 level = level_item.text().upper()
                 if self._current_filter == "All":
                     self._table.setRowHidden(row, False)
+                    visible_count += 1
                 else:
-                    self._table.setRowHidden(row, level != self._current_filter.upper())
+                    hidden = level != self._current_filter.upper()
+                    self._table.setRowHidden(row, hidden)
+                    if not hidden:
+                        visible_count += 1
+
+        # Update count label
+        total = self._table.rowCount()
+        if self._current_filter == "All":
+            self._count_label.setText(f"{total} entr{'ies' if total != 1 else 'y'}")
+        else:
+            self._count_label.setText(f"{visible_count} of {total}")
 
     def _on_auto_scroll_toggled(self, checked: bool) -> None:
         """Handle auto-scroll toggle."""
         self._auto_scroll = checked
-        self._auto_scroll_btn.setText(f"Auto-scroll: {'ON' if checked else 'OFF'}")
 
     def _on_double_click(self, item: QTableWidgetItem) -> None:
         """Handle double-click on log entry."""
@@ -220,6 +284,71 @@ class LogTab(QWidget):
             node_id = node_item.data(Qt.ItemDataRole.UserRole)
             if node_id:
                 self.navigate_to_node.emit(node_id)
+
+    def _on_context_menu(self, pos) -> None:
+        """Show context menu for log entry."""
+        item = self._table.itemAt(pos)
+        if not item:
+            return
+
+        row = item.row()
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 6px 24px 6px 12px;
+                border-radius: 3px;
+            }}
+            QMenu::item:selected {{
+                background-color: {THEME.accent_primary};
+                color: #ffffff;
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {THEME.border};
+                margin: 4px 8px;
+            }}
+        """)
+
+        # Copy message
+        msg_item = self._table.item(row, self.COL_MESSAGE)
+        if msg_item:
+            copy_msg = menu.addAction("Copy Message")
+            copy_msg.triggered.connect(
+                lambda: QApplication.clipboard().setText(msg_item.text())
+            )
+
+        # Copy entire row
+        copy_row = menu.addAction("Copy Log Entry")
+        copy_row.triggered.connect(lambda: self._copy_row(row))
+
+        # Navigate to node
+        node_item = self._table.item(row, self.COL_NODE)
+        if node_item:
+            node_id = node_item.data(Qt.ItemDataRole.UserRole)
+            if node_id:
+                menu.addSeparator()
+                nav_action = menu.addAction("Go to Node")
+                nav_action.triggered.connect(
+                    lambda: self.navigate_to_node.emit(node_id)
+                )
+
+        menu.exec_(self._table.mapToGlobal(pos))
+
+    def _copy_row(self, row: int) -> None:
+        """Copy a log row to clipboard."""
+        parts = []
+        for col in range(self._table.columnCount()):
+            item = self._table.item(row, col)
+            if item:
+                parts.append(item.text())
+        QApplication.clipboard().setText("\t".join(parts))
 
     def _on_export(self) -> None:
         """Export log to file."""
@@ -258,10 +387,8 @@ class LogTab(QWidget):
 
     def _get_level_color(self, level: str) -> QColor:
         """Get color for log level using VSCode Dark+ theme."""
-        from casare_rpa.presentation.canvas.theme import THEME
-
         colors = {
-            "debug": QColor(THEME.text_muted),  # Dimmed for debug
+            "debug": QColor(THEME.text_muted),
             "info": QColor(THEME.status_info),
             "warning": QColor(THEME.status_warning),
             "error": QColor(THEME.status_error),
@@ -269,10 +396,30 @@ class LogTab(QWidget):
         }
         return colors.get(level.lower(), QColor(THEME.text_primary))
 
+    def _get_level_background(self, level: str) -> QColor:
+        """Get subtle background color for log level."""
+        colors = {
+            "debug": QColor(THEME.bg_panel),
+            "info": QColor(THEME.bg_panel),
+            "warning": QColor("#3d3a1a"),
+            "error": QColor("#3d1a1a"),
+            "success": QColor("#1a3d1a"),
+        }
+        return colors.get(level.lower(), QColor(THEME.bg_panel))
+
     def _trim_log(self) -> None:
         """Trim log to max entries."""
         while self._table.rowCount() > self._max_entries:
             self._table.removeRow(0)
+
+    def _update_display(self) -> None:
+        """Update empty state vs table display."""
+        if self._table.rowCount() == 0:
+            self._content_stack.setCurrentIndex(0)  # Empty state
+            self._count_label.setText("0 entries")
+        else:
+            self._content_stack.setCurrentIndex(1)  # Table
+            self._apply_filter()  # Updates count label
 
     # ==================== Public API ====================
 
@@ -315,35 +462,37 @@ class LogTab(QWidget):
 
         Args:
             message: Message text
-            level: Log level (info, warning, error, success)
+            level: Log level (debug, info, warning, error, success)
             node_id: Optional associated node ID
         """
         row = self._table.rowCount()
         self._table.insertRow(row)
 
         # Time
-        from casare_rpa.presentation.canvas.theme import THEME
-
         timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
         time_item = QTableWidgetItem(timestamp)
         time_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
-        # Level
+        # Level (with color-coded background)
         level_item = QTableWidgetItem(level.upper())
         level_color = self._get_level_color(level)
         level_item.setForeground(QBrush(level_color))
+        level_item.setToolTip(f"Log level: {level.title()}")
 
-        # Node
-        node_item = QTableWidgetItem(
-            node_id[:12] + "..." if node_id and len(node_id) > 15 else node_id or ""
-        )
+        # Node (clickable if has node_id)
+        node_display = ""
+        if node_id:
+            node_display = node_id[:12] + "..." if len(node_id) > 15 else node_id
+        node_item = QTableWidgetItem(node_display)
         node_item.setData(Qt.ItemDataRole.UserRole, node_id)
         if node_id:
             node_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+            node_item.setToolTip(f"Node: {node_id}\nDouble-click to navigate")
 
-        # Message
+        # Message (colored by level)
         msg_item = QTableWidgetItem(message)
         msg_item.setForeground(QBrush(level_color))
+        msg_item.setToolTip(message)  # Show full message on hover
 
         self._table.setItem(row, self.COL_TIME, time_item)
         self._table.setItem(row, self.COL_LEVEL, level_item)
@@ -357,6 +506,9 @@ class LogTab(QWidget):
         ):
             self._table.setRowHidden(row, True)
 
+        # Update display state
+        self._update_display()
+
         # Auto-scroll
         if self._auto_scroll:
             self._table.scrollToBottom()
@@ -367,6 +519,7 @@ class LogTab(QWidget):
     def clear(self) -> None:
         """Clear the log."""
         self._table.setRowCount(0)
+        self._update_display()
 
     def get_entry_count(self) -> int:
         """Get the number of log entries."""

@@ -40,8 +40,6 @@ class VisualRichCommentNode(VisualNode):
         self.create_property("bold", False, widget_type=1, tab="style")
         self.create_property("italic", False, widget_type=1, tab="style")
 
-        logger.info("Rich Comment node created")
-
     def setup_ports(self) -> None:
         """Setup ports for comment node."""
         # Comments don't need ports
@@ -63,14 +61,14 @@ class VisualStickyNoteNode(VisualNode):
     NODE_NAME = "Sticky Note"
     NODE_CATEGORY = "basic"
 
-    # Sticky note color themes
+    # Sticky note color themes (using #1A1A1A instead of pure black for softer contrast)
     THEMES = {
-        "yellow": {"bg": "#FFF59D", "text": "#000000"},
-        "pink": {"bg": "#F48FB1", "text": "#000000"},
-        "blue": {"bg": "#81D4FA", "text": "#000000"},
-        "green": {"bg": "#A5D6A7", "text": "#000000"},
-        "orange": {"bg": "#FFAB91", "text": "#000000"},
-        "purple": {"bg": "#CE93D8", "text": "#000000"},
+        "yellow": {"bg": "#FFF59D", "text": "#1A1A1A"},
+        "pink": {"bg": "#F48FB1", "text": "#1A1A1A"},
+        "blue": {"bg": "#81D4FA", "text": "#1A1A1A"},
+        "green": {"bg": "#A5D6A7", "text": "#1A1A1A"},
+        "orange": {"bg": "#FFAB91", "text": "#1A1A1A"},
+        "purple": {"bg": "#CE93D8", "text": "#1A1A1A"},
     }
 
     def __init__(self) -> None:
@@ -86,8 +84,6 @@ class VisualStickyNoteNode(VisualNode):
 
         # Apply sticky note styling
         self._apply_sticky_style()
-
-        logger.info("Sticky Note node created")
 
     def setup_ports(self) -> None:
         """Setup ports for sticky note."""
@@ -143,8 +139,6 @@ class VisualHeaderCommentNode(VisualNode):
         self.create_property("header_color", "#60a5fa", widget_type=0, tab="style")
         self.create_property("font_size", 16, widget_type=2, tab="style")
         self.create_property("show_underline", True, widget_type=1, tab="style")
-
-        logger.info("Section Header node created")
 
     def setup_ports(self) -> None:
         """Setup ports for header."""

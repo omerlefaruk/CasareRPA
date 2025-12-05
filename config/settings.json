@@ -29,5 +29,8 @@
     "fps_limit": 60,
     "max_undo_steps": 100,
     "cache_size_mb": 200
+  },
+  "canvas": {
+    "quick_node_mode": true
   }
 }

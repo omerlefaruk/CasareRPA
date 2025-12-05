@@ -39,11 +39,14 @@ class ExcelOpenNode(BaseNode):
         - file_path: Path to Excel file (.xlsx, .xls)
 
     Config:
+        - file_path: Path to Excel file (can be set via properties panel)
         - visible: Show Excel window (default: False)
+        - read_only: Open in read-only mode (default: False, helps with Protected View)
         - create_if_missing: Create new file if not found
 
     Outputs:
         - workbook: Excel workbook object
+        - app: Excel application object
         - success: Whether operation succeeded
     """
 
@@ -53,7 +56,12 @@ class ExcelOpenNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Excel Open",
     ):
-        default_config = {"visible": False, "create_if_missing": False}
+        default_config = {
+            "file_path": "",  # Can be set via properties panel or input port
+            "visible": False,
+            "read_only": False,
+            "create_if_missing": False,
+        }
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -74,8 +82,15 @@ class ExcelOpenNode(BaseNode):
                 "pywin32 not installed. Install with: pip install pywin32"
             )
 
-        file_path = self.get_input_value("file_path")
-        visible = self.config.get("visible", False)
+        # Use get_parameter to check both port value and config (properties panel)
+        file_path = self.get_parameter("file_path")
+        # Check multiple possible config keys for visibility
+        visible = (
+            self.config.get("visible", False)
+            or self.config.get("show_window", False)
+            or self.config.get("show_excel", False)
+        )
+        read_only = self.config.get("read_only", False)
         create_if_missing = self.config.get("create_if_missing", False)
 
         # Resolve {{variable}} patterns
@@ -90,7 +105,13 @@ class ExcelOpenNode(BaseNode):
             excel.DisplayAlerts = False
 
             if file_path and os.path.exists(file_path):
-                workbook = excel.Workbooks.Open(os.path.abspath(file_path))
+                # Open with read_only option - also helps bypass Protected View
+                # Parameters: Filename, UpdateLinks, ReadOnly
+                workbook = excel.Workbooks.Open(
+                    os.path.abspath(file_path),
+                    UpdateLinks=0,  # Don't update links
+                    ReadOnly=read_only,
+                )
             elif create_if_missing or not file_path:
                 workbook = excel.Workbooks.Add()
                 if file_path:
@@ -168,11 +189,11 @@ class ExcelReadCellNode(BaseNode):
             raise ValueError("Cell reference is required")
 
         try:
-            if isinstance(sheet, int):
-                ws = workbook.Sheets(sheet)
-            else:
-                ws = workbook.Sheets(sheet)
+            # Convert numeric string to int for index-based access
+            if isinstance(sheet, str) and sheet.isdigit():
+                sheet = int(sheet)
 
+            ws = workbook.Sheets(sheet)
             value = ws.Range(cell).Value
 
             self.set_output_value("value", value)
@@ -245,11 +266,11 @@ class ExcelWriteCellNode(BaseNode):
             raise ValueError("Cell reference is required")
 
         try:
-            if isinstance(sheet, int):
-                ws = workbook.Sheets(sheet)
-            else:
-                ws = workbook.Sheets(sheet)
+            # Convert numeric string to int for index-based access
+            if isinstance(sheet, str) and sheet.isdigit():
+                sheet = int(sheet)
 
+            ws = workbook.Sheets(sheet)
             ws.Range(cell).Value = value
 
             self.set_output_value("success", True)
@@ -288,7 +309,7 @@ class ExcelGetRangeNode(BaseNode):
         config: Dict[str, Any] = None,
         name: str = "Excel Get Range",
     ):
-        default_config = {"sheet": 1}
+        default_config = {"sheet": 1, "range": ""}
         if config:
             default_config.update(config)
         super().__init__(node_id, default_config)
@@ -309,7 +330,14 @@ class ExcelGetRangeNode(BaseNode):
         """Execute Excel get range operation"""
         workbook = self.get_input_value("workbook")
         sheet = self.get_input_value("sheet") or self.config.get("sheet", 1)
-        range_ref = self.get_input_value("range")
+        range_ref = self.get_parameter("range")  # Check both port and config
+
+        # Resolve {{variable}} patterns
+        if hasattr(context, "resolve_value"):
+            if isinstance(sheet, str):
+                sheet = context.resolve_value(sheet)
+            if range_ref:
+                range_ref = context.resolve_value(range_ref)
 
         if not workbook:
             raise ValueError("Workbook is required")
@@ -317,11 +345,11 @@ class ExcelGetRangeNode(BaseNode):
             raise ValueError("Range reference is required")
 
         try:
-            if isinstance(sheet, int):
-                ws = workbook.Sheets(sheet)
-            else:
-                ws = workbook.Sheets(sheet)
+            # Convert numeric string to int for index-based access
+            if isinstance(sheet, str) and sheet.isdigit():
+                sheet = int(sheet)
 
+            ws = workbook.Sheets(sheet)
             rng = ws.Range(range_ref)
             data = rng.Value
 
@@ -467,7 +495,8 @@ class WordOpenNode(BaseNode):
                 "pywin32 not installed. Install with: pip install pywin32"
             )
 
-        file_path = self.get_input_value("file_path")
+        # Use get_parameter to check both port value and config (properties panel)
+        file_path = self.get_parameter("file_path")
         visible = self.config.get("visible", False)
         create_if_missing = self.config.get("create_if_missing", False)
 

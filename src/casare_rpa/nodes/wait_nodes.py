@@ -27,6 +27,7 @@ from casare_rpa.domain.value_objects.types import (
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.nodes.browser.browser_base import BrowserBaseNode
 from casare_rpa.nodes.browser.property_constants import (
+    BROWSER_ANCHOR_CONFIG,
     BROWSER_ELEMENT_STATE,
     BROWSER_RETRY_COUNT,
     BROWSER_RETRY_INTERVAL,
@@ -145,6 +146,7 @@ class WaitNode(BaseNode):
         label="Highlight on Find",
         tooltip="Briefly highlight element when found",
     ),
+    BROWSER_ANCHOR_CONFIG,
 )
 @executable_node
 class WaitForElementNode(BrowserBaseNode):

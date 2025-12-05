@@ -15,12 +15,17 @@ from casare_rpa.presentation.canvas.visual_nodes.browser.nodes import (
     VisualClickElementNode,
     VisualTypeTextNode,
     VisualSelectDropdownNode,
+    VisualImageClickNode,
     VisualExtractTextNode,
     VisualGetAttributeNode,
     VisualScreenshotNode,
+    VisualTableScraperNode,
     VisualWaitNode,
     VisualWaitForElementNode,
     VisualWaitForNavigationNode,
+    VisualFormFieldNode,
+    VisualFormFillerNode,
+    VisualDetectFormsNode,
 )
 
 __all__ = [
@@ -36,10 +41,15 @@ __all__ = [
     "VisualClickElementNode",
     "VisualTypeTextNode",
     "VisualSelectDropdownNode",
+    "VisualImageClickNode",
     "VisualExtractTextNode",
     "VisualGetAttributeNode",
     "VisualScreenshotNode",
+    "VisualTableScraperNode",
     "VisualWaitNode",
     "VisualWaitForElementNode",
     "VisualWaitForNavigationNode",
+    "VisualFormFieldNode",
+    "VisualFormFillerNode",
+    "VisualDetectFormsNode",
 ]

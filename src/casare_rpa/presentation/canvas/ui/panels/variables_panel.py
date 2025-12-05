@@ -1,8 +1,13 @@
 """
 Variables Panel UI Component.
 
-Provides workflow variable management with inline editing similar to UiPath.
-Extracted from canvas/panels/variables_tab.py for reusability.
+Provides workflow variable management with improved UX:
+- Empty state guidance when no variables
+- Inline variable editing
+- Type selection with visual indicators
+- Scope filtering
+- Design/Runtime mode switching
+- Context menu for copy/delete
 
 Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
@@ -17,14 +22,17 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
     QHeaderView,
     QAbstractItemView,
     QComboBox,
     QStyledItemDelegate,
     QLabel,
+    QStackedWidget,
+    QApplication,
+    QMenu,
 )
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QBrush
 
 from loguru import logger
 
@@ -32,6 +40,14 @@ from casare_rpa.presentation.canvas.events import (
     LazySubscriptionGroup,
     EventType,
     Event,
+)
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    StatusBadge,
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
 )
 
 
@@ -57,6 +73,17 @@ TYPE_DEFAULTS = {
     "DataTable": None,
 }
 
+# Type colors (matching wire colors for consistency)
+TYPE_COLORS = {
+    "String": THEME.wire_string,
+    "Integer": THEME.wire_number,
+    "Float": THEME.wire_number,
+    "Boolean": THEME.wire_bool,
+    "List": THEME.wire_list,
+    "Dict": THEME.wire_dict,
+    "DataTable": THEME.wire_table,
+}
+
 
 class TypeComboDelegate(QStyledItemDelegate):
     """
@@ -79,16 +106,30 @@ class TypeComboDelegate(QStyledItemDelegate):
         """
         combo = QComboBox(parent)
         combo.addItems(VARIABLE_TYPES)
-        combo.setStyleSheet("""
-            QComboBox {
-                background-color: #3c3f41;
-                color: #d4d4d4;
+        combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {THEME.input_bg};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 2px;
+                padding: 2px 4px;
+            }}
+            QComboBox::drop-down {{
                 border: none;
-                padding: 2px;
-            }
-            QComboBox::drop-down {
-                border: none;
-            }
+                width: 16px;
+            }}
+            QComboBox:hover {{
+                border-color: {THEME.border_light};
+            }}
+            QComboBox:focus {{
+                border-color: {THEME.border_focus};
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                selection-background-color: {THEME.bg_selected};
+            }}
         """)
         return combo
 
@@ -122,11 +163,13 @@ class VariablesPanel(QDockWidget):
     Dockable variables panel for workflow variable management.
 
     Features:
+    - Empty state when no variables
     - Inline variable creation
-    - Type selection
+    - Type selection with color indicators
     - Default value editing
-    - Scope indicators
+    - Scope filtering
     - Design/Runtime modes
+    - Context menu for actions
 
     Signals:
         variable_added: Emitted when variable is added (str: name, str: type, Any: default_value)
@@ -183,64 +226,72 @@ class VariablesPanel(QDockWidget):
         """Set up the user interface."""
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(4, 4, 4, 4)
-        main_layout.setSpacing(4)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("variablesToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(8, 6, 8, 6)
+        toolbar.setSpacing(12)
+
+        # Variable count label
+        self._count_label = QLabel("0 variables")
+        self._count_label.setProperty("muted", True)
 
         # Scope filter dropdown
-        scope_label = QLabel("Scope:")
-        scope_label.setStyleSheet("color: #a0a0a0;")
+        filter_label = QLabel("Scope:")
         self._scope_filter = QComboBox()
         self._scope_filter.addItems(["All", "Global", "Project", "Workflow"])
         self._scope_filter.setFixedWidth(90)
         self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
-        self._scope_filter.setStyleSheet("""
-            QComboBox {
-                background-color: #3c3f41;
-                color: #d4d4d4;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                padding: 2px 4px;
-            }
-            QComboBox::drop-down {
-                border: none;
-            }
-            QComboBox:hover {
-                border: 1px solid #5a8a9a;
-            }
-        """)
+        self._scope_filter.setToolTip("Filter variables by scope")
 
-        # Mode label
-        self._mode_label = QLabel("Mode: Design")
-        self._mode_label.setStyleSheet("color: #a0a0a0;")
+        # Mode badge
+        self._mode_badge = StatusBadge("DESIGN", "info")
 
-        # Add variable button
-        add_btn = QPushButton("Add Variable")
-        add_btn.setFixedWidth(100)
+        # Add variable button (primary action)
+        add_btn = ToolbarButton(
+            text="Add Variable",
+            tooltip="Add a new workflow variable",
+            primary=True,
+        )
         add_btn.clicked.connect(self._on_add_variable)
 
-        # Remove variable button
-        remove_btn = QPushButton("Remove")
-        remove_btn.setFixedWidth(70)
-        remove_btn.clicked.connect(self._on_remove_variable)
-
-        # Clear all button
-        clear_btn = QPushButton("Clear All")
-        clear_btn.setFixedWidth(70)
-        clear_btn.clicked.connect(self._on_clear_all)
-
-        toolbar.addWidget(scope_label)
-        toolbar.addWidget(self._scope_filter)
-        toolbar.addWidget(self._mode_label)
+        toolbar.addWidget(self._count_label)
         toolbar.addStretch()
+        toolbar.addWidget(filter_label)
+        toolbar.addWidget(self._scope_filter)
+        toolbar.addWidget(self._mode_badge)
         toolbar.addWidget(add_btn)
-        toolbar.addWidget(remove_btn)
-        toolbar.addWidget(clear_btn)
 
-        main_layout.addLayout(toolbar)
+        main_layout.addWidget(toolbar_widget)
+
+        # Content stack for empty state vs table
+        self._content_stack = QStackedWidget()
+
+        # Empty state (index 0)
+        self._empty_state = EmptyStateWidget(
+            icon_text="",  # Variable/database icon
+            title="No Variables",
+            description=(
+                "Variables store data that can be used across your workflow.\n\n"
+                "Click 'Add Variable' to create:\n"
+                "- Strings, numbers, and booleans\n"
+                "- Lists and dictionaries\n"
+                "- DataTables for structured data"
+            ),
+            action_text="Add Variable",
+        )
+        self._empty_state.action_clicked.connect(self._on_add_variable)
+        self._content_stack.addWidget(self._empty_state)
+
+        # Table container (index 1)
+        table_container = QWidget()
+        table_layout = QVBoxLayout(table_container)
+        table_layout.setContentsMargins(8, 4, 8, 8)
+        table_layout.setSpacing(4)
 
         # Variables table
         self._table = QTableWidget()
@@ -258,6 +309,9 @@ class VariablesPanel(QDockWidget):
             | QAbstractItemView.EditTrigger.EditKeyPressed
         )
         self._table.itemChanged.connect(self._on_item_changed)
+        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._table.customContextMenuRequested.connect(self._on_context_menu)
+        self._table.verticalHeader().setVisible(False)
 
         # Set type column delegate
         self._table.setItemDelegateForColumn(self.COL_TYPE, TypeComboDelegate())
@@ -273,40 +327,138 @@ class VariablesPanel(QDockWidget):
             self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents
         )
 
-        main_layout.addWidget(self._table)
+        table_layout.addWidget(self._table)
+
+        # Action bar
+        action_bar = QWidget()
+        action_bar.setObjectName("actionBar")
+        action_layout = QHBoxLayout(action_bar)
+        action_layout.setContentsMargins(0, 4, 0, 0)
+        action_layout.setSpacing(8)
+
+        # Remove selected button
+        remove_btn = ToolbarButton(
+            text="Remove Selected",
+            tooltip="Remove the selected variable (Delete)",
+        )
+        remove_btn.clicked.connect(self._on_remove_variable)
+
+        # Clear all button (danger action)
+        clear_btn = ToolbarButton(
+            text="Clear All",
+            tooltip="Remove all variables",
+            danger=True,
+        )
+        clear_btn.clicked.connect(self._on_clear_all)
+
+        action_layout.addStretch()
+        action_layout.addWidget(remove_btn)
+        action_layout.addWidget(clear_btn)
+
+        table_layout.addWidget(action_bar)
+
+        self._content_stack.addWidget(table_container)
+
+        main_layout.addWidget(self._content_stack)
 
         self.setWidget(container)
 
+        # Show empty state initially
+        self._content_stack.setCurrentIndex(0)
+
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QDockWidget::title {
-                background: #2d2d2d;
-                padding: 6px;
-            }
-            QTableWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-            }
-            QTableWidget::item:selected {
-                background-color: #5a8a9a;
-            }
-            QHeaderView::section {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: none;
-                border-right: 1px solid #4a4a4a;
-                border-bottom: 1px solid #4a4a4a;
-                padding: 4px;
-            }
+        """Apply VSCode Dark+ theme styling using THEME constants."""
+        self.setStyleSheet(f"""
+            VariablesPanel, QDockWidget, QWidget, QStackedWidget, QFrame {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME.dock_title_bg};
+                color: {THEME.dock_title_text};
+                padding: 8px 12px;
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            #variablesToolbar {{
+                background-color: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            {get_panel_table_stylesheet()}
         """)
+
+    def _update_display(self) -> None:
+        """Update empty state vs table display and count label."""
+        has_variables = len(self._variables) > 0
+        self._content_stack.setCurrentIndex(1 if has_variables else 0)
+
+        # Update count label
+        count = len(self._variables)
+        self._count_label.setText(f"{count} variable{'s' if count != 1 else ''}")
+        self._count_label.setProperty("muted", count == 0)
+        self._count_label.style().unpolish(self._count_label)
+        self._count_label.style().polish(self._count_label)
+
+    def _on_context_menu(self, pos) -> None:
+        """Show context menu for variable entry."""
+        item = self._table.itemAt(pos)
+        if not item:
+            return
+
+        row = item.row()
+        name_item = self._table.item(row, self.COL_NAME)
+        if not name_item:
+            return
+
+        var_name = name_item.text()
+
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 6px 24px 6px 12px;
+                border-radius: 3px;
+            }}
+            QMenu::item:selected {{
+                background-color: {THEME.accent_primary};
+                color: #ffffff;
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background-color: {THEME.border};
+                margin: 4px 8px;
+            }}
+        """)
+
+        # Copy name
+        copy_name = menu.addAction("Copy Name")
+        copy_name.triggered.connect(lambda: QApplication.clipboard().setText(var_name))
+
+        # Copy value
+        default_item = self._table.item(row, self.COL_DEFAULT)
+        if default_item:
+            copy_value = menu.addAction("Copy Value")
+            copy_value.triggered.connect(
+                lambda: QApplication.clipboard().setText(default_item.text())
+            )
+
+        menu.addSeparator()
+
+        # Delete variable
+        delete_action = menu.addAction("Delete Variable")
+        delete_action.triggered.connect(lambda: self.remove_variable(var_name))
+
+        menu.exec_(self._table.mapToGlobal(pos))
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
@@ -318,12 +470,12 @@ class VariablesPanel(QDockWidget):
             enabled: True for runtime mode, False for design mode
         """
         self._is_runtime_mode = enabled
-        self._mode_label.setText(f"Mode: {'Runtime' if enabled else 'Design'}")
 
-        # Make table read-only in runtime mode
         if enabled:
+            self._mode_badge.set_status("running", "RUNTIME")
             self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         else:
+            self._mode_badge.set_status("info", "DESIGN")
             self._table.setEditTriggers(
                 QAbstractItemView.EditTrigger.DoubleClicked
                 | QAbstractItemView.EditTrigger.EditKeyPressed
@@ -363,21 +515,37 @@ class VariablesPanel(QDockWidget):
         row = self._table.rowCount()
         self._table.insertRow(row)
 
+        # Store original name in UserRole for tracking renames
         name_item = QTableWidgetItem(name)
+        name_item.setData(Qt.ItemDataRole.UserRole, name)
+        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+        name_item.setToolTip(f"Variable: {name}\nDouble-click to rename")
         self._table.setItem(row, self.COL_NAME, name_item)
 
+        # Type with color indicator
         type_item = QTableWidgetItem(var_type)
+        type_color = TYPE_COLORS.get(var_type, THEME.text_primary)
+        type_item.setForeground(QBrush(QColor(type_color)))
+        type_item.setToolTip(f"Type: {var_type}\nDouble-click to change")
         self._table.setItem(row, self.COL_TYPE, type_item)
 
+        # Default value
         default_item = QTableWidgetItem(str(default_value))
+        default_item.setToolTip(f"Default value: {default_value}\nDouble-click to edit")
         self._table.setItem(row, self.COL_DEFAULT, default_item)
 
+        # Scope (read-only)
         scope_item = QTableWidgetItem(scope)
         scope_item.setFlags(scope_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+        scope_item.setForeground(QBrush(QColor(THEME.text_muted)))
+        scope_item.setToolTip(f"Scope: {scope}")
         self._table.setItem(row, self.COL_SCOPE, scope_item)
 
         self.variable_added.emit(name, var_type, default_value)
         self.variables_changed.emit(self._variables)
+
+        # Update display
+        self._update_display()
 
         # Apply scope filter in case new variable doesn't match
         self._apply_scope_filter()
@@ -406,6 +574,9 @@ class VariablesPanel(QDockWidget):
 
         self.variable_removed.emit(name)
         self.variables_changed.emit(self._variables)
+
+        # Update display
+        self._update_display()
 
         logger.debug(f"Variable removed: {name}")
 
@@ -447,6 +618,7 @@ class VariablesPanel(QDockWidget):
         self._variables.clear()
         self._table.setRowCount(0)
         self.variables_changed.emit(self._variables)
+        self._update_display()
         logger.debug("All variables cleared")
 
     def _on_add_variable(self) -> None:
@@ -513,28 +685,83 @@ class VariablesPanel(QDockWidget):
         if not name_item:
             return
 
-        name = name_item.text()
-        if name not in self._variables:
+        current_name = name_item.text()
+        # Get the original/stored name from UserRole (set when variable was added)
+        stored_name = name_item.data(Qt.ItemDataRole.UserRole)
+
+        # Handle NAME column change (variable rename)
+        if col == self.COL_NAME:
+            old_name = stored_name
+            if old_name and old_name != current_name:
+                # Check if new name is empty
+                if not current_name.strip():
+                    logger.warning("Variable name cannot be empty, reverting")
+                    self._table.blockSignals(True)
+                    name_item.setText(old_name)
+                    self._table.blockSignals(False)
+                    return
+
+                # Check if new name already exists
+                if current_name in self._variables:
+                    logger.warning(
+                        f"Variable '{current_name}' already exists, reverting rename"
+                    )
+                    self._table.blockSignals(True)
+                    name_item.setText(old_name)
+                    self._table.blockSignals(False)
+                    return
+
+                # Rename the variable in the dict
+                var_data = self._variables.pop(old_name)
+                self._variables[current_name] = var_data
+
+                # Update the stored name to the new name
+                name_item.setData(Qt.ItemDataRole.UserRole, current_name)
+
+                logger.debug(f"Variable renamed: {old_name} -> {current_name}")
+
+                self.variable_changed.emit(
+                    current_name,
+                    var_data["type"],
+                    var_data["default"],
+                )
+                self.variables_changed.emit(self._variables)
+            return
+
+        # For other columns, use stored name to find the variable
+        # (in case table text doesn't match dict key due to pending edits)
+        lookup_name = stored_name if stored_name in self._variables else current_name
+
+        if lookup_name not in self._variables:
+            logger.warning(f"Variable '{lookup_name}' not found in internal dict")
             return
 
         # Update variable data
         if col == self.COL_TYPE:
             var_type = item.text()
-            self._variables[name]["type"] = var_type
+            self._variables[lookup_name]["type"] = var_type
+
+            # Update type color
+            type_color = TYPE_COLORS.get(var_type, THEME.text_primary)
+            item.setForeground(QBrush(QColor(type_color)))
+
             # Update default value to match type
             default_value = TYPE_DEFAULTS.get(var_type, "")
-            self._variables[name]["default"] = default_value
+            self._variables[lookup_name]["default"] = default_value
             default_item = self._table.item(row, self.COL_DEFAULT)
             if default_item:
+                # Block signals to prevent double-emit
+                self._table.blockSignals(True)
                 default_item.setText(str(default_value))
+                self._table.blockSignals(False)
 
         elif col == self.COL_DEFAULT:
-            self._variables[name]["default"] = item.text()
+            self._variables[lookup_name]["default"] = item.text()
 
         self.variable_changed.emit(
-            name,
-            self._variables[name]["type"],
-            self._variables[name]["default"],
+            lookup_name,
+            self._variables[lookup_name]["type"],
+            self._variables[lookup_name]["default"],
         )
         self.variables_changed.emit(self._variables)
 

@@ -83,6 +83,7 @@ class ExecutionLifecycleManager:
         self._current_session: Optional[ExecutionSession] = None
         self._state_lock = asyncio.Lock()
         self._orphaned_browser_pids: Set[int] = set()
+        self._current_workflow_runner = None  # Reference to active runner for stop
 
     async def start_workflow(
         self,
@@ -122,6 +123,9 @@ class ExecutionLifecycleManager:
                     return False
 
             self._state = ExecutionState.STARTING
+
+            # Store workflow_runner reference for stop access
+            self._current_workflow_runner = workflow_runner
 
             # Create new execution session
             session_id = str(uuid.uuid4())
@@ -193,6 +197,9 @@ class ExecutionLifecycleManager:
                     return False
 
             self._state = ExecutionState.STARTING
+
+            # Store workflow_runner reference for stop access
+            self._current_workflow_runner = workflow_runner
 
             # Create new execution session
             session_id = str(uuid.uuid4())
@@ -378,8 +385,15 @@ class ExecutionLifecycleManager:
             logger.info(f"Stopping workflow (force={force})")
 
             if self._current_session:
-                # Signal use_case to stop
-                if self._current_session.use_case:
+                # Signal use_case to stop via workflow_runner (which has the reference)
+                # This is needed because _current_session.use_case is only set AFTER
+                # workflow execution completes - the runner sets it before execute()
+                if self._current_workflow_runner:
+                    if hasattr(self._current_workflow_runner, "stop"):
+                        logger.debug("Signaling workflow_runner to stop")
+                        self._current_workflow_runner.stop()
+                elif self._current_session.use_case:
+                    # Fallback to session use_case (only set after completion)
                     if hasattr(self._current_session.use_case, "stop"):
                         self._current_session.use_case.stop()
 
@@ -401,6 +415,8 @@ class ExecutionLifecycleManager:
                 except asyncio.CancelledError:
                     pass  # Expected when force cancelling
 
+            # Clear runner reference
+            self._current_workflow_runner = None
             logger.info("Workflow stopped")
             return True
 
@@ -428,6 +444,8 @@ class ExecutionLifecycleManager:
 
             self._current_session = None
 
+        # Clear runner reference
+        self._current_workflow_runner = None
         self._state = ExecutionState.IDLE
 
     async def _track_browser_pid(self, context):

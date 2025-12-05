@@ -1,7 +1,12 @@
 """
 Output Tab for the Bottom Panel.
 
-Displays workflow outputs and return values.
+Displays workflow outputs and return values with improved UX:
+- Empty state guidance when no outputs exist
+- Color-coded type badges
+- Improved toolbar with tooltips
+- Context menu for copy/export
+- Better visual hierarchy
 """
 
 from typing import Optional, Any
@@ -14,17 +19,26 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QTableWidget,
     QTableWidgetItem,
-    QPushButton,
     QLabel,
     QHeaderView,
     QAbstractItemView,
     QTextEdit,
     QSplitter,
+    QStackedWidget,
+    QApplication,
+    QMenu,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QBrush
+from PySide6.QtGui import QColor, QBrush, QCursor
 
 from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    StatusBadge,
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
 
 
 class OutputTab(QWidget):
@@ -32,10 +46,13 @@ class OutputTab(QWidget):
     Output tab widget for displaying workflow outputs.
 
     Features:
+    - Empty state when no outputs
     - Output variables set by nodes
-    - Final workflow result/status
+    - Final workflow result/status with color-coded badge
     - Timestamps for each output
-    - Value preview panel
+    - Value preview panel with JSON formatting
+    - Context menu for copy/export
+    - Type-colored badges
     """
 
     # Table columns
@@ -59,27 +76,61 @@ class OutputTab(QWidget):
     def _setup_ui(self) -> None:
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("outputToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(8, 6, 8, 6)
+        toolbar.setSpacing(12)
 
-        # Status label
+        # Status/count label
         self._status_label = QLabel("No outputs")
-        self._status_label.setStyleSheet(f"color: {THEME.text_muted};")
+        self._status_label.setProperty("muted", True)
+
+        # Copy all button
+        copy_btn = ToolbarButton(
+            text="Copy All",
+            tooltip="Copy all outputs to clipboard (Ctrl+C)",
+        )
+        copy_btn.clicked.connect(self._on_copy_all)
 
         # Clear button
-        clear_btn = QPushButton("Clear")
-        clear_btn.setFixedSize(40, 16)
+        clear_btn = ToolbarButton(
+            text="Clear",
+            tooltip="Clear all outputs",
+        )
         clear_btn.clicked.connect(self.clear)
 
         toolbar.addWidget(self._status_label)
         toolbar.addStretch()
+        toolbar.addWidget(copy_btn)
         toolbar.addWidget(clear_btn)
 
-        layout.addLayout(toolbar)
+        layout.addWidget(toolbar_widget)
+
+        # Content area with stacked widget for empty state
+        self._content_stack = QStackedWidget()
+
+        # Empty state (index 0)
+        self._empty_state = EmptyStateWidget(
+            icon_text="",  # Output/export icon
+            title="No Outputs Yet",
+            description=(
+                "Workflow outputs will appear here when:\n"
+                "- A workflow completes execution\n"
+                "- Nodes produce output values"
+            ),
+        )
+        self._content_stack.addWidget(self._empty_state)
+
+        # Main content (index 1)
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(8, 4, 8, 8)
+        content_layout.setSpacing(4)
 
         # Splitter for table and preview
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -95,102 +146,114 @@ class OutputTab(QWidget):
         self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._table.itemSelectionChanged.connect(self._on_selection_changed)
+        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._table.customContextMenuRequested.connect(self._on_context_menu)
+        self._table.verticalHeader().setVisible(False)
 
         # Configure column sizing
         header = self._table.horizontalHeader()
         header.setSectionResizeMode(
             self.COL_TIME, QHeaderView.ResizeMode.ResizeToContents
         )
-        header.setSectionResizeMode(
-            self.COL_NAME, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(
             self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
         )
         header.setSectionResizeMode(self.COL_VALUE, QHeaderView.ResizeMode.Stretch)
+
+        # Set minimum column widths
+        self._table.setColumnWidth(self.COL_NAME, 120)
 
         splitter.addWidget(self._table)
 
         # Preview panel
         preview_container = QWidget()
         preview_layout = QVBoxLayout(preview_container)
-        preview_layout.setContentsMargins(0, 0, 0, 0)
-        preview_layout.setSpacing(2)
+        preview_layout.setContentsMargins(0, 4, 0, 0)
+        preview_layout.setSpacing(4)
 
-        preview_label = QLabel("Value Preview:")
-        preview_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9pt;")
-        preview_layout.addWidget(preview_label)
+        preview_header = QLabel("VALUE PREVIEW")
+        preview_header.setObjectName("previewHeader")
+        preview_layout.addWidget(preview_header)
 
         self._preview_text = QTextEdit()
         self._preview_text.setReadOnly(True)
-        self._preview_text.setMaximumHeight(100)
-        self._preview_text.setPlaceholderText("Select an output to preview its value")
+        self._preview_text.setMinimumHeight(60)
+        self._preview_text.setMaximumHeight(120)
+        self._preview_text.setPlaceholderText(
+            "Select an output to preview its value..."
+        )
         preview_layout.addWidget(self._preview_text)
 
         splitter.addWidget(preview_container)
 
-        # Set initial splitter sizes
-        splitter.setSizes([250, 100])
+        # Set initial splitter sizes (table gets more space)
+        splitter.setSizes([200, 80])
+        splitter.setCollapsible(1, True)
 
-        layout.addWidget(splitter)
+        content_layout.addWidget(splitter)
 
-        # Result bar
-        self._result_bar = QLabel("")
-        self._result_bar.setStyleSheet(f"""
-            QLabel {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_muted};
-                padding: 6px 8px;
-                font-size: 9pt;
-            }}
-        """)
+        # Result bar (hidden by default)
+        self._result_bar = QWidget()
+        self._result_bar.setObjectName("resultBar")
+        result_layout = QHBoxLayout(self._result_bar)
+        result_layout.setContentsMargins(8, 6, 8, 6)
+        result_layout.setSpacing(8)
+
+        self._result_badge = StatusBadge("", "idle")
+        self._result_message = QLabel("")
+        self._result_message.setObjectName("resultMessage")
+
+        result_layout.addWidget(self._result_badge)
+        result_layout.addWidget(self._result_message)
+        result_layout.addStretch()
+
         self._result_bar.hide()
-        layout.addWidget(self._result_bar)
+        content_layout.addWidget(self._result_bar)
+
+        self._content_stack.addWidget(content_widget)
+
+        layout.addWidget(self._content_stack)
+
+        # Show empty state initially
+        self._content_stack.setCurrentIndex(0)
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling."""
+        # Apply toolbar styles
         self.setStyleSheet(f"""
-            QTableWidget {{
+            OutputTab, QWidget, QStackedWidget, QFrame, QSplitter {{
+                background-color: {THEME.bg_panel};
+            }}
+            #outputToolbar {{
+                background-color: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            {get_panel_table_stylesheet()}
+            #previewHeader {{
+                color: {THEME.text_header};
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                padding: 4px 0;
+            }}
+            QTextEdit {{
                 background-color: {THEME.bg_panel};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border_dark};
-                gridline-color: {THEME.border_dark};
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 9pt;
-            }}
-            QTableWidget::item {{
+                border-radius: 3px;
+                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+                font-size: 11px;
                 padding: 4px;
             }}
-            QTableWidget::item:selected {{
-                background-color: {THEME.bg_selected};
-            }}
-            QHeaderView::section {{
+            #resultBar {{
                 background-color: {THEME.bg_header};
-                color: {THEME.text_header};
-                padding: 4px;
-                border: none;
-                border-bottom: 1px solid {THEME.border_dark};
+                border-top: 1px solid {THEME.border_dark};
             }}
-            QTextEdit {{
-                background-color: {THEME.bg_darkest};
+            #resultMessage {{
                 color: {THEME.text_primary};
-                border: 1px solid {THEME.border_dark};
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 9pt;
-            }}
-            QPushButton {{
-                background-color: {THEME.bg_light};
-                color: {THEME.text_secondary};
-                border: 1px solid {THEME.border};
-                border-radius: 2px;
-                padding: 0px 2px;
-                font-size: 9px;
-            }}
-            QPushButton:hover {{
-                background-color: {THEME.bg_hover};
-            }}
-            QLabel {{
-                color: {THEME.text_secondary};
+                font-size: 11px;
             }}
         """)
 
@@ -212,6 +275,84 @@ class OutputTab(QWidget):
         else:
             self._preview_text.clear()
 
+    def _on_context_menu(self, pos) -> None:
+        """Show context menu for table."""
+        item = self._table.itemAt(pos)
+        if not item:
+            return
+
+        row = item.row()
+        menu = QMenu(self)
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                padding: 6px 24px 6px 12px;
+                border-radius: 3px;
+            }}
+            QMenu::item:selected {{
+                background-color: {THEME.accent_primary};
+                color: #ffffff;
+            }}
+        """)
+
+        # Copy name
+        name_item = self._table.item(row, self.COL_NAME)
+        if name_item:
+            copy_name = menu.addAction("Copy Name")
+            copy_name.triggered.connect(
+                lambda: QApplication.clipboard().setText(name_item.text())
+            )
+
+        # Copy value
+        value_item = self._table.item(row, self.COL_VALUE)
+        if value_item:
+            full_value = value_item.data(Qt.ItemDataRole.UserRole)
+            copy_value = menu.addAction("Copy Value")
+            copy_value.triggered.connect(
+                lambda: QApplication.clipboard().setText(
+                    self._format_value_for_preview(full_value)
+                )
+            )
+
+        # Copy as JSON
+        if name_item and value_item:
+            menu.addSeparator()
+            copy_json = menu.addAction("Copy as JSON")
+            copy_json.triggered.connect(lambda: self._copy_row_as_json(row))
+
+        menu.exec_(self._table.mapToGlobal(pos))
+
+    def _copy_row_as_json(self, row: int) -> None:
+        """Copy a row as JSON to clipboard."""
+        name_item = self._table.item(row, self.COL_NAME)
+        value_item = self._table.item(row, self.COL_VALUE)
+        if name_item and value_item:
+            name = name_item.text()
+            value = value_item.data(Qt.ItemDataRole.UserRole)
+            try:
+                json_str = json.dumps({name: value}, indent=2, default=str)
+                QApplication.clipboard().setText(json_str)
+            except Exception:
+                QApplication.clipboard().setText(f'{{"{name}": "{value}"}}')
+
+    def _on_copy_all(self) -> None:
+        """Copy all outputs to clipboard."""
+        outputs = self.get_outputs()
+        if outputs:
+            try:
+                json_str = json.dumps(outputs, indent=2, default=str)
+                QApplication.clipboard().setText(json_str)
+            except Exception:
+                # Fallback to simple format
+                lines = [f"{k}: {v}" for k, v in outputs.items()]
+                QApplication.clipboard().setText("\n".join(lines))
+
     def _format_value(self, value: Any) -> str:
         """Format a value for table display (truncated)."""
         if value is None:
@@ -221,14 +362,14 @@ class OutputTab(QWidget):
         if isinstance(value, (list, dict)):
             try:
                 text = json.dumps(value, default=str)
-                if len(text) > 100:
-                    return text[:97] + "..."
+                if len(text) > 80:
+                    return text[:77] + "..."
                 return text
             except Exception:
-                return str(value)[:100]
+                return str(value)[:80]
         text = str(value)
-        if len(text) > 100:
-            return text[:97] + "..."
+        if len(text) > 80:
+            return text[:77] + "..."
         return text
 
     def _format_value_for_preview(self, value: Any) -> str:
@@ -262,13 +403,34 @@ class OutputTab(QWidget):
             return "Dict"
         return type(value).__name__
 
+    def _get_type_color(self, type_name: str) -> str:
+        """Get color for type name (VSCode syntax colors)."""
+        colors = {
+            "None": THEME.text_muted,
+            "Boolean": THEME.wire_bool,
+            "Integer": THEME.wire_number,
+            "Float": THEME.wire_number,
+            "String": THEME.wire_string,
+            "List": THEME.wire_list,
+            "Dict": THEME.wire_dict,
+        }
+        return colors.get(type_name, THEME.text_primary)
+
     def _update_status(self) -> None:
-        """Update status label."""
+        """Update status label and show/hide empty state."""
         count = self._table.rowCount()
         if count == 0:
             self._status_label.setText("No outputs")
+            self._status_label.setProperty("muted", True)
+            self._content_stack.setCurrentIndex(0)  # Show empty state
         else:
-            self._status_label.setText(f"{count} output(s)")
+            self._status_label.setText(f"{count} output{'s' if count != 1 else ''}")
+            self._status_label.setProperty("muted", False)
+            self._content_stack.setCurrentIndex(1)  # Show table
+
+        # Refresh style
+        self._status_label.style().unpolish(self._status_label)
+        self._status_label.style().polish(self._status_label)
 
     # ==================== Public API ====================
 
@@ -291,20 +453,22 @@ class OutputTab(QWidget):
         time_item = QTableWidgetItem(time_str)
         time_item.setForeground(QBrush(QColor(THEME.text_muted)))
 
-        # Name
+        # Name (with accent color)
         name_item = QTableWidgetItem(name)
-        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))  # VSCode blue
+        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))
+        name_item.setToolTip(f"Output: {name}")
 
-        # Type
+        # Type (with type-specific color)
         type_name = self._get_type_name(value)
         type_item = QTableWidgetItem(type_name)
-        type_item.setForeground(
-            QBrush(QColor(THEME.wire_dict))
-        )  # VSCode teal for types
+        type_color = self._get_type_color(type_name)
+        type_item.setForeground(QBrush(QColor(type_color)))
+        type_item.setToolTip(f"Type: {type_name}")
 
         # Value (truncated for display, full stored in user data)
         value_item = QTableWidgetItem(self._format_value(value))
         value_item.setData(Qt.ItemDataRole.UserRole, value)
+        value_item.setToolTip("Double-click or select to preview full value")
 
         self._table.setItem(row, self.COL_TIME, time_item)
         self._table.setItem(row, self.COL_NAME, name_item)
@@ -327,27 +491,29 @@ class OutputTab(QWidget):
         self._result_bar.show()
 
         if success:
-            self._result_bar.setStyleSheet("""
-                QLabel {
-                    background-color: #2d4a2d;
-                    color: #6bff6b;
-                    padding: 6px 8px;
-                    font-size: 9pt;
-                    font-weight: bold;
-                }
+            self._result_badge.set_status("success", "SUCCESS")
+            self._result_bar.setStyleSheet(f"""
+                #resultBar {{
+                    background-color: #1a3d1a;
+                    border-top: 1px solid {THEME.status_success};
+                }}
+                #resultMessage {{
+                    color: {THEME.status_success};
+                }}
             """)
-            self._result_bar.setText(f"SUCCESS: {message}")
         else:
-            self._result_bar.setStyleSheet("""
-                QLabel {
-                    background-color: #4a2d2d;
-                    color: #ff6b6b;
-                    padding: 6px 8px;
-                    font-size: 9pt;
-                    font-weight: bold;
-                }
+            self._result_badge.set_status("error", "FAILED")
+            self._result_bar.setStyleSheet(f"""
+                #resultBar {{
+                    background-color: #3d1a1a;
+                    border-top: 1px solid {THEME.status_error};
+                }}
+                #resultMessage {{
+                    color: {THEME.status_error};
+                }}
             """)
-            self._result_bar.setText(f"FAILED: {message}")
+
+        self._result_message.setText(message)
 
     def clear(self) -> None:
         """Clear all outputs."""

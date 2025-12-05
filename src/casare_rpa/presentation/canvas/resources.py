@@ -71,8 +71,6 @@ class ResourceCache:
             icon = QIcon(path)
             cls._icon_cache[path] = icon
             cls._evict_icons_if_needed()
-
-            logger.debug(f"Icon cache miss: {path}")
             return icon
 
     @classmethod
@@ -113,8 +111,6 @@ class ResourceCache:
 
             cls._pixmap_cache[key] = pixmap
             cls._evict_pixmaps_if_needed()
-
-            logger.debug(f"Pixmap cache miss: {path} ({width}x{height})")
             return pixmap
 
     @classmethod
@@ -125,7 +121,6 @@ class ResourceCache:
             keys_to_evict = list(cls._icon_cache.keys())[:evict_count]
             for key in keys_to_evict:
                 del cls._icon_cache[key]
-            logger.debug(f"Evicted {evict_count} icons from cache")
 
     @classmethod
     def _evict_pixmaps_if_needed(cls) -> None:
@@ -135,7 +130,6 @@ class ResourceCache:
             keys_to_evict = list(cls._pixmap_cache.keys())[:evict_count]
             for key in keys_to_evict:
                 del cls._pixmap_cache[key]
-            logger.debug(f"Evicted {evict_count} pixmaps from cache")
 
     @classmethod
     def clear(cls) -> None:

@@ -6,6 +6,7 @@ Centralizes toolbar creation and styling.
 
 from typing import TYPE_CHECKING
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QToolBar
 
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
@@ -24,25 +25,26 @@ class ToolbarBuilder:
     - Organize execution and automation controls
     """
 
-    # Toolbar stylesheet for modern dark theme
+    # Toolbar stylesheet for modern dark theme with text under icons
     TOOLBAR_STYLE = """
         QToolBar {
             background: #2b2b2b;
             border: none;
             spacing: 2px;
-            padding: 2px 4px;
+            padding: 4px 6px;
         }
         QToolButton {
             background: transparent;
             border: 1px solid transparent;
             border-radius: 4px;
-            padding: 4px 8px;
-            color: #e0e0e0;
-            font-size: 12px;
+            padding: 6px 8px 4px 8px;
+            color: #b0b0b0;
+            font-size: 10px;
         }
         QToolButton:hover {
             background: #3d3d3d;
             border: 1px solid #4a4a4a;
+            color: #e0e0e0;
         }
         QToolButton:pressed {
             background: #4a4a4a;
@@ -50,14 +52,15 @@ class ToolbarBuilder:
         QToolButton:checked {
             background: #4a6a8a;
             border: 1px solid #5a7a9a;
+            color: #ffffff;
         }
         QToolButton:disabled {
-            color: #666666;
+            color: #555555;
         }
         QToolBar::separator {
             background: #4a4a4a;
             width: 1px;
-            margin: 4px 6px;
+            margin: 6px 8px;
         }
     """
 
@@ -69,6 +72,11 @@ class ToolbarBuilder:
             main_window: Parent MainWindow instance
         """
         self._main_window = main_window
+
+    def _setup_toolbar_action(self, action, icon_name: str, toolbar_text: str) -> None:
+        """Set icon and short toolbar text for an action."""
+        action.setIcon(get_toolbar_icon(icon_name))
+        action.setIconText(toolbar_text)
 
     def create_toolbar(self) -> QToolBar:
         """
@@ -83,30 +91,33 @@ class ToolbarBuilder:
         toolbar.setObjectName("MainToolbar")
         toolbar.setMovable(False)
         toolbar.setFloatable(False)
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
         toolbar.setStyleSheet(self.TOOLBAR_STYLE)
 
-        # Set icons on actions (they don't have icons by default from ActionManager)
-        mw.action_run.setIcon(get_toolbar_icon("run"))
-        mw.action_pause.setIcon(get_toolbar_icon("pause"))
-        mw.action_stop.setIcon(get_toolbar_icon("stop"))
-        mw.action_start_listening.setIcon(get_toolbar_icon("listen"))
-        mw.action_stop_listening.setIcon(get_toolbar_icon("stop_listen"))
-        mw.action_record_workflow.setIcon(get_toolbar_icon("record"))
-        mw.action_pick_selector.setIcon(get_toolbar_icon("pick_selector"))
-        mw.action_project_manager.setIcon(get_toolbar_icon("project"))
-        mw.action_credential_manager.setIcon(get_toolbar_icon("credentials"))
-        mw.action_performance_dashboard.setIcon(get_toolbar_icon("performance"))
+        # Set icons and short text labels for toolbar display
+        self._setup_toolbar_action(mw.action_run, "run", "Run")
+        self._setup_toolbar_action(mw.action_pause, "pause", "Pause")
+        self._setup_toolbar_action(mw.action_stop, "stop", "Stop")
+        self._setup_toolbar_action(
+            mw.action_record_workflow, "record", "Record Browser"
+        )
+        self._setup_toolbar_action(
+            mw.action_pick_selector, "pick_selector", "Pick Element"
+        )
+        self._setup_toolbar_action(
+            mw.action_project_manager, "project", "Project Manager"
+        )
+        self._setup_toolbar_action(
+            mw.action_credential_manager, "credentials", "Credential Manager"
+        )
+        self._setup_toolbar_action(
+            mw.action_performance_dashboard, "performance", "Performance Monitor"
+        )
 
         # === Execution Controls ===
         toolbar.addAction(mw.action_run)
         toolbar.addAction(mw.action_pause)
         toolbar.addAction(mw.action_stop)
-
-        toolbar.addSeparator()
-
-        # === Trigger Controls ===
-        toolbar.addAction(mw.action_start_listening)
-        toolbar.addAction(mw.action_stop_listening)
 
         toolbar.addSeparator()
 

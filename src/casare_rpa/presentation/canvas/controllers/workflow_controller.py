@@ -22,6 +22,7 @@ from casare_rpa.presentation.canvas.controllers.base_controller import BaseContr
 
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.main_window import MainWindow
+    from casare_rpa.domain.workflow.versioning import VersionHistory
 
 
 class WorkflowController(BaseController):
@@ -64,7 +65,6 @@ class WorkflowController(BaseController):
         super().initialize()
         # Setup drag-drop import handlers
         self.setup_drag_drop_import()
-        logger.info("WorkflowController initialized")
 
     def cleanup(self) -> None:
         """Clean up resources."""
@@ -113,22 +113,6 @@ class WorkflowController(BaseController):
         self.set_modified(False)
 
         self.main_window.show_status("New workflow created", 3000)
-
-    def new_from_template(self) -> None:
-        """Create a new workflow from a template."""
-        logger.info("Creating workflow from template")
-
-        if not self.check_unsaved_changes():
-            return
-
-        from ..ui.dialogs.template_browser import show_template_browser
-
-        template = show_template_browser(self.main_window)
-        if template:
-            # MainWindow will handle the actual template loading via signal
-            self.main_window.show_status(f"Loading template: {template.name}...", 3000)
-            # Emit through main window signal
-            self.main_window.workflow_new_from_template.emit(template)
 
     def open_workflow(self) -> None:
         """Open an existing workflow file."""
@@ -319,16 +303,55 @@ class WorkflowController(BaseController):
             return True
 
         file_name = self._current_file.name if self._current_file else "Untitled"
-        reply = QMessageBox.question(
-            self.main_window,
-            "Unsaved Changes",
-            f"The workflow '{file_name}' has unsaved changes.\n\n"
-            "Do you want to save before continuing?",
+
+        # Create styled message box
+        msg_box = QMessageBox(self.main_window)
+        msg_box.setWindowTitle("Unsaved Changes")
+        msg_box.setText(f"The workflow '{file_name}' has unsaved changes.")
+        msg_box.setInformativeText("Do you want to save before continuing?")
+        msg_box.setStandardButtons(
             QMessageBox.StandardButton.Save
             | QMessageBox.StandardButton.Discard
-            | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Save,
+            | QMessageBox.StandardButton.Cancel
         )
+        msg_box.setDefaultButton(QMessageBox.StandardButton.Save)
+
+        # Style dialog to match UI Explorer
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background: #252526;
+            }
+            QMessageBox QLabel {
+                color: #D4D4D4;
+                font-size: 12px;
+            }
+            QPushButton {
+                background: #2D2D30;
+                border: 1px solid #454545;
+                border-radius: 4px;
+                padding: 0 16px;
+                color: #D4D4D4;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 32px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background: #2A2D2E;
+                border-color: #007ACC;
+                color: white;
+            }
+            QPushButton:default {
+                background: #007ACC;
+                border-color: #007ACC;
+                color: white;
+            }
+            QPushButton:default:hover {
+                background: #1177BB;
+            }
+        """)
+
+        reply = msg_box.exec()
 
         if reply == QMessageBox.StandardButton.Save:
             self.save_workflow()
@@ -337,6 +360,61 @@ class WorkflowController(BaseController):
             return True
         else:  # Cancel
             return False
+
+    def _get_message_box_style(self) -> str:
+        """Get standard QMessageBox stylesheet matching UI Explorer."""
+        return """
+            QMessageBox { background: #252526; }
+            QMessageBox QLabel { color: #D4D4D4; font-size: 12px; }
+            QPushButton {
+                background: #2D2D30;
+                border: 1px solid #454545;
+                border-radius: 4px;
+                padding: 0 16px;
+                color: #D4D4D4;
+                font-size: 12px;
+                font-weight: 500;
+                min-height: 32px;
+                min-width: 80px;
+            }
+            QPushButton:hover { background: #2A2D2E; border-color: #007ACC; color: white; }
+            QPushButton:default { background: #007ACC; border-color: #007ACC; color: white; }
+        """
+
+    def _show_styled_message(
+        self,
+        title: str,
+        text: str,
+        info: str = "",
+        icon: QMessageBox.Icon = QMessageBox.Icon.Warning,
+    ) -> None:
+        """Show a styled QMessageBox matching UI Explorer theme."""
+        msg = QMessageBox(self.main_window)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        if info:
+            msg.setInformativeText(info)
+        msg.setIcon(icon)
+        msg.setStyleSheet(self._get_message_box_style())
+        msg.exec()
+
+    def _show_styled_question(
+        self,
+        title: str,
+        text: str,
+        buttons: QMessageBox.StandardButton = QMessageBox.StandardButton.Yes
+        | QMessageBox.StandardButton.No,
+        default: QMessageBox.StandardButton = QMessageBox.StandardButton.No,
+    ) -> QMessageBox.StandardButton:
+        """Show a styled QMessageBox question and return the reply."""
+        msg = QMessageBox(self.main_window)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setIcon(QMessageBox.Icon.Question)
+        msg.setStandardButtons(buttons)
+        msg.setDefaultButton(default)
+        msg.setStyleSheet(self._get_message_box_style())
+        return msg.exec()
 
     def _check_validation_before_save(self) -> bool:
         """
@@ -350,13 +428,10 @@ class WorkflowController(BaseController):
         if bottom_panel:
             validation_errors = bottom_panel.get_validation_errors_blocking()
             if validation_errors:
-                reply = QMessageBox.warning(
-                    self.main_window,
+                reply = self._show_styled_question(
                     "Validation Errors",
                     f"The workflow has {len(validation_errors)} validation error(s).\n\n"
                     "Do you want to save anyway?",
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                    QMessageBox.StandardButton.No,
                 )
                 return reply == QMessageBox.StandardButton.Yes
 
@@ -482,7 +557,6 @@ class WorkflowController(BaseController):
 
         Extracted from: canvas/components/dragdrop_component.py
         """
-        logger.info("Setting up drag-drop import handlers")
 
         def on_import_file(file_path: str, position: tuple) -> None:
             """Handle file drop on canvas."""
@@ -573,7 +647,6 @@ class WorkflowController(BaseController):
             graph.set_import_callback(on_import_data)
             if hasattr(graph, "setup_drag_drop"):
                 graph.setup_drag_drop()
-            logger.info("Drag-drop import handlers configured")
         else:
             logger.debug("Graph does not support drag-drop import")
 
@@ -815,3 +888,104 @@ class WorkflowController(BaseController):
                     f"{result.message}\n"
                     f"Error: {result.error[:200] if result.error else 'Unknown'}",
                 )
+
+    # =========================
+    # Version History Methods
+    # =========================
+
+    def get_version_history(self) -> Optional["VersionHistory"]:
+        """
+        Get version history for the current workflow.
+
+        Returns:
+            VersionHistory if workflow has been saved and has history,
+            None otherwise.
+
+        Note:
+            Version history is created when a workflow is first saved
+            and updated on each subsequent save.
+        """
+        from casare_rpa.domain.workflow.versioning import VersionHistory
+
+        if not self._current_file:
+            logger.debug("No current file - no version history available")
+            return None
+
+        # Get workflow data from the graph
+        graph = self.main_window.get_graph()
+        if not graph:
+            logger.debug("No graph available - no version history")
+            return None
+
+        # Try to load or create version history for this workflow
+        workflow_id = str(self._current_file.stem)
+
+        try:
+            # Check for existing version history file
+            history_file = self._current_file.parent / f".{workflow_id}_history.json"
+
+            if history_file.exists():
+                # Load existing history
+                import orjson
+
+                history_data = orjson.loads(history_file.read_bytes())
+                history = VersionHistory.from_dict(history_data)
+                logger.debug(f"Loaded version history for {workflow_id}")
+                return history
+            else:
+                # Create new history with current workflow as v1.0.0
+                workflow_data = self._serialize_workflow()
+                if workflow_data:
+                    history = VersionHistory(workflow_id=workflow_id)
+                    history.create_new_version(
+                        workflow_data=workflow_data,
+                        change_summary="Initial version",
+                    )
+                    # Save history file
+                    self._save_version_history(history, history_file)
+                    logger.debug(f"Created new version history for {workflow_id}")
+                    return history
+
+        except Exception as e:
+            logger.warning(f"Failed to get version history: {e}")
+
+        return None
+
+    def _serialize_workflow(self) -> Optional[dict]:
+        """Serialize current workflow to dict."""
+        graph = self.main_window.get_graph()
+        if not graph:
+            return None
+
+        try:
+            # Use existing serialization method if available
+            if hasattr(graph, "serialize_session"):
+                return graph.serialize_session()
+            elif hasattr(graph, "to_dict"):
+                return graph.to_dict()
+            else:
+                # Manual serialization
+                return {
+                    "nodes": [],
+                    "connections": [],
+                    "metadata": {
+                        "name": self._current_file.stem
+                        if self._current_file
+                        else "Untitled"
+                    },
+                }
+        except Exception as e:
+            logger.warning(f"Failed to serialize workflow: {e}")
+            return None
+
+    def _save_version_history(self, history: "VersionHistory", path: Path) -> None:
+        """Save version history to file."""
+        try:
+            import orjson
+
+            path.write_bytes(
+                orjson.dumps(history.to_dict(), option=orjson.OPT_INDENT_2)
+            )
+            logger.debug(f"Saved version history to {path}")
+        except Exception as e:
+            logger.warning(f"Failed to save version history: {e}")

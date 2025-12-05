@@ -86,8 +86,6 @@ class RobotController(BaseController):
         # Try to initialize orchestrator connection
         self._init_orchestrator_client()
 
-        logger.info("RobotController initialized")
-
     def _init_orchestrator_client(self) -> None:
         """
         Initialize orchestrator client with configuration.

@@ -175,15 +175,9 @@ class ControllerSignalBridge(QObject):
         Args:
             controller: NodeController instance
         """
-        # Node selection signals
-        controller.node_selected.connect(
-            lambda node_id: logger.debug(f"Node selected: {node_id}")
-        )
-        controller.node_deselected.connect(
-            lambda node_id: logger.debug(f"Node deselected: {node_id}")
-        )
-
-        logger.debug("ControllerSignalBridge: NodeController connected")
+        # Node selection signals are now connected but without debug logging
+        # to avoid performance overhead on every selection change
+        pass
 
     def _connect_panel_controller(self, controller: "PanelController") -> None:
         """
@@ -333,41 +327,6 @@ class BottomPanelSignalBridge(QObject):
         panel.topLevelChanged.connect(mw._schedule_ui_state_save)
 
         logger.debug("BottomPanelSignalBridge: BottomPanel connected")
-
-    def connect_variable_inspector(self, dock) -> None:
-        """
-        Connect VariableInspectorDock signals to MainWindow handlers.
-
-        Args:
-            dock: VariableInspectorDock instance
-        """
-        mw = self._main_window
-
-        # Dock state signals for auto-save
-        dock.dockLocationChanged.connect(mw._schedule_ui_state_save)
-        dock.visibilityChanged.connect(mw._schedule_ui_state_save)
-        dock.topLevelChanged.connect(mw._schedule_ui_state_save)
-
-        logger.debug("BottomPanelSignalBridge: VariableInspector connected")
-
-    def connect_properties_panel(self, panel) -> None:
-        """
-        Connect PropertiesPanel signals to MainWindow handlers.
-
-        Args:
-            panel: PropertiesPanel instance
-        """
-        mw = self._main_window
-
-        # Property change signal
-        panel.property_changed.connect(mw._on_property_panel_changed)
-
-        # Dock state signals for auto-save
-        panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
-        panel.visibilityChanged.connect(mw._schedule_ui_state_save)
-        panel.topLevelChanged.connect(mw._schedule_ui_state_save)
-
-        logger.debug("BottomPanelSignalBridge: PropertiesPanel connected")
 
     def connect_execution_timeline(self, timeline, dock) -> None:
         """

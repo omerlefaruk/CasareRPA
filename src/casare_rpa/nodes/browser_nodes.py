@@ -31,6 +31,7 @@ from loguru import logger
         label="URL",
         placeholder="https://example.com",
         tooltip="Initial URL to navigate to after launching browser",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "browser_type",
@@ -46,6 +47,15 @@ from loguru import logger
         default=HEADLESS_MODE,
         label="Headless Mode",
         tooltip="Run browser without visible window",
+        essential=True,  # Show when collapsed
+    ),
+    PropertyDef(
+        "do_not_close",
+        PropertyType.BOOLEAN,
+        default=True,
+        label="Do Not Close After Launch",
+        tooltip="Keep browser open after workflow execution completes",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "slow_mo",
@@ -143,11 +153,13 @@ from loguru import logger
         min_value=0,
     ),
     PropertyDef(
-        "do_not_close",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Do Not Close After Launch",
-        tooltip="Keep browser open after workflow execution completes",
+        "window_wait",
+        PropertyType.INTEGER,
+        default=100,
+        label="Window Wait (ms)",
+        tooltip="Time to wait for browser window detection (for maximize/minimize). Set to 0 to skip.",
+        min_value=0,
+        tab="advanced",
     ),
 )
 @executable_node
@@ -182,6 +194,7 @@ class LaunchBrowserNode(BaseNode):
         self.add_input_port("url", PortType.INPUT, DataType.STRING, required=False)
         self.add_output_port("browser", PortType.OUTPUT, DataType.BROWSER)
         self.add_output_port("page", PortType.OUTPUT, DataType.PAGE)
+        self.add_output_port("window", PortType.OUTPUT, DataType.ANY)
 
     async def execute(self, context: ExecutionContext) -> ExecutionResult:
         """
@@ -331,6 +344,69 @@ class LaunchBrowserNode(BaseNode):
                 self.set_output_value("browser", browser)
                 self.set_output_value("page", page)
 
+                # Get browser window for desktop window operations (maximize/minimize)
+                browser_window = None
+                window_wait = self.get_parameter("window_wait", 100)
+                if not headless and window_wait >= 0:
+                    try:
+                        import uiautomation as auto
+                        from casare_rpa.desktop.element import DesktopElement
+                        from concurrent.futures import (
+                            ThreadPoolExecutor,
+                            TimeoutError as FuturesTimeoutError,
+                        )
+
+                        # Wait for window to fully initialize
+                        if window_wait > 0:
+                            await asyncio.sleep(window_wait / 1000)
+
+                        def find_browser_window():
+                            """Find browser window using efficient class name search."""
+                            # Use WindowControl directly with ClassName - much faster than iterating all
+                            browser_classes = [
+                                "Chrome_WidgetWin_1",
+                                "MozillaWindowClass",
+                            ]
+                            for class_name in browser_classes:
+                                try:
+                                    window = auto.WindowControl(
+                                        ClassName=class_name, searchDepth=1
+                                    )
+                                    if window.Exists(
+                                        0.5, 0.1
+                                    ):  # 500ms max wait, 100ms interval
+                                        return window, class_name
+                                except Exception:
+                                    continue
+                            return None, None
+
+                        # Run window search in thread with 2 second timeout to avoid blocking
+                        loop = asyncio.get_event_loop()
+                        with ThreadPoolExecutor(max_workers=1) as executor:
+                            try:
+                                window, class_name = await asyncio.wait_for(
+                                    loop.run_in_executor(executor, find_browser_window),
+                                    timeout=2.0,
+                                )
+                                if window:
+                                    browser_window = DesktopElement(window)
+                                    logger.info(
+                                        f"Found browser window: {window.Name} (class={class_name})"
+                                    )
+                                else:
+                                    logger.debug(
+                                        "Browser window not found within timeout"
+                                    )
+                            except asyncio.TimeoutError:
+                                logger.debug(
+                                    "Browser window search timed out (2s) - skipping"
+                                )
+
+                    except Exception as e:
+                        logger.warning(f"Could not get browser window handle: {e}")
+
+                self.set_output_value("window", browser_window)
+
                 # Emit BROWSER_PAGE_READY event for UI to enable picker/recorder
                 try:
                     from casare_rpa.domain.events import get_event_bus, Event
@@ -362,6 +438,7 @@ class LaunchBrowserNode(BaseNode):
                     "data": {
                         "browser": browser,
                         "page": page,
+                        "window": browser_window,
                         "browser_type": browser_type,
                         "headless": headless,
                         "attempts": attempts,
@@ -519,6 +596,7 @@ class CloseBrowserNode(BaseNode):
         label="Tab Name",
         tooltip="Name to identify this tab",
         required=True,
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "url",
@@ -527,6 +605,7 @@ class CloseBrowserNode(BaseNode):
         label="URL",
         tooltip="Optional URL to navigate to after creating tab",
         placeholder="https://example.com",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "timeout",
@@ -935,6 +1014,7 @@ class GetAllImagesNode(BaseNode):
         label="Save Path",
         tooltip="Local file path to save to (supports {{variables}})",
         placeholder="C:/downloads/file.pdf",
+        essential=True,  # Show when collapsed
     ),
     PropertyDef(
         "use_browser",

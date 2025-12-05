@@ -52,7 +52,6 @@ class NodeController(BaseController):
         super().initialize()
         # Initialize node registry
         self._initialize_node_registry()
-        logger.info("NodeController initialized")
 
     def _initialize_node_registry(self) -> None:
         """
@@ -73,11 +72,9 @@ class NodeController(BaseController):
             # Register all node types with the graph
             node_registry = get_node_registry()
             node_registry.register_all_nodes(graph)
-            logger.info("Registered all node types with graph")
 
             # Pre-build node mapping to avoid delay on first node creation
             get_casare_node_mapping()
-            logger.info("Pre-built node mapping cache")
 
         except ImportError as e:
             logger.error(f"Failed to import node registry: {e}")
@@ -89,6 +86,62 @@ class NodeController(BaseController):
         super().cleanup()
         logger.info("NodeController cleanup")
 
+    def _get_nearest_node(self, max_distance: float = 300.0, use_title: bool = False):
+        """
+        Find the nearest node to cursor.
+
+        Args:
+            max_distance: Maximum distance in pixels. Returns None if no node within range.
+            use_title: If True, calculate distance from title bar center. Otherwise use node center.
+
+        Returns:
+            Nearest node or None if no nodes or none within range.
+        """
+        graph = self._get_graph()
+        if not graph:
+            return None
+
+        viewer = graph.viewer()
+        if not viewer:
+            return None
+
+        # Get mouse position in scene coordinates
+        global_pos = QCursor.pos()
+        view_pos = viewer.mapFromGlobal(global_pos)
+        scene_pos = viewer.mapToScene(view_pos)
+
+        all_nodes = graph.all_nodes()
+        if not all_nodes:
+            return None
+
+        nearest_node = None
+        min_distance = float("inf")
+
+        for node in all_nodes:
+            node_pos = node.pos()  # Top-left corner
+            if hasattr(node, "view") and node.view:
+                rect = node.view.boundingRect()
+                center_x = node_pos[0] + rect.width() / 2
+                if use_title:
+                    # Title bar is ~26px tall, center at ~13px from top
+                    center_y = node_pos[1] + 13
+                else:
+                    center_y = node_pos[1] + rect.height() / 2
+            else:
+                # Fallback estimate
+                center_x = node_pos[0] + 80
+                center_y = node_pos[1] + (13 if use_title else 40)
+
+            dx = scene_pos.x() - center_x
+            dy = scene_pos.y() - center_y
+            distance = (dx * dx + dy * dy) ** 0.5
+
+            if distance < min_distance and distance <= max_distance:
+                min_distance = distance
+                nearest_node = node
+
+        return nearest_node
+
     def select_nearest_node(self) -> None:
         """Select the nearest node to the current mouse cursor position (hotkey 2)."""
         logger.debug("Selecting nearest node to mouse")
@@ -97,46 +150,37 @@ class NodeController(BaseController):
         if not graph:
             return
 
-        viewer = graph.viewer()
-        if not viewer:
+        nearest_node = self._get_nearest_node(max_distance=300.0)
+        if not nearest_node:
+            self.main_window.show_status("No node nearby", 2000)
             return
 
-        # Get mouse position in scene coordinates
-        global_pos = QCursor.pos()
-        view_pos = viewer.mapFromGlobal(global_pos)
-        scene_pos = viewer.mapToScene(view_pos)
+        # Clear current selection and select the nearest node
+        graph.clear_selection()
+        nearest_node.set_selected(True)
 
-        # Find nearest node
-        all_nodes = graph.all_nodes()
-        if not all_nodes:
-            self.main_window.show_status("No nodes in graph", 2000)
+        node_id = nearest_node.get_property("node_id")
+        if node_id:
+            self.node_selected.emit(node_id)
+
+        node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
+        self.main_window.show_status(f"Selected: {node_name}", 2000)
+
+    def toggle_collapse_nearest_node(self) -> None:
+        """Toggle collapse/expand on the nearest node to mouse cursor (hotkey 1)."""
+        logger.debug("Toggling collapse on nearest node")
+
+        nearest_node = self._get_nearest_node(max_distance=150.0, use_title=True)
+        if not nearest_node:
+            self.main_window.show_status("No node nearby", 2000)
             return
 
-        nearest_node = None
-        min_distance = float("inf")
-
-        for node in all_nodes:
-            node_pos = node.pos()
-            # Calculate distance from mouse to node center
-            dx = scene_pos.x() - node_pos[0]
-            dy = scene_pos.y() - node_pos[1]
-            distance = (dx * dx + dy * dy) ** 0.5
-
-            if distance < min_distance:
-                min_distance = distance
-                nearest_node = node
-
-        if nearest_node:
-            # Clear current selection and select the nearest node
-            graph.clear_selection()
-            nearest_node.set_selected(True)
-
-            node_id = nearest_node.get_property("node_id")
-            if node_id:
-                self.node_selected.emit(node_id)
-
+        if hasattr(nearest_node, "toggle_collapse"):
+            nearest_node.toggle_collapse()
+            is_collapsed = getattr(nearest_node, "_collapsed", False)
+            state = "Collapsed" if is_collapsed else "Expanded"
             node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
-            self.main_window.show_status(f"Selected: {node_name}", 2000)
+            self.main_window.show_status(f"{state}: {node_name}", 2000)
 
     def toggle_disable_node(self) -> None:
         """
@@ -150,35 +194,9 @@ class NodeController(BaseController):
         if not graph:
             return
 
-        viewer = graph.viewer()
-        if not viewer:
-            return
-
-        # Get mouse position in scene coordinates
-        global_pos = QCursor.pos()
-        view_pos = viewer.mapFromGlobal(global_pos)
-        scene_pos = viewer.mapToScene(view_pos)
-
-        # Find nearest node to mouse
-        all_nodes = graph.all_nodes()
-        if not all_nodes:
-            self.main_window.show_status("No nodes in graph", 2000)
-            return
-
-        nearest_node = None
-        min_distance = float("inf")
-
-        for node in all_nodes:
-            node_pos = node.pos()
-            dx = scene_pos.x() - node_pos[0]
-            dy = scene_pos.y() - node_pos[1]
-            distance = (dx * dx + dy * dy) ** 0.5
-
-            if distance < min_distance:
-                min_distance = distance
-                nearest_node = node
-
+        nearest_node = self._get_nearest_node(max_distance=300.0)
         if not nearest_node:
+            self.main_window.show_status("No node nearby", 2000)
             return
 
         # Select and toggle disable on the nearest node
@@ -197,6 +215,12 @@ class NodeController(BaseController):
             current_disabled = casare_node.config.get("_disabled", False)
             new_disabled = not current_disabled
             casare_node.config["_disabled"] = new_disabled
+
+            # Also set on visual node property for serialization consistency
+            try:
+                nearest_node.set_property("_disabled", new_disabled)
+            except Exception:
+                pass  # Property might not exist, that's OK
 
             # Update visual appearance
             if hasattr(nearest_node, "view") and nearest_node.view:
@@ -360,13 +384,13 @@ class NodeController(BaseController):
 
                 distance = (dx * dx + dy * dy) ** 0.5
 
-                if distance < min_distance:
+                if distance < min_distance and distance <= 300.0:
                     min_distance = distance
                     closest_port = port
                     closest_node = node
 
         if not closest_port:
-            self.main_window.show_status("No exec_out ports found", 2000)
+            self.main_window.show_status("No exec_out port nearby", 2000)
             return
 
         # Select the node
@@ -440,6 +464,12 @@ class NodeController(BaseController):
             )
             if casare_node:
                 casare_node.config["_disabled"] = new_disabled
+
+                # Also set on visual node property for serialization consistency
+                try:
+                    node.set_property("_disabled", new_disabled)
+                except Exception:
+                    pass  # Property might not exist, that's OK
 
                 # Update visual appearance
                 if hasattr(node, "view") and node.view:

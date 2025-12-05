@@ -35,6 +35,7 @@ from casare_rpa.infrastructure.execution import ExecutionContext
         default="",
         label="Message",
         tooltip="Message to display",
+        essential=True,
     ),
     PropertyDef(
         "detailed_text",

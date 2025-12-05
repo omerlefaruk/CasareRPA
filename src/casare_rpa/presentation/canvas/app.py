@@ -10,6 +10,21 @@ Reduced from 3,112 lines to ~400 lines by extracting components.
 import sys
 import asyncio
 
+# Apply QFont fix FIRST - before any Qt widget imports that might create fonts
+from PySide6.QtGui import QFont
+
+_original_setPointSize = QFont.setPointSize
+
+
+def _safe_setPointSize(self, size: int) -> None:
+    """Guard against invalid point sizes (-1, 0)."""
+    if size <= 0:
+        size = 9
+    _original_setPointSize(self, size)
+
+
+QFont.setPointSize = _safe_setPointSize
+
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from qasync import QEventLoop
@@ -65,13 +80,11 @@ class CasareRPAApp:
         """Initialize the application."""
         # Setup logging
         setup_logging()
-        logger.info(f"Initializing {APP_NAME}...")
 
         # Setup Qt application
         self._setup_qt_application()
 
         # Check for Playwright browsers
-        logger.info("Checking Playwright browser installation...")
         ensure_playwright_ready(show_gui=True, parent=None)
 
         # Create main window and node graph
@@ -85,8 +98,6 @@ class CasareRPAApp:
 
         # Connect UI signals
         self._connect_ui_signals()
-
-        logger.info("Application initialized successfully")
 
     def _setup_qt_application(self) -> None:
         """Setup Qt application and event loop."""
@@ -159,10 +170,7 @@ class CasareRPAApp:
         Raises:
             RuntimeError: If controller initialization fails
         """
-        logger.info("Initializing controllers...")
-
         # Phase 1: Node registry (foundation - no dependencies)
-        logger.debug("Phase 1: Initializing node registry...")
         self._node_controller = NodeController(self._main_window)
         self._node_controller.initialize()
         logger.debug("Node registry initialized - all node types registered")
@@ -207,9 +215,6 @@ class CasareRPAApp:
 
         # Configure execution controller with workflow runner AFTER initialization
         self._execution_controller.set_workflow_runner(self._workflow_runner)
-        logger.info("ExecutionController configured with workflow runner")
-
-        logger.info("All controllers initialized successfully")
 
         # Inject configured controllers into MainWindow
         # This ensures MainWindow uses the same instances that were configured above
@@ -219,7 +224,6 @@ class CasareRPAApp:
             node_controller=self._node_controller,
             selector_controller=self._selector_controller,
         )
-        logger.info("Controllers injected into MainWindow")
 
     def _connect_components(self) -> None:
         """Connect controller signals for inter-controller communication."""
@@ -230,6 +234,9 @@ class CasareRPAApp:
         self._workflow_controller.workflow_saved.connect(self._on_workflow_save)
         self._workflow_controller.workflow_loaded.connect(self._on_workflow_load)
         self._workflow_controller.workflow_created.connect(self._on_workflow_new)
+
+        # Connect main_window workflow_open signal (emitted from recent files, etc.)
+        self._main_window.workflow_open.connect(self._on_workflow_load)
 
         # Connect project controller scenario_opened signal to load workflow
         project_controller = self._main_window.get_project_controller()
@@ -270,7 +277,7 @@ class CasareRPAApp:
         self._main_window.action_delete.triggered.connect(self._on_delete_selected)
         self._main_window.action_cut.triggered.connect(graph.cut_nodes)
         self._main_window.action_copy.triggered.connect(graph.copy_nodes)
-        self._main_window.action_paste.triggered.connect(graph.paste_nodes)
+        self._main_window.action_paste.triggered.connect(self._on_paste_nodes)
         self._main_window.action_duplicate.triggered.connect(self._on_duplicate_nodes)
         self._main_window.action_select_all.triggered.connect(graph.select_all)
 
@@ -307,6 +314,16 @@ class CasareRPAApp:
             if isinstance(item, NodeFrame):
                 scene.removeItem(item)
 
+    def _on_paste_nodes(self) -> None:
+        """Paste nodes and regenerate IDs to avoid duplicates."""
+        graph = self._node_graph.graph
+        graph.paste_nodes()
+
+        # Regenerate IDs for all pasted nodes (selected after paste)
+        pasted_nodes = graph.selected_nodes()
+        if pasted_nodes:
+            self._regenerate_node_ids(pasted_nodes)
+
     def _on_duplicate_nodes(self) -> None:
         """Duplicate the selected nodes at mouse cursor position."""
         graph = self._node_graph.graph
@@ -329,16 +346,70 @@ class CasareRPAApp:
         if not pasted_nodes:
             return
 
-        # Calculate offset to cursor position
+        # CRITICAL: Regenerate IDs for pasted nodes to avoid duplicates
+        # NodeGraphQt's add_node (used by paste) doesn't emit node_created signal,
+        # so the paste hook in node_graph_widget.py doesn't trigger
+        self._regenerate_node_ids(pasted_nodes)
+
+        # Calculate bounding box center of pasted nodes
         min_x = min(node.pos()[0] for node in pasted_nodes)
         min_y = min(node.pos()[1] for node in pasted_nodes)
-        offset_x = scene_pos.x() - min_x
-        offset_y = scene_pos.y() - min_y
+        max_x = max(
+            node.pos()[0] + node.view.boundingRect().width() for node in pasted_nodes
+        )
+        max_y = max(
+            node.pos()[1] + node.view.boundingRect().height() for node in pasted_nodes
+        )
+        center_x = (min_x + max_x) / 2
+        center_y = (min_y + max_y) / 2
 
-        # Move pasted nodes to cursor position
+        # Calculate offset to center nodes at cursor position
+        offset_x = scene_pos.x() - center_x
+        offset_y = scene_pos.y() - center_y
+
+        # Move pasted nodes to cursor position (centered)
         for node in pasted_nodes:
             current_pos = node.pos()
             node.set_pos(current_pos[0] + offset_x, current_pos[1] + offset_y)
+
+    def _regenerate_node_ids(self, nodes: list) -> None:
+        """
+        Regenerate unique IDs for pasted/duplicated nodes.
+
+        NodeGraphQt's paste uses add_node which doesn't emit node_created signal,
+        so this method must be called explicitly after paste operations.
+
+        Args:
+            nodes: List of pasted nodes that need new IDs
+        """
+        from casare_rpa.utils.id_generator import generate_node_id
+
+        for node in nodes:
+            # Skip nodes without casare_node (visual-only like comments)
+            if not hasattr(node, "get_casare_node"):
+                continue
+
+            casare_node = node.get_casare_node()
+            if not casare_node:
+                # Try to create one if missing
+                if hasattr(node, "_auto_create_casare_node"):
+                    node._auto_create_casare_node()
+                    casare_node = node.get_casare_node()
+                if not casare_node:
+                    continue
+
+            # Generate new unique ID
+            node_type = (
+                getattr(casare_node, "node_type", None) or type(casare_node).__name__
+            )
+            old_id = casare_node.node_id
+            new_id = generate_node_id(node_type)
+
+            # Update both casare_node and visual property
+            casare_node.node_id = new_id
+            node.set_property("node_id", new_id)
+
+            logger.debug(f"Regenerated node ID: {old_id} -> {new_id}")
 
     def _on_debug_mode_toggled(self, enabled: bool) -> None:
         """Handle debug mode toggle."""
@@ -698,7 +769,6 @@ class CasareRPAApp:
         Returns:
             Application exit code
         """
-        logger.info("Starting application")
         self._main_window.show()
 
         with self._loop:

@@ -2,6 +2,30 @@
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.presentation.canvas.graph.node_widgets import NodeFilePathWidget
+
+
+def _replace_widget(node: VisualNode, widget) -> None:
+    """
+    Replace auto-generated widget with custom widget.
+
+    If a property already exists (from @node_schema auto-generation),
+    remove it first to avoid NodePropertyError conflicts.
+
+    Args:
+        node: The visual node
+        widget: The custom widget to add (NodeFilePathWidget or NodeDirectoryPathWidget)
+    """
+    prop_name = widget._name  # NodeBaseWidget stores name as _name
+    # Remove existing property if it was auto-generated from schema
+    if hasattr(node, "model") and prop_name in node.model.custom_properties:
+        del node.model.custom_properties[prop_name]
+        # Also remove from widgets dict if present
+        if hasattr(node, "_widgets") and prop_name in node._widgets:
+            del node._widgets[prop_name]
+    # Now safely add our custom widget
+    node.add_custom_widget(widget)
+    widget.setParentItem(node.view)
 
 
 class VisualExcelOpenNode(VisualNode):
@@ -15,9 +39,19 @@ class VisualExcelOpenNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Excel Open node."""
         super().__init__()
-        self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("show_window", True, widget_type=1, tab="config")
-        self.create_property("read_only", False, widget_type=1, tab="config")
+        # Add file path widget with browse button and Excel filter
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="Excel File",
+                file_filter="Excel Files (*.xlsx *.xls);;All Files (*.*)",
+                placeholder="Select Excel file...",
+            ),
+        )
+        # Add checkboxes for options (use show_excel to avoid reserved 'visible')
+        self.add_checkbox("show_excel", "Show Window", state=False)
+        self.add_checkbox("read_only", "Read Only", state=False)
 
     def setup_ports(self) -> None:
         """Setup ports."""
@@ -90,19 +124,19 @@ class VisualExcelGetRangeNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Excel Get Range node."""
         super().__init__()
-        self.add_text_input(
-            "range_address", "Range Address", text="A1:B10", tab="inputs"
-        )
-        self.add_text_input("sheet_name", "Sheet Name", text="Sheet1", tab="inputs")
+        self.add_text_input("range", "Range", text="A1:B10", tab="inputs")
+        self.add_text_input("sheet", "Sheet", text="1", tab="inputs")
 
     def setup_ports(self) -> None:
         """Setup ports."""
         self.add_exec_input("exec_in")
         self.add_typed_input("workbook", DataType.WORKBOOK)
-        self.add_typed_input("range_address", DataType.STRING)
-        self.add_typed_input("sheet_name", DataType.STRING)
+        self.add_typed_input("range", DataType.STRING)
+        self.add_typed_input("sheet", DataType.ANY)
         self.add_exec_output("exec_out")
         self.add_typed_output("data", DataType.LIST)
+        self.add_typed_output("rows", DataType.INTEGER)
+        self.add_typed_output("columns", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
 
 
@@ -138,9 +172,19 @@ class VisualWordOpenNode(VisualNode):
     def __init__(self) -> None:
         """Initialize Word Open node."""
         super().__init__()
-        self.add_text_input("file_path", "File Path", text="", tab="inputs")
-        self.create_property("show_window", True, widget_type=1, tab="config")
-        self.create_property("read_only", False, widget_type=1, tab="config")
+        # Add file path widget with browse button and Word filter
+        _replace_widget(
+            self,
+            NodeFilePathWidget(
+                name="file_path",
+                label="Word File",
+                file_filter="Word Documents (*.docx *.doc);;All Files (*.*)",
+                placeholder="Select Word document...",
+            ),
+        )
+        # Add checkboxes for options (use show_word to avoid reserved 'visible')
+        self.add_checkbox("show_word", "Show Window", state=False)
+        self.add_checkbox("read_only", "Read Only", state=False)
 
     def setup_ports(self) -> None:
         """Setup ports."""

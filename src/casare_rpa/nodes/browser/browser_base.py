@@ -42,6 +42,25 @@ from casare_rpa.config import DEFAULT_NODE_TIMEOUT
 
 T = TypeVar("T")
 
+# Global healing chain instance (lazy initialized)
+_healing_chain = None
+
+
+def get_healing_chain():
+    """Get or create the global healing chain instance."""
+    global _healing_chain
+    if _healing_chain is None:
+        try:
+            from casare_rpa.infrastructure.browser.healing.healing_chain import (
+                SelectorHealingChain,
+            )
+
+            _healing_chain = SelectorHealingChain(enable_cv_fallback=True)
+            logger.info("Initialized global healing chain with CV fallback")
+        except Exception as e:
+            logger.warning(f"Failed to initialize healing chain: {e}")
+    return _healing_chain
+
 
 class PlaywrightError(Exception):
     """Base exception for Playwright-related errors in browser nodes."""
@@ -306,6 +325,491 @@ class BrowserBaseNode(BaseNode, ABC):
 
         selector = context.resolve_value(selector)
         return normalize_selector(selector)
+
+    def get_healing_context(self, param_name: str = "selector") -> Optional[dict]:
+        """
+        Get healing context for a selector parameter.
+
+        The healing context is stored alongside the selector when captured
+        via the Unified Selector Dialog and contains:
+        - fingerprint: Element attributes for heuristic matching
+        - spatial: Anchor element relationships
+        - cv_template: Base64 encoded element screenshot for CV matching
+
+        Args:
+            param_name: Parameter name of the selector
+
+        Returns:
+            Healing context dict, or None if not available
+        """
+        healing_key = f"{param_name}_healing_context"
+        return self.get_parameter(healing_key, None)
+
+    def get_anchor_config(self):
+        """
+        Get anchor configuration from node parameters.
+
+        Returns:
+            NodeAnchorConfig instance (may have enabled=False if not configured)
+        """
+        from casare_rpa.nodes.browser.anchor_config import NodeAnchorConfig
+
+        anchor_json = self.get_parameter("anchor_config", "")
+        return NodeAnchorConfig.from_json(anchor_json)
+
+    async def find_element_with_anchor(
+        self,
+        page: Any,
+        selector: str,
+        anchor_config,
+        timeout_ms: int = 5000,
+    ) -> Optional[Any]:
+        """
+        Find element using anchor-based location.
+
+        Uses anchor element as a stable reference point to find the target element.
+        Falls back to direct selector if anchor fails.
+
+        Args:
+            page: Playwright Page instance
+            selector: Target element selector
+            anchor_config: NodeAnchorConfig instance
+            timeout_ms: Timeout in milliseconds
+
+        Returns:
+            ElementHandle if found, None otherwise
+        """
+        if not anchor_config or not anchor_config.is_valid:
+            return None
+
+        try:
+            from casare_rpa.utils.selectors.anchor_locator import AnchorLocator
+
+            locator = AnchorLocator()
+
+            # First verify anchor exists
+            anchor_element = await page.query_selector(anchor_config.selector)
+            if not anchor_element:
+                logger.warning(
+                    f"Anchor element not found: {anchor_config.selector}, "
+                    f"falling back to direct selector"
+                )
+                return None
+
+            logger.info(
+                f"Using anchor '{anchor_config.display_text}' "
+                f"(position={anchor_config.position}) to find target"
+            )
+
+            # Use anchor to find target
+            element = await locator.find_element_with_anchor(
+                page=page,
+                target_selector=selector,
+                anchor_selector=anchor_config.selector,
+                position=anchor_config.position,
+                offset_x=anchor_config.offset_x,
+                offset_y=anchor_config.offset_y,
+            )
+
+            if element:
+                logger.info(
+                    f"Found target element via anchor: {anchor_config.selector}"
+                )
+                return element
+
+            logger.warning(
+                "Could not find target via anchor, falling back to direct selector"
+            )
+            return None
+
+        except ImportError:
+            logger.warning("AnchorLocator not available")
+            return None
+        except Exception as e:
+            logger.warning(f"Anchor-based location failed: {e}")
+            return None
+
+    async def find_element_smart(
+        self,
+        page: Any,
+        context: ExecutionContext,
+        selector: str,
+        timeout_ms: int = 5000,
+        param_name: str = "selector",
+    ) -> tuple[Any, str, str]:
+        """
+        Find element using anchor (if configured) or healing chain.
+
+        This is the preferred method for finding elements as it:
+        1. First tries anchor-based location (if anchor_config is set)
+        2. Falls back to direct selector
+        3. Uses healing chain if direct selector fails
+
+        Args:
+            page: Playwright Page instance
+            context: Execution context
+            selector: Normalized selector string
+            timeout_ms: Timeout for selector operations
+            param_name: Parameter name to get healing context from
+
+        Returns:
+            Tuple of (element, final_selector, method_used)
+            - element: Found ElementHandle
+            - final_selector: Selector that worked
+            - method_used: "anchor", "original", or healing tier name
+        """
+        # Try anchor-based location first
+        anchor_config = self.get_anchor_config()
+        if anchor_config and anchor_config.is_valid:
+            element = await self.find_element_with_anchor(
+                page, selector, anchor_config, timeout_ms
+            )
+            if element:
+                return element, selector, "anchor"
+
+        # Fall through to standard healing-aware finder
+        return await self.find_element_with_healing(
+            page, selector, timeout_ms, param_name
+        )
+
+    async def find_element_with_healing(
+        self,
+        page: Any,
+        selector: str,
+        timeout_ms: int = 5000,
+        param_name: str = "selector",
+    ) -> tuple[Any, str, str]:
+        """
+        Find element with self-healing fallback.
+
+        Attempts to find element using:
+        1. Primary selector (fast path)
+        2. Healing chain (heuristic → anchor → CV) if primary fails
+
+        Args:
+            page: Playwright Page instance
+            selector: Normalized selector string
+            timeout_ms: Timeout for selector operations
+            param_name: Parameter name to get healing context from
+
+        Returns:
+            Tuple of (element, final_selector, tier_used)
+            - element: Found ElementHandle (may be None for CV results)
+            - final_selector: Selector that worked (or original)
+            - tier_used: "original", "heuristic", "anchor", or "cv"
+
+        Raises:
+            ElementNotFoundError: If element cannot be found by any method
+        """
+        # Fast path: try primary selector first
+        try:
+            element = await page.wait_for_selector(
+                selector,
+                timeout=min(timeout_ms, 2000),
+                state="attached",
+            )
+            if element:
+                return element, selector, "original"
+        except Exception as e:
+            logger.debug(f"Primary selector failed: {selector} - {e}")
+
+        # Get healing context from node config
+        healing_context = self.get_healing_context(param_name)
+        if not healing_context:
+            raise ElementNotFoundError(
+                f"Element not found and no healing context available: {selector}",
+                selector=selector,
+                timeout=timeout_ms,
+            )
+
+        logger.info(f"Primary selector failed, attempting healing for: {selector}")
+
+        # Get or create healing chain
+        healing_chain = get_healing_chain()
+        if not healing_chain:
+            raise ElementNotFoundError(
+                f"Element not found and healing chain unavailable: {selector}",
+                selector=selector,
+                timeout=timeout_ms,
+            )
+
+        # Load healing context into chain
+        await self._load_healing_context(healing_chain, selector, healing_context, page)
+
+        # Attempt healing
+        result = await healing_chain.locate_element(
+            page=page,
+            selector=selector,
+            timeout_ms=timeout_ms,
+        )
+
+        if result.success:
+            tier_name = (
+                result.tier_used.value
+                if hasattr(result.tier_used, "value")
+                else str(result.tier_used)
+            )
+            logger.info(
+                f"Healing succeeded for {selector} using {tier_name} tier "
+                f"(confidence: {result.confidence:.1%})"
+            )
+            return result.element, result.final_selector, tier_name
+
+        raise ElementNotFoundError(
+            f"Element not found after healing attempts: {selector}",
+            selector=selector,
+            timeout=timeout_ms,
+        )
+
+    async def navigate_label_to_input(
+        self,
+        page: Any,
+        element: Any,
+        timeout_ms: int = 5000,
+    ) -> tuple[Any, str]:
+        """
+        Navigate from a label element to its associated input.
+
+        When a selector matches a <label> element but we need an input
+        (for fill/type operations), this method finds the associated input.
+
+        Strategy:
+        1. Check if element is a <label>
+        2. If label has 'for' attribute → find input with that ID
+        3. If no 'for' → look for input/textarea/select inside the label
+        4. If no child → look for following sibling input
+        5. If no sibling → look for input in same parent
+
+        Args:
+            page: Playwright Page instance
+            element: Element handle (potentially a label)
+            timeout_ms: Timeout for finding associated input
+
+        Returns:
+            Tuple of (input_element, navigation_method)
+            - input_element: The input element (or original if not a label)
+            - navigation_method: How we found it ("for_attr", "child", "sibling", "parent", "original")
+        """
+        try:
+            # Check if element is a label
+            tag_name = await element.evaluate("el => el.tagName.toLowerCase()")
+            if tag_name != "label":
+                return element, "original"
+
+            logger.debug("Element is a <label>, attempting to find associated input")
+
+            # Strategy 1: Check 'for' attribute
+            for_attr = await element.evaluate("el => el.getAttribute('for')")
+            if for_attr:
+                try:
+                    input_el = await page.wait_for_selector(
+                        f"#{for_attr}",
+                        timeout=min(timeout_ms, 2000),
+                        state="attached",
+                    )
+                    if input_el:
+                        logger.info(
+                            f"Found input via label 'for' attribute: #{for_attr}"
+                        )
+                        return input_el, "for_attr"
+                except Exception:
+                    logger.debug(f"Could not find input with id='{for_attr}'")
+
+            # Strategy 2: Look for input/textarea/select inside the label
+            try:
+                child_input = await element.query_selector(
+                    "input, textarea, select, [contenteditable='true']"
+                )
+                if child_input:
+                    logger.info("Found input as child of label")
+                    return child_input, "child"
+            except Exception:
+                pass
+
+            # Strategy 3: Look for following sibling input
+            try:
+                sibling_input = await element.evaluate_handle(
+                    """el => {
+                        let sibling = el.nextElementSibling;
+                        while (sibling) {
+                            if (sibling.matches('input, textarea, select, [contenteditable="true"]')) {
+                                return sibling;
+                            }
+                            sibling = sibling.nextElementSibling;
+                        }
+                        return null;
+                    }"""
+                )
+                if sibling_input and await sibling_input.evaluate("el => el !== null"):
+                    as_element = sibling_input.as_element()
+                    if as_element:
+                        logger.info("Found input as sibling of label")
+                        return as_element, "sibling"
+            except Exception:
+                pass
+
+            # Strategy 4: Look for input in same parent container
+            try:
+                parent_input = await element.evaluate_handle(
+                    """el => {
+                        const parent = el.parentElement;
+                        if (!parent) return null;
+                        const input = parent.querySelector('input, textarea, select, [contenteditable="true"]');
+                        return input !== el ? input : null;
+                    }"""
+                )
+                if parent_input and await parent_input.evaluate("el => el !== null"):
+                    as_element = parent_input.as_element()
+                    if as_element:
+                        logger.info("Found input in same parent as label")
+                        return as_element, "parent"
+            except Exception:
+                pass
+
+            # No input found, return original element (will likely fail on fill)
+            logger.warning(
+                "Could not find associated input for label, using original element"
+            )
+            return element, "original"
+
+        except Exception as e:
+            logger.debug(f"Label-to-input navigation failed: {e}")
+            return element, "original"
+
+    async def _load_healing_context(
+        self,
+        healing_chain: Any,
+        selector: str,
+        healing_context: dict,
+        page: Any,
+    ) -> None:
+        """
+        Load stored healing context into the healing chain.
+
+        Reconstructs fingerprint, spatial context, and CV context from
+        the stored healing_context dict.
+
+        Args:
+            healing_chain: SelectorHealingChain instance
+            selector: Original selector
+            healing_context: Stored healing context dict
+            page: Playwright Page instance
+        """
+        try:
+            # Load fingerprint for heuristic healing
+            if "fingerprint" in healing_context:
+                from casare_rpa.utils.selectors.selector_healing import (
+                    ElementFingerprint,
+                )
+
+                fingerprint_data = healing_context["fingerprint"]
+                # Reconstruct fingerprint from dict
+                if isinstance(fingerprint_data, dict):
+                    fingerprint = ElementFingerprint(**fingerprint_data)
+                    healing_chain._fingerprints[selector] = fingerprint
+                    healing_chain._heuristic_healer.store_fingerprint(
+                        selector, fingerprint
+                    )
+                    logger.debug(f"Loaded fingerprint for healing: {selector}")
+
+            # Load spatial context for anchor healing
+            if "spatial" in healing_context:
+                from casare_rpa.infrastructure.browser.healing.models import (
+                    SpatialContext,
+                )
+
+                spatial_data = healing_context["spatial"]
+                if isinstance(spatial_data, dict):
+                    spatial = SpatialContext(**spatial_data)
+                    healing_chain._spatial_contexts[selector] = spatial
+                    healing_chain._anchor_healer.store_context(selector, spatial)
+                    logger.debug(f"Loaded spatial context for healing: {selector}")
+
+            # Load CV template for CV fallback
+            if "cv_template" in healing_context and healing_chain._cv_healer:
+                cv_data = healing_context["cv_template"]
+                if isinstance(cv_data, dict) and "image_base64" in cv_data:
+                    import base64
+                    from casare_rpa.infrastructure.browser.healing.cv_healer import (
+                        CVContext,
+                    )
+
+                    # Decode base64 image
+                    image_bytes = base64.b64decode(cv_data["image_base64"])
+
+                    # Create CV context
+                    cv_context = CVContext(
+                        template_image=image_bytes,
+                        text_content="",  # Not stored in cv_template
+                        expected_position=None,
+                        expected_size=(
+                            cv_data.get("width", 0),
+                            cv_data.get("height", 0),
+                        ),
+                        element_type="unknown",
+                    )
+                    healing_chain._cv_contexts[selector] = cv_context
+                    healing_chain._cv_healer.store_context(selector, cv_context)
+                    logger.debug(
+                        f"Loaded CV template for healing: {selector} "
+                        f"({len(image_bytes)} bytes)"
+                    )
+
+        except Exception as e:
+            logger.warning(f"Failed to load healing context: {e}")
+
+    async def click_with_healing(
+        self,
+        page: Any,
+        selector: str,
+        timeout_ms: int = 5000,
+        param_name: str = "selector",
+        **click_options: Any,
+    ) -> tuple[bool, str]:
+        """
+        Click element with self-healing fallback.
+
+        If the primary selector fails, attempts healing. For CV-based healing,
+        performs coordinate-based click since there's no element handle.
+
+        Args:
+            page: Playwright Page instance
+            selector: Normalized selector string
+            timeout_ms: Timeout for selector operations
+            param_name: Parameter name to get healing context from
+            **click_options: Additional options for page.click()
+
+        Returns:
+            Tuple of (success, tier_used)
+
+        Raises:
+            ElementNotFoundError: If element cannot be found
+        """
+        try:
+            element, final_selector, tier = await self.find_element_with_healing(
+                page, selector, timeout_ms, param_name
+            )
+
+            if tier == "cv" and element is None:
+                # CV healing returns coordinates, not element
+                healing_chain = get_healing_chain()
+                if healing_chain:
+                    result = healing_chain._cv_contexts.get(selector)
+                    # For CV, we need to click at coordinates
+                    # This is a simplified implementation - full impl would use
+                    # result.cv_click_coordinates from HealingChainResult
+                    logger.warning("CV coordinate-based click not fully implemented")
+                    return False, tier
+
+            # Normal click with element
+            await element.click(**click_options)
+            return True, tier
+
+        except ElementNotFoundError:
+            raise
+        except Exception as e:
+            logger.error(f"Click with healing failed: {e}")
+            raise
 
     # =========================================================================
     # Retry Logic

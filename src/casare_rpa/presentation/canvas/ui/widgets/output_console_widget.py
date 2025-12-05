@@ -1,7 +1,12 @@
 """
 Output Console Widget UI Component.
 
-Provides console-style output display for workflow execution.
+Provides console-style output display for workflow execution with improved UX:
+- Empty state when no output
+- Color-coded output levels
+- Auto-scroll toggle
+- Timestamp display
+- Copy and clear functionality
 """
 
 from typing import Optional
@@ -12,14 +17,22 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QTextEdit,
-    QPushButton,
+    QLabel,
     QCheckBox,
+    QStackedWidget,
 )
 from PySide6.QtGui import QTextCursor
+from PySide6.QtCore import Qt
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
 from casare_rpa.presentation.canvas.ui.base_widget import BaseWidget
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    EmptyStateWidget,
+    ToolbarButton,
+    get_panel_toolbar_stylesheet,
+)
 
 
 class OutputConsoleWidget(BaseWidget):
@@ -27,11 +40,13 @@ class OutputConsoleWidget(BaseWidget):
     Console widget for displaying execution output.
 
     Features:
-    - Colored output (info, warning, error, success)
-    - Auto-scroll
-    - Clear functionality
-    - Timestamp display
+    - Empty state when no output
+    - Colored output (info, warning, error, success, debug)
+    - Auto-scroll toggle
+    - Timestamp display toggle
     - Copy to clipboard
+    - Clear functionality
+    - Maximum line limit
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -44,6 +59,7 @@ class OutputConsoleWidget(BaseWidget):
         self._auto_scroll = True
         self._show_timestamps = True
         self._max_lines = 1000
+        self._line_count = 0
 
         super().__init__(parent)
 
@@ -51,55 +67,149 @@ class OutputConsoleWidget(BaseWidget):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setSpacing(0)
 
         # Toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(8)
+        toolbar_widget = QWidget()
+        toolbar_widget.setObjectName("consoleToolbar")
+        toolbar = QHBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(8, 6, 8, 6)
+        toolbar.setSpacing(12)
+
+        # Line count label
+        self._line_count_label = QLabel("0 lines")
+        self._line_count_label.setProperty("muted", True)
 
         # Auto-scroll checkbox
         self._auto_scroll_cb = QCheckBox("Auto-scroll")
         self._auto_scroll_cb.setChecked(self._auto_scroll)
         self._auto_scroll_cb.toggled.connect(self._on_auto_scroll_toggled)
-        toolbar.addWidget(self._auto_scroll_cb)
+        self._auto_scroll_cb.setToolTip("Automatically scroll to latest output")
 
         # Show timestamps checkbox
         self._timestamps_cb = QCheckBox("Timestamps")
         self._timestamps_cb.setChecked(self._show_timestamps)
         self._timestamps_cb.toggled.connect(self._on_timestamps_toggled)
-        toolbar.addWidget(self._timestamps_cb)
-
-        toolbar.addStretch()
+        self._timestamps_cb.setToolTip("Show timestamps on each line")
 
         # Copy button
-        copy_btn = QPushButton("Copy")
-        copy_btn.setFixedWidth(60)
+        copy_btn = ToolbarButton(
+            text="Copy",
+            tooltip="Copy all output to clipboard",
+        )
         copy_btn.clicked.connect(self._on_copy)
-        toolbar.addWidget(copy_btn)
 
         # Clear button
-        clear_btn = QPushButton("Clear")
-        clear_btn.setFixedWidth(60)
+        clear_btn = ToolbarButton(
+            text="Clear",
+            tooltip="Clear console output",
+        )
         clear_btn.clicked.connect(self.clear)
+
+        toolbar.addWidget(self._line_count_label)
+        toolbar.addStretch()
+        toolbar.addWidget(self._auto_scroll_cb)
+        toolbar.addWidget(self._timestamps_cb)
+        toolbar.addWidget(copy_btn)
         toolbar.addWidget(clear_btn)
 
-        layout.addLayout(toolbar)
+        layout.addWidget(toolbar_widget)
 
-        # Console text area
+        # Content stack for empty state vs console
+        self._content_stack = QStackedWidget()
+
+        # Empty state (index 0)
+        self._empty_state = EmptyStateWidget(
+            icon_text="",  # Terminal/console icon
+            title="No Output",
+            description=(
+                "Console output will appear here when:\n"
+                "- You run a workflow (F3)\n"
+                "- Nodes produce output messages\n"
+                "- Debug information is logged"
+            ),
+        )
+        self._content_stack.addWidget(self._empty_state)
+
+        # Console text area (index 1)
+        console_container = QWidget()
+        console_layout = QVBoxLayout(console_container)
+        console_layout.setContentsMargins(8, 4, 8, 8)
+        console_layout.setSpacing(0)
+
         self._console = QTextEdit()
         self._console.setReadOnly(True)
         self._console.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self._console.setStyleSheet("""
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 9pt;
-                border: 1px solid #3d3d3d;
+        self._console.setPlaceholderText("Waiting for output...")
+        console_layout.addWidget(self._console)
+
+        self._content_stack.addWidget(console_container)
+
+        layout.addWidget(self._content_stack)
+
+        # Show empty state initially
+        self._content_stack.setCurrentIndex(0)
+
+        # Apply styling
+        self._apply_styles()
+
+    def _apply_styles(self) -> None:
+        """Apply VSCode Dark+ theme styling."""
+        self.setStyleSheet(f"""
+            OutputConsoleWidget, QWidget, QStackedWidget, QFrame {{
+                background-color: {THEME.bg_panel};
+            }}
+            #consoleToolbar {{
+                background-color: {THEME.bg_header};
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            QCheckBox {{
+                color: {THEME.text_secondary};
+                spacing: 6px;
+                font-size: 11px;
+            }}
+            QCheckBox::indicator {{
+                width: 14px;
+                height: 14px;
+                border: 1px solid {THEME.border};
+                border-radius: 2px;
+                background-color: {THEME.bg_light};
+            }}
+            QCheckBox::indicator:hover {{
+                border-color: {THEME.border_light};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {THEME.accent_primary};
+                border-color: {THEME.accent_primary};
+            }}
+            QCheckBox::indicator:checked:hover {{
+                background-color: {THEME.accent_hover};
+                border-color: {THEME.accent_hover};
+            }}
+            QTextEdit {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+                font-size: 11px;
+                border: 1px solid {THEME.border_dark};
                 border-radius: 3px;
-            }
+                padding: 4px;
+            }}
         """)
-        layout.addWidget(self._console)
+
+    def _update_display(self) -> None:
+        """Update empty state vs console display."""
+        has_content = self._line_count > 0
+        self._content_stack.setCurrentIndex(1 if has_content else 0)
+
+        # Update line count
+        self._line_count_label.setText(
+            f"{self._line_count} line{'s' if self._line_count != 1 else ''}"
+        )
+        self._line_count_label.setProperty("muted", self._line_count == 0)
+        self._line_count_label.style().unpolish(self._line_count_label)
+        self._line_count_label.style().polish(self._line_count_label)
 
     def append_line(
         self,
@@ -112,7 +222,7 @@ class OutputConsoleWidget(BaseWidget):
 
         Args:
             text: Text to append
-            level: Message level (info, warning, error, success)
+            level: Message level (info, warning, error, success, debug)
             timestamp: Whether to include timestamp
         """
         # Limit number of lines
@@ -122,26 +232,34 @@ class OutputConsoleWidget(BaseWidget):
             cursor.select(QTextCursor.SelectionType.BlockUnderCursor)
             cursor.removeSelectedText()
             cursor.deleteChar()  # Remove newline
+            self._line_count -= 1
 
-        # Choose color based on level
+        # Choose color based on level (using THEME colors)
         color_map = {
-            "info": "#d4d4d4",
-            "warning": "#cca700",
-            "error": "#f44747",
-            "success": "#89d185",
-            "debug": "#888888",
+            "info": THEME.text_primary,
+            "warning": THEME.status_warning,
+            "error": THEME.status_error,
+            "success": THEME.status_success,
+            "debug": THEME.text_muted,
         }
-        color = color_map.get(level.lower(), "#d4d4d4")
+        color = color_map.get(level.lower(), THEME.text_primary)
 
         # Format message
         if timestamp and self._show_timestamps:
             ts = datetime.now().strftime("%H:%M:%S")
-            formatted = f'<span style="color: #888888;">[{ts}]</span> <span style="color: {color};">{text}</span>'
+            formatted = (
+                f'<span style="color: {THEME.text_muted};">[{ts}]</span> '
+                f'<span style="color: {color};">{text}</span>'
+            )
         else:
             formatted = f'<span style="color: {color};">{text}</span>'
 
         # Append to console
         self._console.append(formatted)
+        self._line_count += 1
+
+        # Update display state
+        self._update_display()
 
         # Auto-scroll
         if self._auto_scroll:
@@ -199,6 +317,8 @@ class OutputConsoleWidget(BaseWidget):
     def clear(self) -> None:
         """Clear console contents."""
         self._console.clear()
+        self._line_count = 0
+        self._update_display()
         logger.debug("Console cleared")
 
     def get_text(self) -> str:

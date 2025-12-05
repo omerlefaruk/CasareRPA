@@ -11,7 +11,7 @@ from casare_rpa.presentation.canvas.visual_nodes.basic import (
     VisualCommentNode,
 )
 
-# Browser (18 nodes)
+# Browser (23 nodes)
 from casare_rpa.presentation.canvas.visual_nodes.browser import (
     VisualLaunchBrowserNode,
     VisualCloseBrowserNode,
@@ -25,12 +25,17 @@ from casare_rpa.presentation.canvas.visual_nodes.browser import (
     VisualClickElementNode,
     VisualTypeTextNode,
     VisualSelectDropdownNode,
+    VisualImageClickNode,
     VisualExtractTextNode,
     VisualGetAttributeNode,
     VisualScreenshotNode,
+    VisualTableScraperNode,
     VisualWaitNode,
     VisualWaitForElementNode,
     VisualWaitForNavigationNode,
+    VisualFormFieldNode,
+    VisualFormFillerNode,
+    VisualDetectFormsNode,
 )
 
 # Control Flow (16 nodes)
@@ -494,12 +499,17 @@ __all__ = [
     "VisualClickElementNode",
     "VisualTypeTextNode",
     "VisualSelectDropdownNode",
+    "VisualImageClickNode",
     "VisualExtractTextNode",
     "VisualGetAttributeNode",
     "VisualScreenshotNode",
+    "VisualTableScraperNode",
     "VisualWaitNode",
     "VisualWaitForElementNode",
     "VisualWaitForNavigationNode",
+    "VisualFormFieldNode",
+    "VisualFormFillerNode",
+    "VisualDetectFormsNode",
     # control_flow
     "VisualIfNode",
     "VisualForLoopNode",

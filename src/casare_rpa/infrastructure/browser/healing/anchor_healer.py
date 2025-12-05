@@ -137,7 +137,16 @@ class AnchorHealer:
             context_data = await page.evaluate(
                 """
                 (selector) => {
-                    const target = document.querySelector(selector);
+                    // Support both CSS and XPath selectors
+                    let target;
+                    if (selector.startsWith('/') || selector.startsWith('(')) {
+                        // XPath selector
+                        const result = document.evaluate(selector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                        target = result.singleNodeValue;
+                    } else {
+                        // CSS selector
+                        target = document.querySelector(selector);
+                    }
                     if (!target) return null;
 
                     const targetRect = target.getBoundingClientRect();
@@ -635,7 +644,14 @@ class AnchorHealer:
             nearby = await page.evaluate(
                 """
                 ({anchorSelector, maxDistance, tagsFilter}) => {
-                    const anchor = document.querySelector(anchorSelector);
+                    // Support both CSS and XPath selectors
+                    let anchor;
+                    if (anchorSelector.startsWith('/') || anchorSelector.startsWith('(')) {
+                        const result = document.evaluate(anchorSelector, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                        anchor = result.singleNodeValue;
+                    } else {
+                        anchor = document.querySelector(anchorSelector);
+                    }
                     if (!anchor) return [];
 
                     const anchorRect = anchor.getBoundingClientRect();

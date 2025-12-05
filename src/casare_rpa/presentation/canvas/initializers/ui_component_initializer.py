@@ -16,8 +16,6 @@ if TYPE_CHECKING:
 
     from ..main_window import MainWindow
     from ..ui.panels import BottomPanelDock
-    from ..ui.panels.variable_inspector_dock import VariableInspectorDock
-    from ..ui.panels.properties_panel import PropertiesPanel
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
     from ..ui.widgets.execution_timeline import ExecutionTimeline
@@ -71,8 +69,6 @@ class UIComponentInitializer:
 
         Creates:
         - Bottom panel (Variables, Output, Log, Validation)
-        - Variable inspector dock
-        - Properties panel
         - Execution timeline dock
         - Debug components (toolbar, panel)
         - Process mining panel
@@ -92,8 +88,9 @@ class UIComponentInitializer:
 
         # Create panels and docks via DockCreator
         mw._bottom_panel = dock_creator.create_bottom_panel()
-        mw._variable_inspector_dock = dock_creator.create_variable_inspector_dock()
-        mw._properties_panel = dock_creator.create_properties_panel()
+
+        # Connect VariableProvider to MainWindow for variable picker integration
+        self._connect_variable_provider()
 
         dock, timeline = dock_creator.create_execution_timeline_dock()
         mw._execution_timeline_dock = dock
@@ -140,6 +137,24 @@ class UIComponentInitializer:
 
         # Create analytics panel (bottleneck detection, execution analysis)
         mw._analytics_panel = mw._dock_creator.create_analytics_panel()
+
+    def _connect_variable_provider(self) -> None:
+        """
+        Connect VariableProvider singleton to MainWindow.
+
+        This enables variable picker widgets to access:
+        - Workflow variables from the Variables tab
+        - Upstream node output variables
+        - System variables
+        """
+        try:
+            from ..ui.widgets.variable_picker import VariableProvider
+
+            provider = VariableProvider.get_instance()
+            provider.set_main_window(self._main_window)
+            logger.debug("VariableProvider connected to MainWindow")
+        except Exception as e:
+            logger.warning(f"Failed to connect VariableProvider: {e}")
 
     def _setup_validation_timer(self) -> None:
         """

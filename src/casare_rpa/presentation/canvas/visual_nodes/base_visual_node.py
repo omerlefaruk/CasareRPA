@@ -4,7 +4,7 @@ Base Visual Node for CasareRPA.
 This module provides the base VisualNode class to avoid circular imports.
 """
 
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from NodeGraphQt import BaseNode as NodeGraphQtBaseNode
 from PySide6.QtGui import QColor
 
@@ -39,12 +39,19 @@ class VisualNode(NodeGraphQtBaseNode):
         # Pass CasareNodeItem as the graphics item class for custom rendering
         super().__init__(qgraphics_item=CasareNodeItem)
 
+        # Ensure back-reference from view to node (needed for collapse button)
+        if hasattr(self, "view") and self.view is not None:
+            self.view._node = self
+
         # Reference to the underlying CasareRPA node
         self._casare_node: Optional[CasareBaseNode] = None
 
         # Port type registry for typed connections
         self._port_types: Dict[str, Optional[DataType]] = {}
         self._type_registry: PortTypeRegistry = get_port_type_registry()
+
+        # Collapse state - collapsed by default for cleaner canvas
+        self._collapsed: bool = True
 
         # Set node colors with category-based accents
         self._apply_category_colors()
@@ -73,6 +80,9 @@ class VisualNode(NodeGraphQtBaseNode):
         self.create_property("status", "idle")
         self.create_property("_is_running", False)
         self.create_property("_is_completed", False)
+        self.create_property(
+            "_disabled", False
+        )  # Disabled nodes are skipped during execution
 
         # Auto-create linked CasareRPA node
         # This ensures every visual node has a CasareRPA node regardless of how it was created
@@ -89,6 +99,15 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Style text input widgets after they're created
         self._style_text_inputs()
+
+        # Apply initial collapsed state (hide non-essential widgets and update view)
+        if self._collapsed:
+            self._update_widget_visibility()
+            # Also sync view's collapse state and trigger layout
+            if hasattr(self.view, "set_collapsed"):
+                self.view.set_collapsed(True)
+            if hasattr(self.view, "post_init"):
+                self.view.post_init()
 
     def _apply_category_colors(self) -> None:
         """Apply VSCode Dark+ category-based colors to the node."""
@@ -319,6 +338,121 @@ class VisualNode(NodeGraphQtBaseNode):
         # Re-apply port colors now that we have type info
         self._configure_port_colors()
 
+    def _add_variable_aware_text_input(
+        self,
+        name: str,
+        label: str,
+        text: str = "",
+        placeholder_text: str = "",
+        tab: Optional[str] = None,
+        tooltip: Optional[str] = None,
+    ) -> Any:
+        """
+        Add a text input widget with variable picker integration.
+
+        First creates a standard text input, then enhances it with variable
+        picker functionality by replacing the internal QLineEdit.
+
+        Args:
+            name: Property name
+            label: Display label
+            text: Initial text value
+            placeholder_text: Placeholder text when empty
+            tab: Tab name for grouping (optional)
+            tooltip: Tooltip text (optional)
+
+        Returns:
+            The created widget
+        """
+        # First, create standard text input (this properly registers everything)
+        self.add_text_input(
+            name,
+            label,
+            text=text,
+            placeholder_text=placeholder_text,
+            tab=tab,
+            tooltip=tooltip,
+        )
+
+        # Now enhance with variable picker
+        try:
+            from loguru import logger
+            from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+                VariableAwareLineEdit,
+                VariableProvider,
+            )
+
+            # Get the widget we just created
+            widget = self.get_widget(name)
+            if not widget:
+                return None
+
+            # Get the original QLineEdit
+            original_line_edit = widget.get_custom_widget()
+            if not original_line_edit:
+                return widget
+
+            # Create VariableAwareLineEdit with same properties
+            var_line_edit = VariableAwareLineEdit()
+            var_line_edit.setText(original_line_edit.text())
+            var_line_edit.setPlaceholderText(original_line_edit.placeholderText())
+
+            # Apply styling with padding for {x} button
+            var_line_edit.setStyleSheet("""
+                QLineEdit {
+                    background: rgb(60, 60, 80);
+                    border: 1px solid rgb(80, 80, 100);
+                    border-radius: 3px;
+                    color: rgba(230, 230, 230, 255);
+                    padding: 2px 28px 2px 4px;
+                    selection-background-color: rgba(100, 150, 200, 150);
+                }
+                QLineEdit:focus {
+                    background: rgb(70, 70, 90);
+                    border: 1px solid rgb(100, 150, 200);
+                }
+            """)
+
+            if tooltip:
+                var_line_edit.setToolTip(tooltip)
+
+            # Connect to global variable provider
+            var_line_edit.set_provider(VariableProvider.get_instance())
+
+            # Replace the widget's internal line edit by accessing the _NodeGroupBox layout
+            # NodeGraphQt stores the custom widget inside a _NodeGroupBox at layout index 0
+            group_box = widget.widget()  # Returns _NodeGroupBox
+            if group_box and hasattr(group_box, "layout"):
+                layout = group_box.layout()
+                if layout:
+                    # Remove the old widget from layout
+                    layout.removeWidget(original_line_edit)
+                    original_line_edit.setParent(None)
+                    original_line_edit.deleteLater()
+
+                    # Add the new widget to layout
+                    layout.addWidget(var_line_edit)
+
+            # Store reference for value access
+            widget._line_edit = var_line_edit
+
+            # Reconnect signals
+            var_line_edit.editingFinished.connect(widget.on_value_changed)
+            var_line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+
+            logger.debug(
+                f"[Widget Generation] Enhanced text input with variable picker: {name}"
+            )
+
+            return widget
+
+        except ImportError as e:
+            # Variable picker not available, standard text input already created
+            from loguru import logger
+
+            logger.debug(f"Variable picker not available, using standard input: {e}")
+            return self.get_widget(name)
+
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
         # Get all widgets in this node
@@ -362,18 +496,63 @@ class VisualNode(NodeGraphQtBaseNode):
         self._casare_node = node
         self.set_property("node_id", node.node_id)
 
+    def set_property(self, name: str, value, push_undo: bool = True) -> None:
+        """
+        Override set_property to also sync to casare_node.config.
+
+        This ensures widget values are synced in real-time to the domain node's
+        config dict, which is used during workflow execution.
+
+        Args:
+            name: Property name
+            value: Property value
+            push_undo: Whether to push to undo stack (default: True)
+        """
+        # Call parent implementation first
+        super().set_property(name, value, push_undo)
+
+        # CRITICAL: Also sync to casare_node.config for execution
+        # Without this, widget values only go to model.custom_properties
+        # but execution reads from casare_node.config
+        if self._casare_node is not None and hasattr(self._casare_node, "config"):
+            # Skip internal/meta properties
+            if not name.startswith("_") and name not in (
+                "node_id",
+                "name",
+                "color",
+                "pos",
+                "disabled",
+                "selected",
+                "visible",
+                "width",
+                "height",
+                "status",
+            ):
+                self._casare_node.config[name] = value
+
     def _auto_create_casare_node(self) -> None:
         """
         Automatically create and link CasareRPA node.
         Called during __init__ to ensure every visual node has a backing CasareRPA node.
         Handles all creation scenarios: menu, copy/paste, undo/redo, workflow loading.
+
+        Note: For paste/duplicate operations, NodeGraphQt restores properties AFTER
+        __init__ completes. The paste hook in node_graph_widget.py handles regenerating
+        duplicate node_ids via a deferred check.
         """
         if self._casare_node is not None:
             return  # Already has a node
 
         try:
             # Import here to avoid circular dependency
-            from ..graph.node_registry import get_node_factory
+            from ..graph.node_registry import get_node_factory, get_casare_node_mapping
+            from loguru import logger
+
+            # Check if this visual node type has a casare_node mapping
+            mapping = get_casare_node_mapping()
+            if type(self) not in mapping:
+                # Visual-only node (e.g., comment, sticky note) - no casare_node needed
+                return
 
             factory = get_node_factory()
 
@@ -381,11 +560,69 @@ class VisualNode(NodeGraphQtBaseNode):
             casare_node = factory.create_casare_node(self)
             if casare_node:
                 # Node is already linked via factory.create_casare_node -> set_casare_node
-                pass
-        except Exception:
-            # Silently fail during initialization - node will be created later if needed
-            # This handles cases where factory isn't ready yet (e.g., during testing)
+                # Sync visual node properties to casare_node.config
+                self._sync_properties_to_casare_node(casare_node)
+            else:
+                # Log error but don't crash - paste hook will try to create later
+                from loguru import logger
+
+                logger.warning(
+                    f"_auto_create_casare_node: factory returned None for {type(self).__name__}"
+                )
+        except ImportError:
+            # Factory not ready yet (e.g., during testing or early initialization)
+            # The paste hook will handle creating the casare_node later
             pass
+        except Exception as e:
+            # Log the error for debugging but don't crash
+            from loguru import logger
+
+            logger.warning(
+                f"_auto_create_casare_node failed for {type(self).__name__}: {e}"
+            )
+
+    def _sync_properties_to_casare_node(self, casare_node) -> None:
+        """
+        Sync visual node properties to casare_node.config.
+
+        This ensures that custom properties defined in the visual node
+        (via create_property) are available in casare_node.config for execution.
+
+        Args:
+            casare_node: The CasareRPA node to sync properties to
+        """
+        try:
+            # Get all custom properties from visual node model
+            if not hasattr(self, "model") or self.model is None:
+                return
+
+            model = self.model
+            custom_props = list(model.custom_properties.keys()) if model else []
+
+            for prop_name in custom_props:
+                # Skip internal/meta properties
+                if prop_name.startswith("_") or prop_name in (
+                    "node_id",
+                    "name",
+                    "color",
+                    "pos",
+                    "disabled",
+                    "selected",
+                    "visible",
+                    "width",
+                    "height",
+                ):
+                    continue
+
+                try:
+                    prop_value = self.get_property(prop_name)
+                    if prop_value is not None:
+                        # Sync to casare_node config
+                        casare_node.config[prop_name] = prop_value
+                except Exception:
+                    pass  # Property access failed, skip
+        except Exception:
+            pass  # Silently fail during initialization
 
     def _auto_create_widgets_from_schema(self) -> None:
         """
@@ -427,8 +664,27 @@ class VisualNode(NodeGraphQtBaseNode):
                 continue
 
             # Standard widget types
-            if prop_def.type == PropertyType.STRING:
-                self.add_text_input(
+            # Special handling for image_template property (uses element picker)
+            if prop_def.name == "image_template":
+                from casare_rpa.presentation.canvas.graph.node_widgets import (
+                    NodeSelectorWidget,
+                )
+
+                widget = NodeSelectorWidget(
+                    name=prop_def.name,
+                    label=prop_def.label or "Image Template",
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder="Pick element to capture image...",
+                )
+                if widget:
+                    self.add_custom_widget(widget)
+                    widget.setParentItem(self.view)
+                    if hasattr(widget, "set_node_ref"):
+                        widget.set_node_ref(self)
+
+            elif prop_def.type == PropertyType.STRING:
+                # Use variable-aware text input with {x} button for variable insertion
+                self._add_variable_aware_text_input(
                     prop_def.name,
                     prop_def.label or prop_def.name,
                     text=str(prop_def.default) if prop_def.default is not None else "",
@@ -449,8 +705,8 @@ class VisualNode(NodeGraphQtBaseNode):
                         tab=prop_def.tab,
                     )
                 except AttributeError:
-                    # Fallback to text input if add_int_input doesn't exist
-                    self.add_text_input(
+                    # Fallback to variable-aware text input if add_int_input doesn't exist
+                    self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
                         text=str(prop_def.default)
@@ -472,7 +728,7 @@ class VisualNode(NodeGraphQtBaseNode):
                         tab=prop_def.tab,
                     )
                 except AttributeError:
-                    self.add_text_input(
+                    self._add_variable_aware_text_input(
                         prop_def.name,
                         prop_def.label or prop_def.name,
                         text=str(prop_def.default)
@@ -508,8 +764,8 @@ class VisualNode(NodeGraphQtBaseNode):
                         self.set_property(prop_def.name, prop_def.default)
 
             elif prop_def.type == PropertyType.FILE_PATH:
-                # File path uses text input with file browser button
-                self.add_text_input(
+                # File path uses variable-aware text input
+                self._add_variable_aware_text_input(
                     prop_def.name,
                     prop_def.label or prop_def.name,
                     text=str(prop_def.default) if prop_def.default is not None else "",
@@ -519,8 +775,8 @@ class VisualNode(NodeGraphQtBaseNode):
                 )
 
             elif prop_def.type == PropertyType.DIRECTORY_PATH:
-                # Directory path uses text input
-                self.add_text_input(
+                # Directory path uses variable-aware text input
+                self._add_variable_aware_text_input(
                     prop_def.name,
                     prop_def.label or prop_def.name,
                     text=str(prop_def.default) if prop_def.default is not None else "",
@@ -529,13 +785,32 @@ class VisualNode(NodeGraphQtBaseNode):
                     tooltip=prop_def.tooltip,
                 )
 
+            elif prop_def.type == PropertyType.SELECTOR:
+                # Selector type uses special widget with picker button
+                from casare_rpa.presentation.canvas.graph.node_widgets import (
+                    NodeSelectorWidget,
+                )
+
+                widget = NodeSelectorWidget(
+                    name=prop_def.name,
+                    label=prop_def.label or prop_def.name,
+                    text=str(prop_def.default) if prop_def.default is not None else "",
+                    placeholder=prop_def.placeholder or "Enter selector or click ...",
+                )
+                if widget:
+                    self.add_custom_widget(widget)
+                    widget.setParentItem(self.view)
+                    # Set node reference for picker dialog
+                    if hasattr(widget, "set_node_ref"):
+                        widget.set_node_ref(self)
+
             elif prop_def.type in (
+                PropertyType.TEXT,
                 PropertyType.CODE,
                 PropertyType.JSON,
-                PropertyType.SELECTOR,
             ):
-                # These types use multi-line text input
-                self.add_text_input(
+                # These types use variable-aware text input (multi-line in future)
+                self._add_variable_aware_text_input(
                     prop_def.name,
                     prop_def.label or prop_def.name,
                     text=str(prop_def.default) if prop_def.default is not None else "",
@@ -621,3 +896,106 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         if hasattr(self.view, "set_execution_time"):
             self.view.set_execution_time(time_seconds)
+
+    # =========================================================================
+    # COLLAPSE / EXPAND METHODS
+    # =========================================================================
+
+    @property
+    def is_collapsed(self) -> bool:
+        """Check if node is collapsed."""
+        return self._collapsed
+
+    def toggle_collapse(self) -> None:
+        """Toggle collapsed state."""
+        self.set_collapsed(not self._collapsed)
+
+    def set_collapsed(self, collapsed: bool) -> None:
+        """
+        Set collapsed state and update widget visibility.
+
+        When collapsed, only essential properties are shown.
+        Non-essential properties are hidden.
+
+        Args:
+            collapsed: True to collapse, False to expand
+        """
+        if self._collapsed == collapsed:
+            return
+
+        self._collapsed = collapsed
+
+        # Update widget visibility based on schema
+        self._update_widget_visibility()
+
+        # Update collapse button in view
+        if hasattr(self.view, "set_collapsed"):
+            self.view.set_collapsed(collapsed)
+
+        # Trigger layout update
+        if hasattr(self.view, "post_init"):
+            self.view.post_init()
+
+    def _update_widget_visibility(self) -> None:
+        """Update widget visibility based on collapse state and essential flags."""
+        from loguru import logger
+
+        if not self._casare_node:
+            return
+
+        # Get schema from casare node class
+        schema: Optional[NodeSchema] = getattr(
+            self._casare_node.__class__, "__node_schema__", None
+        )
+        if not schema:
+            return
+
+        # Get essential property names
+        essential_props = set(schema.get_essential_properties())
+
+        # Update visibility for each widget
+        all_widgets = self.widgets()
+        for prop_name, widget in all_widgets.items():
+            # Skip internal properties
+            if prop_name.startswith("_"):
+                continue
+
+            # Determine if this widget should be visible
+            if self._collapsed:
+                # When collapsed, only show essential properties
+                should_show = prop_name in essential_props
+            else:
+                # When expanded, show all properties
+                should_show = True
+
+            # Set widget visibility
+            try:
+                # CRITICAL FIX: Sync widget value before hiding
+                # Qt's editingFinished signal only fires on Enter/focus-loss, not when
+                # setVisible(False) is called. Force sync to prevent data loss.
+                if not should_show and widget.isVisible():
+                    # Widget is about to be hidden - sync its current value first
+                    if hasattr(widget, "on_value_changed"):
+                        widget.on_value_changed()
+
+                widget.setVisible(should_show)
+            except Exception as e:
+                logger.debug(f"Could not set visibility for widget {prop_name}: {e}")
+
+    def get_essential_property_names(self) -> list:
+        """
+        Get list of essential property names for this node.
+
+        Returns:
+            List of property names marked as essential in schema
+        """
+        if not self._casare_node:
+            return []
+
+        schema: Optional[NodeSchema] = getattr(
+            self._casare_node.__class__, "__node_schema__", None
+        )
+        if not schema:
+            return []
+
+        return schema.get_essential_properties()

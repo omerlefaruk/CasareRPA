@@ -502,46 +502,6 @@ class ExecutionOrchestrator:
         logger.debug("Workflow execution order validated: no circular dependencies")
         return True, []
 
-    def find_loop_body_nodes(self, loop_node_id: NodeId) -> Set[NodeId]:
-        """
-        Find all nodes reachable from a loop's body output.
-
-        Used to track which nodes are inside a loop for break/continue handling.
-
-        Args:
-            loop_node_id: ID of loop start node
-
-        Returns:
-            Set of node IDs in loop body
-        """
-        body_nodes: Set[NodeId] = set()
-        queue: deque[NodeId] = deque()
-
-        # Find nodes connected to loop body port
-        for connection in self.workflow.connections:
-            if connection.source_node == loop_node_id:
-                if connection.source_port in ("loop_body", "body"):
-                    queue.append(connection.target_node)
-
-        # BFS to find all reachable nodes (until we hit the loop node again)
-        while queue:
-            node_id = queue.popleft()
-
-            if node_id == loop_node_id or node_id in body_nodes:
-                continue
-
-            body_nodes.add(node_id)
-
-            # Add connected nodes
-            for connection in self.workflow.connections:
-                if connection.source_node == node_id:
-                    # Don't follow back to the loop's completed port
-                    if connection.target_node != loop_node_id:
-                        queue.append(connection.target_node)
-
-        logger.debug(f"Loop {loop_node_id} body: {len(body_nodes)} nodes")
-        return body_nodes
-
     def find_try_body_nodes(self, try_node_id: NodeId) -> Set[NodeId]:
         """
         Find all nodes reachable from a try node's try_body output.
@@ -637,6 +597,63 @@ class ExecutionOrchestrator:
         }
 
         return node_type in control_flow_types
+
+    def find_loop_body_nodes(
+        self, loop_start_id: NodeId, loop_end_id: NodeId
+    ) -> Set[NodeId]:
+        """
+        Find all nodes in a loop body between start and end nodes.
+
+        Used to clear executed_nodes when looping back so body nodes
+        can re-execute on each iteration.
+
+        Args:
+            loop_start_id: ForLoopStartNode or WhileLoopStartNode ID
+            loop_end_id: ForLoopEndNode or WhileLoopEndNode ID
+
+        Returns:
+            Set of node IDs that are inside the loop body
+        """
+        body_nodes: Set[NodeId] = set()
+
+        # BFS from loop start's body port to find all reachable nodes
+        # until we hit the loop end
+        queue: deque[NodeId] = deque()
+
+        # Find the first node connected to loop_start's body port
+        for connection in self.workflow.connections:
+            if (
+                connection.source_node == loop_start_id
+                and connection.source_port == "body"
+            ):
+                queue.append(connection.target_node)
+                body_nodes.add(connection.target_node)
+
+        # BFS to find all body nodes
+        while queue:
+            current = queue.popleft()
+
+            # Don't traverse past loop end
+            if current == loop_end_id:
+                continue
+
+            # Find all nodes connected from this node
+            for connection in self.workflow.connections:
+                if connection.source_node == current:
+                    target = connection.target_node
+
+                    if target not in body_nodes:
+                        body_nodes.add(target)
+                        queue.append(target)
+
+        # Remove loop end from body nodes (it's a control flow node, handled separately)
+        body_nodes.discard(loop_end_id)
+
+        logger.debug(
+            f"Found {len(body_nodes)} loop body nodes between "
+            f"{loop_start_id} and {loop_end_id}"
+        )
+        return body_nodes
 
     def get_all_nodes(self) -> List[NodeId]:
         """

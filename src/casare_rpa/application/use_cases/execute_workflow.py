@@ -210,6 +210,39 @@ class ExecuteWorkflowUseCase:
         self._node_instances[node_id] = node
         return node
 
+    def _store_node_outputs_in_context(self, node_id: str, node: Any) -> None:
+        """
+        Store node output values in context.variables for {{node_id.output}} resolution.
+
+        This enables the UiPath/Power Automate style variable syntax where
+        users can reference node outputs as {{node_id.output_port}} in subsequent nodes.
+
+        Args:
+            node_id: ID of the node that just executed
+            node: The node instance with output values
+        """
+        if not self.context or not hasattr(node, "output_ports"):
+            return
+
+        # Get all output values from the node's output ports
+        output_ports = getattr(node, "output_ports", {})
+        if not output_ports:
+            return
+
+        # Store in context.variables as {node_id: {port: value, ...}}
+        # Filter out exec ports
+        data_outputs = {}
+        for port_name, port in output_ports.items():
+            if port_name.startswith("exec") or port_name.startswith("_exec"):
+                continue
+            value = port.get_value() if hasattr(port, "get_value") else None
+            if value is not None:
+                data_outputs[port_name] = value
+
+        if data_outputs:
+            self.context.set_variable(node_id, data_outputs)
+            logger.debug(f"Stored outputs for {node_id}: {list(data_outputs.keys())}")
+
     # ========================================================================
     # MAIN EXECUTION
     # ========================================================================
@@ -426,7 +459,10 @@ class ExecuteWorkflowUseCase:
         # Execute the node
         result = await self._node_executor.execute(node)
 
-        if not result.success:
+        if result.success:
+            # Store node outputs in context for {{node_id.output}} variable resolution
+            self._store_node_outputs_in_context(node_id, node)
+        else:
             error_msg = f"Node {node_id} execution failed"
             self.state_manager.mark_failed(
                 result.result.get("error", error_msg) if result.result else error_msg
@@ -503,6 +539,9 @@ class ExecuteWorkflowUseCase:
 
             # Mark node as executed
             self.state_manager.mark_node_executed(current_node_id)
+
+            # Store node outputs in context for {{node_id.output}} variable resolution
+            self._store_node_outputs_in_context(current_node_id, node)
 
             # Validate output ports
             if exec_result.result:
@@ -591,6 +630,16 @@ class ExecuteWorkflowUseCase:
         if "loop_back_to" in result:
             loop_start_id = result["loop_back_to"]
             logger.debug(f"Loop back to: {loop_start_id}")
+
+            # Clear loop body nodes from executed_nodes so they can re-execute
+            # current_node_id is the ForLoopEndNode or WhileLoopEndNode
+            body_nodes = self.orchestrator.find_loop_body_nodes(
+                loop_start_id, current_node_id
+            )
+            for body_node_id in body_nodes:
+                self.state_manager.executed_nodes.discard(body_node_id)
+            logger.debug(f"Cleared {len(body_nodes)} loop body nodes for re-execution")
+
             nodes_to_execute.insert(0, loop_start_id)
             return True
 
@@ -796,9 +845,23 @@ class ExecuteWorkflowUseCase:
 
             executed_in_workflow.add(current_node_id)
 
+            # Store node outputs in context for {{node_id.output}} variable resolution
+            self._store_node_outputs_in_context(current_node_id, node)
+
             # Handle special result keys
             if exec_result.result and "loop_back_to" in exec_result.result:
                 loop_start_id = exec_result.result["loop_back_to"]
+
+                # Clear loop body nodes from executed_in_workflow so they can re-execute
+                body_nodes = self.orchestrator.find_loop_body_nodes(
+                    loop_start_id, current_node_id
+                )
+                for body_node_id in body_nodes:
+                    executed_in_workflow.discard(body_node_id)
+                logger.debug(
+                    f"Cleared {len(body_nodes)} loop body nodes for re-execution"
+                )
+
                 nodes_to_execute.insert(0, loop_start_id)
                 continue
 
@@ -976,6 +1039,9 @@ class ExecuteWorkflowUseCase:
 
             executed_in_branch.add(current_node_id)
 
+            # Store node outputs in context for {{node_id.output}} variable resolution
+            self._store_node_outputs_in_context(current_node_id, node)
+
             # Handle loop_back_to
             if exec_result.result and "loop_back_to" in exec_result.result:
                 loop_start_id = exec_result.result["loop_back_to"]
@@ -1144,6 +1210,9 @@ class ExecuteWorkflowUseCase:
                 break
 
             executed.add(current_node_id)
+
+            # Store node outputs in context for {{node_id.output}} variable resolution
+            self._store_node_outputs_in_context(current_node_id, node)
 
             # Handle loop_back_to
             if exec_result.result and "loop_back_to" in exec_result.result:
