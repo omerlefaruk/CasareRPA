@@ -1,0 +1,116 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_6be18eb4c647",
+  "name": "Subflow 28",
+  "version": "1.0.0",
+  "description": "Subflow created from 3 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-08T19:17:59.209786",
+  "updated_at": "2025-12-08T19:17:59.210526",
+  "inputs": [],
+  "outputs": [],
+  "parameters": [],
+  "nodes": {
+    "MessageBoxNode_4f977c0f": {
+      "node_id": "MessageBoxNode_4f977c0f",
+      "type": "MessageBoxNode",
+      "name": "Message Box",
+      "position": {
+        "x": 6.90712278661033,
+        "y": 272.49406456217366
+      },
+      "properties": {
+        "node_id": "MessageBoxNode_4f977c0f",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "title": "Message",
+        "message": "",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0"
+      }
+    },
+    "MessageBoxNode_f94ef835": {
+      "node_id": "MessageBoxNode_f94ef835",
+      "type": "MessageBoxNode",
+      "name": "Message Box 1",
+      "position": {
+        "x": 376.637791951371,
+        "y": 408.7106268860329
+      },
+      "properties": {
+        "node_id": "MessageBoxNode_f94ef835",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "title": "Message",
+        "message": "",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0"
+      }
+    },
+    "MessageBoxNode_7cd9edf0": {
+      "node_id": "MessageBoxNode_7cd9edf0",
+      "type": "MessageBoxNode",
+      "name": "Message Box 2",
+      "position": {
+        "x": 762.5847185356386,
+        "y": 248.71022034689673
+      },
+      "properties": {
+        "node_id": "MessageBoxNode_7cd9edf0",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "title": "Message",
+        "message": "",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0"
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "MessageBoxNode_4f977c0f",
+      "source_port": "exec_out",
+      "target_node": "MessageBoxNode_f94ef835",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "MessageBoxNode_f94ef835",
+      "source_port": "exec_out",
+      "target_node": "MessageBoxNode_7cd9edf0",
+      "target_port": "exec_in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": 6.90712278661033,
+    "y": 248.71022034689673,
+    "width": 955.6775957490282,
+    "height": 260.0004065391362
+  }
+}

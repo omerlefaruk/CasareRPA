@@ -1,0 +1,92 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_4e0152223db3",
+  "name": "Subflow 8",
+  "version": "1.0.0",
+  "description": "Subflow created from 3 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-07T20:03:19.004267",
+  "updated_at": "2025-12-07T20:03:19.004922",
+  "inputs": [],
+  "outputs": [],
+  "nodes": {
+    "SetVariableNode_3f64bb08": {
+      "node_id": "SetVariableNode_3f64bb08",
+      "type": "SetVariableNode",
+      "name": "Set Variable 1",
+      "position": {
+        "x": 565.3143093692427,
+        "y": 201.92156191894608
+      },
+      "properties": {
+        "node_id": "SetVariableNode_3f64bb08",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "SetVariableNode_63f40465": {
+      "node_id": "SetVariableNode_63f40465",
+      "type": "SetVariableNode",
+      "name": "Set Variable",
+      "position": {
+        "x": -73.95749223194579,
+        "y": 196.6208007116394
+      },
+      "properties": {
+        "node_id": "SetVariableNode_63f40465",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "0x1346c0ce490": {
+      "node_id": "0x1346c0ce490",
+      "type": "VisualRerouteNode",
+      "name": "Reroute",
+      "position": {
+        "x": 411.08348468937913,
+        "y": 221.17334088003366
+      },
+      "properties": {
+        "node_id": "",
+        "data_type": "EXEC",
+        "is_exec_reroute": true
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "0x1346c0ce490",
+      "source_port": "out",
+      "target_node": "SetVariableNode_3f64bb08",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "SetVariableNode_63f40465",
+      "source_port": "exec_out",
+      "target_node": "0x1346c0ce490",
+      "target_port": "in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": -73.95749223194579,
+    "y": 196.6208007116394,
+    "width": 839.2718016011885,
+    "height": 124.55254016839427
+  }
+}

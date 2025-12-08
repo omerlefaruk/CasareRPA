@@ -2,37 +2,48 @@
 Variables Panel UI Component.
 
 Provides workflow variable management with improved UX:
-- Empty state guidance when no variables
-- Inline variable editing
+- Grouped tree view by scope (Global, Project, Scenario)
+- Inline variable editing with type-appropriate editors
+- Sensitive variable masking (*****)
 - Type selection with visual indicators
 - Scope filtering
 - Design/Runtime mode switching
-- Context menu for copy/delete
+- Context menu for copy/edit/delete
+- Variable picker integration
 
 Uses LazySubscription for EventBus optimization - subscriptions are only active
 when the panel is visible, reducing overhead when panel is hidden.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from PySide6.QtWidgets import (
     QDockWidget,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QTableWidget,
-    QTableWidgetItem,
+    QTreeWidget,
+    QTreeWidgetItem,
     QHeaderView,
     QAbstractItemView,
     QComboBox,
-    QStyledItemDelegate,
     QLabel,
     QStackedWidget,
     QApplication,
     QMenu,
+    QDialog,
+    QFormLayout,
+    QLineEdit,
+    QPushButton,
+    QCheckBox,
+    QTextEdit,
+    QSpinBox,
+    QDoubleSpinBox,
+    QDialogButtonBox,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QBrush
+from PySide6.QtGui import QColor, QBrush, QFont
 
 from loguru import logger
 
@@ -49,6 +60,8 @@ from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
     get_panel_table_stylesheet,
     get_panel_toolbar_stylesheet,
 )
+from casare_rpa.domain.entities.variable import Variable
+from casare_rpa.domain.entities.project.variables import VariableScope, VariableType
 
 
 # Variable type definitions
@@ -63,7 +76,7 @@ VARIABLE_TYPES = [
 ]
 
 # Default values for each type
-TYPE_DEFAULTS = {
+TYPE_DEFAULTS: Dict[str, Any] = {
     "String": "",
     "Integer": 0,
     "Float": 0.0,
@@ -84,78 +97,401 @@ TYPE_COLORS = {
     "DataTable": THEME.wire_table,
 }
 
+# Type badges for compact display
+TYPE_BADGES = {
+    "String": "T",
+    "Integer": "#",
+    "Float": ".",
+    "Boolean": "?",
+    "List": "[]",
+    "Dict": "{}",
+    "DataTable": "tbl",
+}
 
-class TypeComboDelegate(QStyledItemDelegate):
+# Masked value display for sensitive variables
+MASKED_VALUE = "******"
+
+
+class VariableEditDialog(QDialog):
     """
-    Delegate for type selection dropdown in table.
+    Dialog for adding or editing a variable.
 
-    Provides a dropdown for selecting variable types when editing.
+    Provides type-appropriate value editors:
+    - String: QLineEdit
+    - Integer: QSpinBox
+    - Float: QDoubleSpinBox
+    - Boolean: QCheckBox
+    - List/Dict: QTextEdit (JSON)
+    - DataTable: QTextEdit (JSON)
     """
 
-    def createEditor(self, parent, option, index):
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        variable: Optional[Variable] = None,
+        scope: str = "Workflow",
+    ) -> None:
         """
-        Create combo box editor.
+        Initialize the dialog.
 
         Args:
             parent: Parent widget
-            option: Style option
-            index: Model index
-
-        Returns:
-            QComboBox editor
+            variable: Existing variable to edit (None for new)
+            scope: Default scope for new variables
         """
-        combo = QComboBox(parent)
-        combo.addItems(VARIABLE_TYPES)
-        combo.setStyleSheet(f"""
-            QComboBox {{
+        super().__init__(parent)
+
+        self._variable = variable
+        self._is_edit = variable is not None
+        self._current_type = variable.type if variable else "String"
+
+        title = "Edit Variable" if self._is_edit else "Add Variable"
+        self.setWindowTitle(title)
+        self.setMinimumWidth(400)
+        self.setModal(True)
+
+        self._setup_ui(scope)
+        self._apply_styles()
+        self._populate_from_variable()
+        self._connect_signals()
+
+    def _setup_ui(self, default_scope: str) -> None:
+        """Set up the dialog UI."""
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(16, 16, 16, 16)
+
+        # Form layout for fields
+        form = QFormLayout()
+        form.setSpacing(8)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+
+        # Name field
+        self._name_edit = QLineEdit()
+        self._name_edit.setPlaceholderText("Enter variable name...")
+        self._name_edit.setObjectName("nameEdit")
+        form.addRow("Name:", self._name_edit)
+
+        # Type dropdown
+        self._type_combo = QComboBox()
+        self._type_combo.addItems(VARIABLE_TYPES)
+        self._type_combo.setObjectName("typeCombo")
+        form.addRow("Type:", self._type_combo)
+
+        # Scope dropdown
+        self._scope_combo = QComboBox()
+        self._scope_combo.addItems(["Global", "Project", "Scenario"])
+        self._scope_combo.setCurrentText(default_scope)
+        self._scope_combo.setObjectName("scopeCombo")
+        form.addRow("Scope:", self._scope_combo)
+
+        layout.addLayout(form)
+
+        # Value editor stack (different widgets for different types)
+        value_label = QLabel("Default Value:")
+        layout.addWidget(value_label)
+
+        self._value_stack = QStackedWidget()
+        self._value_stack.setMinimumHeight(80)
+
+        # String value (index 0)
+        self._string_edit = QLineEdit()
+        self._string_edit.setPlaceholderText("Enter string value...")
+        self._value_stack.addWidget(self._string_edit)
+
+        # Integer value (index 1)
+        self._int_edit = QSpinBox()
+        self._int_edit.setRange(-2147483648, 2147483647)
+        self._value_stack.addWidget(self._int_edit)
+
+        # Float value (index 2)
+        self._float_edit = QDoubleSpinBox()
+        self._float_edit.setRange(-1e15, 1e15)
+        self._float_edit.setDecimals(6)
+        self._value_stack.addWidget(self._float_edit)
+
+        # Boolean value (index 3)
+        bool_container = QWidget()
+        bool_layout = QHBoxLayout(bool_container)
+        bool_layout.setContentsMargins(0, 0, 0, 0)
+        self._bool_check = QCheckBox("True")
+        bool_layout.addWidget(self._bool_check)
+        bool_layout.addStretch()
+        self._value_stack.addWidget(bool_container)
+
+        # List/Dict/DataTable value - JSON editor (index 4)
+        self._json_edit = QTextEdit()
+        self._json_edit.setPlaceholderText("Enter JSON value (e.g., [] or {})...")
+        self._json_edit.setAcceptRichText(False)
+        self._value_stack.addWidget(self._json_edit)
+
+        layout.addWidget(self._value_stack)
+
+        # Sensitive checkbox
+        self._sensitive_check = QCheckBox("Sensitive (mask value in UI)")
+        self._sensitive_check.setToolTip(
+            "When checked, the variable value will be displayed as ****** in the UI"
+        )
+        layout.addWidget(self._sensitive_check)
+
+        # Description field
+        desc_label = QLabel("Description (optional):")
+        layout.addWidget(desc_label)
+
+        self._desc_edit = QLineEdit()
+        self._desc_edit.setPlaceholderText("Enter description...")
+        layout.addWidget(self._desc_edit)
+
+        # Dialog buttons
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self._on_accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+    def _apply_styles(self) -> None:
+        """Apply dialog styling."""
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+                background: transparent;
+            }}
+            QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
                 background-color: {THEME.input_bg};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                border-radius: 2px;
-                padding: 2px 4px;
+                border-radius: 4px;
+                padding: 6px 10px;
+                min-height: 28px;
+            }}
+            QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {{
+                border-color: {THEME.border_focus};
+            }}
+            QTextEdit {{
+                background-color: {THEME.input_bg};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                font-family: 'Cascadia Code', 'Consolas', monospace;
+                font-size: 11px;
+            }}
+            QTextEdit:focus {{
+                border-color: {THEME.border_focus};
+            }}
+            QCheckBox {{
+                color: {THEME.text_primary};
+                spacing: 8px;
             }}
             QComboBox::drop-down {{
                 border: none;
-                width: 16px;
-            }}
-            QComboBox:hover {{
-                border-color: {THEME.border_light};
-            }}
-            QComboBox:focus {{
-                border-color: {THEME.border_focus};
+                width: 20px;
             }}
             QComboBox QAbstractItemView {{
                 background-color: {THEME.bg_light};
                 color: {THEME.text_primary};
                 border: 1px solid {THEME.border};
-                selection-background-color: {THEME.bg_selected};
+                selection-background-color: {THEME.accent_primary};
+            }}
+            QDialogButtonBox QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 6px 16px;
+                min-width: 80px;
+                min-height: 32px;
+            }}
+            QDialogButtonBox QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QDialogButtonBox QPushButton:default {{
+                background-color: {THEME.accent_primary};
+                border-color: {THEME.accent_primary};
+                color: #ffffff;
+            }}
+            QDialogButtonBox QPushButton:default:hover {{
+                background-color: {THEME.accent_hover};
             }}
         """)
-        return combo
 
-    def setEditorData(self, editor, index):
-        """
-        Set editor data from model.
+    def _connect_signals(self) -> None:
+        """Connect UI signals."""
+        self._type_combo.currentTextChanged.connect(self._on_type_changed)
 
-        Args:
-            editor: Editor widget
-            index: Model index
-        """
-        value = index.data(Qt.ItemDataRole.EditRole)
-        idx = editor.findText(value)
-        if idx >= 0:
-            editor.setCurrentIndex(idx)
+    def _populate_from_variable(self) -> None:
+        """Populate fields from existing variable."""
+        if self._variable:
+            self._name_edit.setText(self._variable.name)
+            self._name_edit.setEnabled(False)  # Cannot rename
+            self._type_combo.setCurrentText(self._variable.type)
+            self._sensitive_check.setChecked(self._variable.sensitive)
+            self._desc_edit.setText(self._variable.description)
 
-    def setModelData(self, editor, model, index):
-        """
-        Set model data from editor.
+            # Set value based on type
+            self._set_value_for_type(self._variable.type, self._variable.default_value)
+        else:
+            # Default for new variable
+            self._on_type_changed("String")
 
-        Args:
-            editor: Editor widget
-            model: Data model
-            index: Model index
+    def _on_type_changed(self, var_type: str) -> None:
+        """Handle type change - switch value editor."""
+        self._current_type = var_type
+
+        # Map type to stack index
+        type_to_index = {
+            "String": 0,
+            "Integer": 1,
+            "Float": 2,
+            "Boolean": 3,
+            "List": 4,
+            "Dict": 4,
+            "DataTable": 4,
+        }
+        index = type_to_index.get(var_type, 0)
+        self._value_stack.setCurrentIndex(index)
+
+        # Set default value for new type
+        default = TYPE_DEFAULTS.get(var_type, "")
+        self._set_value_for_type(var_type, default)
+
+    def _set_value_for_type(self, var_type: str, value: Any) -> None:
+        """Set value editor based on type."""
+        if var_type == "String":
+            self._string_edit.setText(str(value) if value else "")
+        elif var_type == "Integer":
+            try:
+                self._int_edit.setValue(int(value) if value else 0)
+            except (ValueError, TypeError):
+                self._int_edit.setValue(0)
+        elif var_type == "Float":
+            try:
+                self._float_edit.setValue(float(value) if value else 0.0)
+            except (ValueError, TypeError):
+                self._float_edit.setValue(0.0)
+        elif var_type == "Boolean":
+            self._bool_check.setChecked(bool(value) if value else False)
+        else:
+            # List, Dict, DataTable - JSON
+            import json as json_module
+
+            try:
+                if isinstance(value, (list, dict)):
+                    text = json_module.dumps(value, indent=2)
+                elif value is None:
+                    text = (
+                        "null"
+                        if var_type == "DataTable"
+                        else "[]"
+                        if var_type == "List"
+                        else "{}"
+                    )
+                else:
+                    text = str(value)
+                self._json_edit.setPlainText(text)
+            except Exception:
+                self._json_edit.setPlainText("")
+
+    def _get_value_from_editor(self) -> Any:
+        """Get value from the current editor."""
+        var_type = self._type_combo.currentText()
+
+        if var_type == "String":
+            return self._string_edit.text()
+        elif var_type == "Integer":
+            return self._int_edit.value()
+        elif var_type == "Float":
+            return self._float_edit.value()
+        elif var_type == "Boolean":
+            return self._bool_check.isChecked()
+        else:
+            # List, Dict, DataTable - JSON
+            import json as json_module
+
+            text = self._json_edit.toPlainText().strip()
+            if not text:
+                return [] if var_type == "List" else {} if var_type == "Dict" else None
+            try:
+                return json_module.loads(text)
+            except json_module.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON: {e}")
+
+    def _on_accept(self) -> None:
+        """Validate and accept the dialog."""
+        name = self._name_edit.text().strip()
+
+        # Validate name
+        if not name:
+            self._show_error("Name is required")
+            self._name_edit.setFocus()
+            return
+
+        # Validate name format (Python identifier)
+        import re
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", name):
+            self._show_error(
+                "Invalid variable name. Must start with a letter or underscore "
+                "and contain only letters, numbers, and underscores."
+            )
+            self._name_edit.setFocus()
+            return
+
+        # Validate value
+        try:
+            self._get_value_from_editor()
+        except ValueError as e:
+            self._show_error(str(e))
+            return
+
+        self.accept()
+
+    def _show_error(self, message: str) -> None:
+        """Show error message."""
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Validation Error")
+        msg.setText(message)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setStyleSheet(f"""
+            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; }}
+            QPushButton {{
+                background: {THEME.bg_light};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 6px 16px;
+                color: {THEME.text_primary};
+                min-width: 80px;
+                min-height: 32px;
+            }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; }}
+        """)
+        msg.exec()
+
+    def get_variable(self) -> Variable:
         """
-        model.setData(index, editor.currentText(), Qt.ItemDataRole.EditRole)
+        Get the configured variable.
+
+        Returns:
+            Variable entity with configured values
+        """
+        return Variable(
+            name=self._name_edit.text().strip(),
+            type=self._type_combo.currentText(),
+            default_value=self._get_value_from_editor(),
+            description=self._desc_edit.text().strip(),
+            sensitive=self._sensitive_check.isChecked(),
+            readonly=False,
+        )
+
+    def get_scope(self) -> str:
+        """Get the selected scope."""
+        return self._scope_combo.currentText()
 
 
 class VariablesPanel(QDockWidget):
@@ -163,13 +499,16 @@ class VariablesPanel(QDockWidget):
     Dockable variables panel for workflow variable management.
 
     Features:
+    - Grouped tree view by scope (Global, Project, Scenario)
     - Empty state when no variables
-    - Inline variable creation
+    - Type-appropriate value editors
+    - Sensitive variable masking
     - Type selection with color indicators
     - Default value editing
     - Scope filtering
     - Design/Runtime modes
     - Context menu for actions
+    - EventBus integration for variable events
 
     Signals:
         variable_added: Emitted when variable is added (str: name, str: type, Any: default_value)
@@ -183,11 +522,8 @@ class VariablesPanel(QDockWidget):
     variable_removed = Signal(str)
     variables_changed = Signal(dict)
 
-    # Table columns
-    COL_NAME = 0
-    COL_TYPE = 1
-    COL_DEFAULT = 2
-    COL_SCOPE = 3
+    # Scope display order
+    SCOPE_ORDER = ["Global", "Project", "Scenario"]
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -199,9 +535,17 @@ class VariablesPanel(QDockWidget):
         super().__init__("Variables", parent)
         self.setObjectName("VariablesDock")
 
-        self._variables: Dict[str, Dict[str, Any]] = {}
+        # Variables organized by scope: {scope: {name: Variable}}
+        self._variables: Dict[str, Dict[str, Variable]] = {
+            "Global": {},
+            "Project": {},
+            "Scenario": {},
+        }
         self._is_runtime_mode = False
         self._current_scope_filter = "All"
+
+        # Tree item tracking
+        self._scope_items: Dict[str, QTreeWidgetItem] = {}
 
         self._setup_dock()
         self._setup_ui()
@@ -220,7 +564,7 @@ class VariablesPanel(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
-        self.setMinimumWidth(250)
+        self.setMinimumWidth(280)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
@@ -243,7 +587,7 @@ class VariablesPanel(QDockWidget):
         # Scope filter dropdown
         filter_label = QLabel("Scope:")
         self._scope_filter = QComboBox()
-        self._scope_filter.addItems(["All", "Global", "Project", "Workflow"])
+        self._scope_filter.addItems(["All", "Global", "Project", "Scenario"])
         self._scope_filter.setFixedWidth(90)
         self._scope_filter.currentTextChanged.connect(self._on_scope_filter_changed)
         self._scope_filter.setToolTip("Filter variables by scope")
@@ -254,7 +598,7 @@ class VariablesPanel(QDockWidget):
         # Add variable button (primary action)
         add_btn = ToolbarButton(
             text="Add Variable",
-            tooltip="Add a new workflow variable",
+            tooltip="Add a new variable (Ctrl+N)",
             primary=True,
         )
         add_btn.clicked.connect(self._on_add_variable)
@@ -268,66 +612,57 @@ class VariablesPanel(QDockWidget):
 
         main_layout.addWidget(toolbar_widget)
 
-        # Content stack for empty state vs table
+        # Content stack for empty state vs tree
         self._content_stack = QStackedWidget()
 
         # Empty state (index 0)
         self._empty_state = EmptyStateWidget(
-            icon_text="",  # Variable/database icon
+            icon_text="",  # Variable icon
             title="No Variables",
             description=(
                 "Variables store data that can be used across your workflow.\n\n"
                 "Click 'Add Variable' to create:\n"
                 "- Strings, numbers, and booleans\n"
                 "- Lists and dictionaries\n"
-                "- DataTables for structured data"
+                "- DataTables for structured data\n\n"
+                "Scopes:\n"
+                "- Global: Available to all projects\n"
+                "- Project: Available within project\n"
+                "- Scenario: Current workflow only"
             ),
             action_text="Add Variable",
         )
         self._empty_state.action_clicked.connect(self._on_add_variable)
         self._content_stack.addWidget(self._empty_state)
 
-        # Table container (index 1)
-        table_container = QWidget()
-        table_layout = QVBoxLayout(table_container)
-        table_layout.setContentsMargins(8, 4, 8, 8)
-        table_layout.setSpacing(4)
+        # Tree container (index 1)
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        tree_layout.setContentsMargins(8, 4, 8, 8)
+        tree_layout.setSpacing(4)
 
-        # Variables table
-        self._table = QTableWidget()
-        self._table.setColumnCount(4)
-        self._table.setHorizontalHeaderLabels(
-            ["Name", "Type", "Default Value", "Scope"]
-        )
-
-        # Configure table
-        self._table.setAlternatingRowColors(True)
-        self._table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self._table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self._table.setEditTriggers(
-            QAbstractItemView.EditTrigger.DoubleClicked
-            | QAbstractItemView.EditTrigger.EditKeyPressed
-        )
-        self._table.itemChanged.connect(self._on_item_changed)
-        self._table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._table.customContextMenuRequested.connect(self._on_context_menu)
-        self._table.verticalHeader().setVisible(False)
-
-        # Set type column delegate
-        self._table.setItemDelegateForColumn(self.COL_TYPE, TypeComboDelegate())
+        # Variables tree widget
+        self._tree = QTreeWidget()
+        self._tree.setColumnCount(4)
+        self._tree.setHeaderLabels(["Name", "Type", "Value", ""])
+        self._tree.setAlternatingRowColors(True)
+        self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._tree.customContextMenuRequested.connect(self._on_context_menu)
+        self._tree.itemDoubleClicked.connect(self._on_item_double_clicked)
+        self._tree.setIndentation(16)
+        self._tree.setRootIsDecorated(True)
 
         # Configure column sizing
-        header = self._table.horizontalHeader()
-        header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(
-            self.COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
-        )
-        header.setSectionResizeMode(self.COL_DEFAULT, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(
-            self.COL_SCOPE, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header = self._tree.header()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Name
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)  # Type
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)  # Value
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)  # Actions
+        header.resizeSection(3, 24)
 
-        table_layout.addWidget(self._table)
+        tree_layout.addWidget(self._tree)
 
         # Action bar
         action_bar = QWidget()
@@ -338,10 +673,17 @@ class VariablesPanel(QDockWidget):
 
         # Remove selected button
         remove_btn = ToolbarButton(
-            text="Remove Selected",
-            tooltip="Remove the selected variable (Delete)",
+            text="Delete",
+            tooltip="Delete selected variable (Delete key)",
         )
         remove_btn.clicked.connect(self._on_remove_variable)
+
+        # Edit button
+        edit_btn = ToolbarButton(
+            text="Edit",
+            tooltip="Edit selected variable (Enter or double-click)",
+        )
+        edit_btn.clicked.connect(self._on_edit_variable)
 
         # Clear all button (danger action)
         clear_btn = ToolbarButton(
@@ -352,19 +694,45 @@ class VariablesPanel(QDockWidget):
         clear_btn.clicked.connect(self._on_clear_all)
 
         action_layout.addStretch()
+        action_layout.addWidget(edit_btn)
         action_layout.addWidget(remove_btn)
         action_layout.addWidget(clear_btn)
 
-        table_layout.addWidget(action_bar)
+        tree_layout.addWidget(action_bar)
 
-        self._content_stack.addWidget(table_container)
+        self._content_stack.addWidget(tree_container)
 
         main_layout.addWidget(self._content_stack)
 
         self.setWidget(container)
 
+        # Initialize scope groups
+        self._initialize_scope_groups()
+
         # Show empty state initially
         self._content_stack.setCurrentIndex(0)
+
+    def _initialize_scope_groups(self) -> None:
+        """Initialize the scope group items in the tree."""
+        for scope in self.SCOPE_ORDER:
+            scope_item = QTreeWidgetItem([scope, "", "", ""])
+            scope_item.setData(
+                0, Qt.ItemDataRole.UserRole, {"type": "scope", "scope": scope}
+            )
+
+            # Style scope header
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(10)
+            scope_item.setFont(0, font)
+            scope_item.setForeground(0, QBrush(QColor(THEME.text_header)))
+
+            # Make it non-selectable
+            scope_item.setFlags(scope_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+
+            self._tree.addTopLevelItem(scope_item)
+            scope_item.setExpanded(True)
+            self._scope_items[scope] = scope_item
 
     def _apply_styles(self) -> None:
         """Apply VSCode Dark+ theme styling using THEME constants."""
@@ -389,32 +757,190 @@ class VariablesPanel(QDockWidget):
             }}
             {get_panel_toolbar_stylesheet()}
             {get_panel_table_stylesheet()}
+            QTreeWidget {{
+                background-color: {THEME.bg_panel};
+                border: 1px solid {THEME.border_dark};
+            }}
+            QTreeWidget::item {{
+                padding: 4px 8px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {THEME.bg_selected};
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {THEME.bg_hover};
+            }}
+            QTreeWidget::branch {{
+                background: transparent;
+            }}
+            QTreeWidget::branch:has-children:!has-siblings:closed,
+            QTreeWidget::branch:closed:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
+            QTreeWidget::branch:open:has-children:!has-siblings,
+            QTreeWidget::branch:open:has-children:has-siblings {{
+                border-image: none;
+                image: none;
+            }}
         """)
 
     def _update_display(self) -> None:
-        """Update empty state vs table display and count label."""
-        has_variables = len(self._variables) > 0
+        """Update empty state vs tree display and count label."""
+        total_count = sum(len(vars) for vars in self._variables.values())
+        has_variables = total_count > 0
         self._content_stack.setCurrentIndex(1 if has_variables else 0)
 
         # Update count label
-        count = len(self._variables)
-        self._count_label.setText(f"{count} variable{'s' if count != 1 else ''}")
-        self._count_label.setProperty("muted", count == 0)
+        self._count_label.setText(
+            f"{total_count} variable{'s' if total_count != 1 else ''}"
+        )
+        self._count_label.setProperty("muted", total_count == 0)
         self._count_label.style().unpolish(self._count_label)
         self._count_label.style().polish(self._count_label)
 
+        # Update scope group visibility
+        self._apply_scope_filter()
+
+    def _format_value_display(self, variable: Variable) -> str:
+        """
+        Format value for display in the tree.
+
+        Args:
+            variable: Variable entity
+
+        Returns:
+            Formatted display string (masked if sensitive)
+        """
+        if variable.sensitive:
+            return MASKED_VALUE
+
+        value = variable.default_value
+
+        if value is None:
+            return "(null)"
+        elif isinstance(value, bool):
+            return "true" if value else "false"
+        elif isinstance(value, (list, dict)):
+            import json as json_module
+
+            try:
+                text = json_module.dumps(value)
+                if len(text) > 30:
+                    text = text[:27] + "..."
+                return text
+            except Exception:
+                return str(value)[:30]
+        else:
+            text = str(value)
+            if len(text) > 30:
+                text = text[:27] + "..."
+            return text
+
+    def _add_variable_to_tree(self, variable: Variable, scope: str) -> QTreeWidgetItem:
+        """
+        Add a variable item to the tree under its scope group.
+
+        Args:
+            variable: Variable entity
+            scope: Scope string
+
+        Returns:
+            Created tree widget item
+        """
+        scope_item = self._scope_items.get(scope)
+        if not scope_item:
+            logger.warning(f"Unknown scope: {scope}")
+            scope_item = self._scope_items.get("Scenario", self._scope_items["Global"])
+
+        # Create variable item
+        type_badge = TYPE_BADGES.get(variable.type, "?")
+        value_display = self._format_value_display(variable)
+
+        var_item = QTreeWidgetItem(
+            [
+                variable.name,
+                f"[{type_badge}] {variable.type}",
+                value_display,
+                "",  # Actions column
+            ]
+        )
+
+        # Store variable data
+        var_item.setData(
+            0,
+            Qt.ItemDataRole.UserRole,
+            {
+                "type": "variable",
+                "name": variable.name,
+                "scope": scope,
+                "variable": variable,
+            },
+        )
+
+        # Apply type color to name
+        var_item.setForeground(0, QBrush(QColor(THEME.accent_primary)))
+
+        # Apply type color to type column
+        type_color = TYPE_COLORS.get(variable.type, THEME.text_primary)
+        var_item.setForeground(1, QBrush(QColor(type_color)))
+
+        # Value color
+        if variable.sensitive:
+            var_item.setForeground(2, QBrush(QColor(THEME.text_muted)))
+        else:
+            var_item.setForeground(2, QBrush(QColor(THEME.text_secondary)))
+
+        # Tooltip with full info
+        tooltip = f"Name: {variable.name}\nType: {variable.type}\nScope: {scope}"
+        if variable.description:
+            tooltip += f"\nDescription: {variable.description}"
+        if variable.sensitive:
+            tooltip += "\n(Sensitive - value hidden)"
+        var_item.setToolTip(0, tooltip)
+        var_item.setToolTip(1, tooltip)
+        var_item.setToolTip(2, tooltip)
+
+        scope_item.addChild(var_item)
+        return var_item
+
+    def _find_variable_item(self, name: str, scope: str) -> Optional[QTreeWidgetItem]:
+        """
+        Find a variable item in the tree.
+
+        Args:
+            name: Variable name
+            scope: Scope string
+
+        Returns:
+            Tree item or None if not found
+        """
+        scope_item = self._scope_items.get(scope)
+        if not scope_item:
+            return None
+
+        for i in range(scope_item.childCount()):
+            child = scope_item.child(i)
+            data = child.data(0, Qt.ItemDataRole.UserRole)
+            if data and data.get("name") == name:
+                return child
+
+        return None
+
     def _on_context_menu(self, pos) -> None:
         """Show context menu for variable entry."""
-        item = self._table.itemAt(pos)
+        item = self._tree.itemAt(pos)
         if not item:
             return
 
-        row = item.row()
-        name_item = self._table.item(row, self.COL_NAME)
-        if not name_item:
-            return
+        data = item.data(0, Qt.ItemDataRole.UserRole)
+        if not data or data.get("type") != "variable":
+            return  # Only show menu for variable items
 
-        var_name = name_item.text()
+        var_name = data.get("name", "")
+        scope = data.get("scope", "")
+        variable = data.get("variable")
 
         menu = QMenu(self)
         menu.setStyleSheet(f"""
@@ -440,25 +966,46 @@ class VariablesPanel(QDockWidget):
             }}
         """)
 
+        # Edit variable
+        edit_action = menu.addAction("Edit Variable")
+        edit_action.triggered.connect(lambda: self._edit_variable(var_name, scope))
+
+        menu.addSeparator()
+
         # Copy name
         copy_name = menu.addAction("Copy Name")
         copy_name.triggered.connect(lambda: QApplication.clipboard().setText(var_name))
 
-        # Copy value
-        default_item = self._table.item(row, self.COL_DEFAULT)
-        if default_item:
+        # Copy value (only if not sensitive)
+        if variable and not variable.sensitive:
             copy_value = menu.addAction("Copy Value")
             copy_value.triggered.connect(
-                lambda: QApplication.clipboard().setText(default_item.text())
+                lambda: QApplication.clipboard().setText(str(variable.default_value))
             )
+
+        # Copy insertion text
+        copy_insert = menu.addAction("Copy {{variable}}")
+        copy_insert.triggered.connect(
+            lambda: QApplication.clipboard().setText(f"{{{{{var_name}}}}}")
+        )
 
         menu.addSeparator()
 
         # Delete variable
         delete_action = menu.addAction("Delete Variable")
-        delete_action.triggered.connect(lambda: self.remove_variable(var_name))
+        delete_action.triggered.connect(lambda: self.remove_variable(var_name, scope))
 
-        menu.exec_(self._table.mapToGlobal(pos))
+        menu.exec_(self._tree.mapToGlobal(pos))
+
+    def _on_item_double_clicked(self, item: QTreeWidgetItem, column: int) -> None:
+        """Handle double-click on tree item."""
+        data = item.data(0, Qt.ItemDataRole.UserRole)
+        if not data or data.get("type") != "variable":
+            return
+
+        var_name = data.get("name", "")
+        scope = data.get("scope", "")
+        self._edit_variable(var_name, scope)
 
     def set_runtime_mode(self, enabled: bool) -> None:
         """
@@ -473,13 +1020,8 @@ class VariablesPanel(QDockWidget):
 
         if enabled:
             self._mode_badge.set_status("running", "RUNTIME")
-            self._table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         else:
             self._mode_badge.set_status("info", "DESIGN")
-            self._table.setEditTriggers(
-                QAbstractItemView.EditTrigger.DoubleClicked
-                | QAbstractItemView.EditTrigger.EditKeyPressed
-            )
 
         logger.debug(f"Variables panel mode: {'Runtime' if enabled else 'Design'}")
 
@@ -488,8 +1030,10 @@ class VariablesPanel(QDockWidget):
         name: str,
         var_type: str = "String",
         default_value: Any = "",
-        scope: str = "Workflow",
-    ) -> None:
+        scope: str = "Scenario",
+        description: str = "",
+        sensitive: bool = False,
+    ) -> bool:
         """
         Add a variable to the panel.
 
@@ -497,273 +1041,357 @@ class VariablesPanel(QDockWidget):
             name: Variable name
             var_type: Variable type
             default_value: Default value
-            scope: Variable scope
+            scope: Variable scope (Global, Project, Scenario)
+            description: Optional description
+            sensitive: Whether to mask value
+
+        Returns:
+            True if added successfully
         """
-        # Check if variable already exists
-        if name in self._variables:
-            logger.warning(f"Variable '{name}' already exists")
-            return
+        # Normalize scope
+        if scope not in self.SCOPE_ORDER:
+            scope = "Scenario"
+
+        # Check if variable already exists in this scope
+        if name in self._variables.get(scope, {}):
+            logger.warning(f"Variable '{name}' already exists in {scope} scope")
+            return False
+
+        # Create Variable entity
+        try:
+            variable = Variable(
+                name=name,
+                type=var_type,
+                default_value=default_value,
+                description=description,
+                sensitive=sensitive,
+                readonly=False,
+            )
+        except ValueError as e:
+            logger.error(f"Invalid variable: {e}")
+            return False
 
         # Store variable
-        self._variables[name] = {
-            "type": var_type,
-            "default": default_value,
-            "scope": scope,
-        }
+        if scope not in self._variables:
+            self._variables[scope] = {}
+        self._variables[scope][name] = variable
 
-        # Add to table
-        row = self._table.rowCount()
-        self._table.insertRow(row)
+        # Add to tree
+        self._add_variable_to_tree(variable, scope)
 
-        # Store original name in UserRole for tracking renames
-        name_item = QTableWidgetItem(name)
-        name_item.setData(Qt.ItemDataRole.UserRole, name)
-        name_item.setForeground(QBrush(QColor(THEME.accent_primary)))
-        name_item.setToolTip(f"Variable: {name}\nDouble-click to rename")
-        self._table.setItem(row, self.COL_NAME, name_item)
-
-        # Type with color indicator
-        type_item = QTableWidgetItem(var_type)
-        type_color = TYPE_COLORS.get(var_type, THEME.text_primary)
-        type_item.setForeground(QBrush(QColor(type_color)))
-        type_item.setToolTip(f"Type: {var_type}\nDouble-click to change")
-        self._table.setItem(row, self.COL_TYPE, type_item)
-
-        # Default value
-        default_item = QTableWidgetItem(str(default_value))
-        default_item.setToolTip(f"Default value: {default_value}\nDouble-click to edit")
-        self._table.setItem(row, self.COL_DEFAULT, default_item)
-
-        # Scope (read-only)
-        scope_item = QTableWidgetItem(scope)
-        scope_item.setFlags(scope_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-        scope_item.setForeground(QBrush(QColor(THEME.text_muted)))
-        scope_item.setToolTip(f"Scope: {scope}")
-        self._table.setItem(row, self.COL_SCOPE, scope_item)
-
+        # Emit signals
         self.variable_added.emit(name, var_type, default_value)
-        self.variables_changed.emit(self._variables)
+        self.variables_changed.emit(self.get_all_variables_flat())
 
         # Update display
         self._update_display()
 
-        # Apply scope filter in case new variable doesn't match
-        self._apply_scope_filter()
+        logger.debug(f"Variable added: {name} ({var_type}) in {scope} scope")
+        return True
 
-        logger.debug(f"Variable added: {name} ({var_type})")
-
-    def remove_variable(self, name: str) -> None:
+    def remove_variable(self, name: str, scope: Optional[str] = None) -> bool:
         """
         Remove a variable from the panel.
 
         Args:
             name: Variable name
+            scope: Scope to remove from (None = search all scopes)
+
+        Returns:
+            True if removed successfully
         """
-        if name not in self._variables:
-            return
+        if scope:
+            scopes_to_check = [scope]
+        else:
+            scopes_to_check = self.SCOPE_ORDER
 
-        # Remove from dict
-        del self._variables[name]
+        for s in scopes_to_check:
+            if s in self._variables and name in self._variables[s]:
+                # Remove from dict
+                del self._variables[s][name]
 
-        # Remove from table
-        for row in range(self._table.rowCount()):
-            item = self._table.item(row, self.COL_NAME)
-            if item and item.text() == name:
-                self._table.removeRow(row)
-                break
+                # Remove from tree
+                item = self._find_variable_item(name, s)
+                if item:
+                    parent = item.parent()
+                    if parent:
+                        parent.removeChild(item)
 
-        self.variable_removed.emit(name)
-        self.variables_changed.emit(self._variables)
+                # Emit signals
+                self.variable_removed.emit(name)
+                self.variables_changed.emit(self.get_all_variables_flat())
 
-        # Update display
-        self._update_display()
+                # Update display
+                self._update_display()
 
-        logger.debug(f"Variable removed: {name}")
+                logger.debug(f"Variable removed: {name} from {s} scope")
+                return True
 
-    def update_variable_value(self, name: str, value: Any) -> None:
+        return False
+
+    def update_variable_value(
+        self, name: str, value: Any, scope: Optional[str] = None
+    ) -> None:
         """
         Update variable value (runtime mode).
 
         Args:
             name: Variable name
             value: New value
+            scope: Scope to update (None = search all scopes)
         """
-        if name not in self._variables:
+        if scope:
+            scopes_to_check = [scope]
+        else:
+            scopes_to_check = self.SCOPE_ORDER
+
+        for s in scopes_to_check:
+            if s in self._variables and name in self._variables[s]:
+                variable = self._variables[s][name]
+                variable.default_value = value
+
+                # Update tree item
+                item = self._find_variable_item(name, s)
+                if item:
+                    value_display = self._format_value_display(variable)
+                    item.setText(2, value_display)
+
+                logger.debug(f"Variable updated: {name} = {value}")
+                return
+
+    def _edit_variable(self, name: str, scope: str) -> None:
+        """
+        Open edit dialog for a variable.
+
+        Args:
+            name: Variable name
+            scope: Scope
+        """
+        if self._is_runtime_mode:
             return
 
-        self._variables[name]["current_value"] = value
+        variable = self._variables.get(scope, {}).get(name)
+        if not variable:
+            return
 
-        # Update table
-        for row in range(self._table.rowCount()):
-            item = self._table.item(row, self.COL_NAME)
-            if item and item.text() == name:
-                default_item = self._table.item(row, self.COL_DEFAULT)
-                if default_item:
-                    default_item.setText(str(value))
-                break
+        dialog = VariableEditDialog(self, variable=variable, scope=scope)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_var = dialog.get_variable()
 
-        logger.debug(f"Variable updated: {name} = {value}")
+            # Update the variable
+            self._variables[scope][name] = new_var
+
+            # Update tree item
+            item = self._find_variable_item(name, scope)
+            if item:
+                type_badge = TYPE_BADGES.get(new_var.type, "?")
+                item.setText(1, f"[{type_badge}] {new_var.type}")
+                item.setText(2, self._format_value_display(new_var))
+
+                # Update colors
+                type_color = TYPE_COLORS.get(new_var.type, THEME.text_primary)
+                item.setForeground(1, QBrush(QColor(type_color)))
+
+                if new_var.sensitive:
+                    item.setForeground(2, QBrush(QColor(THEME.text_muted)))
+                else:
+                    item.setForeground(2, QBrush(QColor(THEME.text_secondary)))
+
+                # Update stored data
+                item.setData(
+                    0,
+                    Qt.ItemDataRole.UserRole,
+                    {
+                        "type": "variable",
+                        "name": name,
+                        "scope": scope,
+                        "variable": new_var,
+                    },
+                )
+
+            # Emit signals
+            self.variable_changed.emit(name, new_var.type, new_var.default_value)
+            self.variables_changed.emit(self.get_all_variables_flat())
+
+            logger.debug(f"Variable edited: {name}")
 
     def get_variables(self) -> Dict[str, Dict[str, Any]]:
         """
-        Get all variables.
+        Get all variables in flat format for variable picker.
 
         Returns:
-            Dictionary of all variables
+            Dictionary of {name: {type: str, default: Any, scope: str}}
         """
-        return self._variables.copy()
+        result = {}
+        for scope, vars in self._variables.items():
+            for name, var in vars.items():
+                result[name] = {
+                    "type": var.type,
+                    "default": var.default_value,
+                    "scope": scope,
+                }
+        return result
 
-    def clear_variables(self) -> None:
-        """Clear all variables."""
-        self._variables.clear()
-        self._table.setRowCount(0)
-        self.variables_changed.emit(self._variables)
+    def get_all_variables_flat(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Get all variables in flat format.
+
+        Returns:
+            Dictionary of {name: {type: str, default: Any, scope: str, sensitive: bool}}
+        """
+        result = {}
+        for scope, vars in self._variables.items():
+            for name, var in vars.items():
+                result[name] = {
+                    "type": var.type,
+                    "default": var.default_value,
+                    "scope": scope,
+                    "sensitive": var.sensitive,
+                    "description": var.description,
+                }
+        return result
+
+    def get_variables_by_scope(self, scope: str) -> Dict[str, Variable]:
+        """
+        Get variables for a specific scope.
+
+        Args:
+            scope: Scope string
+
+        Returns:
+            Dictionary of {name: Variable}
+        """
+        return self._variables.get(scope, {}).copy()
+
+    def clear_variables(self, scope: Optional[str] = None) -> None:
+        """
+        Clear variables.
+
+        Args:
+            scope: Specific scope to clear (None = clear all)
+        """
+        if scope:
+            scopes_to_clear = [scope]
+        else:
+            scopes_to_clear = self.SCOPE_ORDER
+
+        for s in scopes_to_clear:
+            self._variables[s] = {}
+            scope_item = self._scope_items.get(s)
+            if scope_item:
+                # Remove all children
+                while scope_item.childCount() > 0:
+                    scope_item.removeChild(scope_item.child(0))
+
+        self.variables_changed.emit(self.get_all_variables_flat())
         self._update_display()
-        logger.debug("All variables cleared")
+        logger.debug(f"Variables cleared: {scope or 'all scopes'}")
 
     def _on_add_variable(self) -> None:
         """Handle add variable button click."""
-        # Generate unique name
-        i = 1
-        while f"variable{i}" in self._variables:
-            i += 1
+        if self._is_runtime_mode:
+            return
 
-        name = f"variable{i}"
-        self.add_variable(name, "String", "", "Workflow")
+        # Determine default scope based on filter
+        default_scope = self._current_scope_filter
+        if default_scope == "All":
+            default_scope = "Scenario"
+
+        dialog = VariableEditDialog(self, scope=default_scope)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            variable = dialog.get_variable()
+            scope = dialog.get_scope()
+
+            self.add_variable(
+                name=variable.name,
+                var_type=variable.type,
+                default_value=variable.default_value,
+                scope=scope,
+                description=variable.description,
+                sensitive=variable.sensitive,
+            )
+
+    def _on_edit_variable(self) -> None:
+        """Handle edit button click."""
+        current = self._tree.currentItem()
+        if not current:
+            return
+
+        data = current.data(0, Qt.ItemDataRole.UserRole)
+        if not data or data.get("type") != "variable":
+            return
+
+        self._edit_variable(data.get("name", ""), data.get("scope", ""))
 
     def _on_remove_variable(self) -> None:
         """Handle remove variable button click."""
-        current_row = self._table.currentRow()
-        if current_row >= 0:
-            name_item = self._table.item(current_row, self.COL_NAME)
-            if name_item:
-                self.remove_variable(name_item.text())
+        current = self._tree.currentItem()
+        if not current:
+            return
+
+        data = current.data(0, Qt.ItemDataRole.UserRole)
+        if not data or data.get("type") != "variable":
+            return
+
+        self.remove_variable(data.get("name", ""), data.get("scope", ""))
 
     def _on_clear_all(self) -> None:
         """Handle clear all button click."""
-        self.clear_variables()
+        if self._is_runtime_mode:
+            return
+
+        # Confirm dialog
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Clear All Variables")
+        msg.setText("Are you sure you want to delete all variables?")
+        msg.setInformativeText("This action cannot be undone.")
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        msg.setDefaultButton(QMessageBox.StandardButton.No)
+        msg.setStyleSheet(f"""
+            QMessageBox {{ background: {THEME.bg_panel}; }}
+            QMessageBox QLabel {{ color: {THEME.text_primary}; }}
+            QPushButton {{
+                background: {THEME.bg_light};
+                border: 1px solid {THEME.border};
+                border-radius: 4px;
+                padding: 6px 16px;
+                color: {THEME.text_primary};
+                min-width: 80px;
+                min-height: 32px;
+            }}
+            QPushButton:hover {{ background: {THEME.bg_hover}; }}
+        """)
+
+        if msg.exec() == QMessageBox.StandardButton.Yes:
+            self.clear_variables()
 
     def _on_scope_filter_changed(self, scope: str) -> None:
         """
         Handle scope filter dropdown change.
 
-        Filters the table to show only variables matching the selected scope.
-
         Args:
-            scope: Selected scope filter ("All", "Global", "Project", "Workflow")
+            scope: Selected scope filter
         """
         self._current_scope_filter = scope
         self._apply_scope_filter()
         logger.debug(f"Scope filter changed to: {scope}")
 
     def _apply_scope_filter(self) -> None:
-        """Apply current scope filter to table rows."""
+        """Apply current scope filter to tree items."""
         scope_filter = self._current_scope_filter
 
-        for row in range(self._table.rowCount()):
-            scope_item = self._table.item(row, self.COL_SCOPE)
-            if scope_item:
-                row_scope = scope_item.text()
-                # Show row if filter is "All" or matches row scope
-                should_show = scope_filter == "All" or row_scope == scope_filter
-                self._table.setRowHidden(row, not should_show)
-
-    def _on_item_changed(self, item: QTableWidgetItem) -> None:
-        """
-        Handle table item change.
-
-        Args:
-            item: Changed table item
-        """
-        if self._is_runtime_mode:
-            return
-
-        row = item.row()
-        col = item.column()
-
-        name_item = self._table.item(row, self.COL_NAME)
-        if not name_item:
-            return
-
-        current_name = name_item.text()
-        # Get the original/stored name from UserRole (set when variable was added)
-        stored_name = name_item.data(Qt.ItemDataRole.UserRole)
-
-        # Handle NAME column change (variable rename)
-        if col == self.COL_NAME:
-            old_name = stored_name
-            if old_name and old_name != current_name:
-                # Check if new name is empty
-                if not current_name.strip():
-                    logger.warning("Variable name cannot be empty, reverting")
-                    self._table.blockSignals(True)
-                    name_item.setText(old_name)
-                    self._table.blockSignals(False)
-                    return
-
-                # Check if new name already exists
-                if current_name in self._variables:
-                    logger.warning(
-                        f"Variable '{current_name}' already exists, reverting rename"
-                    )
-                    self._table.blockSignals(True)
-                    name_item.setText(old_name)
-                    self._table.blockSignals(False)
-                    return
-
-                # Rename the variable in the dict
-                var_data = self._variables.pop(old_name)
-                self._variables[current_name] = var_data
-
-                # Update the stored name to the new name
-                name_item.setData(Qt.ItemDataRole.UserRole, current_name)
-
-                logger.debug(f"Variable renamed: {old_name} -> {current_name}")
-
-                self.variable_changed.emit(
-                    current_name,
-                    var_data["type"],
-                    var_data["default"],
-                )
-                self.variables_changed.emit(self._variables)
-            return
-
-        # For other columns, use stored name to find the variable
-        # (in case table text doesn't match dict key due to pending edits)
-        lookup_name = stored_name if stored_name in self._variables else current_name
-
-        if lookup_name not in self._variables:
-            logger.warning(f"Variable '{lookup_name}' not found in internal dict")
-            return
-
-        # Update variable data
-        if col == self.COL_TYPE:
-            var_type = item.text()
-            self._variables[lookup_name]["type"] = var_type
-
-            # Update type color
-            type_color = TYPE_COLORS.get(var_type, THEME.text_primary)
-            item.setForeground(QBrush(QColor(type_color)))
-
-            # Update default value to match type
-            default_value = TYPE_DEFAULTS.get(var_type, "")
-            self._variables[lookup_name]["default"] = default_value
-            default_item = self._table.item(row, self.COL_DEFAULT)
-            if default_item:
-                # Block signals to prevent double-emit
-                self._table.blockSignals(True)
-                default_item.setText(str(default_value))
-                self._table.blockSignals(False)
-
-        elif col == self.COL_DEFAULT:
-            self._variables[lookup_name]["default"] = item.text()
-
-        self.variable_changed.emit(
-            lookup_name,
-            self._variables[lookup_name]["type"],
-            self._variables[lookup_name]["default"],
-        )
-        self.variables_changed.emit(self._variables)
+        for scope, scope_item in self._scope_items.items():
+            # Show/hide scope groups based on filter
+            if scope_filter == "All":
+                # Show scope if it has variables
+                has_vars = scope_item.childCount() > 0
+                scope_item.setHidden(not has_vars)
+            else:
+                # Only show matching scope
+                scope_item.setHidden(scope != scope_filter)
 
     def _setup_lazy_subscriptions(self) -> None:
         """
@@ -793,9 +1421,11 @@ class VariablesPanel(QDockWidget):
         name = event.get("name", "")
         var_type = event.get("type", "String")
         value = event.get("value", "")
-        scope = event.get("scope", "Workflow")
+        scope = event.get("scope", "Scenario")
 
-        if name and name not in self._variables:
+        # Check if variable already exists in any scope
+        exists = any(name in vars for vars in self._variables.values())
+        if not exists:
             self.add_variable(name, var_type, value, scope)
 
     def _on_variable_updated_event(self, event: Event) -> None:
@@ -808,7 +1438,7 @@ class VariablesPanel(QDockWidget):
         name = event.get("name", "")
         value = event.get("value")
 
-        if name and name in self._variables:
+        if name:
             self.update_variable_value(name, value)
 
     def _on_variable_deleted_event(self, event: Event) -> None:
@@ -823,19 +1453,9 @@ class VariablesPanel(QDockWidget):
             self.remove_variable(name)
 
     def _on_execution_started(self, event: Event) -> None:
-        """
-        Handle execution started event.
-
-        Args:
-            event: Execution started event
-        """
+        """Handle execution started event."""
         self.set_runtime_mode(True)
 
     def _on_execution_completed(self, event: Event) -> None:
-        """
-        Handle execution completed event.
-
-        Args:
-            event: Execution completed event
-        """
+        """Handle execution completed event."""
         self.set_runtime_mode(False)

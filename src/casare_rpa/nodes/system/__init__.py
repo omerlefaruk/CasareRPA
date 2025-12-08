@@ -6,6 +6,8 @@ This package provides nodes for system-level operations:
 - Message boxes and dialogs
 - Terminal/CMD command execution
 - Windows Services management
+- System utilities (volume, processes, env vars)
+- Quick nodes (hotkeys, beeps, clipboard monitor)
 """
 
 from casare_rpa.nodes.system.clipboard_nodes import (
@@ -17,6 +19,25 @@ from casare_rpa.nodes.system.dialog_nodes import (
     MessageBoxNode,
     InputDialogNode,
     TooltipNode,
+    SystemNotificationNode,
+    ConfirmDialogNode,
+    ProgressDialogNode,
+    FilePickerDialogNode,
+    FolderPickerDialogNode,
+    ColorPickerDialogNode,
+    DateTimePickerDialogNode,
+    SnackbarNode,
+    BalloonTipNode,
+    # New dialog nodes
+    ListPickerDialogNode,
+    MultilineInputDialogNode,
+    CredentialDialogNode,
+    FormDialogNode,
+    ImagePreviewDialogNode,
+    TableDialogNode,
+    WizardDialogNode,
+    SplashScreenNode,
+    AudioAlertNode,
 )
 from casare_rpa.nodes.system.command_nodes import (
     RunCommandNode,
@@ -30,6 +51,32 @@ from casare_rpa.nodes.system.service_nodes import (
     RestartServiceNode,
     ListServicesNode,
 )
+from casare_rpa.nodes.system.system_nodes import (
+    ScreenRegionPickerNode,
+    VolumeControlNode,
+    ProcessListNode,
+    ProcessKillNode,
+    EnvironmentVariableNode,
+    SystemInfoNode,
+)
+from casare_rpa.nodes.system.quick_nodes import (
+    HotkeyWaitNode,
+    BeepNode,
+    ClipboardMonitorNode,
+)
+from casare_rpa.nodes.system.utility_system_nodes import (
+    FileWatcherNode,
+    QRCodeNode,
+    Base64Node,
+    UUIDGeneratorNode,
+    AssertSystemNode,
+    LogToFileNode,
+)
+from casare_rpa.nodes.system.media_nodes import (
+    TextToSpeechNode,
+    PDFPreviewDialogNode,
+    WebcamCaptureNode,
+)
 
 __all__ = [
     # Clipboard operations
@@ -40,6 +87,25 @@ __all__ = [
     "MessageBoxNode",
     "InputDialogNode",
     "TooltipNode",
+    "SystemNotificationNode",
+    "ConfirmDialogNode",
+    "ProgressDialogNode",
+    "FilePickerDialogNode",
+    "FolderPickerDialogNode",
+    "ColorPickerDialogNode",
+    "DateTimePickerDialogNode",
+    "SnackbarNode",
+    "BalloonTipNode",
+    # New dialog nodes
+    "ListPickerDialogNode",
+    "MultilineInputDialogNode",
+    "CredentialDialogNode",
+    "FormDialogNode",
+    "ImagePreviewDialogNode",
+    "TableDialogNode",
+    "WizardDialogNode",
+    "SplashScreenNode",
+    "AudioAlertNode",
     # Command execution
     "RunCommandNode",
     "RunPowerShellNode",
@@ -50,4 +116,26 @@ __all__ = [
     "StopServiceNode",
     "RestartServiceNode",
     "ListServicesNode",
+    # System utilities
+    "ScreenRegionPickerNode",
+    "VolumeControlNode",
+    "ProcessListNode",
+    "ProcessKillNode",
+    "EnvironmentVariableNode",
+    "SystemInfoNode",
+    # Quick nodes
+    "HotkeyWaitNode",
+    "BeepNode",
+    "ClipboardMonitorNode",
+    # Utility system nodes
+    "FileWatcherNode",
+    "QRCodeNode",
+    "Base64Node",
+    "UUIDGeneratorNode",
+    "AssertSystemNode",
+    "LogToFileNode",
+    # Media nodes
+    "TextToSpeechNode",
+    "PDFPreviewDialogNode",
+    "WebcamCaptureNode",
 ]

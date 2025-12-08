@@ -34,10 +34,16 @@ class VisualNode(NodeGraphQtBaseNode):
     NODE_NAME = "Visual Node"
     NODE_CATEGORY = "basic"
 
-    def __init__(self) -> None:
-        """Initialize visual node."""
-        # Pass CasareNodeItem as the graphics item class for custom rendering
-        super().__init__(qgraphics_item=CasareNodeItem)
+    def __init__(self, qgraphics_item=None) -> None:
+        """
+        Initialize visual node.
+
+        Args:
+            qgraphics_item: Optional custom graphics item class. Defaults to CasareNodeItem.
+        """
+        # Pass graphics item class for custom rendering
+        item_class = qgraphics_item if qgraphics_item is not None else CasareNodeItem
+        super().__init__(qgraphics_item=item_class)
 
         # Ensure back-reference from view to node (needed for collapse button)
         if hasattr(self, "view") and self.view is not None:
@@ -45,6 +51,10 @@ class VisualNode(NodeGraphQtBaseNode):
 
         # Reference to the underlying CasareRPA node
         self._casare_node: Optional[CasareBaseNode] = None
+
+        # Last execution output data (for output inspector popup)
+        # Updated by ExecutionController after node execution completes
+        self._last_output: Optional[Dict[str, Any]] = None
 
         # Port type registry for typed connections
         self._port_types: Dict[str, Optional[DataType]] = {}
@@ -91,6 +101,9 @@ class VisualNode(NodeGraphQtBaseNode):
         # Setup ports for this node type
         self.setup_ports()
 
+        # Setup custom widgets defined by subclasses
+        self.setup_widgets()
+
         # Auto-create widgets from schema if available
         self._auto_create_widgets_from_schema()
 
@@ -129,6 +142,11 @@ class VisualNode(NodeGraphQtBaseNode):
         # VSCode text color (#D4D4D4)
         self.model.text_color = (212, 212, 212, 255)
 
+        # Set category on view for header coloring
+        if hasattr(self, "view") and self.view is not None:
+            if hasattr(self.view, "set_category"):
+                self.view.set_category(self.NODE_CATEGORY)
+
     def _create_temp_icon(self) -> str:
         """
         Create a professional icon for this node type.
@@ -148,6 +166,18 @@ class VisualNode(NodeGraphQtBaseNode):
         Setup node ports.
 
         Override this method in subclasses to define ports.
+        """
+        pass
+
+    def setup_widgets(self) -> None:
+        """
+        Setup custom widgets for this node.
+
+        Override this method in subclasses to add custom widgets like
+        file pickers, credential selectors, or cascading dropdowns.
+
+        Note: This is called BEFORE _auto_create_widgets_from_schema(),
+        so custom widgets can override schema-based widgets.
         """
         pass
 
@@ -350,8 +380,9 @@ class VisualNode(NodeGraphQtBaseNode):
         """
         Add a text input widget with variable picker integration.
 
-        First creates a standard text input, then enhances it with variable
-        picker functionality by replacing the internal QLineEdit.
+        PERFORMANCE: Uses direct creation via create_variable_text_widget() when
+        available, avoiding the two-step create+replace pattern. This reduces
+        widget instantiation overhead and DOM operations.
 
         Args:
             name: Property name
@@ -364,7 +395,35 @@ class VisualNode(NodeGraphQtBaseNode):
         Returns:
             The created widget
         """
-        # First, create standard text input (this properly registers everything)
+        # PERFORMANCE: Try direct creation path first
+        # This creates VariableAwareLineEdit directly in a NodeBaseWidget,
+        # avoiding the create standard widget + replace internal QLineEdit pattern
+        try:
+            from casare_rpa.presentation.canvas.graph.node_widgets import (
+                create_variable_text_widget,
+            )
+
+            widget = create_variable_text_widget(
+                name=name,
+                label=label,
+                text=text,
+                placeholder_text=placeholder_text,
+                tooltip=tooltip or "",
+            )
+
+            if widget:
+                # Add the widget to the node
+                self.add_custom_widget(widget, tab=tab)
+                widget.setParentItem(self.view)
+                return widget
+
+        except ImportError:
+            pass  # Fall back to standard approach
+        except Exception:
+            pass  # Fall back to standard approach
+
+        # FALLBACK: Standard approach - create text input and return
+        # Used when direct creation fails or isn't available
         self.add_text_input(
             name,
             label,
@@ -374,84 +433,7 @@ class VisualNode(NodeGraphQtBaseNode):
             tooltip=tooltip,
         )
 
-        # Now enhance with variable picker
-        try:
-            from loguru import logger
-            from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
-                VariableAwareLineEdit,
-                VariableProvider,
-            )
-
-            # Get the widget we just created
-            widget = self.get_widget(name)
-            if not widget:
-                return None
-
-            # Get the original QLineEdit
-            original_line_edit = widget.get_custom_widget()
-            if not original_line_edit:
-                return widget
-
-            # Create VariableAwareLineEdit with same properties
-            var_line_edit = VariableAwareLineEdit()
-            var_line_edit.setText(original_line_edit.text())
-            var_line_edit.setPlaceholderText(original_line_edit.placeholderText())
-
-            # Apply styling with padding for {x} button
-            var_line_edit.setStyleSheet("""
-                QLineEdit {
-                    background: rgb(60, 60, 80);
-                    border: 1px solid rgb(80, 80, 100);
-                    border-radius: 3px;
-                    color: rgba(230, 230, 230, 255);
-                    padding: 2px 28px 2px 4px;
-                    selection-background-color: rgba(100, 150, 200, 150);
-                }
-                QLineEdit:focus {
-                    background: rgb(70, 70, 90);
-                    border: 1px solid rgb(100, 150, 200);
-                }
-            """)
-
-            if tooltip:
-                var_line_edit.setToolTip(tooltip)
-
-            # Connect to global variable provider
-            var_line_edit.set_provider(VariableProvider.get_instance())
-
-            # Replace the widget's internal line edit by accessing the _NodeGroupBox layout
-            # NodeGraphQt stores the custom widget inside a _NodeGroupBox at layout index 0
-            group_box = widget.widget()  # Returns _NodeGroupBox
-            if group_box and hasattr(group_box, "layout"):
-                layout = group_box.layout()
-                if layout:
-                    # Remove the old widget from layout
-                    layout.removeWidget(original_line_edit)
-                    original_line_edit.setParent(None)
-                    original_line_edit.deleteLater()
-
-                    # Add the new widget to layout
-                    layout.addWidget(var_line_edit)
-
-            # Store reference for value access
-            widget._line_edit = var_line_edit
-
-            # Reconnect signals
-            var_line_edit.editingFinished.connect(widget.on_value_changed)
-            var_line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
-
-            logger.debug(
-                f"[Widget Generation] Enhanced text input with variable picker: {name}"
-            )
-
-            return widget
-
-        except ImportError as e:
-            # Variable picker not available, standard text input already created
-            from loguru import logger
-
-            logger.debug(f"Variable picker not available, using standard input: {e}")
-            return self.get_widget(name)
+        return self.get_widget(name)
 
     def _style_text_inputs(self) -> None:
         """Apply custom styling to text input widgets for better visibility."""
@@ -633,9 +615,9 @@ class VisualNode(NodeGraphQtBaseNode):
 
         This provides a declarative way to define node properties once and have both
         the config and UI generated automatically.
-        """
-        from loguru import logger
 
+        Note: Widgets created in setup_widgets() take precedence over schema widgets.
+        """
         if not self._casare_node:
             return  # No casare node yet
 
@@ -644,19 +626,16 @@ class VisualNode(NodeGraphQtBaseNode):
             self._casare_node.__class__, "__node_schema__", None
         )
         if not schema:
-            logger.debug(
-                f"[Widget Generation] {self.__class__.__name__}: No __node_schema__ found, "
-                f"using manual widget creation"
-            )
             return  # No schema, use manual widget definitions
 
-        logger.debug(
-            f"[Widget Generation] {self.__class__.__name__}: Auto-generating {len(schema.properties)} "
-            f"widgets from @node_schema decorator"
-        )
+        # Get existing widget names (created in setup_widgets)
+        existing_widgets = set(self.widgets().keys())
 
         # Generate widgets from schema
         for prop_def in schema.properties:
+            # Skip if widget already exists (created in setup_widgets)
+            if prop_def.name in existing_widgets:
+                continue
             # Custom widget class override
             if prop_def.widget_class:
                 # Custom widgets need special handling - skip for now
@@ -999,3 +978,34 @@ class VisualNode(NodeGraphQtBaseNode):
             return []
 
         return schema.get_essential_properties()
+
+    # =========================================================================
+    # OUTPUT INSPECTOR METHODS
+    # =========================================================================
+
+    def get_last_output(self) -> Optional[Dict[str, Any]]:
+        """
+        Get the last execution output data.
+
+        This data is populated by ExecutionController after node execution
+        completes and is used by the Node Output Inspector popup.
+
+        Returns:
+            Dictionary of output port name -> value, or None if not executed
+        """
+        return self._last_output
+
+    def set_last_output(self, output: Optional[Dict[str, Any]]) -> None:
+        """
+        Set the last execution output data.
+
+        Called by ExecutionController after node execution completes.
+
+        Args:
+            output: Dictionary of output port name -> value
+        """
+        self._last_output = output
+
+    def clear_last_output(self) -> None:
+        """Clear the last execution output data."""
+        self._last_output = None

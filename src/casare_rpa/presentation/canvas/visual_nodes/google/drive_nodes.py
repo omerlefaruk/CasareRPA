@@ -1,7 +1,69 @@
-"""Visual nodes for Google Drive operations."""
+"""Visual nodes for Google Drive operations.
+
+All nodes use cascading credential pickers:
+1. NodeGoogleCredentialWidget - Google account selection
+2. NodeGoogleDriveFileWidget - File selection (cascades from credential)
+3. NodeGoogleDriveFolderWidget - Folder selection (cascades from credential)
+"""
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.presentation.canvas.graph.node_widgets import (
+    NodeGoogleCredentialWidget,
+    NodeGoogleDriveFileWidget,
+    NodeGoogleDriveFolderWidget,
+)
+
+# Google Drive API scopes
+DRIVE_READONLY_SCOPE = ["https://www.googleapis.com/auth/drive.readonly"]
+DRIVE_FULL_SCOPE = ["https://www.googleapis.com/auth/drive"]
+
+
+class VisualGoogleDriveBaseNode(VisualNode):
+    """Base class for Google Drive visual nodes with credential picker integration."""
+
+    # Subclasses should set this to DRIVE_READONLY_SCOPE or DRIVE_FULL_SCOPE
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
+
+    def __init__(self, qgraphics_item=None) -> None:
+        super().__init__(qgraphics_item)
+
+    def setup_widgets(self) -> None:
+        """Setup credential picker widget."""
+        self._cred_widget = NodeGoogleCredentialWidget(
+            name="credential_id",
+            label="Google Account",
+            scopes=self.REQUIRED_SCOPES,
+        )
+        if self._cred_widget:
+            self.add_custom_widget(self._cred_widget)
+            self._cred_widget.setParentItem(self.view)
+
+    def setup_file_widget(self, mime_types: list = None) -> None:
+        """Setup Drive file picker widget (call from subclass if needed)."""
+        self._file_widget = NodeGoogleDriveFileWidget(
+            name="file_id",
+            label="File",
+            credential_widget=self._cred_widget,
+            mime_types=mime_types,
+        )
+        if self._file_widget:
+            self.add_custom_widget(self._file_widget)
+            self._file_widget.setParentItem(self.view)
+
+    def setup_folder_widget(
+        self, label: str = "Folder", name: str = "folder_id"
+    ) -> None:
+        """Setup Drive folder navigator widget (call from subclass if needed)."""
+        self._folder_widget = NodeGoogleDriveFolderWidget(
+            name=name,
+            label=label,
+            credential_widget=self._cred_widget,
+            enhanced=True,  # Use full navigator with browse/search/manual ID
+        )
+        if self._folder_widget:
+            self.add_custom_widget(self._folder_widget)
+            self._folder_widget.setParentItem(self.view)
 
 
 # =============================================================================
@@ -9,43 +71,41 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 # =============================================================================
 
 
-class VisualDriveUploadFileNode(VisualNode):
-    """Visual representation of DriveUploadFileNode.
-
-    Widgets are auto-generated from DriveUploadFileNode's @node_schema decorator.
-    """
+class VisualDriveUploadFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveUploadFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Upload File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveUploadFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("file_path", DataType.STRING)
         self.add_typed_input("file_name", DataType.STRING)
-        self.add_typed_input("folder_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("file_id", DataType.STRING)
         self.add_typed_output("file_url", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_folder_widget()
 
-class VisualDriveDownloadFileNode(VisualNode):
-    """Visual representation of DriveDownloadFileNode.
 
-    Widgets are auto-generated from DriveDownloadFileNode's @node_schema decorator.
-    """
+class VisualDriveDownloadFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveDownloadFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Download File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveDownloadFileNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("destination", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("file_path", DataType.STRING)
@@ -53,102 +113,107 @@ class VisualDriveDownloadFileNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
-class VisualDriveDeleteFileNode(VisualNode):
-    """Visual representation of DriveDeleteFileNode.
 
-    Widgets are auto-generated from DriveDeleteFileNode's @node_schema decorator.
-    """
+class VisualDriveDeleteFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveDeleteFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Delete File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveDeleteFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
-class VisualDriveCopyFileNode(VisualNode):
-    """Visual representation of DriveCopyFileNode.
 
-    Widgets are auto-generated from DriveCopyFileNode's @node_schema decorator.
-    """
+class VisualDriveCopyFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveCopyFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Copy File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveCopyFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("new_name", DataType.STRING)
-        self.add_typed_input("folder_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("new_file_id", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
+        self.setup_folder_widget()
 
-class VisualDriveMoveFileNode(VisualNode):
-    """Visual representation of DriveMoveFileNode.
 
-    Widgets are auto-generated from DriveMoveFileNode's @node_schema decorator.
-    """
+class VisualDriveMoveFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveMoveFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Move File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveMoveFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
-        self.add_typed_input("folder_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
+        self.setup_folder_widget()
 
-class VisualDriveRenameFileNode(VisualNode):
-    """Visual representation of DriveRenameFileNode.
 
-    Widgets are auto-generated from DriveRenameFileNode's @node_schema decorator.
-    """
+class VisualDriveRenameFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveRenameFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Rename File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveRenameFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("new_name", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
-class VisualDriveGetFileNode(VisualNode):
-    """Visual representation of DriveGetFileNode.
 
-    Widgets are auto-generated from DriveGetFileNode's @node_schema decorator.
-    """
+class VisualDriveGetFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveGetFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Get File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveGetFileNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("name", DataType.STRING)
         self.add_typed_output("mime_type", DataType.STRING)
@@ -156,9 +221,13 @@ class VisualDriveGetFileNode(VisualNode):
         self.add_typed_output("created_time", DataType.STRING)
         self.add_typed_output("modified_time", DataType.STRING)
         self.add_typed_output("web_view_link", DataType.STRING)
-        self.add_typed_output("parents", DataType.ARRAY)
+        self.add_typed_output("parents", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
 
 # =============================================================================
@@ -166,68 +235,69 @@ class VisualDriveGetFileNode(VisualNode):
 # =============================================================================
 
 
-class VisualDriveCreateFolderNode(VisualNode):
-    """Visual representation of DriveCreateFolderNode.
-
-    Widgets are auto-generated from DriveCreateFolderNode's @node_schema decorator.
-    """
+class VisualDriveCreateFolderNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveCreateFolderNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Create Folder"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveCreateFolderNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("folder_name", DataType.STRING)
-        self.add_typed_input("parent_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("folder_id", DataType.STRING)
         self.add_typed_output("folder_url", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        # Parent folder picker - use enhanced navigator
+        self.setup_folder_widget(label="Parent Folder", name="parent_id")
 
-class VisualDriveListFilesNode(VisualNode):
-    """Visual representation of DriveListFilesNode.
 
-    Widgets are auto-generated from DriveListFilesNode's @node_schema decorator.
-    """
+class VisualDriveListFilesNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveListFilesNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: List Files"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveListFilesNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("folder_id", DataType.STRING)
         self.add_typed_input("page_size", DataType.INTEGER)
         self.add_exec_output("exec_out")
-        self.add_typed_output("files", DataType.ARRAY)
+        self.add_typed_output("files", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_folder_widget()
 
-class VisualDriveSearchFilesNode(VisualNode):
-    """Visual representation of DriveSearchFilesNode.
 
-    Widgets are auto-generated from DriveSearchFilesNode's @node_schema decorator.
-    """
+class VisualDriveSearchFilesNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveSearchFilesNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Search Files"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveSearchFilesNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("query", DataType.STRING)
         self.add_typed_input("page_size", DataType.INTEGER)
         self.add_exec_output("exec_out")
-        self.add_typed_output("files", DataType.ARRAY)
+        self.add_typed_output("files", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
@@ -239,20 +309,17 @@ class VisualDriveSearchFilesNode(VisualNode):
 # =============================================================================
 
 
-class VisualDriveShareFileNode(VisualNode):
-    """Visual representation of DriveShareFileNode.
-
-    Widgets are auto-generated from DriveShareFileNode's @node_schema decorator.
-    """
+class VisualDriveShareFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveShareFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Share File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveShareFileNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("email", DataType.STRING)
         self.add_typed_input("role", DataType.STRING)
         self.add_exec_output("exec_out")
@@ -260,46 +327,52 @@ class VisualDriveShareFileNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
-class VisualDriveRemovePermissionNode(VisualNode):
-    """Visual representation of DriveRemovePermissionNode.
 
-    Widgets are auto-generated from DriveRemovePermissionNode's @node_schema decorator.
-    """
+class VisualDriveRemoveShareNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveRemoveShareNode."""
 
     __identifier__ = "casare_rpa.google"
-    NODE_NAME = "Drive: Remove Permission"
+    NODE_NAME = "Drive: Remove Share"
     NODE_CATEGORY = "google/drive"
-    CASARE_NODE_CLASS = "DriveRemovePermissionNode"
+    CASARE_NODE_CLASS = "DriveRemoveShareNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("permission_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
-class VisualDriveGetPermissionsNode(VisualNode):
-    """Visual representation of DriveGetPermissionsNode.
 
-    Widgets are auto-generated from DriveGetPermissionsNode's @node_schema decorator.
-    """
+class VisualDriveGetPermissionsNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveGetPermissionsNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Get Permissions"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveGetPermissionsNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("permissions", DataType.ARRAY)
+        self.add_typed_output("permissions", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
 
 
 # =============================================================================
@@ -307,20 +380,17 @@ class VisualDriveGetPermissionsNode(VisualNode):
 # =============================================================================
 
 
-class VisualDriveExportFileNode(VisualNode):
-    """Visual representation of DriveExportFileNode.
-
-    Widgets are auto-generated from DriveExportFileNode's @node_schema decorator.
-    """
+class VisualDriveExportFileNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveExportFileNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Export File"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveExportFileNode"
+    REQUIRED_SCOPES = DRIVE_READONLY_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_id", DataType.STRING)
         self.add_typed_input("export_format", DataType.STRING)
         self.add_typed_input("destination", DataType.STRING)
         self.add_exec_output("exec_out")
@@ -328,75 +398,79 @@ class VisualDriveExportFileNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_file_widget()
+
 
 # =============================================================================
 # Batch Operations
 # =============================================================================
 
 
-class VisualDriveBatchDeleteNode(VisualNode):
-    """Visual representation of DriveBatchDeleteNode.
-
-    Widgets are auto-generated from DriveBatchDeleteNode's @node_schema decorator.
-    """
+class VisualDriveBatchDeleteNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveBatchDeleteNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Batch Delete"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveBatchDeleteNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_ids", DataType.ARRAY)
+        self.add_typed_input("file_ids", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("deleted_count", DataType.INTEGER)
         self.add_typed_output("failed_count", DataType.INTEGER)
-        self.add_typed_output("results", DataType.ARRAY)
+        self.add_typed_output("results", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualDriveBatchMoveNode(VisualNode):
-    """Visual representation of DriveBatchMoveNode.
-
-    Widgets are auto-generated from DriveBatchMoveNode's @node_schema decorator.
-    """
+class VisualDriveBatchMoveNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveBatchMoveNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Batch Move"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveBatchMoveNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_ids", DataType.ARRAY)
-        self.add_typed_input("folder_id", DataType.STRING)
+        self.add_typed_input("file_ids", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("moved_count", DataType.INTEGER)
         self.add_typed_output("failed_count", DataType.INTEGER)
-        self.add_typed_output("results", DataType.ARRAY)
+        self.add_typed_output("results", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_folder_widget()
 
-class VisualDriveBatchCopyNode(VisualNode):
-    """Visual representation of DriveBatchCopyNode.
 
-    Widgets are auto-generated from DriveBatchCopyNode's @node_schema decorator.
-    """
+class VisualDriveBatchCopyNode(VisualGoogleDriveBaseNode):
+    """Visual representation of DriveBatchCopyNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Drive: Batch Copy"
     NODE_CATEGORY = "google/drive"
     CASARE_NODE_CLASS = "DriveBatchCopyNode"
+    REQUIRED_SCOPES = DRIVE_FULL_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("file_ids", DataType.ARRAY)
-        self.add_typed_input("folder_id", DataType.STRING)
+        self.add_typed_input("file_ids", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("copied_count", DataType.INTEGER)
         self.add_typed_output("failed_count", DataType.INTEGER)
-        self.add_typed_output("results", DataType.ARRAY)
+        self.add_typed_output("results", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_folder_widget()

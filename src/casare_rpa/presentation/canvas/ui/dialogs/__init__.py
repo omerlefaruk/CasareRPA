@@ -43,6 +43,22 @@ from casare_rpa.presentation.canvas.ui.dialogs.migration_dialog import (
 from casare_rpa.presentation.canvas.ui.dialogs.quick_node_config_dialog import (
     QuickNodeConfigDialog,
 )
+from casare_rpa.presentation.canvas.ui.dialogs.parameter_promotion_dialog import (
+    ParameterPromotionDialog,
+    show_parameter_promotion_dialog,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.google_oauth_dialog import (
+    GoogleOAuthDialog,
+    GOOGLE_SCOPES,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.environment_editor import (
+    EnvironmentEditorDialog,
+    show_environment_editor,
+)
+from casare_rpa.presentation.canvas.ui.dialogs.project_wizard import (
+    ProjectWizard,
+    show_project_wizard,
+)
 
 __all__ = [
     "NodePropertiesDialog",
@@ -58,4 +74,15 @@ __all__ = [
     "MigrationDialog",
     "show_migration_dialog",
     "QuickNodeConfigDialog",
+    "ParameterPromotionDialog",
+    "show_parameter_promotion_dialog",
+    # Google OAuth
+    "GoogleOAuthDialog",
+    "GOOGLE_SCOPES",
+    # Environment Editor
+    "EnvironmentEditorDialog",
+    "show_environment_editor",
+    # Project Wizard
+    "ProjectWizard",
+    "show_project_wizard",
 ]

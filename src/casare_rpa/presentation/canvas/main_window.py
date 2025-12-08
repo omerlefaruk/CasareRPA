@@ -97,9 +97,13 @@ class MainWindow(QMainWindow):
 
         # Panels and docks
         self._bottom_panel: Optional["BottomPanelDock"] = None
+        self._side_panel = (
+            None  # SidePanelDock (Debug, Process Mining, Robot Picker, Analytics)
+        )
         self._debug_panel: Optional["DebugPanel"] = None
         self._process_mining_panel = None  # ProcessMiningPanel
         self._robot_picker_panel = None  # RobotPickerPanel
+        self._analytics_panel = None  # AnalyticsPanel
         self._command_palette: Optional["CommandPalette"] = None
 
         # 3-tier loading state
@@ -158,6 +162,15 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{APP_NAME} v{APP_VERSION}")
         self.resize(GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT)
         self.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
+
+        # Set corner preferences so right dock doesn't overlap bottom dock
+        # Bottom corners belong to the bottom dock area
+        self.setCorner(
+            Qt.Corner.BottomRightCorner, Qt.DockWidgetArea.BottomDockWidgetArea
+        )
+        self.setCorner(
+            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.BottomDockWidgetArea
+        )
 
         from casare_rpa.presentation.canvas.theme import get_canvas_stylesheet
 
@@ -223,12 +236,11 @@ class MainWindow(QMainWindow):
         cp.register_action(self.action_delete, "Edit")
         cp.register_action(self.action_select_all, "Edit")
         cp.register_action(self.action_find_node, "Edit")
-        cp.register_action(self.action_toggle_bottom_panel, "View")
         cp.register_action(self.action_toggle_minimap, "View")
         cp.register_action(self.action_run, "Run", "Execute workflow")
         cp.register_action(self.action_pause, "Run", "Pause execution")
         cp.register_action(self.action_stop, "Run", "Stop execution")
-        cp.register_action(self.action_debug, "Run", "Debug workflow")
+        cp.register_action(self.action_restart, "Run", "Restart workflow")
         cp.register_action(self.action_validate, "Automation", "Validate workflow")
         cp.register_action(self.action_record_workflow, "Automation", "Record actions")
         cp.register_action(
@@ -273,14 +285,6 @@ class MainWindow(QMainWindow):
 
     # ==================== Panel Toggle Handlers ====================
 
-    def _on_toggle_bottom_panel(self, checked: bool) -> None:
-        """Handle bottom panel toggle."""
-        if self._panel_controller:
-            if checked:
-                self._panel_controller.show_bottom_panel()
-            else:
-                self._panel_controller.hide_bottom_panel()
-
     def _on_focus_view(self) -> None:
         """Focus view: zoom to selected node and center it (F)."""
         if self._is_text_widget_focused():
@@ -314,11 +318,12 @@ class MainWindow(QMainWindow):
         return self.bottom_panel
 
     @property
-    def execution_timeline(self) -> Optional["ExecutionTimeline"]:
-        return getattr(self, "_execution_timeline", None)
+    def side_panel(self):
+        """Get the side panel (Debug, Process Mining, Robot Picker, Analytics)."""
+        return self._side_panel
 
-    def get_execution_timeline(self) -> Optional["ExecutionTimeline"]:
-        return self.execution_timeline
+    def get_side_panel(self):
+        return self.side_panel
 
     @property
     def validation_panel(self):
@@ -337,30 +342,53 @@ class MainWindow(QMainWindow):
         if self._panel_controller:
             self._panel_controller.hide_bottom_panel()
 
+    def show_side_panel(self) -> None:
+        """Show the side panel."""
+        if self._side_panel:
+            self._side_panel.show()
+            if hasattr(self, "action_toggle_side_panel"):
+                self.action_toggle_side_panel.setChecked(True)
+
+    def hide_side_panel(self) -> None:
+        """Hide the side panel."""
+        if self._side_panel:
+            self._side_panel.hide()
+            if hasattr(self, "action_toggle_side_panel"):
+                self.action_toggle_side_panel.setChecked(False)
+
+    def show_debug_tab(self) -> None:
+        """Show the side panel with Debug tab active."""
+        if self._side_panel:
+            self._side_panel.show_debug_tab()
+            if hasattr(self, "action_toggle_side_panel"):
+                self.action_toggle_side_panel.setChecked(True)
+
+    def show_analytics_tab(self) -> None:
+        """Show the side panel with Analytics tab active."""
+        if self._side_panel:
+            self._side_panel.show_analytics_tab()
+            if hasattr(self, "action_toggle_side_panel"):
+                self.action_toggle_side_panel.setChecked(True)
+
     def show_validation_panel(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.show_validation_tab()
-            self.action_toggle_bottom_panel.setChecked(True)
 
     def hide_validation_panel(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.hide()
-            self.action_toggle_bottom_panel.setChecked(False)
 
     def show_log_viewer(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.show_log_tab()
-            self.action_toggle_bottom_panel.setChecked(True)
 
     def hide_log_viewer(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.hide()
-            self.action_toggle_bottom_panel.setChecked(False)
 
     def show_execution_history(self) -> None:
         if self._bottom_panel:
             self._bottom_panel.show_history_tab()
-            self.action_toggle_bottom_panel.setChecked(True)
 
     # ==================== Property Change Handler ====================
 
@@ -880,53 +908,6 @@ class MainWindow(QMainWindow):
         """Handle save as scenario action - emits signal for app.py to handle."""
         self.save_as_scenario_requested.emit()
 
-    def _on_migrate_workflow(self) -> None:
-        """Handle migrate workflow action - opens migration dialog."""
-        if not self._workflow_controller:
-            logger.warning("Cannot migrate: workflow controller not initialized")
-            return
-
-        # Get current workflow's version history
-        version_history = self._workflow_controller.get_version_history()
-        if not version_history:
-            from PySide6.QtWidgets import QMessageBox
-
-            msg = QMessageBox(self)
-            msg.setWindowTitle("Migration Not Available")
-            msg.setText("This workflow has no version history.")
-            msg.setInformativeText(
-                "Save the workflow first to create an initial version."
-            )
-            msg.setIcon(QMessageBox.Icon.Information)
-            msg.setStyleSheet(self._get_message_box_style())
-            msg.exec()
-            return
-
-        # Check if there are enough versions
-        versions = version_history.list_versions()
-        if len(versions) < 2:
-            from PySide6.QtWidgets import QMessageBox
-
-            msg = QMessageBox(self)
-            msg.setWindowTitle("Migration Not Available")
-            msg.setText("Migration requires at least 2 versions.")
-            msg.setInformativeText(f"Current workflow has {len(versions)} version(s).")
-            msg.setIcon(QMessageBox.Icon.Information)
-            msg.setStyleSheet(self._get_message_box_style())
-            msg.exec()
-            return
-
-        # Show migration dialog
-        from casare_rpa.presentation.canvas.ui.dialogs import show_migration_dialog
-
-        result = show_migration_dialog(version_history, self)
-        if result and result.success and result.migrated_data:
-            logger.info(
-                f"Migration completed: {result.from_version} → {result.to_version}"
-            )
-            # Optionally reload the workflow with migrated data
-            # self._workflow_controller.reload_from_data(result.migrated_data)
-
     def _on_run_workflow(self) -> None:
         if self._execution_controller:
             self._execution_controller.run_workflow()
@@ -969,6 +950,11 @@ class MainWindow(QMainWindow):
     def _on_stop_workflow(self) -> None:
         if self._execution_controller:
             self._execution_controller.stop_workflow()
+
+    def _on_restart_workflow(self) -> None:
+        """Restart workflow - stop, reset, and run fresh (F8)."""
+        if self._execution_controller:
+            self._execution_controller.restart_workflow()
 
     def _on_start_listening(self) -> None:
         """Start listening for trigger events (F9)."""
@@ -1149,6 +1135,25 @@ class MainWindow(QMainWindow):
         status = "enabled" if checked else "disabled"
         self.show_status(f"Auto-connect {status}", 2000)
         logger.debug(f"Auto-connect mode: {status}")
+
+    def _on_toggle_high_performance_mode(self, checked: bool) -> None:
+        """
+        Toggle high performance rendering mode.
+
+        When enabled, forces simplified LOD rendering at all zoom levels
+        for smoother interaction with large workflows (50+ nodes).
+
+        Args:
+            checked: True to enable high performance mode, False to disable
+        """
+        # Update graph widget if available
+        graph_widget = self._central_widget
+        if graph_widget and hasattr(graph_widget, "set_high_performance_mode"):
+            graph_widget.set_high_performance_mode(checked)
+
+        # Show status feedback
+        status = "enabled" if checked else "disabled"
+        self.show_status(f"High Performance Mode {status}", 2000)
 
     def _on_toggle_quick_node_mode(self, checked: bool) -> None:
         """
@@ -1561,20 +1566,25 @@ class MainWindow(QMainWindow):
         if self._project_controller:
             self._project_controller.show_project_manager()
 
-    # ==================== Credential Management ====================
+    def _on_project_opened(self, project_id: str) -> None:
+        """Handle project opened from Project Explorer."""
+        logger.info(f"Opening project: {project_id}")
+        if self._project_controller:
+            self._project_controller.load_project(project_id)
 
-    def _on_credential_manager(self) -> None:
-        """Open the credential manager dialog."""
-        from casare_rpa.presentation.canvas.ui.dialogs import CredentialManagerDialog
+    def _on_project_selected(self, project_id: str) -> None:
+        """Handle project selection from Project Explorer."""
+        logger.debug(f"Project selected: {project_id}")
 
-        dialog = CredentialManagerDialog(self)
-        dialog.credentials_changed.connect(self._on_credentials_changed)
-        dialog.exec()
-
-    def _on_credentials_changed(self) -> None:
-        """Handle credential changes."""
-        # Notify any components that need to refresh credential lists
-        logger.info("Credentials updated")
+    def _on_credential_updated(self, credential_id: str) -> None:
+        """Handle credential updated - refresh nodes that use credentials."""
+        logger.info(f"Credential updated: {credential_id}")
+        # Notify nodes that might need to refresh
+        graph = self.get_graph()
+        if graph:
+            for node in graph.all_nodes():
+                if hasattr(node, "refresh_credential"):
+                    node.refresh_credential(credential_id)
 
     # ==================== Fleet Dashboard ====================
 
@@ -1600,6 +1610,10 @@ class MainWindow(QMainWindow):
         # Cleanup UI initializer
         if self._ui_initializer:
             self._ui_initializer.cleanup()
+
+        # Cleanup side panel
+        if self._side_panel:
+            self._side_panel.cleanup()
 
         ComponentFactory.clear()
 

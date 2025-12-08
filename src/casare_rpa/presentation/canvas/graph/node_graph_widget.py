@@ -22,10 +22,31 @@ from casare_rpa.presentation.canvas.connections.connection_cutter import (
     ConnectionCutter,
 )
 from casare_rpa.presentation.canvas.connections.node_insert import NodeInsertManager
+from casare_rpa.presentation.canvas.connections.reroute_insert import (
+    RerouteInsertManager,
+)
+from casare_rpa.presentation.canvas.connections.smart_routing import (
+    SmartRoutingManager,
+    set_routing_manager,
+)
+from casare_rpa.presentation.canvas.connections.wire_bundler import (
+    WireBundler,
+    get_wire_bundler,
+    set_wire_bundler,
+)
 from casare_rpa.presentation.canvas.graph.composite_node_creator import (
     CompositeNodeCreator,
 )
 from casare_rpa.presentation.canvas.graph.custom_pipe import CasarePipe
+from casare_rpa.presentation.canvas.graph.custom_node_item import (
+    get_high_performance_mode,
+    set_high_performance_mode,
+    get_high_perf_node_threshold,
+)
+from casare_rpa.presentation.canvas.graph.lod_manager import (
+    get_lod_manager,
+    LODLevel,
+)
 from casare_rpa.presentation.canvas.graph.event_filters import (
     ConnectionDropFilter,
     OutputPortMMBFilter,
@@ -39,6 +60,12 @@ from casare_rpa.presentation.canvas.graph.node_widgets import (
     apply_all_node_widget_fixes,
 )
 from casare_rpa.presentation.canvas.graph.selection_manager import SelectionManager
+from casare_rpa.presentation.canvas.ui.panels.port_legend_panel import PortLegendPanel
+from casare_rpa.presentation.canvas.ui.widgets.breadcrumb_nav import (
+    BreadcrumbNavWidget,
+    BreadcrumbItem,
+    SubflowNavigationController,
+)
 
 # ============================================================================
 # CRITICAL: Disable NodeGraphQt item caching to prevent zoom/pan glitches
@@ -61,7 +88,6 @@ try:
     _node_base.ITEM_CACHE_MODE = _NO_CACHE
     _pipe.ITEM_CACHE_MODE = _NO_CACHE
     _port.ITEM_CACHE_MODE = _NO_CACHE
-    logger.debug("Disabled NodeGraphQt item caching to prevent zoom/pan glitches")
 except Exception as e:
     logger.warning(f"Failed to patch NodeGraphQt cache mode: {e}")
 
@@ -146,12 +172,36 @@ class NodeGraphWidget(QWidget):
         # Create node insert manager (drag node onto connection to insert)
         self._node_insert = NodeInsertManager(self._graph, self)
 
+        # Create reroute insert manager (Alt+LMB on wire to insert reroute node)
+        self._reroute_insert = RerouteInsertManager(self._graph, self)
+
+        # Create wire bundler for grouping parallel connections
+        self._wire_bundler = WireBundler(self._graph, self)
+        set_wire_bundler(self._wire_bundler)  # Set as global instance
+
+        # Create smart routing manager for obstacle avoidance
+        self._smart_routing = SmartRoutingManager(self._graph)
+        set_routing_manager(self._smart_routing)  # Set as global instance
+
         # Create quick actions for node context menu
         self._quick_actions = NodeQuickActions(self._graph, self)
 
         # Wire up auto-connect reference so quick actions can check drag state
         # This allows RMB to confirm auto-connect while dragging
         self._quick_actions.set_auto_connect_manager(self._auto_connect)
+
+        # Track Alt+drag duplicate node and offset for mouse move updates
+        self._alt_drag_node = None
+        self._alt_drag_offset_x = 0.0
+        self._alt_drag_offset_y = 0.0
+
+        # Track mouse press for popup close (click vs drag detection)
+        self._popup_close_press_pos = None
+
+        # Connect create subflow action
+        self._quick_actions.create_subflow_requested.connect(
+            self._create_subflow_from_selection
+        )
 
         # Setup connection validator for strict type checking
         self._validator = (
@@ -192,6 +242,12 @@ class NodeGraphWidget(QWidget):
         # Fix MMB panning over items
         self._fix_mmb_panning()
 
+        # Setup port legend panel (F1 help overlay)
+        self._setup_port_legend()
+
+        # Setup breadcrumb navigation for subflows (V to dive in, C to go back)
+        self._setup_breadcrumb_nav()
+
     def _patch_viewer_for_connection_search(self):
         """
         Install an event filter to detect when a connection is dropped on empty space.
@@ -210,6 +266,109 @@ class NodeGraphWidget(QWidget):
         NodeGraphQt's default MMB behavior is used instead.
         """
         pass
+
+    def _setup_port_legend(self) -> None:
+        """
+        Create and configure the port legend panel (F1 help overlay).
+
+        The legend shows port shapes and colors to help users understand
+        connection types. It auto-hides after 5 seconds unless pinned.
+        """
+        self._port_legend = PortLegendPanel(self)
+        # Show hint for first-time users
+        self._port_legend.show_first_time_hint()
+
+    def _setup_breadcrumb_nav(self) -> None:
+        """
+        Create and configure the breadcrumb navigation for subflows.
+
+        Keyboard shortcuts:
+            V - Dive into selected subflow
+            C - Go back to parent workflow
+
+        The breadcrumb shows in top-left corner when inside a subflow.
+        """
+        # Create breadcrumb widget
+        self._breadcrumb = BreadcrumbNavWidget(self)
+        self._breadcrumb.setParent(self)
+        self._breadcrumb.move(10, 10)  # Position in top-left
+
+        # Get main_window for serialization support
+        main_window = self.window()
+
+        # Create navigation controller with main_window for state save/restore
+        self._subflow_nav = SubflowNavigationController(
+            self._graph, self._breadcrumb, main_window
+        )
+
+        # Connect navigation signals
+        self._breadcrumb.navigate_back.connect(self._on_subflow_go_back)
+        self._breadcrumb.navigate_to.connect(self._on_subflow_navigate_to)
+
+        # Initialize with root workflow
+        self._subflow_nav.initialize("root", "main")
+
+    def _on_subflow_dive_in(self) -> bool:
+        """
+        Handle V key - dive into selected subflow.
+
+        Returns:
+            True if successfully dived in
+        """
+        if not hasattr(self, "_subflow_nav"):
+            return False
+
+        selected = self._graph.selected_nodes()
+        if len(selected) != 1:
+            logger.debug("Dive in requires exactly 1 node selected")
+            return False
+
+        node = selected[0]
+
+        # Check if it's a subflow node
+        node_type = node.__class__.__name__.lower()
+        identifier = getattr(node, "__identifier__", "").lower()
+        if "subflow" not in node_type and "subflow" not in identifier:
+            logger.debug(f"Selected node is not a subflow: {node_type}")
+            return False
+
+        success = self._subflow_nav.dive_in()
+        if success:
+            logger.info("Dived into subflow")
+        return success
+
+    def _on_subflow_go_back(self) -> bool:
+        """
+        Handle C key or back button - go back to parent workflow.
+
+        Returns:
+            True if successfully went back
+        """
+        if not hasattr(self, "_subflow_nav"):
+            return False
+
+        success = self._subflow_nav.go_back()
+        if success:
+            logger.info("Went back to parent workflow")
+        return success
+
+    def _on_subflow_navigate_to(self, item_id: str, level_index: int) -> None:
+        """Handle clicking a breadcrumb to navigate to that level."""
+        if not hasattr(self, "_subflow_nav"):
+            return
+
+        logger.info(f"Navigating to level {level_index}: {item_id}")
+        self._subflow_nav.navigate_to_level(level_index)
+
+    @property
+    def breadcrumb(self) -> BreadcrumbNavWidget:
+        """Get the breadcrumb navigation widget."""
+        return self._breadcrumb
+
+    @property
+    def subflow_navigation(self) -> SubflowNavigationController:
+        """Get the subflow navigation controller."""
+        return self._subflow_nav
 
     def _setup_viewport_culling(self) -> None:
         """
@@ -242,12 +401,16 @@ class NodeGraphWidget(QWidget):
             # Install viewport update timer for smooth culling during pan/zoom
             # Use 33ms (~30 FPS) instead of 16ms (~60 FPS) to reduce CPU overhead
             # while still providing smooth visual updates
-            from PySide6.QtCore import QTimer
+            from PySide6.QtCore import QTimer, QRectF
 
             self._viewport_update_timer = QTimer(self)
             self._viewport_update_timer.setInterval(33)  # ~30 FPS (reduced from 60 FPS)
             self._viewport_update_timer.timeout.connect(self._update_viewport_culling)
             self._viewport_update_timer.start()
+
+            # PERFORMANCE: Track last viewport rect for idle detection
+            # Skip updates when viewport hasn't changed (saves CPU when graph is static)
+            self._last_viewport_rect: QRectF = QRectF()
 
             logger.debug("Viewport culling signals connected")
         except Exception as e:
@@ -259,11 +422,30 @@ class NodeGraphWidget(QWidget):
             if hasattr(node, "view") and node.view:
                 rect = node.view.sceneBoundingRect()
                 self._culler.register_node(node.id, node.view, rect)
+
+                # PERFORMANCE: Set up position change callback for spatial hash updates
+                # This ensures the spatial hash stays current when nodes are dragged
+                view = node.view
+                if hasattr(view, "set_position_callback"):
+                    node_id = node.id
+
+                    def on_position_changed(item, nid=node_id):
+                        try:
+                            self._culler.update_node_position(
+                                nid, item.sceneBoundingRect()
+                            )
+                        except Exception:
+                            pass
+
+                    view.set_position_callback(on_position_changed)
         except Exception as e:
             logger.debug(f"Could not register node for culling: {e}")
 
         # Update variable picker context for all widgets in the node
         self._update_variable_picker_context(node)
+
+        # PERFORMANCE: Auto-enable high performance mode for large workflows
+        self._check_performance_mode()
 
     def _update_variable_picker_context(self, node) -> None:
         """
@@ -382,7 +564,7 @@ class NodeGraphWidget(QWidget):
             logger.debug(f"Could not unregister pipe from culling: {e}")
 
     def _update_viewport_culling(self) -> None:
-        """Update culling based on current viewport (called by timer)."""
+        """Update culling and LOD based on current viewport (called by timer)."""
         try:
             viewer = self._graph.viewer()
             if viewer and viewer.viewport():
@@ -390,7 +572,33 @@ class NodeGraphWidget(QWidget):
                 viewport_rect = viewer.mapToScene(
                     viewer.viewport().rect()
                 ).boundingRect()
+
+                # PERFORMANCE: Skip update if viewport hasn't changed (idle detection)
+                # This saves significant CPU when the graph is static
+                if (
+                    hasattr(self, "_last_viewport_rect")
+                    and viewport_rect == self._last_viewport_rect
+                ):
+                    return
+
+                self._last_viewport_rect = viewport_rect
                 self._culler.update_viewport(viewport_rect)
+
+                # PERFORMANCE: Update LOD manager once per frame
+                # All nodes/pipes will query this cached LOD level instead of
+                # calculating zoom individually in their paint() methods
+                lod_manager = get_lod_manager()
+                lod_manager.update_from_view(viewer)
+
+                # Force LOD to ULTRA_LOW in high performance mode
+                if get_high_performance_mode():
+                    lod_manager.force_lod(LODLevel.LOW)
+
+                # SMART ROUTING: Update obstacles once per frame
+                # This collects node bounding boxes for wire routing
+                if hasattr(self, "_smart_routing") and self._smart_routing.is_enabled():
+                    self._smart_routing.update_obstacles()
+
         except Exception:
             # Suppress errors during startup
             pass
@@ -579,6 +787,48 @@ class NodeGraphWidget(QWidget):
         """
         return self._node_insert
 
+    @property
+    def reroute_insert(self) -> RerouteInsertManager:
+        """
+        Get the reroute insert manager.
+
+        Returns:
+            RerouteInsertManager instance
+        """
+        return self._reroute_insert
+
+    @property
+    def wire_bundler(self) -> WireBundler:
+        """
+        Get the wire bundler manager.
+
+        Returns:
+            WireBundler instance
+        """
+        return self._wire_bundler
+
+    def set_wire_bundling_enabled(self, enabled: bool) -> None:
+        """
+        Enable or disable wire bundling.
+
+        When enabled, 3+ parallel connections between the same node pair
+        are rendered as a single thick wire with a count badge.
+
+        Args:
+            enabled: Whether to enable wire bundling
+        """
+        self._wire_bundler.set_enabled(enabled)
+        logger.info(f"Wire bundling {'enabled' if enabled else 'disabled'}")
+
+    def is_wire_bundling_enabled(self) -> bool:
+        """
+        Check if wire bundling is enabled.
+
+        Returns:
+            True if wire bundling is enabled
+        """
+        return self._wire_bundler.is_enabled()
+
     def set_auto_connect_enabled(self, enabled: bool) -> None:
         """
         Enable or disable the auto-connect feature.
@@ -606,6 +856,105 @@ class NodeGraphWidget(QWidget):
         """
         self._auto_connect.set_max_distance(distance)
 
+    # =========================================================================
+    # HIGH PERFORMANCE MODE
+    # =========================================================================
+
+    def _check_performance_mode(self) -> None:
+        """
+        Check if high performance mode should be auto-enabled based on node count.
+
+        PERFORMANCE: Auto-enables when node count >= 50 to maintain smooth
+        interaction with large workflows.
+        """
+        node_count = len(self._graph.all_nodes())
+        threshold = get_high_perf_node_threshold()
+
+        # Auto-enable at threshold, but don't auto-disable
+        # User must manually disable if they want full rendering
+        if node_count >= threshold and not get_high_performance_mode():
+            set_high_performance_mode(True)
+            logger.info(
+                f"Auto-enabled High Performance Mode ({node_count} nodes >= {threshold})"
+            )
+
+    def set_high_performance_mode(self, enabled: bool) -> None:
+        """
+        Enable or disable high performance mode.
+
+        When enabled:
+        - Forces simplified LOD rendering at all zoom levels
+        - Disables antialiasing
+        - Skips icons, badges, and text rendering
+
+        Args:
+            enabled: True to enable high performance mode
+        """
+        set_high_performance_mode(enabled)
+        # Force viewport repaint
+        self._graph.viewer().viewport().update()
+        logger.info(f"High Performance Mode {'enabled' if enabled else 'disabled'}")
+
+    def is_high_performance_mode(self) -> bool:
+        """
+        Check if high performance mode is enabled.
+
+        Returns:
+            True if high performance mode is active
+        """
+        return get_high_performance_mode()
+
+    # =========================================================================
+    # SMART WIRE ROUTING
+    # =========================================================================
+
+    @property
+    def smart_routing(self) -> SmartRoutingManager:
+        """
+        Get the smart routing manager.
+
+        Returns:
+            SmartRoutingManager instance
+        """
+        return self._smart_routing
+
+    def set_smart_routing_enabled(self, enabled: bool) -> None:
+        """
+        Enable or disable smart wire routing.
+
+        When enabled:
+        - Wires automatically route around node bounding boxes
+        - Control points are adjusted to avoid obstacles
+        - Maintains bezier curve smoothness
+
+        Args:
+            enabled: True to enable smart routing
+        """
+        from casare_rpa.presentation.canvas.graph.custom_pipe import (
+            set_smart_routing_enabled,
+        )
+
+        self._smart_routing.set_enabled(enabled)
+        set_smart_routing_enabled(enabled)
+
+        if enabled:
+            # Force initial obstacle update
+            self._smart_routing.mark_dirty()
+            self._smart_routing.update_obstacles()
+
+        # Force viewport repaint to redraw all pipes
+        self._graph.viewer().viewport().update()
+        logger.info(f"Smart Wire Routing {'enabled' if enabled else 'disabled'}")
+
+    def is_smart_routing_enabled(self) -> bool:
+        """
+        Check if smart wire routing is enabled.
+
+        Returns:
+            True if smart routing is active
+        """
+        return self._smart_routing.is_enabled()
+
     @property
     def quick_actions(self) -> NodeQuickActions:
         """
@@ -627,6 +976,21 @@ class NodeGraphWidget(QWidget):
         Returns:
             True if event was handled, False otherwise
         """
+        # Handle drag events (more reliable than method override)
+        event_type = event.type()
+        if event_type == QEvent.Type.DragEnter:
+            logger.info(f"EVENT FILTER: DragEnter received from {type(obj).__name__}")
+            self._handle_drag_enter(event)
+            return event.isAccepted()
+        elif event_type == QEvent.Type.DragMove:
+            # Don't log DragMove to avoid spam
+            self._handle_drag_move(event)
+            return event.isAccepted()
+        elif event_type == QEvent.Type.Drop:
+            logger.info(f"EVENT FILTER: Drop received from {type(obj).__name__}")
+            self._handle_drop(event)
+            return event.isAccepted()
+
         # Clear focus from text widgets when mouse enters canvas
         # This prevents numpad shortcuts (1-6) from typing into focused widgets
         if event.type() == QEvent.Type.Enter:
@@ -642,9 +1006,32 @@ class NodeGraphWidget(QWidget):
                         break
                     parent = getattr(parent, "parent", lambda: None)()
 
-        # Capture right-click position BEFORE context menu is shown
-        # We intercept MouseButtonPress with RightButton to capture position early
+        # Close output popup when LMB clicking outside of it
         if event.type() == event.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.LeftButton:
+                # Check if popup is open and click is outside its bounds
+                if (
+                    hasattr(self, "_output_popup")
+                    and self._output_popup
+                    and self._output_popup.isVisible()
+                ):
+                    if hasattr(event, "globalPos"):
+                        global_pos = event.globalPos()
+                    else:
+                        global_pos = event.globalPosition().toPoint()
+                    # Close if click is outside popup geometry
+                    popup_rect = self._output_popup.geometry()
+                    if not popup_rect.contains(global_pos):
+                        self.close_output_popup()
+
+            # Alt+LMB: Houdini-style drag duplicate
+            if (
+                event.button() == Qt.MouseButton.LeftButton
+                and event.modifiers() & Qt.KeyboardModifier.AltModifier
+            ):
+                if self._alt_drag_duplicate(event):
+                    return True
+
             if event.button() == Qt.MouseButton.RightButton:
                 viewer = self._graph.viewer()
 
@@ -668,6 +1055,17 @@ class NodeGraphWidget(QWidget):
 
                 # Let the event propagate to show the menu
                 return False
+
+        # Handle mouse release for Alt+drag duplicate cleanup
+        if event.type() == event.Type.MouseButtonRelease:
+            if event.button() == Qt.MouseButton.LeftButton and self._alt_drag_node:
+                self._alt_drag_node = None
+
+        # Handle mouse move for Alt+drag duplicate positioning
+        if event.type() == event.Type.MouseMove:
+            if self._alt_drag_node:
+                self._alt_drag_move(event)
+                return True  # Consume event to prevent canvas pan
 
         if event.type() == event.Type.KeyPress:
             key_event = event
@@ -748,17 +1146,63 @@ class NodeGraphWidget(QWidget):
                     logger.debug("ESC pressed - cancelled live connection")
                     return True
 
-            # Handle X key or Delete key to delete selected frames
-            # Note: X key (88) and Delete key
-            if key_event.key() == Qt.Key.Key_X or key_event.key() == Qt.Key.Key_Delete:
-                logger.debug(f"Frame delete key pressed: {key_event.key()}")
+            # Handle Delete key to delete selected nodes and frames
+            if key_event.key() == Qt.Key.Key_Delete:
+                # First try deleting frames
                 if self._delete_selected_frames():
-                    return True  # Event handled if frames were deleted
+                    return True
+                # Then try deleting nodes
+                if self._delete_selected_nodes():
+                    return True
 
-            # Also handle lowercase 'x' (key code 88)
-            if key_event.text().lower() == "x":
-                logger.debug("X key text detected")
+            # Handle X key for frame deletion only (nodes use Delete)
+            if key_event.key() == Qt.Key.Key_X or key_event.text().lower() == "x":
+                logger.debug(f"X key pressed: {key_event.key()}")
                 if self._delete_selected_frames():
+                    return True
+
+            # Handle Ctrl+D to duplicate selected nodes
+            if (
+                key_event.key() == Qt.Key.Key_D
+                and key_event.modifiers() == Qt.KeyboardModifier.ControlModifier
+            ):
+                if self._duplicate_selected_nodes():
+                    return True
+
+            # Handle Ctrl+E to toggle node enable/disable
+            if (
+                key_event.key() == Qt.Key.Key_E
+                and key_event.modifiers() == Qt.KeyboardModifier.ControlModifier
+            ):
+                if self._toggle_selected_nodes_enabled():
+                    return True
+
+            # Handle F2 to rename selected node
+            if key_event.key() == Qt.Key.Key_F2:
+                if self._rename_selected_node():
+                    return True
+
+            # Handle F1 to toggle port legend panel
+            if key_event.key() == Qt.Key.Key_F1:
+                self._toggle_port_legend()
+                return True
+
+            # Handle Ctrl+G to create subflow from selection
+            if (
+                key_event.key() == Qt.Key.Key_G
+                and key_event.modifiers() == Qt.KeyboardModifier.ControlModifier
+            ):
+                if self._create_subflow_from_selection():
+                    return True
+
+            # Handle V key to dive into selected subflow
+            if key_event.key() == Qt.Key.Key_V and not key_event.modifiers():
+                if self._on_subflow_dive_in():
+                    return True
+
+            # Handle C key to go back to parent workflow
+            if key_event.key() == Qt.Key.Key_C and not key_event.modifiers():
+                if self._on_subflow_go_back():
                     return True
 
         return super().eventFilter(obj, event)
@@ -771,6 +1215,359 @@ class NodeGraphWidget(QWidget):
             True if any frames were deleted, False otherwise
         """
         return self._selection.delete_selected_frames()
+
+    def _delete_selected_nodes(self) -> bool:
+        """
+        Delete all selected nodes in the graph.
+
+        Returns:
+            True if any nodes were deleted, False otherwise
+        """
+        try:
+            selected = self._graph.selected_nodes()
+            if not selected:
+                return False
+
+            logger.debug(f"Deleting {len(selected)} selected nodes")
+            self._graph.delete_nodes(selected)
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete selected nodes: {e}")
+            return False
+
+    def _duplicate_selected_nodes(self) -> bool:
+        """
+        Duplicate all selected nodes with slight position offset.
+
+        Returns:
+            True if nodes were duplicated, False otherwise
+        """
+        try:
+            selected = self._graph.selected_nodes()
+            if not selected:
+                return False
+
+            logger.debug(f"Duplicating {len(selected)} selected nodes")
+
+            # Use NodeGraphQt's built-in duplicate if available
+            if hasattr(self._graph, "duplicate_nodes"):
+                self._graph.duplicate_nodes(selected)
+                return True
+
+            # Fallback: Copy/paste approach
+            self._graph.copy_nodes(selected)
+            self._graph.paste_nodes()
+            return True
+        except Exception as e:
+            logger.error(f"Failed to duplicate selected nodes: {e}")
+            return False
+
+    def _get_node_at_view_pos(self, view_pos):
+        """
+        Get node at given view coordinates.
+
+        Args:
+            view_pos: Position in view coordinates (QPoint or QPointF)
+
+        Returns:
+            Node object if found, None otherwise
+        """
+        try:
+            from NodeGraphQt.qgraphics.node_base import NodeItem
+
+            viewer = self._graph.viewer()
+            scene_pos = viewer.mapToScene(
+                view_pos.toPoint() if hasattr(view_pos, "toPoint") else view_pos
+            )
+            item = viewer.scene().itemAt(scene_pos, viewer.transform())
+
+            if not item:
+                return None
+
+            # Walk up parent chain to find NodeItem
+            current = item
+            while current:
+                if isinstance(current, NodeItem):
+                    for node in self._graph.all_nodes():
+                        if hasattr(node, "view") and node.view == current:
+                            return node
+                    break
+                current = current.parentItem()
+
+            return None
+        except Exception as e:
+            logger.debug(f"Error getting node at position: {e}")
+            return None
+
+    def _alt_drag_duplicate(self, event) -> bool:
+        """
+        Handle Alt+LMB drag to duplicate node under cursor (Houdini-style).
+
+        Creates a duplicate that follows cursor during drag.
+
+        Args:
+            event: Mouse press event
+
+        Returns:
+            True if handled, False otherwise
+        """
+        try:
+            viewer = self._graph.viewer()
+            view_pos = viewer.mapFromGlobal(event.globalPosition().toPoint())
+            node = self._get_node_at_view_pos(view_pos)
+
+            if not node:
+                return False
+
+            # Get scene position for new node placement
+            scene_pos = viewer.mapToScene(view_pos)
+
+            # Store original position
+            orig_x, orig_y = node.pos()
+
+            # Duplicate the node
+            self._graph.copy_nodes([node])
+            self._graph.paste_nodes()
+
+            # Get the duplicate (last added node - it's auto-selected after paste)
+            selected = self._graph.selected_nodes()
+            new_node = None
+            for n in selected:
+                if n != node:
+                    new_node = n
+                    break
+
+            if not new_node:
+                # Fallback: find node near original position
+                for n in self._graph.all_nodes():
+                    if n != node and hasattr(n, "view"):
+                        nx, ny = n.pos()
+                        if abs(nx - orig_x) < 150 and abs(ny - orig_y) < 150:
+                            new_node = n
+                            break
+
+            if not new_node:
+                return False
+
+            # Calculate offset - where user clicked relative to original node's top-left
+            # This preserves the "grip point" - click top-left, drag from top-left
+            self._alt_drag_offset_x = scene_pos.x() - orig_x
+            self._alt_drag_offset_y = scene_pos.y() - orig_y
+
+            # Store node for drag tracking BEFORE positioning
+            # so mouse moves can immediately update position
+            self._alt_drag_node = new_node
+
+            # Position duplicate at cursor position (with offset for grip point)
+            # This makes the duplicate visible immediately under cursor
+            new_node.set_pos(
+                scene_pos.x() - self._alt_drag_offset_x,
+                scene_pos.y() - self._alt_drag_offset_y,
+            )
+
+            view_item = new_node.view
+            if view_item:
+                # Bring duplicate to front so it's visible above original
+                view_item.setZValue(view_item.zValue() + 1000)
+                view_item.prepareGeometryChange()
+                view_item.update()
+
+            # Select only the new node
+            self._graph.clear_selection()
+            new_node.set_selected(True)
+            if view_item:
+                view_item.setSelected(True)
+
+            logger.debug(
+                f"Alt+drag duplicated node: {node.name()} -> {new_node.name()}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Alt+drag duplicate failed: {e}")
+            return False
+
+    def _alt_drag_move(self, event) -> bool:
+        """
+        Update position of Alt+drag duplicate node during mouse move.
+
+        Args:
+            event: Mouse move event
+
+        Returns:
+            True if handled, False otherwise
+        """
+        if not self._alt_drag_node:
+            return False
+
+        try:
+            viewer = self._graph.viewer()
+            view_pos = viewer.mapFromGlobal(event.globalPosition().toPoint())
+            scene_pos = viewer.mapToScene(view_pos)
+
+            # Update node position (centered on cursor)
+            self._alt_drag_node.set_pos(
+                scene_pos.x() - self._alt_drag_offset_x,
+                scene_pos.y() - self._alt_drag_offset_y,
+            )
+            return True
+        except Exception as e:
+            logger.debug(f"Alt+drag move error: {e}")
+            return False
+
+    def _toggle_selected_nodes_enabled(self) -> bool:
+        """
+        Toggle the enabled/disabled state of all selected nodes.
+
+        Disabled nodes are visually marked and skipped during execution.
+
+        Returns:
+            True if any nodes were toggled, False otherwise
+        """
+        try:
+            selected = self._graph.selected_nodes()
+            if not selected:
+                return False
+
+            logger.debug(f"Toggling enabled state for {len(selected)} selected nodes")
+
+            for node in selected:
+                # Get the view item (CasareNodeItem)
+                view = node.view
+                if (
+                    view
+                    and hasattr(view, "set_disabled")
+                    and hasattr(view, "is_disabled")
+                ):
+                    # Toggle the disabled state
+                    current_disabled = view.is_disabled()
+                    new_disabled = not current_disabled
+                    view.set_disabled(new_disabled)
+
+                    # Also sync to casare node config for execution
+                    casare_node = (
+                        node.get_casare_node()
+                        if hasattr(node, "get_casare_node")
+                        else None
+                    )
+                    if casare_node:
+                        casare_node.config["_disabled"] = new_disabled
+
+                    # Also set on visual node property for serialization
+                    try:
+                        node.set_property("_disabled", new_disabled)
+                    except Exception:
+                        pass  # Property might not exist
+
+                    logger.debug(f"Node {node.name()} disabled: {new_disabled}")
+
+            return True
+        except Exception as e:
+            logger.error(f"Failed to toggle node enabled state: {e}")
+            return False
+
+    def _rename_selected_node(self) -> bool:
+        """
+        Start rename mode for the first selected node.
+
+        Only works when exactly one node is selected.
+
+        Returns:
+            True if rename mode was started, False otherwise
+        """
+        try:
+            selected = self._graph.selected_nodes()
+            if len(selected) != 1:
+                # Only allow rename with single selection
+                if len(selected) > 1:
+                    logger.debug("Cannot rename: multiple nodes selected")
+                return False
+
+            node = selected[0]
+            view = node.view
+
+            # Check if the node's text item supports editing
+            if view and hasattr(view, "_text_item"):
+                text_item = view._text_item
+                if hasattr(text_item, "set_editable"):
+                    # Enable editing mode on the text item
+                    text_item.set_editable(True)
+                    text_item.setFocus()
+                    logger.debug(f"Started rename mode for node: {node.name()}")
+                    return True
+
+            logger.debug("Node does not support inline rename")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to start node rename: {e}")
+            return False
+
+    def _create_subflow_from_selection(self) -> bool:
+        """
+        Create a subflow from the currently selected nodes.
+
+        This packages the selected nodes into a reusable subflow:
+        1. Analyzes connections to detect inputs/outputs
+        2. Prompts user for subflow name
+        3. Creates and saves the subflow definition
+        4. Replaces selected nodes with a SubflowVisualNode
+        5. Reconnects external connections
+
+        Returns:
+            True if subflow was created, False otherwise
+        """
+        try:
+            selected = self._graph.selected_nodes()
+            if len(selected) < 2:
+                logger.debug("Create Subflow: Need at least 2 nodes selected")
+                return False
+
+            # Import and execute the action
+            from casare_rpa.presentation.canvas.actions.create_subflow import (
+                CreateSubflowAction,
+            )
+
+            action = CreateSubflowAction(self, self)
+            subflow_node = action.execute(selected)
+
+            if subflow_node:
+                logger.info(f"Created subflow from {len(selected)} nodes")
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Failed to create subflow: {e}")
+            return False
+
+    # =========================================================================
+    # PORT LEGEND
+    # =========================================================================
+
+    def _toggle_port_legend(self) -> None:
+        """Toggle the port legend panel visibility."""
+        if hasattr(self, "_port_legend") and self._port_legend:
+            self._port_legend.toggle_legend()
+
+    def show_port_legend(self) -> None:
+        """Show the port legend panel."""
+        if hasattr(self, "_port_legend") and self._port_legend:
+            self._port_legend.show_legend()
+
+    def hide_port_legend(self) -> None:
+        """Hide the port legend panel."""
+        if hasattr(self, "_port_legend") and self._port_legend:
+            self._port_legend.hide_legend()
+
+    @property
+    def port_legend(self) -> "PortLegendPanel":
+        """
+        Get the port legend panel.
+
+        Returns:
+            PortLegendPanel instance
+        """
+        return self._port_legend
 
     # =========================================================================
     # CONNECTION VALIDATION
@@ -903,6 +1700,11 @@ class NodeGraphWidget(QWidget):
 
         # Verify node still exists (might have been deleted)
         if node not in self._graph.all_nodes():
+            return
+
+        # Skip Reroute nodes - they're just wire routing, don't need casare_node
+        node_class_name = type(node).__name__
+        if "Reroute" in node_class_name:
             return
 
         # Get current node_id property (now should be restored if pasted)
@@ -1123,23 +1925,72 @@ class NodeGraphWidget(QWidget):
         Must be called after widget is initialized. Enables dropping
         .json files directly onto the canvas to import nodes.
         """
-        # Enable drops on the graph viewer widget
+        # Enable drops on the graph viewer widget AND its viewport
         viewer = self._graph.viewer()
+        logger.info(f"Setting up drag-drop on viewer: {type(viewer).__name__}")
+
         viewer.setAcceptDrops(True)
+
+        # The viewport is where drag events actually arrive in QGraphicsView
+        viewport = viewer.viewport()
+        if viewport:
+            viewport.setAcceptDrops(True)
+            logger.info(f"Viewport found: {type(viewport).__name__}")
+        else:
+            logger.warning("No viewport found on viewer!")
 
         # Override drag/drop events on the viewer
         viewer.dragEnterEvent = self._handle_drag_enter
         viewer.dragMoveEvent = self._handle_drag_move
         viewer.dropEvent = self._handle_drop
 
-        logger.debug("Drag-drop support enabled for workflow import")
+        # Also install event filter for more reliable event interception
+        viewer.installEventFilter(self)
+        if viewport:
+            viewport.installEventFilter(self)
+
+        # Also set accept drops on the entire widget (this NodeGraphWidget)
+        self.setAcceptDrops(True)
+        self._graph.setAcceptDrops(True) if hasattr(
+            self._graph, "setAcceptDrops"
+        ) else None
+
+        logger.info(
+            "Drag-drop support enabled for workflow import (viewer + viewport + self)"
+        )
+
+    # Direct drag event handlers for NodeGraphWidget (fallback)
+    def dragEnterEvent(self, event) -> None:
+        """Handle drag enter at widget level."""
+        logger.info("NodeGraphWidget.dragEnterEvent called")
+        self._handle_drag_enter(event)
+
+    def dragMoveEvent(self, event) -> None:
+        """Handle drag move at widget level."""
+        self._handle_drag_move(event)
+
+    def dropEvent(self, event) -> None:
+        """Handle drop at widget level."""
+        logger.info("NodeGraphWidget.dropEvent called")
+        self._handle_drop(event)
 
     def _handle_drag_enter(self, event) -> None:
-        """Handle drag enter event - accept JSON files and node library drags."""
+        """Handle drag enter event - accept JSON files, node library drags, and variable drags."""
         mime_data = event.mimeData()
+
+        # Log all available formats for debugging
+        formats = mime_data.formats()
+        logger.debug(f"Drag enter: available formats = {formats}")
 
         # Accept node library drags
         if mime_data.hasFormat("application/x-casare-node"):
+            logger.info("Drag enter: accepted node library drag")
+            event.acceptProposedAction()
+            return
+
+        # Accept variable drags from Output Inspector (for node property widgets)
+        if mime_data.hasFormat("application/x-casare-variable"):
+            logger.info("Drag enter: accepted VARIABLE drag from Output Inspector")
             event.acceptProposedAction()
             return
 
@@ -1147,6 +1998,10 @@ class NodeGraphWidget(QWidget):
         if mime_data.hasText():
             text = mime_data.text()
             if text.startswith("casare_node:"):
+                event.acceptProposedAction()
+                return
+            # Accept variable reference text ({{NodeName.port}})
+            if text.startswith("{{") and text.endswith("}}"):
                 event.acceptProposedAction()
                 return
 
@@ -1174,14 +2029,183 @@ class NodeGraphWidget(QWidget):
 
     def _handle_drop(self, event) -> None:
         """Handle drop event - import workflow file, JSON text, or node library node."""
+        from PySide6.QtWidgets import QGraphicsProxyWidget
 
         mime_data = event.mimeData()
+        logger.debug(
+            f"Drop event received. Has variable format: {mime_data.hasFormat('application/x-casare-variable')}"
+        )
+
         drop_pos = event.position() if hasattr(event, "position") else event.posF()
 
         # Convert to scene coordinates for node positioning
         viewer = self._graph.viewer()
         scene_pos = viewer.mapToScene(drop_pos.toPoint())
         position = (scene_pos.x(), scene_pos.y())
+
+        # Handle variable drops - directly insert into text widgets
+        if mime_data.hasFormat("application/x-casare-variable"):
+            import json as json_module
+            from PySide6.QtWidgets import QLineEdit, QTextEdit
+
+            # Extract variable text from MIME data
+            variable_text = None
+            try:
+                data_bytes = mime_data.data("application/x-casare-variable")
+                data_str = bytes(data_bytes).decode("utf-8")
+                data = json_module.loads(data_str)
+                variable_text = data.get("variable", "")
+            except Exception as e:
+                logger.debug(f"Failed to parse variable MIME data: {e}")
+
+            # Fallback to plain text
+            if not variable_text and mime_data.hasText():
+                text = mime_data.text()
+                if text.startswith("{{") and text.endswith("}}"):
+                    variable_text = text
+
+            if not variable_text:
+                event.ignore()
+                return
+
+            # Find all items at the drop position - check ALL proxy widgets
+            items = viewer.items(drop_pos.toPoint())
+            logger.info(
+                f"Variable drop: found {len(items)} items at position {drop_pos.toPoint()}"
+            )
+
+            # Log the types of items found
+            for i, item in enumerate(items):
+                logger.debug(f"  Item {i}: {type(item).__name__}")
+
+            for item in items:
+                if isinstance(item, QGraphicsProxyWidget):
+                    logger.info(f"Found QGraphicsProxyWidget: {item}")
+                    widget = item.widget()
+                    if not widget:
+                        continue
+
+                    # Map position to widget coordinates
+                    widget_pos = item.mapFromScene(scene_pos).toPoint()
+
+                    # Find the deepest child widget at position
+                    target = widget.childAt(widget_pos)
+                    if target is None:
+                        # If no child at exact position, check if we're over the proxy itself
+                        # and search all children for QLineEdit
+                        target = widget
+
+                    # Walk up to find a QLineEdit or QTextEdit widget
+                    while target:
+                        # Handle QLineEdit (most common case)
+                        if isinstance(target, QLineEdit):
+                            # Insert variable text at cursor position
+                            cursor_pos = target.cursorPosition()
+                            current_text = target.text()
+                            new_text = (
+                                current_text[:cursor_pos]
+                                + variable_text
+                                + current_text[cursor_pos:]
+                            )
+                            target.setText(new_text)
+                            target.setCursorPosition(cursor_pos + len(variable_text))
+                            target.setFocus()
+                            event.acceptProposedAction()
+                            logger.info(
+                                f"Variable dropped on QLineEdit: {variable_text}"
+                            )
+                            return
+
+                        # Handle QTextEdit
+                        if isinstance(target, QTextEdit):
+                            target.insertPlainText(variable_text)
+                            target.setFocus()
+                            event.acceptProposedAction()
+                            logger.info(
+                                f"Variable dropped on QTextEdit: {variable_text}"
+                            )
+                            return
+
+                        target = target.parent() if hasattr(target, "parent") else None
+
+                    # Also try to find any QLineEdit in the widget hierarchy
+                    # (fallback for when childAt doesn't find exact match)
+                    line_edits = widget.findChildren(QLineEdit)
+                    if line_edits:
+                        # Use the first visible line edit
+                        for le in line_edits:
+                            if le.isVisible():
+                                cursor_pos = le.cursorPosition()
+                                current_text = le.text()
+                                new_text = (
+                                    current_text[:cursor_pos]
+                                    + variable_text
+                                    + current_text[cursor_pos:]
+                                )
+                                le.setText(new_text)
+                                le.setCursorPosition(cursor_pos + len(variable_text))
+                                le.setFocus()
+                                event.acceptProposedAction()
+                                logger.info(
+                                    f"Variable dropped on QLineEdit (fallback): {variable_text}"
+                                )
+                                return
+
+            # Fallback: Try to find focused QLineEdit anywhere
+            focus_widget = QApplication.focusWidget()
+            if isinstance(focus_widget, QLineEdit):
+                cursor_pos = focus_widget.cursorPosition()
+                current_text = focus_widget.text()
+                new_text = (
+                    current_text[:cursor_pos]
+                    + variable_text
+                    + current_text[cursor_pos:]
+                )
+                focus_widget.setText(new_text)
+                focus_widget.setCursorPosition(cursor_pos + len(variable_text))
+                event.acceptProposedAction()
+                logger.info(f"Variable dropped on focused QLineEdit: {variable_text}")
+                return
+
+            # Last resort: Search scene for all proxy widgets with QLineEdit
+            logger.warning(
+                "No QLineEdit found at drop position, searching entire scene..."
+            )
+            scene = viewer.scene()
+            if scene:
+                for scene_item in scene.items():
+                    if isinstance(scene_item, QGraphicsProxyWidget):
+                        widget = scene_item.widget()
+                        if widget:
+                            # Check if cursor is over this proxy widget
+                            item_rect = scene_item.sceneBoundingRect()
+                            if item_rect.contains(scene_pos):
+                                logger.info("Found proxy widget at scene position")
+                                line_edits = widget.findChildren(QLineEdit)
+                                for le in line_edits:
+                                    if le.isVisible():
+                                        cursor_pos = le.cursorPosition()
+                                        current_text = le.text()
+                                        new_text = (
+                                            current_text[:cursor_pos]
+                                            + variable_text
+                                            + current_text[cursor_pos:]
+                                        )
+                                        le.setText(new_text)
+                                        le.setCursorPosition(
+                                            cursor_pos + len(variable_text)
+                                        )
+                                        le.setFocus()
+                                        event.acceptProposedAction()
+                                        logger.info(
+                                            f"Variable dropped (scene search): {variable_text}"
+                                        )
+                                        return
+
+            # If no widget handled it, ignore
+            logger.warning("Variable drop failed - no suitable widget found")
+            event.ignore()
+            return
 
         # Handle node library drops (application/x-casare-node)
         if mime_data.hasFormat("application/x-casare-node"):
@@ -1314,3 +2338,90 @@ class NodeGraphWidget(QWidget):
             self._creation_helper.x_gap = self._set_variable_x_gap
 
         self._creation_helper.create_set_variable_for_port(source_port_item)
+
+    # =========================================================================
+    # OUTPUT INSPECTOR POPUP
+    # =========================================================================
+
+    def show_output_inspector(
+        self,
+        node_id: str,
+        node_name: str,
+        output_data,
+        global_pos,
+    ) -> None:
+        """
+        Show the Node Output Inspector popup for a node.
+
+        Called when user middle-clicks on a node to view its output port values.
+
+        Args:
+            node_id: The node ID
+            node_name: The node display name
+            output_data: Dictionary of output port name -> value, or None
+            global_pos: Global screen position (QPoint) for popup placement
+        """
+        from casare_rpa.presentation.canvas.ui.widgets.node_output_popup import (
+            NodeOutputPopup,
+        )
+        from PySide6.QtCore import QPoint
+
+        # Create popup if not already exists, or reuse existing
+        if not hasattr(self, "_output_popup") or self._output_popup is None:
+            self._output_popup = NodeOutputPopup(self)
+            # Connect close signal to clear reference when not pinned
+            self._output_popup.closed.connect(self._on_output_popup_closed)
+
+        popup = self._output_popup
+
+        # Set node info
+        popup.set_node(node_id, node_name)
+
+        # Set data or show empty state
+        if output_data:
+            popup.set_data(output_data)
+        else:
+            popup.set_data({})
+
+        # Position popup directly below the node (small vertical gap)
+        # global_pos is already at node's bottom-left
+        if isinstance(global_pos, QPoint):
+            adjusted_pos = QPoint(global_pos.x(), global_pos.y() + 5)
+        else:
+            adjusted_pos = QPoint(int(global_pos.x()), int(global_pos.y()) + 5)
+
+        popup.show_at_position(adjusted_pos)
+        logger.debug(f"Showing output inspector for node: {node_name}")
+
+    def _on_output_popup_closed(self) -> None:
+        """Handle output popup close event."""
+        # Only clear reference if not pinned
+        if hasattr(self, "_output_popup") and self._output_popup:
+            if not self._output_popup.is_pinned:
+                self._output_popup = None
+
+    def close_output_popup(self) -> None:
+        """Close the output inspector popup if open and not pinned."""
+        if hasattr(self, "_output_popup") and self._output_popup:
+            if not self._output_popup.is_pinned:
+                self._output_popup.close()
+                self._output_popup = None
+
+    def update_output_inspector(self, node_id: str, output_data) -> None:
+        """
+        Update the output inspector if it's showing for the specified node.
+
+        Called when node execution completes to refresh the popup with new data.
+
+        Args:
+            node_id: The node ID whose output changed
+            output_data: New output data dictionary
+        """
+        if not hasattr(self, "_output_popup") or self._output_popup is None:
+            return
+
+        if self._output_popup.node_id == node_id:
+            if output_data:
+                self._output_popup.set_data(output_data)
+            else:
+                self._output_popup.set_data({})

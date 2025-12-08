@@ -66,6 +66,9 @@ class HistoryTab(QWidget):
     node_selected = Signal(str)
     clear_requested = Signal()
 
+    # PERFORMANCE: Maximum deferred entries before forcing update
+    MAX_DEFERRED = 50
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the history tab.
@@ -78,6 +81,9 @@ class HistoryTab(QWidget):
         # Store full history for filtering
         self._full_history: List[Dict[str, Any]] = []
         self._current_filter = "All"
+
+        # PERFORMANCE: Lazy update support - defer updates when tab not visible
+        self._deferred_entries: List[Dict[str, Any]] = []
 
         self._setup_ui()
         self._apply_styles()
@@ -486,13 +492,67 @@ class HistoryTab(QWidget):
         self._full_history = history.copy()
         self._apply_filter()
 
+    def _is_tab_visible(self) -> bool:
+        """
+        Check if this tab is currently visible.
+
+        PERFORMANCE: Used for lazy updates - defer expensive table updates
+        when user isn't looking at this tab.
+        """
+        if not self.isVisible():
+            return False
+
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, "currentWidget"):
+                return parent.currentWidget() == self
+            parent = parent.parent()
+
+        return True
+
+    def _flush_deferred_entries(self) -> None:
+        """Flush all deferred entries to the table."""
+        if not self._deferred_entries:
+            return
+
+        for entry in self._deferred_entries:
+            self._full_history.append(entry)
+            if self._should_show_entry(entry):
+                self._add_entry_to_table(entry, len(self._full_history))
+
+        self._deferred_entries.clear()
+        self._update_statistics()
+        self._update_display()
+        logger.debug("Flushed deferred history entries")
+
+    def showEvent(self, event) -> None:
+        """Handle tab becoming visible - flush deferred updates."""
+        super().showEvent(event)
+        if self._deferred_entries:
+            self._flush_deferred_entries()
+
     def append_entry(self, entry: Dict[str, Any]) -> None:
         """
         Append a single entry to the history.
 
+        PERFORMANCE: Uses lazy updates - defers table updates when tab
+        is not visible to reduce CPU during workflow execution.
+
         Args:
             entry: Execution history entry
         """
+        # PERFORMANCE: Defer updates when tab not visible
+        is_visible = self._is_tab_visible()
+
+        if not is_visible and len(self._deferred_entries) < self.MAX_DEFERRED:
+            self._deferred_entries.append(entry)
+            return
+
+        # Flush deferred entries if now visible
+        if is_visible and self._deferred_entries:
+            self._flush_deferred_entries()
+
+        # Add this entry directly
         self._full_history.append(entry)
 
         # If filter allows this entry, add it

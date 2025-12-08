@@ -1,0 +1,72 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_10cacddcc52c",
+  "name": "My Subflow",
+  "version": "1.0.0",
+  "description": "Subflow created from 2 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-07T16:43:26.395516",
+  "updated_at": "2025-12-07T16:43:26.396331",
+  "inputs": [],
+  "outputs": [],
+  "nodes": {
+    "SetVariableNode_ab013a56": {
+      "node_id": "SetVariableNode_ab013a56",
+      "type": "SetVariableNode",
+      "name": "Set Variable 1",
+      "position": {
+        "x": 611.9610079935418,
+        "y": 233.72612916278626
+      },
+      "properties": {
+        "node_id": "SetVariableNode_ab013a56",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "SetVariableNode_3e0a269e": {
+      "node_id": "SetVariableNode_3e0a269e",
+      "type": "SetVariableNode",
+      "name": "Set Variable",
+      "position": {
+        "x": 52.20062450195377,
+        "y": 232.66597692132495
+      },
+      "properties": {
+        "node_id": "SetVariableNode_3e0a269e",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "SetVariableNode_3e0a269e",
+      "source_port": "exec_out",
+      "target_node": "SetVariableNode_ab013a56",
+      "target_port": "exec_in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": 52.20062450195377,
+    "y": 232.66597692132495,
+    "width": 759.7603834915881,
+    "height": 101.06015224146131
+  }
+}

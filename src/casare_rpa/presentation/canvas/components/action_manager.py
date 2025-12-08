@@ -85,14 +85,6 @@ class ActionManager:
             mw.close,
         )
 
-        mw.action_migrate_workflow = self._create_action(
-            "migrate_workflow",
-            "&Migrate Version...",
-            QKeySequence("Ctrl+Shift+M"),
-            "Migrate workflow between versions",
-            mw._on_migrate_workflow,
-        )
-
         # === EDIT ACTIONS ===
         mw.action_undo = self._create_action(
             "undo",
@@ -226,15 +218,6 @@ class ActionManager:
             mw._on_home_all,
         )
 
-        mw.action_toggle_bottom_panel = self._create_action(
-            "toggle_bottom_panel",
-            "&Output Panel",
-            QKeySequence("Ctrl+`"),
-            "Show/hide output panel",
-            mw._on_toggle_bottom_panel,
-            checkable=True,
-        )
-
         mw.action_toggle_minimap = self._create_action(
             "toggle_minimap",
             "&Minimap",
@@ -290,6 +273,14 @@ class ActionManager:
             "Stop workflow execution (F7)",
             mw._on_stop_workflow,
             enabled=False,
+        )
+
+        mw.action_restart = self._create_action(
+            "restart",
+            "Restart",
+            QKeySequence("F8"),
+            "Restart workflow - stop, reset, and run fresh (F8)",
+            mw._on_restart_workflow,
         )
 
         mw.action_run_to_node = self._create_action(
@@ -456,15 +447,6 @@ class ActionManager:
             mw._on_project_manager,
         )
 
-        # === CREDENTIAL ACTIONS ===
-        mw.action_credential_manager = self._create_action(
-            "credential_manager",
-            "&Credential Manager...",
-            QKeySequence("Ctrl+Shift+K"),
-            "Manage API keys and credentials",
-            mw._on_credential_manager,
-        )
-
         # === PERFORMANCE ACTIONS ===
         mw.action_performance_dashboard = self._create_action(
             "performance_dashboard",
@@ -472,6 +454,15 @@ class ActionManager:
             QKeySequence("Ctrl+Alt+P"),
             "View performance metrics and statistics",
             mw._on_open_performance_dashboard,
+        )
+
+        mw.action_high_performance_mode = self._create_action(
+            "high_performance_mode",
+            "&High Performance Mode",
+            None,
+            "Force simplified rendering for large workflows (auto-enabled at 50+ nodes)",
+            mw._on_toggle_high_performance_mode,
+            checkable=True,
         )
 
         # Apply saved hotkeys

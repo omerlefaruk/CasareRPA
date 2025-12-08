@@ -39,6 +39,7 @@ class NodeQuickActions(QObject):
     copy_requested = Signal()
     paste_requested = Signal()
     center_view_requested = Signal(str)
+    create_subflow_requested = Signal()  # Create subflow from selection
 
     def __init__(self, graph: "NodeGraph", parent: Optional[QObject] = None) -> None:
         """
@@ -199,6 +200,13 @@ class NodeQuickActions(QObject):
 
         menu.addSeparator()
 
+        # === Subflow Actions ===
+        selected = self._graph.selected_nodes()
+        if len(selected) >= 2:
+            create_subflow_action = menu.addAction("Create Subflow (Ctrl+G)")
+            create_subflow_action.triggered.connect(self._on_create_subflow)
+            menu.addSeparator()
+
         # === Info Actions ===
         copy_id_action = menu.addAction("Copy Node ID")
         copy_id_action.triggered.connect(self._on_copy_node_id)
@@ -288,6 +296,11 @@ class NodeQuickActions(QObject):
             clipboard = QApplication.clipboard()
             clipboard.setText(node_id)
             logger.debug(f"Copied node ID to clipboard: {node_id}")
+
+    def _on_create_subflow(self) -> None:
+        """Handle create subflow action."""
+        logger.debug("Quick action: Create Subflow")
+        self.create_subflow_requested.emit()
 
 
 def setup_node_quick_actions(graph: "NodeGraph") -> NodeQuickActions:

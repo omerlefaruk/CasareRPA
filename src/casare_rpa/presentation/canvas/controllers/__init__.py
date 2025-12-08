@@ -73,6 +73,9 @@ from casare_rpa.presentation.canvas.controllers.preferences_controller import (
 from casare_rpa.presentation.canvas.controllers.autosave_controller import (
     AutosaveController,
 )
+from casare_rpa.presentation.canvas.controllers.project_autosave_controller import (
+    ProjectAutosaveController,
+)
 from casare_rpa.presentation.canvas.controllers.project_controller import (
     ProjectController,
 )
@@ -94,6 +97,7 @@ __all__ = [
     "SelectorController",
     "PreferencesController",
     "AutosaveController",
+    "ProjectAutosaveController",
     "ProjectController",
     "RobotController",
     # Event utilities

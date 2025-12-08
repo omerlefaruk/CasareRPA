@@ -1,0 +1,146 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_desktop",
+  "name": "Desktop Automation Suite",
+  "description": "Automate Windows desktop applications with dialogs, file operations, clipboard management, and system commands. Includes user interaction nodes.",
+  "category": "Desktop Automation",
+  "icon": "desktop",
+  "color": "#9C27B0",
+  "tags": ["desktop", "windows", "dialogs", "files", "system", "advanced"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "advanced",
+  "estimated_nodes": 10,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "input_folder",
+      "data_type": "String",
+      "default_value": "",
+      "description": "Folder to process files from",
+      "required": true
+    },
+    {
+      "name": "output_folder",
+      "data_type": "String",
+      "default_value": "",
+      "description": "Folder to save processed files",
+      "required": true
+    },
+    {
+      "name": "file_pattern",
+      "data_type": "String",
+      "default_value": "*.txt",
+      "description": "File pattern to match",
+      "required": false
+    },
+    {
+      "name": "show_notifications",
+      "data_type": "Boolean",
+      "default_value": true,
+      "description": "Show system notifications",
+      "required": false
+    }
+  ],
+  "default_credentials": [],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": false,
+    "timeout_seconds": 120,
+    "retry_count": 0
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "FolderPickerDialogNode_001",
+        "node_type": "FolderPickerDialogNode",
+        "position": [300, 300],
+        "config": {
+          "title": "Select Input Folder",
+          "initial_path": "{{input_folder}}"
+        },
+        "display_name": "Select Input Folder"
+      },
+      {
+        "node_id": "ListFilesNode_001",
+        "node_type": "ListFilesNode",
+        "position": [500, 300],
+        "config": {
+          "directory": "{{FolderPickerDialogNode_001.selected_path}}",
+          "pattern": "{{file_pattern}}"
+        },
+        "display_name": "List Files"
+      },
+      {
+        "node_id": "ForLoopStartNode_001",
+        "node_type": "ForLoopStartNode",
+        "position": [700, 300],
+        "config": {
+          "items": "{{ListFilesNode_001.files}}"
+        },
+        "display_name": "Process Each File"
+      },
+      {
+        "node_id": "ReadFileNode_001",
+        "node_type": "ReadFileNode",
+        "position": [900, 300],
+        "config": {
+          "file_path": "{{ForLoopStartNode_001.item}}"
+        },
+        "display_name": "Read File"
+      },
+      {
+        "node_id": "WriteFileNode_001",
+        "node_type": "WriteFileNode",
+        "position": [1100, 300],
+        "config": {
+          "file_path": "{{output_folder}}/processed_{{ForLoopStartNode_001.index}}.txt",
+          "content": "{{ReadFileNode_001.content}}"
+        },
+        "display_name": "Write Processed File"
+      },
+      {
+        "node_id": "ForLoopEndNode_001",
+        "node_type": "ForLoopEndNode",
+        "position": [1300, 300],
+        "config": {},
+        "display_name": "End Loop"
+      },
+      {
+        "node_id": "SystemNotificationNode_001",
+        "node_type": "SystemNotificationNode",
+        "position": [1500, 300],
+        "config": {
+          "title": "Processing Complete",
+          "message": "Processed {{ListFilesNode_001.count}} files"
+        },
+        "display_name": "Show Notification"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1700, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "FolderPickerDialogNode_001", "to_port": "in"},
+      {"from_node": "FolderPickerDialogNode_001", "from_port": "out", "to_node": "ListFilesNode_001", "to_port": "in"},
+      {"from_node": "ListFilesNode_001", "from_port": "out", "to_node": "ForLoopStartNode_001", "to_port": "in"},
+      {"from_node": "ForLoopStartNode_001", "from_port": "loop", "to_node": "ReadFileNode_001", "to_port": "in"},
+      {"from_node": "ReadFileNode_001", "from_port": "out", "to_node": "WriteFileNode_001", "to_port": "in"},
+      {"from_node": "WriteFileNode_001", "from_port": "out", "to_node": "ForLoopEndNode_001", "to_port": "in"},
+      {"from_node": "ForLoopEndNode_001", "from_port": "out", "to_node": "SystemNotificationNode_001", "to_port": "in"},
+      {"from_node": "SystemNotificationNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

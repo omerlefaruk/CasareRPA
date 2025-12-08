@@ -465,6 +465,15 @@ from casare_rpa.nodes.system import (
     MessageBoxNode,
     InputDialogNode,
     TooltipNode,
+    SystemNotificationNode,
+    ConfirmDialogNode,
+    ProgressDialogNode,
+    FilePickerDialogNode,
+    FolderPickerDialogNode,
+    ColorPickerDialogNode,
+    DateTimePickerDialogNode,
+    SnackbarNode,
+    BalloonTipNode,
     RunCommandNode,
     RunPowerShellNode,
     GetServiceStatusNode,
@@ -472,6 +481,38 @@ from casare_rpa.nodes.system import (
     StopServiceNode,
     RestartServiceNode,
     ListServicesNode,
+    # New dialog nodes
+    ListPickerDialogNode,
+    MultilineInputDialogNode,
+    CredentialDialogNode,
+    FormDialogNode,
+    ImagePreviewDialogNode,
+    TableDialogNode,
+    WizardDialogNode,
+    SplashScreenNode,
+    AudioAlertNode,
+    # System utilities
+    ScreenRegionPickerNode,
+    VolumeControlNode,
+    ProcessListNode,
+    ProcessKillNode,
+    EnvironmentVariableNode,
+    SystemInfoNode,
+    # Quick nodes
+    HotkeyWaitNode,
+    BeepNode,
+    ClipboardMonitorNode,
+    # Utility system nodes
+    FileWatcherNode,
+    QRCodeNode,
+    Base64Node,
+    UUIDGeneratorNode,
+    AssertSystemNode,
+    LogToFileNode,
+    # Media nodes
+    TextToSpeechNode,
+    PDFPreviewDialogNode,
+    WebcamCaptureNode,
 )
 
 # Script nodes
@@ -569,6 +610,30 @@ from casare_rpa.nodes.llm import (
     LLMSummarizeNode,
     LLMClassifyNode,
     LLMTranslateNode,
+)
+
+# Subflow nodes
+from casare_rpa.nodes.subflow_node import SubflowNode
+
+# Google Workspace nodes
+from casare_rpa.nodes.google.drive_nodes import (
+    DriveUploadFileNode,
+    DriveDownloadFileNode,
+    DriveDeleteFileNode,
+    DriveCopyFileNode,
+    DriveMoveFileNode,
+    DriveRenameFileNode,
+    DriveGetFileNode,
+    DriveCreateFolderNode,
+    DriveListFilesNode,
+    DriveSearchFilesNode,
+    DriveShareFileNode,
+    DriveRemoveShareNode,
+    DriveGetPermissionsNode,
+    DriveCreateShareLinkNode,
+    DriveBatchDeleteNode,
+    DriveBatchMoveNode,
+    DriveBatchCopyNode,
 )
 
 # Map node types to classes
@@ -775,6 +840,15 @@ NODE_TYPE_MAP = {
     "MessageBoxNode": MessageBoxNode,
     "InputDialogNode": InputDialogNode,
     "TooltipNode": TooltipNode,
+    "SystemNotificationNode": SystemNotificationNode,
+    "ConfirmDialogNode": ConfirmDialogNode,
+    "ProgressDialogNode": ProgressDialogNode,
+    "FilePickerDialogNode": FilePickerDialogNode,
+    "FolderPickerDialogNode": FolderPickerDialogNode,
+    "ColorPickerDialogNode": ColorPickerDialogNode,
+    "DateTimePickerDialogNode": DateTimePickerDialogNode,
+    "SnackbarNode": SnackbarNode,
+    "BalloonTipNode": BalloonTipNode,
     "RunCommandNode": RunCommandNode,
     "RunPowerShellNode": RunPowerShellNode,
     "GetServiceStatusNode": GetServiceStatusNode,
@@ -782,6 +856,38 @@ NODE_TYPE_MAP = {
     "StopServiceNode": StopServiceNode,
     "RestartServiceNode": RestartServiceNode,
     "ListServicesNode": ListServicesNode,
+    # New dialog nodes
+    "ListPickerDialogNode": ListPickerDialogNode,
+    "MultilineInputDialogNode": MultilineInputDialogNode,
+    "CredentialDialogNode": CredentialDialogNode,
+    "FormDialogNode": FormDialogNode,
+    "ImagePreviewDialogNode": ImagePreviewDialogNode,
+    "TableDialogNode": TableDialogNode,
+    "WizardDialogNode": WizardDialogNode,
+    "SplashScreenNode": SplashScreenNode,
+    "AudioAlertNode": AudioAlertNode,
+    # System utilities
+    "ScreenRegionPickerNode": ScreenRegionPickerNode,
+    "VolumeControlNode": VolumeControlNode,
+    "ProcessListNode": ProcessListNode,
+    "ProcessKillNode": ProcessKillNode,
+    "EnvironmentVariableNode": EnvironmentVariableNode,
+    "SystemInfoNode": SystemInfoNode,
+    # Quick nodes
+    "HotkeyWaitNode": HotkeyWaitNode,
+    "BeepNode": BeepNode,
+    "ClipboardMonitorNode": ClipboardMonitorNode,
+    # Utility system nodes
+    "FileWatcherNode": FileWatcherNode,
+    "QRCodeNode": QRCodeNode,
+    "Base64Node": Base64Node,
+    "UUIDGeneratorNode": UUIDGeneratorNode,
+    "AssertSystemNode": AssertSystemNode,
+    "LogToFileNode": LogToFileNode,
+    # Media nodes
+    "TextToSpeechNode": TextToSpeechNode,
+    "PDFPreviewDialogNode": PDFPreviewDialogNode,
+    "WebcamCaptureNode": WebcamCaptureNode,
     # Script nodes
     "RunPythonScriptNode": RunPythonScriptNode,
     "RunPythonFileNode": RunPythonFileNode,
@@ -867,6 +973,26 @@ NODE_TYPE_MAP = {
     "LLMSummarizeNode": LLMSummarizeNode,
     "LLMClassifyNode": LLMClassifyNode,
     "LLMTranslateNode": LLMTranslateNode,
+    # Subflow nodes
+    "SubflowNode": SubflowNode,
+    # Google Drive nodes
+    "DriveUploadFileNode": DriveUploadFileNode,
+    "DriveDownloadFileNode": DriveDownloadFileNode,
+    "DriveDeleteFileNode": DriveDeleteFileNode,
+    "DriveCopyFileNode": DriveCopyFileNode,
+    "DriveMoveFileNode": DriveMoveFileNode,
+    "DriveRenameFileNode": DriveRenameFileNode,
+    "DriveGetFileNode": DriveGetFileNode,
+    "DriveCreateFolderNode": DriveCreateFolderNode,
+    "DriveListFilesNode": DriveListFilesNode,
+    "DriveSearchFilesNode": DriveSearchFilesNode,
+    "DriveShareFileNode": DriveShareFileNode,
+    "DriveRemoveShareNode": DriveRemoveShareNode,
+    "DriveGetPermissionsNode": DriveGetPermissionsNode,
+    "DriveCreateShareLinkNode": DriveCreateShareLinkNode,
+    "DriveBatchDeleteNode": DriveBatchDeleteNode,
+    "DriveBatchMoveNode": DriveBatchMoveNode,
+    "DriveBatchCopyNode": DriveBatchCopyNode,
 }
 
 

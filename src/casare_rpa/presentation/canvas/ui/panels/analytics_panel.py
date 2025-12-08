@@ -5,7 +5,6 @@ Provides bottleneck detection and execution analysis views
 connected to the Orchestrator REST API.
 """
 
-import asyncio
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtWidgets import (
@@ -36,41 +35,32 @@ from loguru import logger
 class ApiWorker(QObject):
     """Worker for background API calls."""
 
-    finished = Signal(dict)
+    finished = Signal(object)  # dict or list
     error = Signal(str)
 
-    def __init__(self, url: str, method: str = "GET") -> None:
+    def __init__(self, url: str, timeout: float = 5.0) -> None:
         """Initialize worker."""
         super().__init__()
         self.url = url
-        self.method = method
+        self.timeout = timeout
 
     def run(self) -> None:
-        """Execute the API call."""
+        """Execute the API call in background thread."""
         try:
-            import asyncio
+            import urllib.request
+            import json
 
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                result = loop.run_until_complete(self._fetch())
-                self.finished.emit(result)
-            finally:
-                loop.close()
+            req = urllib.request.Request(self.url, method="GET")
+            req.add_header("Accept", "application/json")
+
+            with urllib.request.urlopen(req, timeout=self.timeout) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode())
+                    self.finished.emit(data)
+                else:
+                    self.error.emit(f"API error {response.status}")
         except Exception as e:
             self.error.emit(str(e))
-
-    async def _fetch(self) -> Dict[str, Any]:
-        """Async API fetch."""
-        import aiohttp
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as response:
-                if response.status == 200:
-                    return await response.json()
-                else:
-                    error_text = await response.text()
-                    raise RuntimeError(f"API error {response.status}: {error_text}")
 
 
 class AnalyticsPanel(QDockWidget):
@@ -92,17 +82,28 @@ class AnalyticsPanel(QDockWidget):
     bottleneck_clicked = Signal(dict)
     insight_clicked = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initialize the analytics panel."""
-        super().__init__("Analytics", parent)
-        self.setObjectName("AnalyticsDock")
+    def __init__(
+        self, parent: Optional[QWidget] = None, embedded: bool = False
+    ) -> None:
+        """Initialize the analytics panel.
+
+        Args:
+            parent: Optional parent widget
+            embedded: If True, behave as QWidget (for embedding in tab panels)
+        """
+        self._embedded = embedded
+        if embedded:
+            QWidget.__init__(self, parent)
+        else:
+            super().__init__("Analytics", parent)
+            self.setObjectName("AnalyticsDock")
 
         self._api_base_url = self._get_orchestrator_url()
         self._current_workflow: Optional[str] = None
-        self._api_thread: Optional[QThread] = None
-        self._api_worker: Optional[ApiWorker] = None
+        self._active_workers: List[tuple] = []  # (thread, worker) pairs
 
-        self._setup_dock()
+        if not embedded:
+            self._setup_dock()
         self._setup_ui()
         self._apply_styles()
         self._setup_refresh_timer()
@@ -192,8 +193,11 @@ class AnalyticsPanel(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        container = QWidget()
-        main_layout = QVBoxLayout(container)
+        if self._embedded:
+            main_layout = QVBoxLayout(self)
+        else:
+            container = QWidget()
+            main_layout = QVBoxLayout(container)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(8)
 
@@ -229,7 +233,8 @@ class AnalyticsPanel(QDockWidget):
         self._tabs.addTab(timeline_tab, "Timeline")
 
         main_layout.addWidget(self._tabs)
-        self.setWidget(container)
+        if not self._embedded:
+            self.setWidget(container)
 
     def _create_header(self) -> QHBoxLayout:
         """Create header with workflow selector."""
@@ -550,6 +555,37 @@ class AnalyticsPanel(QDockWidget):
         self._refresh_timer.timeout.connect(self._auto_refresh)
         self._refresh_timer.setInterval(60000)  # 1 minute
 
+    def _run_in_background(
+        self, url: str, on_success, on_error=None, timeout: float = 5.0
+    ) -> None:
+        """Run API call in background thread to avoid UI freeze."""
+        thread = QThread()
+        worker = ApiWorker(url, timeout=timeout)
+        worker.moveToThread(thread)
+
+        # Connect signals
+        thread.started.connect(worker.run)
+        worker.finished.connect(on_success)
+        worker.finished.connect(thread.quit)
+        if on_error:
+            worker.error.connect(on_error)
+        worker.error.connect(thread.quit)
+
+        # Cleanup on finish
+        def cleanup():
+            try:
+                self._active_workers.remove((thread, worker))
+            except ValueError:
+                pass
+            thread.deleteLater()
+            worker.deleteLater()
+
+        thread.finished.connect(cleanup)
+
+        # Track and start
+        self._active_workers.append((thread, worker))
+        thread.start()
+
     def showEvent(self, event) -> None:
         """Handle show event."""
         super().showEvent(event)
@@ -563,63 +599,50 @@ class AnalyticsPanel(QDockWidget):
         self._refresh_timer.stop()
 
     def _check_api_connection(self) -> None:
-        """Check if API is reachable."""
-        try:
-            import urllib.request
+        """Check if API is reachable (non-blocking)."""
+        url = f"{self._api_base_url.replace('/api/v1', '')}/health"
 
-            url = f"{self._api_base_url.replace('/api/v1', '')}/health"
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("Accept", "application/json")
+        def on_success(_):
+            self._api_status.setText("●")
+            self._api_status.setStyleSheet("color: #89d185;")
+            self._api_status.setToolTip("API connected")
 
-            with urllib.request.urlopen(req, timeout=2) as response:
-                if response.status == 200:
-                    self._api_status.setText("●")
-                    self._api_status.setStyleSheet("color: #89d185;")
-                    self._api_status.setToolTip("API connected")
-                    return
+        def on_error(err):
+            logger.debug(f"API health check failed: {err}")
+            self._api_status.setText("●")
+            self._api_status.setStyleSheet("color: #f44747;")
+            self._api_status.setToolTip("API not reachable")
 
-        except Exception as e:
-            logger.debug(f"API health check failed: {e}")
-
-        self._api_status.setText("●")
-        self._api_status.setStyleSheet("color: #f44747;")
-        self._api_status.setToolTip("API not reachable")
+        self._run_in_background(url, on_success, on_error, timeout=2.0)
 
     def _load_workflows(self) -> None:
-        """Load available workflows from API."""
-        try:
-            import urllib.request
-            import json
+        """Load available workflows from API (non-blocking)."""
+        url = f"{self._api_base_url}/analytics/process-mining/workflows"
 
-            url = f"{self._api_base_url}/analytics/process-mining/workflows"
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("Accept", "application/json")
+        def on_success(data):
+            current_data = self._workflow_combo.currentData()
+            self._workflow_combo.blockSignals(True)
+            self._workflow_combo.clear()
+            self._workflow_combo.addItem("Select workflow...", None)
 
-            with urllib.request.urlopen(req, timeout=5) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
+            for wf in data:
+                wf_id = wf.get("workflow_id", "")
+                count = wf.get("trace_count", 0)
+                self._workflow_combo.addItem(f"{wf_id} ({count} traces)", wf_id)
 
-                    current_data = self._workflow_combo.currentData()
-                    self._workflow_combo.blockSignals(True)
-                    self._workflow_combo.clear()
-                    self._workflow_combo.addItem("Select workflow...", None)
+            # Restore selection
+            if current_data:
+                for i in range(self._workflow_combo.count()):
+                    if self._workflow_combo.itemData(i) == current_data:
+                        self._workflow_combo.setCurrentIndex(i)
+                        break
 
-                    for wf in data:
-                        wf_id = wf.get("workflow_id", "")
-                        count = wf.get("trace_count", 0)
-                        self._workflow_combo.addItem(f"{wf_id} ({count} traces)", wf_id)
+            self._workflow_combo.blockSignals(False)
 
-                    # Restore selection
-                    if current_data:
-                        for i in range(self._workflow_combo.count()):
-                            if self._workflow_combo.itemData(i) == current_data:
-                                self._workflow_combo.setCurrentIndex(i)
-                                break
+        def on_error(err):
+            logger.debug(f"Failed to load workflows: {err}")
 
-                    self._workflow_combo.blockSignals(False)
-
-        except Exception as e:
-            logger.debug(f"Failed to load workflows: {e}")
+        self._run_in_background(url, on_success, on_error, timeout=5.0)
 
     def _on_workflow_changed(self, index: int) -> None:
         """Handle workflow selection change."""
@@ -641,27 +664,20 @@ class AnalyticsPanel(QDockWidget):
         self._load_timeline()
 
     def _load_bottlenecks(self) -> None:
-        """Load bottleneck analysis from API."""
+        """Load bottleneck analysis from API (non-blocking)."""
         if not self._current_workflow:
             return
 
-        try:
-            import urllib.request
-            import json
+        days = self._days_spin.value()
+        url = f"{self._api_base_url}/analytics/bottlenecks/{self._current_workflow}?days={days}"
 
-            days = self._days_spin.value()
-            url = f"{self._api_base_url}/analytics/bottlenecks/{self._current_workflow}?days={days}"
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("Accept", "application/json")
+        def on_error(err):
+            logger.error(f"Failed to load bottlenecks: {err}")
+            self._bottleneck_detail.setText(f"Error loading bottlenecks: {err}")
 
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
-                    self._update_bottlenecks_ui(data)
-
-        except Exception as e:
-            logger.error(f"Failed to load bottlenecks: {e}")
-            self._bottleneck_detail.setText(f"Error loading bottlenecks: {e}")
+        self._run_in_background(
+            url, self._update_bottlenecks_ui, on_error, timeout=15.0
+        )
 
     def _update_bottlenecks_ui(self, data: Dict[str, Any]) -> None:
         """Update bottlenecks UI with API data."""
@@ -736,27 +752,18 @@ class AnalyticsPanel(QDockWidget):
             self.bottleneck_clicked.emit(bn)
 
     def _load_execution_analysis(self) -> None:
-        """Load execution analysis from API."""
+        """Load execution analysis from API (non-blocking)."""
         if not self._current_workflow:
             return
 
-        try:
-            import urllib.request
-            import json
+        days = self._days_spin.value()
+        url = f"{self._api_base_url}/analytics/execution/{self._current_workflow}?days={days}"
 
-            days = self._days_spin.value()
-            url = f"{self._api_base_url}/analytics/execution/{self._current_workflow}?days={days}"
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("Accept", "application/json")
+        def on_error(err):
+            logger.error(f"Failed to load execution analysis: {err}")
+            self._insight_detail.setText(f"Error loading analysis: {err}")
 
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
-                    self._update_execution_ui(data)
-
-        except Exception as e:
-            logger.error(f"Failed to load execution analysis: {e}")
-            self._insight_detail.setText(f"Error loading analysis: {e}")
+        self._run_in_background(url, self._update_execution_ui, on_error, timeout=15.0)
 
     def _update_execution_ui(self, data: Dict[str, Any]) -> None:
         """Update execution analysis UI."""
@@ -855,27 +862,18 @@ class AnalyticsPanel(QDockWidget):
             self.insight_clicked.emit(insight)
 
     def _load_timeline(self) -> None:
-        """Load timeline data from API."""
+        """Load timeline data from API (non-blocking)."""
         if not self._current_workflow:
             return
 
-        try:
-            import urllib.request
-            import json
+        days = self._days_spin.value()
+        granularity = self._granularity_combo.currentText()
+        url = f"{self._api_base_url}/analytics/execution/{self._current_workflow}/timeline?days={days}&granularity={granularity}"
 
-            days = self._days_spin.value()
-            granularity = self._granularity_combo.currentText()
-            url = f"{self._api_base_url}/analytics/execution/{self._current_workflow}/timeline?days={days}&granularity={granularity}"
-            req = urllib.request.Request(url, method="GET")
-            req.add_header("Accept", "application/json")
+        def on_error(err):
+            logger.error(f"Failed to load timeline: {err}")
 
-            with urllib.request.urlopen(req, timeout=30) as response:
-                if response.status == 200:
-                    data = json.loads(response.read().decode())
-                    self._update_timeline_ui(data)
-
-        except Exception as e:
-            logger.error(f"Failed to load timeline: {e}")
+        self._run_in_background(url, self._update_timeline_ui, on_error, timeout=15.0)
 
     def _update_timeline_ui(self, data: Dict[str, Any]) -> None:
         """Update timeline table."""
@@ -923,15 +921,13 @@ class AnalyticsPanel(QDockWidget):
         """Clean up resources."""
         self._refresh_timer.stop()
 
-        if self._api_thread is not None:
-            if self._api_thread.isRunning():
-                self._api_thread.quit()
-                self._api_thread.wait(3000)
-            self._api_thread.deleteLater()
-            self._api_thread = None
-
-        if self._api_worker is not None:
-            self._api_worker.deleteLater()
-            self._api_worker = None
+        # Stop all active workers
+        for thread, worker in self._active_workers[:]:
+            if thread.isRunning():
+                thread.quit()
+                thread.wait(1000)
+            thread.deleteLater()
+            worker.deleteLater()
+        self._active_workers.clear()
 
         logger.debug("AnalyticsPanel cleaned up")

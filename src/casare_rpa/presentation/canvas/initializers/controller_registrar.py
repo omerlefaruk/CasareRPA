@@ -37,6 +37,7 @@ if TYPE_CHECKING:
         SelectorController,
         ProjectController,
         RobotController,
+        ProjectAutosaveController,
     )
 
 
@@ -96,6 +97,7 @@ class ControllerRegistrar:
             UIStateController,
             ProjectController,
             RobotController,
+            ProjectAutosaveController,
         )
 
         # Instantiate MainWindow-specific controllers
@@ -107,6 +109,7 @@ class ControllerRegistrar:
         mw._ui_state_controller = UIStateController(mw)
         mw._project_controller = ProjectController(mw)
         mw._robot_controller = RobotController(mw)
+        mw._project_autosave_controller = ProjectAutosaveController(mw)
 
         # External controllers - set to None, injected later
         mw._workflow_controller = None
@@ -136,6 +139,35 @@ class ControllerRegistrar:
         mw._ui_state_controller.initialize()
         mw._project_controller.initialize()
         mw._robot_controller.initialize()
+        mw._project_autosave_controller.initialize()
+
+        # Connect project autosave signals
+        self._connect_project_autosave_signals()
+
+    def _connect_project_autosave_signals(self) -> None:
+        """Connect project controller signals to autosave controller."""
+        mw = self._main_window
+
+        if not mw._project_controller or not mw._project_autosave_controller:
+            return
+
+        # When a project is opened, register it with autosave
+        mw._project_controller.project_opened.connect(
+            self._on_project_opened_for_autosave
+        )
+        mw._project_controller.project_closed.connect(
+            lambda: mw._project_autosave_controller.clear_project()
+        )
+
+    def _on_project_opened_for_autosave(self, project) -> None:
+        """Handle project opened - register with autosave controller."""
+        mw = self._main_window
+        if mw._project_autosave_controller and project:
+            # Get project path from project entity via property
+            project_path = getattr(project, "path", None)
+            if project_path:
+                mw._project_autosave_controller.set_project(project, project_path)
+                logger.info(f"Project autosave enabled: {project_path}")
 
     def set_external_controllers(
         self,
@@ -335,6 +367,7 @@ class ControllerRegistrar:
             mw._ui_state_controller,
             mw._project_controller,
             mw._robot_controller,
+            getattr(mw, "_project_autosave_controller", None),
         ]
 
         for controller in controllers:

@@ -15,10 +15,9 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QMenu
 
     from ..main_window import MainWindow
-    from ..ui.panels import BottomPanelDock
+    from ..ui.panels import BottomPanelDock, SidePanelDock
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
-    from ..ui.widgets.execution_timeline import ExecutionTimeline
     from ..ui.debug_panel import DebugPanel
     from ..controllers.robot_controller import RobotController
 
@@ -68,11 +67,8 @@ class UIComponentInitializer:
         Load NORMAL tier components after window is shown.
 
         Creates:
-        - Bottom panel (Variables, Output, Log, Validation)
-        - Execution timeline dock
-        - Debug components (toolbar, panel)
-        - Process mining panel
-        - Robot picker panel
+        - Bottom panel (Variables, Output, Log, Validation, History, Terminal, Timeline)
+        - Side panel (Debug, Process Mining, Robot Picker, Analytics)
         - Validation timer
         """
         if self._normal_components_loaded:
@@ -87,25 +83,26 @@ class UIComponentInitializer:
         dock_creator = mw._dock_creator
 
         # Create panels and docks via DockCreator
+        # Bottom panel now includes Timeline tab
         mw._bottom_panel = dock_creator.create_bottom_panel()
 
         # Connect VariableProvider to MainWindow for variable picker integration
         self._connect_variable_provider()
 
-        dock, timeline = dock_creator.create_execution_timeline_dock()
-        mw._execution_timeline_dock = dock
-        mw._execution_timeline = timeline
+        # Create side panel (combines Debug, Process Mining, Robot Picker, Analytics)
+        mw._side_panel = dock_creator.create_side_panel(
+            debug_controller=getattr(mw, "_debug_controller", None),
+            robot_controller=mw._robot_controller,
+        )
 
-        # Create debug components
-        self._create_debug_components()
+        # Keep references for backwards compatibility
+        mw._debug_panel = mw._side_panel.get_debug_tab()
+        mw._process_mining_panel = mw._side_panel.get_process_mining_tab()
+        mw._robot_picker_panel = mw._side_panel.get_robot_picker_tab()
+        mw._analytics_panel = mw._side_panel.get_analytics_tab()
 
         # Setup validation timer
         self._setup_validation_timer()
-
-        # Create robot picker panel with robot controller
-        mw._robot_picker_panel = dock_creator.create_robot_picker_panel(
-            mw._robot_controller
-        )
 
         self._normal_components_loaded = True
 
@@ -117,26 +114,6 @@ class UIComponentInitializer:
         logger.info(
             f"UIComponentInitializer: Normal tier components loaded in {elapsed:.2f}ms"
         )
-
-    def _create_debug_components(self) -> None:
-        """
-        Create debug panel.
-
-        Debug panel provides:
-        - Call stack visualization
-        - Watch expressions
-        - Breakpoints list
-        """
-        mw = self._main_window
-
-        # Create debug panel (Call Stack, Watch, Breakpoints)
-        mw._debug_panel = mw._dock_creator.create_debug_panel()
-
-        # Create process mining panel (AI-powered process discovery)
-        mw._process_mining_panel = mw._dock_creator.create_process_mining_panel()
-
-        # Create analytics panel (bottleneck detection, execution analysis)
-        mw._analytics_panel = mw._dock_creator.create_analytics_panel()
 
     def _connect_variable_provider(self) -> None:
         """

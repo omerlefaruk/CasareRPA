@@ -11,6 +11,52 @@ All types here are framework-agnostic and represent pure domain concepts.
 
 from enum import Enum, auto
 from typing import Any, Dict, Optional, Union
+import sys
+
+
+# =============================================================================
+# PERFORMANCE: String Interning for Frequently Used Strings
+# =============================================================================
+# Interned strings share memory and have O(1) identity comparison instead of
+# O(n) character-by-character comparison. This is especially useful for:
+# - Node type names (compared on every execution)
+# - Port names (compared on every connection)
+# - Event type names (compared on every publish)
+
+_interned_strings: Dict[str, str] = {}
+
+
+def intern_string(s: str) -> str:
+    """
+    Intern a string for memory efficiency and fast comparison.
+
+    PERFORMANCE: Interned strings are cached and reused. Comparing
+    interned strings with 'is' is O(1) instead of O(n) for '=='.
+
+    Args:
+        s: String to intern
+
+    Returns:
+        Interned string (may be same object or cached copy)
+    """
+    # Use Python's built-in sys.intern for small strings
+    if len(s) < 50:
+        return sys.intern(s)
+
+    # For longer strings, use our own cache
+    if s not in _interned_strings:
+        _interned_strings[s] = s
+    return _interned_strings[s]
+
+
+def intern_node_type(node_type: str) -> str:
+    """Intern a node type name."""
+    return intern_string(node_type)
+
+
+def intern_port_name(port_name: str) -> str:
+    """Intern a port name."""
+    return intern_string(port_name)
 
 
 # ============================================================================

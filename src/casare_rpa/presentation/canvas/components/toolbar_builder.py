@@ -6,7 +6,7 @@ Centralizes toolbar creation and styling.
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QToolBar
 
 from casare_rpa.presentation.canvas.ui.icons import get_toolbar_icon
@@ -25,21 +25,21 @@ class ToolbarBuilder:
     - Organize execution and automation controls
     """
 
-    # Toolbar stylesheet for modern dark theme with text under icons
+    # Compact toolbar stylesheet - text beside icon
     TOOLBAR_STYLE = """
         QToolBar {
             background: #2b2b2b;
             border: none;
-            spacing: 2px;
-            padding: 4px 6px;
+            spacing: 1px;
+            padding: 2px 4px;
         }
         QToolButton {
             background: transparent;
             border: 1px solid transparent;
-            border-radius: 4px;
-            padding: 6px 8px 4px 8px;
+            border-radius: 3px;
+            padding: 3px 6px;
             color: #b0b0b0;
-            font-size: 10px;
+            font-size: 11px;
         }
         QToolButton:hover {
             background: #3d3d3d;
@@ -60,7 +60,7 @@ class ToolbarBuilder:
         QToolBar::separator {
             background: #4a4a4a;
             width: 1px;
-            margin: 6px 8px;
+            margin: 3px 5px;
         }
     """
 
@@ -73,10 +73,14 @@ class ToolbarBuilder:
         """
         self._main_window = main_window
 
-    def _setup_toolbar_action(self, action, icon_name: str, toolbar_text: str) -> None:
-        """Set icon and short toolbar text for an action."""
+    def _setup_toolbar_action(
+        self, action, icon_name: str, text: str, tooltip: str = ""
+    ) -> None:
+        """Set icon, short text label, and tooltip for an action."""
         action.setIcon(get_toolbar_icon(icon_name))
-        action.setIconText(toolbar_text)
+        action.setIconText(text)
+        if tooltip:
+            action.setToolTip(tooltip)
 
     def create_toolbar(self) -> QToolBar:
         """
@@ -91,33 +95,42 @@ class ToolbarBuilder:
         toolbar.setObjectName("MainToolbar")
         toolbar.setMovable(False)
         toolbar.setFloatable(False)
-        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        toolbar.setIconSize(QSize(16, 16))
         toolbar.setStyleSheet(self.TOOLBAR_STYLE)
 
-        # Set icons and short text labels for toolbar display
-        self._setup_toolbar_action(mw.action_run, "run", "Run")
-        self._setup_toolbar_action(mw.action_pause, "pause", "Pause")
-        self._setup_toolbar_action(mw.action_stop, "stop", "Stop")
+        # Set icons with short labels (text beside icon)
+        self._setup_toolbar_action(mw.action_run, "run", "Run", "Run Workflow (F5)")
+        self._setup_toolbar_action(mw.action_pause, "pause", "Pause", "Pause (F6)")
+        self._setup_toolbar_action(mw.action_stop, "stop", "Stop", "Stop (Shift+F5)")
+        self._setup_toolbar_action(mw.action_restart, "restart", "Restart")
         self._setup_toolbar_action(
-            mw.action_record_workflow, "record", "Record Browser"
+            mw.action_record_workflow, "record", "Record", "Record Browser Actions"
         )
         self._setup_toolbar_action(
-            mw.action_pick_selector, "pick_selector", "Pick Element"
+            mw.action_pick_selector, "pick_selector", "Pick", "Pick Element Selector"
         )
         self._setup_toolbar_action(
-            mw.action_project_manager, "project", "Project Manager"
+            mw.action_project_manager, "project", "Project", "Project Manager"
         )
         self._setup_toolbar_action(
-            mw.action_credential_manager, "credentials", "Credential Manager"
+            mw.action_fleet_dashboard, "fleet", "Fleet", "Fleet Dashboard"
         )
         self._setup_toolbar_action(
-            mw.action_performance_dashboard, "performance", "Performance Monitor"
+            mw.action_save_layout, "layout", "Layout", "Save Layout"
+        )
+        self._setup_toolbar_action(
+            mw.action_performance_dashboard,
+            "performance",
+            "Perf",
+            "Performance Dashboard",
         )
 
         # === Execution Controls ===
         toolbar.addAction(mw.action_run)
         toolbar.addAction(mw.action_pause)
         toolbar.addAction(mw.action_stop)
+        toolbar.addAction(mw.action_restart)
 
         toolbar.addSeparator()
 
@@ -127,13 +140,10 @@ class ToolbarBuilder:
 
         toolbar.addSeparator()
 
-        # === Project & Settings ===
+        # === Project & Management ===
         toolbar.addAction(mw.action_project_manager)
-        toolbar.addAction(mw.action_credential_manager)
-
-        toolbar.addSeparator()
-
-        # === Performance ===
+        toolbar.addAction(mw.action_fleet_dashboard)
+        toolbar.addAction(mw.action_save_layout)
         toolbar.addAction(mw.action_performance_dashboard)
 
         mw.addToolBar(toolbar)

@@ -39,3 +39,10 @@ class PropertyType(str, Enum):
 
     # Custom widget type
     CUSTOM = "custom"  # Fully custom widget class
+
+    # Google integration types
+    GOOGLE_CREDENTIAL = "google_credential"  # Google OAuth credential picker
+    GOOGLE_SPREADSHEET = "google_spreadsheet"  # Spreadsheet picker (cascading)
+    GOOGLE_SHEET = "google_sheet"  # Sheet picker (depends on spreadsheet)
+    GOOGLE_DRIVE_FILE = "google_drive_file"  # Drive file picker
+    GOOGLE_DRIVE_FOLDER = "google_drive_folder"  # Drive folder picker

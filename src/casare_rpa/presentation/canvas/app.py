@@ -90,7 +90,15 @@ class CasareRPAApp:
         # Create main window and node graph
         self._create_ui()
 
-        # Initialize components in dependency order
+        # STARTUP OPTIMIZATION: Show window BEFORE heavy initialization
+        # This gives immediate visual feedback while nodes load in background
+        self._main_window.setWindowTitle(f"{APP_NAME} - Loading...")
+        self._main_window.show()
+
+        # Process pending events to ensure window is displayed
+        self._app.processEvents()
+
+        # Initialize components in dependency order (node registration is deferred)
         self._initialize_components()
 
         # Connect component signals
@@ -98,6 +106,9 @@ class CasareRPAApp:
 
         # Connect UI signals
         self._connect_ui_signals()
+
+        # Restore window title after initialization
+        self._main_window.setWindowTitle(APP_NAME)
 
     def _setup_qt_application(self) -> None:
         """Setup Qt application and event loop."""
@@ -174,6 +185,19 @@ class CasareRPAApp:
         self._node_controller = NodeController(self._main_window)
         self._node_controller.initialize()
         logger.debug("Node registry initialized - all node types registered")
+
+        # GPU OPTIMIZATION: Preload node icons into texture atlas
+        # This must happen after node registration but before first paint
+        try:
+            from casare_rpa.presentation.canvas.graph.icon_atlas import (
+                get_icon_atlas,
+                preload_node_icons,
+            )
+
+            get_icon_atlas().initialize()
+            preload_node_icons()
+        except Exception as e:
+            logger.warning(f"Failed to preload icon atlas: {e}")
 
         # Phase 2: All other controllers (depend on node registry)
         logger.debug("Phase 2: Initializing application controllers...")
@@ -769,7 +793,10 @@ class CasareRPAApp:
         Returns:
             Application exit code
         """
-        self._main_window.show()
+        # Window already shown in __init__ for faster perceived startup
+        # Just ensure it's visible and start the event loop
+        if not self._main_window.isVisible():
+            self._main_window.show()
 
         with self._loop:
             exit_code = self._loop.run_forever()
@@ -788,7 +815,9 @@ class CasareRPAApp:
             Application exit code
         """
         logger.info("Starting application (async)")
-        self._main_window.show()
+        # Window already shown in __init__ for faster perceived startup
+        if not self._main_window.isVisible():
+            self._main_window.show()
         return 0
 
     def cleanup(self) -> None:

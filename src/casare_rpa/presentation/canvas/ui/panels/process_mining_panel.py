@@ -171,10 +171,21 @@ class ProcessMiningPanel(QDockWidget):
     workflow_selected = Signal(str)
     insight_clicked = Signal(dict)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initialize the process mining panel."""
-        super().__init__("Process Mining", parent)
-        self.setObjectName("ProcessMiningDock")
+    def __init__(
+        self, parent: Optional[QWidget] = None, embedded: bool = False
+    ) -> None:
+        """Initialize the process mining panel.
+
+        Args:
+            parent: Optional parent widget
+            embedded: If True, behave as QWidget (for embedding in tab panels)
+        """
+        self._embedded = embedded
+        if embedded:
+            QWidget.__init__(self, parent)
+        else:
+            super().__init__("Process Mining", parent)
+            self.setObjectName("ProcessMiningDock")
 
         self._miner = None
         self._current_workflow: Optional[str] = None
@@ -186,7 +197,8 @@ class ProcessMiningPanel(QDockWidget):
         self._ai_thread: Optional[QThread] = None
         self._ai_worker: Optional[AIEnhanceWorker] = None
 
-        self._setup_dock()
+        if not embedded:
+            self._setup_dock()
         self._setup_ui()
         self._apply_styles()
         self._setup_refresh_timer()
@@ -207,8 +219,11 @@ class ProcessMiningPanel(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        container = QWidget()
-        main_layout = QVBoxLayout(container)
+        if self._embedded:
+            main_layout = QVBoxLayout(self)
+        else:
+            container = QWidget()
+            main_layout = QVBoxLayout(container)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(8)
 
@@ -244,7 +259,8 @@ class ProcessMiningPanel(QDockWidget):
         self._tabs.addTab(conformance_tab, "Conformance")
 
         main_layout.addWidget(self._tabs)
-        self.setWidget(container)
+        if not self._embedded:
+            self.setWidget(container)
 
     def _create_header(self) -> QHBoxLayout:
         """Create header with workflow selector."""

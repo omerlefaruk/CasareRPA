@@ -398,6 +398,15 @@ class ActionFactory(QObject):
             triggered=mw._on_get_exec_out,
         )
 
+        self._create_action(
+            "high_performance_mode",
+            "&High Performance Mode",
+            status_tip="Force simplified rendering for large workflows (auto-enabled at 50+ nodes)",
+            triggered=mw._on_toggle_high_performance_mode,
+            checkable=True,
+            checked=False,
+        )
+
     def _create_workflow_actions(self) -> None:
         """Create Workflow menu actions."""
         mw = self._main_window

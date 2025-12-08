@@ -38,6 +38,7 @@ class EventCategory(Enum):
     VARIABLE = "variable"
     DEBUG = "debug"
     TRIGGER = "trigger"
+    CREDENTIAL = "credential"
 
 
 class EventType(Enum):
@@ -519,6 +520,22 @@ class EventType(Enum):
     BROWSER_PREVIEW_OPENED = auto()
     """Browser preview window opened."""
 
+    # =========================================================================
+    # Credential Events
+    # =========================================================================
+
+    CREDENTIAL_ADDED = auto()
+    """Credential added to store."""
+
+    CREDENTIAL_UPDATED = auto()
+    """Credential updated."""
+
+    CREDENTIAL_DELETED = auto()
+    """Credential deleted from store."""
+
+    CREDENTIAL_TESTED = auto()
+    """Credential connection tested."""
+
     @property
     def category(self) -> EventCategory:
         """
@@ -574,6 +591,10 @@ class EventType(Enum):
         # Trigger events
         if "TRIGGER" in self.name:
             return EventCategory.TRIGGER
+
+        # Credential events
+        if "CREDENTIAL" in self.name:
+            return EventCategory.CREDENTIAL
 
         # Default to system
         return EventCategory.SYSTEM

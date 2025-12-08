@@ -62,6 +62,11 @@ def _build_casare_node_mapping() -> Dict[Type, Type]:
             logger.debug(f"Skipping composite marker node: {visual_class.__name__}")
             continue
 
+        # Skip reroute nodes - they're purely visual (wire routing), no execution
+        if "Reroute" in visual_class.__name__:
+            logger.debug(f"Skipping reroute node: {visual_class.__name__}")
+            continue
+
         # Get the CasareRPA node class name from attribute or derive from class name
         casare_class_name = getattr(visual_class, "CASARE_NODE_CLASS", None)
         casare_module = getattr(visual_class, "CASARE_NODE_MODULE", None)

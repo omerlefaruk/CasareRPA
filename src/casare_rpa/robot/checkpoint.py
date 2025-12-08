@@ -180,15 +180,29 @@ class CheckpointManager:
         if not hasattr(context, "variables"):
             return result
 
+        # PERFORMANCE: Fast-path for common serializable types (avoid test serialization)
+        _SAFE_TYPES = (str, int, float, bool, type(None))
+
         for key, value in context.variables.items():
-            try:
-                # Test if serializable
-                orjson.dumps(value)
+            # Fast path: primitives are always serializable
+            if isinstance(value, _SAFE_TYPES):
                 result[key] = value
-            except (TypeError, ValueError):
-                # Skip non-serializable values
-                logger.debug(f"Skipping non-serializable variable: {key}")
-                result[key] = f"<non-serializable: {type(value).__name__}>"
+            elif isinstance(value, (list, dict)):
+                # Lists and dicts need full check (may contain non-serializable items)
+                try:
+                    orjson.dumps(value)
+                    result[key] = value
+                except (TypeError, ValueError):
+                    logger.debug(f"Skipping non-serializable variable: {key}")
+                    result[key] = f"<non-serializable: {type(value).__name__}>"
+            else:
+                # Other types: test serializability
+                try:
+                    orjson.dumps(value)
+                    result[key] = value
+                except (TypeError, ValueError):
+                    logger.debug(f"Skipping non-serializable variable: {key}")
+                    result[key] = f"<non-serializable: {type(value).__name__}>"
 
         return result
 

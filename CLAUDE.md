@@ -5,6 +5,7 @@
       2. NO estimated effort/time/complexity ratings.
       3. REUSE > CREATION. Extend existing patterns.
       4. ALWAYS use .brain/ for context and plans.
+      5. Always Be Swarming - Will your task benefit from parallelization? Deploy sub agents.
     </rules>
 
     <brain location=".brain/">
@@ -122,6 +123,23 @@
         - deploy/supabase/migrations/*.sql
       </affected_files>
     </orchestration_changes>
+
+    <node_registration>
+      <!-- CRITICAL: New nodes must be registered in ALL places or errors occur -->
+      <rule>1. nodes/{category}/__init__.py: Export the node class</rule>
+      <rule>2. nodes/__init__.py: Add to _NODE_REGISTRY dict (lazy loading)</rule>
+      <rule>3. utils/workflow/workflow_loader.py: Import + add to NODE_TYPE_MAP (validation)</rule>
+      <rule>4. visual_nodes/{category}/nodes.py: Create VisualXxxNode class</rule>
+      <rule>5. visual_nodes/{category}/__init__.py: Export VisualXxxNode</rule>
+      <rule>6. visual_nodes/__init__.py: Add to _VISUAL_NODE_REGISTRY (for tab menu)</rule>
+      <affected_files>
+        - src/casare_rpa/nodes/__init__.py (_NODE_REGISTRY)
+        - src/casare_rpa/utils/workflow/workflow_loader.py (import + NODE_TYPE_MAP)
+        - src/casare_rpa/presentation/canvas/visual_nodes/__init__.py (_VISUAL_NODE_REGISTRY)
+      </affected_files>
+      <error_symptom>UNKNOWN_NODE_TYPE: Unknown node type: XxxNode</error_symptom>
+      <error_symptom>Node not in tab menu: Missing from visual_nodes/__init__.py registry</error_symptom>
+    </node_registration>
   </meta>
 
   <project name="CasareRPA">

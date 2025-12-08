@@ -1,0 +1,147 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_googlews",
+  "name": "Google Workspace Integration",
+  "description": "Automate Google Workspace tasks: read emails, process spreadsheets, manage Drive files. Requires Google OAuth credentials.",
+  "category": "Google Workspace",
+  "icon": "google",
+  "color": "#4285F4",
+  "tags": ["google", "gmail", "sheets", "drive", "workspace", "intermediate"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "intermediate",
+  "estimated_nodes": 12,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "spreadsheet_id",
+      "data_type": "String",
+      "default_value": "",
+      "description": "Google Sheets spreadsheet ID",
+      "required": true
+    },
+    {
+      "name": "sheet_range",
+      "data_type": "String",
+      "default_value": "Sheet1!A1:Z100",
+      "description": "Range to read from spreadsheet",
+      "required": true
+    },
+    {
+      "name": "drive_folder_id",
+      "data_type": "String",
+      "default_value": "",
+      "description": "Google Drive folder ID for uploads",
+      "required": false
+    },
+    {
+      "name": "email_search_query",
+      "data_type": "String",
+      "default_value": "is:unread",
+      "description": "Gmail search query",
+      "required": false
+    }
+  ],
+  "default_credentials": [
+    {
+      "alias": "google_oauth",
+      "credential_type": "google_oauth",
+      "description": "Google Workspace OAuth credentials",
+      "required": true
+    }
+  ],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": true,
+    "timeout_seconds": 60,
+    "retry_count": 2
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "GmailListEmailsNode_001",
+        "node_type": "GmailListEmailsNode",
+        "position": [300, 200],
+        "config": {
+          "credential_name": "google_oauth",
+          "query": "{{email_search_query}}",
+          "max_results": 10
+        },
+        "display_name": "List Emails"
+      },
+      {
+        "node_id": "SheetsGetRangeNode_001",
+        "node_type": "SheetsGetRangeNode",
+        "position": [300, 400],
+        "config": {
+          "credential_name": "google_oauth",
+          "spreadsheet_id": "{{spreadsheet_id}}",
+          "range": "{{sheet_range}}"
+        },
+        "display_name": "Read Spreadsheet"
+      },
+      {
+        "node_id": "ForLoopStartNode_001",
+        "node_type": "ForLoopStartNode",
+        "position": [550, 300],
+        "config": {
+          "items": "{{SheetsGetRangeNode_001.values}}"
+        },
+        "display_name": "Process Each Row"
+      },
+      {
+        "node_id": "SetVariableNode_001",
+        "node_type": "SetVariableNode",
+        "position": [750, 300],
+        "config": {
+          "variable_name": "current_row",
+          "value": "{{ForLoopStartNode_001.item}}"
+        },
+        "display_name": "Set Current Row"
+      },
+      {
+        "node_id": "ForLoopEndNode_001",
+        "node_type": "ForLoopEndNode",
+        "position": [950, 300],
+        "config": {},
+        "display_name": "End Loop"
+      },
+      {
+        "node_id": "SheetsAppendRowNode_001",
+        "node_type": "SheetsAppendRowNode",
+        "position": [1150, 300],
+        "config": {
+          "credential_name": "google_oauth",
+          "spreadsheet_id": "{{spreadsheet_id}}",
+          "range": "Results!A1",
+          "values": [["Processed", "{{current_row}}"]]
+        },
+        "display_name": "Log Results"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1350, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "GmailListEmailsNode_001", "to_port": "in"},
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "SheetsGetRangeNode_001", "to_port": "in"},
+      {"from_node": "SheetsGetRangeNode_001", "from_port": "out", "to_node": "ForLoopStartNode_001", "to_port": "in"},
+      {"from_node": "ForLoopStartNode_001", "from_port": "loop", "to_node": "SetVariableNode_001", "to_port": "in"},
+      {"from_node": "SetVariableNode_001", "from_port": "out", "to_node": "ForLoopEndNode_001", "to_port": "in"},
+      {"from_node": "ForLoopEndNode_001", "from_port": "out", "to_node": "SheetsAppendRowNode_001", "to_port": "in"},
+      {"from_node": "SheetsAppendRowNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

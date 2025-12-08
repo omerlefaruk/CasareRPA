@@ -6,10 +6,36 @@ once and auto-generating config, widgets, and validation.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Type, Tuple
+from typing import Any, Callable, Dict, List, Optional, Type, Tuple
 from loguru import logger
 
 from casare_rpa.domain.schemas.property_types import PropertyType
+
+
+# PERFORMANCE: Module-level type validators to avoid rebuilding on every call
+# Previously rebuilt with 18 lambdas on every _validate_type() invocation
+TYPE_VALIDATORS: Dict[PropertyType, Callable[[Any], bool]] = {
+    PropertyType.STRING: lambda v: isinstance(v, str),
+    PropertyType.TEXT: lambda v: isinstance(v, str),
+    PropertyType.INTEGER: lambda v: isinstance(v, int) and not isinstance(v, bool),
+    PropertyType.FLOAT: lambda v: isinstance(v, (int, float))
+    and not isinstance(v, bool),
+    PropertyType.BOOLEAN: lambda v: isinstance(v, bool),
+    PropertyType.ANY: lambda v: True,
+    PropertyType.CHOICE: lambda v: isinstance(v, str),
+    PropertyType.MULTI_CHOICE: lambda v: isinstance(v, list),
+    PropertyType.FILE_PATH: lambda v: isinstance(v, str),
+    PropertyType.DIRECTORY_PATH: lambda v: isinstance(v, str),
+    PropertyType.FILE_PATTERN: lambda v: isinstance(v, str),
+    PropertyType.JSON: lambda v: isinstance(v, (dict, list)),
+    PropertyType.CODE: lambda v: isinstance(v, str),
+    PropertyType.SELECTOR: lambda v: isinstance(v, str),
+    PropertyType.COLOR: lambda v: isinstance(v, str),
+    PropertyType.DATE: lambda v: isinstance(v, str),
+    PropertyType.TIME: lambda v: isinstance(v, str),
+    PropertyType.DATETIME: lambda v: isinstance(v, str),
+    PropertyType.CUSTOM: lambda v: True,
+}
 
 
 @dataclass
@@ -173,31 +199,9 @@ class NodeSchema:
         Returns:
             True if type matches, False otherwise
         """
-        type_validators = {
-            PropertyType.STRING: lambda v: isinstance(v, str),
-            PropertyType.TEXT: lambda v: isinstance(v, str),  # Multi-line text
-            PropertyType.INTEGER: lambda v: isinstance(v, int)
-            and not isinstance(v, bool),
-            PropertyType.FLOAT: lambda v: isinstance(v, (int, float))
-            and not isinstance(v, bool),
-            PropertyType.BOOLEAN: lambda v: isinstance(v, bool),
-            PropertyType.ANY: lambda v: True,  # Accepts any type
-            PropertyType.CHOICE: lambda v: isinstance(v, str),
-            PropertyType.MULTI_CHOICE: lambda v: isinstance(v, list),
-            PropertyType.FILE_PATH: lambda v: isinstance(v, str),
-            PropertyType.DIRECTORY_PATH: lambda v: isinstance(v, str),
-            PropertyType.FILE_PATTERN: lambda v: isinstance(v, str),
-            PropertyType.JSON: lambda v: isinstance(v, (dict, list)),
-            PropertyType.CODE: lambda v: isinstance(v, str),
-            PropertyType.SELECTOR: lambda v: isinstance(v, str),
-            PropertyType.COLOR: lambda v: isinstance(v, str),
-            PropertyType.DATE: lambda v: isinstance(v, str),
-            PropertyType.TIME: lambda v: isinstance(v, str),
-            PropertyType.DATETIME: lambda v: isinstance(v, str),
-            PropertyType.CUSTOM: lambda v: True,  # Custom widgets handle validation
-        }
-
-        validator = type_validators.get(prop.type)
+        # Uses module-level TYPE_VALIDATORS for O(1) lookup
+        # Previously rebuilt dict with 18 lambdas on every call
+        validator = TYPE_VALIDATORS.get(prop.type)
         if validator is None:
             logger.warning(f"Unknown property type: {prop.type}")
             return True  # Unknown types pass validation

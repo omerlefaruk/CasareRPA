@@ -24,6 +24,24 @@ from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.value_objects.types import NodeId
 
 
+# Pre-computed set of control flow node types (module-level constant for O(1) lookup)
+CONTROL_FLOW_TYPES = frozenset(
+    {
+        "IfNode",
+        "SwitchNode",
+        "ForLoopStartNode",
+        "ForLoopEndNode",
+        "WhileLoopStartNode",
+        "WhileLoopEndNode",
+        "BreakNode",
+        "ContinueNode",
+        "TryNode",
+        "CatchNode",
+        "RetryNode",
+    }
+)
+
+
 class ExecutionOrchestrator:
     """
     Domain service for workflow execution logic.
@@ -49,6 +67,42 @@ class ExecutionOrchestrator:
         """
         self.workflow = workflow
         self._execution_graph: Optional[Dict[NodeId, List[NodeId]]] = None
+
+        # PERFORMANCE: Build connection index maps for O(1) lookups
+        # Instead of O(n) scans through all connections for every node execution
+        self._outgoing_connections: Dict[NodeId, List] = {}
+        self._incoming_connections: Dict[NodeId, List] = {}
+        self._port_connections: Dict[
+            tuple, List
+        ] = {}  # (node_id, port_name) -> connections
+        self._build_connection_indexes()
+
+    def _build_connection_indexes(self) -> None:
+        """
+        Build connection index maps for O(1) lookups.
+
+        Replaces O(n) scans through all connections with dict lookups.
+        """
+        self._outgoing_connections.clear()
+        self._incoming_connections.clear()
+        self._port_connections.clear()
+
+        for conn in self.workflow.connections:
+            # Index by source node (outgoing)
+            if conn.source_node not in self._outgoing_connections:
+                self._outgoing_connections[conn.source_node] = []
+            self._outgoing_connections[conn.source_node].append(conn)
+
+            # Index by target node (incoming)
+            if conn.target_node not in self._incoming_connections:
+                self._incoming_connections[conn.target_node] = []
+            self._incoming_connections[conn.target_node].append(conn)
+
+            # Index by (source_node, source_port) for port-specific lookups
+            port_key = (conn.source_node, conn.source_port)
+            if port_key not in self._port_connections:
+                self._port_connections[port_key] = []
+            self._port_connections[port_key].append(conn)
 
     def find_start_node(self) -> Optional[NodeId]:
         """
@@ -210,21 +264,22 @@ class ExecutionOrchestrator:
 
             return next_nodes
 
-        # Default routing: follow all exec_out connections
-        for connection in self.workflow.connections:
-            if connection.source_node == current_node_id:
-                # Only follow execution connections (not data connections)
-                if "exec" in connection.source_port.lower():
-                    next_nodes.append(connection.target_node)
-                    logger.debug(
-                        f"Exec connection: {current_node_id} -> {connection.target_node}"
-                    )
+        # Default routing: follow all exec_out connections (using pre-built index)
+        for connection in self._outgoing_connections.get(current_node_id, []):
+            # Only follow execution connections (not data connections)
+            if "exec" in connection.source_port.lower():
+                next_nodes.append(connection.target_node)
+                logger.debug(
+                    f"Exec connection: {current_node_id} -> {connection.target_node}"
+                )
 
         return next_nodes
 
     def _get_connections_from_port(self, node_id: NodeId, port_name: str) -> List:
         """
         Get all connections originating from a specific port.
+
+        Uses pre-built index for O(1) lookup instead of O(n) scan.
 
         Args:
             node_id: Source node ID
@@ -233,11 +288,7 @@ class ExecutionOrchestrator:
         Returns:
             List of connections from the specified port
         """
-        return [
-            conn
-            for conn in self.workflow.connections
-            if conn.source_node == node_id and conn.source_port == port_name
-        ]
+        return self._port_connections.get((node_id, port_name), [])
 
     def calculate_execution_path(
         self, start_node_id: NodeId, target_node_id: Optional[NodeId] = None
@@ -259,7 +310,7 @@ class ExecutionOrchestrator:
             # Calculate subgraph: nodes on paths from start to target
             return self._calculate_subgraph(start_node_id, target_node_id)
 
-        # Calculate full reachable graph
+        # Calculate full reachable graph (using pre-built index)
         reachable: Set[NodeId] = set()
         queue: deque[NodeId] = deque([start_node_id])
         reachable.add(start_node_id)
@@ -267,13 +318,12 @@ class ExecutionOrchestrator:
         while queue:
             current = queue.popleft()
 
-            # Find all connected nodes
-            for connection in self.workflow.connections:
-                if connection.source_node == current:
-                    target = connection.target_node
-                    if target not in reachable:
-                        reachable.add(target)
-                        queue.append(target)
+            # Find all connected nodes (O(1) lookup instead of O(n) scan)
+            for connection in self._outgoing_connections.get(current, []):
+                target = connection.target_node
+                if target not in reachable:
+                    reachable.add(target)
+                    queue.append(target)
 
         logger.info(f"Calculated execution path: {len(reachable)} nodes reachable")
         return reachable
@@ -301,27 +351,26 @@ class ExecutionOrchestrator:
             )
             return set()
 
-        # Build reverse graph for backtracking
+        # Build reverse graph for backtracking (using pre-built index)
         predecessors: Dict[NodeId, Set[NodeId]] = {}
         queue: deque[NodeId] = deque([start_node_id])
         visited: Set[NodeId] = {start_node_id}
 
-        # BFS to build predecessor map
+        # BFS to build predecessor map (O(1) lookup per node)
         while queue:
             current = queue.popleft()
 
-            for connection in self.workflow.connections:
-                if connection.source_node == current:
-                    target = connection.target_node
+            for connection in self._outgoing_connections.get(current, []):
+                target = connection.target_node
 
-                    # Track predecessors
-                    if target not in predecessors:
-                        predecessors[target] = set()
-                    predecessors[target].add(current)
+                # Track predecessors
+                if target not in predecessors:
+                    predecessors[target] = set()
+                predecessors[target].add(current)
 
-                    if target not in visited:
-                        visited.add(target)
-                        queue.append(target)
+                if target not in visited:
+                    visited.add(target)
+                    queue.append(target)
 
         # Backtrace from target to start to find all nodes on paths
         subgraph: Set[NodeId] = {target_node_id}
@@ -363,16 +412,16 @@ class ExecutionOrchestrator:
         while queue:
             current = queue.popleft()
 
-            for connection in self.workflow.connections:
-                if connection.source_node == current:
-                    target = connection.target_node
+            # O(1) lookup instead of O(n) scan
+            for connection in self._outgoing_connections.get(current, []):
+                target = connection.target_node
 
-                    if target == target_node_id:
-                        return True
+                if target == target_node_id:
+                    return True
 
-                    if target not in visited:
-                        visited.add(target)
-                        queue.append(target)
+                if target not in visited:
+                    visited.add(target)
+                    queue.append(target)
 
         return False
 
@@ -517,13 +566,9 @@ class ExecutionOrchestrator:
         body_nodes: Set[NodeId] = set()
         queue: deque[NodeId] = deque()
 
-        # Find nodes connected to try_body port
-        for connection in self.workflow.connections:
-            if (
-                connection.source_node == try_node_id
-                and connection.source_port == "try_body"
-            ):
-                queue.append(connection.target_node)
+        # Find nodes connected to try_body port (O(1) lookup)
+        for connection in self._port_connections.get((try_node_id, "try_body"), []):
+            queue.append(connection.target_node)
 
         # BFS to find all reachable nodes
         while queue:
@@ -534,11 +579,10 @@ class ExecutionOrchestrator:
 
             body_nodes.add(node_id)
 
-            # Add connected nodes
-            for connection in self.workflow.connections:
-                if connection.source_node == node_id:
-                    if connection.target_node != try_node_id:
-                        queue.append(connection.target_node)
+            # Add connected nodes (O(1) lookup)
+            for connection in self._outgoing_connections.get(node_id, []):
+                if connection.target_node != try_node_id:
+                    queue.append(connection.target_node)
 
         logger.debug(f"Try {try_node_id} body: {len(body_nodes)} nodes")
         return body_nodes
@@ -574,6 +618,9 @@ class ExecutionOrchestrator:
         - BreakNode, ContinueNode
         - TryNode, CatchNode
 
+        Uses module-level CONTROL_FLOW_TYPES frozenset for O(1) lookup
+        without recreating the set on every call.
+
         Args:
             node_id: Node ID
 
@@ -581,22 +628,7 @@ class ExecutionOrchestrator:
             True if node is a control flow node
         """
         node_type = self.get_node_type(node_id)
-
-        control_flow_types = {
-            "IfNode",
-            "SwitchNode",
-            "ForLoopStartNode",
-            "ForLoopEndNode",
-            "WhileLoopStartNode",
-            "WhileLoopEndNode",
-            "BreakNode",
-            "ContinueNode",
-            "TryNode",
-            "CatchNode",
-            "RetryNode",
-        }
-
-        return node_type in control_flow_types
+        return node_type in CONTROL_FLOW_TYPES
 
     def find_loop_body_nodes(
         self, loop_start_id: NodeId, loop_end_id: NodeId
@@ -620,14 +652,10 @@ class ExecutionOrchestrator:
         # until we hit the loop end
         queue: deque[NodeId] = deque()
 
-        # Find the first node connected to loop_start's body port
-        for connection in self.workflow.connections:
-            if (
-                connection.source_node == loop_start_id
-                and connection.source_port == "body"
-            ):
-                queue.append(connection.target_node)
-                body_nodes.add(connection.target_node)
+        # Find the first node connected to loop_start's body port (O(1) lookup)
+        for connection in self._port_connections.get((loop_start_id, "body"), []):
+            queue.append(connection.target_node)
+            body_nodes.add(connection.target_node)
 
         # BFS to find all body nodes
         while queue:
@@ -637,14 +665,13 @@ class ExecutionOrchestrator:
             if current == loop_end_id:
                 continue
 
-            # Find all nodes connected from this node
-            for connection in self.workflow.connections:
-                if connection.source_node == current:
-                    target = connection.target_node
+            # Find all nodes connected from this node (O(1) lookup)
+            for connection in self._outgoing_connections.get(current, []):
+                target = connection.target_node
 
-                    if target not in body_nodes:
-                        body_nodes.add(target)
-                        queue.append(target)
+                if target not in body_nodes:
+                    body_nodes.add(target)
+                    queue.append(target)
 
         # Remove loop end from body nodes (it's a control flow node, handled separately)
         body_nodes.discard(loop_end_id)

@@ -6,7 +6,7 @@ launching browsers, managing tabs, and cleanup.
 """
 
 import asyncio
-
+from typing import Optional
 
 from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
@@ -21,6 +21,22 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.resilience import retry_operation
 from ..utils.config import DEFAULT_BROWSER, HEADLESS_MODE, BROWSER_ARGS
 from loguru import logger
+
+
+# =============================================================================
+# PERFORMANCE: Playwright Singleton (via PlaywrightManager)
+# =============================================================================
+# Starting Playwright has overhead (~200-500ms). Using PlaywrightManager, we:
+# - Pay the startup cost only once per process
+# - Avoid memory churn from multiple Playwright instances
+# - Enable faster browser launches on subsequent calls
+# - Centralize lifecycle management in infrastructure layer
+
+from casare_rpa.infrastructure.browser.playwright_manager import (
+    PlaywrightManager,
+    get_playwright_singleton,
+    shutdown_playwright_singleton,
+)
 
 
 @node_schema(
@@ -224,8 +240,6 @@ class LaunchBrowserNode(BaseNode):
                         f"Retry attempt {attempts - 1}/{retry_count} for browser launch"
                     )
 
-                from playwright.async_api import async_playwright
-
                 browser_type = self.get_parameter("browser_type", DEFAULT_BROWSER)
                 headless = self.get_parameter("headless", HEADLESS_MODE)
 
@@ -244,8 +258,9 @@ class LaunchBrowserNode(BaseNode):
                 if channel and browser_type == "chromium":
                     launch_options["channel"] = channel
 
-                # Launch playwright
-                playwright = await async_playwright().start()
+                # PERFORMANCE: Use Playwright singleton instead of creating new instance
+                # This avoids ~200-500ms startup overhead on subsequent browser launches
+                playwright = await get_playwright_singleton()
 
                 # Get browser type and launch with options
                 if browser_type == "firefox":

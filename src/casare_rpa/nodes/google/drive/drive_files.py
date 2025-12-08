@@ -30,25 +30,9 @@ from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
 # Reusable Property Definitions for Drive Nodes
 # ============================================================================
 
-DRIVE_ACCESS_TOKEN = PropertyDef(
-    "access_token",
-    PropertyType.STRING,
-    default="",
-    label="Access Token",
-    placeholder="ya29.xxx...",
-    tooltip="OAuth 2.0 access token for Google Drive API",
-    tab="connection",
-)
-
-DRIVE_CREDENTIAL_NAME = PropertyDef(
-    "credential_name",
-    PropertyType.STRING,
-    default="",
-    label="Credential Name",
-    placeholder="google_drive",
-    tooltip="Name of stored OAuth credential (alternative to access token)",
-    tab="connection",
-)
+# NOTE: access_token and credential_name are NOT defined here.
+# Credential selection is handled by NodeGoogleCredentialWidget in the visual layer.
+# The credential_id property is set by the picker widget.
 
 DRIVE_FILE_ID = PropertyDef(
     "file_id",
@@ -76,8 +60,6 @@ DRIVE_FOLDER_ID = PropertyDef(
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     PropertyDef(
         "file_path",
         PropertyType.STRING,
@@ -228,8 +210,6 @@ class DriveUploadFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
     PropertyDef(
         "destination_path",
@@ -331,8 +311,6 @@ class DriveDownloadFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
     PropertyDef(
         "new_name",
@@ -429,8 +407,6 @@ class DriveCopyFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
     PropertyDef(
         "folder_id",
@@ -529,8 +505,6 @@ class DriveMoveFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
     PropertyDef(
         "permanent",
@@ -621,8 +595,6 @@ class DriveDeleteFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
     PropertyDef(
         "new_name",
@@ -717,8 +689,6 @@ class DriveRenameFileNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FILE_ID,
 )
 @executable_node

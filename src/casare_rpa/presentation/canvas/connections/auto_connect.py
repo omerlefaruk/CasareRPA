@@ -10,6 +10,7 @@ Now uses ConnectionValidator for type-safe connection checking.
 
 from typing import Optional, Tuple, List
 import math
+import time
 
 from PySide6.QtCore import QObject, Signal, QPointF, Qt
 from PySide6.QtWidgets import QGraphicsLineItem
@@ -60,6 +61,10 @@ class AutoConnectManager(QObject):
         self._max_distance = 600.0  # Maximum distance to suggest connections (pixels)
         self._right_button_pressed = False
         self._original_context_policy = None  # Store original context menu policy
+
+        # PERFORMANCE: Throttle suggestion updates to reduce CPU during drag
+        self._last_update_time: float = 0.0
+        self._update_throttle_ms: float = 60.0  # Only update every 60ms
 
         # Install event filter on the graph viewer
         self._setup_event_filters()
@@ -231,6 +236,12 @@ class AutoConnectManager(QObject):
         """Update connection suggestions based on dragging node position."""
         if not self._dragging_node:
             return
+
+        # PERFORMANCE: Throttle updates to reduce CPU during drag
+        current_time = time.perf_counter() * 1000  # ms
+        if current_time - self._last_update_time < self._update_throttle_ms:
+            return
+        self._last_update_time = current_time
 
         # Clear previous suggestions
         self._clear_suggestions()

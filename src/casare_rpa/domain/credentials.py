@@ -246,16 +246,9 @@ class CredentialAwareMixin:
                 )
     """
 
-    def get_parameter(self, name: str, default: Any = None) -> Any:
-        """
-        Get parameter value by name.
-
-        This method must be provided by the class this mixin is mixed with.
-        BaseNode provides this implementation.
-        """
-        raise NotImplementedError(
-            "CredentialAwareMixin must be used with a class that implements get_parameter"
-        )
+    # NOTE: This mixin expects the host class (e.g., BaseNode) to provide get_parameter().
+    # We do NOT define a stub here because it would shadow BaseNode.get_parameter due to MRO.
+    # Python's duck typing handles this - just call self.get_parameter() and it works.
 
     async def resolve_credential(
         self,

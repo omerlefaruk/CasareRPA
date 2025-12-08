@@ -76,6 +76,26 @@ from casare_rpa.infrastructure.security.rbac import (
     create_authorization_service,
     get_default_permissions,
 )
+from casare_rpa.infrastructure.security.google_oauth import (
+    GoogleOAuthCredentialData,
+    GoogleOAuthManager,
+    GoogleOAuthError,
+    TokenRefreshError,
+    TokenExpiredError,
+    InvalidCredentialError,
+    GOOGLE_TOKEN_ENDPOINT,
+    GOOGLE_USERINFO_ENDPOINT,
+    GOOGLE_REVOKE_ENDPOINT,
+    TOKEN_EXPIRY_BUFFER_SECONDS,
+    get_google_oauth_manager,
+    get_google_access_token,
+    get_google_user_info,
+)
+from casare_rpa.infrastructure.security.oauth_server import (
+    LocalOAuthServer,
+    OAuthCallbackHandler,
+    build_google_auth_url,
+)
 from casare_rpa.infrastructure.security.tenancy import (
     # Enums
     TenantStatus,
@@ -178,6 +198,31 @@ __all__ = [
     "create_permission_registry",
     "create_authorization_service",
     "get_default_permissions",
+    # ==========================================================================
+    # GOOGLE OAUTH
+    # ==========================================================================
+    # Data classes
+    "GoogleOAuthCredentialData",
+    # Manager
+    "GoogleOAuthManager",
+    # Exceptions
+    "GoogleOAuthError",
+    "TokenRefreshError",
+    "TokenExpiredError",
+    "InvalidCredentialError",
+    # Constants
+    "GOOGLE_TOKEN_ENDPOINT",
+    "GOOGLE_USERINFO_ENDPOINT",
+    "GOOGLE_REVOKE_ENDPOINT",
+    "TOKEN_EXPIRY_BUFFER_SECONDS",
+    # Convenience functions
+    "get_google_oauth_manager",
+    "get_google_access_token",
+    "get_google_user_info",
+    # OAuth Server
+    "LocalOAuthServer",
+    "OAuthCallbackHandler",
+    "build_google_auth_url",
     # ==========================================================================
     # MULTI-TENANCY
     # ==========================================================================

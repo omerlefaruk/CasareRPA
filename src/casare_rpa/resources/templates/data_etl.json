@@ -1,0 +1,141 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_dataetl",
+  "name": "Data ETL Pipeline",
+  "description": "Extract, transform, and load data between files and databases. Includes CSV/JSON processing, data filtering, and batch operations.",
+  "category": "Data ETL",
+  "icon": "data",
+  "color": "#FF5722",
+  "tags": ["data", "etl", "csv", "json", "transform", "intermediate"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "intermediate",
+  "estimated_nodes": 9,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "input_csv_path",
+      "data_type": "String",
+      "default_value": "input/data.csv",
+      "description": "Input CSV file path",
+      "required": true
+    },
+    {
+      "name": "output_json_path",
+      "data_type": "String",
+      "default_value": "output/transformed.json",
+      "description": "Output JSON file path",
+      "required": true
+    },
+    {
+      "name": "filter_column",
+      "data_type": "String",
+      "default_value": "status",
+      "description": "Column to filter on",
+      "required": false
+    },
+    {
+      "name": "filter_value",
+      "data_type": "String",
+      "default_value": "active",
+      "description": "Value to filter for",
+      "required": false
+    }
+  ],
+  "default_credentials": [],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": true,
+    "timeout_seconds": 300,
+    "retry_count": 1
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "ReadCSVNode_001",
+        "node_type": "ReadCSVNode",
+        "position": [300, 300],
+        "config": {
+          "file_path": "{{input_csv_path}}",
+          "has_header": true
+        },
+        "display_name": "Read CSV"
+      },
+      {
+        "node_id": "ListFilterNode_001",
+        "node_type": "ListFilterNode",
+        "position": [500, 300],
+        "config": {
+          "items": "{{ReadCSVNode_001.data}}",
+          "condition": "item.{{filter_column}} == '{{filter_value}}'"
+        },
+        "display_name": "Filter Data"
+      },
+      {
+        "node_id": "ListMapNode_001",
+        "node_type": "ListMapNode",
+        "position": [700, 300],
+        "config": {
+          "items": "{{ListFilterNode_001.result}}",
+          "expression": "{'id': item.id, 'name': item.name, 'processed_at': now()}"
+        },
+        "display_name": "Transform Data"
+      },
+      {
+        "node_id": "SetVariableNode_001",
+        "node_type": "SetVariableNode",
+        "position": [900, 300],
+        "config": {
+          "variable_name": "record_count",
+          "value": "{{ListMapNode_001.result|length}}"
+        },
+        "display_name": "Count Records"
+      },
+      {
+        "node_id": "WriteJSONFileNode_001",
+        "node_type": "WriteJSONFileNode",
+        "position": [1100, 300],
+        "config": {
+          "file_path": "{{output_json_path}}",
+          "data": "{{ListMapNode_001.result}}",
+          "indent": 2
+        },
+        "display_name": "Write JSON"
+      },
+      {
+        "node_id": "LogNode_001",
+        "node_type": "LogNode",
+        "position": [1300, 300],
+        "config": {
+          "message": "ETL complete. Processed {{record_count}} records.",
+          "level": "info"
+        },
+        "display_name": "Log Summary"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1500, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "ReadCSVNode_001", "to_port": "in"},
+      {"from_node": "ReadCSVNode_001", "from_port": "out", "to_node": "ListFilterNode_001", "to_port": "in"},
+      {"from_node": "ListFilterNode_001", "from_port": "out", "to_node": "ListMapNode_001", "to_port": "in"},
+      {"from_node": "ListMapNode_001", "from_port": "out", "to_node": "SetVariableNode_001", "to_port": "in"},
+      {"from_node": "SetVariableNode_001", "from_port": "out", "to_node": "WriteJSONFileNode_001", "to_port": "in"},
+      {"from_node": "WriteJSONFileNode_001", "from_port": "out", "to_node": "LogNode_001", "to_port": "in"},
+      {"from_node": "LogNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

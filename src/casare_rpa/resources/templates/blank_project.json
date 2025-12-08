@@ -1,0 +1,45 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_blank",
+  "name": "Blank Project",
+  "description": "Start with an empty canvas. Perfect for building custom workflows from scratch.",
+  "category": "Custom",
+  "icon": "plus",
+  "color": "#607D8B",
+  "tags": ["blank", "empty", "custom", "beginner"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "beginner",
+  "estimated_nodes": 2,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [],
+  "default_credentials": [],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": true,
+    "timeout_seconds": 30,
+    "retry_count": 0
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [300, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [700, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

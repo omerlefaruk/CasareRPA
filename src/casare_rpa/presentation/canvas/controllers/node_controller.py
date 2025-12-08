@@ -203,32 +203,28 @@ class NodeController(BaseController):
         graph.clear_selection()
         nearest_node.set_selected(True)
 
-        # Get the casare node instance
-        casare_node = (
-            nearest_node.get_casare_node()
-            if hasattr(nearest_node, "get_casare_node")
-            else None
-        )
-
-        if casare_node:
-            # Toggle the disabled state
-            current_disabled = casare_node.config.get("_disabled", False)
+        # Use view.set_disabled() for proper visual overlay (same as Ctrl+E)
+        view = nearest_node.view
+        if view and hasattr(view, "set_disabled") and hasattr(view, "is_disabled"):
+            # Toggle the disabled state using view methods
+            current_disabled = view.is_disabled()
             new_disabled = not current_disabled
-            casare_node.config["_disabled"] = new_disabled
+            view.set_disabled(new_disabled)
 
-            # Also set on visual node property for serialization consistency
+            # Also sync to casare node config for execution
+            casare_node = (
+                nearest_node.get_casare_node()
+                if hasattr(nearest_node, "get_casare_node")
+                else None
+            )
+            if casare_node:
+                casare_node.config["_disabled"] = new_disabled
+
+            # Also set on visual node property for serialization
             try:
                 nearest_node.set_property("_disabled", new_disabled)
             except Exception:
                 pass  # Property might not exist, that's OK
-
-            # Update visual appearance
-            if hasattr(nearest_node, "view") and nearest_node.view:
-                if new_disabled:
-                    # Make node semi-transparent when disabled
-                    nearest_node.view.setOpacity(0.4)
-                else:
-                    nearest_node.view.setOpacity(1.0)
 
             node_id = nearest_node.get_property("node_id")
             node_name = nearest_node.name() if hasattr(nearest_node, "name") else "Node"
@@ -243,6 +239,9 @@ class NodeController(BaseController):
                     self.node_enabled.emit(node_id)
 
             self.main_window.show_status(f"{node_name} {state}", 2000)
+        else:
+            # Fallback for nodes without set_disabled method
+            self.main_window.show_status("Cannot disable this node type", 2000)
 
     def navigate_to_node(self, node_id: str) -> None:
         """

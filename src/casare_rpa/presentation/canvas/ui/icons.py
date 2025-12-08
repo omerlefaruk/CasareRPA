@@ -7,16 +7,23 @@ that work on all platforms without external assets.
 For custom icons, use ResourceCache.get_icon(path) from resources.py.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict, Tuple
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QIcon
     from PySide6.QtWidgets import QStyle
 
+# PERFORMANCE: Cache for colored icons to avoid recreation on every call
+# Icons are immutable, so caching is safe and effective
+_colored_icon_cache: Dict[Tuple[str, str, int], "QIcon"] = {}
 
-def _create_colored_icon(shape: str, color: str, size: int = 24) -> "QIcon":
+
+def _create_colored_icon(shape: str, color: str, size: int = 16) -> "QIcon":
     """
     Create a colored icon with specified shape.
+
+    PERFORMANCE: Uses caching to avoid recreating icons on every call.
+    Icons are immutable so caching is safe.
 
     Args:
         shape: "play", "pause", or "stop"
@@ -26,6 +33,11 @@ def _create_colored_icon(shape: str, color: str, size: int = 24) -> "QIcon":
     Returns:
         QIcon with the colored shape
     """
+    # PERFORMANCE: Check cache first
+    cache_key = (shape, color, size)
+    if cache_key in _colored_icon_cache:
+        return _colored_icon_cache[cache_key]
+
     from PySide6.QtCore import QPointF, QRectF, Qt
     from PySide6.QtGui import QBrush, QColor, QIcon, QPainter, QPen, QPixmap, QPolygonF
 
@@ -62,9 +74,67 @@ def _create_colored_icon(shape: str, color: str, size: int = 24) -> "QIcon":
     elif shape == "stop":
         # Square
         painter.drawRoundedRect(QRectF(margin, margin, inner_size, inner_size), 3, 3)
+    elif shape == "restart":
+        # Circular arrow (restart symbol)
+        from PySide6.QtGui import QPainterPath
+        import math
+
+        center_x = size / 2
+        center_y = size / 2
+        radius = inner_size * 0.4
+
+        # Draw circular arc (about 270 degrees)
+        path = QPainterPath()
+        start_angle = -45  # degrees
+        span_angle = 270  # degrees
+
+        # Arc rect
+        arc_rect = QRectF(
+            center_x - radius,
+            center_y - radius,
+            radius * 2,
+            radius * 2,
+        )
+        path.arcMoveTo(arc_rect, start_angle)
+        path.arcTo(arc_rect, start_angle, span_angle)
+
+        # Draw arc with thicker pen
+        pen = QPen(qcolor, size * 0.12)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(path)
+
+        # Draw arrowhead at the end of the arc
+        end_angle = math.radians(start_angle + span_angle)
+        end_x = center_x + radius * math.cos(end_angle)
+        end_y = center_y - radius * math.sin(end_angle)
+
+        # Arrowhead pointing in direction of arc
+        arrow_size = size * 0.25
+        arrow_angle = end_angle - math.pi / 2  # Perpendicular to end of arc
+
+        arrow_points = [
+            QPointF(end_x, end_y),
+            QPointF(
+                end_x - arrow_size * math.cos(arrow_angle - 0.5),
+                end_y + arrow_size * math.sin(arrow_angle - 0.5),
+            ),
+            QPointF(
+                end_x - arrow_size * math.cos(arrow_angle + 0.5),
+                end_y + arrow_size * math.sin(arrow_angle + 0.5),
+            ),
+        ]
+        painter.setBrush(QBrush(qcolor))
+        painter.setPen(QPen(qcolor))
+        painter.drawPolygon(QPolygonF(arrow_points))
 
     painter.end()
-    return QIcon(pixmap)
+
+    # Cache and return
+    icon = QIcon(pixmap)
+    _colored_icon_cache[cache_key] = icon
+    return icon
 
 
 class ToolbarIcons:
@@ -102,6 +172,7 @@ class ToolbarIcons:
         "pause": "SP_MediaPause",
         "resume": "SP_MediaPlay",
         "stop": "SP_MediaStop",
+        "restart": "SP_BrowserReload",
         "step": "SP_MediaSeekForward",
         "continue": "SP_MediaSkipForward",
         # Debug operations
@@ -131,7 +202,8 @@ class ToolbarIcons:
         "metrics": "SP_DriveHDIcon",
         # Project/Settings
         "project": "SP_DirIcon",
-        "credentials": "SP_DialogApplyButton",
+        "fleet": "SP_DriveNetIcon",
+        "layout": "SP_DialogSaveButton",
         # Trigger controls
         "listen": "SP_MediaPlay",
         "stop_listen": "SP_MediaStop",
@@ -160,6 +232,7 @@ class ToolbarIcons:
         "run": ("play", "#4CAF50"),  # Green
         "pause": ("pause", "#FF9800"),  # Orange
         "stop": ("stop", "#F44336"),  # Red
+        "restart": ("restart", "#2196F3"),  # Blue
         "resume": ("play", "#4CAF50"),  # Green
     }
 

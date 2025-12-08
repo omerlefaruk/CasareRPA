@@ -15,6 +15,16 @@ from casare_rpa.domain.entities.variable import (
 from casare_rpa.domain.entities.workflow import WorkflowSchema
 from casare_rpa.domain.entities.execution_state import ExecutionState, ExecutionContext
 from casare_rpa.domain.entities.tenant import Tenant, TenantId, TenantSettings
+from casare_rpa.domain.entities.subflow import (
+    Subflow,
+    SubflowPort,
+    SubflowParameter,
+    SubflowMetadata,
+    SUBFLOW_SCHEMA_VERSION,
+    MAX_NESTING_DEPTH,
+    SUBFLOWS_DIRECTORY,
+    generate_subflow_id,
+)
 
 # WorkflowSchedule removed - use Schedule Trigger node instead
 from casare_rpa.domain.entities.project import (
@@ -52,6 +62,15 @@ __all__ = [
     "ProjectVariable",  # Alias for Variable (backwards compatibility)
     "ExecutionState",
     "ExecutionContext",  # Alias for ExecutionState (backwards compatibility)
+    # Subflow entities
+    "Subflow",
+    "SubflowPort",
+    "SubflowParameter",
+    "SubflowMetadata",
+    "SUBFLOW_SCHEMA_VERSION",
+    "MAX_NESTING_DEPTH",
+    "SUBFLOWS_DIRECTORY",
+    "generate_subflow_id",
     # Project entities
     "Project",
     "Scenario",

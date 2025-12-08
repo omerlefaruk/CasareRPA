@@ -5,11 +5,20 @@ Handles automatic workflow saving functionality:
 - Periodic autosave based on settings
 - Autosave timer management
 - Settings synchronization
+- PERFORMANCE: Background thread for file I/O to avoid UI freezes
 """
 
 from typing import Optional, TYPE_CHECKING
+from concurrent.futures import ThreadPoolExecutor
+import threading
+
 from PySide6.QtCore import QTimer, Signal
 from loguru import logger
+
+# PERFORMANCE: Background thread pool for autosave file I/O
+# Prevents UI freezes during save operations on large workflows
+_autosave_executor: Optional[ThreadPoolExecutor] = None
+_autosave_lock = threading.Lock()
 
 from casare_rpa.presentation.canvas.controllers.base_controller import BaseController
 from casare_rpa.presentation.canvas.events.event_bus import EventBus
@@ -42,6 +51,15 @@ class AutosaveController(BaseController):
         super().__init__(main_window)
         self._autosave_timer: Optional[QTimer] = None
         self._event_bus = EventBus()
+        self._save_in_progress = False
+
+        # PERFORMANCE: Initialize background thread pool for file I/O
+        global _autosave_executor
+        with _autosave_lock:
+            if _autosave_executor is None:
+                _autosave_executor = ThreadPoolExecutor(
+                    max_workers=1, thread_name_prefix="autosave"
+                )
 
     def initialize(self) -> None:
         """Initialize controller and setup autosave timer."""
@@ -167,7 +185,13 @@ class AutosaveController(BaseController):
         Only saves if:
         - Autosave is enabled in settings
         - A workflow file is currently open
+        - Not already saving
         """
+        # Prevent concurrent saves
+        if self._save_in_progress:
+            logger.debug("Autosave skipped: save already in progress")
+            return
+
         try:
             from ....utils.settings_manager import get_settings_manager
 
@@ -185,6 +209,8 @@ class AutosaveController(BaseController):
                 logger.debug("Autosave skipped: no file currently open")
                 return
 
+            self._save_in_progress = True
+
             # Emit signal
             self.autosave_triggered.emit()
 
@@ -198,29 +224,74 @@ class AutosaveController(BaseController):
 
             logger.info(f"Auto-saving workflow: {current_file}")
 
-            # Trigger save through main window
-            # This delegates to WorkflowController
-            if hasattr(self.main_window, "workflow_save"):
-                self.main_window.workflow_save.emit()
+            # PERFORMANCE: Offload file I/O to background thread
+            # Get workflow data on main thread (required for Qt objects)
+            workflow_data = None
+            if hasattr(self.main_window, "get_workflow_data"):
+                workflow_data = self.main_window.get_workflow_data()
 
-                # Emit success signal
-                self.autosave_completed.emit()
-
-                # Publish success event
-                success_event = Event(
-                    type=EventType.AUTOSAVE_COMPLETED,
-                    source="AutosaveController",
-                    data={"file_path": str(current_file)},
+            if workflow_data and _autosave_executor:
+                # Submit background save
+                future = _autosave_executor.submit(
+                    self._save_workflow_background, workflow_data, str(current_file)
                 )
-                self._event_bus.publish(success_event)
-
+                future.add_done_callback(
+                    lambda f: self._on_background_save_complete(f, str(current_file))
+                )
+            elif hasattr(self.main_window, "workflow_save"):
+                # Fallback to synchronous save via signal
+                self.main_window.workflow_save.emit()
+                self._finalize_autosave_success(str(current_file))
             else:
                 logger.error("MainWindow does not have workflow_save signal")
                 self._handle_autosave_failure("workflow_save signal not found")
 
         except Exception as e:
             logger.error(f"Autosave failed: {e}")
+            self._save_in_progress = False
             self._handle_autosave_failure(str(e))
+
+    def _save_workflow_background(self, workflow_data: dict, file_path: str) -> None:
+        """
+        Save workflow in background thread.
+
+        PERFORMANCE: File I/O runs off main thread to prevent UI freezes.
+        """
+        import orjson
+        from pathlib import Path
+
+        path = Path(file_path)
+        json_bytes = orjson.dumps(workflow_data, option=orjson.OPT_INDENT_2)
+        path.write_bytes(json_bytes)
+
+    def _on_background_save_complete(self, future, file_path: str) -> None:
+        """Handle background save completion (called from thread pool)."""
+        from PySide6.QtCore import QTimer
+
+        try:
+            future.result()  # Raise any exception
+            # Schedule success callback on main thread
+            QTimer.singleShot(0, lambda: self._finalize_autosave_success(file_path))
+        except Exception as e:
+            logger.error(f"Background autosave failed: {e}")
+            QTimer.singleShot(0, lambda: self._finalize_autosave_failure(str(e)))
+
+    def _finalize_autosave_success(self, file_path: str) -> None:
+        """Finalize successful autosave (runs on main thread)."""
+        self._save_in_progress = False
+        self.autosave_completed.emit()
+
+        success_event = Event(
+            type=EventType.AUTOSAVE_COMPLETED,
+            source="AutosaveController",
+            data={"file_path": file_path},
+        )
+        self._event_bus.publish(success_event)
+
+    def _finalize_autosave_failure(self, error_message: str) -> None:
+        """Finalize failed autosave (runs on main thread)."""
+        self._save_in_progress = False
+        self._handle_autosave_failure(error_message)
 
     def _handle_autosave_failure(self, error_message: str) -> None:
         """

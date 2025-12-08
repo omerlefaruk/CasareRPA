@@ -1,0 +1,106 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_6f808848f084",
+  "name": "My Subflow",
+  "version": "1.0.0",
+  "description": "Subflow created from 3 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-07T05:04:53.448077",
+  "updated_at": "2025-12-07T05:04:53.448969",
+  "inputs": [],
+  "outputs": [],
+  "nodes": {
+    "0x2856ac96710": {
+      "node_id": "0x2856ac96710",
+      "type": "VisualRerouteNode",
+      "name": "Reroute",
+      "position": {
+        "x": 391.9180039967709,
+        "y": 258.3388215726419
+      },
+      "properties": {
+        "node_id": "",
+        "data_type": "EXEC",
+        "is_exec_reroute": true
+      }
+    },
+    "SetVariableNode_ff387c33": {
+      "node_id": "SetVariableNode_ff387c33",
+      "type": "SetVariableNode",
+      "name": "Set Variable",
+      "position": {
+        "x": 698.8934917933718,
+        "y": 228.42536795547957
+      },
+      "properties": {
+        "node_id": "SetVariableNode_ff387c33",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "LaunchBrowserNode_a2482fd0": {
+      "node_id": "LaunchBrowserNode_a2482fd0",
+      "type": "LaunchBrowserNode",
+      "name": "Launch Browser",
+      "position": {
+        "x": -123.3233493121495,
+        "y": 249.88019174579398
+      },
+      "properties": {
+        "node_id": "LaunchBrowserNode_a2482fd0",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "url": "",
+        "browser_type": "chromium",
+        "headless": false,
+        "do_not_close": true,
+        "slow_mo": "0",
+        "channel": "",
+        "viewport_width": "1280",
+        "viewport_height": "720",
+        "user_agent": "",
+        "locale": "",
+        "timezone_id": "",
+        "color_scheme": "light",
+        "ignore_https_errors": false,
+        "proxy_server": "",
+        "retry_count": "0",
+        "retry_interval": "2000",
+        "window_wait": "100"
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "0x2856ac36900",
+      "source_port": "exec_out",
+      "target_node": "0x2856ac96710",
+      "target_port": "in"
+    },
+    {
+      "source_node": "0x2856ac96710",
+      "source_port": "out",
+      "target_node": "0x2856ac96210",
+      "target_port": "exec_in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": -123.3233493121495,
+    "y": 228.42536795547957,
+    "width": 1022.2168411055213,
+    "height": 129.91345361716233
+  }
+}

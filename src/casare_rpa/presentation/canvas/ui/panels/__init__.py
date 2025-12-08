@@ -31,9 +31,15 @@ from casare_rpa.presentation.canvas.ui.panels.process_mining_panel import (
 )
 from casare_rpa.presentation.canvas.ui.panels.analytics_panel import AnalyticsPanel
 from casare_rpa.presentation.canvas.ui.panels.robot_picker_panel import RobotPickerPanel
+from casare_rpa.presentation.canvas.ui.panels.side_panel_dock import SidePanelDock
 from casare_rpa.presentation.canvas.ui.panels.terminal_tab import TerminalTab
 from casare_rpa.presentation.canvas.ui.panels.browser_recording_panel import (
     BrowserRecordingPanel,
+)
+from casare_rpa.presentation.canvas.ui.panels.port_legend_panel import PortLegendPanel
+from casare_rpa.presentation.canvas.ui.panels.credentials_panel import CredentialsPanel
+from casare_rpa.presentation.canvas.ui.panels.project_explorer_panel import (
+    ProjectExplorerPanel,
 )
 
 # TriggersTab removed - triggers are now visual nodes
@@ -55,11 +61,15 @@ __all__ = [
     "VariablesPanel",
     "MinimapPanel",
     "BottomPanelDock",
+    "SidePanelDock",
     "LogViewerPanel",
     "ProcessMiningPanel",
     "AnalyticsPanel",
     "RobotPickerPanel",
     "BrowserRecordingPanel",
+    "PortLegendPanel",
+    "CredentialsPanel",
+    "ProjectExplorerPanel",
     # Tabs
     "HistoryTab",
     "LogTab",
