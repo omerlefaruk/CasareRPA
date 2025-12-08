@@ -13,6 +13,8 @@ from enum import Enum
 from typing import Optional, Set
 from loguru import logger
 
+from casare_rpa.domain.events import EventType, get_event_bus
+
 
 class ExecutionState(str, Enum):
     """Execution state machine states."""
@@ -406,14 +408,32 @@ class ExecutionLifecycleManager:
                     self._current_session.task.cancel()
 
                 # Wait for cleanup with timeout
+                task_was_cancelled = False
                 try:
                     timeout = 5.0 if force else 30.0
                     await asyncio.wait_for(self._current_session.task, timeout=timeout)
                 except asyncio.TimeoutError:
                     logger.error("Workflow stop timed out - forcing cleanup")
                     await self._force_cleanup()
+                    task_was_cancelled = True
                 except asyncio.CancelledError:
-                    pass  # Expected when force cancelling
+                    task_was_cancelled = True  # Expected when force cancelling
+
+                # Emit WORKFLOW_STOPPED event if task was force-cancelled
+                # (graceful stop emits this in ExecuteWorkflowUseCase when loop exits)
+                if task_was_cancelled:
+                    try:
+                        event_bus = get_event_bus()
+                        event_bus.emit(
+                            EventType.WORKFLOW_STOPPED,
+                            {
+                                "reason": "force_cancelled",
+                                "force": force,
+                            },
+                        )
+                        logger.debug("Emitted WORKFLOW_STOPPED event for force cancel")
+                    except Exception as e:
+                        logger.warning(f"Failed to emit WORKFLOW_STOPPED event: {e}")
 
             # Clear runner reference
             self._current_workflow_runner = None

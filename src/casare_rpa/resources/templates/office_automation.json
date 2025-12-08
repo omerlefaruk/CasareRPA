@@ -1,0 +1,144 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_office",
+  "name": "Office Document Automation",
+  "description": "Automate Microsoft Office workflows: read Excel data, generate Word documents, and send Outlook emails. Includes data merge and templating.",
+  "category": "Office Automation",
+  "icon": "office",
+  "color": "#D14424",
+  "tags": ["excel", "word", "outlook", "office", "documents", "intermediate"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "intermediate",
+  "estimated_nodes": 8,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "excel_file_path",
+      "data_type": "String",
+      "default_value": "data/contacts.xlsx",
+      "description": "Path to Excel file with data",
+      "required": true
+    },
+    {
+      "name": "word_template_path",
+      "data_type": "String",
+      "default_value": "templates/letter_template.docx",
+      "description": "Path to Word template",
+      "required": false
+    },
+    {
+      "name": "output_folder",
+      "data_type": "String",
+      "default_value": "output/generated",
+      "description": "Folder for generated documents",
+      "required": true
+    },
+    {
+      "name": "email_subject",
+      "data_type": "String",
+      "default_value": "Automated Report",
+      "description": "Subject for email notifications",
+      "required": false
+    }
+  ],
+  "default_credentials": [],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": false,
+    "timeout_seconds": 120,
+    "retry_count": 1
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "ExcelOpenNode_001",
+        "node_type": "ExcelOpenNode",
+        "position": [300, 300],
+        "config": {
+          "file_path": "{{excel_file_path}}"
+        },
+        "display_name": "Open Excel"
+      },
+      {
+        "node_id": "ExcelGetRangeNode_001",
+        "node_type": "ExcelGetRangeNode",
+        "position": [500, 300],
+        "config": {
+          "sheet_name": "Sheet1",
+          "range": "A1:Z100"
+        },
+        "display_name": "Read Data Range"
+      },
+      {
+        "node_id": "ForLoopStartNode_001",
+        "node_type": "ForLoopStartNode",
+        "position": [700, 300],
+        "config": {
+          "items": "{{ExcelGetRangeNode_001.data}}"
+        },
+        "display_name": "Process Each Row"
+      },
+      {
+        "node_id": "WordOpenNode_001",
+        "node_type": "WordOpenNode",
+        "position": [900, 300],
+        "config": {
+          "file_path": "{{word_template_path}}"
+        },
+        "display_name": "Open Word Template"
+      },
+      {
+        "node_id": "WordReplaceTextNode_001",
+        "node_type": "WordReplaceTextNode",
+        "position": [1100, 300],
+        "config": {
+          "find": "{{NAME}}",
+          "replace": "{{ForLoopStartNode_001.item.name}}"
+        },
+        "display_name": "Replace Placeholders"
+      },
+      {
+        "node_id": "ForLoopEndNode_001",
+        "node_type": "ForLoopEndNode",
+        "position": [1300, 300],
+        "config": {},
+        "display_name": "End Loop"
+      },
+      {
+        "node_id": "ExcelCloseNode_001",
+        "node_type": "ExcelCloseNode",
+        "position": [1500, 300],
+        "config": {
+          "save": true
+        },
+        "display_name": "Close Excel"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1700, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "ExcelOpenNode_001", "to_port": "in"},
+      {"from_node": "ExcelOpenNode_001", "from_port": "out", "to_node": "ExcelGetRangeNode_001", "to_port": "in"},
+      {"from_node": "ExcelGetRangeNode_001", "from_port": "out", "to_node": "ForLoopStartNode_001", "to_port": "in"},
+      {"from_node": "ForLoopStartNode_001", "from_port": "loop", "to_node": "WordOpenNode_001", "to_port": "in"},
+      {"from_node": "WordOpenNode_001", "from_port": "out", "to_node": "WordReplaceTextNode_001", "to_port": "in"},
+      {"from_node": "WordReplaceTextNode_001", "from_port": "out", "to_node": "ForLoopEndNode_001", "to_port": "in"},
+      {"from_node": "ForLoopEndNode_001", "from_port": "out", "to_node": "ExcelCloseNode_001", "to_port": "in"},
+      {"from_node": "ExcelCloseNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

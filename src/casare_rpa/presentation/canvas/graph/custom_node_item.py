@@ -14,9 +14,165 @@ References:
 """
 
 from typing import Set, Optional
-from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
+from PySide6.QtCore import Qt, QRectF, QRect, QTimer, QPointF
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QPainterPath, QPixmap, QFont
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsOpacityEffect
 from NodeGraphQt.qgraphics.node_base import NodeItem
+
+# Import GPU optimization managers (lazy import to avoid circular deps)
+# These are imported at module level for performance - no function call overhead
+from casare_rpa.presentation.canvas.graph.lod_manager import get_lod_manager, LODLevel
+from casare_rpa.presentation.canvas.graph.background_cache import get_background_cache
+from casare_rpa.presentation.canvas.graph.icon_atlas import get_icon_atlas
+
+
+# ============================================================================
+# PERFORMANCE: Pre-cached paint objects to avoid allocation in paint()
+# These are created once at module load instead of per-frame allocations
+# ============================================================================
+
+# Status indicator colors
+_SUCCESS_GREEN = QColor(76, 175, 80)
+_ERROR_RED = QColor(244, 67, 54)
+_WARNING_ORANGE = QColor(255, 152, 0)  # #FF9800 for warning state
+_DISABLED_GRAY = QColor(68, 68, 68)  # #444444 for disabled border
+_SKIPPED_GRAY = QColor(128, 128, 128)  # Gray for skipped indicator
+
+# Contrast-compliant text colors (WCAG 4.5:1 ratio on dark background)
+_SECONDARY_TEXT_COLOR = QColor(170, 170, 170)  # #AAAAAA - 5.5:1 ratio
+_PORT_LABEL_COLOR = QColor(212, 212, 212)  # #D4D4D4 - 10:1 ratio
+
+# ============================================================================
+# HIGH PERFORMANCE MODE
+# ============================================================================
+# When enabled, forces LOD rendering at all zoom levels and disables expensive
+# visual effects. Auto-enabled when node count >= 50.
+
+_high_performance_mode: bool = False
+_HIGH_PERF_NODE_THRESHOLD: int = 50
+
+
+def set_high_performance_mode(enabled: bool) -> None:
+    """
+    Enable or disable high performance mode globally.
+
+    When enabled:
+    - Forces simplified LOD rendering at all zoom levels
+    - Disables antialiasing
+    - Skips icons, badges, and text rendering
+
+    Args:
+        enabled: True to enable high performance mode
+    """
+    global _high_performance_mode
+    _high_performance_mode = enabled
+
+
+def get_high_performance_mode() -> bool:
+    """
+    Check if high performance mode is enabled.
+
+    Returns:
+        True if high performance mode is active
+    """
+    return _high_performance_mode
+
+
+def get_high_perf_node_threshold() -> int:
+    """
+    Get the node count threshold for auto-enabling high performance mode.
+
+    Returns:
+        Node count threshold (default: 50)
+    """
+    return _HIGH_PERF_NODE_THRESHOLD
+
+
+# Execution time badge colors
+_BADGE_BG_COLOR = QColor(30, 30, 30, 100)
+_BADGE_TEXT_COLOR = QColor(220, 220, 220, 200)
+
+# Header colors (default maroon, will be overridden by category color)
+_HEADER_COLOR = QColor(85, 45, 50)
+_SEPARATOR_COLOR = QColor(100, 55, 60)
+_HEADER_TEXT_COLOR = QColor(240, 235, 235)
+
+# ============================================================================
+# CATEGORY HEADER COLORS
+# ============================================================================
+# Category-aware header coloring for visual node type identification.
+# Uses SOLID, DISTINCT colors for each category - no gradient, no transparency.
+# Colors are designed for maximum visual distinction between categories.
+
+_CATEGORY_HEADER_COLORS: dict[str, QColor] = {
+    "browser": QColor(156, 39, 176),  # Purple - #9C27B0
+    "navigation": QColor(103, 58, 183),  # Deep Purple - #673AB7
+    "interaction": QColor(63, 81, 181),  # Indigo - #3F51B5
+    "data": QColor(76, 175, 80),  # Green - #4CAF50
+    "data_operations": QColor(76, 175, 80),  # Green - #4CAF50 (same as data)
+    "variable": QColor(0, 150, 136),  # Teal - #009688
+    "control_flow": QColor(244, 67, 54),  # Red - #F44336
+    "error_handling": QColor(255, 87, 34),  # Deep Orange - #FF5722
+    "wait": QColor(255, 152, 0),  # Orange - #FF9800
+    "debug": QColor(158, 158, 158),  # Gray - #9E9E9E
+    "utility": QColor(96, 125, 139),  # Blue Gray - #607D8B
+    "file": QColor(121, 85, 72),  # Brown - #795548
+    "file_operations": QColor(121, 85, 72),  # Brown - #795548 (same as file)
+    "database": QColor(33, 150, 243),  # Blue - #2196F3
+    "rest_api": QColor(3, 169, 244),  # Light Blue - #03A9F4
+    "email": QColor(233, 30, 99),  # Pink - #E91E63
+    "office_automation": QColor(33, 123, 75),  # Office Green
+    "desktop": QColor(0, 188, 212),  # Cyan - #00BCD4
+    "desktop_automation": QColor(0, 188, 212),  # Cyan - #00BCD4 (same as desktop)
+    "triggers": QColor(255, 193, 7),  # Amber - #FFC107
+    "messaging": QColor(139, 195, 74),  # Light Green - #8BC34A
+    "ai_ml": QColor(171, 71, 188),  # Purple accent
+    "document": QColor(255, 152, 0),  # Orange - #FF9800
+    "google": QColor(66, 133, 244),  # Google Blue
+    "scripts": QColor(205, 220, 57),  # Lime - #CDDC39
+    "system": QColor(63, 81, 181),  # Indigo - same as interaction
+    "basic": QColor(97, 97, 97),  # Dark Gray - #616161
+}
+
+# Default header color for unknown categories
+_DEFAULT_CATEGORY_COLOR = QColor(85, 45, 50)  # Original maroon
+
+
+def get_category_header_color(category: str) -> QColor:
+    """
+    Get the header color for a node category.
+
+    For hierarchical categories (e.g., "google/gmail/send"), uses the root category color.
+
+    Args:
+        category: Category string (may be hierarchical with '/')
+
+    Returns:
+        QColor for the category header
+    """
+    if not category:
+        return _DEFAULT_CATEGORY_COLOR
+
+    # Extract root category from hierarchical path
+    root_category = category.split("/")[0].lower()
+    return _CATEGORY_HEADER_COLORS.get(root_category, _DEFAULT_CATEGORY_COLOR)
+
+
+# Collapse button colors
+_COLLAPSE_BTN_BG = QColor(60, 60, 65, 180)
+_COLLAPSE_BTN_SYMBOL = QColor(200, 200, 200)
+
+# Pre-cached fonts
+_TITLE_FONT: Optional[QFont] = None
+
+
+def _get_title_font() -> QFont:
+    """Get cached title font for node name display."""
+    global _TITLE_FONT
+    if _TITLE_FONT is None:
+        _TITLE_FONT = QFont("Segoe UI", 9)
+        _TITLE_FONT.setWeight(QFont.Weight.Medium)
+    return _TITLE_FONT
 
 
 # ============================================================================
@@ -133,6 +289,15 @@ class CasareNodeItem(NodeItem):
         self._execution_time_ms: Optional[float] = None
         self._animation_offset = 0
 
+        # New status states for Phase 1 UI overhaul
+        self._is_disabled = False  # Gray diagonal lines overlay, 50% opacity
+        self._is_skipped = False  # Gray fast-forward icon in corner
+        self._has_warning = False  # Yellow triangle, orange border
+
+        # MMB click detection (for output inspector popup)
+        self._mmb_press_pos = None
+        self._mmb_press_scene_pos = None
+
         # Robot override state
         self._has_robot_override = False
         self._override_is_capability_based = False
@@ -144,6 +309,9 @@ class CasareNodeItem(NodeItem):
         # Custom icon pixmap (separate from parent's _icon_item)
         self._custom_icon_pixmap = None
 
+        # Node type identifier for icon atlas lookups
+        self._node_type_name: str = ""
+
         # Colors matching the reference image
         self._normal_border_color = QColor(68, 68, 68)  # Dark gray border
         self._selected_border_color = QColor(255, 215, 0)  # Bright yellow
@@ -152,9 +320,16 @@ class CasareNodeItem(NodeItem):
         self._robot_override_color = QColor(0, 150, 136)  # Teal for robot icon
         self._capability_override_color = QColor(156, 39, 176)  # Purple for capability
 
+        # Category for header coloring (set via set_category method)
+        self._category: str = ""
+        self._cached_header_color: Optional[QColor] = None
+
         # Collapse state
         self._is_collapsed = False
         self._collapse_button_rect: Optional[QRectF] = None
+
+        # PERFORMANCE: Callback for position updates (used by viewport culling)
+        self._on_position_changed: Optional[callable] = None
 
         # Hide parent's text item to avoid double title
         if hasattr(self, "_text_item") and self._text_item:
@@ -163,9 +338,12 @@ class CasareNodeItem(NodeItem):
     def boundingRect(self) -> QRectF:
         """
         Override bounding rect to include space above for execution time badge.
+
+        Only extends when execution time is shown (not for status icons).
+        Status icons are drawn in a fixed position that doesn't require rect extension.
         """
         rect = super().boundingRect()
-        # Extend the bounding rect upward to include badge area
+        # Only extend for execution time badge (status icons fit within normal bounds)
         if self._execution_time_ms is not None:
             return QRectF(
                 rect.x(),
@@ -179,10 +357,95 @@ class CasareNodeItem(NodeItem):
         """Get the actual node rectangle (without badge area)."""
         return super().boundingRect()
 
+    def _paint_lod(self, painter: QPainter, lod_level: LODLevel = LODLevel.LOW) -> None:
+        """
+        Paint simplified LOD version for low zoom levels.
+
+        PERFORMANCE: At low zoom levels, skip expensive rendering (icons, text,
+        badges, status indicators) and draw simple colored rectangles.
+        This significantly reduces CPU when viewing large workflows zoomed out.
+
+        Args:
+            lod_level: The LOD level to render at (ULTRA_LOW or LOW)
+        """
+        painter.save()
+
+        # Use LOD manager to determine antialiasing
+        lod_manager = get_lod_manager()
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing, lod_manager.should_use_antialiasing()
+        )
+
+        rect = self._get_node_rect()
+
+        # Simple fill with status-aware color
+        if self._has_error:
+            fill_color = _ERROR_RED
+        elif self._has_warning:
+            fill_color = _WARNING_ORANGE
+        elif self._is_completed:
+            fill_color = _SUCCESS_GREEN
+        elif self._is_running:
+            fill_color = self._running_border_color
+        elif self._is_disabled:
+            # Use very transparent background for disabled (more grayed out)
+            fill_color = QColor(self._node_bg_color)
+            fill_color.setAlpha(64)
+        else:
+            fill_color = self._node_bg_color
+
+        # ULTRA_LOW: Just fill rect, no rounded corners
+        if lod_level == LODLevel.ULTRA_LOW:
+            painter.fillRect(rect, fill_color)
+        else:
+            # LOW: Simple rounded rect
+            painter.setBrush(QBrush(fill_color))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(rect, 4, 4)
+
+        # Simple border based on status
+        if self.selected or self._is_running:
+            painter.setPen(QPen(self._selected_border_color, 2))
+        elif self._has_warning:
+            painter.setPen(QPen(_WARNING_ORANGE, 2))
+        elif self._is_disabled:
+            painter.setPen(QPen(_DISABLED_GRAY, 1))
+        else:
+            painter.setPen(QPen(self._normal_border_color, 1))
+
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        if lod_level == LODLevel.ULTRA_LOW:
+            painter.drawRect(rect)
+        else:
+            painter.drawRoundedRect(rect, 4, 4)
+
+        painter.restore()
+
     def paint(self, painter, option, widget):
         """
         Custom paint method for the node.
+
+        PERFORMANCE: Uses centralized LOD manager to determine rendering detail.
+        The LOD level is computed once per frame (in viewport update timer),
+        not per-node. This eliminates redundant zoom calculations.
+
+        HIGH PERFORMANCE MODE: When enabled (manually or auto-enabled at 50+ nodes),
+        forces LOD rendering at all zoom levels for maximum performance.
         """
+        # Get LOD level from centralized manager (computed once per frame)
+        lod_manager = get_lod_manager()
+        lod_level = lod_manager.current_lod
+
+        # HIGH PERFORMANCE MODE: Force LOD rendering at all zoom levels
+        if _high_performance_mode:
+            self._paint_lod(painter, LODLevel.LOW)
+            return
+
+        # LOD check - at low zoom, render simplified version
+        if lod_level in (LODLevel.ULTRA_LOW, LODLevel.LOW):
+            self._paint_lod(painter, lod_level)
+            return
+
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
@@ -190,10 +453,16 @@ class CasareNodeItem(NodeItem):
         rect = self._get_node_rect()
         border_width = 2.0
 
-        # Determine border color and style
+        # Determine border color and style based on status states
         if self._is_running:
             border_color = self._running_border_color
             border_style = Qt.PenStyle.DashLine
+        elif self._has_warning:
+            border_color = _WARNING_ORANGE
+            border_style = Qt.PenStyle.SolidLine
+        elif self._is_disabled:
+            border_color = _DISABLED_GRAY
+            border_style = Qt.PenStyle.SolidLine
         elif self.selected:
             border_color = self._selected_border_color
             border_style = Qt.PenStyle.SolidLine
@@ -206,8 +475,13 @@ class CasareNodeItem(NodeItem):
         path = QPainterPath()
         path.addRoundedRect(rect, radius, radius)
 
-        # Fill background
-        painter.fillPath(path, QBrush(self._node_bg_color))
+        # Fill background - with opacity reduction for disabled state
+        if self._is_disabled:
+            bg_color = QColor(self._node_bg_color)
+            bg_color.setAlpha(64)  # 25% opacity (more grayed out)
+            painter.fillPath(path, QBrush(bg_color))
+        else:
+            painter.fillPath(path, QBrush(self._node_bg_color))
 
         # Draw border
         pen = QPen(border_color, border_width)
@@ -227,12 +501,20 @@ class CasareNodeItem(NodeItem):
         self._draw_collapse_button(painter, rect)
 
         # Draw custom icon if available
-        if self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
+        # PERFORMANCE: Try icon atlas first, fall back to individual pixmap
+        if lod_manager.should_render_icons():
             icon_size = 24
             icon_x = rect.left() + 12
             icon_y = rect.top() + 12
-            icon_rect = QRectF(icon_x, icon_y, icon_size, icon_size)
-            painter.drawPixmap(icon_rect.toRect(), self._custom_icon_pixmap)
+            icon_rect = QRect(int(icon_x), int(icon_y), icon_size, icon_size)
+
+            # Try atlas first (GPU-efficient single texture)
+            icon_atlas = get_icon_atlas()
+            if self._node_type_name and icon_atlas.has_icon(self._node_type_name):
+                icon_atlas.draw_icon(painter, self._node_type_name, icon_rect)
+            elif self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
+                # Fallback to individual pixmap
+                painter.drawPixmap(icon_rect, self._custom_icon_pixmap)
 
         # Draw execution time badge at bottom
         self._draw_execution_time(painter, rect)
@@ -241,23 +523,38 @@ class CasareNodeItem(NodeItem):
         if self._has_robot_override:
             self._draw_robot_override_icon(painter, rect)
 
-        # Draw status indicator LAST so it's always on top (error takes precedence over completed)
+        # Draw disabled overlay (diagonal gray lines)
+        if self._is_disabled:
+            self._draw_disabled_overlay(painter, rect)
+
+        # Draw status indicator LAST so it's always on top
+        # Priority: error > warning > skipped > completed
         if self._has_error:
             self._draw_error_icon(painter, rect)
+        elif self._has_warning:
+            self._draw_warning_icon(painter, rect)
+        elif self._is_skipped:
+            self._draw_skipped_icon(painter, rect)
         elif self._is_completed:
             self._draw_checkmark(painter, rect)
 
         painter.restore()
 
-    def _draw_checkmark(self, painter, rect):
-        """Draw a checkmark in the top-right corner."""
-        size = 20
-        margin = 8
-        x = rect.right() - size - margin
-        y = rect.top() + margin - 5  # Raised 5px to stay above header
+    def _get_status_icon_position(self, rect) -> tuple:
+        """Get position for status icons (above node, next to execution time badge)."""
+        size = 16
+        # Position above the node, to the right of center (where time badge is)
+        # This places the icon next to the execution time badge
+        x = rect.center().x() + 30  # Right of the centered time badge
+        y = rect.top() - size - 6  # Above node, same height as time badge
+        return x, y, size
 
-        # Background circle
-        painter.setBrush(QBrush(QColor(76, 175, 80)))  # Green
+    def _draw_checkmark(self, painter, rect):
+        """Draw a checkmark above node, next to execution time badge."""
+        x, y, size = self._get_status_icon_position(rect)
+
+        # Background circle (using cached color)
+        painter.setBrush(QBrush(_SUCCESS_GREEN))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
 
@@ -281,14 +578,11 @@ class CasareNodeItem(NodeItem):
         painter.drawPath(check_path)
 
     def _draw_error_icon(self, painter, rect):
-        """Draw an error X icon in the top-right corner."""
-        size = 20
-        margin = 8
-        x = rect.right() - size - margin
-        y = rect.top() + margin - 5  # Raised 5px to stay above header
+        """Draw an error X icon above node, next to execution time badge."""
+        x, y, size = self._get_status_icon_position(rect)
 
-        # Red circle background
-        painter.setBrush(QBrush(QColor(244, 67, 54)))  # Material Red
+        # Red circle background (using cached color)
+        painter.setBrush(QBrush(_ERROR_RED))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
 
@@ -309,6 +603,99 @@ class CasareNodeItem(NodeItem):
         painter.drawLine(
             QPointF(x + size - inset, y + inset), QPointF(x + inset, y + size - inset)
         )
+
+    def _draw_warning_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw a warning triangle icon above node, next to execution time badge."""
+        x, y, size = self._get_status_icon_position(rect)
+
+        # Yellow/orange triangle background
+        painter.setBrush(QBrush(_WARNING_ORANGE))
+        painter.setPen(Qt.PenStyle.NoPen)
+
+        # Draw triangle pointing up
+        triangle_path = QPainterPath()
+        triangle_path.moveTo(x + size / 2, y)  # Top point
+        triangle_path.lineTo(x + size, y + size)  # Bottom right
+        triangle_path.lineTo(x, y + size)  # Bottom left
+        triangle_path.closeSubpath()
+        painter.drawPath(triangle_path)
+
+        # White exclamation mark
+        painter.setPen(
+            QPen(
+                Qt.GlobalColor.white,
+                2.5,
+                Qt.PenStyle.SolidLine,
+                Qt.PenCapStyle.RoundCap,
+            )
+        )
+        # Exclamation line
+        painter.drawLine(
+            QPointF(x + size / 2, y + size * 0.3),
+            QPointF(x + size / 2, y + size * 0.6),
+        )
+        # Exclamation dot
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
+        painter.drawEllipse(QPointF(x + size / 2, y + size * 0.78), 2, 2)
+
+    def _draw_skipped_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw a fast-forward (skip) icon above node, next to execution time badge."""
+        x, y, size = self._get_status_icon_position(rect)
+
+        # Gray circle background
+        painter.setBrush(QBrush(_SKIPPED_GRAY))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(QPointF(x + size / 2, y + size / 2), size / 2, size / 2)
+
+        # White fast-forward symbol (two triangles pointing right)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(Qt.GlobalColor.white))
+
+        # First triangle
+        tri1_path = QPainterPath()
+        tri1_path.moveTo(x + size * 0.2, y + size * 0.25)
+        tri1_path.lineTo(x + size * 0.5, y + size * 0.5)
+        tri1_path.lineTo(x + size * 0.2, y + size * 0.75)
+        tri1_path.closeSubpath()
+        painter.drawPath(tri1_path)
+
+        # Second triangle
+        tri2_path = QPainterPath()
+        tri2_path.moveTo(x + size * 0.45, y + size * 0.25)
+        tri2_path.lineTo(x + size * 0.75, y + size * 0.5)
+        tri2_path.lineTo(x + size * 0.45, y + size * 0.75)
+        tri2_path.closeSubpath()
+        painter.drawPath(tri2_path)
+
+    def _draw_disabled_overlay(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw gray wash and diagonal lines overlay for disabled state."""
+        painter.save()
+
+        # Clip to node bounds
+        radius = 8.0
+        clip_path = QPainterPath()
+        clip_path.addRoundedRect(rect, radius, radius)
+        painter.setClipPath(clip_path)
+
+        # Draw gray wash overlay first (makes content more grayed out)
+        wash_color = QColor(40, 40, 40, 140)  # Dark gray wash
+        painter.fillRect(rect, wash_color)
+
+        # Draw diagonal lines (darker and more prominent)
+        line_spacing = 6  # Closer spacing for more coverage
+        line_color = QColor(60, 60, 60, 180)  # Darker, more opaque lines
+        painter.setPen(QPen(line_color, 2.0, Qt.PenStyle.SolidLine))
+
+        # Draw lines from top-left to bottom-right direction
+        start_x = rect.left() - rect.height()
+        while start_x < rect.right():
+            painter.drawLine(
+                QPointF(start_x, rect.bottom()),
+                QPointF(start_x + rect.height(), rect.top()),
+            )
+            start_x += line_spacing
+
+        painter.restore()
 
     def _draw_execution_time(self, painter, rect):
         """Draw execution time badge above the node."""
@@ -344,24 +731,22 @@ class CasareNodeItem(NodeItem):
 
         badge_rect = QRectF(badge_x, badge_y, badge_width, badge_height)
 
-        # Draw badge background (dark gray, not pure black)
+        # Draw badge background (using cached color)
         badge_path = QPainterPath()
         badge_path.addRoundedRect(badge_rect, badge_radius, badge_radius)
-        painter.fillPath(
-            badge_path, QBrush(QColor(30, 30, 30, 100))
-        )  # Dark gray (#1E1E1E) with transparency
+        painter.fillPath(badge_path, QBrush(_BADGE_BG_COLOR))
 
-        # Draw text (light gray, slightly transparent)
-        painter.setPen(QColor(220, 220, 220, 200))
+        # Draw text (using cached color)
+        painter.setPen(_BADGE_TEXT_COLOR)
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, time_text)
 
     def _draw_text(self, painter, rect):
-        """Draw node name with header background."""
+        """Draw node name with SOLID category-colored header background."""
         # Header dimensions
         header_height = 26
         radius = 8.0
 
-        # Draw header background (reddish/maroon color)
+        # Draw header background with category color
         header_rect = QRectF(rect.left(), rect.top(), rect.width(), header_height)
         header_path = QPainterPath()
         # Only round top corners
@@ -383,22 +768,29 @@ class CasareNodeItem(NodeItem):
         )
         header_path.closeSubpath()
 
-        # Header color (dark reddish/maroon)
-        header_color = QColor(85, 45, 50)
-        painter.fillPath(header_path, QBrush(header_color))
+        # Get category-based header color (cached for performance)
+        # Use SOLID color at FULL opacity - no gradient, no transparency
+        if self._cached_header_color is None:
+            self._cached_header_color = get_category_header_color(self._category)
 
-        # Draw separator line (reddish tint)
-        painter.setPen(QPen(QColor(100, 55, 60), 1))
+        # Fill with SOLID color (no gradient)
+        painter.fillPath(header_path, QBrush(self._cached_header_color))
+
+        # Draw separator line (slightly darker than header)
+        sep_color = QColor(self._cached_header_color)
+        # Darken the separator by reducing brightness
+        sep_color.setRed(max(0, int(sep_color.red() * 0.7)))
+        sep_color.setGreen(max(0, int(sep_color.green() * 0.7)))
+        sep_color.setBlue(max(0, int(sep_color.blue() * 0.7)))
+        painter.setPen(QPen(sep_color, 1))
         painter.drawLine(
             QPointF(header_rect.left(), header_rect.bottom()),
             QPointF(header_rect.right(), header_rect.bottom()),
         )
 
-        # Draw node name (centered)
-        painter.setPen(QColor(240, 235, 235))  # Slightly warm white text
-        font = QFont("Segoe UI", 9)
-        font.setWeight(QFont.Weight.Medium)
-        painter.setFont(font)
+        # Draw node name (centered, using cached font and color)
+        painter.setPen(_HEADER_TEXT_COLOR)
+        painter.setFont(_get_title_font())
 
         # Get node name
         node_name = self.name if hasattr(self, "name") else "Node"
@@ -415,15 +807,15 @@ class CasareNodeItem(NodeItem):
         # Store button rect for click detection
         self._collapse_button_rect = QRectF(x, y, btn_size, btn_size)
 
-        # Draw button background (subtle rounded rect)
+        # Draw button background (using cached color)
         btn_path = QPainterPath()
         btn_path.addRoundedRect(self._collapse_button_rect, 3, 3)
-        painter.fillPath(btn_path, QBrush(QColor(60, 60, 65, 180)))
+        painter.fillPath(btn_path, QBrush(_COLLAPSE_BTN_BG))
 
-        # Draw +/- symbol
+        # Draw +/- symbol (using cached color)
         painter.setPen(
             QPen(
-                QColor(200, 200, 200), 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
+                _COLLAPSE_BTN_SYMBOL, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap
             )
         )
 
@@ -450,9 +842,24 @@ class CasareNodeItem(NodeItem):
         self.update()
 
     def mousePressEvent(self, event):
-        """Handle mouse press events, including collapse button clicks."""
+        """Handle mouse press events, including collapse button clicks and middle-click."""
         from PySide6.QtCore import Qt
         from loguru import logger
+
+        # Middle-click: Record press position for click detection
+        # Only show popup on release if it was a click (not a drag/pan)
+        if event.button() == Qt.MouseButton.MiddleButton:
+            # Verify click is actually within node bounds
+            if not self.boundingRect().contains(event.pos()):
+                event.ignore()
+                return
+
+            # Store press position and scene pos for click vs drag detection
+            self._mmb_press_pos = event.pos()
+            self._mmb_press_scene_pos = event.scenePos()
+            # Accept to receive release event
+            event.accept()
+            return
 
         # Check if click is on collapse button
         # Use expanded hit area for easier clicking
@@ -472,6 +879,127 @@ class CasareNodeItem(NodeItem):
 
         # Call parent implementation for normal behavior
         super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release events, including MMB click for output inspector."""
+        from PySide6.QtCore import Qt
+
+        # MMB release: Show popup only if it was a click (not a drag/pan)
+        if event.button() == Qt.MouseButton.MiddleButton:
+            if (
+                hasattr(self, "_mmb_press_scene_pos")
+                and self._mmb_press_scene_pos is not None
+            ):
+                # Check distance in scene coords (more accurate if view moved)
+                delta = event.scenePos() - self._mmb_press_scene_pos
+                distance = (delta.x() ** 2 + delta.y() ** 2) ** 0.5
+
+                if distance < 10:
+                    # It's a click - show output inspector
+                    view = (
+                        self.scene().views()[0]
+                        if self.scene() and self.scene().views()
+                        else None
+                    )
+                    if view:
+                        node_rect = self.sceneBoundingRect()
+                        bottom_center_scene = node_rect.bottomLeft()
+                        view_pos = view.mapFromScene(bottom_center_scene)
+                        global_pos = view.mapToGlobal(view_pos)
+                        self._emit_output_inspector_signal(global_pos)
+
+                # Clear press positions
+                self._mmb_press_pos = None
+                self._mmb_press_scene_pos = None
+            event.accept()
+            return
+
+        super().mouseReleaseEvent(event)
+
+    def _emit_output_inspector_signal(self, global_pos):
+        """
+        Emit signal to show output inspector for this node.
+
+        The signal is routed through the NodeGraphWidget which handles
+        creating and positioning the popup.
+
+        Args:
+            global_pos: Global screen position for popup
+        """
+        from loguru import logger
+
+        # Get the VisualNode instance
+        node = getattr(self, "_node", None)
+        if not node:
+            logger.debug("Cannot show output inspector: no visual node attached")
+            return
+
+        # Get output data from the visual node
+        output_data = None
+        if hasattr(node, "_last_output"):
+            output_data = node._last_output
+
+        # Find the graph widget and emit the signal
+        # The graph viewer is the parent of the scene
+        scene = self.scene()
+        if not scene:
+            return
+
+        views = scene.views()
+        if not views:
+            return
+
+        view = views[0]
+
+        # Look for NodeGraphWidget parent
+        from casare_rpa.presentation.canvas.graph.node_graph_widget import (
+            NodeGraphWidget,
+        )
+
+        parent = view.parent()
+        while parent:
+            if isinstance(parent, NodeGraphWidget):
+                # Call the show_output_inspector method
+                if hasattr(parent, "show_output_inspector"):
+                    node_id = (
+                        node.get_property("node_id")
+                        if hasattr(node, "get_property")
+                        else node.id
+                    )
+                    node_name = node.name() if callable(node.name) else str(node.name)
+                    parent.show_output_inspector(
+                        node_id, node_name, output_data, global_pos
+                    )
+                    logger.debug(f"Showing output inspector for {node_name}")
+                    return
+                break
+            parent = (
+                parent.parent()
+                if hasattr(parent, "parent") and callable(parent.parent)
+                else None
+            )
+
+        logger.debug("Could not find NodeGraphWidget to show output inspector")
+
+    def itemChange(self, change, value):
+        """
+        Handle item changes, particularly position changes.
+
+        PERFORMANCE: Notifies viewport culling when node position changes
+        so the spatial hash can be updated for efficient viewport queries.
+        """
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            # Notify callback for viewport culling spatial hash update
+            if self._on_position_changed:
+                try:
+                    self._on_position_changed(self)
+                except Exception:
+                    pass  # Don't let callback errors break node movement
+        return super().itemChange(change, value)
+
+    def set_position_callback(self, callback: callable) -> None:
+        """Set callback for position change notifications (used by viewport culling)."""
+        self._on_position_changed = callback
 
     def set_running(self, running: bool):
         """
@@ -502,6 +1030,103 @@ class CasareNodeItem(NodeItem):
             self._is_completed = False  # Error takes precedence
         self.update()
 
+    def set_disabled(self, disabled: bool) -> None:
+        """
+        Set node disabled state.
+
+        Disabled nodes show a gray diagonal lines overlay and reduced opacity.
+        Disabled nodes are skipped during workflow execution.
+        Widget parameters also get dimmed with reduced opacity.
+
+        Args:
+            disabled: True to disable the node, False to enable
+        """
+        self._is_disabled = disabled
+
+        # Apply disabled styling to all widget parameters
+        self._apply_widget_disabled_styling(disabled)
+
+        self.update()
+
+    def _apply_widget_disabled_styling(self, disabled: bool) -> None:
+        """
+        Apply or remove disabled styling from widget parameters.
+
+        Disabled widgets get reduced opacity (40%) to match the node background.
+
+        Args:
+            disabled: True to apply disabled styling, False to restore normal
+        """
+        try:
+            for widget in self.widgets.values():
+                if widget is None:
+                    continue
+
+                if disabled:
+                    # Apply opacity effect for dimmed appearance
+                    opacity_effect = QGraphicsOpacityEffect()
+                    opacity_effect.setOpacity(0.4)  # 40% opacity (very dimmed)
+                    widget.setGraphicsEffect(opacity_effect)
+                else:
+                    # Remove opacity effect
+                    widget.setGraphicsEffect(None)
+        except Exception:
+            # Silently handle any widget access errors
+            pass
+
+    def is_disabled(self) -> bool:
+        """
+        Check if node is disabled.
+
+        Returns:
+            True if node is disabled
+        """
+        return self._is_disabled
+
+    def set_skipped(self, skipped: bool) -> None:
+        """
+        Set node skipped state.
+
+        Skipped nodes show a gray fast-forward icon above the node.
+        This indicates the node was skipped during execution (e.g., condition not met).
+
+        Args:
+            skipped: True to show skipped indicator, False to hide
+        """
+        self._is_skipped = skipped
+        self.update()
+
+    def is_skipped(self) -> bool:
+        """
+        Check if node is in skipped state.
+
+        Returns:
+            True if node was skipped
+        """
+        return self._is_skipped
+
+    def set_warning(self, has_warning: bool) -> None:
+        """
+        Set node warning state.
+
+        Warning nodes show a yellow triangle icon above the node and orange border.
+        This indicates validation warnings or potential issues.
+
+        Args:
+            has_warning: True to show warning indicator, False to hide
+        """
+        self._has_warning = has_warning
+        self.update()
+
+    def has_warning(self) -> bool:
+        """
+        Check if node has warning state.
+
+        Returns:
+            True if node has a warning
+        """
+        return self._has_warning
+
     def set_execution_time(self, time_seconds: Optional[float]):
         """
         Set execution time to display.
@@ -521,13 +1146,16 @@ class CasareNodeItem(NodeItem):
     def clear_execution_state(self):
         """Reset all execution state for workflow restart.
 
-        Note: Robot override state is NOT cleared here as it's configuration,
-        not execution state. Override persists across workflow runs.
+        Note: Robot override state and disabled state are NOT cleared here
+        as they are configuration, not execution state. They persist across runs.
         """
         self.prepareGeometryChange()  # Bounding rect changes when badge is removed
         self._is_running = False
         self._is_completed = False
         self._has_error = False
+        self._is_skipped = False  # Clear skipped (execution result)
+        self._has_warning = False  # Clear warning (execution result)
+        # Note: _is_disabled is NOT cleared - it's configuration
         self._execution_time_ms = None
         self._animation_offset = 0
         self._animation_coordinator.unregister(self)
@@ -627,10 +1255,73 @@ class CasareNodeItem(NodeItem):
             return "This node requires specific capabilities"
         return "This node is assigned to a specific robot"
 
-    def set_icon(self, pixmap: QPixmap):
-        """Set custom node icon."""
+    def set_icon(self, pixmap: QPixmap) -> None:
+        """
+        Set custom node icon.
+
+        Also registers with icon atlas for GPU-efficient rendering
+        if node_type_name is set.
+
+        Args:
+            pixmap: The icon pixmap to use
+        """
         self._custom_icon_pixmap = pixmap
+
+        # Register with icon atlas for GPU-efficient rendering
+        if self._node_type_name and pixmap and not pixmap.isNull():
+            icon_atlas = get_icon_atlas()
+            if not icon_atlas.has_icon(self._node_type_name):
+                icon_atlas.add_icon(self._node_type_name, pixmap)
+
         self.update()
+
+    def set_node_type_name(self, type_name: str) -> None:
+        """
+        Set the node type name for icon atlas lookups.
+
+        Args:
+            type_name: The node type identifier (e.g., "ClickNode")
+        """
+        self._node_type_name = type_name
+
+        # If icon already set, register it with atlas
+        if self._custom_icon_pixmap and not self._custom_icon_pixmap.isNull():
+            icon_atlas = get_icon_atlas()
+            if not icon_atlas.has_icon(type_name):
+                icon_atlas.add_icon(type_name, self._custom_icon_pixmap)
+
+    def get_node_type_name(self) -> str:
+        """
+        Get the node type name.
+
+        Returns:
+            The node type identifier
+        """
+        return self._node_type_name
+
+    def set_category(self, category: str) -> None:
+        """
+        Set the node category for header coloring.
+
+        The category determines the header gradient color.
+        Call this after node creation to apply category-specific styling.
+
+        Args:
+            category: Category string (e.g., "browser", "data", "control_flow")
+        """
+        if self._category != category:
+            self._category = category
+            self._cached_header_color = None  # Invalidate cached color
+            self.update()
+
+    def get_category(self) -> str:
+        """
+        Get the node category.
+
+        Returns:
+            Category string
+        """
+        return self._category
 
     def borderColor(self):
         """Get current border color based on state."""

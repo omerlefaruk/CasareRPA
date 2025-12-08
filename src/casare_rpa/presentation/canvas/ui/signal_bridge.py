@@ -327,23 +327,3 @@ class BottomPanelSignalBridge(QObject):
         panel.topLevelChanged.connect(mw._schedule_ui_state_save)
 
         logger.debug("BottomPanelSignalBridge: BottomPanel connected")
-
-    def connect_execution_timeline(self, timeline, dock) -> None:
-        """
-        Connect ExecutionTimeline signals to MainWindow handlers.
-
-        Args:
-            timeline: ExecutionTimeline widget
-            dock: QDockWidget containing the timeline
-        """
-        mw = self._main_window
-
-        # Node clicked signal
-        timeline.node_clicked.connect(mw._select_node_by_id)
-
-        # Dock state signals for auto-save
-        dock.dockLocationChanged.connect(mw._schedule_ui_state_save)
-        dock.visibilityChanged.connect(mw._schedule_ui_state_save)
-        dock.topLevelChanged.connect(mw._schedule_ui_state_save)
-
-        logger.debug("BottomPanelSignalBridge: ExecutionTimeline connected")

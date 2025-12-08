@@ -74,11 +74,6 @@ class MenuBuilder:
 
         file_menu.addSeparator()
 
-        # --- Migration Utilities ---
-        file_menu.addAction(mw.action_migrate_workflow)
-
-        file_menu.addSeparator()
-
         # --- Exit (destructive action, always last) ---
         file_menu.addAction(mw.action_exit)
 
@@ -125,22 +120,19 @@ class MenuBuilder:
         """Create View menu with logical groupings.
 
         Groups:
-        - Panel toggles (core UI panels)
-        - Layout management
+        - Minimap toggle
+        - Performance settings
         - Dashboards (external views)
         """
         view_menu = menubar.addMenu("&View")
 
-        # --- Panels Submenu ---
-        panels_menu = view_menu.addMenu("&Panels")
-        panels_menu.addAction(mw.action_toggle_bottom_panel)
-        panels_menu.addSeparator()
-        panels_menu.addAction(mw.action_toggle_minimap)
+        # --- Minimap ---
+        view_menu.addAction(mw.action_toggle_minimap)
 
         view_menu.addSeparator()
 
-        # --- Layout Management ---
-        view_menu.addAction(mw.action_save_layout)
+        # --- Performance Settings ---
+        view_menu.addAction(mw.action_high_performance_mode)
 
         view_menu.addSeparator()
 
@@ -167,6 +159,7 @@ class MenuBuilder:
         run_menu.addAction(mw.action_run_all)
         run_menu.addAction(mw.action_pause)
         run_menu.addAction(mw.action_stop)
+        run_menu.addAction(mw.action_restart)
 
         run_menu.addSeparator()
 
@@ -237,8 +230,7 @@ class MenuBuilder:
 
         help_menu.addSeparator()
 
-        # --- Settings and Configuration ---
-        help_menu.addAction(mw.action_credential_manager)
+        # --- Settings ---
         help_menu.addAction(mw.action_preferences)
 
         help_menu.addSeparator()

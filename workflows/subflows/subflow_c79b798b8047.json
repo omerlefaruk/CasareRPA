@@ -1,0 +1,85 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_c79b798b8047",
+  "name": "Subflow 13",
+  "version": "1.0.0",
+  "description": "Subflow created from 2 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-08T02:23:21.052787",
+  "updated_at": "2025-12-08T02:23:21.053438",
+  "inputs": [],
+  "outputs": [],
+  "parameters": [],
+  "nodes": {
+    "MessageBoxNode_e472e7ac": {
+      "node_id": "MessageBoxNode_e472e7ac",
+      "type": "MessageBoxNode",
+      "name": "Message Box 1",
+      "position": {
+        "x": 555.6991856945192,
+        "y": 114.0288003772335
+      },
+      "properties": {
+        "node_id": "MessageBoxNode_e472e7ac",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "title": "Message",
+        "message": "2",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0"
+      }
+    },
+    "MessageBoxNode_1548d974": {
+      "node_id": "MessageBoxNode_1548d974",
+      "type": "MessageBoxNode",
+      "name": "Message Box",
+      "position": {
+        "x": 116.8701630771331,
+        "y": 108.20157450993776
+      },
+      "properties": {
+        "node_id": "MessageBoxNode_1548d974",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "title": "Message",
+        "message": "hey",
+        "detailed_text": "",
+        "icon_type": "information",
+        "buttons": "ok",
+        "default_button": "",
+        "always_on_top": true,
+        "play_sound": false,
+        "auto_close_timeout": "0"
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "MessageBoxNode_1548d974",
+      "source_port": "exec_out",
+      "target_node": "MessageBoxNode_e472e7ac",
+      "target_port": "exec_in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": 116.8701630771331,
+    "y": 108.20157450993776,
+    "width": 638.829022617386,
+    "height": 105.82722586729574
+  }
+}

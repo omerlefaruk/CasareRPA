@@ -1,7 +1,36 @@
-"""Visual nodes for Google Calendar operations."""
+"""Visual nodes for Google Calendar operations.
+
+All nodes use Google credential picker for OAuth authentication.
+"""
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.presentation.canvas.graph.node_widgets import (
+    NodeGoogleCredentialWidget,
+)
+
+# Google Calendar API scope
+CALENDAR_SCOPE = ["https://www.googleapis.com/auth/calendar"]
+
+
+class VisualGoogleCalendarBaseNode(VisualNode):
+    """Base class for Google Calendar visual nodes with credential picker integration."""
+
+    REQUIRED_SCOPES = CALENDAR_SCOPE
+
+    def __init__(self, qgraphics_item=None) -> None:
+        super().__init__(qgraphics_item)
+
+    def setup_widgets(self) -> None:
+        """Setup credential picker widget."""
+        self._cred_widget = NodeGoogleCredentialWidget(
+            name="credential_id",
+            label="Google Account",
+            scopes=self.REQUIRED_SCOPES,
+        )
+        if self._cred_widget:
+            self.add_custom_widget(self._cred_widget)
+            self._cred_widget.setParentItem(self.view)
 
 
 # =============================================================================
@@ -9,85 +38,13 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 # =============================================================================
 
 
-class VisualCalendarListEventsNode(VisualNode):
+class VisualCalendarListEventsNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarListEventsNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Calendar: List Events"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarListEventsNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-            placeholder_text="OAuth credential name",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-            placeholder_text="primary or calendar@group.calendar.google.com",
-        )
-        self.add_text_input(
-            "time_min",
-            "Start Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-01-01T00:00:00Z",
-        )
-        self.add_text_input(
-            "time_max",
-            "End Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-12-31T23:59:59Z",
-        )
-        self.add_text_input(
-            "max_results",
-            "Max Results",
-            text="100",
-            tab="properties",
-        )
-        self.add_text_input(
-            "query",
-            "Search Query",
-            text="",
-            tab="properties",
-            placeholder_text="Free text search term",
-        )
-        # Advanced tab
-        self.add_checkbox(
-            "single_events",
-            "Single Events",
-            state=True,
-            tab="advanced",
-        )
-        self.add_combo_menu(
-            "order_by",
-            "Order By",
-            items=["startTime", "updated"],
-            tab="advanced",
-        )
-        self.add_checkbox(
-            "show_deleted",
-            "Show Deleted",
-            state=False,
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -96,59 +53,20 @@ class VisualCalendarListEventsNode(VisualNode):
         self.add_typed_input("time_max", DataType.STRING)
         self.add_typed_input("max_results", DataType.INTEGER)
         self.add_exec_output("exec_out")
-        self.add_typed_output("events", DataType.ARRAY)
+        self.add_typed_output("events", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarGetEventNode(VisualNode):
+class VisualCalendarGetEventNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarGetEventNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Calendar: Get Event"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarGetEventNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-        )
-        self.add_text_input(
-            "event_id",
-            "Event ID",
-            text="",
-            tab="properties",
-            placeholder_text="Event identifier",
-        )
-        # Advanced tab
-        self.add_text_input(
-            "time_zone",
-            "Time Zone",
-            text="",
-            tab="advanced",
-            placeholder_text="America/New_York",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -161,118 +79,20 @@ class VisualCalendarGetEventNode(VisualNode):
         self.add_typed_output("end_time", DataType.STRING)
         self.add_typed_output("description", DataType.STRING)
         self.add_typed_output("location", DataType.STRING)
-        self.add_typed_output("attendees", DataType.ARRAY)
+        self.add_typed_output("attendees", DataType.LIST)
         self.add_typed_output("organizer", DataType.STRING)
         self.add_typed_output("html_link", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarCreateEventNode(VisualNode):
+class VisualCalendarCreateEventNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarCreateEventNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Calendar: Create Event"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarCreateEventNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-        )
-        self.add_text_input(
-            "summary",
-            "Event Title",
-            text="",
-            tab="properties",
-            placeholder_text="Meeting with Team",
-        )
-        self.add_text_input(
-            "start_time",
-            "Start Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-01-15T10:00:00",
-        )
-        self.add_text_input(
-            "end_time",
-            "End Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-01-15T11:00:00",
-        )
-        self.add_text_input(
-            "description",
-            "Description",
-            text="",
-            tab="properties",
-            placeholder_text="Event description",
-        )
-        self.add_text_input(
-            "location",
-            "Location",
-            text="",
-            tab="properties",
-            placeholder_text="Conference Room A",
-        )
-        self.add_text_input(
-            "attendees",
-            "Attendees",
-            text="",
-            tab="properties",
-            placeholder_text="email1@example.com, email2@example.com",
-        )
-        # Advanced tab
-        self.add_text_input(
-            "time_zone",
-            "Time Zone",
-            text="",
-            tab="advanced",
-            placeholder_text="America/New_York",
-        )
-        self.add_combo_menu(
-            "reminder_method",
-            "Reminder Method",
-            items=["email", "popup", "none"],
-            tab="advanced",
-        )
-        self.add_text_input(
-            "reminder_minutes",
-            "Reminder Minutes",
-            text="30",
-            tab="advanced",
-        )
-        self.add_checkbox(
-            "send_notifications",
-            "Send Notifications",
-            state=True,
-            tab="advanced",
-        )
-        self.add_combo_menu(
-            "visibility",
-            "Visibility",
-            items=["default", "public", "private", "confidential"],
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -282,7 +102,7 @@ class VisualCalendarCreateEventNode(VisualNode):
         self.add_typed_input("end_time", DataType.STRING)
         self.add_typed_input("description", DataType.STRING)
         self.add_typed_input("location", DataType.STRING)
-        self.add_typed_input("attendees", DataType.ARRAY)
+        self.add_typed_input("attendees", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("event_id", DataType.STRING)
         self.add_typed_output("html_link", DataType.STRING)
@@ -291,93 +111,13 @@ class VisualCalendarCreateEventNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarUpdateEventNode(VisualNode):
+class VisualCalendarUpdateEventNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarUpdateEventNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Calendar: Update Event"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarUpdateEventNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-        )
-        self.add_text_input(
-            "event_id",
-            "Event ID",
-            text="",
-            tab="properties",
-            placeholder_text="Event identifier to update",
-        )
-        self.add_text_input(
-            "summary",
-            "Event Title",
-            text="",
-            tab="properties",
-            placeholder_text="Leave empty to keep current",
-        )
-        self.add_text_input(
-            "start_time",
-            "Start Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="Leave empty to keep current",
-        )
-        self.add_text_input(
-            "end_time",
-            "End Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="Leave empty to keep current",
-        )
-        self.add_text_input(
-            "description",
-            "Description",
-            text="",
-            tab="properties",
-            placeholder_text="Leave empty to keep current",
-        )
-        self.add_text_input(
-            "location",
-            "Location",
-            text="",
-            tab="properties",
-            placeholder_text="Leave empty to keep current",
-        )
-        self.add_text_input(
-            "attendees",
-            "Attendees",
-            text="",
-            tab="properties",
-            placeholder_text="email1@example.com, email2@example.com",
-        )
-        # Advanced tab
-        self.add_checkbox(
-            "send_notifications",
-            "Send Notifications",
-            state=True,
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -388,7 +128,7 @@ class VisualCalendarUpdateEventNode(VisualNode):
         self.add_typed_input("end_time", DataType.STRING)
         self.add_typed_input("description", DataType.STRING)
         self.add_typed_input("location", DataType.STRING)
-        self.add_typed_input("attendees", DataType.ARRAY)
+        self.add_typed_input("attendees", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("event_id", DataType.STRING)
         self.add_typed_output("html_link", DataType.STRING)
@@ -397,51 +137,13 @@ class VisualCalendarUpdateEventNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarDeleteEventNode(VisualNode):
+class VisualCalendarDeleteEventNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarDeleteEventNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Calendar: Delete Event"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarDeleteEventNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-        )
-        self.add_text_input(
-            "event_id",
-            "Event ID",
-            text="",
-            tab="properties",
-            placeholder_text="Event identifier to delete",
-        )
-        # Advanced tab
-        self.add_checkbox(
-            "send_notifications",
-            "Send Notifications",
-            state=True,
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -452,7 +154,7 @@ class VisualCalendarDeleteEventNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarQuickAddNode(VisualNode):
+class VisualCalendarQuickAddNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarQuickAddNode.
 
     Creates events using natural language text like:
@@ -464,44 +166,6 @@ class VisualCalendarQuickAddNode(VisualNode):
     NODE_NAME = "Calendar: Quick Add"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarQuickAddNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-        )
-        self.add_text_input(
-            "text",
-            "Quick Add Text",
-            text="",
-            tab="properties",
-            placeholder_text="Meeting with team tomorrow at 2pm",
-        )
-        # Advanced tab
-        self.add_checkbox(
-            "send_notifications",
-            "Send Notifications",
-            state=True,
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -517,7 +181,7 @@ class VisualCalendarQuickAddNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarMoveEventNode(VisualNode):
+class VisualCalendarMoveEventNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarMoveEventNode.
 
     Moves an event from one calendar to another.
@@ -527,52 +191,6 @@ class VisualCalendarMoveEventNode(VisualNode):
     NODE_NAME = "Calendar: Move Event"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarMoveEventNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "source_calendar_id",
-            "Source Calendar ID",
-            text="primary",
-            tab="properties",
-            placeholder_text="Calendar to move from",
-        )
-        self.add_text_input(
-            "event_id",
-            "Event ID",
-            text="",
-            tab="properties",
-            placeholder_text="Event identifier to move",
-        )
-        self.add_text_input(
-            "destination_calendar_id",
-            "Destination Calendar ID",
-            text="",
-            tab="properties",
-            placeholder_text="Calendar to move to",
-        )
-        # Advanced tab
-        self.add_checkbox(
-            "send_notifications",
-            "Send Notifications",
-            state=True,
-            tab="advanced",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -586,7 +204,7 @@ class VisualCalendarMoveEventNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarGetFreeBusyNode(VisualNode):
+class VisualCalendarGetFreeBusyNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarGetFreeBusyNode.
 
     Returns free/busy information for a set of calendars.
@@ -597,61 +215,14 @@ class VisualCalendarGetFreeBusyNode(VisualNode):
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarGetFreeBusyNode"
 
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_ids",
-            "Calendar IDs",
-            text="primary",
-            tab="properties",
-            placeholder_text="primary, work@group.calendar.google.com",
-        )
-        self.add_text_input(
-            "time_min",
-            "Start Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-01-15T00:00:00Z",
-        )
-        self.add_text_input(
-            "time_max",
-            "End Time (ISO)",
-            text="",
-            tab="properties",
-            placeholder_text="2025-01-16T00:00:00Z",
-        )
-        # Advanced tab
-        self.add_text_input(
-            "time_zone",
-            "Time Zone",
-            text="",
-            tab="advanced",
-            placeholder_text="America/New_York",
-        )
-
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("calendar_ids", DataType.ARRAY)
+        self.add_typed_input("calendar_ids", DataType.LIST)
         self.add_typed_input("time_min", DataType.STRING)
         self.add_typed_input("time_max", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("free_busy", DataType.OBJECT)
-        self.add_typed_output("busy_periods", DataType.ARRAY)
+        self.add_typed_output("busy_periods", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
@@ -661,7 +232,7 @@ class VisualCalendarGetFreeBusyNode(VisualNode):
 # =============================================================================
 
 
-class VisualCalendarListCalendarsNode(VisualNode):
+class VisualCalendarListCalendarsNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarListCalendarsNode.
 
     Lists all calendars accessible by the user.
@@ -672,47 +243,17 @@ class VisualCalendarListCalendarsNode(VisualNode):
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarListCalendarsNode"
 
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_checkbox(
-            "show_hidden",
-            "Show Hidden",
-            state=False,
-            tab="properties",
-        )
-        self.add_checkbox(
-            "show_deleted",
-            "Show Deleted",
-            state=False,
-            tab="properties",
-        )
-
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_exec_output("exec_out")
-        self.add_typed_output("calendars", DataType.ARRAY)
+        self.add_typed_output("calendars", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarGetCalendarNode(VisualNode):
+class VisualCalendarGetCalendarNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarGetCalendarNode.
 
     Gets metadata for a single calendar.
@@ -722,31 +263,6 @@ class VisualCalendarGetCalendarNode(VisualNode):
     NODE_NAME = "Calendar: Get Calendar"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarGetCalendarNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="primary",
-            tab="properties",
-            placeholder_text="primary or calendar@group.calendar.google.com",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -762,7 +278,7 @@ class VisualCalendarGetCalendarNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarCreateCalendarNode(VisualNode):
+class VisualCalendarCreateCalendarNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarCreateCalendarNode.
 
     Creates a new secondary calendar.
@@ -772,52 +288,6 @@ class VisualCalendarCreateCalendarNode(VisualNode):
     NODE_NAME = "Calendar: Create Calendar"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarCreateCalendarNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "summary",
-            "Calendar Name",
-            text="",
-            tab="properties",
-            placeholder_text="Work Calendar",
-        )
-        self.add_text_input(
-            "description",
-            "Description",
-            text="",
-            tab="properties",
-            placeholder_text="Calendar for work events",
-        )
-        self.add_text_input(
-            "time_zone",
-            "Time Zone",
-            text="",
-            tab="properties",
-            placeholder_text="America/New_York",
-        )
-        self.add_text_input(
-            "location",
-            "Location",
-            text="",
-            tab="properties",
-            placeholder_text="Office Location",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -831,7 +301,7 @@ class VisualCalendarCreateCalendarNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualCalendarDeleteCalendarNode(VisualNode):
+class VisualCalendarDeleteCalendarNode(VisualGoogleCalendarBaseNode):
     """Visual representation of CalendarDeleteCalendarNode.
 
     Deletes a secondary calendar.
@@ -842,31 +312,6 @@ class VisualCalendarDeleteCalendarNode(VisualNode):
     NODE_NAME = "Calendar: Delete Calendar"
     NODE_CATEGORY = "google/calendar"
     CASARE_NODE_CLASS = "CalendarDeleteCalendarNode"
-
-    def __init__(self) -> None:
-        super().__init__()
-        # Connection tab
-        self.add_text_input(
-            "credential_name",
-            "Credential",
-            text="google",
-            tab="connection",
-        )
-        self.add_text_input(
-            "access_token",
-            "Access Token",
-            text="",
-            tab="connection",
-            placeholder_text="Optional: Direct access token",
-        )
-        # Properties tab
-        self.add_text_input(
-            "calendar_id",
-            "Calendar ID",
-            text="",
-            tab="properties",
-            placeholder_text="calendar@group.calendar.google.com",
-        )
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")

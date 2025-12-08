@@ -187,10 +187,10 @@ class ExecutionController(BaseController):
             )
 
             # Subscribe all events to log viewer if available
+            # PERFORMANCE: Use subscribe_all() for O(1) instead of 100+ subscriptions
             log_viewer = self.main_window.get_log_viewer()
             if log_viewer and hasattr(log_viewer, "log_event"):
-                for event_type in EventType:
-                    self._event_bus.subscribe(event_type, log_viewer.log_event)
+                self._event_bus.subscribe_all(log_viewer.log_event)
         except ImportError as e:
             logger.warning(f"EventBus not available: {e}")
             self._event_bus = None
@@ -243,9 +243,9 @@ class ExecutionController(BaseController):
                 if self._log_bridge:
                     self._log_bridge.emit_log(level, message, module, timestamp)
 
-            # Register callback with DEBUG level to capture all logs
-            # (user can filter in Log Tab dropdown)
-            set_ui_log_callback(log_callback, min_level="DEBUG")
+            # Register callback with INFO level for better performance
+            # DEBUG logging has significant overhead during execution
+            set_ui_log_callback(log_callback, min_level="INFO")
 
         except ImportError as e:
             logger.warning(f"Failed to setup Log Tab bridge: {e}")
@@ -393,7 +393,7 @@ class ExecutionController(BaseController):
         Handle NODE_STARTED event from EventBus.
 
         Extracted from: canvas/components/execution_component.py
-        Updates visual node status to 'running'.
+        Updates visual node status to 'running' and starts pipe flow animation.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -404,15 +404,8 @@ class ExecutionController(BaseController):
                 visual_node.update_status("running")
                 logger.debug(f"Node {node_id} visual status: running")
 
-            # Update execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline:
-                node_name = (
-                    event_data.get("node_name", node_id)
-                    if isinstance(event_data, dict)
-                    else node_id
-                )
-                timeline.add_event(node_id, node_name, "started")
+                # Start flow animation on outgoing pipes
+                self._start_pipe_animations(visual_node)
 
     def _on_node_completed(self, event) -> None:
         """
@@ -420,7 +413,9 @@ class ExecutionController(BaseController):
 
         Extracted from: canvas/components/execution_component.py
         Updates visual node status to 'success' (shows green checkmark).
-        Also forwards node output to Output Tab and History Tab.
+        Also stops pipe animation with success glow, stores output for
+        output inspector popup, and forwards node output to Output Tab
+        and History Tab.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -449,16 +444,22 @@ class ExecutionController(BaseController):
                     visual_node.update_execution_time(execution_time_sec)
                 logger.debug(f"Node {node_id} visual status: success")
 
-            # Update execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline and isinstance(event_data, dict):
-                node_name = event_data.get("node_name", node_id)
-                duration_ms = None
-                if execution_time_sec is not None:
-                    duration_ms = execution_time_sec * 1000
-                timeline.add_event(
-                    node_id, node_name, "completed", duration_ms=duration_ms
-                )
+                # Stop flow animation with success glow
+                self._stop_pipe_animations(visual_node, success=True)
+
+                # Store output data for output inspector popup (middle-click)
+                # Get output port values from event_data (set by node_executor)
+                if hasattr(visual_node, "set_last_output"):
+                    output_data = (
+                        event_data.get("outputs", {})
+                        if isinstance(event_data, dict)
+                        else {}
+                    )
+                    if output_data:
+                        visual_node.set_last_output(output_data)
+                        logger.debug(
+                            f"Stored output for node {node_id}: {list(output_data.keys())}"
+                        )
 
             # Forward output to Output Tab and History Tab
             bottom_panel = self.main_window.get_bottom_panel()
@@ -491,7 +492,7 @@ class ExecutionController(BaseController):
 
         Extracted from: canvas/components/execution_component.py
         Updates visual node status to 'error' (shows red X icon).
-        Also adds failed entry to History Tab.
+        Also stops pipe animation and adds failed entry to History Tab.
         """
         # Extract data from Event object
         event_data = event.data if hasattr(event, "data") else event
@@ -507,13 +508,8 @@ class ExecutionController(BaseController):
                 visual_node.update_status("error")
                 logger.error(f"Node {node_id} error: {error}")
 
-            # Update execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline and isinstance(event_data, dict):
-                node_name = event_data.get("node_name", node_id)
-                timeline.add_event(
-                    node_id, node_name, "error", error_message=str(error)
-                )
+                # Stop flow animation without success glow
+                self._stop_pipe_animations(visual_node, success=False)
 
             # Add to history
             bottom_panel = self.main_window.get_bottom_panel()
@@ -540,11 +536,6 @@ class ExecutionController(BaseController):
         Also sets workflow result and exports variables to Output Tab.
         """
         logger.info("Workflow execution completed (EventBus)")
-
-        # End execution timeline
-        timeline = self.main_window.get_execution_timeline()
-        if timeline:
-            timeline.end_execution()
 
         # Set workflow result in Output Tab
         bottom_panel = self.main_window.get_bottom_panel()
@@ -586,11 +577,6 @@ class ExecutionController(BaseController):
             else "Unknown error"
         )
         logger.error(f"Workflow error (EventBus): {error}")
-
-        # End execution timeline
-        timeline = self.main_window.get_execution_timeline()
-        if timeline:
-            timeline.end_execution()
 
         # Set workflow result in Output Tab
         bottom_panel = self.main_window.get_bottom_panel()
@@ -684,6 +670,65 @@ class ExecutionController(BaseController):
         """
         return self._node_index.get(node_id)
 
+    def _start_pipe_animations(self, visual_node) -> None:
+        """
+        Start flow animation on all outgoing pipes from a node.
+
+        Called when a node starts executing to show data flowing along wires.
+
+        Args:
+            visual_node: The visual node whose output pipes should animate
+        """
+        try:
+            # Get outgoing pipes from output ports
+            for output_port in visual_node.output_ports():
+                # output_port.view gives access to the NodeGraphQt port item
+                port_view = getattr(output_port, "view", None)
+                if port_view is None:
+                    continue
+
+                # Get connected pipes from the port view
+                connected_pipes = getattr(port_view, "connected_pipes", None)
+                if connected_pipes is None:
+                    continue
+
+                for pipe in connected_pipes:
+                    if hasattr(pipe, "start_flow_animation"):
+                        pipe.start_flow_animation()
+        except Exception:
+            # Don't let animation errors affect execution
+            pass
+
+    def _stop_pipe_animations(self, visual_node, success: bool = True) -> None:
+        """
+        Stop flow animation on all outgoing pipes from a node.
+
+        Called when a node finishes executing.
+
+        Args:
+            visual_node: The visual node whose output pipes should stop animating
+            success: Whether execution was successful (shows green glow if True)
+        """
+        try:
+            # Get outgoing pipes from output ports
+            for output_port in visual_node.output_ports():
+                # output_port.view gives access to the NodeGraphQt port item
+                port_view = getattr(output_port, "view", None)
+                if port_view is None:
+                    continue
+
+                # Get connected pipes from the port view
+                connected_pipes = getattr(port_view, "connected_pipes", None)
+                if connected_pipes is None:
+                    continue
+
+                for pipe in connected_pipes:
+                    if hasattr(pipe, "stop_flow_animation"):
+                        pipe.stop_flow_animation(show_completion_glow=success)
+        except Exception:
+            # Don't let animation errors affect execution
+            pass
+
     def _reset_all_node_visuals(self) -> None:
         """Reset all node visual states to idle (clears animations and status icons)."""
         graph = self.main_window.get_graph()
@@ -772,11 +817,6 @@ class ExecutionController(BaseController):
 
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
-
-            # Start execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline:
-                timeline.start_execution()
 
             self._is_paused = False
             self.execution_started.emit()
@@ -890,11 +930,6 @@ class ExecutionController(BaseController):
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
 
-            # Start execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline:
-                timeline.start_execution()
-
             self._is_paused = False
             self.run_to_node_requested.emit(target_node_id)
             self.execution_started.emit()
@@ -986,11 +1021,6 @@ class ExecutionController(BaseController):
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
 
-            # Start execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline:
-                timeline.start_execution()
-
             self._is_paused = False
             self.run_single_node_requested.emit(target_node_id)
             self.execution_started.emit()
@@ -1059,11 +1089,6 @@ class ExecutionController(BaseController):
 
             # Build node index for O(1) lookups during execution events
             self._build_node_index()
-
-            # Start execution timeline
-            timeline = self.main_window.get_execution_timeline()
-            if timeline:
-                timeline.start_execution()
 
             self._is_paused = False
             self.execution_started.emit()
@@ -1166,21 +1191,71 @@ class ExecutionController(BaseController):
 
     async def _stop_workflow_async(self) -> None:
         """Async stop workflow via lifecycle manager."""
-        success = await self._lifecycle_manager.stop_workflow(force=False)
+        # Use force=True for immediate cancellation
+        # Graceful stop (force=False) only checks flag between nodes,
+        # which can take 120s+ if a node is running a long browser operation
+        success = await self._lifecycle_manager.stop_workflow(force=True)
+
+        # Always reset state and emit events, regardless of success
+        # This ensures UI stays in sync even if cleanup had issues
+        self._is_running = False
+        self._is_paused = False
+        self.execution_stopped.emit()
+
+        # Emit MainWindow signal for backward compatibility
+        self.main_window.workflow_stop.emit()
+
+        # Update UI state
+        self._update_execution_actions(running=False)
+
         if success:
-            self._is_running = False
-            self._is_paused = False
-            self.execution_stopped.emit()
-
-            # Emit MainWindow signal for backward compatibility
-            self.main_window.workflow_stop.emit()
-
-            # Update UI state
-            self._update_execution_actions(running=False)
-
             self.main_window.show_status("Workflow execution stopped", 3000)
         else:
-            logger.warning("Failed to stop workflow via lifecycle manager")
+            logger.warning("Workflow stop completed with issues")
+            self.main_window.show_status(
+                "Workflow stopped (cleanup may be incomplete)", 3000
+            )
+
+    def restart_workflow(self) -> None:
+        """
+        Restart workflow - force stop, reset all state, and run fresh.
+
+        This ensures a clean restart as if the workflow was never run before:
+        1. Force stop any running execution
+        2. Reset all node visual states
+        3. Clear execution context and variables
+        4. Start fresh execution
+        """
+        logger.info("Restarting workflow")
+
+        # Create async task to handle the restart
+        asyncio.create_task(self._restart_workflow_async())
+
+    async def _restart_workflow_async(self) -> None:
+        """Async implementation of restart workflow."""
+        # Step 1: Force stop if running
+        if self._is_running:
+            logger.info("Stopping current execution before restart")
+            await self._lifecycle_manager.stop_workflow(force=True)
+
+            # Reset state
+            self._is_running = False
+            self._is_paused = False
+
+        # Step 2: Reset all node visuals
+        self._reset_all_node_visuals()
+
+        # Step 3: Clear execution context via lifecycle manager
+        # (This is handled by force_cleanup in stop_workflow)
+
+        # Step 4: Small delay to ensure cleanup completes
+        await asyncio.sleep(0.1)
+
+        # Step 5: Start fresh execution
+        logger.info("Starting fresh workflow execution")
+        self.run_workflow()
+
+        self.main_window.show_status("Workflow restarted", 3000)
 
     def on_execution_completed(self) -> None:
         """Handle workflow execution completion."""

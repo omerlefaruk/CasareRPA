@@ -1,0 +1,128 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_webscrape",
+  "name": "Web Scraping Starter",
+  "description": "Basic web scraping template with browser launch, navigation, data extraction, and file output. Includes error handling and logging.",
+  "category": "Web Scraping",
+  "icon": "web",
+  "color": "#2196F3",
+  "tags": ["web", "scraping", "browser", "extraction", "beginner"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "beginner",
+  "estimated_nodes": 8,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "target_url",
+      "data_type": "String",
+      "default_value": "https://example.com",
+      "description": "URL to scrape",
+      "required": true
+    },
+    {
+      "name": "output_file",
+      "data_type": "String",
+      "default_value": "output/scraped_data.json",
+      "description": "Output file path",
+      "required": true
+    },
+    {
+      "name": "headless_mode",
+      "data_type": "Boolean",
+      "default_value": false,
+      "description": "Run browser in headless mode",
+      "required": false
+    }
+  ],
+  "default_credentials": [],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": true,
+    "timeout_seconds": 30,
+    "retry_count": 1
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "LaunchBrowserNode_001",
+        "node_type": "LaunchBrowserNode",
+        "position": [300, 300],
+        "config": {
+          "browser": "chromium",
+          "headless": "{{headless_mode}}"
+        },
+        "display_name": "Launch Browser"
+      },
+      {
+        "node_id": "GoToURLNode_001",
+        "node_type": "GoToURLNode",
+        "position": [500, 300],
+        "config": {
+          "url": "{{target_url}}"
+        },
+        "display_name": "Navigate to URL"
+      },
+      {
+        "node_id": "WaitForElementNode_001",
+        "node_type": "WaitForElementNode",
+        "position": [700, 300],
+        "config": {
+          "selector": "body",
+          "timeout": 10000
+        },
+        "display_name": "Wait for Page Load"
+      },
+      {
+        "node_id": "ExtractTextNode_001",
+        "node_type": "ExtractTextNode",
+        "position": [900, 300],
+        "config": {
+          "selector": "body"
+        },
+        "display_name": "Extract Page Content"
+      },
+      {
+        "node_id": "WriteJSONFileNode_001",
+        "node_type": "WriteJSONFileNode",
+        "position": [1100, 300],
+        "config": {
+          "file_path": "{{output_file}}",
+          "data": "{{ExtractTextNode_001.text}}"
+        },
+        "display_name": "Save to JSON"
+      },
+      {
+        "node_id": "CloseBrowserNode_001",
+        "node_type": "CloseBrowserNode",
+        "position": [1300, 300],
+        "config": {},
+        "display_name": "Close Browser"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1500, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "LaunchBrowserNode_001", "to_port": "in"},
+      {"from_node": "LaunchBrowserNode_001", "from_port": "out", "to_node": "GoToURLNode_001", "to_port": "in"},
+      {"from_node": "GoToURLNode_001", "from_port": "out", "to_node": "WaitForElementNode_001", "to_port": "in"},
+      {"from_node": "WaitForElementNode_001", "from_port": "out", "to_node": "ExtractTextNode_001", "to_port": "in"},
+      {"from_node": "ExtractTextNode_001", "from_port": "out", "to_node": "WriteJSONFileNode_001", "to_port": "in"},
+      {"from_node": "WriteJSONFileNode_001", "from_port": "out", "to_node": "CloseBrowserNode_001", "to_port": "in"},
+      {"from_node": "CloseBrowserNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

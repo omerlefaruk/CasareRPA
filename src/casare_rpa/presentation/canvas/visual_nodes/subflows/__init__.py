@@ -1,0 +1,15 @@
+"""
+Visual Nodes - Subflows
+
+Subflow-related visual nodes.
+"""
+
+from casare_rpa.presentation.canvas.visual_nodes.subflows.nodes import (
+    VisualSubflowNode,
+    SubflowVisualNode,  # Backward compatibility alias
+)
+
+__all__ = [
+    "VisualSubflowNode",
+    "SubflowVisualNode",
+]

@@ -1,0 +1,92 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_42bc50b3eedd",
+  "name": "Subflow 4",
+  "version": "1.0.0",
+  "description": "Subflow created from 3 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-07T16:57:28.820056",
+  "updated_at": "2025-12-07T16:57:28.820688",
+  "inputs": [],
+  "outputs": [],
+  "nodes": {
+    "SetVariableNode_36de46ec": {
+      "node_id": "SetVariableNode_36de46ec",
+      "type": "SetVariableNode",
+      "name": "Set Variable",
+      "position": {
+        "x": 29.937427431265604,
+        "y": 197.6809529531007
+      },
+      "properties": {
+        "node_id": "SetVariableNode_36de46ec",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "SetVariableNode_40731e1b": {
+      "node_id": "SetVariableNode_40731e1b",
+      "type": "SetVariableNode",
+      "name": "Set Variable 1",
+      "position": {
+        "x": 575.9158317838562,
+        "y": 187.0794305384873
+      },
+      "properties": {
+        "node_id": "SetVariableNode_40731e1b",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    },
+    "0x22fdb04e490": {
+      "node_id": "0x22fdb04e490",
+      "type": "VisualRerouteNode",
+      "name": "Reroute",
+      "position": {
+        "x": 454.54972658929415,
+        "y": 228.59440657026303
+      },
+      "properties": {
+        "node_id": "",
+        "data_type": "EXEC",
+        "is_exec_reroute": true
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "0x22fdb04e490",
+      "source_port": "out",
+      "target_node": "SetVariableNode_40731e1b",
+      "target_port": "exec_in"
+    },
+    {
+      "source_node": "SetVariableNode_36de46ec",
+      "source_port": "exec_out",
+      "target_node": "0x22fdb04e490",
+      "target_port": "in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": 29.937427431265604,
+    "y": 187.0794305384873,
+    "width": 745.9784043525906,
+    "height": 141.51497603177572
+  }
+}

@@ -16,7 +16,6 @@ from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_drive_client import (
@@ -29,25 +28,9 @@ from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
 # Reusable Property Definitions
 # ============================================================================
 
-DRIVE_ACCESS_TOKEN = PropertyDef(
-    "access_token",
-    PropertyType.STRING,
-    default="",
-    label="Access Token",
-    placeholder="ya29.xxx...",
-    tooltip="OAuth 2.0 access token for Google Drive API",
-    tab="connection",
-)
-
-DRIVE_CREDENTIAL_NAME = PropertyDef(
-    "credential_name",
-    PropertyType.STRING,
-    default="",
-    label="Credential Name",
-    placeholder="google_drive",
-    tooltip="Name of stored OAuth credential (alternative to access token)",
-    tab="connection",
-)
+# NOTE: access_token and credential_name are NOT defined here.
+# Credential selection is handled by NodeGoogleCredentialWidget in the visual layer.
+# The credential_id property is set by the picker widget.
 
 DRIVE_FOLDER_ID = PropertyDef(
     "folder_id",
@@ -82,10 +65,8 @@ DRIVE_MAX_RESULTS = PropertyDef(
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     PropertyDef(
-        "name",
+        "folder_name",
         PropertyType.STRING,
         default="",
         required=True,
@@ -142,18 +123,14 @@ class DriveCreateFolderNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Create folder inputs
-        self.add_input_port("name", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "parent_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "description", PortType.INPUT, DataType.STRING, required=False
-        )
+        self.add_input_port("folder_name", DataType.STRING, required=True)
+        self.add_input_port("parent_id", DataType.STRING, required=False)
+        self.add_input_port("description", DataType.STRING, required=False)
 
         # Create folder outputs
-        self.add_output_port("folder_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("name", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("web_view_link", PortType.OUTPUT, DataType.STRING)
+        self.add_output_port("folder_id", DataType.STRING)
+        self.add_output_port("folder_name", DataType.STRING)
+        self.add_output_port("web_view_link", DataType.STRING)
 
     async def _execute_drive(
         self,
@@ -161,7 +138,7 @@ class DriveCreateFolderNode(DriveBaseNode):
         client: GoogleDriveClient,
     ) -> ExecutionResult:
         """Create a folder in Google Drive."""
-        name = self._resolve_value(context, self.get_parameter("name"))
+        name = self._resolve_value(context, self.get_parameter("folder_name"))
         parent_id = self._resolve_value(context, self.get_parameter("parent_id"))
         description = self._resolve_value(context, self.get_parameter("description"))
 
@@ -185,7 +162,7 @@ class DriveCreateFolderNode(DriveBaseNode):
         # Set outputs
         self._set_success_outputs()
         self.set_output_value("folder_id", result.id)
-        self.set_output_value("name", result.name)
+        self.set_output_value("folder_name", result.name)
         self.set_output_value("web_view_link", result.web_view_link or "")
 
         logger.info(f"Created folder in Drive: {result.name} ({result.id})")
@@ -205,8 +182,6 @@ class DriveCreateFolderNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     DRIVE_FOLDER_ID,
     DRIVE_QUERY,
     PropertyDef(
@@ -291,25 +266,17 @@ class DriveListFilesNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # List files inputs
-        self.add_input_port(
-            "folder_id", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port("query", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "mime_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "max_results", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port("order_by", PortType.INPUT, DataType.STRING, required=False)
-        self.add_input_port(
-            "include_trashed", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("folder_id", DataType.STRING, required=False)
+        self.add_input_port("query", DataType.STRING, required=False)
+        self.add_input_port("mime_type", DataType.STRING, required=False)
+        self.add_input_port("max_results", DataType.INTEGER, required=False)
+        self.add_input_port("order_by", DataType.STRING, required=False)
+        self.add_input_port("include_trashed", DataType.BOOLEAN, required=False)
 
         # List files outputs
-        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("has_more", PortType.OUTPUT, DataType.BOOLEAN)
+        self.add_output_port("files", DataType.LIST)
+        self.add_output_port("file_count", DataType.INTEGER)
+        self.add_output_port("has_more", DataType.BOOLEAN)
 
     async def _execute_drive(
         self,
@@ -379,8 +346,6 @@ class DriveListFilesNode(DriveBaseNode):
 
 
 @node_schema(
-    DRIVE_ACCESS_TOKEN,
-    DRIVE_CREDENTIAL_NAME,
     PropertyDef(
         "query",
         PropertyType.TEXT,
@@ -460,20 +425,14 @@ class DriveSearchFilesNode(DriveBaseNode):
         self._define_common_output_ports()
 
         # Search inputs
-        self.add_input_port("query", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port(
-            "mime_type", PortType.INPUT, DataType.STRING, required=False
-        )
-        self.add_input_port(
-            "max_results", PortType.INPUT, DataType.INTEGER, required=False
-        )
-        self.add_input_port(
-            "include_trashed", PortType.INPUT, DataType.BOOLEAN, required=False
-        )
+        self.add_input_port("query", DataType.STRING, required=True)
+        self.add_input_port("mime_type", DataType.STRING, required=False)
+        self.add_input_port("max_results", DataType.INTEGER, required=False)
+        self.add_input_port("include_trashed", DataType.BOOLEAN, required=False)
 
         # Search outputs
-        self.add_output_port("files", PortType.OUTPUT, DataType.LIST)
-        self.add_output_port("file_count", PortType.OUTPUT, DataType.INTEGER)
+        self.add_output_port("files", DataType.LIST)
+        self.add_output_port("file_count", DataType.INTEGER)
 
     async def _execute_drive(
         self,

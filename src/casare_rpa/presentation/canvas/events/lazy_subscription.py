@@ -68,11 +68,6 @@ class LazySubscription(QObject):
         # Install event filter for clean interception
         component.installEventFilter(self)
 
-        logger.debug(
-            f"LazySubscription created for {event_type.name} on "
-            f"{component.__class__.__name__}"
-        )
-
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         """
         Qt event filter to intercept show/hide events.
@@ -102,20 +97,12 @@ class LazySubscription(QObject):
         if not self.active:
             EventBus().subscribe(self.event_type, self.handler)
             self.active = True
-            logger.debug(
-                f"LazySubscription activated: {self.event_type.name} on "
-                f"{self.component.__class__.__name__}"
-            )
 
     def deactivate(self) -> None:
         """Deactivate subscription (unsubscribe from EventBus)."""
         if self.active:
             EventBus().unsubscribe(self.event_type, self.handler)
             self.active = False
-            logger.debug(
-                f"LazySubscription deactivated: {self.event_type.name} on "
-                f"{self.component.__class__.__name__}"
-            )
 
     def cleanup(self) -> None:
         """
@@ -125,9 +112,6 @@ class LazySubscription(QObject):
         """
         self.deactivate()
         self.component.removeEventFilter(self)
-        logger.debug(
-            f"LazySubscription cleaned up for {self.component.__class__.__name__}"
-        )
 
 
 class LazySubscriptionGroup:
@@ -169,11 +153,6 @@ class LazySubscriptionGroup:
             for event_type, handler in subscriptions[1:]:
                 sub = _SharedVisibilitySubscription(event_type, handler, first_sub)
                 self._subscriptions.append(sub)
-
-        logger.debug(
-            f"LazySubscriptionGroup created with {len(subscriptions)} subscriptions "
-            f"for {component.__class__.__name__}"
-        )
 
     @property
     def active(self) -> bool:

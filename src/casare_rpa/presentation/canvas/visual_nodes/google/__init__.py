@@ -113,7 +113,7 @@ from casare_rpa.presentation.canvas.visual_nodes.google.drive_nodes import (
     VisualDriveSearchFilesNode,
     # Permissions
     VisualDriveShareFileNode,
-    VisualDriveRemovePermissionNode,
+    VisualDriveRemoveShareNode,
     VisualDriveGetPermissionsNode,
     # Export
     VisualDriveExportFileNode,
@@ -214,7 +214,7 @@ __all__ = [
     "VisualDriveSearchFilesNode",
     # Drive - Permissions (3)
     "VisualDriveShareFileNode",
-    "VisualDriveRemovePermissionNode",
+    "VisualDriveRemoveShareNode",
     "VisualDriveGetPermissionsNode",
     # Drive - Export (1)
     "VisualDriveExportFileNode",

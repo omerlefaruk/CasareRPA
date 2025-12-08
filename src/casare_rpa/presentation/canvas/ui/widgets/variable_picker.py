@@ -51,7 +51,7 @@ TYPE_COLORS: Dict[str, str] = {
     "List": "#ce9178",  # Orange
     "Dict": "#dcdcaa",  # Yellow
     "DataTable": "#d16d9e",  # Pink
-    "Any": "#808080",  # Gray
+    "Any": "#AAAAAA",  # Light gray (WCAG 4.5:1 compliant)
 }
 
 TYPE_BADGES: Dict[str, str] = {
@@ -144,7 +144,7 @@ QLineEdit#SearchBox {
     padding: 4px 8px;
 }
 QLabel#SectionHeader {
-    color: #808080;
+    color: #AAAAAA;
     font-size: 10px;
     font-weight: bold;
     padding: 4px 8px;
@@ -1033,7 +1033,7 @@ class VariablePickerPopup(QWidget):
             header_font.setBold(True)
             header_font.setPointSize(9)
             header_item.setFont(0, header_font)
-            header_item.setForeground(0, QColor("#808080"))
+            header_item.setForeground(0, QColor("#AAAAAA"))
             self._tree_widget.addTopLevelItem(header_item)
 
             # Add variables in this group
@@ -1069,7 +1069,7 @@ class VariablePickerPopup(QWidget):
 
         # Color-code by type
         item.setForeground(0, QColor(var.type_color))
-        item.setForeground(1, QColor("#808080"))
+        item.setForeground(1, QColor("#AAAAAA"))
 
         parent.addChild(item)
 
@@ -1316,7 +1316,7 @@ class VariableButton(QPushButton):
 
 class VariableAwareLineEdit(QLineEdit):
     """
-    Enhanced LineEdit with variable picker integration.
+    Enhanced LineEdit with variable picker integration and inline validation.
 
     Features:
         - Shows VariableButton on hover (right side)
@@ -1324,12 +1324,19 @@ class VariableAwareLineEdit(QLineEdit):
         - "{{" typing triggers inline autocomplete
         - insert_variable() method inserts at cursor position
         - Node context for upstream variable detection
+        - Inline validation with visual feedback (red/orange border)
+        - Drag-and-drop support for variable insertion from Output Inspector
 
     Signals:
         variable_inserted: Emitted when a variable is inserted (str: var_text)
+        validation_changed: Emitted when validation status changes
     """
 
+    # MIME type for variable drag-and-drop from Node Output Inspector
+    VARIABLE_MIME_TYPE = "application/x-casare-variable"
+
     variable_inserted = Signal(str)
+    validation_changed = Signal(object)  # ValidationResult
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the widget."""
@@ -1344,6 +1351,15 @@ class VariableAwareLineEdit(QLineEdit):
         # Node context for upstream variable detection
         self._current_node_id: Optional[str] = None
         self._graph: Optional[Any] = None
+
+        # Validation support
+        self._validators: List[Any] = []  # List of validator functions
+        self._validation_status = "valid"  # "valid", "invalid", "warning"
+        self._validation_message = ""
+        self._base_stylesheet = ""  # Store base stylesheet for validation overlay
+
+        # Enable drag-and-drop
+        self.setAcceptDrops(True)
 
         self._setup_variable_button()
         self._connect_signals()
@@ -1365,6 +1381,8 @@ class VariableAwareLineEdit(QLineEdit):
     def _connect_signals(self) -> None:
         """Connect internal signals."""
         self.textChanged.connect(self._on_text_changed)
+        # Run validation when editing is finished
+        self.editingFinished.connect(self._run_validation)
 
     def _update_button_position(self) -> None:
         """Update variable button position."""
@@ -1379,6 +1397,88 @@ class VariableAwareLineEdit(QLineEdit):
         """Handle resize to reposition button."""
         super().resizeEvent(event)
         self._update_button_position()
+
+    # =========================================================================
+    # Drag and Drop Support
+    # =========================================================================
+
+    def dragEnterEvent(self, event) -> None:
+        """
+        Handle drag enter - accept variable drops from Node Output Inspector.
+
+        Accepts:
+        - application/x-casare-variable MIME type (from Schema view)
+        - text/plain as fallback
+        """
+        mime_data = event.mimeData()
+
+        # Accept our custom MIME type
+        if mime_data.hasFormat(self.VARIABLE_MIME_TYPE):
+            event.acceptProposedAction()
+            return
+
+        # Also accept plain text as fallback
+        if mime_data.hasText():
+            text = mime_data.text()
+            # Only accept if it looks like a variable reference
+            if text.startswith("{{") and text.endswith("}}"):
+                event.acceptProposedAction()
+                return
+
+        event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        """Handle drag move - keep accepting the drop."""
+        mime_data = event.mimeData()
+
+        if mime_data.hasFormat(self.VARIABLE_MIME_TYPE):
+            event.acceptProposedAction()
+        elif mime_data.hasText():
+            text = mime_data.text()
+            if text.startswith("{{") and text.endswith("}}"):
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event) -> None:
+        """
+        Handle drop - insert variable at cursor position.
+
+        Extracts variable reference from:
+        - Custom MIME data (JSON with "variable" key)
+        - Plain text fallback
+        """
+        import json as json_module
+
+        mime_data = event.mimeData()
+        variable_text = None
+
+        # Try custom MIME type first
+        if mime_data.hasFormat(self.VARIABLE_MIME_TYPE):
+            try:
+                data_bytes = mime_data.data(self.VARIABLE_MIME_TYPE)
+                data_str = bytes(data_bytes).decode("utf-8")
+                data = json_module.loads(data_str)
+                variable_text = data.get("variable", "")
+            except Exception as e:
+                logger.debug(f"Failed to parse variable drag data: {e}")
+
+        # Fall back to plain text
+        if not variable_text and mime_data.hasText():
+            text = mime_data.text()
+            if text.startswith("{{") and text.endswith("}}"):
+                variable_text = text
+
+        if variable_text:
+            # Insert at cursor position (or append if no focus)
+            self.insert_variable(variable_text)
+            self.variable_inserted.emit(variable_text)
+            event.acceptProposedAction()
+            logger.debug(f"Variable dropped: {variable_text}")
+        else:
+            event.ignore()
 
     def enterEvent(self, event) -> None:
         """Handle enter event."""
@@ -1532,6 +1632,153 @@ class VariableAwareLineEdit(QLineEdit):
                 self._variable_button.show()
             else:
                 self._variable_button.hide()
+
+    # =========================================================================
+    # Validation Methods
+    # =========================================================================
+
+    def add_validator(self, validator) -> None:
+        """
+        Add a validator function for inline validation.
+
+        Validators are called in order on editingFinished. First failure stops.
+
+        Args:
+            validator: Function that takes value and returns ValidationResult
+                       (from casare_rpa.presentation.canvas.ui.widgets.validated_input)
+        """
+        self._validators.append(validator)
+
+    def clear_validators(self) -> None:
+        """Remove all validators."""
+        self._validators.clear()
+        self._set_validation_visual("valid", "")
+
+    def _run_validation(self) -> None:
+        """Run all validators and update visual state."""
+        if not self._validators:
+            return
+
+        value = self.text()
+        status = "valid"
+        message = ""
+
+        for validator in self._validators:
+            try:
+                result = validator(value)
+                # Handle ValidationResult objects
+                if hasattr(result, "status"):
+                    status_val = result.status
+                    # Convert enum to string if needed
+                    if hasattr(status_val, "name"):
+                        status = status_val.name.lower()
+                    elif hasattr(status_val, "value"):
+                        status = str(status_val.value).lower()
+                    else:
+                        status = str(status_val).lower()
+                    message = getattr(result, "message", "")
+                    if status != "valid":
+                        break
+            except Exception as e:
+                logger.debug(f"Validator error: {e}")
+                status = "invalid"
+                message = str(e)
+                break
+
+        self._set_validation_visual(status, message)
+
+    def _set_validation_visual(self, status: str, message: str) -> None:
+        """
+        Update visual state based on validation status.
+
+        Args:
+            status: "valid", "invalid", or "warning"
+            message: Error/warning message
+        """
+        if self._validation_status == status and self._validation_message == message:
+            return  # No change
+
+        self._validation_status = status
+        self._validation_message = message
+
+        # Define border colors
+        border_colors = {
+            "valid": "#505064",  # Normal border
+            "invalid": "#F44336",  # Red border
+            "warning": "#FF9800",  # Orange border
+        }
+        border_color = border_colors.get(status, "#505064")
+        border_width = "2px" if status != "valid" else "1px"
+
+        # Apply validation-aware stylesheet
+        self.setStyleSheet(f"""
+            QLineEdit {{
+                background: #3c3c50;
+                border: {border_width} solid {border_color};
+                border-radius: 3px;
+                color: #e6e6e6;
+                padding: 2px 28px 2px 4px;
+            }}
+            QLineEdit:focus {{
+                border: {border_width} solid {border_color if status != 'valid' else '#6496c8'};
+            }}
+        """)
+
+        # Update tooltip with validation message
+        if message:
+            self.setToolTip(message)
+        else:
+            self.setToolTip("")
+
+        # Emit validation changed signal
+        try:
+            from casare_rpa.presentation.canvas.ui.widgets.validated_input import (
+                ValidationResult,
+                ValidationStatus,
+            )
+
+            status_enum = {
+                "valid": ValidationStatus.VALID,
+                "invalid": ValidationStatus.INVALID,
+                "warning": ValidationStatus.WARNING,
+            }.get(status, ValidationStatus.VALID)
+            self.validation_changed.emit(
+                ValidationResult(status=status_enum, message=message)
+            )
+        except ImportError:
+            pass  # Emit raw data if ValidationResult not available
+
+    def validate(self) -> bool:
+        """
+        Manually trigger validation.
+
+        Returns:
+            True if valid, False otherwise
+        """
+        self._run_validation()
+        return self._validation_status == "valid"
+
+    def is_valid(self) -> bool:
+        """Check if current value is valid."""
+        return self._validation_status == "valid"
+
+    def get_validation_status(self) -> str:
+        """Get current validation status string."""
+        return self._validation_status
+
+    def get_validation_message(self) -> str:
+        """Get current validation message."""
+        return self._validation_message
+
+    def set_validation_status(self, status: str, message: str = "") -> None:
+        """
+        Manually set validation status (for external validation).
+
+        Args:
+            status: "valid", "invalid", or "warning"
+            message: Optional message
+        """
+        self._set_validation_visual(status, message)
 
 
 # =============================================================================

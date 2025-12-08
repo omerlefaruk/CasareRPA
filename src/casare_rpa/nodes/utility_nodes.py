@@ -852,6 +852,131 @@ class LogNode(BaseNode):
             return {"success": False, "error": error_msg}
 
 
+@executable_node
+class RerouteNode(BaseNode):
+    """
+    Reroute Node - Houdini-style passthrough dot for organizing connections.
+
+    A minimal node that simply passes its input value through to its output.
+    Used to create clean wire routing without affecting data flow.
+
+    Features:
+    - Passes through any data type unchanged
+    - Can operate in data mode (passes values) or exec mode (passes execution flow)
+    - Inherits wire color from connected data type
+    - Small diamond visual representation
+    """
+
+    def __init__(
+        self,
+        node_id: str,
+        name: str = "Reroute",
+        **kwargs,
+    ) -> None:
+        """
+        Initialize reroute node.
+
+        Args:
+            node_id: Unique identifier for this node
+            name: Display name for the node
+        """
+        config = kwargs.get("config", {})
+        config.setdefault("data_type", "ANY")
+        config.setdefault("is_exec_reroute", False)
+        super().__init__(node_id, config)
+        self.name = name
+        self.node_type = "RerouteNode"
+        self.category = "utility"
+        self.description = "Passthrough dot for organizing connections"
+
+    def _define_ports(self) -> None:
+        """Define node ports."""
+        # Single input and output - type determined by connection
+        self.add_input_port("in", DataType.ANY)
+        self.add_output_port("out", DataType.ANY)
+
+    def set_data_type(self, data_type: Optional[DataType]) -> None:
+        """
+        Set the data type for this reroute node.
+
+        Called when a connection is made to update the wire color.
+
+        Args:
+            data_type: The DataType to use, or None for ANY
+        """
+        if data_type is None:
+            self.config["data_type"] = "ANY"
+        else:
+            self.config["data_type"] = data_type.value
+
+    def get_data_type(self) -> DataType:
+        """
+        Get the configured data type.
+
+        Returns:
+            DataType enum value
+        """
+        type_str = self.config.get("data_type", "ANY")
+        try:
+            # DataType.value is the string representation
+            for dt in DataType:
+                if dt.value == type_str or dt.name == type_str:
+                    return dt
+            return DataType.ANY
+        except Exception:
+            return DataType.ANY
+
+    def set_exec_mode(self, is_exec: bool) -> None:
+        """
+        Set whether this reroute is for execution flow or data.
+
+        Args:
+            is_exec: True for execution flow, False for data
+        """
+        self.config["is_exec_reroute"] = is_exec
+
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        """
+        Execute reroute node - passes input through to output unchanged.
+
+        Args:
+            context: Execution context for the workflow
+
+        Returns:
+            Result with the passthrough value
+        """
+        self.status = NodeStatus.RUNNING
+
+        try:
+            # Get input value
+            value = self.get_input_value("in")
+
+            # Pass through to output
+            self.set_output_value("out", value)
+
+            logger.debug(
+                f"Reroute {self.node_id} passing through: {type(value).__name__}"
+            )
+
+            self.status = NodeStatus.SUCCESS
+
+            # Determine next node based on mode
+            is_exec = self.config.get("is_exec_reroute", False)
+            next_nodes = ["exec_out"] if is_exec else ["out"]
+
+            return {
+                "success": True,
+                "value": value,
+                "next_nodes": next_nodes,
+            }
+
+        except Exception as e:
+            error_msg = f"Reroute error: {e}"
+            logger.exception(error_msg)
+            self.status = NodeStatus.ERROR
+            return {"success": False, "error": error_msg}
+
+
 # Export all nodes
 __all__ = [
     "HttpMethod",
@@ -862,4 +987,5 @@ __all__ = [
     "TransformNode",
     "LogLevel",
     "LogNode",
+    "RerouteNode",
 ]

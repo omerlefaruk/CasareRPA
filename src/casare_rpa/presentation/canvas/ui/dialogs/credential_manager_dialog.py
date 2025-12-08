@@ -258,6 +258,10 @@ class CredentialManagerDialog(QDialog):
         userpass_tab = self._create_userpass_tab()
         self._tabs.addTab(userpass_tab, "Logins")
 
+        # Google Accounts tab
+        google_tab = self._create_google_accounts_tab()
+        self._tabs.addTab(google_tab, "Google Accounts")
+
         # All Credentials tab
         all_tab = self._create_all_credentials_tab()
         self._tabs.addTab(all_tab, "All Credentials")
@@ -456,6 +460,319 @@ class CredentialManagerDialog(QDialog):
         layout.addLayout(right_panel, 1)
 
         return widget
+
+    def _create_google_accounts_tab(self) -> QWidget:
+        """Create Google Accounts management tab."""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+
+        # Header
+        header_layout = QHBoxLayout()
+        header_label = QLabel("Connected Google Accounts")
+        header_label.setStyleSheet("font-weight: bold; font-size: 16px;")
+        header_layout.addWidget(header_label)
+        header_layout.addStretch()
+
+        # Add account button
+        self._google_add_btn = QPushButton("+ Add Google Account")
+        self._google_add_btn.clicked.connect(self._add_google_account)
+        self._google_add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4285F4;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #5a95f5;
+            }
+        """)
+        header_layout.addWidget(self._google_add_btn)
+        layout.addLayout(header_layout)
+
+        # Description
+        desc_label = QLabel(
+            "Manage your Google accounts for Sheets, Drive, Gmail, Calendar, and Docs integration."
+        )
+        desc_label.setStyleSheet("color: #888888; margin-bottom: 12px;")
+        desc_label.setWordWrap(True)
+        layout.addWidget(desc_label)
+
+        # Accounts list
+        self._google_accounts_list = QListWidget()
+        self._google_accounts_list.setMinimumHeight(200)
+        self._google_accounts_list.itemClicked.connect(self._on_google_account_selected)
+        layout.addWidget(self._google_accounts_list)
+
+        # Account details panel
+        self._google_details_group = QGroupBox("Account Details")
+        details_layout = QFormLayout()
+
+        self._google_email_label = QLabel("-")
+        details_layout.addRow("Email:", self._google_email_label)
+
+        self._google_scopes_label = QLabel("-")
+        self._google_scopes_label.setWordWrap(True)
+        details_layout.addRow("Scopes:", self._google_scopes_label)
+
+        self._google_status_label = QLabel("-")
+        details_layout.addRow("Status:", self._google_status_label)
+
+        self._google_created_label = QLabel("-")
+        details_layout.addRow("Added:", self._google_created_label)
+
+        self._google_details_group.setLayout(details_layout)
+        layout.addWidget(self._google_details_group)
+
+        # Action buttons
+        btn_layout = QHBoxLayout()
+
+        self._google_refresh_btn = QPushButton("Refresh Token")
+        self._google_refresh_btn.clicked.connect(self._refresh_google_token)
+        self._google_refresh_btn.setEnabled(False)
+        btn_layout.addWidget(self._google_refresh_btn)
+
+        self._google_set_default_btn = QPushButton("Set as Default")
+        self._google_set_default_btn.clicked.connect(self._set_google_default)
+        self._google_set_default_btn.setEnabled(False)
+        btn_layout.addWidget(self._google_set_default_btn)
+
+        self._google_delete_btn = QPushButton("Remove Account")
+        self._google_delete_btn.clicked.connect(self._delete_google_account)
+        self._google_delete_btn.setEnabled(False)
+        self._google_delete_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+            }
+            QPushButton:hover {
+                background-color: #e53935;
+            }
+            QPushButton:disabled {
+                background-color: #5c5c5c;
+            }
+        """)
+        btn_layout.addWidget(self._google_delete_btn)
+
+        btn_layout.addStretch()
+        layout.addLayout(btn_layout)
+
+        layout.addStretch()
+
+        # Load accounts
+        self._refresh_google_accounts()
+
+        return widget
+
+    def _refresh_google_accounts(self) -> None:
+        """Refresh the Google accounts list."""
+        self._google_accounts_list.clear()
+        store = self._get_store()
+
+        credentials = store.list_google_credentials()
+        for cred in credentials:
+            # Get additional details
+            data = store.get_credential(cred["id"])
+            email = data.get("user_email", "Unknown") if data else "Unknown"
+
+            # Create list item
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, cred["id"])
+
+            # Display format: email (name)
+            display_text = f"[G] {email}"
+            if cred["name"] != email:
+                display_text += f" - {cred['name']}"
+            item.setText(display_text)
+
+            self._google_accounts_list.addItem(item)
+
+        # Update button states
+        has_accounts = self._google_accounts_list.count() > 0
+        if not has_accounts:
+            self._google_email_label.setText("No accounts connected")
+            self._google_scopes_label.setText("-")
+            self._google_status_label.setText("-")
+            self._google_created_label.setText("-")
+
+    def _on_google_account_selected(self, item: QListWidgetItem) -> None:
+        """Handle Google account selection."""
+        cred_id = item.data(Qt.ItemDataRole.UserRole)
+        self._current_google_id = cred_id
+
+        store = self._get_store()
+        info = store.get_credential_info(cred_id)
+        data = store.get_credential(cred_id)
+
+        if info and data:
+            # Update details
+            self._google_email_label.setText(data.get("user_email", "Unknown"))
+
+            # Format scopes nicely
+            scopes = data.get("scopes", [])
+            if scopes:
+                scope_names = []
+                for scope in scopes:
+                    if "spreadsheets" in scope:
+                        scope_names.append("Sheets")
+                    elif "drive" in scope:
+                        scope_names.append("Drive")
+                    elif "gmail" in scope:
+                        scope_names.append("Gmail")
+                    elif "calendar" in scope:
+                        scope_names.append("Calendar")
+                    elif "documents" in scope:
+                        scope_names.append("Docs")
+                self._google_scopes_label.setText(", ".join(set(scope_names)) or "None")
+            else:
+                self._google_scopes_label.setText("None")
+
+            # Check token status
+            token_expiry = data.get("token_expiry")
+            if token_expiry:
+                from datetime import datetime
+
+                try:
+                    expiry = datetime.fromisoformat(token_expiry.replace("Z", "+00:00"))
+                    if expiry > datetime.now(expiry.tzinfo):
+                        self._google_status_label.setText("Valid")
+                        self._google_status_label.setStyleSheet("color: #4CAF50;")
+                    else:
+                        self._google_status_label.setText("Expired - Click Refresh")
+                        self._google_status_label.setStyleSheet("color: #f44336;")
+                except Exception:
+                    self._google_status_label.setText("Unknown")
+                    self._google_status_label.setStyleSheet("color: #ff9800;")
+            else:
+                self._google_status_label.setText("Unknown")
+                self._google_status_label.setStyleSheet("color: #ff9800;")
+
+            self._google_created_label.setText(info.get("created_at", "Unknown")[:10])
+
+            # Enable buttons
+            self._google_refresh_btn.setEnabled(True)
+            self._google_set_default_btn.setEnabled(True)
+            self._google_delete_btn.setEnabled(True)
+
+    def _add_google_account(self) -> None:
+        """Open OAuth dialog to add a Google account."""
+        try:
+            from casare_rpa.presentation.canvas.ui.dialogs.google_oauth_dialog import (
+                GoogleOAuthDialog,
+            )
+
+            dialog = GoogleOAuthDialog(self)
+            dialog.credential_created.connect(self._on_google_credential_created)
+            dialog.exec()
+
+        except ImportError as e:
+            logger.error(f"Google OAuth dialog not available: {e}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Google OAuth dialog is not available. Please check your installation.",
+            )
+
+    def _on_google_credential_created(self, credential_id: str) -> None:
+        """Handle new Google credential creation."""
+        self._refresh_google_accounts()
+        self._refresh_all_credentials()
+        self.credentials_changed.emit()
+
+        QMessageBox.information(
+            self,
+            "Success",
+            "Google account connected successfully!",
+        )
+
+    def _refresh_google_token(self) -> None:
+        """Refresh the selected Google account's token."""
+        cred_id = getattr(self, "_current_google_id", None)
+        if not cred_id:
+            return
+
+        try:
+            from casare_rpa.infrastructure.security.google_oauth import (
+                GoogleOAuthManager,
+            )
+
+            # Try to refresh
+            import asyncio
+
+            async def do_refresh():
+                manager = GoogleOAuthManager()
+                return await manager.get_access_token(cred_id)
+
+            # Run in event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                token = loop.run_until_complete(do_refresh())
+                if token:
+                    self._google_status_label.setText("Valid")
+                    self._google_status_label.setStyleSheet("color: #4CAF50;")
+                    QMessageBox.information(
+                        self, "Success", "Token refreshed successfully!"
+                    )
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "Warning",
+                        "Could not refresh token. You may need to re-authenticate.",
+                    )
+            finally:
+                loop.close()
+
+        except Exception as e:
+            logger.error(f"Failed to refresh token: {e}")
+            QMessageBox.critical(self, "Error", f"Failed to refresh token: {e}")
+
+    def _set_google_default(self) -> None:
+        """Set the selected Google account as default."""
+        cred_id = getattr(self, "_current_google_id", None)
+        if not cred_id:
+            return
+
+        # TODO: Implement default account setting
+        # For now, just show a message
+        QMessageBox.information(
+            self,
+            "Info",
+            "Default account setting will be implemented in a future update.",
+        )
+
+    def _delete_google_account(self) -> None:
+        """Delete the selected Google account."""
+        cred_id = getattr(self, "_current_google_id", None)
+        if not cred_id:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            "Are you sure you want to remove this Google account?\n\n"
+            "This will revoke access for all workflows using this account.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            store = self._get_store()
+            store.delete_credential(cred_id)
+            self._current_google_id = None
+
+            # Reset UI
+            self._google_email_label.setText("-")
+            self._google_scopes_label.setText("-")
+            self._google_status_label.setText("-")
+            self._google_created_label.setText("-")
+            self._google_refresh_btn.setEnabled(False)
+            self._google_set_default_btn.setEnabled(False)
+            self._google_delete_btn.setEnabled(False)
+
+            self._refresh_google_accounts()
+            self._refresh_all_credentials()
+            self.credentials_changed.emit()
 
     def _create_all_credentials_tab(self) -> QWidget:
         """Create tab showing all credentials."""

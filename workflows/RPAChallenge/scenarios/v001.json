@@ -4,8 +4,8 @@
     "description": "",
     "version": "1.0.0",
     "author": "",
-    "created_at": "2025-12-05T18:58:47.084286",
-    "modified_at": "2025-12-05T18:58:47.084289"
+    "created_at": "2025-12-05T19:39:13.671149",
+    "modified_at": "2025-12-05T19:39:13.671152"
   },
   "nodes": {
     "LaunchBrowserNode_59e94eb8": {
@@ -18,7 +18,7 @@
       "config": {
         "url": "rpachallenge.com",
         "browser_type": "chromium",
-        "headless": false,
+        "headless": true,
         "do_not_close": true,
         "slow_mo": "0",
         "channel": "",
@@ -248,12 +248,6 @@
       "source_port": "exec_out",
       "target_node": "FormFieldNode_d36bd205",
       "target_port": "exec_in"
-    },
-    {
-      "source_node": "ClickElementNode_980f9b3a",
-      "source_port": "page",
-      "target_node": "FormFieldNode_d36bd205",
-      "target_port": "page"
     },
     {
       "source_node": "FormFieldNode_d36bd205",

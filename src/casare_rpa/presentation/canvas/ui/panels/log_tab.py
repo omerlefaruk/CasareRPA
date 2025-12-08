@@ -57,6 +57,7 @@ class LogTab(QWidget):
     - Export to file
     - Context menu for copy
     - Color-coded level indicators
+    - PERFORMANCE: Lazy updates when tab not visible
 
     Signals:
         navigate_to_node: Emitted when user wants to navigate to a node
@@ -70,6 +71,9 @@ class LogTab(QWidget):
     COL_NODE = 2
     COL_MESSAGE = 3
 
+    # PERFORMANCE: Maximum deferred entries before forcing update
+    MAX_DEFERRED = 100
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
         Initialize the Log tab.
@@ -82,6 +86,10 @@ class LogTab(QWidget):
         self._auto_scroll = True
         self._current_filter = "All"
         self._max_entries = 1000
+
+        # PERFORMANCE: Lazy update support - defer updates when tab not visible
+        self._deferred_logs: list = []
+        self._last_visible_check = False
 
         self._setup_ui()
         self._apply_styles()
@@ -454,17 +462,77 @@ class LogTab(QWidget):
 
         self.log_message(message, level, event.node_id)
 
+    def _is_tab_visible(self) -> bool:
+        """
+        Check if this tab is currently visible.
+
+        PERFORMANCE: Used for lazy updates - defer expensive table updates
+        when user isn't looking at this tab.
+        """
+        # Check if tab is hidden or parent dock is collapsed
+        if not self.isVisible():
+            return False
+
+        # Check if our tab is the currently selected one in the tab widget
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, "currentWidget"):
+                return parent.currentWidget() == self
+            parent = parent.parent()
+
+        return True
+
+    def _flush_deferred_logs(self) -> None:
+        """Flush all deferred log entries to the table."""
+        if not self._deferred_logs:
+            return
+
+        # Batch insert all deferred logs
+        for log_entry in self._deferred_logs:
+            self._add_log_entry_to_table(*log_entry)
+
+        self._deferred_logs.clear()
+        logger.debug(f"Flushed {len(self._deferred_logs)} deferred log entries")
+
+    def showEvent(self, event) -> None:
+        """Handle tab becoming visible - flush deferred updates."""
+        super().showEvent(event)
+        if self._deferred_logs:
+            self._flush_deferred_logs()
+
     def log_message(
         self, message: str, level: str = "info", node_id: Optional[str] = None
     ) -> None:
         """
         Log a custom message.
 
+        PERFORMANCE: Uses lazy updates - defers table updates when tab
+        is not visible to reduce CPU during workflow execution.
+
         Args:
             message: Message text
             level: Log level (debug, info, warning, error, success)
             node_id: Optional associated node ID
         """
+        # PERFORMANCE: Defer updates when tab not visible
+        is_visible = self._is_tab_visible()
+
+        if not is_visible and len(self._deferred_logs) < self.MAX_DEFERRED:
+            # Defer this log entry
+            self._deferred_logs.append((message, level, node_id))
+            return
+
+        # Flush any deferred logs first if we're now visible
+        if is_visible and self._deferred_logs:
+            self._flush_deferred_logs()
+
+        # Add this entry directly
+        self._add_log_entry_to_table(message, level, node_id)
+
+    def _add_log_entry_to_table(
+        self, message: str, level: str, node_id: Optional[str]
+    ) -> None:
+        """Actually add a log entry to the table widget."""
         row = self._table.rowCount()
         self._table.insertRow(row)
 

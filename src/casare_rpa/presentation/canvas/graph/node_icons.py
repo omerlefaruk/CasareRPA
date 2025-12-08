@@ -47,9 +47,11 @@ CATEGORY_COLORS = {
 # Node type to icon mapping using Unicode symbols and custom shapes
 NODE_ICONS = {
     # Basic nodes
-    "Start": ("▶", "basic"),
-    "End": ("⬛", "basic"),
-    "Comment": ("💬", "basic"),
+    "Start": ("\u25b6", "basic"),
+    "End": ("\u2b1b", "basic"),
+    "Comment": ("\U0001f4ac", "basic"),
+    # Subflow node
+    "Subflow": ("\u2b14", "utility"),  # Square lozenge - represents nested workflow
     # Browser nodes
     "Launch Browser": ("🌐", "browser"),
     "Close Browser": ("✖", "browser"),

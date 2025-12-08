@@ -19,6 +19,7 @@ from typing import Any, Dict, List
 from loguru import logger
 
 from casare_rpa.domain.entities.base_node import BaseNode
+from casare_rpa.domain.decorators import executable_node
 from casare_rpa.domain.value_objects.types import DataType, ExecutionResult
 from casare_rpa.infrastructure.execution import ExecutionContext
 
@@ -115,6 +116,7 @@ def _create_message_with_attachment(
 # =============================================================================
 
 
+@executable_node
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
 
@@ -122,13 +124,11 @@ class GmailSendEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("to", DataType.STRING, "Recipient email")
         self.add_input_port("subject", DataType.STRING, "Email subject")
         self.add_input_port("body", DataType.STRING, "Email body")
         self.add_input_port("cc", DataType.STRING, "CC recipients")
         self.add_input_port("bcc", DataType.STRING, "BCC recipients")
-        self.add_exec_output()
         self.add_output_port("message_id", DataType.STRING, "Sent message ID")
         self.add_output_port("thread_id", DataType.STRING, "Thread ID")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -174,6 +174,7 @@ class GmailSendEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
 
@@ -181,14 +182,12 @@ class GmailSendWithAttachmentNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("to", DataType.STRING, "Recipient email")
         self.add_input_port("subject", DataType.STRING, "Email subject")
         self.add_input_port("body", DataType.STRING, "Email body")
         self.add_input_port("attachments", DataType.ARRAY, "File paths to attach")
         self.add_input_port("cc", DataType.STRING, "CC recipients")
         self.add_input_port("bcc", DataType.STRING, "BCC recipients")
-        self.add_exec_output()
         self.add_output_port("message_id", DataType.STRING, "Sent message ID")
         self.add_output_port("thread_id", DataType.STRING, "Thread ID")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -237,6 +236,7 @@ class GmailSendWithAttachmentNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
 
@@ -244,13 +244,11 @@ class GmailCreateDraftNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("to", DataType.STRING, "Recipient email")
         self.add_input_port("subject", DataType.STRING, "Email subject")
         self.add_input_port("body", DataType.STRING, "Email body")
         self.add_input_port("cc", DataType.STRING, "CC recipients")
         self.add_input_port("bcc", DataType.STRING, "BCC recipients")
-        self.add_exec_output()
         self.add_output_port("draft_id", DataType.STRING, "Draft ID")
         self.add_output_port("message_id", DataType.STRING, "Message ID")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -294,6 +292,7 @@ class GmailCreateDraftNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
 
@@ -301,9 +300,7 @@ class GmailSendDraftNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("draft_id", DataType.STRING, "Draft ID to send")
-        self.add_exec_output()
         self.add_output_port("message_id", DataType.STRING, "Sent message ID")
         self.add_output_port("thread_id", DataType.STRING, "Thread ID")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -349,6 +346,7 @@ class GmailSendDraftNode(BaseNode):
 # =============================================================================
 
 
+@executable_node
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
 
@@ -356,9 +354,7 @@ class GmailGetEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("subject", DataType.STRING, "Email subject")
         self.add_output_port("from", DataType.STRING, "Sender email")
         self.add_output_port("to", DataType.STRING, "Recipient email")
@@ -450,6 +446,7 @@ class GmailGetEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
 
@@ -457,10 +454,8 @@ class GmailListEmailsNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("max_results", DataType.INTEGER, "Maximum results")
         self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to filter")
-        self.add_exec_output()
         self.add_output_port("messages", DataType.ARRAY, "List of message objects")
         self.add_output_port("count", DataType.INTEGER, "Number of messages")
         self.add_output_port("next_page_token", DataType.STRING, "Next page token")
@@ -506,6 +501,7 @@ class GmailListEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
 
@@ -513,10 +509,8 @@ class GmailSearchEmailsNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("query", DataType.STRING, "Search query")
         self.add_input_port("max_results", DataType.INTEGER, "Maximum results")
-        self.add_exec_output()
         self.add_output_port("messages", DataType.ARRAY, "List of message objects")
         self.add_output_port("count", DataType.INTEGER, "Number of messages")
         self.add_output_port("next_page_token", DataType.STRING, "Next page token")
@@ -563,6 +557,7 @@ class GmailSearchEmailsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
 
@@ -570,9 +565,7 @@ class GmailGetThreadNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("thread_id", DataType.STRING, "Thread ID")
-        self.add_exec_output()
         self.add_output_port("messages", DataType.ARRAY, "Thread messages")
         self.add_output_port("count", DataType.INTEGER, "Number of messages in thread")
         self.add_output_port("snippet", DataType.STRING, "Thread snippet")
@@ -623,6 +616,7 @@ class GmailGetThreadNode(BaseNode):
 # =============================================================================
 
 
+@executable_node
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
 
@@ -630,11 +624,9 @@ class GmailModifyLabelsNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
         self.add_input_port("add_labels", DataType.ARRAY, "Labels to add")
         self.add_input_port("remove_labels", DataType.ARRAY, "Labels to remove")
-        self.add_exec_output()
         self.add_output_port("labels", DataType.ARRAY, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -680,6 +672,7 @@ class GmailModifyLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
 
@@ -687,9 +680,7 @@ class GmailMoveToTrashNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -719,6 +710,7 @@ class GmailMoveToTrashNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
 
@@ -726,9 +718,7 @@ class GmailMarkAsReadNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -760,6 +750,7 @@ class GmailMarkAsReadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
 
@@ -767,9 +758,7 @@ class GmailMarkAsUnreadNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -801,6 +790,7 @@ class GmailMarkAsUnreadNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
 
@@ -808,10 +798,8 @@ class GmailStarEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
         self.add_input_port("star", DataType.BOOLEAN, "Star (True) or Unstar (False)")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -851,6 +839,7 @@ class GmailStarEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
 
@@ -858,9 +847,7 @@ class GmailArchiveEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -892,6 +879,7 @@ class GmailArchiveEmailNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
 
@@ -899,9 +887,7 @@ class GmailDeleteEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 
@@ -936,6 +922,7 @@ class GmailDeleteEmailNode(BaseNode):
 # =============================================================================
 
 
+@executable_node
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
 
@@ -943,9 +930,7 @@ class GmailBatchSendNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("emails", DataType.ARRAY, "Array of email objects")
-        self.add_exec_output()
         self.add_output_port("results", DataType.ARRAY, "Send results")
         self.add_output_port("sent_count", DataType.INTEGER, "Number sent")
         self.add_output_port("failed_count", DataType.INTEGER, "Number failed")
@@ -1026,6 +1011,7 @@ class GmailBatchSendNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
 
@@ -1033,11 +1019,9 @@ class GmailBatchModifyNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_ids", DataType.ARRAY, "Array of message IDs")
         self.add_input_port("add_labels", DataType.ARRAY, "Labels to add")
         self.add_input_port("remove_labels", DataType.ARRAY, "Labels to remove")
-        self.add_exec_output()
         self.add_output_port("modified_count", DataType.INTEGER, "Number modified")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1076,6 +1060,7 @@ class GmailBatchModifyNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
 
@@ -1083,9 +1068,7 @@ class GmailBatchDeleteNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_ids", DataType.ARRAY, "Array of message IDs")
-        self.add_exec_output()
         self.add_output_port("deleted_count", DataType.INTEGER, "Number deleted")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1123,6 +1106,7 @@ class GmailBatchDeleteNode(BaseNode):
 # =============================================================================
 
 
+@executable_node
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
 
@@ -1130,10 +1114,8 @@ class GmailAddLabelNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
         self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to add")
-        self.add_exec_output()
         self.add_output_port("labels", DataType.ARRAY, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1185,6 +1167,7 @@ class GmailAddLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
 
@@ -1192,10 +1175,8 @@ class GmailRemoveLabelNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID")
         self.add_input_port("label_ids", DataType.ARRAY, "Label IDs to remove")
-        self.add_exec_output()
         self.add_output_port("labels", DataType.ARRAY, "Updated labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
@@ -1247,6 +1228,7 @@ class GmailRemoveLabelNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailGetLabelsNode(BaseNode):
     """Get all labels from Gmail account."""
 
@@ -1254,8 +1236,6 @@ class GmailGetLabelsNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
-        self.add_exec_output()
         self.add_output_port("labels", DataType.ARRAY, "List of label objects")
         self.add_output_port("count", DataType.INTEGER, "Number of labels")
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
@@ -1304,6 +1284,7 @@ class GmailGetLabelsNode(BaseNode):
             return {"success": False, "error": str(e)}
 
 
+@executable_node
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""
 
@@ -1311,9 +1292,7 @@ class GmailTrashEmailNode(BaseNode):
     CATEGORY = "google/gmail"
 
     def _define_ports(self) -> None:
-        self.add_exec_input()
         self.add_input_port("message_id", DataType.STRING, "Message ID to trash")
-        self.add_exec_output()
         self.add_output_port("success", DataType.BOOLEAN, "Success status")
         self.add_output_port("error", DataType.STRING, "Error message")
 

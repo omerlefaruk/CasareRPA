@@ -192,8 +192,6 @@ class PanelController(BaseController):
         if panel:
             panel.show()
             self.bottom_panel_toggled.emit(True)
-            if hasattr(self.main_window, "action_toggle_bottom_panel"):
-                self.main_window.action_toggle_bottom_panel.setChecked(True)
 
     def hide_bottom_panel(self) -> None:
         """Hide the bottom panel."""
@@ -201,8 +199,6 @@ class PanelController(BaseController):
         if panel:
             panel.hide()
             self.bottom_panel_toggled.emit(False)
-            if hasattr(self.main_window, "action_toggle_bottom_panel"):
-                self.main_window.action_toggle_bottom_panel.setChecked(False)
 
     def show_minimap(self) -> None:
         """Show the minimap overlay."""

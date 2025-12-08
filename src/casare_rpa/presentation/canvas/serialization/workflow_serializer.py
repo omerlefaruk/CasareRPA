@@ -166,6 +166,11 @@ class WorkflowSerializer:
                 "name",
                 "color",
                 "pos",
+                # Subflow internal properties (stored as instance vars, not widgets)
+                "subflow_id",
+                "subflow_path",
+                "subflow_name",
+                "node_count",
             ):
                 continue
 
@@ -187,6 +192,17 @@ class WorkflowSerializer:
         # Default name is typically "{NodeType}_1" or similar - only save if customized
         default_prefix = node_type.replace("Node", "")
         is_custom_name = display_name and not display_name.startswith(default_prefix)
+
+        # Special handling for subflow nodes - add internal properties to config
+        # These are stored as instance variables but need to be serialized for loading
+        if node_type == "SubflowNode" or "Subflow" in visual_node.__class__.__name__:
+            for internal_prop in ("subflow_id", "subflow_path", "subflow_name"):
+                try:
+                    val = visual_node.get_property(internal_prop)
+                    if val:
+                        config[internal_prop] = val
+                except Exception:
+                    pass
 
         node_dict = {
             "node_id": node_id,

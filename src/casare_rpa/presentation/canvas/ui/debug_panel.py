@@ -116,6 +116,7 @@ class DebugPanel(QDockWidget):
         self,
         parent: Optional[QWidget] = None,
         debug_controller: Optional["DebugController"] = None,
+        embedded: bool = False,
     ) -> None:
         """
         Initialize the enhanced debug panel.
@@ -123,9 +124,15 @@ class DebugPanel(QDockWidget):
         Args:
             parent: Optional parent widget
             debug_controller: Optional debug controller for integration
+            embedded: If True, behave as QWidget (for embedding in tab panels)
         """
-        super().__init__("Debug", parent)
-        self.setObjectName("DebugDock")
+        self._embedded = embedded
+        if embedded:
+            # Initialize as QWidget for embedding in tabs
+            QWidget.__init__(self, parent)
+        else:
+            super().__init__("Debug", parent)
+            self.setObjectName("DebugDock")
 
         self._debug_controller = debug_controller
         self._auto_scroll = True
@@ -134,7 +141,8 @@ class DebugPanel(QDockWidget):
         self._repl_history: List[str] = []
         self._repl_history_index = -1
 
-        self._setup_dock()
+        if not embedded:
+            self._setup_dock()
         self._setup_ui()
         self._apply_styles()
         self._setup_connections()
@@ -186,8 +194,11 @@ class DebugPanel(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        container = QWidget()
-        main_layout = QVBoxLayout(container)
+        if self._embedded:
+            main_layout = QVBoxLayout(self)
+        else:
+            container = QWidget()
+            main_layout = QVBoxLayout(container)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
@@ -219,7 +230,8 @@ class DebugPanel(QDockWidget):
         self._tabs.addTab(snapshots_tab, "Snapshots")
 
         main_layout.addWidget(self._tabs)
-        self.setWidget(container)
+        if not self._embedded:
+            self.setWidget(container)
 
     def _create_step_toolbar(self) -> QFrame:
         """

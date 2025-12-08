@@ -17,7 +17,7 @@ from typing import Any, Dict, Optional, Tuple
 from loguru import logger
 
 from casare_rpa.domain.events import Event, EventBus
-from casare_rpa.domain.value_objects.types import EventType, NodeStatus
+from casare_rpa.domain.value_objects.types import DataType, EventType, NodeStatus
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.utils.performance.performance_metrics import get_metrics
 
@@ -80,6 +80,9 @@ class NodeExecutor:
         self.node_timeout = node_timeout
         self._calculate_progress = progress_calculator or (lambda: 0.0)
 
+        # PERFORMANCE: Cache metrics instance to avoid singleton lookup on every call
+        self._metrics = get_metrics()
+
     def _emit_event(
         self, event_type: EventType, data: Dict[str, Any], node_id: Optional[str] = None
     ) -> None:
@@ -126,8 +129,8 @@ class NodeExecutor:
         start_time = time.time()
         node_type = node.__class__.__name__
 
-        # Record metrics start
-        get_metrics().record_node_start(node_type, node.node_id)
+        # Record metrics start (using cached instance)
+        self._metrics.record_node_start(node_type, node.node_id)
 
         try:
             # Validate node before execution
@@ -305,19 +308,30 @@ class NodeExecutor:
         if result.get("success", False):
             node.status = NodeStatus.SUCCESS
 
+            # Collect output port values for output inspector
+            outputs = {}
+            if hasattr(node, "output_ports"):
+                for port_name, port in node.output_ports.items():
+                    # Skip EXEC ports - they're flow control, not data
+                    if port.data_type != DataType.EXEC:
+                        outputs[port_name] = port.value
+
             self._emit_event(
                 EventType.NODE_COMPLETED,
                 {
                     "node_id": node.node_id,
+                    "node_name": getattr(node, "name", node.node_id),
+                    "node_type": node_type,
                     "message": result.get("data", {}).get("message", "Completed"),
                     "progress": self._calculate_progress(),
                     "execution_time": execution_time,
+                    "outputs": outputs,  # Output port values for inspector
                 },
                 node.node_id,
             )
 
             # Record successful execution in metrics
-            get_metrics().record_node_complete(
+            self._metrics.record_node_complete(
                 node_type, node.node_id, execution_time * 1000, success=True
             )
 
@@ -344,7 +358,7 @@ class NodeExecutor:
         logger.error(f"Node execution failed: {node.node_id} - {error_msg}")
 
         # Record failed execution in metrics
-        get_metrics().record_node_complete(
+        self._metrics.record_node_complete(
             node_type, node.node_id, execution_time * 1000, success=False
         )
 
@@ -386,7 +400,7 @@ class NodeExecutor:
         logger.exception(f"Exception during node execution: {node.node_id}")
 
         # Record exception in metrics
-        get_metrics().record_node_complete(
+        self._metrics.record_node_complete(
             node_type, node.node_id, execution_time * 1000, success=False
         )
 
@@ -468,7 +482,7 @@ class NodeExecutorWithTryCatch(NodeExecutor):
             )
 
         # Record exception in metrics
-        get_metrics().record_node_complete(
+        self._metrics.record_node_complete(
             node_type, node.node_id, execution_time * 1000, success=False
         )
 

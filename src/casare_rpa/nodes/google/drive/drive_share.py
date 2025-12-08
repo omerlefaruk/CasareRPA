@@ -8,6 +8,7 @@ This module provides nodes for managing Google Drive file permissions:
 - DriveCreateShareLinkNode: Create a shareable link
 
 All nodes use Google Drive API v3 and require OAuth2 authentication.
+Credential selection is handled by NodeGoogleCredentialWidget in the visual layer.
 """
 
 from typing import Any, Dict, List, Optional
@@ -15,75 +16,76 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 from loguru import logger
 
-from casare_rpa.domain.entities.base_node import BaseNode
 from casare_rpa.domain.decorators import executable_node, node_schema
 from casare_rpa.domain.schemas import PropertyDef, PropertyType
 from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
-    NodeStatus,
     PortType,
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
+from casare_rpa.infrastructure.resources.google_drive_client import GoogleDriveClient
+from casare_rpa.nodes.google.drive.drive_base import DriveBaseNode
 
 
-DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
+# ============================================================================
+# Reusable Property Definitions
+# ============================================================================
+
+# NOTE: access_token and credential_name are NOT defined here.
+# Credential selection is handled by NodeGoogleCredentialWidget in the visual layer.
+# The credential_id property is set by the picker widget.
+
+DRIVE_FILE_ID = PropertyDef(
+    "file_id",
+    PropertyType.STRING,
+    default="",
+    required=True,
+    label="File ID",
+    placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+    tooltip="Google Drive file ID",
+)
 
 
-async def _make_drive_request(
-    session: aiohttp.ClientSession,
-    method: str,
-    endpoint: str,
-    access_token: str,
-    json_body: Optional[Dict[str, Any]] = None,
-    params: Optional[Dict[str, str]] = None,
-) -> Dict[str, Any]:
-    """
-    Make an authenticated request to Google Drive API.
-
-    Args:
-        session: aiohttp client session
-        method: HTTP method (GET, POST, DELETE, PATCH)
-        endpoint: API endpoint path
-        access_token: OAuth2 access token
-        json_body: Optional JSON request body
-        params: Optional query parameters
-
-    Returns:
-        JSON response from API
-
-    Raises:
-        ValueError: If API returns an error
-    """
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-
-    url = f"{DRIVE_API_BASE}{endpoint}"
-
-    async with session.request(
-        method=method,
-        url=url,
-        headers=headers,
-        json=json_body,
-        params=params,
-    ) as response:
-        if response.status == 204:
-            return {"success": True}
-
-        response_data = await response.json()
-
-        if response.status >= 400:
-            error = response_data.get("error", {})
-            error_msg = error.get("message", f"HTTP {response.status}")
-            error_code = error.get("code", response.status)
-            raise ValueError(f"Drive API error ({error_code}): {error_msg}")
-
-        return response_data
+# ============================================================================
+# Drive Share File Node
+# ============================================================================
 
 
 @node_schema(
+    DRIVE_FILE_ID,
+    PropertyDef(
+        "email",
+        PropertyType.STRING,
+        default="",
+        label="Email",
+        placeholder="user@example.com",
+        tooltip="Email address of user or group to share with",
+    ),
+    PropertyDef(
+        "role",
+        PropertyType.CHOICE,
+        default="reader",
+        choices=["reader", "writer", "commenter", "owner"],
+        label="Role",
+        tooltip="Permission role to grant",
+    ),
+    PropertyDef(
+        "permission_type",
+        PropertyType.CHOICE,
+        default="user",
+        choices=["user", "group", "domain", "anyone"],
+        label="Type",
+        tooltip="Permission type",
+    ),
+    PropertyDef(
+        "domain",
+        PropertyType.STRING,
+        default="",
+        label="Domain",
+        placeholder="example.com",
+        tooltip="Domain for domain-type permissions",
+    ),
     PropertyDef(
         "send_notification",
         PropertyType.BOOLEAN,
@@ -99,13 +101,6 @@ async def _make_drive_request(
         tooltip="Custom message to include in the notification email",
     ),
     PropertyDef(
-        "move_to_new_owners_root",
-        PropertyType.BOOLEAN,
-        default=False,
-        label="Move to Owner's Root",
-        tooltip="For ownership transfers, move file to new owner's root folder",
-    ),
-    PropertyDef(
         "transfer_ownership",
         PropertyType.BOOLEAN,
         default=False,
@@ -114,7 +109,7 @@ async def _make_drive_request(
     ),
 )
 @executable_node
-class DriveShareFileNode(BaseNode):
+class DriveShareFileNode(DriveBaseNode):
     """
     Add a permission to a Google Drive file or folder.
 
@@ -124,155 +119,143 @@ class DriveShareFileNode(BaseNode):
     - Google Groups (by email)
     - Domains (for G Suite/Workspace)
 
-    Config (via @node_schema):
-        send_notification: Send email notification (default: True)
-        email_message: Custom message in notification email
-        move_to_new_owners_root: Move file on ownership transfer
-        transfer_ownership: Transfer ownership (requires role=owner)
-
     Inputs:
-        access_token: OAuth2 access token with drive scope
         file_id: ID of the file or folder to share
         email: Email address of user or group to share with
         role: Permission role (reader, writer, commenter, owner)
-        type: Permission type (user, group, domain, anyone)
+        permission_type: Permission type (user, group, domain, anyone)
         domain: Domain for domain-type permissions
 
     Outputs:
         permission_id: ID of the created permission
         permission: Full permission object
         success: Whether sharing succeeded
+        error: Error message if failed
     """
 
-    def __init__(
-        self, node_id: str, name: str = "Drive: Share File", **kwargs: Any
-    ) -> None:
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "DriveShareFileNode"
+    NODE_TYPE = "drive_share_file"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Share File"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Share File", **kwargs)
+        self._define_ports()
 
     def _define_ports(self) -> None:
-        self.add_input_port("access_token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING)
-        self.add_input_port("email", PortType.INPUT, DataType.STRING)
-        self.add_input_port("role", PortType.INPUT, DataType.STRING)
-        self.add_input_port("type", PortType.INPUT, DataType.STRING)
-        self.add_input_port("domain", PortType.INPUT, DataType.STRING)
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
 
-        self.add_output_port("permission_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("permission", PortType.OUTPUT, DataType.DICT)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        # Share-specific inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("email", DataType.STRING, required=False)
+        self.add_input_port("role", DataType.STRING, required=False)
+        self.add_input_port("permission_type", DataType.STRING, required=False)
+        self.add_input_port("domain", DataType.STRING, required=False)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        self.status = NodeStatus.RUNNING
+        # Share-specific outputs
+        self.add_output_port("permission_id", DataType.STRING)
+        self.add_output_port("permission", DataType.DICT)
 
-        try:
-            access_token = self.get_parameter("access_token", "")
-            file_id = self.get_parameter("file_id", "")
-            email = self.get_parameter("email", "")
-            role = self.get_parameter("role", "reader")
-            perm_type = self.get_parameter("type", "user")
-            domain = self.get_parameter("domain", "")
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Share a file in Google Drive."""
+        file_id = self._resolve_value(context, self.get_parameter("file_id"))
+        email = self._resolve_value(context, self.get_parameter("email"))
+        role = self.get_parameter("role") or "reader"
+        perm_type = self.get_parameter("permission_type") or "user"
+        domain = self._resolve_value(context, self.get_parameter("domain"))
 
-            send_notification = self.get_parameter("send_notification", True)
-            email_message = self.get_parameter("email_message", "")
-            move_to_root = self.get_parameter("move_to_new_owners_root", False)
-            transfer_ownership = self.get_parameter("transfer_ownership", False)
+        send_notification = self.get_parameter("send_notification", True)
+        email_message = self.get_parameter("email_message", "")
+        transfer_ownership = self.get_parameter("transfer_ownership", False)
 
-            # Resolve from context
-            access_token = context.resolve_value(access_token)
-            file_id = context.resolve_value(file_id)
-            email = context.resolve_value(email)
-
-            if not access_token:
-                raise ValueError("access_token is required")
-            if not file_id:
-                raise ValueError("file_id is required")
-
-            # Validate role
-            valid_roles = ["reader", "writer", "commenter", "owner"]
-            if role not in valid_roles:
-                raise ValueError(f"role must be one of: {valid_roles}")
-
-            # Validate type
-            valid_types = ["user", "group", "domain", "anyone"]
-            if perm_type not in valid_types:
-                raise ValueError(f"type must be one of: {valid_types}")
-
-            # Require email for user/group types
-            if perm_type in ["user", "group"] and not email:
-                raise ValueError(f"email is required for type '{perm_type}'")
-
-            # Require domain for domain type
-            if perm_type == "domain" and not domain:
-                raise ValueError("domain is required for type 'domain'")
-
-            # Build permission body
-            permission_body: Dict[str, Any] = {
-                "role": role,
-                "type": perm_type,
-            }
-
-            if perm_type in ["user", "group"]:
-                permission_body["emailAddress"] = email
-            elif perm_type == "domain":
-                permission_body["domain"] = domain
-
-            # Build query params
-            params: Dict[str, str] = {}
-            if send_notification:
-                params["sendNotificationEmail"] = "true"
-                if email_message:
-                    params["emailMessage"] = email_message
-            else:
-                params["sendNotificationEmail"] = "false"
-
-            if transfer_ownership:
-                params["transferOwnership"] = "true"
-                if move_to_root:
-                    params["moveToNewOwnersRoot"] = "true"
-
-            logger.info(f"Sharing file {file_id} with {email or perm_type}")
-
-            async with aiohttp.ClientSession() as session:
-                result = await _make_drive_request(
-                    session=session,
-                    method="POST",
-                    endpoint=f"/files/{file_id}/permissions",
-                    access_token=access_token,
-                    json_body=permission_body,
-                    params=params,
-                )
-
-            permission_id = result.get("id", "")
-
-            self.set_output_value("permission_id", permission_id)
-            self.set_output_value("permission", result)
-            self.set_output_value("success", True)
-
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"File shared successfully, permission_id: {permission_id}")
-
+        if not file_id:
+            self._set_error_outputs("File ID is required")
             return {
-                "success": True,
-                "data": {"permission_id": permission_id, "role": role},
-                "next_nodes": ["exec_out"],
+                "success": False,
+                "error": "File ID is required",
+                "next_nodes": [],
             }
 
-        except Exception as e:
-            error_msg = f"Drive share error: {str(e)}"
-            logger.error(error_msg)
-            self.set_output_value("permission_id", "")
-            self.set_output_value("permission", {})
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg, "next_nodes": []}
+        # Validate inputs
+        if perm_type in ["user", "group"] and not email:
+            self._set_error_outputs(f"Email is required for type '{perm_type}'")
+            return {
+                "success": False,
+                "error": f"Email is required for type '{perm_type}'",
+                "next_nodes": [],
+            }
+
+        if perm_type == "domain" and not domain:
+            self._set_error_outputs("Domain is required for type 'domain'")
+            return {
+                "success": False,
+                "error": "Domain is required for type 'domain'",
+                "next_nodes": [],
+            }
+
+        logger.debug(f"Sharing file in Drive: {file_id} with {email or perm_type}")
+
+        # Create permission
+        result = await client.create_permission(
+            file_id=file_id,
+            role=role,
+            type=perm_type,
+            email_address=email if perm_type in ["user", "group"] else None,
+            domain=domain if perm_type == "domain" else None,
+            send_notification_email=send_notification,
+            email_message=email_message if send_notification else None,
+            transfer_ownership=transfer_ownership,
+        )
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("permission_id", result.id)
+        self.set_output_value(
+            "permission",
+            {
+                "id": result.id,
+                "type": result.type,
+                "role": result.role,
+                "emailAddress": result.email_address,
+                "domain": result.domain,
+                "displayName": result.display_name,
+            },
+        )
+
+        logger.info(f"Shared file in Drive: {file_id} with {email or perm_type}")
+
+        return {
+            "success": True,
+            "permission_id": result.id,
+            "role": role,
+            "next_nodes": [],
+        }
 
 
-@node_schema()
+# ============================================================================
+# Drive Remove Share Node
+# ============================================================================
+
+
+@node_schema(
+    DRIVE_FILE_ID,
+    PropertyDef(
+        "permission_id",
+        PropertyType.STRING,
+        default="",
+        required=True,
+        label="Permission ID",
+        placeholder="12345678901234567890",
+        tooltip="ID of the permission to remove",
+    ),
+)
 @executable_node
-class DriveRemoveShareNode(BaseNode):
+class DriveRemoveShareNode(DriveBaseNode):
     """
     Remove a permission from a Google Drive file or folder.
 
@@ -280,79 +263,83 @@ class DriveRemoveShareNode(BaseNode):
     Requires the permission ID, which can be obtained from DriveGetPermissionsNode.
 
     Inputs:
-        access_token: OAuth2 access token with drive scope
         file_id: ID of the file or folder
         permission_id: ID of the permission to remove
 
     Outputs:
         success: Whether removal succeeded
+        error: Error message if failed
     """
 
-    def __init__(
-        self, node_id: str, name: str = "Drive: Remove Share", **kwargs: Any
-    ) -> None:
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "DriveRemoveShareNode"
+    NODE_TYPE = "drive_remove_share"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Remove Share"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Remove Share", **kwargs)
+        self._define_ports()
 
     def _define_ports(self) -> None:
-        self.add_input_port("access_token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING)
-        self.add_input_port("permission_id", PortType.INPUT, DataType.STRING)
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
 
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        # Remove share inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
+        self.add_input_port("permission_id", DataType.STRING, required=True)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        self.status = NodeStatus.RUNNING
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Remove a permission from a file in Google Drive."""
+        file_id = self._resolve_value(context, self.get_parameter("file_id"))
+        permission_id = self._resolve_value(
+            context, self.get_parameter("permission_id")
+        )
 
-        try:
-            access_token = self.get_parameter("access_token", "")
-            file_id = self.get_parameter("file_id", "")
-            permission_id = self.get_parameter("permission_id", "")
-
-            # Resolve from context
-            access_token = context.resolve_value(access_token)
-            file_id = context.resolve_value(file_id)
-            permission_id = context.resolve_value(permission_id)
-
-            if not access_token:
-                raise ValueError("access_token is required")
-            if not file_id:
-                raise ValueError("file_id is required")
-            if not permission_id:
-                raise ValueError("permission_id is required")
-
-            logger.info(f"Removing permission {permission_id} from file {file_id}")
-
-            async with aiohttp.ClientSession() as session:
-                await _make_drive_request(
-                    session=session,
-                    method="DELETE",
-                    endpoint=f"/files/{file_id}/permissions/{permission_id}",
-                    access_token=access_token,
-                )
-
-            self.set_output_value("success", True)
-
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Permission {permission_id} removed successfully")
-
+        if not file_id:
+            self._set_error_outputs("File ID is required")
             return {
-                "success": True,
-                "data": {"permission_id": permission_id, "removed": True},
-                "next_nodes": ["exec_out"],
+                "success": False,
+                "error": "File ID is required",
+                "next_nodes": [],
             }
 
-        except Exception as e:
-            error_msg = f"Drive remove share error: {str(e)}"
-            logger.error(error_msg)
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg, "next_nodes": []}
+        if not permission_id:
+            self._set_error_outputs("Permission ID is required")
+            return {
+                "success": False,
+                "error": "Permission ID is required",
+                "next_nodes": [],
+            }
+
+        logger.debug(f"Removing permission {permission_id} from file {file_id}")
+
+        # Delete permission
+        await client.delete_permission(file_id=file_id, permission_id=permission_id)
+
+        # Set outputs
+        self._set_success_outputs()
+
+        logger.info(f"Removed permission {permission_id} from file {file_id}")
+
+        return {
+            "success": True,
+            "permission_id": permission_id,
+            "removed": True,
+            "next_nodes": [],
+        }
+
+
+# ============================================================================
+# Drive Get Permissions Node
+# ============================================================================
 
 
 @node_schema(
+    DRIVE_FILE_ID,
     PropertyDef(
         "include_permissions_for_view",
         PropertyType.BOOLEAN,
@@ -362,116 +349,104 @@ class DriveRemoveShareNode(BaseNode):
     ),
 )
 @executable_node
-class DriveGetPermissionsNode(BaseNode):
+class DriveGetPermissionsNode(DriveBaseNode):
     """
     List all permissions on a Google Drive file or folder.
 
     Returns a list of all users and groups with access to the file,
     including their roles and permission IDs.
 
-    Config (via @node_schema):
-        include_permissions_for_view: Include published file permissions
-
     Inputs:
-        access_token: OAuth2 access token with drive scope
         file_id: ID of the file or folder
 
     Outputs:
         permissions: List of permission objects
         count: Number of permissions
         success: Whether listing succeeded
+        error: Error message if failed
     """
 
-    def __init__(
-        self, node_id: str, name: str = "Drive: Get Permissions", **kwargs: Any
-    ) -> None:
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "DriveGetPermissionsNode"
+    NODE_TYPE = "drive_get_permissions"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Get Permissions"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Get Permissions", **kwargs)
+        self._define_ports()
 
     def _define_ports(self) -> None:
-        self.add_input_port("access_token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING)
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
 
-        self.add_output_port("permissions", PortType.OUTPUT, DataType.ARRAY)
-        self.add_output_port("count", PortType.OUTPUT, DataType.INTEGER)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        # Get permissions inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        self.status = NodeStatus.RUNNING
+        # Get permissions outputs
+        self.add_output_port("permissions", DataType.LIST)
+        self.add_output_port("count", DataType.INTEGER)
 
-        try:
-            access_token = self.get_parameter("access_token", "")
-            file_id = self.get_parameter("file_id", "")
-            include_for_view = self.get_parameter("include_permissions_for_view", False)
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Get all permissions for a file in Google Drive."""
+        file_id = self._resolve_value(context, self.get_parameter("file_id"))
 
-            # Resolve from context
-            access_token = context.resolve_value(access_token)
-            file_id = context.resolve_value(file_id)
-
-            if not access_token:
-                raise ValueError("access_token is required")
-            if not file_id:
-                raise ValueError("file_id is required")
-
-            logger.info(f"Getting permissions for file {file_id}")
-
-            params = {
-                "fields": "permissions(id,type,role,emailAddress,domain,displayName,photoLink,expirationTime,deleted,pendingOwner)",
-            }
-            if include_for_view:
-                params["includePermissionsForView"] = "published"
-
-            all_permissions: List[Dict[str, Any]] = []
-            page_token: Optional[str] = None
-
-            async with aiohttp.ClientSession() as session:
-                while True:
-                    if page_token:
-                        params["pageToken"] = page_token
-
-                    result = await _make_drive_request(
-                        session=session,
-                        method="GET",
-                        endpoint=f"/files/{file_id}/permissions",
-                        access_token=access_token,
-                        params=params,
-                    )
-
-                    permissions = result.get("permissions", [])
-                    all_permissions.extend(permissions)
-
-                    page_token = result.get("nextPageToken")
-                    if not page_token:
-                        break
-
-            count = len(all_permissions)
-
-            self.set_output_value("permissions", all_permissions)
-            self.set_output_value("count", count)
-            self.set_output_value("success", True)
-
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Retrieved {count} permissions for file {file_id}")
-
+        if not file_id:
+            self._set_error_outputs("File ID is required")
             return {
-                "success": True,
-                "data": {"count": count},
-                "next_nodes": ["exec_out"],
+                "success": False,
+                "error": "File ID is required",
+                "next_nodes": [],
             }
 
-        except Exception as e:
-            error_msg = f"Drive get permissions error: {str(e)}"
-            logger.error(error_msg)
-            self.set_output_value("permissions", [])
-            self.set_output_value("count", 0)
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg, "next_nodes": []}
+        logger.debug(f"Getting permissions for file {file_id}")
+
+        # Get permissions
+        permissions = await client.list_permissions(file_id=file_id)
+
+        # Convert to serializable format
+        permissions_data = []
+        for perm in permissions:
+            permissions_data.append(
+                {
+                    "id": perm.id,
+                    "type": perm.type,
+                    "role": perm.role,
+                    "emailAddress": perm.email_address,
+                    "domain": perm.domain,
+                    "displayName": perm.display_name,
+                    "photoLink": perm.photo_link,
+                    "expirationTime": perm.expiration_time,
+                    "deleted": perm.deleted,
+                    "pendingOwner": perm.pending_owner,
+                }
+            )
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("permissions", permissions_data)
+        self.set_output_value("count", len(permissions_data))
+
+        logger.info(f"Retrieved {len(permissions_data)} permissions for file {file_id}")
+
+        return {
+            "success": True,
+            "permissions": permissions_data,
+            "count": len(permissions_data),
+            "next_nodes": [],
+        }
+
+
+# ============================================================================
+# Drive Create Share Link Node
+# ============================================================================
 
 
 @node_schema(
+    DRIVE_FILE_ID,
     PropertyDef(
         "access_type",
         PropertyType.CHOICE,
@@ -497,118 +472,89 @@ class DriveGetPermissionsNode(BaseNode):
     ),
 )
 @executable_node
-class DriveCreateShareLinkNode(BaseNode):
+class DriveCreateShareLinkNode(DriveBaseNode):
     """
     Create a shareable link for a Google Drive file or folder.
 
     This creates an "anyone" or "anyoneWithLink" permission to enable
     link sharing. The file can then be accessed by anyone with the link.
 
-    Config (via @node_schema):
-        access_type: "anyone" (public) or "anyoneWithLink" (unlisted)
-        link_role: reader, writer, or commenter
-        allow_file_discovery: Allow file in search results
-
     Inputs:
-        access_token: OAuth2 access token with drive scope
         file_id: ID of the file or folder
 
     Outputs:
         share_link: The shareable link (webViewLink)
         permission_id: ID of the created permission
         success: Whether link creation succeeded
+        error: Error message if failed
     """
 
-    def __init__(
-        self, node_id: str, name: str = "Drive: Create Share Link", **kwargs: Any
-    ) -> None:
-        config = kwargs.get("config", {})
-        super().__init__(node_id, config)
-        self.name = name
-        self.node_type = "DriveCreateShareLinkNode"
+    NODE_TYPE = "drive_create_share_link"
+    NODE_CATEGORY = "google_drive"
+    NODE_DISPLAY_NAME = "Drive: Create Share Link"
+
+    def __init__(self, node_id: str, **kwargs: Any) -> None:
+        super().__init__(node_id, name="Drive Create Share Link", **kwargs)
+        self._define_ports()
 
     def _define_ports(self) -> None:
-        self.add_input_port("access_token", PortType.INPUT, DataType.STRING)
-        self.add_input_port("file_id", PortType.INPUT, DataType.STRING)
+        """Define input and output ports."""
+        self._define_common_input_ports()
+        self._define_common_output_ports()
 
-        self.add_output_port("share_link", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("permission_id", PortType.OUTPUT, DataType.STRING)
-        self.add_output_port("success", PortType.OUTPUT, DataType.BOOLEAN)
+        # Create share link inputs
+        self.add_input_port("file_id", DataType.STRING, required=True)
 
-    async def execute(self, context: ExecutionContext) -> ExecutionResult:
-        self.status = NodeStatus.RUNNING
+        # Create share link outputs
+        self.add_output_port("share_link", DataType.STRING)
+        self.add_output_port("permission_id", DataType.STRING)
 
-        try:
-            access_token = self.get_parameter("access_token", "")
-            file_id = self.get_parameter("file_id", "")
-            access_type = self.get_parameter("access_type", "anyone")
-            link_role = self.get_parameter("link_role", "reader")
-            allow_discovery = self.get_parameter("allow_file_discovery", False)
+    async def _execute_drive(
+        self,
+        context: ExecutionContext,
+        client: GoogleDriveClient,
+    ) -> ExecutionResult:
+        """Create a shareable link for a file in Google Drive."""
+        file_id = self._resolve_value(context, self.get_parameter("file_id"))
+        access_type = self.get_parameter("access_type") or "anyone"
+        link_role = self.get_parameter("link_role") or "reader"
+        allow_discovery = self.get_parameter("allow_file_discovery", False)
 
-            # Resolve from context
-            access_token = context.resolve_value(access_token)
-            file_id = context.resolve_value(file_id)
-
-            if not access_token:
-                raise ValueError("access_token is required")
-            if not file_id:
-                raise ValueError("file_id is required")
-
-            logger.info(f"Creating share link for file {file_id}")
-
-            # Create the anyone permission
-            permission_body: Dict[str, Any] = {
-                "role": link_role,
-                "type": access_type,
-            }
-
-            if allow_discovery:
-                permission_body["allowFileDiscovery"] = True
-
-            async with aiohttp.ClientSession() as session:
-                # Create permission
-                perm_result = await _make_drive_request(
-                    session=session,
-                    method="POST",
-                    endpoint=f"/files/{file_id}/permissions",
-                    access_token=access_token,
-                    json_body=permission_body,
-                )
-
-                permission_id = perm_result.get("id", "")
-
-                # Get the file to retrieve webViewLink
-                file_result = await _make_drive_request(
-                    session=session,
-                    method="GET",
-                    endpoint=f"/files/{file_id}",
-                    access_token=access_token,
-                    params={"fields": "webViewLink,webContentLink"},
-                )
-
-            share_link = file_result.get("webViewLink", "")
-
-            self.set_output_value("share_link", share_link)
-            self.set_output_value("permission_id", permission_id)
-            self.set_output_value("success", True)
-
-            self.status = NodeStatus.SUCCESS
-            logger.info(f"Share link created: {share_link}")
-
+        if not file_id:
+            self._set_error_outputs("File ID is required")
             return {
-                "success": True,
-                "data": {"share_link": share_link, "permission_id": permission_id},
-                "next_nodes": ["exec_out"],
+                "success": False,
+                "error": "File ID is required",
+                "next_nodes": [],
             }
 
-        except Exception as e:
-            error_msg = f"Drive create share link error: {str(e)}"
-            logger.error(error_msg)
-            self.set_output_value("share_link", "")
-            self.set_output_value("permission_id", "")
-            self.set_output_value("success", False)
-            self.status = NodeStatus.ERROR
-            return {"success": False, "error": error_msg, "next_nodes": []}
+        logger.debug(f"Creating share link for file {file_id}")
+
+        # Create permission
+        permission = await client.create_permission(
+            file_id=file_id,
+            role=link_role,
+            type=access_type,
+            allow_file_discovery=allow_discovery,
+        )
+
+        # Get file to retrieve webViewLink
+        file_info = await client.get_file(file_id=file_id)
+        share_link = file_info.web_view_link or ""
+
+        # Set outputs
+        self._set_success_outputs()
+        self.set_output_value("share_link", share_link)
+        self.set_output_value("permission_id", permission.id)
+
+        logger.info(f"Created share link for file {file_id}: {share_link}")
+
+        return {
+            "success": True,
+            "share_link": share_link,
+            "permission_id": permission.id,
+            "next_nodes": [],
+        }
 
 
 __all__ = [

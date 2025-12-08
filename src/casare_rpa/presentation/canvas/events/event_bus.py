@@ -37,12 +37,16 @@ Usage:
     bus.unsubscribe(EventType.WORKFLOW_SAVED, on_workflow_saved)
 """
 
-from typing import Callable, Dict, List, Optional, Tuple, Any
+from typing import Callable, Dict, List, Optional, Tuple, Any, Set
 from collections import defaultdict, deque
 from threading import RLock
 import time
 
 from loguru import logger
+
+# PERFORMANCE: Event batching for rapid events
+# Reduces UI thrashing during fast workflow execution
+BATCH_INTERVAL_MS = 16  # ~60fps, batches events within this window
 
 from casare_rpa.presentation.canvas.events.event import Event, EventFilter
 from casare_rpa.presentation.canvas.events.event_types import EventType, EventCategory
@@ -128,10 +132,19 @@ class EventBus:
         # Thread safety
         self._lock = RLock()
 
+        # PERFORMANCE: Event batching for rapid events
+        # Reduces UI updates during fast workflow execution
+        self._batched_events: Dict[EventType, Event] = {}
+        self._batch_timer: Any = None  # QTimer for deferred flush
+        self._last_batch_flush = time.perf_counter()
+        self._batchable_types: Set[EventType] = {
+            EventType.NODE_EXECUTION_COMPLETED,
+            EventType.NODE_EXECUTION_STARTED,
+            EventType.VARIABLE_SET,
+        }
+
         # Initialization complete
         self._initialized = True
-
-        logger.debug("EventBus initialized")
 
     def subscribe(
         self,
@@ -161,10 +174,6 @@ class EventBus:
             if handler not in self._subscribers[event_type]:
                 self._subscribers[event_type].append(handler)
                 self._invalidate_cache(event_type)
-                logger.debug(
-                    f"Subscribed to {event_type.name}: "
-                    f"{handler.__name__ if hasattr(handler, '__name__') else handler}"
-                )
 
     def subscribe_all(self, handler: EventHandler) -> None:
         """
@@ -191,7 +200,6 @@ class EventBus:
             if handler not in self._wildcard_subscribers:
                 self._wildcard_subscribers.append(handler)
                 self._filtered_cache.clear()  # Wildcard affects all events
-                logger.debug(f"Subscribed to all events: {handler.__name__}")
 
     def subscribe_filtered(
         self,
@@ -228,7 +236,6 @@ class EventBus:
             if filter_handler not in self._filtered_subscribers:
                 self._filtered_subscribers.append(filter_handler)
                 self._filtered_cache.clear()  # Filter may match any event
-                logger.debug(f"Subscribed with filter: {event_filter}")
 
     def unsubscribe(
         self,
@@ -253,7 +260,6 @@ class EventBus:
                 try:
                     self._subscribers[event_type].remove(handler)
                     self._invalidate_cache(event_type)
-                    logger.debug(f"Unsubscribed from {event_type.name}")
                     return True
                 except ValueError:
                     return False
@@ -273,7 +279,6 @@ class EventBus:
             try:
                 self._wildcard_subscribers.remove(handler)
                 self._filtered_cache.clear()  # Wildcard affects all events
-                logger.debug(f"Unsubscribed from all events: {handler.__name__}")
                 return True
             except ValueError:
                 return False
@@ -298,10 +303,76 @@ class EventBus:
             try:
                 self._filtered_subscribers.remove(filter_handler)
                 self._filtered_cache.clear()  # Filter may match any event
-                logger.debug(f"Unsubscribed from filter: {event_filter}")
                 return True
             except ValueError:
                 return False
+
+    def publish_batched(self, event: Event) -> None:
+        """
+        Publish an event with batching for rapid events.
+
+        PERFORMANCE: Batches rapid events of the same type within 16ms window.
+        This reduces UI thrashing during fast workflow execution where
+        NODE_COMPLETED events fire in quick succession.
+
+        Args:
+            event: Event to publish
+        """
+        event_type = getattr(event, "type", None) or getattr(event, "event_type", None)
+
+        # Only batch specific event types
+        if event_type not in self._batchable_types:
+            self.publish(event)
+            return
+
+        with self._lock:
+            current_time = time.perf_counter()
+            elapsed_ms = (current_time - self._last_batch_flush) * 1000
+
+            # If batch window expired, flush and publish immediately
+            if elapsed_ms >= BATCH_INTERVAL_MS:
+                self._flush_batched_events()
+                self.publish(event)
+                self._last_batch_flush = current_time
+            else:
+                # Add to batch (overwrites previous event of same type)
+                self._batched_events[event_type] = event
+                # Schedule deferred flush if not already scheduled
+                self._schedule_batch_flush()
+
+    def _schedule_batch_flush(self) -> None:
+        """Schedule a deferred flush of batched events using QTimer."""
+        if self._batch_timer is not None:
+            return  # Already scheduled
+
+        try:
+            from PySide6.QtCore import QTimer
+
+            self._batch_timer = QTimer()
+            self._batch_timer.setSingleShot(True)
+            self._batch_timer.timeout.connect(self._on_batch_timer_timeout)
+            self._batch_timer.start(BATCH_INTERVAL_MS)
+        except ImportError:
+            # Not in Qt context - flush immediately
+            self._flush_batched_events()
+
+    def _on_batch_timer_timeout(self) -> None:
+        """Handle batch timer timeout - flush pending events."""
+        with self._lock:
+            self._batch_timer = None
+            self._flush_batched_events()
+            self._last_batch_flush = time.perf_counter()
+
+    def _flush_batched_events(self) -> None:
+        """Flush all batched events."""
+        if not self._batched_events:
+            return
+
+        # Publish all batched events
+        for event in self._batched_events.values():
+            self._publish_internal(event)
+
+        self._batched_events.clear()
 
     def publish(self, event: Event) -> None:
         """
@@ -326,6 +397,10 @@ class EventBus:
             )
             bus.publish(event)
         """
+        self._publish_internal(event)
+
+    def _publish_internal(self, event: Event) -> None:
+        """Internal publish implementation."""
         with self._lock:
             # Update metrics
             self._metrics["events_published"] += 1

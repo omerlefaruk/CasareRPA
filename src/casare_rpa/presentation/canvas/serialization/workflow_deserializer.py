@@ -241,6 +241,18 @@ class WorkflowDeserializer:
             if custom_name:
                 visual_node.set_name(custom_name)
 
+            # Special handling for subflow nodes - load subflow to create promoted parameter widgets
+            if (
+                node_type == "SubflowNode"
+                or "Subflow" in visual_node.__class__.__name__
+            ):
+                try:
+                    if hasattr(visual_node, "load_subflow"):
+                        visual_node.load_subflow()
+                        logger.debug(f"Loaded subflow for node {node_id}")
+                except Exception as e:
+                    logger.debug(f"Could not load subflow for node {node_id}: {e}")
+
             logger.debug(f"Created node: {node_type} at {pos} with id {node_id}")
             return visual_node
 
@@ -323,6 +335,15 @@ class WorkflowDeserializer:
             if key == "node_id":
                 continue
 
+            # Skip internal subflow properties (handled by VisualSubflowNode internally)
+            if key in ("subflow_id", "subflow_path", "subflow_name", "node_count"):
+                # Still set via set_property (let the override handle storage)
+                try:
+                    visual_node.set_property(key, value)
+                except Exception:
+                    pass
+                continue
+
             try:
                 # Try to set as property
                 if key in custom_props or self._has_property(visual_node, key):
@@ -355,6 +376,9 @@ class WorkflowDeserializer:
             Number of connections created
         """
         created = 0
+        logger.debug(
+            f"Creating {len(connections)} connections, node_map has {len(node_map)} nodes"
+        )
 
         for conn in connections:
             try:
@@ -388,11 +412,15 @@ class WorkflowDeserializer:
                 # Create connection
                 output_port.connect_to(input_port)
                 created += 1
+                logger.debug(
+                    f"Connected {source_id}.{source_port} -> {target_id}.{target_port}"
+                )
 
             except Exception as e:
                 logger.warning(f"Failed to create connection: {e}")
                 continue
 
+        logger.info(f"Created {created}/{len(connections)} connections")
         return created
 
     def _restore_variables(self, variables: Dict) -> None:

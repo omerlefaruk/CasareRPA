@@ -1,0 +1,121 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_apiwebhk",
+  "name": "API Integration & Webhooks",
+  "description": "Connect to REST APIs, handle webhooks, and process JSON responses. Includes authentication and error handling patterns.",
+  "category": "API & Webhooks",
+  "icon": "api",
+  "color": "#00BCD4",
+  "tags": ["api", "rest", "webhooks", "json", "http", "beginner"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "beginner",
+  "estimated_nodes": 6,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "api_base_url",
+      "data_type": "String",
+      "default_value": "https://api.example.com",
+      "description": "Base URL for API calls",
+      "required": true
+    },
+    {
+      "name": "api_endpoint",
+      "data_type": "String",
+      "default_value": "/v1/data",
+      "description": "API endpoint path",
+      "required": true
+    },
+    {
+      "name": "output_file",
+      "data_type": "String",
+      "default_value": "output/api_response.json",
+      "description": "File to save API response",
+      "required": false
+    }
+  ],
+  "default_credentials": [
+    {
+      "alias": "api_key",
+      "credential_type": "api_key",
+      "description": "API authentication key",
+      "required": false
+    }
+  ],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": true,
+    "timeout_seconds": 30,
+    "retry_count": 3
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "SetHttpHeadersNode_001",
+        "node_type": "SetHttpHeadersNode",
+        "position": [300, 300],
+        "config": {
+          "headers": {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer {{api_key}}"
+          }
+        },
+        "display_name": "Set Headers"
+      },
+      {
+        "node_id": "HttpRequestNode_001",
+        "node_type": "HttpRequestNode",
+        "position": [500, 300],
+        "config": {
+          "url": "{{api_base_url}}{{api_endpoint}}",
+          "method": "GET",
+          "timeout": 30
+        },
+        "display_name": "Call API"
+      },
+      {
+        "node_id": "ParseJsonResponseNode_001",
+        "node_type": "ParseJsonResponseNode",
+        "position": [700, 300],
+        "config": {
+          "response": "{{HttpRequestNode_001.response}}"
+        },
+        "display_name": "Parse Response"
+      },
+      {
+        "node_id": "WriteJSONFileNode_001",
+        "node_type": "WriteJSONFileNode",
+        "position": [900, 300],
+        "config": {
+          "file_path": "{{output_file}}",
+          "data": "{{ParseJsonResponseNode_001.data}}",
+          "indent": 2
+        },
+        "display_name": "Save Response"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1100, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "SetHttpHeadersNode_001", "to_port": "in"},
+      {"from_node": "SetHttpHeadersNode_001", "from_port": "out", "to_node": "HttpRequestNode_001", "to_port": "in"},
+      {"from_node": "HttpRequestNode_001", "from_port": "out", "to_node": "ParseJsonResponseNode_001", "to_port": "in"},
+      {"from_node": "ParseJsonResponseNode_001", "from_port": "out", "to_node": "WriteJSONFileNode_001", "to_port": "in"},
+      {"from_node": "WriteJSONFileNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

@@ -236,7 +236,6 @@ class CasareLivePipe:
                 self._idx_pointer.setPen(pen)
 
             LivePipeItem.draw_index_pointer = fixed_draw_index_pointer
-            logger.debug("CasareLivePipe: Fixed draw_index_pointer text_pos bug")
 
         except ImportError as e:
             logger.warning(f"CasareLivePipe: Could not import LivePipeItem: {e}")
@@ -278,7 +277,6 @@ class CasarePipeItemFix:
                 return original_draw_path(self, start_port, end_port, cursor_pos)
 
             PipeItem.draw_path = fixed_draw_path
-            logger.debug("CasarePipeItemFix: Fixed draw_path viewer None crash")
 
         except ImportError as e:
             logger.warning(f"CasarePipeItemFix: Could not import PipeItem: {e}")
@@ -333,7 +331,6 @@ class CasareNodeDataDropFix:
                 return original_on_node_data_dropped(self, data, pos)
 
             NodeGraph._on_node_data_dropped = fixed_on_node_data_dropped
-            logger.debug("CasareNodeDataDropFix: Fixed _on_node_data_dropped QUrl bug")
 
         except ImportError as e:
             logger.warning(f"CasareNodeDataDropFix: Could not import NodeGraph: {e}")
@@ -341,9 +338,13 @@ class CasareNodeDataDropFix:
             logger.warning(f"CasareNodeDataDropFix: Could not apply fix: {e}")
 
 
+# Maximum length for port labels before truncation
+PORT_LABEL_MAX_LENGTH = 15
+
+
 class CasareNodeBaseFontFix:
     """
-    Fix for NodeBase._add_port() font handling bug.
+    Fix for NodeBase._add_port() font handling bug and port label truncation.
 
     The original NodeGraphQt code at node_base.py:921-922 has:
         text.font().setPointSize(8)
@@ -353,7 +354,10 @@ class CasareNodeBaseFontFix:
     modifies the copy, then setFont() applies the unmodified original font
     which may have -1 as its point size if no font was explicitly set.
 
-    This fix patches _add_port to properly create and set the font.
+    This fix patches _add_port to:
+    1. Properly create and set the font
+    2. Truncate long port labels (>15 chars) with ellipsis
+    3. Set tooltip with full label on hover
 
     Usage:
         # Apply fix at module load time
@@ -362,9 +366,9 @@ class CasareNodeBaseFontFix:
 
     @staticmethod
     def apply_fix() -> None:
-        """Apply the font fix to NodeItem._add_port."""
+        """Apply the font fix and port label truncation to NodeItem._add_port."""
         try:
-            from PySide6.QtGui import QFont
+            from PySide6.QtGui import QFont, QFontMetrics
             from PySide6.QtWidgets import QGraphicsTextItem
             from NodeGraphQt.qgraphics.node_base import (
                 NodeItem,
@@ -375,14 +379,39 @@ class CasareNodeBaseFontFix:
             _original_add_port = NodeItem._add_port  # noqa: F841
 
             def fixed_add_port(self, port):
-                """Patched version that properly sets font point size."""
-                text = QGraphicsTextItem(port.name, self)
-                # Fix: Create a new font with explicit size instead of modifying copy
+                """Patched version with font fix and port label truncation."""
+                port_name = port.name
+                display_name = port_name
+
+                # Create font with explicit size
                 font = QFont()
                 font.setPointSize(8)
+
+                # Truncate long labels with ellipsis (Phase 1 UI improvement)
+                if len(port_name) > PORT_LABEL_MAX_LENGTH:
+                    # Use QFontMetrics.elidedText for proper truncation
+                    fm = QFontMetrics(font)
+                    # Calculate max width based on max chars (approx 6px per char at 8pt)
+                    max_width = PORT_LABEL_MAX_LENGTH * 6
+                    from PySide6.QtCore import Qt
+
+                    display_name = fm.elidedText(
+                        port_name, Qt.TextElideMode.ElideRight, max_width
+                    )
+
+                text = QGraphicsTextItem(display_name, self)
                 text.setFont(font)
                 text.setVisible(port.display_name)
                 text.setCacheMode(ITEM_CACHE_MODE)
+
+                # Set tooltip with full port name for truncated labels
+                if display_name != port_name:
+                    text.setToolTip(f"{port_name}")
+                else:
+                    # Standard tooltip for non-truncated labels
+                    conn_type = "multi" if port.multi_connection else "single"
+                    text.setToolTip(f"{port_name}: ({conn_type})")
+
                 if port.port_type == PortTypeEnum.IN.value:
                     self._input_items[port] = text
                 elif port.port_type == PortTypeEnum.OUT.value:
@@ -392,7 +421,6 @@ class CasareNodeBaseFontFix:
                 return port
 
             NodeItem._add_port = fixed_add_port
-            logger.debug("CasareNodeBaseFontFix: Fixed NodeItem._add_port font bug")
 
         except ImportError as e:
             logger.warning(f"CasareNodeBaseFontFix: Could not import NodeItem: {e}")
@@ -431,9 +459,6 @@ class CasareViewerFontFix:
                 return f
 
             QGraphicsTextItem.font = safe_font
-            logger.debug(
-                "CasareViewerFontFix: Fixed QGraphicsTextItem.font() for -1 point size"
-            )
 
         except Exception as e:
             logger.warning(f"CasareViewerFontFix: Could not apply fix: {e}")
@@ -470,7 +495,6 @@ class CasareQFontFix:
 
             QFont.setPointSize = safe_setPointSize
             CasareQFontFix._applied = True
-            logger.debug("CasareQFontFix: Patched QFont.setPointSize for -1 values")
 
         except Exception as e:
             logger.warning(f"CasareQFontFix: Could not apply fix: {e}")
@@ -546,14 +570,133 @@ class CasareNodeItemPaintFix:
                         painter.restore()
 
             NodeItem.paint = patched_paint
-            logger.debug(
-                "CasareNodeItemPaintFix: Fixed NodeItem.paint for selection styling"
-            )
 
         except ImportError as e:
             logger.warning(f"CasareNodeItemPaintFix: Could not import NodeItem: {e}")
         except Exception as e:
             logger.warning(f"CasareNodeItemPaintFix: Could not apply fix: {e}")
+
+
+class CasarePortItemShapeFix:
+    """
+    Fix to replace NodeGraphQt's circle-only port rendering with custom shapes.
+
+    This patches PortItem.paint to use our draw_port_shape function which
+    renders different shapes based on DataType (diamond for boolean, square
+    for list, hexagon for dict, triangle for exec, etc.).
+
+    Provides visual accessibility for color-blind users per WCAG 2.1.
+    """
+
+    @staticmethod
+    def apply_fix() -> None:
+        """Apply the port shape rendering fix."""
+        try:
+            from NodeGraphQt.qgraphics.port import PortItem
+            from NodeGraphQt.constants import PortTypeEnum
+            from PySide6.QtCore import QPointF, QRectF
+            from PySide6.QtGui import QPainter, QColor, QPen
+
+            from casare_rpa.presentation.canvas.graph.port_shapes import draw_port_shape
+            from casare_rpa.domain.value_objects.types import DataType
+
+            # Store original paint method
+            original_paint = PortItem.paint
+
+            def patched_paint(self, painter, option, widget):
+                """
+                Draw the port with shape based on data type.
+
+                Falls back to original paint for non-CasareRPA nodes.
+                """
+                painter.save()
+
+                # Calculate port rect (same as original)
+                rect_w = self._width / 1.8
+                rect_h = self._height / 1.8
+                rect_x = self.boundingRect().center().x() - (rect_w / 2)
+                rect_y = self.boundingRect().center().y() - (rect_h / 2)
+                port_rect = QRectF(rect_x, rect_y, rect_w, rect_h)
+                center = port_rect.center()
+                size = rect_w / 2
+
+                # Determine colors based on state
+                from NodeGraphQt.constants import PortEnum
+
+                if self._hovered:
+                    fill_color = PortEnum.HOVER_COLOR.value
+                    border_color = PortEnum.HOVER_BORDER_COLOR.value
+                elif self.connected_pipes:
+                    fill_color = PortEnum.ACTIVE_COLOR.value
+                    border_color = PortEnum.ACTIVE_BORDER_COLOR.value
+                else:
+                    fill_color = self.color
+                    border_color = self.border_color
+
+                # Try to get data type from visual node
+                data_type = None
+                is_exec = False
+                is_output = self.port_type == PortTypeEnum.OUT.value
+
+                try:
+                    # Get parent node item
+                    node_item = self.node
+                    if node_item:
+                        # Get visual node via NodeGraphQt's internal _node attribute
+                        visual_node = getattr(node_item, "_node", None)
+                        if visual_node and hasattr(visual_node, "get_port_type"):
+                            port_name = self.name
+                            data_type = visual_node.get_port_type(port_name)
+                            # Check if it's an exec port (None means exec)
+                            if hasattr(visual_node, "is_exec_port"):
+                                is_exec = visual_node.is_exec_port(port_name)
+                            elif data_type is None:
+                                is_exec = True
+                except Exception:
+                    pass  # Fall through to default circle
+
+                # Draw port shape
+                draw_port_shape(
+                    painter=painter,
+                    center=QPointF(center.x(), center.y()),
+                    size=size,
+                    data_type=data_type,
+                    fill_color=fill_color,
+                    border_color=border_color,
+                    is_exec=is_exec,
+                    is_output=is_output,
+                )
+
+                # Draw connected indicator (inner shape) for non-hovered connected ports
+                if self.connected_pipes and not self._hovered:
+                    inner_size = size * 0.4
+                    border_qcolor = QColor(*border_color)
+                    painter.setPen(QPen(border_qcolor, 1.6))
+                    painter.setBrush(border_qcolor)
+                    painter.drawEllipse(center, inner_size, inner_size)
+                elif self._hovered:
+                    # Hover indicator
+                    if self.multi_connection:
+                        inner_size = size * 0.55
+                        border_qcolor = QColor(*border_color)
+                        fill_qcolor = QColor(*fill_color)
+                        painter.setPen(QPen(border_qcolor, 1.4))
+                        painter.setBrush(fill_qcolor)
+                    else:
+                        inner_size = size * 0.3
+                        border_qcolor = QColor(*border_color)
+                        painter.setPen(QPen(border_qcolor, 1.6))
+                        painter.setBrush(border_qcolor)
+                    painter.drawEllipse(center, inner_size, inner_size)
+
+                painter.restore()
+
+            PortItem.paint = patched_paint
+
+        except ImportError as e:
+            logger.warning(f"CasarePortItemShapeFix: Could not import: {e}")
+        except Exception as e:
+            logger.warning(f"CasarePortItemShapeFix: Could not apply fix: {e}")
 
 
 def apply_all_node_widget_fixes() -> None:
@@ -571,6 +714,7 @@ def apply_all_node_widget_fixes() -> None:
     - QGraphicsTextItem.font() -1 point size fix
     - QFont.setPointSize -1 value fix
     - NodeItem.paint selection styling fix
+    - PortItem.paint custom shapes per DataType (accessibility)
 
     Note: CasareComboBox and CasareCheckBox fixes are applied per-widget
     via the patched __init__ methods installed below.
@@ -583,9 +727,8 @@ def apply_all_node_widget_fixes() -> None:
     CasareNodeBaseFontFix.apply_fix()
     CasareViewerFontFix.apply_fix()
     CasareNodeItemPaintFix.apply_fix()
+    CasarePortItemShapeFix.apply_fix()
     _install_widget_init_patches()
-
-    logger.debug("All NodeGraphQt widget fixes applied")
 
 
 def _install_widget_init_patches() -> None:
@@ -617,12 +760,99 @@ def _install_widget_init_patches() -> None:
 
         NodeCheckBox.__init__ = patched_checkbox_init
 
-        logger.debug("Installed NodeComboBox and NodeCheckBox init patches")
-
     except ImportError as e:
         logger.warning(f"Could not install widget init patches: {e}")
     except Exception as e:
         logger.warning(f"Error installing widget init patches: {e}")
+
+
+# =============================================================================
+# Variable-Aware Text Widget - Direct creation for performance
+# =============================================================================
+
+
+def create_variable_text_widget(
+    name: str,
+    label: str,
+    text: str = "",
+    placeholder_text: str = "",
+    tooltip: str = "",
+):
+    """
+    Factory function to create a variable-aware text input widget.
+
+    PERFORMANCE: This creates the widget directly with VariableAwareLineEdit,
+    avoiding the two-step process of creating a standard widget then replacing
+    its internal QLineEdit.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        text: Initial text value
+        placeholder_text: Placeholder text when empty
+        tooltip: Tooltip text for the widget
+
+    Returns:
+        NodeBaseWidget with VariableAwareLineEdit, or None if unavailable
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.variable_picker import (
+            VariableProvider,
+        )
+    except ImportError:
+        logger.error("NodeGraphQt or variable picker not available")
+        return None
+
+    # Create VariableAwareLineEdit directly
+    line_edit = VariableAwareLineEdit()
+    line_edit.setText(text)
+    line_edit.setPlaceholderText(placeholder_text)
+
+    # Apply standard styling with padding for {x} button
+    line_edit.setStyleSheet("""
+        QLineEdit {
+            background: rgb(60, 60, 80);
+            border: 1px solid rgb(80, 80, 100);
+            border-radius: 3px;
+            color: rgba(230, 230, 230, 255);
+            padding: 2px 28px 2px 4px;
+            selection-background-color: rgba(100, 150, 200, 150);
+        }
+        QLineEdit:focus {
+            background: rgb(70, 70, 90);
+            border: 1px solid rgb(100, 150, 200);
+        }
+    """)
+
+    if tooltip:
+        line_edit.setToolTip(tooltip)
+
+    # Connect to global variable provider
+    line_edit.set_provider(VariableProvider.get_instance())
+
+    # Create NodeBaseWidget with VariableAwareLineEdit as custom widget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(line_edit)
+
+    # Connect signals
+    line_edit.editingFinished.connect(widget.on_value_changed)
+    line_edit.variable_inserted.connect(lambda _: widget.on_value_changed())
+
+    # Store reference
+    widget._line_edit = line_edit
+
+    # Override get_value and set_value for consistent behavior
+    def get_value():
+        return line_edit.text()
+
+    def set_value(value):
+        line_edit.setText(str(value) if value else "")
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
 
 
 # =============================================================================
@@ -1379,3 +1609,600 @@ class NodeSelectorWidget:
             placeholder: Placeholder text when empty
         """
         return create_selector_widget(name, label, placeholder, text)
+
+
+# =============================================================================
+# Google Integration Widgets
+# =============================================================================
+
+
+def _apply_combo_z_fix(widget) -> None:
+    """
+    Apply z-value fix to a NodeBaseWidget containing a combo box.
+
+    When QComboBox is embedded in a QGraphicsProxyWidget, the dropdown popup
+    can get clipped by other widgets. This fix raises the z-value when
+    the popup is shown and restores it when hidden.
+
+    Args:
+        widget: NodeBaseWidget containing a picker with _combo attribute
+    """
+    try:
+        picker = getattr(widget, "_picker", None)
+        if not picker:
+            return
+
+        combo = getattr(picker, "_combo", None)
+        if not combo:
+            return
+
+        # Store original z-value for restoration
+        widget._original_z = widget.zValue() if hasattr(widget, "zValue") else 0
+
+        # Store original methods
+        original_show_popup = combo.showPopup
+        original_hide_popup = combo.hidePopup
+
+        def patched_show_popup():
+            """Raise z-value when popup opens."""
+            if hasattr(widget, "setZValue"):
+                widget.setZValue(COMBO_RAISED_Z)
+            original_show_popup()
+
+        def patched_hide_popup():
+            """Restore original z-value when popup closes."""
+            try:
+                original_hide_popup()
+                if hasattr(widget, "setZValue") and hasattr(widget, "_original_z"):
+                    widget.setZValue(widget._original_z)
+            except RuntimeError:
+                pass  # Widget already deleted
+
+        # Apply patches
+        combo.showPopup = patched_show_popup
+        combo.hidePopup = patched_hide_popup
+
+    except Exception as e:
+        logger.debug(f"Could not apply combo z-fix: {e}")
+
+
+def create_google_credential_widget(
+    name: str,
+    label: str,
+    scopes: list = None,
+):
+    """
+    Factory function to create a Google credential picker widget.
+
+    Creates a dropdown showing only Google OAuth credentials with
+    "Add Google Account..." option at the bottom.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        scopes: Optional list of required scopes (for filtering)
+
+    Returns:
+        NodeBaseWidget with GoogleCredentialPicker
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_credential_picker import (
+            GoogleCredentialPicker,
+        )
+    except ImportError as e:
+        logger.error(f"Google credential picker not available: {e}")
+        return None
+
+    # Create the picker widget
+    picker = GoogleCredentialPicker(required_scopes=scopes or [])
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(picker)
+
+    # Connect signals
+    picker.credential_changed.connect(lambda _: widget.on_value_changed())
+
+    # Store reference
+    widget._picker = picker
+
+    # Apply z-value fix for combo popup visibility
+    _apply_combo_z_fix(widget)
+
+    # Override get_value and set_value
+    def get_value():
+        return picker.get_credential_id()
+
+    def set_value(value):
+        if value:
+            picker.set_credential_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+def create_google_spreadsheet_widget(
+    name: str,
+    label: str,
+    credential_widget=None,
+):
+    """
+    Factory function to create a Google Spreadsheet picker widget.
+
+    Creates a cascading dropdown that loads spreadsheets when a
+    credential is selected.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        credential_widget: Optional parent credential widget for cascading
+
+    Returns:
+        NodeBaseWidget with GoogleSpreadsheetPicker
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
+            GoogleSpreadsheetPicker,
+        )
+    except ImportError as e:
+        logger.error(f"Google spreadsheet picker not available: {e}")
+        return None
+
+    # Create the picker widget
+    picker = GoogleSpreadsheetPicker()
+
+    # Connect to parent credential widget if provided
+    if credential_widget and hasattr(credential_widget, "_picker"):
+        cred_picker = credential_widget._picker
+        cred_picker.credential_changed.connect(
+            lambda cred_id: picker.set_parent_value(cred_id)
+        )
+        # Initialize with current credential if already selected
+        current_cred = cred_picker.get_credential_id()
+        if current_cred:
+            picker.set_parent_value(current_cred)
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(picker)
+
+    # Connect signals
+    picker.selection_changed.connect(lambda: widget.on_value_changed())
+
+    # Store reference
+    widget._picker = picker
+
+    # Apply z-value fix for combo popup visibility
+    _apply_combo_z_fix(widget)
+
+    # Override get_value and set_value
+    def get_value():
+        return picker.get_selected_id()
+
+    def set_value(value):
+        if value:
+            picker.set_selected_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+def create_google_sheet_widget(
+    name: str,
+    label: str,
+    spreadsheet_widget=None,
+    credential_widget=None,
+):
+    """
+    Factory function to create a Google Sheet picker widget.
+
+    Creates a cascading dropdown that loads sheets when a
+    spreadsheet is selected.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        spreadsheet_widget: Optional parent spreadsheet widget for cascading
+        credential_widget: Optional credential widget for authentication
+
+    Returns:
+        NodeBaseWidget with GoogleSheetPicker
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
+            GoogleSheetPicker,
+        )
+    except ImportError as e:
+        logger.error(f"Google sheet picker not available: {e}")
+        return None
+
+    # Create the picker widget
+    picker = GoogleSheetPicker()
+
+    # Connect to parent credential widget if provided
+    if credential_widget and hasattr(credential_widget, "_picker"):
+        credential_widget._picker.credential_changed.connect(
+            lambda cred_id: picker.set_credential_id(cred_id)
+        )
+
+    # Connect to parent spreadsheet widget if provided
+    if spreadsheet_widget and hasattr(spreadsheet_widget, "_picker"):
+        spreadsheet_widget._picker.selection_changed.connect(
+            lambda: picker.set_parent_value(
+                spreadsheet_widget._picker.get_selected_id()
+            )
+        )
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(picker)
+
+    # Connect signals
+    picker.selection_changed.connect(lambda: widget.on_value_changed())
+
+    # Store reference
+    widget._picker = picker
+
+    # Apply z-value fix for combo popup visibility
+    _apply_combo_z_fix(widget)
+
+    # Override get_value and set_value
+    def get_value():
+        return picker.get_selected_id()
+
+    def set_value(value):
+        if value:
+            picker.set_selected_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+def create_google_drive_file_widget(
+    name: str,
+    label: str,
+    credential_widget=None,
+    mime_types: list = None,
+    folder_id: str = None,
+):
+    """
+    Factory function to create a Google Drive file picker widget.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        credential_widget: Optional parent credential widget for cascading
+        mime_types: Optional list of MIME types to filter (first one used)
+        folder_id: Optional folder ID to restrict search
+
+    Returns:
+        NodeBaseWidget with GoogleDriveFilePicker
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
+            GoogleDriveFilePicker,
+        )
+    except ImportError as e:
+        logger.error(f"Google Drive file picker not available: {e}")
+        return None
+
+    # Create the picker widget (GoogleDriveFilePicker takes mime_type singular)
+    mime_type = mime_types[0] if mime_types else None
+    picker = GoogleDriveFilePicker(mime_type=mime_type, folder_id=folder_id)
+
+    # Connect to parent credential widget if provided
+    if credential_widget and hasattr(credential_widget, "_picker"):
+        cred_picker = credential_widget._picker
+        cred_picker.credential_changed.connect(
+            lambda cred_id: picker.set_parent_value(cred_id)
+        )
+        # Initialize with current credential if already selected
+        current_cred = cred_picker.get_credential_id()
+        if current_cred:
+            picker.set_parent_value(current_cred)
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(picker)
+
+    # Connect signals
+    picker.selection_changed.connect(lambda: widget.on_value_changed())
+
+    # Store reference
+    widget._picker = picker
+
+    # Apply z-value fix for combo popup visibility
+    _apply_combo_z_fix(widget)
+
+    # Override get_value and set_value
+    def get_value():
+        return picker.get_selected_id()
+
+    def set_value(value):
+        if value:
+            picker.set_selected_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+def create_google_drive_folder_widget(
+    name: str,
+    label: str,
+    credential_widget=None,
+    enhanced: bool = False,
+):
+    """
+    Factory function to create a Google Drive folder picker widget.
+
+    Args:
+        name: Property name for the node
+        label: Label text displayed above the widget
+        credential_widget: Optional parent credential widget for cascading
+        enhanced: If True, use the enhanced folder navigator with
+                  browse/search/manual ID modes. If False (default),
+                  use simple dropdown picker.
+
+    Returns:
+        NodeBaseWidget with GoogleDriveFolderPicker or GoogleDriveFolderNavigator
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+    except ImportError as e:
+        logger.error(f"NodeGraphQt not available: {e}")
+        return None
+
+    if enhanced:
+        # Use enhanced navigator with browse/search/manual modes
+        return _create_enhanced_folder_widget(name, label, credential_widget)
+    else:
+        # Use simple dropdown picker (original behavior)
+        return _create_simple_folder_widget(name, label, credential_widget)
+
+
+def _create_simple_folder_widget(
+    name: str,
+    label: str,
+    credential_widget=None,
+):
+    """Create simple folder dropdown widget (original implementation)."""
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
+            GoogleDriveFolderPicker,
+        )
+    except ImportError as e:
+        logger.error(f"Google Drive folder picker not available: {e}")
+        return None
+
+    # Create the picker widget
+    picker = GoogleDriveFolderPicker()
+
+    # Connect to parent credential widget if provided
+    if credential_widget and hasattr(credential_widget, "_picker"):
+        cred_picker = credential_widget._picker
+        cred_picker.credential_changed.connect(
+            lambda cred_id: picker.set_parent_value(cred_id)
+        )
+        # Initialize with current credential if already selected
+        current_cred = cred_picker.get_credential_id()
+        if current_cred:
+            picker.set_parent_value(current_cred)
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(picker)
+
+    # Connect signals
+    picker.selection_changed.connect(lambda: widget.on_value_changed())
+
+    # Store reference
+    widget._picker = picker
+
+    # Apply z-value fix for combo popup visibility
+    _apply_combo_z_fix(widget)
+
+    # Override get_value and set_value
+    def get_value():
+        return picker.get_selected_id()
+
+    def set_value(value):
+        if value:
+            picker.set_selected_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+def _create_enhanced_folder_widget(
+    name: str,
+    label: str,
+    credential_widget=None,
+):
+    """
+    Create enhanced folder navigator widget with browse/search/manual ID modes.
+
+    Features:
+    - Browse mode: Navigate folder hierarchy with breadcrumb
+    - Search mode: Search folders across Drive
+    - Manual ID mode: Paste folder ID from Google Drive URL
+    """
+    try:
+        from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
+        from casare_rpa.presentation.canvas.ui.widgets.google_folder_navigator import (
+            GoogleDriveFolderNavigator,
+        )
+    except ImportError as e:
+        logger.error(f"Google Drive folder navigator not available: {e}")
+        # Fall back to simple widget
+        return _create_simple_folder_widget(name, label, credential_widget)
+
+    # Create the navigator widget
+    navigator = GoogleDriveFolderNavigator(show_mode_buttons=True)
+
+    # Connect to parent credential widget if provided
+    if credential_widget and hasattr(credential_widget, "_picker"):
+        cred_picker = credential_widget._picker
+        cred_picker.credential_changed.connect(
+            lambda cred_id: navigator.set_credential_id(cred_id)
+        )
+        # Initialize with current credential if already selected
+        current_cred = cred_picker.get_credential_id()
+        if current_cred:
+            navigator.set_credential_id(current_cred)
+
+    # Create NodeBaseWidget
+    widget = NodeBaseWidget(parent=None, name=name, label=label)
+    widget.set_custom_widget(navigator)
+
+    # Connect signals
+    navigator.folder_selected.connect(lambda: widget.on_value_changed())
+
+    # Store reference
+    widget._navigator = navigator
+    widget._picker = navigator  # For compatibility with z-fix
+
+    # Override get_value and set_value
+    def get_value():
+        return navigator.get_folder_id()
+
+    def set_value(value):
+        if value:
+            navigator.set_folder_id(value)
+
+    widget.get_value = get_value
+    widget.set_value = set_value
+
+    return widget
+
+
+class NodeGoogleCredentialWidget:
+    """
+    Google credential picker widget for NodeGraphQt nodes.
+
+    Shows a dropdown with connected Google accounts and
+    "Add Google Account..." option to add new ones.
+
+    Usage:
+        widget = NodeGoogleCredentialWidget(name="credential", label="Google Account")
+        self.add_custom_widget(widget)
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        scopes: list = None,
+    ):
+        return create_google_credential_widget(name, label, scopes)
+
+
+class NodeGoogleSpreadsheetWidget:
+    """
+    Google Spreadsheet picker widget for NodeGraphQt nodes.
+
+    Cascading dropdown that loads spreadsheets from Google Drive.
+
+    Usage:
+        cred_widget = NodeGoogleCredentialWidget(...)
+        sheet_widget = NodeGoogleSpreadsheetWidget(
+            name="spreadsheet",
+            label="Spreadsheet",
+            credential_widget=cred_widget,
+        )
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        credential_widget=None,
+    ):
+        return create_google_spreadsheet_widget(name, label, credential_widget)
+
+
+class NodeGoogleSheetWidget:
+    """
+    Google Sheet picker widget for NodeGraphQt nodes.
+
+    Cascading dropdown that loads sheet tabs from a spreadsheet.
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        spreadsheet_widget=None,
+        credential_widget=None,
+    ):
+        return create_google_sheet_widget(
+            name, label, spreadsheet_widget, credential_widget
+        )
+
+
+class NodeGoogleDriveFileWidget:
+    """
+    Google Drive file picker widget for NodeGraphQt nodes.
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        credential_widget=None,
+        mime_types: list = None,
+        folder_id: str = None,
+    ):
+        return create_google_drive_file_widget(
+            name, label, credential_widget, mime_types, folder_id
+        )
+
+
+class NodeGoogleDriveFolderWidget:
+    """
+    Google Drive folder picker widget for NodeGraphQt nodes.
+
+    With enhanced=False (default): Simple dropdown with folder list.
+    With enhanced=True: Full navigator with browse/search/manual ID modes.
+
+    Usage:
+        # Simple dropdown
+        widget = NodeGoogleDriveFolderWidget(
+            name="folder_id",
+            label="Destination Folder",
+            credential_widget=cred_widget,
+        )
+
+        # Enhanced navigator
+        widget = NodeGoogleDriveFolderWidget(
+            name="folder_id",
+            label="Destination Folder",
+            credential_widget=cred_widget,
+            enhanced=True,
+        )
+    """
+
+    def __new__(
+        cls,
+        name: str = "",
+        label: str = "",
+        credential_widget=None,
+        enhanced: bool = False,
+    ):
+        return create_google_drive_folder_widget(
+            name, label, credential_widget, enhanced
+        )

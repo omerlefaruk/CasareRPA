@@ -550,6 +550,12 @@ class ValidationTab(QWidget):
         self._repair_btn.setVisible(False)  # Hide repair button
         self._content_stack.setCurrentIndex(0)  # Empty state
 
+        # PERFORMANCE: Clear validation cache to free memory
+        # Cache is only useful within same workflow session
+        from casare_rpa.domain.validation.validators import clear_validation_cache
+
+        clear_validation_cache()
+
         # Refresh styles
         self._status_label.style().unpolish(self._status_label)
         self._status_label.style().polish(self._status_label)

@@ -1,5 +1,5 @@
 {
-  "enabled": false,
+  "enabled": true,
   "bindings": [
     {
       "key": "b",
@@ -11,12 +11,6 @@
       "key": "u",
       "node_type": "GoToURLNode",
       "display_name": "Go To URL",
-      "category": "browser"
-    },
-    {
-      "key": "c",
-      "node_type": "ClickElementNode",
-      "display_name": "Click Element",
       "category": "browser"
     },
     {

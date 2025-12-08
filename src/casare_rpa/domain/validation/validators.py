@@ -4,9 +4,15 @@ CasareRPA - Validators Module
 Contains validation functions for workflows, nodes, and connections.
 """
 
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from casare_rpa.domain.value_objects.types import SCHEMA_VERSION
+
+# PERFORMANCE: Incremental validation cache
+# Stores validation results for unchanged nodes to avoid re-validation
+_validation_cache: Dict[
+    str, Tuple[str, "ValidationResult"]
+] = {}  # node_id -> (hash, result)
 
 from casare_rpa.domain.validation.rules import (
     find_entry_points_and_reachable,
@@ -109,6 +115,100 @@ def quick_validate(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     result = validate_workflow(data)
     error_messages = [f"{issue.code}: {issue.message}" for issue in result.errors]
     return result.is_valid, error_messages
+
+
+def validate_incremental(
+    data: Dict[str, Any],
+    changed_node_ids: Optional[Set[str]] = None,
+) -> ValidationResult:
+    """
+    Incrementally validate a workflow, only re-validating changed nodes.
+
+    PERFORMANCE: For large workflows, this can be 10-100x faster than
+    full validation when only a few nodes have changed.
+
+    Args:
+        data: Serialized workflow dictionary
+        changed_node_ids: Set of node IDs that have changed since last validation.
+                         If None, validates all nodes (same as validate_workflow).
+
+    Returns:
+        ValidationResult with all issues found
+    """
+    import hashlib
+    import orjson
+
+    result = ValidationResult()
+
+    # Check top-level structure (always required)
+    _validate_structure(data, result)
+    if not result.is_valid:
+        return result
+
+    # Validate metadata (always)
+    _validate_metadata(data.get("metadata", {}), result)
+
+    # Validate nodes with caching
+    nodes = data.get("nodes", {})
+    node_ids = set(nodes.keys())
+
+    for node_id, node_data in nodes.items():
+        # If no changed_node_ids specified, validate all
+        if changed_node_ids is None or node_id in changed_node_ids:
+            # Validate and cache
+            node_result = ValidationResult()
+            _validate_node(node_id, node_data, node_result)
+
+            # Store in cache with hash
+            try:
+                node_hash = hashlib.md5(orjson.dumps(node_data)).hexdigest()
+                _validation_cache[node_id] = (node_hash, node_result)
+            except Exception:
+                pass  # Skip caching if serialization fails
+
+            # Merge into main result
+            for error in node_result.errors:
+                result.errors.append(error)
+            for warning in node_result.warnings:
+                result.warnings.append(warning)
+        else:
+            # Check cache for unchanged node
+            try:
+                node_hash = hashlib.md5(orjson.dumps(node_data)).hexdigest()
+                if node_id in _validation_cache:
+                    cached_hash, cached_result = _validation_cache[node_id]
+                    if cached_hash == node_hash:
+                        # Use cached result
+                        for error in cached_result.errors:
+                            result.errors.append(error)
+                        for warning in cached_result.warnings:
+                            result.warnings.append(warning)
+                        continue
+            except Exception:
+                pass
+
+            # Cache miss or hash mismatch - validate fully
+            node_result = ValidationResult()
+            _validate_node(node_id, node_data, node_result)
+            for error in node_result.errors:
+                result.errors.append(error)
+            for warning in node_result.warnings:
+                result.warnings.append(warning)
+
+    # Connections must be validated fully (they depend on all nodes)
+    connections = data.get("connections", [])
+    _validate_connections(connections, node_ids, result)
+
+    # Workflow-level semantics must be validated fully
+    _validate_workflow_semantics(data, result)
+
+    return result
+
+
+def clear_validation_cache() -> None:
+    """Clear the incremental validation cache."""
+    global _validation_cache
+    _validation_cache.clear()
 
 
 # ============================================================================
@@ -436,4 +536,6 @@ __all__ = [
     "validate_node",
     "validate_connections",
     "quick_validate",
+    "validate_incremental",
+    "clear_validation_cache",
 ]

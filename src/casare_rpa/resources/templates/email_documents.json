@@ -1,0 +1,144 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_emaildocs",
+  "name": "Email & Document Processing",
+  "description": "Process emails, extract attachments, parse PDFs, and generate reports. Includes email filtering and document text extraction.",
+  "category": "Email & Documents",
+  "icon": "email",
+  "color": "#E91E63",
+  "tags": ["email", "pdf", "documents", "attachments", "intermediate"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "intermediate",
+  "estimated_nodes": 8,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "email_folder",
+      "data_type": "String",
+      "default_value": "INBOX",
+      "description": "Email folder to process",
+      "required": true
+    },
+    {
+      "name": "attachments_folder",
+      "data_type": "String",
+      "default_value": "downloads/attachments",
+      "description": "Folder to save attachments",
+      "required": true
+    },
+    {
+      "name": "processed_folder",
+      "data_type": "String",
+      "default_value": "Processed",
+      "description": "Folder to move processed emails",
+      "required": false
+    },
+    {
+      "name": "max_emails",
+      "data_type": "Integer",
+      "default_value": 10,
+      "description": "Maximum emails to process",
+      "required": false
+    }
+  ],
+  "default_credentials": [
+    {
+      "alias": "email_credentials",
+      "credential_type": "username_password",
+      "description": "Email server login credentials",
+      "required": true
+    }
+  ],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": false,
+    "timeout_seconds": 120,
+    "retry_count": 2
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "GmailListEmailsNode_001",
+        "node_type": "GmailListEmailsNode",
+        "position": [300, 300],
+        "config": {
+          "credential_name": "email_credentials",
+          "query": "has:attachment",
+          "max_results": "{{max_emails}}"
+        },
+        "display_name": "List Emails with Attachments"
+      },
+      {
+        "node_id": "ForLoopStartNode_001",
+        "node_type": "ForLoopStartNode",
+        "position": [500, 300],
+        "config": {
+          "items": "{{GmailListEmailsNode_001.messages}}"
+        },
+        "display_name": "Process Each Email"
+      },
+      {
+        "node_id": "GmailGetAttachmentNode_001",
+        "node_type": "GmailGetAttachmentNode",
+        "position": [700, 300],
+        "config": {
+          "credential_name": "email_credentials",
+          "message_id": "{{ForLoopStartNode_001.item.id}}",
+          "save_path": "{{attachments_folder}}"
+        },
+        "display_name": "Download Attachments"
+      },
+      {
+        "node_id": "ReadPDFTextNode_001",
+        "node_type": "ReadPDFTextNode",
+        "position": [900, 300],
+        "config": {
+          "file_path": "{{GmailGetAttachmentNode_001.saved_path}}"
+        },
+        "display_name": "Extract PDF Text"
+      },
+      {
+        "node_id": "GmailMarkAsReadNode_001",
+        "node_type": "GmailMarkAsReadNode",
+        "position": [1100, 300],
+        "config": {
+          "credential_name": "email_credentials",
+          "message_id": "{{ForLoopStartNode_001.item.id}}"
+        },
+        "display_name": "Mark as Read"
+      },
+      {
+        "node_id": "ForLoopEndNode_001",
+        "node_type": "ForLoopEndNode",
+        "position": [1300, 300],
+        "config": {},
+        "display_name": "End Loop"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [1500, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "GmailListEmailsNode_001", "to_port": "in"},
+      {"from_node": "GmailListEmailsNode_001", "from_port": "out", "to_node": "ForLoopStartNode_001", "to_port": "in"},
+      {"from_node": "ForLoopStartNode_001", "from_port": "loop", "to_node": "GmailGetAttachmentNode_001", "to_port": "in"},
+      {"from_node": "GmailGetAttachmentNode_001", "from_port": "out", "to_node": "ReadPDFTextNode_001", "to_port": "in"},
+      {"from_node": "ReadPDFTextNode_001", "from_port": "out", "to_node": "GmailMarkAsReadNode_001", "to_port": "in"},
+      {"from_node": "GmailMarkAsReadNode_001", "from_port": "out", "to_node": "ForLoopEndNode_001", "to_port": "in"},
+      {"from_node": "ForLoopEndNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

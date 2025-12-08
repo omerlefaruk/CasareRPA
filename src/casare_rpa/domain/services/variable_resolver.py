@@ -20,6 +20,12 @@ VARIABLE_PATTERN = re.compile(
 # Pattern to parse path segments (handles both .key and [index])
 PATH_SEGMENT_PATTERN = re.compile(r"\.([a-zA-Z_][a-zA-Z0-9_]*)|\[(\d+)\]")
 
+# PERFORMANCE: Pre-compiled pattern for single variable detection
+# Previously compiled on every call in resolve_variables()
+SINGLE_VAR_PATTERN = re.compile(
+    r"^\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}$"
+)
+
 
 def _resolve_nested_path(path: str, variables: Dict[str, Any]) -> Any:
     """
@@ -132,11 +138,9 @@ def resolve_variables(value: Any, variables: Dict[str, Any]) -> Any:
 
     # Check if the entire value is a single variable reference
     # This allows preserving the original type (bool, int, dict, etc.)
+    # Uses pre-compiled pattern for O(1) lookup instead of compiling on every call
     stripped = value.strip()
-    single_var_match = re.match(
-        r"^\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*|\[\d+\])*)\s*\}\}$",
-        stripped,
-    )
+    single_var_match = SINGLE_VAR_PATTERN.match(stripped)
     if single_var_match:
         var_path = single_var_match.group(1)
 

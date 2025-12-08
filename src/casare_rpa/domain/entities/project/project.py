@@ -33,6 +33,11 @@ class Project:
         modified_at: Last modification timestamp
         tags: List of tags for categorization
         settings: Project-level execution settings
+
+        folder_id: ID of folder containing this project (v2.0.0)
+        template_id: ID of template this project was created from (v2.0.0)
+        environment_ids: List of environment IDs in this project (v2.0.0)
+        active_environment_id: Currently active environment (v2.0.0)
     """
 
     id: str
@@ -44,6 +49,12 @@ class Project:
     tags: List[str] = field(default_factory=list)
     settings: ProjectSettings = field(default_factory=ProjectSettings)
     schema_version: str = PROJECT_SCHEMA_VERSION
+
+    # v2.0.0 fields
+    folder_id: Optional[str] = None
+    template_id: Optional[str] = None
+    environment_ids: List[str] = field(default_factory=list)
+    active_environment_id: Optional[str] = None
 
     # Runtime properties (not serialized)
     _path: Optional[Path] = field(default=None, repr=False)
@@ -93,6 +104,13 @@ class Project:
             return self._path / "credentials.json"
         return None
 
+    @property
+    def environments_dir(self) -> Optional[Path]:
+        """Get environments directory path (v2.0.0)."""
+        if self._path:
+            return self._path / "environments"
+        return None
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary for project.json."""
         return {
@@ -105,6 +123,11 @@ class Project:
             "modified_at": self.modified_at.isoformat() if self.modified_at else None,
             "tags": self.tags,
             "settings": self.settings.to_dict(),
+            # v2.0.0 fields
+            "folder_id": self.folder_id,
+            "template_id": self.template_id,
+            "environment_ids": self.environment_ids,
+            "active_environment_id": self.active_environment_id,
         }
 
     @classmethod
@@ -128,6 +151,11 @@ class Project:
             tags=data.get("tags", []),
             settings=ProjectSettings.from_dict(data.get("settings", {})),
             schema_version=data.get("$schema_version", PROJECT_SCHEMA_VERSION),
+            # v2.0.0 fields (with defaults for v1.0.0 migration)
+            folder_id=data.get("folder_id"),
+            template_id=data.get("template_id"),
+            environment_ids=data.get("environment_ids", []),
+            active_environment_id=data.get("active_environment_id"),
         )
 
     @classmethod

@@ -63,15 +63,22 @@ class RobotPickerPanel(QDockWidget):
     refresh_requested = Signal()
     submit_to_cloud_requested = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, embedded: bool = False
+    ) -> None:
         """
         Initialize the Robot Picker Panel.
 
         Args:
             parent: Optional parent widget
+            embedded: If True, behave as QWidget (for embedding in tab panels)
         """
-        super().__init__("Robot Picker", parent)
-        self.setObjectName("RobotPickerDock")
+        self._embedded = embedded
+        if embedded:
+            QWidget.__init__(self, parent)
+        else:
+            super().__init__("Robot Picker", parent)
+            self.setObjectName("RobotPickerDock")
 
         self._selected_robot_id: Optional[str] = None
         self._execution_mode: str = "local"
@@ -79,7 +86,8 @@ class RobotPickerPanel(QDockWidget):
         self._robot_items: Dict[str, QTreeWidgetItem] = {}
         self._connected_to_orchestrator: bool = False
 
-        self._setup_dock()
+        if not embedded:
+            self._setup_dock()
         self._setup_ui()
         self._apply_styles()
 
@@ -100,8 +108,11 @@ class RobotPickerPanel(QDockWidget):
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        container = QWidget()
-        layout = QVBoxLayout(container)
+        if self._embedded:
+            layout = QVBoxLayout(self)
+        else:
+            container = QWidget()
+            layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
 
@@ -220,7 +231,8 @@ class RobotPickerPanel(QDockWidget):
         # Add stretch at bottom
         layout.addStretch()
 
-        self.setWidget(container)
+        if not self._embedded:
+            self.setWidget(container)
 
     def _apply_styles(self) -> None:
         """Apply dark theme styling."""

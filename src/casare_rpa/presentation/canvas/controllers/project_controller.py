@@ -100,6 +100,17 @@ class ProjectController(BaseController):
             logger.error(f"Failed to get recent projects: {e}")
             return []
 
+    def load_project(self, project_path: str) -> None:
+        """
+        Load a project from the given path.
+
+        Public API for loading projects programmatically.
+
+        Args:
+            project_path: Path to the project directory
+        """
+        self._on_project_opened(project_path)
+
     def show_project_manager(self) -> None:
         """Show project manager dialog."""
         import asyncio
@@ -126,7 +137,7 @@ class ProjectController(BaseController):
         self, recent_projects: List["ProjectIndexEntry"]
     ) -> None:
         """
-        Show project manager dialog with recent projects.
+        Show project manager dialog.
 
         Args:
             recent_projects: List of recent project entries
@@ -141,7 +152,6 @@ class ProjectController(BaseController):
         # Connect signals
         dialog.project_created.connect(self._on_project_created)
         dialog.project_opened.connect(self._on_project_opened)
-        dialog.project_deleted.connect(self._on_project_removed)
         dialog.scenario_opened.connect(self._on_scenario_opened)
 
         self._dialog = dialog

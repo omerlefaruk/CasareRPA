@@ -3,22 +3,207 @@ Custom pipe styling for node connections.
 
 Provides:
 - Dotted line style when dragging connections
+- Type-colored wires (like Unreal Blueprints)
+- Variable wire thickness by data type
 - Connection labels showing data type
 - Output preview on hover
+- Connection compatibility feedback
+- High Performance Mode support (simplified rendering)
+- Execution flow animation (continuous dot animation during execution)
+- Smart wire routing with bezier obstacle avoidance
 """
 
-from PySide6.QtCore import Qt, QRectF
-from PySide6.QtGui import QPen, QFont, QFontMetrics, QColor, QPainter, QBrush
+from typing import Optional
+from PySide6.QtCore import Qt, QRectF, QTimer, QPointF
+from PySide6.QtGui import (
+    QPen,
+    QFont,
+    QFontMetrics,
+    QColor,
+    QPainter,
+    QPainterPath,
+    QBrush,
+    QRadialGradient,
+)
 from NodeGraphQt.qgraphics.pipe import PipeItem
+
+# Import high performance mode flag from custom_node_item
+from casare_rpa.presentation.canvas.graph.custom_node_item import (
+    get_high_performance_mode,
+)
+
+# Import LOD manager for centralized zoom-based rendering decisions
+from casare_rpa.presentation.canvas.graph.lod_manager import (
+    get_lod_manager,
+    LODLevel,
+)
+
+# Import DataType for type-based coloring
+from casare_rpa.domain.value_objects.types import DataType
+
+
+# ============================================================================
+# SMART WIRE ROUTING
+# ============================================================================
+# Global flag to enable/disable smart wire routing.
+# When enabled, wires automatically route around node bounding boxes.
+# Disabled by default - can be enabled via View menu.
+
+_smart_routing_enabled: bool = False
+
+
+def set_smart_routing_enabled(enabled: bool) -> None:
+    """Enable or disable smart wire routing globally."""
+    global _smart_routing_enabled
+    _smart_routing_enabled = enabled
+
+
+def is_smart_routing_enabled() -> bool:
+    """Check if smart wire routing is enabled."""
+    return _smart_routing_enabled
+
+
+# PERFORMANCE: Pre-cached paint objects to avoid allocation in paint()
+# These are created once at module load instead of 60+ times per frame
+_INSERT_HIGHLIGHT_COLOR = QColor(255, 140, 0)
+_HOVER_COLOR = QColor(100, 200, 255)
+_LABEL_BG_COLOR = QColor(40, 40, 40, 200)
+_LABEL_BORDER_COLOR = QColor(80, 80, 80)
+_LABEL_TEXT_COLOR = QColor(180, 180, 180)
+_PREVIEW_BG_COLOR = QColor(50, 50, 40, 230)
+_PREVIEW_BORDER_COLOR = QColor(100, 100, 80)
+_PREVIEW_TEXT_COLOR = QColor(220, 220, 180)
+_LABEL_FONT = QFont("Segoe UI", 8)
+_PREVIEW_FONT = QFont("Consolas", 9)
+
+# ============================================================================
+# EXECUTION FLOW ANIMATION CONSTANTS
+# ============================================================================
+# Animation settings for the flowing dot during execution.
+# The dot travels continuously along the wire path while the connected node executes.
+
+# Animation timing
+_ANIMATION_INTERVAL_MS = 16  # ~60fps for smooth animation
+_ANIMATION_CYCLE_MS = 500  # One full cycle (dot travels wire length) in 500ms
+_ANIMATION_STEP = _ANIMATION_INTERVAL_MS / _ANIMATION_CYCLE_MS  # Progress per tick
+
+# Completion glow duration
+_COMPLETION_GLOW_MS = 300  # Brief glow effect when execution completes
+
+# Flow dot visual settings
+_FLOW_DOT_RADIUS = 4.0  # Base radius of the flowing dot
+_FLOW_DOT_GLOW_RADIUS = 8.0  # Glow radius around the dot
+_FLOW_DOT_COLOR = QColor(255, 255, 255, 220)  # White flowing dot
+_FLOW_DOT_GLOW_COLOR = QColor(255, 255, 255, 80)  # Subtle glow around dot
+
+# Completion glow colors
+_COMPLETION_GLOW_COLOR = QColor(76, 175, 80, 150)  # Green glow on completion
+
+# ============================================================================
+# TYPE-COLORED WIRE SYSTEM
+# ============================================================================
+# Wire colors match data types for visual identification (like Unreal Blueprints).
+# Execution wires are white and thicker for prominence.
+
+# Type-based wire colors (matches Unreal Blueprints style)
+TYPE_WIRE_COLORS: dict[DataType, QColor] = {
+    DataType.STRING: QColor(0x56, 0x9C, 0xD6),  # #569CD6 - Light Blue
+    DataType.INTEGER: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
+    DataType.FLOAT: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal (same as int)
+    DataType.BOOLEAN: QColor(0xF4, 0x87, 0x71),  # #F48771 - Red
+    DataType.LIST: QColor(0x89, 0xD1, 0x85),  # #89D185 - Green
+    DataType.DICT: QColor(0xCE, 0x91, 0x78),  # #CE9178 - Orange
+    DataType.PAGE: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
+    DataType.ELEMENT: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
+    DataType.BROWSER: QColor(0xC5, 0x86, 0xC0),  # #C586C0 - Purple
+    DataType.WINDOW: QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
+    DataType.DESKTOP_ELEMENT: QColor(0x9C, 0xDC, 0xFE),  # #9CDCFE - Light blue
+    DataType.DB_CONNECTION: QColor(0x4E, 0xC9, 0xB0),  # #4EC9B0 - Teal
+    DataType.WORKBOOK: QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
+    DataType.WORKSHEET: QColor(0x21, 0x7B, 0x4B),  # #217B4B - Office green
+    DataType.DOCUMENT: QColor(0xFF, 0x98, 0x00),  # #FF9800 - Orange
+    DataType.OBJECT: QColor(0x80, 0x80, 0x80),  # #808080 - Gray
+    DataType.ANY: QColor(0x80, 0x80, 0x80),  # #808080 - Gray
+}
+
+# Execution wire color (white for prominence)
+_EXEC_WIRE_COLOR = QColor(0xFF, 0xFF, 0xFF)  # #FFFFFF - White
+
+# Default wire color for unknown types
+_DEFAULT_WIRE_COLOR = QColor(0x80, 0x80, 0x80)  # #808080 - Gray
+
+# Incompatible connection color (red)
+_INCOMPATIBLE_WIRE_COLOR = QColor(0xF4, 0x43, 0x36)  # #F44336 - Red
+
+# Wire thickness constants
+WIRE_THICKNESS = {
+    "exec": 3.0,  # Execution - most prominent
+    "data_active": 2.0,  # Data that was used during execution
+    "data_idle": 1.5,  # Default data connections
+    "optional": 1.0,  # Optional connections (not implemented yet)
+}
+
+
+def get_type_wire_color(data_type: Optional[DataType]) -> QColor:
+    """
+    Get wire color for a data type.
+
+    Args:
+        data_type: The DataType enum value, or None for execution ports
+
+    Returns:
+        QColor for the wire
+    """
+    if data_type is None:
+        # Execution port
+        return _EXEC_WIRE_COLOR
+    return TYPE_WIRE_COLORS.get(data_type, _DEFAULT_WIRE_COLOR)
+
+
+def check_type_compatibility(
+    source_type: Optional[DataType], target_type: Optional[DataType]
+) -> bool:
+    """
+    Check if two port types are compatible for connection.
+
+    Args:
+        source_type: DataType of source port (None for exec)
+        target_type: DataType of target port (None for exec)
+
+    Returns:
+        True if connection is allowed
+    """
+    # Both exec - always compatible
+    if source_type is None and target_type is None:
+        return True
+
+    # Mixed exec/data - never compatible
+    if (source_type is None) != (target_type is None):
+        return False
+
+    # Check type compatibility using port type registry
+    try:
+        from casare_rpa.domain.port_type_system import get_port_type_registry
+
+        registry = get_port_type_registry()
+        return registry.is_compatible(source_type, target_type)
+    except Exception:
+        # On error, allow connection (permissive fallback)
+        return True
 
 
 class CasarePipe(PipeItem):
     """
     Custom pipe with:
     - Dotted style when being dragged
+    - Type-colored wires (like Unreal Blueprints)
+    - Variable thickness by port type
     - Optional data type label on the connection
     - Output preview on hover
     - Insert highlight when node is dragged over
+    - Connection compatibility feedback during drag
+    - Execution flow animation (continuous dot animation during execution)
+    - Smart wire routing with bezier obstacle avoidance
     """
 
     def __init__(self):
@@ -31,48 +216,689 @@ class CasarePipe(PipeItem):
         self._hovered = False
         self._insert_highlight = False  # Highlight when node dragged over
 
+        # Type-colored wire caching (computed once per connection)
+        self._cached_wire_color: Optional[QColor] = None
+        self._cached_wire_thickness: float = WIRE_THICKNESS["data_idle"]
+        self._is_exec_connection: bool = False
+
+        # Connection compatibility feedback
+        self._is_incompatible: bool = False
+
+        # ============================================================
+        # EXECUTION FLOW ANIMATION STATE
+        # ============================================================
+        # Animation progress: 0.0 = at source, 1.0 = at target
+        self._animation_progress: float = 0.0
+        # Whether animation is currently running
+        self._is_animating: bool = False
+        # Brief glow effect after completion
+        self._show_completion_glow: bool = False
+        # Timer for animation updates (created lazily to avoid overhead)
+        self._animation_timer: Optional[QTimer] = None
+
+        # ============================================================
+        # SMART WIRE ROUTING STATE
+        # ============================================================
+        # Cached routed control points (invalidated on node move)
+        self._routed_ctrl1: Optional[QPointF] = None
+        self._routed_ctrl2: Optional[QPointF] = None
+        # Hash of last positions to detect when to recalculate
+        self._last_position_hash: int = 0
+
         # Enable hover events
         self.setAcceptHoverEvents(True)
+
+    # =========================================================================
+    # EXECUTION FLOW ANIMATION METHODS
+    # =========================================================================
+
+    def start_flow_animation(self) -> None:
+        """
+        Start continuous flow animation.
+
+        Call this when the source node starts execution to show
+        data flowing along the wire.
+        """
+        if self._is_animating:
+            return  # Already animating
+
+        self._is_animating = True
+        self._animation_progress = 0.0
+        self._show_completion_glow = False
+
+        # Create timer lazily
+        if self._animation_timer is None:
+            self._animation_timer = QTimer()
+            self._animation_timer.timeout.connect(self._on_animation_tick)
+
+        self._animation_timer.start(_ANIMATION_INTERVAL_MS)
+        self.update()
+
+    def stop_flow_animation(self, show_completion_glow: bool = True) -> None:
+        """
+        Stop animation with optional brief glow effect.
+
+        Args:
+            show_completion_glow: If True, show brief green glow on completion
+        """
+        if self._animation_timer is not None:
+            self._animation_timer.stop()
+
+        self._is_animating = False
+        self._animation_progress = 0.0
+
+        if show_completion_glow:
+            # Show brief completion glow
+            self._show_completion_glow = True
+            QTimer.singleShot(_COMPLETION_GLOW_MS, self._clear_completion_glow)
+
+        self.update()
+
+    def _clear_completion_glow(self) -> None:
+        """Clear the completion glow effect."""
+        self._show_completion_glow = False
+        self.update()
+
+    def _on_animation_tick(self) -> None:
+        """
+        Animation timer callback.
+
+        Advances the animation progress and triggers repaint.
+        """
+        if not self._is_animating:
+            return
+
+        self._animation_progress += _ANIMATION_STEP
+        if self._animation_progress >= 1.0:
+            self._animation_progress = 0.0  # Loop back to start
+
+        self.update()
+
+    def is_animating(self) -> bool:
+        """Check if flow animation is currently active."""
+        return self._is_animating
+
+    def _draw_flow_dot(self, painter: QPainter) -> None:
+        """
+        Draw the animated flow dot traveling along the wire.
+
+        The dot appears as a glowing white circle that moves from
+        source to target port continuously during execution.
+
+        Args:
+            painter: QPainter to draw with
+        """
+        if not self._is_animating:
+            return
+
+        path = self.path()
+        if path.isEmpty():
+            return
+
+        # Get position along the path
+        try:
+            pos = path.pointAtPercent(self._animation_progress)
+        except Exception:
+            return
+
+        # Draw glow behind the dot (subtle)
+        glow_gradient = QRadialGradient(pos, _FLOW_DOT_GLOW_RADIUS)
+        glow_gradient.setColorAt(0, _FLOW_DOT_GLOW_COLOR)
+        glow_gradient.setColorAt(1, QColor(255, 255, 255, 0))
+        painter.setBrush(QBrush(glow_gradient))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawEllipse(pos, _FLOW_DOT_GLOW_RADIUS, _FLOW_DOT_GLOW_RADIUS)
+
+        # Draw solid dot
+        painter.setBrush(QBrush(_FLOW_DOT_COLOR))
+        painter.drawEllipse(pos, _FLOW_DOT_RADIUS, _FLOW_DOT_RADIUS)
+
+    def _draw_completion_glow(self, painter: QPainter) -> None:
+        """
+        Draw brief completion glow effect along the entire wire.
+
+        This provides visual feedback when execution completes successfully.
+
+        Args:
+            painter: QPainter to draw with
+        """
+        if not self._show_completion_glow:
+            return
+
+        path = self.path()
+        if path.isEmpty():
+            return
+
+        # Draw glowing wire on completion
+        glow_pen = QPen(_COMPLETION_GLOW_COLOR, self._get_wire_thickness() + 4)
+        glow_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(glow_pen)
+        painter.drawPath(path)
+
+    def _get_port_data_type(self) -> Optional[DataType]:
+        """
+        Get the DataType from the output port.
+
+        Returns:
+            DataType enum value, or None for execution ports
+        """
+        if not self.output_port:
+            return DataType.ANY
+
+        try:
+            # Get the node from the output port
+            node = self.output_port.node()
+            if not node:
+                return DataType.ANY
+
+            # Get port type from node's _port_types dict
+            port_name = self.output_port.name()
+            if hasattr(node, "_port_types"):
+                # CRITICAL FIX: Check if key EXISTS before getting value
+                # Previously used .get() which returns None for both:
+                # - Exec ports (intentionally set to None)
+                # - Missing keys (port not registered)
+                # Both cases were treated as exec ports, making all wires white
+                if port_name in node._port_types:
+                    # Key exists - return its value (None for exec, DataType for data)
+                    return node._port_types[port_name]
+                # Key doesn't exist - fall through to name-based detection
+
+            # Check if it's an exec port by name
+            if port_name and ("exec" in port_name.lower()):
+                return None  # Execution port
+
+            return DataType.ANY
+        except Exception:
+            return DataType.ANY
+
+    def _compute_wire_color_and_thickness(self) -> tuple[QColor, float]:
+        """
+        Compute wire color and thickness based on output port data type.
+
+        Caches the result for performance.
+
+        Returns:
+            Tuple of (QColor, thickness)
+        """
+        data_type = self._get_port_data_type()
+
+        # Get color based on type
+        wire_color = get_type_wire_color(data_type)
+
+        # Get thickness based on whether it's exec or data
+        if data_type is None:
+            # Execution wire - thick white
+            thickness = WIRE_THICKNESS["exec"]
+            self._is_exec_connection = True
+        else:
+            # Data wire - normal thickness
+            thickness = WIRE_THICKNESS["data_idle"]
+            self._is_exec_connection = False
+
+        return wire_color, thickness
+
+    def _get_wire_color(self) -> QColor:
+        """
+        Get the wire color for this connection.
+
+        Uses cached value if available, otherwise computes it.
+
+        Returns:
+            QColor for the wire
+        """
+        # Return incompatible color if connection is invalid
+        if self._is_incompatible:
+            return _INCOMPATIBLE_WIRE_COLOR
+
+        # Use cached color if available
+        if self._cached_wire_color is not None:
+            return self._cached_wire_color
+
+        # Compute and cache
+        self._cached_wire_color, self._cached_wire_thickness = (
+            self._compute_wire_color_and_thickness()
+        )
+        return self._cached_wire_color
+
+    def _get_wire_thickness(self) -> float:
+        """
+        Get the wire thickness for this connection.
+
+        Uses cached value if available.
+
+        Returns:
+            Thickness in pixels
+        """
+        # Ensure color/thickness are computed
+        if self._cached_wire_color is None:
+            self._cached_wire_color, self._cached_wire_thickness = (
+                self._compute_wire_color_and_thickness()
+            )
+        return self._cached_wire_thickness
+
+    def invalidate_cache(self) -> None:
+        """
+        Invalidate cached wire color/thickness.
+
+        Call this when the connection changes.
+        """
+        self._cached_wire_color = None
+        self._cached_wire_thickness = WIRE_THICKNESS["data_idle"]
+        self._is_exec_connection = False
+        # Also invalidate routed path cache
+        self._routed_ctrl1 = None
+        self._routed_ctrl2 = None
+        self._last_position_hash = 0
+
+    # =========================================================================
+    # SMART WIRE ROUTING METHODS
+    # =========================================================================
+
+    def invalidate_routing_cache(self) -> None:
+        """
+        Invalidate the smart routing cache.
+
+        Call this when nodes move and paths need recalculation.
+        """
+        self._routed_ctrl1 = None
+        self._routed_ctrl2 = None
+        self._last_position_hash = 0
+
+    def _calculate_position_hash(self, pos1: QPointF, pos2: QPointF) -> int:
+        """Calculate hash of endpoint positions for cache invalidation."""
+        return hash(
+            (
+                round(pos1.x(), 1),
+                round(pos1.y(), 1),
+                round(pos2.x(), 1),
+                round(pos2.y(), 1),
+            )
+        )
+
+    def _get_smart_routed_path(
+        self,
+        pos1: QPointF,
+        pos2: QPointF,
+    ) -> QPainterPath:
+        """
+        Calculate bezier path with smart obstacle avoidance.
+
+        Uses SmartRouter to find control points that route around nodes.
+        Caches result for performance.
+
+        Args:
+            pos1: Start position (source port)
+            pos2: End position (target port)
+
+        Returns:
+            QPainterPath with routed bezier curve
+        """
+        # Check if we need to recalculate
+        current_hash = self._calculate_position_hash(pos1, pos2)
+
+        if (
+            self._routed_ctrl1 is not None
+            and self._routed_ctrl2 is not None
+            and self._last_position_hash == current_hash
+        ):
+            # Use cached control points
+            path = QPainterPath()
+            path.moveTo(pos1)
+            path.cubicTo(self._routed_ctrl1, self._routed_ctrl2, pos2)
+            return path
+
+        # Calculate new routed path
+        try:
+            from casare_rpa.presentation.canvas.connections.smart_routing import (
+                get_routing_manager,
+            )
+
+            manager = get_routing_manager()
+            if manager and manager.is_enabled():
+                # Get source and target node IDs for exclusion
+                source_node_id = None
+                target_node_id = None
+
+                if self.output_port and hasattr(self.output_port, "node"):
+                    node = self.output_port.node()
+                    if node and hasattr(node, "id"):
+                        source_node_id = node.id
+
+                if self.input_port and hasattr(self.input_port, "node"):
+                    node = self.input_port.node()
+                    if node and hasattr(node, "id"):
+                        target_node_id = node.id
+
+                # Calculate routed path
+                p0, ctrl1, ctrl2, p3 = manager.calculate_path(
+                    pos1, pos2, source_node_id, target_node_id
+                )
+
+                # Cache the control points
+                self._routed_ctrl1 = ctrl1
+                self._routed_ctrl2 = ctrl2
+                self._last_position_hash = current_hash
+
+                path = QPainterPath()
+                path.moveTo(p0)
+                path.cubicTo(ctrl1, ctrl2, p3)
+                return path
+
+        except ImportError:
+            pass  # Smart routing not available
+        except Exception:
+            pass  # Fall through to standard path
+
+        # Fallback: standard bezier path (same as NodeGraphQt)
+        return self._get_standard_bezier_path(pos1, pos2)
+
+    def _get_standard_bezier_path(
+        self,
+        pos1: QPointF,
+        pos2: QPointF,
+    ) -> QPainterPath:
+        """
+        Calculate standard bezier path without obstacle avoidance.
+
+        This matches NodeGraphQt's default behavior for curved pipes.
+
+        Args:
+            pos1: Start position
+            pos2: End position
+
+        Returns:
+            QPainterPath with standard bezier curve
+        """
+        path = QPainterPath()
+        path.moveTo(pos1)
+
+        # Calculate control points (horizontal offset like NodeGraphQt)
+        dx = pos2.x() - pos1.x()
+        tangent = abs(dx)
+
+        # Limit tangent based on port node width (approximate)
+        max_tangent = 150.0  # Default max
+        tangent = min(tangent, max_tangent)
+
+        # Control points offset horizontally
+        ctrl1 = QPointF(pos1.x() + tangent, pos1.y())
+        ctrl2 = QPointF(pos2.x() - tangent, pos2.y())
+
+        path.cubicTo(ctrl1, ctrl2, pos2)
+        return path
+
+    def draw_path(self, start_port, end_port=None, cursor_pos=None):
+        """
+        Draw the connection path with optional smart routing.
+
+        Overrides NodeGraphQt's draw_path to add smart routing capability.
+        When smart routing is enabled, calculates bezier control points
+        that route around node obstacles.
+
+        Args:
+            start_port: Port used to draw the starting point
+            end_port: Port used to draw the end point
+            cursor_pos: Cursor position for live connection dragging
+        """
+        if not start_port:
+            return
+
+        # Get start position (center of port)
+        pos1 = start_port.scenePos()
+        pos1.setX(pos1.x() + (start_port.boundingRect().width() / 2))
+        pos1.setY(pos1.y() + (start_port.boundingRect().height() / 2))
+
+        # Get end position
+        if cursor_pos:
+            pos2 = cursor_pos
+        elif end_port:
+            pos2 = end_port.scenePos()
+            pos2.setX(pos2.x() + (start_port.boundingRect().width() / 2))
+            pos2.setY(pos2.y() + (start_port.boundingRect().height() / 2))
+        else:
+            return
+
+        # Visibility check for connected pipe
+        if self.input_port and self.output_port:
+            is_visible = all(
+                [
+                    self._input_port.isVisible(),
+                    self._output_port.isVisible(),
+                    self._input_port.node.isVisible(),
+                    self._output_port.node.isVisible(),
+                ]
+            )
+            self.setVisible(is_visible)
+            if not is_visible:
+                return
+
+        # Use smart routing for completed connections (not live dragging)
+        # and only when smart routing is globally enabled
+        if (
+            is_smart_routing_enabled()
+            and self.input_port
+            and self.output_port
+            and not cursor_pos
+        ):
+            # Use smart routed path
+            path = self._get_smart_routed_path(pos1, pos2)
+            self.setPath(path)
+            self._draw_direction_pointer()
+            return
+
+        # Fall back to parent implementation for live dragging
+        # or when smart routing is disabled
+        super().draw_path(start_port, end_port, cursor_pos)
+
+    def set_incompatible(self, incompatible: bool) -> None:
+        """
+        Set whether this connection is incompatible (for drag feedback).
+
+        Args:
+            incompatible: True if connection types don't match
+        """
+        if self._is_incompatible != incompatible:
+            self._is_incompatible = incompatible
+            self.update()
+
+    def is_incompatible(self) -> bool:
+        """Check if connection is marked as incompatible."""
+        return self._is_incompatible
+
+    def check_target_compatibility(self, target_port) -> bool:
+        """
+        Check if the current drag source is compatible with a target port.
+
+        Used during connection dragging to provide visual feedback.
+
+        Args:
+            target_port: The potential target input port
+
+        Returns:
+            True if connection would be valid
+        """
+        if not self.output_port or not target_port:
+            return True  # Can't check - assume compatible
+
+        try:
+            # Get source node and type
+            source_node = self.output_port.node()
+            target_node = target_port.node()
+
+            if not source_node or not target_node:
+                return True
+
+            # Same node - not compatible
+            if source_node == target_node:
+                return False
+
+            # Get port types
+            source_type = self._get_port_data_type()
+
+            # Get target port type
+            target_type: Optional[DataType] = None
+            if hasattr(target_node, "_port_types"):
+                target_type = target_node._port_types.get(target_port.name())
+
+            # Check compatibility
+            return check_type_compatibility(source_type, target_type)
+
+        except Exception:
+            return True  # On error, assume compatible
+
+    def update_compatibility_for_target(self, target_port) -> None:
+        """
+        Update the incompatible state based on a target port.
+
+        Call this during drag to update visual feedback.
+
+        Args:
+            target_port: The potential target port (or None to clear)
+        """
+        if target_port is None:
+            self.set_incompatible(False)
+        else:
+            is_compatible = self.check_target_compatibility(target_port)
+            self.set_incompatible(not is_compatible)
+
+    def _paint_lod(self, painter: QPainter, lod_level: LODLevel = LODLevel.LOW) -> None:
+        """
+        Paint simplified LOD version for low zoom levels.
+
+        PERFORMANCE: At low zoom levels, skip bezier curves, antialiasing,
+        labels, and previews. Draw simple straight lines instead.
+        Still uses type-colored wires for visual consistency.
+
+        Args:
+            lod_level: The LOD level (ULTRA_LOW or LOW)
+        """
+        path = self.path()
+
+        # Handle empty path - fall back to parent's paint for live dragging
+        if path.isEmpty():
+            # During live dragging, path may be incomplete - let parent handle it
+            super().paint(painter, None, None)
+            return
+
+        # Use LOD manager to determine antialiasing
+        lod_manager = get_lod_manager()
+        painter.setRenderHint(
+            QPainter.RenderHint.Antialiasing, lod_manager.should_use_antialiasing()
+        )
+
+        # Use type-colored wire even in LOD mode
+        wire_color = self._get_wire_color()
+
+        # ULTRA_LOW: Thinner line, no type distinction
+        if lod_level == LODLevel.ULTRA_LOW:
+            pen = QPen(wire_color, 1)
+        else:
+            # LOW: Keep type-based thickness but simplified
+            pen = QPen(wire_color, max(1.0, self._get_wire_thickness() * 0.75))
+
+        pen.setStyle(Qt.PenStyle.SolidLine)
+        painter.setPen(pen)
+
+        # Draw straight line from start to end instead of bezier path
+        try:
+            start = path.pointAtPercent(0)
+            end = path.pointAtPercent(1)
+            painter.drawLine(start, end)
+        except Exception:
+            # Path may be invalid, draw the full path instead
+            painter.drawPath(path)
 
     def paint(self, painter, option, widget):
         """
         Paint the pipe with custom styling.
+
+        Features:
+        - Type-colored wires based on output port DataType
+        - Variable thickness (exec=3px, data=1.5px)
+        - Dashed line for incompatible connections during drag
+        - LOD rendering at low zoom levels
+
+        PERFORMANCE: Uses centralized LOD manager to determine rendering detail.
+        The LOD level is computed once per frame (in viewport update timer),
+        not per-pipe. This eliminates redundant zoom calculations.
+
+        HIGH PERFORMANCE MODE: When enabled, forces LOD rendering at all
+        zoom levels for maximum performance with large workflows.
         """
+        # Get LOD level from centralized manager (computed once per frame)
+        lod_manager = get_lod_manager()
+        lod_level = lod_manager.current_lod
+
+        # HIGH PERFORMANCE MODE: Force LOD rendering at all zoom levels
+        if get_high_performance_mode():
+            self._paint_lod(painter, LODLevel.LOW)
+            return
+
+        # LOD check - at low zoom, render simplified version
+        if lod_level in (LODLevel.ULTRA_LOW, LODLevel.LOW):
+            self._paint_lod(painter, lod_level)
+            return
+
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Get current pen width
-        pen_width = self.pen().widthF() if self.pen() else 2.0
+        # Get type-based wire color and thickness
+        wire_color = self._get_wire_color()
+        wire_thickness = self._get_wire_thickness()
 
         # Use dotted line when pipe is being drawn (live mode)
         if not self.input_port or not self.output_port:
-            # Connection is being dragged - use dotted line
-            pen = QPen(self.color, pen_width)
-            pen.setStyle(Qt.PenStyle.DashLine)
-            pen.setDashPattern([4, 4])
+            # Connection is being dragged
+            if self._is_incompatible:
+                # Incompatible connection - red dashed line
+                pen = QPen(_INCOMPATIBLE_WIRE_COLOR, wire_thickness)
+                pen.setStyle(Qt.PenStyle.DashLine)
+                pen.setDashPattern([4, 4])
+            else:
+                # Normal dragging - use wire color with dashed line
+                pen = QPen(wire_color, wire_thickness)
+                pen.setStyle(Qt.PenStyle.DashLine)
+                pen.setDashPattern([4, 4])
             painter.setPen(pen)
         else:
-            # Connection is complete - use solid line
-            # Priority: insert highlight > hover > normal
+            # Connection is complete - use solid line with type color
+            # Priority: insert highlight > hover > type-colored
             if self._insert_highlight:
                 # Orange highlight when node is being dragged over
-                pen = QPen(QColor(255, 140, 0), pen_width + 2)
+                pen = QPen(_INSERT_HIGHLIGHT_COLOR, wire_thickness + 2)
             elif self._hovered:
-                pen = QPen(QColor(100, 200, 255), pen_width + 0.5)
+                # Hover highlight - brighter version of wire color
+                hover_color = QColor(wire_color)
+                hover_color = hover_color.lighter(130)
+                pen = QPen(hover_color, wire_thickness + 0.5)
             else:
-                pen = QPen(self.color, pen_width)
+                # Normal state - type-colored wire
+                pen = QPen(wire_color, wire_thickness)
             pen.setStyle(Qt.PenStyle.SolidLine)
             painter.setPen(pen)
+
+        # Draw completion glow first (behind the wire)
+        if self._show_completion_glow:
+            self._draw_completion_glow(painter)
 
         # Draw the path
         painter.drawPath(self.path())
 
+        # Draw flow animation dot (during execution)
+        if self._is_animating:
+            self._draw_flow_dot(painter)
+
         # Draw label if enabled and connection is complete
+        # PERFORMANCE: Only draw labels at FULL LOD
         if self._show_label and self.input_port and self.output_port:
-            self._draw_label(painter)
+            if lod_manager.should_render_labels():
+                self._draw_label(painter)
 
         # Draw output preview on hover
+        # PERFORMANCE: Only draw preview at FULL LOD
         if self._hovered and self._output_value is not None:
-            self._draw_output_preview(painter)
+            if lod_manager.should_render_labels():
+                self._draw_output_preview(painter)
 
     def _draw_label(self, painter: QPainter) -> None:
         """Draw the data type label on the connection."""
@@ -91,12 +917,11 @@ class CasarePipe(PipeItem):
         # Get midpoint along the path
         midpoint = path.pointAtPercent(0.5)
 
-        # Setup font
-        font = QFont("Segoe UI", 8)
-        painter.setFont(font)
+        # Setup font (using cached font)
+        painter.setFont(_LABEL_FONT)
 
         # Calculate text bounds
-        fm = QFontMetrics(font)
+        fm = QFontMetrics(_LABEL_FONT)
         text_rect = fm.boundingRect(self._label_text)
         padding = 4
 
@@ -108,13 +933,13 @@ class CasarePipe(PipeItem):
             text_rect.height() + padding * 2,
         )
 
-        # Draw background
-        painter.setBrush(QBrush(QColor(40, 40, 40, 200)))
-        painter.setPen(QPen(QColor(80, 80, 80), 1))
+        # Draw background (using cached colors)
+        painter.setBrush(QBrush(_LABEL_BG_COLOR))
+        painter.setPen(QPen(_LABEL_BORDER_COLOR, 1))
         painter.drawRoundedRect(bg_rect, 3, 3)
 
-        # Draw text
-        painter.setPen(QPen(QColor(180, 180, 180)))
+        # Draw text (using cached color)
+        painter.setPen(QPen(_LABEL_TEXT_COLOR))
         painter.drawText(bg_rect, Qt.AlignmentFlag.AlignCenter, self._label_text)
 
     def _draw_output_preview(self, painter: QPainter) -> None:
@@ -135,12 +960,11 @@ class CasarePipe(PipeItem):
         # Position near the start (25% along the path)
         pos = path.pointAtPercent(0.25)
 
-        # Setup font
-        font = QFont("Consolas", 9)
-        painter.setFont(font)
+        # Setup font (using cached font)
+        painter.setFont(_PREVIEW_FONT)
 
         # Calculate text bounds
-        fm = QFontMetrics(font)
+        fm = QFontMetrics(_PREVIEW_FONT)
         text_rect = fm.boundingRect(value_str)
         padding = 6
 
@@ -152,13 +976,13 @@ class CasarePipe(PipeItem):
             text_rect.height() + padding * 2,
         )
 
-        # Draw background with slight yellow tint
-        painter.setBrush(QBrush(QColor(50, 50, 40, 230)))
-        painter.setPen(QPen(QColor(100, 100, 80), 1))
+        # Draw background with slight yellow tint (using cached colors)
+        painter.setBrush(QBrush(_PREVIEW_BG_COLOR))
+        painter.setPen(QPen(_PREVIEW_BORDER_COLOR, 1))
         painter.drawRoundedRect(bg_rect, 4, 4)
 
-        # Draw text
-        painter.setPen(QPen(QColor(220, 220, 180)))
+        # Draw text (using cached color)
+        painter.setPen(QPen(_PREVIEW_TEXT_COLOR))
         painter.drawText(bg_rect, Qt.AlignmentFlag.AlignCenter, value_str)
 
     def _get_port_type_label(self) -> str:

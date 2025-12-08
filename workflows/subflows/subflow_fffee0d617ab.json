@@ -1,0 +1,86 @@
+{
+  "$schema_version": "1.0.0",
+  "id": "subflow_fffee0d617ab",
+  "name": "My Subflow",
+  "version": "1.0.0",
+  "description": "Subflow created from 2 nodes",
+  "category": "subflows",
+  "created_at": "2025-12-07T04:56:46.251342",
+  "updated_at": "2025-12-07T04:56:46.252184",
+  "inputs": [],
+  "outputs": [],
+  "nodes": {
+    "LaunchBrowserNode_4ebc66f9": {
+      "node_id": "LaunchBrowserNode_4ebc66f9",
+      "type": "LaunchBrowserNode",
+      "name": "Launch Browser",
+      "position": {
+        "x": -246.301009321665,
+        "y": 178.8499915678841
+      },
+      "properties": {
+        "node_id": "LaunchBrowserNode_4ebc66f9",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "url": "",
+        "browser_type": "chromium",
+        "headless": false,
+        "do_not_close": true,
+        "slow_mo": "0",
+        "channel": "",
+        "viewport_width": "1280",
+        "viewport_height": "720",
+        "user_agent": "",
+        "locale": "",
+        "timezone_id": "",
+        "color_scheme": "light",
+        "ignore_https_errors": false,
+        "proxy_server": "",
+        "retry_count": "0",
+        "retry_interval": "2000",
+        "window_wait": "100"
+      }
+    },
+    "SetVariableNode_d3a1dfd4": {
+      "node_id": "SetVariableNode_d3a1dfd4",
+      "type": "SetVariableNode",
+      "name": "Set Variable",
+      "position": {
+        "x": 243.0280279649951,
+        "y": 179.65836484825786
+      },
+      "properties": {
+        "node_id": "SetVariableNode_d3a1dfd4",
+        "status": "idle",
+        "_is_running": false,
+        "_is_completed": false,
+        "_disabled": false,
+        "variable_name": "",
+        "variable_type": "String",
+        "default_value": ""
+      }
+    }
+  },
+  "connections": [
+    {
+      "source_node": "0x18336602900",
+      "source_port": "exec_out",
+      "target_node": "0x18336681bd0",
+      "target_port": "exec_in"
+    }
+  ],
+  "metadata": {
+    "icon": "subflow",
+    "author": "",
+    "tags": [],
+    "color": "#6366F1"
+  },
+  "bounds": {
+    "x": -246.301009321665,
+    "y": 178.8499915678841,
+    "width": 689.3290372866601,
+    "height": 100.80837328037376
+  }
+}

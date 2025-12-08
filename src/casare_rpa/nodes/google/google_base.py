@@ -26,7 +26,6 @@ from casare_rpa.domain.value_objects.types import (
     DataType,
     ExecutionResult,
     NodeStatus,
-    PortType,
 )
 from casare_rpa.domain.schemas.property_schema import PropertyDef
 from casare_rpa.domain.schemas.property_types import PropertyType
@@ -168,60 +167,42 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         self._client: Optional[GoogleAPIClient] = None
 
     def _define_common_input_ports(self) -> None:
-        """Define standard Google input ports for credentials."""
-        # Credential name for looking up in credential manager
-        self.add_input_port(
-            "credential_name",
-            PortType.INPUT,
-            DataType.STRING,
-            label="Credential Name",
-            required=False,
-        )
-        # Direct access token (alternative to credential_name)
-        self.add_input_port(
-            "access_token",
-            PortType.INPUT,
-            DataType.STRING,
-            label="Access Token",
-            required=False,
-        )
-        # Refresh token for automatic token refresh
-        self.add_input_port(
-            "refresh_token",
-            PortType.INPUT,
-            DataType.STRING,
-            label="Refresh Token",
-            required=False,
-        )
-        # Service account JSON for service-to-service auth
-        self.add_input_port(
-            "service_account_json",
-            PortType.INPUT,
-            DataType.DICT,
-            label="Service Account JSON",
-            required=False,
-        )
+        """Define standard Google input ports.
+
+        NOTE: Credential-related input ports (access_token, credential_name, etc.)
+        are NOT defined here. Credential selection is handled by
+        NodeGoogleCredentialWidget in the visual layer, which sets the
+        credential_id property. The GoogleBaseNode._get_credentials() method
+        resolves credentials from the credential_id or falls back to other sources.
+        """
+        # No credential ports - handled by visual layer's credential picker
+        pass
 
     def _define_common_output_ports(self) -> None:
         """Define standard Google output ports."""
         self.add_output_port(
             "success",
-            PortType.OUTPUT,
             DataType.BOOLEAN,
             label="Success",
         )
         self.add_output_port(
             "error",
-            PortType.OUTPUT,
             DataType.STRING,
             label="Error Message",
         )
         self.add_output_port(
             "error_code",
-            PortType.OUTPUT,
             DataType.INTEGER,
             label="Error Code",
         )
+
+    def _resolve_value(self, context: ExecutionContext, value: Any) -> Any:
+        """Resolve a value that may contain variable references."""
+        if value is None:
+            return None
+        if hasattr(context, "resolve_value"):
+            return context.resolve_value(value)
+        return value
 
     async def _get_google_client(self, context: ExecutionContext) -> GoogleAPIClient:
         """
@@ -274,8 +255,8 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         Get Google credentials from various sources using unified credential resolution.
 
         Resolution order:
-        1. Vault lookup (via credential_name parameter)
-        2. Direct parameters (access_token, refresh_token)
+        1. Vault lookup (via credential_id from picker widget)
+        2. Direct parameters (access_token, refresh_token) - for programmatic use
         3. Service account JSON
         4. Context variables (google_access_token, google_refresh_token)
         5. Environment variables (GOOGLE_ACCESS_TOKEN, GOOGLE_APPLICATION_CREDENTIALS)
@@ -290,10 +271,11 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             GoogleAuthError: If no credentials found
         """
         # Try vault/credential resolution first using CredentialAwareMixin
+        # The credential_id is set by NodeGoogleCredentialWidget in the visual layer
         access_token = await self.resolve_credential(
             context,
-            credential_name_param="credential_name",
-            direct_param="access_token",
+            credential_name_param="credential_id",  # From picker widget
+            direct_param="access_token",  # Fallback for programmatic use
             env_var="GOOGLE_ACCESS_TOKEN",
             context_var="google_access_token",
             credential_field="access_token",
@@ -317,7 +299,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             client_secret = None
 
             # Check vault credential for OAuth metadata
-            cred_name = self.get_parameter("credential_name")
+            cred_name = self.get_parameter("credential_id")
             if cred_name:
                 try:
                     provider = await context.get_credential_provider()
@@ -346,7 +328,7 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
         try:
             from casare_rpa.utils.security.credential_manager import credential_manager
 
-            cred_name = self.get_parameter("credential_name")
+            cred_name = self.get_parameter("credential_id")
             if cred_name:
                 cred_name = context.resolve_value(cred_name)
                 cred = credential_manager.get_credential(cred_name)
@@ -380,6 +362,48 @@ class GoogleBaseNode(CredentialAwareMixin, BaseNode):
             pass
         except Exception as e:
             logger.debug(f"Legacy credential manager lookup failed: {e}")
+
+        # Try credential_store (local encrypted storage used by UI)
+        try:
+            from casare_rpa.infrastructure.security.credential_store import (
+                get_credential_store,
+            )
+
+            store = get_credential_store()
+            cred_id = self.get_parameter("credential_id")
+            if cred_id:
+                cred_id = context.resolve_value(cred_id)
+                # Get decrypted credential data by ID
+                data = store.get_credential(cred_id)
+                if data and data.get("access_token"):
+                    logger.debug(f"Using credential from store: {cred_id}")
+
+                    # Parse expiry timestamp
+                    expiry = None
+                    if data.get("token_expiry"):
+                        from datetime import datetime
+
+                        try:
+                            exp_str = data["token_expiry"]
+                            if exp_str.endswith("Z"):
+                                exp_str = exp_str[:-1] + "+00:00"
+                            exp_dt = datetime.fromisoformat(exp_str)
+                            expiry = exp_dt.timestamp()
+                        except Exception:
+                            pass
+
+                    return GoogleCredentials(
+                        access_token=data.get("access_token"),
+                        refresh_token=data.get("refresh_token"),
+                        client_id=data.get("client_id"),
+                        client_secret=data.get("client_secret"),
+                        scopes=self.REQUIRED_SCOPES,
+                        expiry=expiry,
+                    )
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.debug(f"Credential store lookup failed: {e}")
 
         # Try service account JSON
         service_account = self.get_parameter("service_account_json")
@@ -615,7 +639,6 @@ class DocsBaseNode(GoogleBaseNode):
         """Define document_id input port for Docs operations."""
         self.add_input_port(
             "document_id",
-            PortType.INPUT,
             DataType.STRING,
             label="Document ID",
             required=True,
@@ -678,7 +701,6 @@ class SheetsBaseNode(GoogleBaseNode):
         """Define spreadsheet_id input port for Sheets operations."""
         self.add_input_port(
             "spreadsheet_id",
-            PortType.INPUT,
             DataType.STRING,
             label="Spreadsheet ID",
             required=True,
@@ -688,7 +710,6 @@ class SheetsBaseNode(GoogleBaseNode):
         """Define sheet_name input port."""
         self.add_input_port(
             "sheet_name",
-            PortType.INPUT,
             DataType.STRING,
             label="Sheet Name",
             required=False,
@@ -814,7 +835,7 @@ class DriveBaseNode(GoogleBaseNode):
     Base class for Google Drive nodes.
 
     Extends GoogleBaseNode with Drive-specific functionality:
-    - Drive API service access (drive/v3)
+    - Uses GoogleDriveClient (aiohttp-based) for Drive API access
     - Drive-specific scopes
     - File/folder handling utilities
 
@@ -829,7 +850,6 @@ class DriveBaseNode(GoogleBaseNode):
         """Define file_id input port for Drive operations."""
         self.add_input_port(
             "file_id",
-            PortType.INPUT,
             DataType.STRING,
             label="File ID",
             required=True,
@@ -862,24 +882,39 @@ class DriveBaseNode(GoogleBaseNode):
         context: ExecutionContext,
         client: GoogleAPIClient,
     ) -> ExecutionResult:
-        """Delegate to Drive-specific execution."""
-        service = await client.get_service(self.SERVICE_NAME, self.SERVICE_VERSION)
-        return await self._execute_drive(context, client, service)
+        """Delegate to Drive-specific execution using GoogleDriveClient."""
+        from casare_rpa.infrastructure.resources.google_drive_client import (
+            GoogleDriveClient,
+            DriveConfig,
+        )
+
+        # Ensure token is fresh (will refresh if expired)
+        access_token = await client._ensure_valid_token()
+
+        # Create GoogleDriveClient with fresh token
+        drive_client = GoogleDriveClient(
+            config=DriveConfig(
+                access_token=access_token,
+            )
+        )
+
+        try:
+            return await self._execute_drive(context, drive_client)
+        finally:
+            await drive_client.close()
 
     @abstractmethod
     async def _execute_drive(
         self,
         context: ExecutionContext,
-        client: GoogleAPIClient,
-        service: Any,
+        client: "GoogleDriveClient",
     ) -> ExecutionResult:
         """
         Execute the Google Drive operation.
 
         Args:
             context: Execution context
-            client: Google API client
-            service: Drive API service object
+            client: GoogleDriveClient (aiohttp-based async client)
 
         Returns:
             Execution result dictionary
@@ -907,7 +942,6 @@ class CalendarBaseNode(GoogleBaseNode):
         """Define calendar_id input port."""
         self.add_input_port(
             "calendar_id",
-            PortType.INPUT,
             DataType.STRING,
             label="Calendar ID",
             required=False,

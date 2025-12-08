@@ -36,6 +36,7 @@ class CredentialType(Enum):
     USERNAME_PASSWORD = "username_password"
     CONNECTION_STRING = "connection_string"
     OAUTH_TOKEN = "oauth_token"
+    GOOGLE_OAUTH = "google_oauth"
     CUSTOM = "custom"
 
 
@@ -140,6 +141,27 @@ CREDENTIAL_CATEGORIES = {
         "type": CredentialType.CUSTOM,
         "providers": [],
         "fields": [],
+    },
+    "google": {
+        "name": "Google Workspace",
+        "type": CredentialType.GOOGLE_OAUTH,
+        "providers": [
+            "google_workspace",
+            "gmail",
+            "drive",
+            "sheets",
+            "docs",
+            "calendar",
+        ],
+        "fields": [
+            "client_id",
+            "client_secret",
+            "access_token",
+            "refresh_token",
+            "token_expiry",
+            "scopes",
+        ],
+        "auto_refresh": True,
     },
 }
 
@@ -622,6 +644,115 @@ class CredentialStore:
             return os.environ.get(env_var)
 
         return None
+
+    def save_google_oauth(
+        self,
+        name: str,
+        client_id: str,
+        client_secret: str,
+        access_token: str,
+        refresh_token: str,
+        scopes: List[str],
+        token_expiry: Optional[str] = None,
+        user_email: Optional[str] = None,
+        project_id: Optional[str] = None,
+        description: str = "",
+        credential_id: Optional[str] = None,
+    ) -> str:
+        """
+        Save a Google OAuth credential.
+
+        Args:
+            name: Display name for the credential
+            client_id: OAuth 2.0 client ID from Google Cloud Console
+            client_secret: OAuth 2.0 client secret
+            access_token: Current access token
+            refresh_token: Refresh token for obtaining new access tokens
+            scopes: List of OAuth scopes granted
+            token_expiry: ISO format datetime string when token expires
+            user_email: Email of authenticated user (optional)
+            project_id: Google Cloud project ID (optional)
+            description: Optional description
+            credential_id: Optional ID for updating existing credential
+
+        Returns:
+            Credential ID
+        """
+        data = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "scopes": scopes,
+        }
+
+        if token_expiry:
+            data["token_expiry"] = token_expiry
+
+        if user_email:
+            data["user_email"] = user_email
+
+        if project_id:
+            data["project_id"] = project_id
+
+        # Determine provider from scopes
+        provider = "google_workspace"
+        scope_str = " ".join(scopes).lower()
+        if "gmail" in scope_str:
+            provider = "gmail"
+        elif "sheets" in scope_str or "spreadsheets" in scope_str:
+            provider = "sheets"
+        elif "drive" in scope_str:
+            provider = "drive"
+        elif "docs" in scope_str or "documents" in scope_str:
+            provider = "docs"
+        elif "calendar" in scope_str:
+            provider = "calendar"
+
+        return self.save_credential(
+            name=name,
+            credential_type=CredentialType.GOOGLE_OAUTH,
+            category="google",
+            data=data,
+            description=description,
+            tags=[provider, "oauth"],
+            credential_id=credential_id,
+        )
+
+    def list_google_credentials(self) -> List[Dict[str, Any]]:
+        """
+        List all Google OAuth credentials.
+
+        Returns:
+            List of credential metadata dictionaries.
+        """
+        return self.list_credentials(
+            category="google",
+            credential_type=CredentialType.GOOGLE_OAUTH,
+        )
+
+    def get_google_credential_for_dropdown(self) -> List[tuple[str, str]]:
+        """
+        Get Google credentials formatted for dropdown: [(id, display_name), ...]
+
+        The display name includes the user email if available.
+        """
+        self._ensure_initialized()
+
+        results = []
+        for cred in self._credentials.values():
+            if cred.category == "google":
+                # Try to get user email for display
+                display_name = cred.name
+                try:
+                    data = self.get_credential(cred.id)
+                    if data and data.get("user_email"):
+                        display_name = f"{cred.name} ({data['user_email']})"
+                except Exception:
+                    pass
+                results.append((cred.id, display_name))
+
+        return sorted(results, key=lambda x: x[1].lower())
 
 
 # Global instance

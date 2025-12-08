@@ -113,22 +113,11 @@ class UIStateController(BaseController):
         mw = self.main_window
 
         # Bottom panel - use property accessor
+        # Timeline is now a tab in bottom panel, no separate dock needed
         if mw.bottom_panel:
             mw.bottom_panel.dockLocationChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.visibilityChanged.connect(self.schedule_auto_save)
             mw.bottom_panel.topLevelChanged.connect(self.schedule_auto_save)
-
-        # Execution timeline - use property accessor
-        if mw.execution_timeline:
-            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
-            if execution_timeline_dock:
-                execution_timeline_dock.dockLocationChanged.connect(
-                    self.schedule_auto_save
-                )
-                execution_timeline_dock.visibilityChanged.connect(
-                    self.schedule_auto_save
-                )
-                execution_timeline_dock.topLevelChanged.connect(self.schedule_auto_save)
 
     # ==================== Core State Methods ====================
 
@@ -302,13 +291,7 @@ class UIStateController(BaseController):
                         mw.bottom_panel._tab_widget.currentIndex(),
                     )
 
-            # Execution timeline - use property accessor
-            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
-            if execution_timeline_dock:
-                self._settings.setValue(
-                    self._KEY_EXECUTION_TIMELINE_VISIBLE,
-                    execution_timeline_dock.isVisible(),
-                )
+            # Execution timeline is now a tab in bottom panel (no separate dock)
 
             # Minimap - use property accessor
             if mw.minimap:
@@ -333,8 +316,6 @@ class UIStateController(BaseController):
                     self._KEY_BOTTOM_PANEL_VISIBLE, True, type=bool
                 )
                 mw.bottom_panel.setVisible(visible)
-                if hasattr(mw, "action_toggle_bottom_panel"):
-                    mw.action_toggle_bottom_panel.setChecked(visible)
 
                 # Restore selected tab (internal to bottom panel)
                 tab_index = self._settings.value(
@@ -345,15 +326,7 @@ class UIStateController(BaseController):
                     if 0 <= tab_index < tab_count:
                         mw.bottom_panel._tab_widget.setCurrentIndex(tab_index)
 
-            # Execution timeline - use property accessor
-            execution_timeline_dock = getattr(mw, "_execution_timeline_dock", None)
-            if execution_timeline_dock:
-                visible = self._settings.value(
-                    self._KEY_EXECUTION_TIMELINE_VISIBLE, False, type=bool
-                )
-                execution_timeline_dock.setVisible(visible)
-                if hasattr(mw, "action_toggle_timeline"):
-                    mw.action_toggle_timeline.setChecked(visible)
+            # Execution timeline is now a tab in bottom panel (no separate dock)
 
             # Minimap - use property accessor
             if mw.minimap:

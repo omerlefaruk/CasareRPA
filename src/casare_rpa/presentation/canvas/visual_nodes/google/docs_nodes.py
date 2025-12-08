@@ -1,7 +1,58 @@
-"""Visual nodes for Google Docs operations."""
+"""Visual nodes for Google Docs operations.
+
+All nodes use Google credential picker for OAuth authentication.
+Document operations also use Drive file picker filtered for Google Docs.
+"""
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.presentation.canvas.graph.node_widgets import (
+    NodeGoogleCredentialWidget,
+    NodeGoogleDriveFileWidget,
+)
+
+# Google Docs API scope
+DOCS_SCOPE = ["https://www.googleapis.com/auth/documents"]
+# Additional Drive scope for document listing
+DOCS_WITH_DRIVE_SCOPE = [
+    "https://www.googleapis.com/auth/documents",
+    "https://www.googleapis.com/auth/drive.readonly",
+]
+
+# MIME type for Google Docs documents
+GOOGLE_DOCS_MIME_TYPE = ["application/vnd.google-apps.document"]
+
+
+class VisualGoogleDocsBaseNode(VisualNode):
+    """Base class for Google Docs visual nodes with credential picker integration."""
+
+    REQUIRED_SCOPES = DOCS_WITH_DRIVE_SCOPE
+
+    def __init__(self, qgraphics_item=None) -> None:
+        super().__init__(qgraphics_item)
+
+    def setup_widgets(self) -> None:
+        """Setup credential picker widget."""
+        self._cred_widget = NodeGoogleCredentialWidget(
+            name="credential_id",
+            label="Google Account",
+            scopes=self.REQUIRED_SCOPES,
+        )
+        if self._cred_widget:
+            self.add_custom_widget(self._cred_widget)
+            self._cred_widget.setParentItem(self.view)
+
+    def setup_document_widget(self) -> None:
+        """Setup Drive file picker widget filtered for Google Docs."""
+        self._document_widget = NodeGoogleDriveFileWidget(
+            name="document_id",
+            label="Document",
+            credential_widget=self._cred_widget,
+            mime_types=GOOGLE_DOCS_MIME_TYPE,
+        )
+        if self._document_widget:
+            self.add_custom_widget(self._document_widget)
+            self._document_widget.setParentItem(self.view)
 
 
 # =============================================================================
@@ -9,16 +60,18 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 # =============================================================================
 
 
-class VisualDocsCreateDocumentNode(VisualNode):
+class VisualDocsCreateDocumentNode(VisualGoogleDocsBaseNode):
     """Visual representation of DocsCreateDocumentNode.
 
-    Widgets are auto-generated from DocsCreateDocumentNode's @node_schema decorator.
+    Creates a new Google Doc. Only needs credential picker since
+    no existing document is required.
     """
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Create Document"
     NODE_CATEGORY = "google/docs"
     CASARE_NODE_CLASS = "DocsCreateDocumentNode"
+    REQUIRED_SCOPES = DOCS_SCOPE
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
@@ -30,11 +83,8 @@ class VisualDocsCreateDocumentNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualDocsGetDocumentNode(VisualNode):
-    """Visual representation of DocsGetDocumentNode.
-
-    Widgets are auto-generated from DocsGetDocumentNode's @node_schema decorator.
-    """
+class VisualDocsGetDocumentNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsGetDocumentNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Get Document"
@@ -43,7 +93,6 @@ class VisualDocsGetDocumentNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("title", DataType.STRING)
         self.add_typed_output("body", DataType.OBJECT)
@@ -51,12 +100,13 @@ class VisualDocsGetDocumentNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsGetContentNode(VisualNode):
-    """Visual representation of DocsGetTextNode (gets document content).
 
-    Widgets are auto-generated from DocsGetTextNode's @node_schema decorator.
-    """
+class VisualDocsGetContentNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsGetTextNode (gets document content)."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Get Content"
@@ -65,7 +115,6 @@ class VisualDocsGetContentNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_exec_output("exec_out")
         self.add_typed_output("text", DataType.STRING)
         self.add_typed_output("word_count", DataType.INTEGER)
@@ -73,17 +122,18 @@ class VisualDocsGetContentNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
+
 
 # =============================================================================
 # Text Operations
 # =============================================================================
 
 
-class VisualDocsInsertTextNode(VisualNode):
-    """Visual representation of DocsInsertTextNode.
-
-    Widgets are auto-generated from DocsInsertTextNode's @node_schema decorator.
-    """
+class VisualDocsInsertTextNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsInsertTextNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Insert Text"
@@ -92,19 +142,19 @@ class VisualDocsInsertTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("text", DataType.STRING)
         self.add_typed_input("index", DataType.INTEGER)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsDeleteContentNode(VisualNode):
-    """Visual representation of DocsDeleteContentNode.
 
-    Widgets are auto-generated from DocsDeleteContentNode's @node_schema decorator.
-    """
+class VisualDocsDeleteContentNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsDeleteContentNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Delete Content"
@@ -113,19 +163,19 @@ class VisualDocsDeleteContentNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("start_index", DataType.INTEGER)
         self.add_typed_input("end_index", DataType.INTEGER)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsReplaceTextNode(VisualNode):
-    """Visual representation of DocsReplaceTextNode.
 
-    Widgets are auto-generated from DocsReplaceTextNode's @node_schema decorator.
-    """
+class VisualDocsReplaceTextNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsReplaceTextNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Replace Text"
@@ -134,7 +184,6 @@ class VisualDocsReplaceTextNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("find_text", DataType.STRING)
         self.add_typed_input("replace_text", DataType.STRING)
         self.add_typed_input("match_case", DataType.BOOLEAN)
@@ -143,17 +192,18 @@ class VisualDocsReplaceTextNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
+
 
 # =============================================================================
 # Formatting Operations
 # =============================================================================
 
 
-class VisualDocsInsertTableNode(VisualNode):
-    """Visual representation of DocsInsertTableNode.
-
-    Widgets are auto-generated from DocsInsertTableNode's @node_schema decorator.
-    """
+class VisualDocsInsertTableNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsInsertTableNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Insert Table"
@@ -162,7 +212,6 @@ class VisualDocsInsertTableNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("rows", DataType.INTEGER)
         self.add_typed_input("columns", DataType.INTEGER)
         self.add_typed_input("index", DataType.INTEGER)
@@ -170,12 +219,13 @@ class VisualDocsInsertTableNode(VisualNode):
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsInsertImageNode(VisualNode):
-    """Visual representation of DocsInsertImageNode.
 
-    Widgets are auto-generated from DocsInsertImageNode's @node_schema decorator.
-    """
+class VisualDocsInsertImageNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsInsertImageNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Insert Image"
@@ -184,21 +234,21 @@ class VisualDocsInsertImageNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("image_uri", DataType.STRING)
         self.add_typed_input("index", DataType.INTEGER)
-        self.add_typed_input("width", DataType.FLOAT)
-        self.add_typed_input("height", DataType.FLOAT)
+        self.add_typed_input("image_width", DataType.FLOAT)
+        self.add_typed_input("image_height", DataType.FLOAT)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsUpdateStyleNode(VisualNode):
-    """Visual representation of DocsApplyStyleNode (updates text styling).
 
-    Widgets are auto-generated from DocsApplyStyleNode's @node_schema decorator.
-    """
+class VisualDocsUpdateStyleNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsApplyStyleNode (updates text styling)."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Update Style"
@@ -207,19 +257,19 @@ class VisualDocsUpdateStyleNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
         self.add_typed_input("start_index", DataType.INTEGER)
         self.add_typed_input("end_index", DataType.INTEGER)
         self.add_exec_output("exec_out")
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()
 
-class VisualDocsBatchUpdateNode(VisualNode):
-    """Visual representation of DocsBatchUpdateNode.
 
-    Widgets are auto-generated from DocsBatchUpdateNode's @node_schema decorator.
-    """
+class VisualDocsBatchUpdateNode(VisualGoogleDocsBaseNode):
+    """Visual representation of DocsBatchUpdateNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Docs: Batch Update"
@@ -228,9 +278,12 @@ class VisualDocsBatchUpdateNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("document_id", DataType.STRING)
-        self.add_typed_input("requests", DataType.ARRAY)
+        self.add_typed_input("requests", DataType.LIST)
         self.add_exec_output("exec_out")
-        self.add_typed_output("replies", DataType.ARRAY)
+        self.add_typed_output("replies", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
+
+    def setup_widgets(self) -> None:
+        super().setup_widgets()
+        self.setup_document_widget()

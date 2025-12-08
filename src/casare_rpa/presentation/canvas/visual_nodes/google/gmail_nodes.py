@@ -1,7 +1,36 @@
-"""Visual nodes for Gmail operations."""
+"""Visual nodes for Gmail operations.
+
+All nodes use Google credential picker for OAuth authentication.
+"""
 
 from casare_rpa.domain.value_objects.types import DataType
 from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualNode
+from casare_rpa.presentation.canvas.graph.node_widgets import (
+    NodeGoogleCredentialWidget,
+)
+
+# Gmail API scope
+GMAIL_SCOPE = ["https://www.googleapis.com/auth/gmail.modify"]
+
+
+class VisualGmailBaseNode(VisualNode):
+    """Base class for Gmail visual nodes with credential picker integration."""
+
+    REQUIRED_SCOPES = GMAIL_SCOPE
+
+    def __init__(self, qgraphics_item=None) -> None:
+        super().__init__(qgraphics_item)
+
+    def setup_widgets(self) -> None:
+        """Setup credential picker widget."""
+        self._cred_widget = NodeGoogleCredentialWidget(
+            name="credential_id",
+            label="Google Account",
+            scopes=self.REQUIRED_SCOPES,
+        )
+        if self._cred_widget:
+            self.add_custom_widget(self._cred_widget)
+            self._cred_widget.setParentItem(self.view)
 
 
 # =============================================================================
@@ -9,11 +38,8 @@ from casare_rpa.presentation.canvas.visual_nodes.base_visual_node import VisualN
 # =============================================================================
 
 
-class VisualGmailSendEmailNode(VisualNode):
-    """Visual representation of GmailSendEmailNode.
-
-    Widgets are auto-generated from GmailSendEmailNode's @node_schema decorator.
-    """
+class VisualGmailSendEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailSendEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send Email"
@@ -32,11 +58,8 @@ class VisualGmailSendEmailNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailSendWithAttachmentNode(VisualNode):
-    """Visual representation of GmailSendWithAttachmentNode.
-
-    Widgets are auto-generated from GmailSendWithAttachmentNode's @node_schema decorator.
-    """
+class VisualGmailSendWithAttachmentNode(VisualGmailBaseNode):
+    """Visual representation of GmailSendWithAttachmentNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send With Attachment"
@@ -48,7 +71,7 @@ class VisualGmailSendWithAttachmentNode(VisualNode):
         self.add_typed_input("to", DataType.STRING)
         self.add_typed_input("subject", DataType.STRING)
         self.add_typed_input("body", DataType.STRING)
-        self.add_typed_input("attachments", DataType.ARRAY)
+        self.add_typed_input("attachments", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("message_id", DataType.STRING)
         self.add_typed_output("thread_id", DataType.STRING)
@@ -56,11 +79,8 @@ class VisualGmailSendWithAttachmentNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailReplyToEmailNode(VisualNode):
-    """Visual representation of GmailReplyToEmailNode.
-
-    Widgets are auto-generated from GmailReplyToEmailNode's @node_schema decorator.
-    """
+class VisualGmailReplyToEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailReplyToEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Reply To Email"
@@ -78,11 +98,8 @@ class VisualGmailReplyToEmailNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailForwardEmailNode(VisualNode):
-    """Visual representation of GmailForwardEmailNode.
-
-    Widgets are auto-generated from GmailForwardEmailNode's @node_schema decorator.
-    """
+class VisualGmailForwardEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailForwardEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Forward Email"
@@ -99,11 +116,8 @@ class VisualGmailForwardEmailNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailCreateDraftNode(VisualNode):
-    """Visual representation of GmailCreateDraftNode.
-
-    Widgets are auto-generated from GmailCreateDraftNode's @node_schema decorator.
-    """
+class VisualGmailCreateDraftNode(VisualGmailBaseNode):
+    """Visual representation of GmailCreateDraftNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Create Draft"
@@ -122,11 +136,8 @@ class VisualGmailCreateDraftNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailSendDraftNode(VisualNode):
-    """Visual representation of GmailSendDraftNode.
-
-    Widgets are auto-generated from GmailSendDraftNode's @node_schema decorator.
-    """
+class VisualGmailSendDraftNode(VisualGmailBaseNode):
+    """Visual representation of GmailSendDraftNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Send Draft"
@@ -148,11 +159,8 @@ class VisualGmailSendDraftNode(VisualNode):
 # =============================================================================
 
 
-class VisualGmailGetEmailNode(VisualNode):
-    """Visual representation of GmailGetEmailNode.
-
-    Widgets are auto-generated from GmailGetEmailNode's @node_schema decorator.
-    """
+class VisualGmailGetEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailGetEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Email"
@@ -169,17 +177,14 @@ class VisualGmailGetEmailNode(VisualNode):
         self.add_typed_output("date", DataType.STRING)
         self.add_typed_output("body", DataType.STRING)
         self.add_typed_output("snippet", DataType.STRING)
-        self.add_typed_output("labels", DataType.ARRAY)
-        self.add_typed_output("attachments", DataType.ARRAY)
+        self.add_typed_output("labels", DataType.LIST)
+        self.add_typed_output("attachments", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailListEmailsNode(VisualNode):
-    """Visual representation of GmailListEmailsNode.
-
-    Widgets are auto-generated from GmailListEmailsNode's @node_schema decorator.
-    """
+class VisualGmailListEmailsNode(VisualGmailBaseNode):
+    """Visual representation of GmailListEmailsNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: List Emails"
@@ -189,20 +194,17 @@ class VisualGmailListEmailsNode(VisualNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("max_results", DataType.INTEGER)
-        self.add_typed_input("label_ids", DataType.ARRAY)
+        self.add_typed_input("label_ids", DataType.LIST)
         self.add_exec_output("exec_out")
-        self.add_typed_output("messages", DataType.ARRAY)
+        self.add_typed_output("messages", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailSearchEmailsNode(VisualNode):
-    """Visual representation of GmailSearchEmailsNode.
-
-    Widgets are auto-generated from GmailSearchEmailsNode's @node_schema decorator.
-    """
+class VisualGmailSearchEmailsNode(VisualGmailBaseNode):
+    """Visual representation of GmailSearchEmailsNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Search Emails"
@@ -214,18 +216,15 @@ class VisualGmailSearchEmailsNode(VisualNode):
         self.add_typed_input("query", DataType.STRING)
         self.add_typed_input("max_results", DataType.INTEGER)
         self.add_exec_output("exec_out")
-        self.add_typed_output("messages", DataType.ARRAY)
+        self.add_typed_output("messages", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("next_page_token", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailGetThreadNode(VisualNode):
-    """Visual representation of GmailGetThreadNode.
-
-    Widgets are auto-generated from GmailGetThreadNode's @node_schema decorator.
-    """
+class VisualGmailGetThreadNode(VisualGmailBaseNode):
+    """Visual representation of GmailGetThreadNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Thread"
@@ -236,18 +235,15 @@ class VisualGmailGetThreadNode(VisualNode):
         self.add_exec_input("exec_in")
         self.add_typed_input("thread_id", DataType.STRING)
         self.add_exec_output("exec_out")
-        self.add_typed_output("messages", DataType.ARRAY)
+        self.add_typed_output("messages", DataType.LIST)
         self.add_typed_output("count", DataType.INTEGER)
         self.add_typed_output("snippet", DataType.STRING)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailGetAttachmentNode(VisualNode):
-    """Visual representation of GmailGetAttachmentNode.
-
-    Widgets are auto-generated from GmailGetAttachmentNode's @node_schema decorator.
-    """
+class VisualGmailGetAttachmentNode(VisualGmailBaseNode):
+    """Visual representation of GmailGetAttachmentNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Get Attachment"
@@ -271,11 +267,8 @@ class VisualGmailGetAttachmentNode(VisualNode):
 # =============================================================================
 
 
-class VisualGmailModifyLabelsNode(VisualNode):
-    """Visual representation of GmailModifyLabelsNode.
-
-    Widgets are auto-generated from GmailModifyLabelsNode's @node_schema decorator.
-    """
+class VisualGmailModifyLabelsNode(VisualGmailBaseNode):
+    """Visual representation of GmailModifyLabelsNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Modify Labels"
@@ -285,19 +278,16 @@ class VisualGmailModifyLabelsNode(VisualNode):
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
         self.add_typed_input("message_id", DataType.STRING)
-        self.add_typed_input("add_labels", DataType.ARRAY)
-        self.add_typed_input("remove_labels", DataType.ARRAY)
+        self.add_typed_input("add_labels", DataType.LIST)
+        self.add_typed_input("remove_labels", DataType.LIST)
         self.add_exec_output("exec_out")
-        self.add_typed_output("labels", DataType.ARRAY)
+        self.add_typed_output("labels", DataType.LIST)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailMoveToTrashNode(VisualNode):
-    """Visual representation of GmailMoveToTrashNode.
-
-    Widgets are auto-generated from GmailMoveToTrashNode's @node_schema decorator.
-    """
+class VisualGmailMoveToTrashNode(VisualGmailBaseNode):
+    """Visual representation of GmailMoveToTrashNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Move to Trash"
@@ -312,11 +302,8 @@ class VisualGmailMoveToTrashNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailMarkAsReadNode(VisualNode):
-    """Visual representation of GmailMarkAsReadNode.
-
-    Widgets are auto-generated from GmailMarkAsReadNode's @node_schema decorator.
-    """
+class VisualGmailMarkAsReadNode(VisualGmailBaseNode):
+    """Visual representation of GmailMarkAsReadNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Mark as Read"
@@ -331,11 +318,8 @@ class VisualGmailMarkAsReadNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailMarkAsUnreadNode(VisualNode):
-    """Visual representation of GmailMarkAsUnreadNode.
-
-    Widgets are auto-generated from GmailMarkAsUnreadNode's @node_schema decorator.
-    """
+class VisualGmailMarkAsUnreadNode(VisualGmailBaseNode):
+    """Visual representation of GmailMarkAsUnreadNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Mark as Unread"
@@ -350,11 +334,8 @@ class VisualGmailMarkAsUnreadNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailStarEmailNode(VisualNode):
-    """Visual representation of GmailStarEmailNode.
-
-    Widgets are auto-generated from GmailStarEmailNode's @node_schema decorator.
-    """
+class VisualGmailStarEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailStarEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Star Email"
@@ -370,11 +351,8 @@ class VisualGmailStarEmailNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailArchiveEmailNode(VisualNode):
-    """Visual representation of GmailArchiveEmailNode.
-
-    Widgets are auto-generated from GmailArchiveEmailNode's @node_schema decorator.
-    """
+class VisualGmailArchiveEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailArchiveEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Archive Email"
@@ -389,11 +367,8 @@ class VisualGmailArchiveEmailNode(VisualNode):
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailDeleteEmailNode(VisualNode):
-    """Visual representation of GmailDeleteEmailNode.
-
-    Widgets are auto-generated from GmailDeleteEmailNode's @node_schema decorator.
-    """
+class VisualGmailDeleteEmailNode(VisualGmailBaseNode):
+    """Visual representation of GmailDeleteEmailNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Delete Email"
@@ -413,11 +388,8 @@ class VisualGmailDeleteEmailNode(VisualNode):
 # =============================================================================
 
 
-class VisualGmailBatchSendNode(VisualNode):
-    """Visual representation of GmailBatchSendNode.
-
-    Widgets are auto-generated from GmailBatchSendNode's @node_schema decorator.
-    """
+class VisualGmailBatchSendNode(VisualGmailBaseNode):
+    """Visual representation of GmailBatchSendNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Send"
@@ -426,20 +398,17 @@ class VisualGmailBatchSendNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("emails", DataType.ARRAY)
+        self.add_typed_input("emails", DataType.LIST)
         self.add_exec_output("exec_out")
-        self.add_typed_output("results", DataType.ARRAY)
+        self.add_typed_output("results", DataType.LIST)
         self.add_typed_output("sent_count", DataType.INTEGER)
         self.add_typed_output("failed_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailBatchModifyNode(VisualNode):
-    """Visual representation of GmailBatchModifyNode.
-
-    Widgets are auto-generated from GmailBatchModifyNode's @node_schema decorator.
-    """
+class VisualGmailBatchModifyNode(VisualGmailBaseNode):
+    """Visual representation of GmailBatchModifyNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Modify"
@@ -448,20 +417,17 @@ class VisualGmailBatchModifyNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("message_ids", DataType.ARRAY)
-        self.add_typed_input("add_labels", DataType.ARRAY)
-        self.add_typed_input("remove_labels", DataType.ARRAY)
+        self.add_typed_input("message_ids", DataType.LIST)
+        self.add_typed_input("add_labels", DataType.LIST)
+        self.add_typed_input("remove_labels", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("modified_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)
         self.add_typed_output("error", DataType.STRING)
 
 
-class VisualGmailBatchDeleteNode(VisualNode):
-    """Visual representation of GmailBatchDeleteNode.
-
-    Widgets are auto-generated from GmailBatchDeleteNode's @node_schema decorator.
-    """
+class VisualGmailBatchDeleteNode(VisualGmailBaseNode):
+    """Visual representation of GmailBatchDeleteNode."""
 
     __identifier__ = "casare_rpa.google"
     NODE_NAME = "Gmail: Batch Delete"
@@ -470,7 +436,7 @@ class VisualGmailBatchDeleteNode(VisualNode):
 
     def setup_ports(self) -> None:
         self.add_exec_input("exec_in")
-        self.add_typed_input("message_ids", DataType.ARRAY)
+        self.add_typed_input("message_ids", DataType.LIST)
         self.add_exec_output("exec_out")
         self.add_typed_output("deleted_count", DataType.INTEGER)
         self.add_typed_output("success", DataType.BOOLEAN)

@@ -85,6 +85,11 @@ class GoogleScope(Enum):
     DRIVE_FILE = "https://www.googleapis.com/auth/drive.file"
     DRIVE_FULL = "https://www.googleapis.com/auth/drive"
 
+    # Calendar
+    CALENDAR_READONLY = "https://www.googleapis.com/auth/calendar.readonly"
+    CALENDAR_FULL = "https://www.googleapis.com/auth/calendar"
+    CALENDAR_EVENTS = "https://www.googleapis.com/auth/calendar.events"
+
 
 # Scope shortcuts for common use cases
 SCOPES = {
@@ -98,6 +103,9 @@ SCOPES = {
     "drive": [GoogleScope.DRIVE_FULL.value],
     "drive_readonly": [GoogleScope.DRIVE_READONLY.value],
     "drive_file": [GoogleScope.DRIVE_FILE.value],
+    "calendar": [GoogleScope.CALENDAR_FULL.value],
+    "calendar_readonly": [GoogleScope.CALENDAR_READONLY.value],
+    "calendar_events": [GoogleScope.CALENDAR_EVENTS.value],
 }
 
 
@@ -215,6 +223,7 @@ class GoogleAPIClient:
         "sheets": "https://sheets.googleapis.com",
         "docs": "https://docs.googleapis.com",
         "drive": "https://www.googleapis.com",
+        "calendar": "https://www.googleapis.com",
     }
 
     API_VERSIONS = {
@@ -222,6 +231,7 @@ class GoogleAPIClient:
         "sheets": "v4",
         "docs": "v1",
         "drive": "v3",
+        "calendar": "v3",
     }
 
     def __init__(self, config: GoogleConfig):

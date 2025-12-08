@@ -34,6 +34,10 @@ from casare_rpa.presentation.canvas.visual_nodes.utility.nodes import (
     VisualTextExtractNode,
 )
 
+from casare_rpa.presentation.canvas.visual_nodes.utility.reroute_node import (
+    VisualRerouteNode,
+)
+
 __all__ = [
     # Random operations
     "VisualRandomNumberNode",
@@ -64,4 +68,6 @@ __all__ = [
     "VisualTextCountNode",
     "VisualTextJoinNode",
     "VisualTextExtractNode",
+    # Reroute node
+    "VisualRerouteNode",
 ]

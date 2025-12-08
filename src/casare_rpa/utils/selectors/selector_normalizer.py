@@ -1,8 +1,12 @@
 """
 Selector Normalizer - Ensures selectors work with Playwright
 Handles XPath, CSS, ARIA, data attributes, text selectors, XML format, wildcards, etc.
+
+PERFORMANCE: normalize_selector() is cached with LRU cache (512 entries) to avoid
+repeated string processing for commonly used selectors during workflow execution.
 """
 
+from functools import lru_cache
 from typing import Tuple
 from loguru import logger
 
@@ -25,9 +29,13 @@ def _build_itext_xpath(text: str, element: str = "*") -> str:
     return f"//{element}[contains(translate(., '{upper}', '{lower}'), '{lower}')]"
 
 
+@lru_cache(maxsize=512)
 def normalize_selector(selector: str) -> str:
     r"""
     Normalize any selector format to work with Playwright.
+
+    PERFORMANCE: This function is cached with LRU cache (512 entries) to avoid
+    repeated processing of the same selectors during workflow execution.
 
     Playwright selector syntax:
     - XPath: starts with '//' or has 'xpath=' prefix

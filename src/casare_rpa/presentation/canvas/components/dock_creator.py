@@ -14,11 +14,10 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from ..main_window import MainWindow
-    from ..ui.panels import BottomPanelDock
+    from ..ui.panels import BottomPanelDock, SidePanelDock
     from ..ui.panels.process_mining_panel import ProcessMiningPanel
     from ..ui.panels.analytics_panel import AnalyticsPanel
     from ..ui.panels.robot_picker_panel import RobotPickerPanel
-    from ..ui.widgets.execution_timeline import ExecutionTimeline
     from ..ui.debug_panel import DebugPanel
     from ..debugger.debug_controller import DebugController
     from ..controllers.robot_controller import RobotController
@@ -30,11 +29,7 @@ class DockCreator:
 
     Responsibilities:
     - Create bottom panel dock
-    - Create execution timeline dock
-    - Create debug panel
-    - Create process mining panel
-    - Create robot picker panel
-    - Create analytics panel
+    - Create side panel dock (Debug, Process Mining, Robot Picker, Analytics)
     - Connect dock signals
     """
 
@@ -78,60 +73,82 @@ class DockCreator:
 
         # Initially visible
         bottom_panel.show()
-        mw.action_toggle_bottom_panel.setChecked(True)
 
         return bottom_panel
 
-    def create_execution_timeline_dock(
+    def create_side_panel(
         self,
-    ) -> tuple[QDockWidget, "ExecutionTimeline"]:
+        debug_controller: Optional["DebugController"] = None,
+        robot_controller: Optional["RobotController"] = None,
+    ) -> "SidePanelDock":
         """
-        Create the Execution Timeline dock for visualizing workflow execution.
+        Create the unified Side Panel with Debug, Process Mining, Robot Picker, Analytics tabs.
+
+        Args:
+            debug_controller: Optional debug controller for integration
+            robot_controller: Optional robot controller for integration
 
         Returns:
-            Tuple of (QDockWidget, ExecutionTimeline)
+            Created SidePanelDock instance
         """
-        from ..ui.widgets.execution_timeline import ExecutionTimeline
+        from ..ui.panels import SidePanelDock
 
         mw = self._main_window
-        execution_timeline = ExecutionTimeline(mw)
+        side_panel = SidePanelDock(mw, debug_controller, robot_controller)
 
-        # Create dock widget
-        execution_timeline_dock = QDockWidget("Execution Timeline", mw)
-        execution_timeline_dock.setObjectName("ExecutionTimelineDock")
-        execution_timeline_dock.setWidget(execution_timeline)
-        execution_timeline_dock.setAllowedAreas(
-            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea
-        )
+        # Connect signals
+        side_panel.navigate_to_node.connect(mw._on_navigate_to_node)
+        side_panel.step_over_requested.connect(mw._on_debug_step_over)
+        side_panel.step_into_requested.connect(mw._on_debug_step_into)
+        side_panel.step_out_requested.connect(mw._on_debug_step_out)
+        side_panel.continue_requested.connect(mw._on_debug_continue)
 
-        # Add to main window (bottom area)
-        mw.addDockWidget(
-            Qt.DockWidgetArea.BottomDockWidgetArea, execution_timeline_dock
-        )
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, side_panel)
 
         # Connect dock state changes to auto-save
-        execution_timeline_dock.dockLocationChanged.connect(mw._schedule_ui_state_save)
-        execution_timeline_dock.visibilityChanged.connect(mw._schedule_ui_state_save)
-        execution_timeline_dock.topLevelChanged.connect(mw._schedule_ui_state_save)
+        side_panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
+        side_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
+        side_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
 
-        # Add toggle action to View menu
+        # Connect to robot controller for analytics URL updates
+        if robot_controller:
+            robot_controller.connection_status_changed.connect(
+                lambda connected: self._update_side_panel_analytics_url(
+                    side_panel, connected
+                )
+            )
+
+        # Add toggle action to View menu with hotkey 7
         try:
             view_menu = self._find_view_menu()
             if view_menu:
-                toggle_action = execution_timeline_dock.toggleViewAction()
-                toggle_action.setText("&Execution Timeline")
+                toggle_action = side_panel.toggleViewAction()
+                toggle_action.setText("&Side Panel")
+                toggle_action.setShortcut(QKeySequence("7"))
                 view_menu.addAction(toggle_action)
-                mw.action_toggle_timeline = toggle_action
+                mw.action_toggle_side_panel = toggle_action
         except RuntimeError as e:
-            logger.warning(f"Could not add Execution Timeline to View menu: {e}")
-
-        # Connect node clicked signal
-        execution_timeline.node_clicked.connect(mw._select_node_by_id)
+            logger.warning(f"Could not add Side Panel to View menu: {e}")
 
         # Initially hidden
-        execution_timeline_dock.hide()
+        side_panel.hide()
 
-        return execution_timeline_dock, execution_timeline
+        return side_panel
+
+    def _update_side_panel_analytics_url(
+        self, side_panel: "SidePanelDock", connected: bool
+    ) -> None:
+        """Update side panel analytics URL when robot controller connects."""
+        if not connected:
+            return
+
+        mw = self._main_window
+        if hasattr(mw, "_robot_controller") and mw._robot_controller:
+            url = mw._robot_controller.orchestrator_url
+            if url:
+                side_panel.set_analytics_api_url(url)
+                logger.debug(f"Side panel analytics URL updated to: {url}")
 
     def create_debug_panel(
         self, debug_controller: Optional["DebugController"] = None
@@ -363,3 +380,101 @@ class DockCreator:
             if action.text() == "&View":
                 return action.menu()
         return None
+
+    def create_project_explorer_panel(self) -> "ProjectExplorerPanel":
+        """
+        Create the Project Explorer Panel for folder hierarchy.
+
+        Features:
+        - VS Code-style tree view
+        - Folder creation, renaming, deletion
+        - Project drag-drop organization
+        - Double-click to open project
+
+        Returns:
+            Created ProjectExplorerPanel instance
+        """
+        from ..ui.panels import ProjectExplorerPanel
+
+        mw = self._main_window
+        project_explorer = ProjectExplorerPanel(mw)
+
+        # Connect signals
+        if hasattr(mw, "_on_project_opened"):
+            project_explorer.project_opened.connect(mw._on_project_opened)
+        if hasattr(mw, "_on_project_selected"):
+            project_explorer.project_selected.connect(mw._on_project_selected)
+
+        # Add to main window (left side)
+        mw.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, project_explorer)
+
+        # Connect dock state changes to auto-save
+        if hasattr(mw, "_schedule_ui_state_save"):
+            project_explorer.dockLocationChanged.connect(mw._schedule_ui_state_save)
+            project_explorer.visibilityChanged.connect(mw._schedule_ui_state_save)
+            project_explorer.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = project_explorer.toggleViewAction()
+                toggle_action.setText("&Project Explorer")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+E"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_project_explorer = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Project Explorer to View menu: {e}")
+
+        # Initially hidden
+        project_explorer.hide()
+
+        return project_explorer
+
+    def create_credentials_panel(self) -> "CredentialsPanel":
+        """
+        Create the Credentials Panel for global credentials management.
+
+        Features:
+        - View credential aliases (not values)
+        - Add/Edit/Delete credentials
+        - Test connection for API keys
+        - Context menu actions
+
+        Returns:
+            Created CredentialsPanel instance
+        """
+        from ..ui.panels import CredentialsPanel
+
+        mw = self._main_window
+        credentials_panel = CredentialsPanel(mw)
+
+        # Connect signals
+        if hasattr(mw, "_on_credential_updated"):
+            credentials_panel.credential_updated.connect(mw._on_credential_updated)
+
+        # Add to main window (right side)
+        mw.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, credentials_panel)
+
+        # Connect dock state changes to auto-save
+        if hasattr(mw, "_schedule_ui_state_save"):
+            credentials_panel.dockLocationChanged.connect(mw._schedule_ui_state_save)
+            credentials_panel.visibilityChanged.connect(mw._schedule_ui_state_save)
+            credentials_panel.topLevelChanged.connect(mw._schedule_ui_state_save)
+
+        # Add toggle action to View menu
+        try:
+            view_menu = self._find_view_menu()
+            if view_menu:
+                toggle_action = credentials_panel.toggleViewAction()
+                toggle_action.setText("&Credentials Panel")
+                toggle_action.setShortcut(QKeySequence("Ctrl+Shift+C"))
+                view_menu.addAction(toggle_action)
+                mw.action_toggle_credentials_panel = toggle_action
+        except RuntimeError as e:
+            logger.warning(f"Could not add Credentials Panel to View menu: {e}")
+
+        # Initially hidden
+        credentials_panel.hide()
+
+        return credentials_panel

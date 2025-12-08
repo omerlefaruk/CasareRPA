@@ -1,0 +1,106 @@
+{
+  "$schema_version": "2.0.0",
+  "id": "tmpl_notify",
+  "name": "Scheduled Notification System",
+  "description": "Send scheduled notifications via Telegram or system alerts. Includes triggers, message formatting, and delivery confirmation.",
+  "category": "Notifications",
+  "icon": "bell",
+  "color": "#FFC107",
+  "tags": ["notifications", "telegram", "scheduled", "alerts", "beginner"],
+  "version": "1.0.0",
+  "author": "CasareRPA",
+  "difficulty": "beginner",
+  "estimated_nodes": 5,
+  "is_builtin": true,
+  "is_public": true,
+  "default_variables": [
+    {
+      "name": "notification_message",
+      "data_type": "String",
+      "default_value": "Hello! This is your scheduled notification.",
+      "description": "Message to send",
+      "required": true
+    },
+    {
+      "name": "telegram_chat_id",
+      "data_type": "String",
+      "default_value": "",
+      "description": "Telegram chat ID to send messages",
+      "required": false
+    },
+    {
+      "name": "schedule_cron",
+      "data_type": "String",
+      "default_value": "0 9 * * *",
+      "description": "Cron schedule (default: 9 AM daily)",
+      "required": false
+    }
+  ],
+  "default_credentials": [
+    {
+      "alias": "telegram_bot_token",
+      "credential_type": "api_key",
+      "description": "Telegram bot API token",
+      "required": false
+    }
+  ],
+  "default_settings": {
+    "default_browser": "chromium",
+    "stop_on_error": false,
+    "timeout_seconds": 30,
+    "retry_count": 2
+  },
+  "base_workflow": {
+    "nodes": [
+      {
+        "node_id": "StartNode_001",
+        "node_type": "StartNode",
+        "position": [100, 300],
+        "config": {},
+        "display_name": "Start"
+      },
+      {
+        "node_id": "GetCurrentDateTimeNode_001",
+        "node_type": "GetCurrentDateTimeNode",
+        "position": [300, 300],
+        "config": {
+          "format": "%Y-%m-%d %H:%M:%S"
+        },
+        "display_name": "Get Current Time"
+      },
+      {
+        "node_id": "FormatStringNode_001",
+        "node_type": "FormatStringNode",
+        "position": [500, 300],
+        "config": {
+          "template": "[{{GetCurrentDateTimeNode_001.datetime}}] {{notification_message}}"
+        },
+        "display_name": "Format Message"
+      },
+      {
+        "node_id": "TelegramSendMessageNode_001",
+        "node_type": "TelegramSendMessageNode",
+        "position": [700, 300],
+        "config": {
+          "bot_token": "{{telegram_bot_token}}",
+          "chat_id": "{{telegram_chat_id}}",
+          "text": "{{FormatStringNode_001.result}}"
+        },
+        "display_name": "Send Telegram Message"
+      },
+      {
+        "node_id": "EndNode_001",
+        "node_type": "EndNode",
+        "position": [900, 300],
+        "config": {},
+        "display_name": "End"
+      }
+    ],
+    "connections": [
+      {"from_node": "StartNode_001", "from_port": "out", "to_node": "GetCurrentDateTimeNode_001", "to_port": "in"},
+      {"from_node": "GetCurrentDateTimeNode_001", "from_port": "out", "to_node": "FormatStringNode_001", "to_port": "in"},
+      {"from_node": "FormatStringNode_001", "from_port": "out", "to_node": "TelegramSendMessageNode_001", "to_port": "in"},
+      {"from_node": "TelegramSendMessageNode_001", "from_port": "out", "to_node": "EndNode_001", "to_port": "in"}
+    ]
+  }
+}

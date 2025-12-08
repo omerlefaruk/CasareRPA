@@ -41,6 +41,13 @@ from casare_rpa.application.use_cases.project_management import (
     DeleteScenarioUseCase,
     ListScenariosUseCase,
 )
+from casare_rpa.application.use_cases.subflow_executor import (
+    Subflow,
+    SubflowInputDefinition,
+    SubflowOutputDefinition,
+    SubflowExecutionResult,
+    SubflowExecutor,
+)
 
 __all__ = [
     # Workflow use cases
@@ -55,6 +62,12 @@ __all__ = [
     "ValidateWorkflowUseCase",
     "ValidationResult",
     "ValidationIssue",
+    # Subflow use cases
+    "Subflow",
+    "SubflowInputDefinition",
+    "SubflowOutputDefinition",
+    "SubflowExecutionResult",
+    "SubflowExecutor",
     # Project result types
     "ProjectResult",
     "ScenarioResult",

@@ -694,14 +694,14 @@ class DocsInsertTableNode(DocsBaseNode):
         tooltip="Character index position (1-based) where image will be inserted",
     ),
     PropertyDef(
-        "width",
+        "image_width",
         PropertyType.FLOAT,
         default=0,
         label="Width (pt)",
         tooltip="Optional width in points (0 for auto)",
     ),
     PropertyDef(
-        "height",
+        "image_height",
         PropertyType.FLOAT,
         default=0,
         label="Height (pt)",
@@ -743,10 +743,10 @@ class DocsInsertImageNode(DocsBaseNode):
         self._define_common_output_ports()
 
         # Image-specific ports
-        self.add_input_port("image_url", PortType.INPUT, DataType.STRING, required=True)
-        self.add_input_port("index", PortType.INPUT, DataType.INTEGER, required=True)
-        self.add_input_port("width", PortType.INPUT, DataType.FLOAT, required=False)
-        self.add_input_port("height", PortType.INPUT, DataType.FLOAT, required=False)
+        self.add_input_port("image_url", DataType.STRING, required=True)
+        self.add_input_port("index", DataType.INTEGER, required=True)
+        self.add_input_port("image_width", DataType.FLOAT, required=False)
+        self.add_input_port("image_height", DataType.FLOAT, required=False)
 
     async def _execute_docs(
         self,
@@ -791,8 +791,8 @@ class DocsInsertImageNode(DocsBaseNode):
             index = 1
 
         # Get optional dimensions
-        width = self.get_parameter("width")
-        height = self.get_parameter("height")
+        width = self.get_parameter("image_width")
+        height = self.get_parameter("image_height")
 
         if hasattr(context, "resolve_value"):
             width = context.resolve_value(width)

@@ -49,6 +49,74 @@ from casare_rpa.presentation.canvas.ui.widgets.selector_input_widget import (
 from casare_rpa.presentation.canvas.ui.widgets.anchor_selector_widget import (
     AnchorSelectorWidget,
 )
+from casare_rpa.presentation.canvas.ui.widgets.validated_input import (
+    ValidationStatus,
+    ValidationResult,
+    ValidatedLineEdit,
+    ValidatedInputWidget,
+    get_validated_line_edit_style,
+    required_validator,
+    min_value_validator,
+    max_value_validator,
+    range_validator,
+    integer_validator,
+    positive_validator,
+    non_negative_validator,
+    selector_warning_validator,
+)
+from casare_rpa.presentation.canvas.ui.widgets.breadcrumb_nav import (
+    BreadcrumbItem,
+    BreadcrumbNavWidget,
+    SubflowNavigationController,
+)
+from casare_rpa.presentation.canvas.ui.widgets.google_credential_picker import (
+    GoogleCredentialPicker,
+    GoogleCredentialPickerWithLabel,
+)
+from casare_rpa.presentation.canvas.ui.widgets.cascading_dropdown import (
+    CascadingDropdownBase,
+    CascadingDropdownWithLabel,
+    DropdownItem,
+)
+from casare_rpa.presentation.canvas.ui.widgets.google_pickers import (
+    GoogleSpreadsheetPicker,
+    GoogleSheetPicker,
+    GoogleDriveFilePicker,
+    GoogleDriveFolderPicker,
+)
+from casare_rpa.presentation.canvas.ui.widgets.google_folder_navigator import (
+    FolderInfo,
+    FolderNavigatorState,
+    FolderCache,
+    NavigatorMode,
+    PathBreadcrumb,
+    FolderSearchInput,
+    GoogleDriveFolderNavigator,
+    fetch_folder_children,
+    fetch_folders_recursive,
+    search_folders,
+    validate_folder_id,
+    get_folder_path,
+    extract_folder_id_from_url,
+)
+from casare_rpa.presentation.canvas.ui.widgets.json_syntax_highlighter import (
+    JsonSyntaxHighlighter,
+    JsonColors,
+    get_json_highlighter_stylesheet,
+)
+from casare_rpa.presentation.canvas.ui.widgets.node_output_popup import (
+    NodeOutputPopup,
+    OutputSchemaView,
+    OutputTableView,
+    OutputJsonView,
+    PopupColors,
+    SchemaItemWidget,
+)
+from casare_rpa.presentation.canvas.ui.widgets.profiling_tree import (
+    ProfilingTreeWidget,
+    ProfilingEntry,
+    PercentageBarDelegate,
+)
 
 __all__ = [
     "VariableEditorWidget",
@@ -85,4 +153,63 @@ __all__ = [
     "is_selector_property",
     # Anchor Selector
     "AnchorSelectorWidget",
+    # Validation
+    "ValidationStatus",
+    "ValidationResult",
+    "ValidatedLineEdit",
+    "ValidatedInputWidget",
+    "get_validated_line_edit_style",
+    "required_validator",
+    "min_value_validator",
+    "max_value_validator",
+    "range_validator",
+    "integer_validator",
+    "positive_validator",
+    "non_negative_validator",
+    "selector_warning_validator",
+    # Breadcrumb Navigation
+    "BreadcrumbItem",
+    "BreadcrumbNavWidget",
+    "SubflowNavigationController",
+    # Google Credential Picker
+    "GoogleCredentialPicker",
+    "GoogleCredentialPickerWithLabel",
+    # Cascading Dropdown
+    "CascadingDropdownBase",
+    "CascadingDropdownWithLabel",
+    "DropdownItem",
+    # Google Pickers
+    "GoogleSpreadsheetPicker",
+    "GoogleSheetPicker",
+    "GoogleDriveFilePicker",
+    "GoogleDriveFolderPicker",
+    # Google Folder Navigator
+    "FolderInfo",
+    "FolderNavigatorState",
+    "FolderCache",
+    "NavigatorMode",
+    "PathBreadcrumb",
+    "FolderSearchInput",
+    "GoogleDriveFolderNavigator",
+    "fetch_folder_children",
+    "fetch_folders_recursive",
+    "search_folders",
+    "validate_folder_id",
+    "get_folder_path",
+    "extract_folder_id_from_url",
+    # JSON Syntax Highlighter
+    "JsonSyntaxHighlighter",
+    "JsonColors",
+    "get_json_highlighter_stylesheet",
+    # Node Output Inspector
+    "NodeOutputPopup",
+    "OutputSchemaView",
+    "OutputTableView",
+    "OutputJsonView",
+    "PopupColors",
+    "SchemaItemWidget",
+    # Profiling Tree
+    "ProfilingTreeWidget",
+    "ProfilingEntry",
+    "PercentageBarDelegate",
 ]

@@ -65,6 +65,19 @@ class VariableResolver:
         self.workflow = workflow
         self._get_node = node_getter
 
+        # PERFORMANCE: Build connection index for O(1) lookups
+        # Instead of O(n) scans through all connections for every node
+        self._incoming_connections: dict = {}
+        self._build_connection_index()
+
+    def _build_connection_index(self) -> None:
+        """Build connection index map for O(1) lookups by target node."""
+        self._incoming_connections.clear()
+        for conn in self.workflow.connections:
+            if conn.target_node not in self._incoming_connections:
+                self._incoming_connections[conn.target_node] = []
+            self._incoming_connections[conn.target_node].append(conn)
+
     def transfer_data(self, connection: Any) -> None:
         """
         Transfer data from source port to target port.
@@ -102,12 +115,13 @@ class VariableResolver:
         """
         Transfer all input data to a node from its connected sources.
 
+        Uses pre-built index for O(1) lookup instead of O(n) scan.
+
         Args:
             node_id: Target node ID to transfer data to
         """
-        for connection in self.workflow.connections:
-            if connection.target_node == node_id:
-                self.transfer_data(connection)
+        for connection in self._incoming_connections.get(node_id, []):
+            self.transfer_data(connection)
 
     def validate_output_ports(self, node: Any, result: Dict[str, Any]) -> bool:
         """

@@ -20,8 +20,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QTabWidget,
     QSizePolicy,
+    QScrollArea,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 from loguru import logger
 
 from casare_rpa.presentation.canvas.theme import THEME
@@ -76,7 +77,7 @@ class BottomPanelDock(QDockWidget):
         Args:
             parent: Optional parent widget
         """
-        super().__init__("Panel", parent)
+        super().__init__("Bottom Panel", parent)
         self.setObjectName("BottomPanelDock")
 
         self._is_runtime_mode = False
@@ -89,40 +90,60 @@ class BottomPanelDock(QDockWidget):
 
     def _setup_dock(self) -> None:
         """Configure dock widget properties."""
-        # Allow only bottom area
-        self.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
+        # Allow bottom and top areas for flexibility
+        self.setAllowedAreas(
+            Qt.DockWidgetArea.BottomDockWidgetArea | Qt.DockWidgetArea.TopDockWidgetArea
+        )
 
-        # Set features (movable but not floatable for consistent layout)
+        # Set features - allow floating for better resize handling
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
 
-        # Set minimum height
-        self.setMinimumHeight(150)
+        # Set minimum height - allow shrinking but not too small
+        self.setMinimumHeight(120)
 
-        # Allow vertical resizing
+        # Allow vertical resizing - can expand but starts preferred size
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
+    def sizeHint(self) -> QSize:
+        """Return preferred size for dock widget."""
+        return QSize(800, 250)
+
+    def showEvent(self, event) -> None:
+        """Handle show event - ensure minimum visible size."""
+        super().showEvent(event)
+        # Ensure dock has usable size when shown
+        if self.height() < 120:
+            self.resize(self.width(), 250)
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
-        # Main container widget
+        # Main container widget with expanding size policy
         container = QWidget()
+        container.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # Create tab widget
+        # Create tab widget with expanding size policy
         self._tab_widget = QTabWidget()
         self._tab_widget.setTabPosition(QTabWidget.TabPosition.North)
         self._tab_widget.setDocumentMode(True)
         self._tab_widget.setUsesScrollButtons(True)
         self._tab_widget.setMovable(False)  # Fixed tab order for consistency
+        self._tab_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
         # Create tabs
         self._create_tabs()
 
-        layout.addWidget(self._tab_widget)
+        layout.addWidget(self._tab_widget, stretch=1)
         self.setWidget(container)
 
     def _create_tabs(self) -> None:
