@@ -28,7 +28,8 @@
       <operations>
         - NEVER commit without explicit request.
         - NEVER leave hardcoded credentials.
-        - ALWAYS update .brain/activeContext.md after major tasks.
+        - ALWAYS update .brain/context/current.md after major tasks.
+        - Archive completed tasks to .brain/context/recent.md (keep last 3).
       </operations>
     </protocols>
 
@@ -61,16 +62,52 @@
     </mcp_tools>
 
     <brain location=".brain/">
-      <file name="activeContext.md">Current session state. Update after major tasks.</file>
-      <file name="systemPatterns.md">Architecture patterns. Update when discovering new ones.</file>
-      <file name="projectRules.md">Coding standards. Source of truth.</file>
-      <file name="plans/{feature}.md">Feature plans. ALWAYS create here.</file>
-      <file name="docs/node-checklist.md">Node implementation checklist. Read when creating nodes.</file>
-      <file name="docs/trigger-checklist.md">Trigger node checklist. Read for trigger nodes.</file>
-      <file name="docs/tdd-guide.md">TDD guide. Read when writing tests.</file>
-      <file name="docs/ui-standards.md">UI standards. Read when building UI.</file>
-      <file name="docs/widget-rules.md">Widget rules. Read for file paths/variable picker.</file>
+      <!-- Token-Optimized Context (v2) -->
+      <file name="context/current.md">Active session (~25 lines). ALWAYS load first.</file>
+      <file name="context/recent.md">Last 3 completed tasks. Load on demand.</file>
+      <file name="context/archive/">Historical sessions. Reference only, never load.</file>
+
+      <!-- Stable References -->
+      <file name="systemPatterns.md">Architecture patterns. Load when designing.</file>
+      <file name="projectRules.md">Coding standards. Load when implementing.</file>
+      <file name="plans/{feature}.md">Feature plans. Create here.</file>
+
+      <!-- On-Demand Docs -->
+      <file name="docs/node-checklist.md">Node implementation checklist.</file>
+      <file name="docs/trigger-checklist.md">Trigger node checklist.</file>
+      <file name="docs/tdd-guide.md">TDD guide.</file>
+      <file name="docs/ui-standards.md">UI standards.</file>
+      <file name="docs/widget-rules.md">Widget rules.</file>
     </brain>
+
+    <token_optimization>
+      <principle>Minimize context loading. Every token costs latency and money.</principle>
+
+      <index_files>
+        Use index files for fast discovery instead of broad searches:
+        - src/casare_rpa/nodes/_index.md - Node implementations
+        - src/casare_rpa/presentation/canvas/_index.md - UI components
+      </index_files>
+
+      <context_caching>
+        - If you read a file earlier in session, reference it: "As seen in file.py (read above)..."
+        - Exception: Re-read if user says file changed
+        - Never re-read unchanged files
+      </context_caching>
+
+      <file_reading>
+        - Use offset/limit for large files (>500 lines)
+        - Read only the section being modified
+        - Parallel reads for independent files
+      </file_reading>
+
+      <output_compression>
+        - Use tables over prose
+        - Max 10 lines per finding
+        - Reference files as file.py:line not full paths
+        - Skip filler phrases ("As we can see...", "It appears that...")
+      </output_compression>
+    </token_optimization>
 
     <mandatory_workflow>
       <description>ALL agents MUST follow this 5-phase workflow. No exceptions.</description>
