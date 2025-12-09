@@ -135,24 +135,24 @@ class CasareCheckBox:
             QCheckBox::indicator {{
                 width: 18px;
                 height: 18px;
-                border: 2px solid #3E3E42;
-                border-radius: 3px;
-                background-color: #252526;
+                border: 1px solid #52525b;
+                border-radius: 4px;
+                background-color: #18181b;
             }}
 
             QCheckBox::indicator:unchecked:hover {{
-                border-color: #0063B1;
+                border-color: #6366f1;
             }}
 
             QCheckBox::indicator:checked {{
-                background-color: #0063B1;
-                border-color: #0063B1;
+                background-color: #6366f1;
+                border-color: #6366f1;
                 image: url({checkmark_path});
             }}
 
             QCheckBox::indicator:checked:hover {{
-                background-color: #005A9E;
-                border-color: #005A9E;
+                background-color: #4f46e5;
+                border-color: #4f46e5;
             }}
         """
 
@@ -519,6 +519,7 @@ class CasareNodeItemPaintFix:
         """Apply the custom paint fix to NodeItem."""
         try:
             from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
+            from PySide6.QtCore import Qt
             from NodeGraphQt.qgraphics.node_base import NodeItem
 
             def patched_paint(self, painter, option, widget):
@@ -538,20 +539,25 @@ class CasareNodeItemPaintFix:
                 border_color = QColor(*self.border_color)
 
                 if self.selected:
-                    # VSCode-style selection: 3px blue border
-                    border_width = 3.0
-                    border_color = QColor(
-                        0, 122, 204, 255
-                    )  # VSCode focus border (#007ACC)
+                    # GLOW EFFECT: Multi-layered soft border
+                    # 1. Inner focus ring (Indigo 500)
+                    border_width = 2.0
+                    border_color = QColor("#6366f1")
+
+                    # 2. Outer glow (Indigo 500 with alpha) - rendered below
+                    glow_pen = QPen(QColor(99, 102, 241, 60), 6.0)
+                    glow_pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+                    painter.setPen(glow_pen)
+                    painter.drawRoundedRect(rect, 12.0, 12.0)
                 else:
                     border_width = 1.0
 
-                # Create rounded rectangle path with 8px radius
-                radius = 8.0
+                # Create rounded rectangle path with 12px radius (Modern look)
+                radius = 12.0
                 path = QPainterPath()
                 path.addRoundedRect(rect, radius, radius)
 
-                # Fill background
+                # Fill background (Base color)
                 painter.fillPath(path, bg_color)
 
                 # Draw border

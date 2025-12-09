@@ -213,6 +213,10 @@ class BrowserBaseNode(BaseNode, ABC):
     3. Use @node_schema with property constants
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: none -> none
+
     def __init__(
         self, node_id: str, config: Optional[dict] = None, **kwargs: Any
     ) -> None:

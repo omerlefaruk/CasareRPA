@@ -83,6 +83,10 @@ class SaveAttachmentNode(BaseNode):
     Downloads and saves attachments from an email.
     """
 
+    # @category: email
+    # @requires: email
+    # @ports: imap_server, username, password, email_uid, save_path, folder -> saved_files, count
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize SaveAttachment node."""
         super().__init__(node_id, config)
@@ -262,6 +266,10 @@ class MarkEmailNode(BaseNode):
     Updates email flags on the IMAP server.
     """
 
+    # @category: email
+    # @requires: email
+    # @ports: imap_server, username, password, email_uid, folder, mark_as -> success
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize MarkEmail node."""
         super().__init__(node_id, config)
@@ -402,6 +410,10 @@ class DeleteEmailNode(BaseNode):
     Moves email to trash or permanently deletes it.
     """
 
+    # @category: email
+    # @requires: email
+    # @ports: imap_server, username, password, email_uid, folder -> success
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize DeleteEmail node."""
         super().__init__(node_id, config)
@@ -531,6 +543,10 @@ class MoveEmailNode(BaseNode):
 
     Copies email to target folder and marks original as deleted.
     """
+
+    # @category: email
+    # @requires: email
+    # @ports: imap_server, username, password, email_uid, source_folder, target_folder -> success
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize MoveEmail node."""

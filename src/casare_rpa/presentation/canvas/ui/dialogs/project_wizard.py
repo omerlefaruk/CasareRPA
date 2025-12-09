@@ -34,6 +34,15 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    DialogStyles,
+    DialogSize,
+    COLORS,
+    DIALOG_DIMENSIONS,
+    show_styled_warning,
+    show_styled_error,
+)
+
 
 class TemplateCard(QFrame):
     """Clickable template card widget."""
@@ -346,12 +355,14 @@ class ProjectWizard(QDialog):
         self._template_cards: List[TemplateCard] = []
 
         self.setWindowTitle("New Project Wizard")
-        self.setMinimumSize(900, 600)
+        self.setMinimumSize(*DIALOG_DIMENSIONS[DialogSize.XL])
         self.setModal(True)
+
+        # Apply base dialog styling
+        self.setStyleSheet(DialogStyles.full_dialog_style())
 
         self._setup_ui()
         self._load_templates()
-        self._apply_styles()
         self._update_navigation()
 
     def _setup_ui(self) -> None:
@@ -379,7 +390,7 @@ class ProjectWizard(QDialog):
         """Create step indicator header."""
         header = QFrame()
         header.setFixedHeight(60)
-        header.setStyleSheet("background: #1E1E1E; border-bottom: 1px solid #3E3E42;")
+        header.setStyleSheet(DialogStyles.step_header())
 
         layout = QHBoxLayout(header)
         layout.setContentsMargins(24, 0, 24, 0)
@@ -415,7 +426,9 @@ class ProjectWizard(QDialog):
             # Arrow between steps
             if i < len(steps) - 1:
                 arrow = QLabel(">")
-                arrow.setStyleSheet("color: #666666; font-size: 16px; padding: 0 16px;")
+                arrow.setStyleSheet(
+                    f"color: {COLORS.text_disabled}; font-size: 16px; padding: 0 16px;"
+                )
                 layout.addWidget(arrow)
 
         layout.addStretch()
@@ -435,38 +448,20 @@ class ProjectWizard(QDialog):
 
         # Title
         title = QLabel("Choose a Template")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #D4D4D4;")
+        title.setStyleSheet(DialogStyles.header(font_size=18))
         left_layout.addWidget(title)
 
         subtitle = QLabel(
             "Select a template to start your project with pre-configured nodes and settings."
         )
-        subtitle.setStyleSheet("color: #888888; margin-bottom: 16px;")
+        subtitle.setStyleSheet(DialogStyles.subheader())
         left_layout.addWidget(subtitle)
 
         # Scroll area for template cards
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setStyleSheet("""
-            QScrollArea {
-                border: none;
-                background: transparent;
-            }
-            QScrollBar:vertical {
-                background: #252526;
-                width: 10px;
-                border-radius: 5px;
-            }
-            QScrollBar::handle:vertical {
-                background: #3E3E42;
-                border-radius: 5px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #4E4E52;
-            }
-        """)
+        scroll.setStyleSheet(DialogStyles.scroll_area())
 
         self._template_grid_widget = QWidget()
         self._template_grid = QGridLayout(self._template_grid_widget)
@@ -491,11 +486,11 @@ class ProjectWizard(QDialog):
 
         # Title
         title = QLabel("Project Details")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #D4D4D4;")
+        title.setStyleSheet(DialogStyles.header(font_size=18))
         layout.addWidget(title)
 
         subtitle = QLabel("Configure your new project settings.")
-        subtitle.setStyleSheet("color: #888888; margin-bottom: 16px;")
+        subtitle.setStyleSheet(DialogStyles.subheader())
         layout.addWidget(subtitle)
 
         # Form container
@@ -571,11 +566,11 @@ class ProjectWizard(QDialog):
 
         # Title
         title = QLabel("Environment Setup")
-        title.setStyleSheet("font-size: 18px; font-weight: bold; color: #D4D4D4;")
+        title.setStyleSheet(DialogStyles.header(font_size=18))
         layout.addWidget(title)
 
         subtitle = QLabel("Configure environments for different deployment stages.")
-        subtitle.setStyleSheet("color: #888888; margin-bottom: 16px;")
+        subtitle.setStyleSheet(DialogStyles.subheader())
         layout.addWidget(subtitle)
 
         # Environments group
@@ -674,14 +669,14 @@ class ProjectWizard(QDialog):
         """Create navigation button bar."""
         nav = QFrame()
         nav.setFixedHeight(60)
-        nav.setStyleSheet("background: #1E1E1E; border-top: 1px solid #3E3E42;")
+        nav.setStyleSheet(DialogStyles.nav_bar())
 
         layout = QHBoxLayout(nav)
         layout.setContentsMargins(24, 0, 24, 0)
 
         # Cancel button
         self._cancel_btn = QPushButton("Cancel")
-        self._cancel_btn.setStyleSheet(self._get_secondary_button_style())
+        self._cancel_btn.setStyleSheet(DialogStyles.button_secondary())
         self._cancel_btn.clicked.connect(self.reject)
         layout.addWidget(self._cancel_btn)
 
@@ -689,13 +684,13 @@ class ProjectWizard(QDialog):
 
         # Back button
         self._back_btn = QPushButton("Back")
-        self._back_btn.setStyleSheet(self._get_secondary_button_style())
+        self._back_btn.setStyleSheet(DialogStyles.button_secondary())
         self._back_btn.clicked.connect(self._go_back)
         layout.addWidget(self._back_btn)
 
         # Next/Finish button
         self._next_btn = QPushButton("Next")
-        self._next_btn.setStyleSheet(self._get_primary_button_style())
+        self._next_btn.setStyleSheet(DialogStyles.button_primary())
         self._next_btn.clicked.connect(self._go_next)
         layout.addWidget(self._next_btn)
 
@@ -1190,198 +1185,27 @@ class ProjectWizard(QDialog):
 
     def _show_warning(self, message: str) -> None:
         """Show warning message box."""
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Warning")
-        msg.setText(message)
-        msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setStyleSheet(self._get_message_box_style())
-        msg.exec()
+        show_styled_warning(self, "Warning", message)
 
     def _show_error(self, message: str) -> None:
         """Show error message box."""
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Error")
-        msg.setText(message)
-        msg.setIcon(QMessageBox.Icon.Critical)
-        msg.setStyleSheet(self._get_message_box_style())
-        msg.exec()
-
-    def _apply_styles(self) -> None:
-        """Apply global dialog styles."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #252526;
-                color: #D4D4D4;
-            }
-            QLabel {
-                color: #D4D4D4;
-            }
-        """)
+        show_styled_error(self, "Error", message)
 
     def _get_form_group_style(self) -> str:
         """Get form group box style."""
-        return """
-            QGroupBox {
-                font-weight: bold;
-                font-size: 12px;
-                border: 1px solid #3E3E42;
-                border-radius: 4px;
-                margin-top: 12px;
-                padding-top: 8px;
-                background: #2D2D30;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 12px;
-                padding: 0 4px;
-                color: #D4D4D4;
-            }
-        """
+        return DialogStyles.group_box()
 
     def _get_input_style(self) -> str:
         """Get input field style."""
-        return """
-            QLineEdit {
-                background: #3C3C3C;
-                border: 1px solid #5C5C5C;
-                border-radius: 4px;
-                padding: 8px;
-                color: #D4D4D4;
-                font-size: 12px;
-                min-height: 28px;
-            }
-            QLineEdit:focus {
-                border-color: #007ACC;
-            }
-            QLineEdit:read-only {
-                background: #2D2D30;
-            }
-        """
+        return DialogStyles.input_field()
 
     def _get_checkbox_style(self) -> str:
         """Get checkbox style."""
-        return """
-            QCheckBox {
-                color: #D4D4D4;
-                font-size: 12px;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 1px solid #5C5C5C;
-                border-radius: 3px;
-                background: #3C3C3C;
-            }
-            QCheckBox::indicator:checked {
-                border: 1px solid #007ACC;
-                border-radius: 3px;
-                background: #007ACC;
-            }
-        """
-
-    def _get_primary_button_style(self) -> str:
-        """Get primary button style."""
-        return """
-            QPushButton {
-                background: #007ACC;
-                border: none;
-                border-radius: 4px;
-                padding: 0 20px;
-                color: white;
-                font-size: 12px;
-                font-weight: 600;
-                min-height: 32px;
-                min-width: 100px;
-            }
-            QPushButton:hover {
-                background: #1177BB;
-            }
-            QPushButton:pressed {
-                background: #094771;
-            }
-            QPushButton:disabled {
-                background: #3E3E42;
-                color: #6B6B6B;
-            }
-        """
-
-    def _get_secondary_button_style(self) -> str:
-        """Get secondary button style."""
-        return """
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
-                border-radius: 4px;
-                padding: 0 20px;
-                color: #D4D4D4;
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #2A2D2E;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:pressed {
-                background: #252526;
-            }
-        """
+        return DialogStyles.checkbox()
 
     def _get_inline_button_style(self) -> str:
         """Get inline button style."""
-        return """
-            QPushButton {
-                background: #007ACC;
-                border: none;
-                border-radius: 4px;
-                padding: 0 12px;
-                color: white;
-                font-size: 11px;
-                font-weight: 600;
-                min-height: 28px;
-            }
-            QPushButton:hover {
-                background: #1177BB;
-            }
-        """
-
-    def _get_message_box_style(self) -> str:
-        """Get message box style."""
-        return """
-            QMessageBox {
-                background: #252526;
-            }
-            QMessageBox QLabel {
-                color: #D4D4D4;
-                font-size: 12px;
-            }
-            QPushButton {
-                background: #2D2D30;
-                border: 1px solid #454545;
-                border-radius: 4px;
-                padding: 0 16px;
-                color: #D4D4D4;
-                font-size: 12px;
-                font-weight: 500;
-                min-height: 32px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background: #2A2D2E;
-                border-color: #007ACC;
-                color: white;
-            }
-            QPushButton:default {
-                background: #007ACC;
-                border-color: #007ACC;
-                color: white;
-            }
-        """
+        return DialogStyles.button_inline()
 
 
 def show_project_wizard(parent: Optional[QWidget] = None) -> Optional[str]:

@@ -62,6 +62,10 @@ class SetVariableNode(BaseNode):
     Stores a value under a variable name for later retrieval.
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: value, variable_name -> value
+
     def __init__(
         self,
         node_id: str,
@@ -211,6 +215,10 @@ class GetVariableNode(BaseNode):
     Retrieves a previously stored variable value.
     """
 
+    # @category: data
+    # @requires: none
+    # @ports: variable_name -> value
+
     def __init__(
         self,
         node_id: str,
@@ -304,6 +312,10 @@ class IncrementVariableNode(BaseNode):
 
     Retrieves a variable, increments it, and stores the result.
     """
+
+    # @category: data
+    # @requires: none
+    # @ports: variable_name, increment -> value
 
     def __init__(
         self,

@@ -197,6 +197,10 @@ class TableScraperNode(BrowserBaseNode):
         headers: Table headers (if found)
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: table_selector -> data, row_count, headers
+
     def __init__(
         self,
         node_id: str,

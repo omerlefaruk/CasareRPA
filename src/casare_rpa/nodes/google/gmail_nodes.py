@@ -120,6 +120,10 @@ def _create_message_with_attachment(
 class GmailSendEmailNode(BaseNode):
     """Send an email via Gmail."""
 
+    # @category: google
+    # @requires: email
+    # @ports: to, subject, body, cc, bcc -> message_id, thread_id, success, error
+
     NODE_NAME = "Gmail: Send Email"
     CATEGORY = "google/gmail"
 
@@ -177,6 +181,10 @@ class GmailSendEmailNode(BaseNode):
 @executable_node
 class GmailSendWithAttachmentNode(BaseNode):
     """Send an email with attachments via Gmail."""
+
+    # @category: google
+    # @requires: email
+    # @ports: to, subject, body, attachments, cc, bcc -> message_id, thread_id, success, error
 
     NODE_NAME = "Gmail: Send With Attachment"
     CATEGORY = "google/gmail"
@@ -240,6 +248,10 @@ class GmailSendWithAttachmentNode(BaseNode):
 class GmailCreateDraftNode(BaseNode):
     """Create a draft email in Gmail."""
 
+    # @category: google
+    # @requires: email
+    # @ports: to, subject, body, cc, bcc -> draft_id, message_id, success, error
+
     NODE_NAME = "Gmail: Create Draft"
     CATEGORY = "google/gmail"
 
@@ -296,6 +308,10 @@ class GmailCreateDraftNode(BaseNode):
 class GmailSendDraftNode(BaseNode):
     """Send an existing draft from Gmail."""
 
+    # @category: google
+    # @requires: email
+    # @ports: draft_id -> message_id, thread_id, success, error
+
     NODE_NAME = "Gmail: Send Draft"
     CATEGORY = "google/gmail"
 
@@ -349,6 +365,10 @@ class GmailSendDraftNode(BaseNode):
 @executable_node
 class GmailGetEmailNode(BaseNode):
     """Get a specific email by ID from Gmail."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> subject, from, to, date, body, snippet, labels, attachments, success, error
 
     NODE_NAME = "Gmail: Get Email"
     CATEGORY = "google/gmail"
@@ -450,6 +470,10 @@ class GmailGetEmailNode(BaseNode):
 class GmailListEmailsNode(BaseNode):
     """List emails from Gmail inbox."""
 
+    # @category: google
+    # @requires: email
+    # @ports: max_results, label_ids -> messages, count, next_page_token, success, error
+
     NODE_NAME = "Gmail: List Emails"
     CATEGORY = "google/gmail"
 
@@ -504,6 +528,10 @@ class GmailListEmailsNode(BaseNode):
 @executable_node
 class GmailSearchEmailsNode(BaseNode):
     """Search emails in Gmail using query."""
+
+    # @category: google
+    # @requires: email
+    # @ports: query, max_results -> messages, count, next_page_token, success, error
 
     NODE_NAME = "Gmail: Search Emails"
     CATEGORY = "google/gmail"
@@ -560,6 +588,10 @@ class GmailSearchEmailsNode(BaseNode):
 @executable_node
 class GmailGetThreadNode(BaseNode):
     """Get a complete email thread from Gmail."""
+
+    # @category: google
+    # @requires: email
+    # @ports: thread_id -> messages, count, snippet, success, error
 
     NODE_NAME = "Gmail: Get Thread"
     CATEGORY = "google/gmail"
@@ -620,6 +652,10 @@ class GmailGetThreadNode(BaseNode):
 class GmailModifyLabelsNode(BaseNode):
     """Modify labels on a Gmail message."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_id, add_labels, remove_labels -> labels, success, error
+
     NODE_NAME = "Gmail: Modify Labels"
     CATEGORY = "google/gmail"
 
@@ -676,6 +712,10 @@ class GmailModifyLabelsNode(BaseNode):
 class GmailMoveToTrashNode(BaseNode):
     """Move a Gmail message to trash."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
+
     NODE_NAME = "Gmail: Move to Trash"
     CATEGORY = "google/gmail"
 
@@ -713,6 +753,10 @@ class GmailMoveToTrashNode(BaseNode):
 @executable_node
 class GmailMarkAsReadNode(BaseNode):
     """Mark a Gmail message as read."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
 
     NODE_NAME = "Gmail: Mark as Read"
     CATEGORY = "google/gmail"
@@ -754,6 +798,10 @@ class GmailMarkAsReadNode(BaseNode):
 class GmailMarkAsUnreadNode(BaseNode):
     """Mark a Gmail message as unread."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
+
     NODE_NAME = "Gmail: Mark as Unread"
     CATEGORY = "google/gmail"
 
@@ -793,6 +841,10 @@ class GmailMarkAsUnreadNode(BaseNode):
 @executable_node
 class GmailStarEmailNode(BaseNode):
     """Star or unstar a Gmail message."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id, star -> success, error
 
     NODE_NAME = "Gmail: Star Email"
     CATEGORY = "google/gmail"
@@ -843,6 +895,10 @@ class GmailStarEmailNode(BaseNode):
 class GmailArchiveEmailNode(BaseNode):
     """Archive a Gmail message (remove from inbox)."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
+
     NODE_NAME = "Gmail: Archive Email"
     CATEGORY = "google/gmail"
 
@@ -882,6 +938,10 @@ class GmailArchiveEmailNode(BaseNode):
 @executable_node
 class GmailDeleteEmailNode(BaseNode):
     """Permanently delete a Gmail message."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
 
     NODE_NAME = "Gmail: Delete Email"
     CATEGORY = "google/gmail"
@@ -925,6 +985,10 @@ class GmailDeleteEmailNode(BaseNode):
 @executable_node
 class GmailBatchSendNode(BaseNode):
     """Send multiple emails in batch."""
+
+    # @category: google
+    # @requires: email
+    # @ports: emails -> results, sent_count, failed_count, success, error
 
     NODE_NAME = "Gmail: Batch Send"
     CATEGORY = "google/gmail"
@@ -1015,6 +1079,10 @@ class GmailBatchSendNode(BaseNode):
 class GmailBatchModifyNode(BaseNode):
     """Modify multiple Gmail messages in batch."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_ids, add_labels, remove_labels -> modified_count, success, error
+
     NODE_NAME = "Gmail: Batch Modify"
     CATEGORY = "google/gmail"
 
@@ -1064,6 +1132,10 @@ class GmailBatchModifyNode(BaseNode):
 class GmailBatchDeleteNode(BaseNode):
     """Delete multiple Gmail messages in batch."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_ids -> deleted_count, success, error
+
     NODE_NAME = "Gmail: Batch Delete"
     CATEGORY = "google/gmail"
 
@@ -1109,6 +1181,10 @@ class GmailBatchDeleteNode(BaseNode):
 @executable_node
 class GmailAddLabelNode(BaseNode):
     """Add label(s) to a Gmail message."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id, label_ids -> labels, success, error
 
     NODE_NAME = "Gmail: Add Label"
     CATEGORY = "google/gmail"
@@ -1171,6 +1247,10 @@ class GmailAddLabelNode(BaseNode):
 class GmailRemoveLabelNode(BaseNode):
     """Remove label(s) from a Gmail message."""
 
+    # @category: google
+    # @requires: email
+    # @ports: message_id, label_ids -> labels, success, error
+
     NODE_NAME = "Gmail: Remove Label"
     CATEGORY = "google/gmail"
 
@@ -1232,6 +1312,10 @@ class GmailRemoveLabelNode(BaseNode):
 class GmailGetLabelsNode(BaseNode):
     """Get all labels from Gmail account."""
 
+    # @category: google
+    # @requires: email
+    # @ports: none -> labels, count, success, error
+
     NODE_NAME = "Gmail: Get Labels"
     CATEGORY = "google/gmail"
 
@@ -1287,6 +1371,10 @@ class GmailGetLabelsNode(BaseNode):
 @executable_node
 class GmailTrashEmailNode(BaseNode):
     """Move a Gmail message to trash (alias for MoveToTrash with clearer name)."""
+
+    # @category: google
+    # @requires: email
+    # @ports: message_id -> success, error
 
     NODE_NAME = "Gmail: Trash Email"
     CATEGORY = "google/gmail"

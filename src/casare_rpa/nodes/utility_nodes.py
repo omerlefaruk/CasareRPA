@@ -47,6 +47,10 @@ class HttpRequestNode(BaseNode):
     Uses aiohttp for async requests.
     """
 
+    # @category: data
+    # @requires: requests
+    # @ports: url, headers, body -> response_body, status_code, headers, success, error
+
     def __init__(
         self,
         node_id: str,
@@ -298,6 +302,10 @@ class ValidateNode(BaseNode):
         validation_param: Parameter for validation
         error_message: Custom error message
     """
+
+    # @category: data
+    # @requires: requests
+    # @ports: value -> valid, invalid, is_valid, error_message
 
     def __init__(
         self,
@@ -557,6 +565,10 @@ class TransformNode(BaseNode):
         variable_name: Variable name for result
     """
 
+    # @category: data
+    # @requires: requests
+    # @ports: value, param -> result, success, error
+
     def __init__(
         self,
         node_id: str,
@@ -776,6 +788,10 @@ class LogNode(BaseNode):
         include_node_id: Include node ID
     """
 
+    # @category: data
+    # @requires: requests
+    # @ports: message, data -> none
+
     def __init__(
         self,
         node_id: str,
@@ -838,6 +854,11 @@ class LogNode(BaseNode):
             log_func = getattr(logger, level.value)
             log_func(formatted_message)
 
+            # Also print to terminal for visibility in Terminal tab
+            # This allows users to see log output in the Terminal panel
+            if self.get_parameter("print_to_terminal", True):
+                print(f"[{level.value.upper()}] {formatted_message}")
+
             self.status = NodeStatus.SUCCESS
             return {
                 "success": True,
@@ -866,6 +887,10 @@ class RerouteNode(BaseNode):
     - Inherits wire color from connected data type
     - Small diamond visual representation
     """
+
+    # @category: data
+    # @requires: requests
+    # @ports: in -> out
 
     def __init__(
         self,

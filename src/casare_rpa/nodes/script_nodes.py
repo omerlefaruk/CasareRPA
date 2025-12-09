@@ -67,6 +67,10 @@ class RunPythonScriptNode(BaseNode):
         error: Error message if failed
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: code, variables -> result, output, success, error
+
     def __init__(self, node_id: str, name: str = "Run Python Script", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -279,6 +283,10 @@ class RunPythonFileNode(BaseNode):
         success: Whether execution succeeded
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: file_path, args, working_dir -> stdout, stderr, return_code, success
+
     def __init__(self, node_id: str, name: str = "Run Python File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -441,6 +449,10 @@ class EvalExpressionNode(BaseNode):
         error: Error message if failed
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: expression, variables -> result, type, success, error
+
     def __init__(self, node_id: str, name: str = "Eval Expression", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -592,6 +604,10 @@ class RunBatchScriptNode(BaseNode):
         return_code: Process return code
         success: Whether execution succeeded
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: script, working_dir -> stdout, stderr, return_code, success
 
     def __init__(self, node_id: str, name: str = "Run Batch Script", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -790,6 +806,10 @@ class RunJavaScriptNode(BaseNode):
         success: Whether execution succeeded
         error: Error message if failed
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: code, input_data -> result, success, error
 
     def __init__(self, node_id: str, name: str = "Run JavaScript", **kwargs) -> None:
         config = kwargs.get("config", {})

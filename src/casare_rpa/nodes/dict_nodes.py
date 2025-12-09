@@ -22,6 +22,10 @@ from casare_rpa.infrastructure.execution import ExecutionContext
 class JsonParseNode(BaseNode):
     """Node that parses a JSON string."""
 
+    # @category: data
+    # @requires: none
+    # @ports: json_string -> data
+
     def __init__(self, node_id: str, name: str = "JSON Parse", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -52,6 +56,10 @@ class JsonParseNode(BaseNode):
 @executable_node
 class GetPropertyNode(BaseNode):
     """Node that gets a property from a dictionary/object."""
+
+    # @category: data
+    # @requires: none
+    # @ports: object, property_path -> value
 
     def __init__(self, node_id: str, name: str = "Get Property", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -96,6 +104,10 @@ class GetPropertyNode(BaseNode):
 @executable_node
 class DictGetNode(BaseNode):
     """Node that gets a value from a dictionary by key."""
+
+    # @category: data
+    # @requires: none
+    # @ports: dict, key, default -> value, found
 
     def __init__(self, node_id: str, name: str = "Dict Get", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -143,6 +155,10 @@ class DictGetNode(BaseNode):
 class DictSetNode(BaseNode):
     """Node that sets a value in a dictionary."""
 
+    # @category: data
+    # @requires: none
+    # @ports: dict, key, value -> result
+
     def __init__(self, node_id: str, name: str = "Dict Set", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -185,6 +201,10 @@ class DictSetNode(BaseNode):
 @executable_node
 class DictRemoveNode(BaseNode):
     """Node that removes a key from a dictionary."""
+
+    # @category: data
+    # @requires: none
+    # @ports: dict, key -> result, removed_value
 
     def __init__(self, node_id: str, name: str = "Dict Remove", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -229,6 +249,10 @@ class DictRemoveNode(BaseNode):
 class DictMergeNode(BaseNode):
     """Node that merges two dictionaries."""
 
+    # @category: data
+    # @requires: none
+    # @ports: dict_1, dict_2 -> result
+
     def __init__(self, node_id: str, name: str = "Dict Merge", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -266,6 +290,10 @@ class DictMergeNode(BaseNode):
 @executable_node
 class DictKeysNode(BaseNode):
     """Node that gets all keys from a dictionary."""
+
+    # @category: data
+    # @requires: none
+    # @ports: dict -> keys, count
 
     def __init__(self, node_id: str, name: str = "Dict Keys", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -307,6 +335,10 @@ class DictKeysNode(BaseNode):
 class DictValuesNode(BaseNode):
     """Node that gets all values from a dictionary."""
 
+    # @category: data
+    # @requires: none
+    # @ports: dict -> values, count
+
     def __init__(self, node_id: str, name: str = "Dict Values", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -347,6 +379,10 @@ class DictValuesNode(BaseNode):
 class DictHasKeyNode(BaseNode):
     """Node that checks if a dictionary has a key."""
 
+    # @category: data
+    # @requires: none
+    # @ports: dict, key -> has_key
+
     def __init__(self, node_id: str, name: str = "Dict Has Key", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -382,6 +418,10 @@ class DictHasKeyNode(BaseNode):
 @executable_node
 class CreateDictNode(BaseNode):
     """Node that creates a dictionary from key-value pairs."""
+
+    # @category: data
+    # @requires: none
+    # @ports: key_1, value_1, key_2, value_2, key_3, value_3 -> dict
 
     def __init__(self, node_id: str, name: str = "Create Dict", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -448,6 +488,10 @@ class CreateDictNode(BaseNode):
 class DictToJsonNode(BaseNode):
     """Node that converts a dictionary to a JSON string."""
 
+    # @category: data
+    # @requires: none
+    # @ports: dict, indent -> json_string
+
     def __init__(self, node_id: str, name: str = "Dict to JSON", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -495,6 +539,10 @@ class DictToJsonNode(BaseNode):
 @executable_node
 class DictItemsNode(BaseNode):
     """Node that gets key-value pairs from a dictionary as a list of dicts."""
+
+    # @category: data
+    # @requires: none
+    # @ports: dict -> items, count
 
     def __init__(self, node_id: str, name: str = "Dict Items", **kwargs) -> None:
         config = kwargs.get("config", {})

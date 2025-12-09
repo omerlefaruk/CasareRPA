@@ -116,6 +116,10 @@ class TelegramSendMessageNode(TelegramBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: text, parse_mode, disable_notification, reply_to_message_id -> text
+
     NODE_TYPE = "telegram_send_message"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "Telegram: Send Message"
@@ -240,6 +244,10 @@ class TelegramSendPhotoNode(TelegramBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: photo, caption, parse_mode, disable_notification -> photo_path
 
     NODE_TYPE = "telegram_send_photo"
     NODE_CATEGORY = "messaging"
@@ -370,6 +378,10 @@ class TelegramSendDocumentNode(TelegramBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: document, filename, caption, parse_mode, disable_notification -> document_path
+
     NODE_TYPE = "telegram_send_document"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "Telegram: Send Document"
@@ -499,6 +511,10 @@ class TelegramSendLocationNode(TelegramBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: latitude, longitude, disable_notification -> latitude, longitude
 
     NODE_TYPE = "telegram_send_location"
     NODE_CATEGORY = "messaging"

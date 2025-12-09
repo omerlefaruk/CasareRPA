@@ -158,7 +158,7 @@ class FrameStyleManager:
             if hasattr(node, "get_port_type"):
                 data_type = node.get_port_type(port.name())
                 if data_type:
-                    from casare_rpa.domain.port_type_system import (
+                    from casare_rpa.application.services.port_type_service import (
                         get_port_type_registry,
                     )
 

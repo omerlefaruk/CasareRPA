@@ -89,6 +89,10 @@ class RunCommandNode(BaseNode):
         success: Whether command succeeded (return_code == 0)
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: command, args -> stdout, stderr, return_code, success
+
     # SECURITY: Dangerous shell metacharacters that enable command injection
     DANGEROUS_CHARS = [
         "|",
@@ -327,6 +331,10 @@ class RunPowerShellNode(BaseNode):
         return_code: Process return code
         success: Whether command succeeded
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: script -> stdout, stderr, return_code, success
 
     # SECURITY: Dangerous PowerShell commands/patterns that could be malicious
     DANGEROUS_PATTERNS = [

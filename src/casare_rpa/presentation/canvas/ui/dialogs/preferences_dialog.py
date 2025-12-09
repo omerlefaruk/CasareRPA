@@ -24,6 +24,12 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    DialogStyles,
+    DialogSize,
+    apply_dialog_style,
+)
+
 
 class PreferencesDialog(QDialog):
     """
@@ -58,13 +64,13 @@ class PreferencesDialog(QDialog):
         self.preferences = preferences or {}
 
         self.setWindowTitle("Preferences")
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(400)
         self.setModal(True)
+
+        # Apply standardized dialog styling
+        apply_dialog_style(self, DialogSize.MD)
 
         self._setup_ui()
         self._load_preferences()
-        self._apply_styles()
 
         logger.debug("PreferencesDialog opened")
 
@@ -201,7 +207,7 @@ class PreferencesDialog(QDialog):
             "New workflows must be manually saved first."
         )
         info_label.setWordWrap(True)
-        info_label.setStyleSheet("color: #888888; font-size: 11px; margin-top: 10px;")
+        info_label.setStyleSheet(DialogStyles.info_label())
         autosave_layout.addRow("", info_label)
 
         autosave_group.setLayout(autosave_layout)
@@ -333,40 +339,6 @@ class PreferencesDialog(QDialog):
         layout.addStretch()
 
         return widget
-
-    def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QGroupBox {
-                border: 1px solid #4a4a4a;
-                border-radius: 4px;
-                margin-top: 10px;
-                padding-top: 10px;
-                font-weight: bold;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px;
-            }
-            QSpinBox, QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                border-radius: 3px;
-                color: #e0e0e0;
-                padding: 4px;
-            }
-            QSpinBox:focus, QComboBox:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QCheckBox {
-                color: #e0e0e0;
-            }
-        """)
 
     def _load_preferences(self) -> None:
         """Load current preferences into widgets."""

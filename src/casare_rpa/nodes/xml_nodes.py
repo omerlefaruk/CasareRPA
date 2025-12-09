@@ -46,6 +46,10 @@ class ParseXMLNode(BaseNode):
         success: Whether parsing succeeded
     """
 
+    # @category: data
+    # @requires: xml
+    # @ports: xml_string -> root_tag, root_text, child_count, success
+
     def __init__(self, node_id: str, name: str = "Parse XML", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -130,6 +134,10 @@ class ReadXMLFileNode(BaseNode):
         xml_string: Raw XML content
         success: Whether operation succeeded
     """
+
+    # @category: data
+    # @requires: xml
+    # @ports: file_path -> root_tag, xml_string, success
 
     def __init__(self, node_id: str, name: str = "Read XML File", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -228,6 +236,10 @@ class WriteXMLFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: data
+    # @requires: xml
+    # @ports: file_path, xml_string -> file_path, success
+
     def __init__(self, node_id: str, name: str = "Write XML File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -312,6 +324,10 @@ class XPathQueryNode(BaseNode):
         first_text: Text of first match
         success: Whether query succeeded
     """
+
+    # @category: data
+    # @requires: xml
+    # @ports: xml_string, xpath -> results, count, first_text, success
 
     def __init__(self, node_id: str, name: str = "XPath Query", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -406,6 +422,10 @@ class GetXMLElementNode(BaseNode):
         found: Whether element was found
     """
 
+    # @category: data
+    # @requires: xml
+    # @ports: xml_string, tag_name, index -> tag, text, attributes, child_count, found
+
     def __init__(self, node_id: str, name: str = "Get XML Element", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -488,6 +508,10 @@ class GetXMLAttributeNode(BaseNode):
         value: Attribute value
         found: Whether attribute was found
     """
+
+    # @category: data
+    # @requires: xml
+    # @ports: xml_string, xpath, attribute_name -> value, found
 
     def __init__(self, node_id: str, name: str = "Get XML Attribute", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -579,6 +603,10 @@ class XMLToJsonNode(BaseNode):
         json_string: JSON as string
         success: Whether conversion succeeded
     """
+
+    # @category: data
+    # @requires: xml
+    # @ports: xml_string -> json_data, json_string, success
 
     def __init__(self, node_id: str, name: str = "XML to JSON", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -683,6 +711,10 @@ class JsonToXMLNode(BaseNode):
         xml_string: Converted XML string
         success: Whether conversion succeeded
     """
+
+    # @category: data
+    # @requires: xml
+    # @ports: json_data -> xml_string, success
 
     def __init__(self, node_id: str, name: str = "JSON to XML", **kwargs) -> None:
         config = kwargs.get("config", {})

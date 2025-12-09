@@ -81,6 +81,10 @@ class ReadPDFTextNode(BaseNode):
         success: Whether extraction succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path, start_page, end_page, password -> text, page_count, pages, is_encrypted, success
+
     def __init__(self, node_id: str, name: str = "Read PDF Text", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -197,6 +201,10 @@ class GetPDFInfoNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> page_count, title, author, subject, creator, producer, creation_date, modification_date, is_encrypted, success
+
     def __init__(self, node_id: str, name: str = "Get PDF Info", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -282,6 +290,10 @@ class MergePDFsNode(BaseNode):
         page_count: Total pages in merged PDF
         success: Whether merge succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: input_files, output_path -> output_path, attachment_file, page_count, success
 
     def __init__(self, node_id: str, name: str = "Merge PDFs", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -382,6 +394,10 @@ class SplitPDFNode(BaseNode):
         success: Whether split succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: input_file, output_dir -> output_files, page_count, success
+
     def __init__(self, node_id: str, name: str = "Split PDF", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -472,6 +488,10 @@ class ExtractPDFPagesNode(BaseNode):
         page_count: Number of pages extracted
         success: Whether extraction succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: input_file, output_path, pages -> output_path, attachment_file, page_count, success
 
     def __init__(self, node_id: str, name: str = "Extract PDF Pages", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -589,6 +609,10 @@ class PDFToImagesNode(BaseNode):
         page_count: Number of images created
         success: Whether conversion succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: input_file, output_dir, start_page, end_page -> output_files, page_count, success
 
     def __init__(self, node_id: str, name: str = "PDF to Images", **kwargs) -> None:
         config = kwargs.get("config", {})

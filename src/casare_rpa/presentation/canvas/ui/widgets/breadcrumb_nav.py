@@ -26,6 +26,8 @@ from PySide6.QtGui import QFont, QCursor
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 @dataclass
 class BreadcrumbItem:
@@ -56,32 +58,32 @@ class BreadcrumbButton(QPushButton):
         self._apply_style()
 
     def _apply_style(self) -> None:
-        """Apply visual styling based on state."""
+        """Apply visual styling based on state using THEME constants."""
         if self.is_current:
             # Current level - bold white, not clickable
-            self.setStyleSheet("""
-                QPushButton {
-                    color: #FFFFFF;
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    color: {THEME.text_primary};
                     background: transparent;
                     border: none;
                     padding: 0 2px;
                     font-weight: bold;
                     font-size: 11px;
-                }
+                }}
             """)
         else:
             # Clickable parent - light blue, underline on hover
-            self.setStyleSheet("""
-                QPushButton {
-                    color: #7CB7E8;
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    color: {THEME.accent_primary};
                     background: transparent;
                     border: none;
                     padding: 0 2px;
                     font-size: 11px;
-                }
-                QPushButton:hover {
+                }}
+                QPushButton:hover {{
                     text-decoration: underline;
-                }
+                }}
             """)
 
 
@@ -90,12 +92,12 @@ class BreadcrumbSeparator(QLabel):
 
     def __init__(self, parent=None):
         super().__init__("/", parent)
-        self.setStyleSheet("""
-            QLabel {
-                color: #606060;
+        self.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_disabled};
                 padding: 0 3px;
                 font-size: 11px;
-            }
+            }}
         """)
 
 
@@ -153,7 +155,7 @@ class BreadcrumbNavWidget(QFrame):
         layout.addWidget(self._breadcrumb_container)
 
     def _apply_style(self) -> None:
-        """Apply widget styling - subtle semi-transparent background."""
+        """Apply widget styling - subtle semi-transparent background using THEME."""
         self.setStyleSheet("""
             BreadcrumbNavWidget {
                 background-color: rgba(25, 25, 25, 0.85);

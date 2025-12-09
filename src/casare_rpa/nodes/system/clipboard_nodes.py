@@ -32,6 +32,10 @@ class ClipboardCopyNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: text -> success
+
     def __init__(self, node_id: str, name: str = "Clipboard Copy", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -109,6 +113,10 @@ class ClipboardPasteNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: none -> text, success
+
     def __init__(self, node_id: str, name: str = "Clipboard Paste", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -182,6 +190,10 @@ class ClipboardClearNode(BaseNode):
     Outputs:
         success: Whether operation succeeded
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: none -> success
 
     def __init__(self, node_id: str, name: str = "Clipboard Clear", **kwargs) -> None:
         config = kwargs.get("config", {})

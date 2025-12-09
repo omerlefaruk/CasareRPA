@@ -44,6 +44,12 @@ from PySide6.QtGui import QColor, QBrush, QFont, QAction
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
+
 if TYPE_CHECKING:
     from casare_rpa.presentation.canvas.debugger.debug_controller import (
         DebugController,
@@ -631,89 +637,78 @@ class DebugPanel(QDockWidget):
         pass
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QDockWidget::title {
-                background: #2d2d2d;
-                padding: 6px;
-            }
-            QTableWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-            }
-            QTableWidget::item:selected {
-                background-color: #5a8a9a;
-            }
-            QHeaderView::section {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: none;
-                border-right: 1px solid #4a4a4a;
-                border-bottom: 1px solid #4a4a4a;
-                padding: 4px;
-            }
-            QTreeWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                color: #e0e0e0;
-            }
-            QTreeWidget::item:selected {
-                background-color: #5a8a9a;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #5a5a5a;
-                padding: 4px 8px;
-                border-radius: 2px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #252525;
-            }
-            QPushButton:disabled {
-                background-color: #2d2d2d;
-                color: #606060;
-            }
-            QLineEdit {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px;
-            }
-            QComboBox {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px;
-            }
-            QFrame {
-                background-color: #2d2d2d;
-                border: 1px solid #3d3d3d;
-            }
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
-            }
-            QTabBar::tab {
-                background-color: #2d2d2d;
-                color: #a0a0a0;
+        """Apply VSCode Dark+ theme styling using THEME system."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME.dock_title_bg};
+                color: {THEME.dock_title_text};
                 padding: 6px 12px;
-                border: 1px solid #3d3d3d;
-            }
-            QTabBar::tab:selected {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-            }
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            {get_panel_table_stylesheet()}
+            QFrame {{
+                background-color: {THEME.bg_header};
+                border: 1px solid {THEME.border_dark};
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
+                padding: 4px 8px;
+                border-radius: 3px;
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_lighter};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_disabled};
+                border-color: {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            QTabWidget {{
+                background-color: {THEME.bg_panel};
+                border: none;
+            }}
+            QTabWidget::pane {{
+                background-color: {THEME.bg_panel};
+                border: none;
+                border-top: 1px solid {THEME.border_dark};
+            }}
+            QTabBar {{
+                background-color: {THEME.bg_header};
+            }}
+            QTabBar::tab {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_muted};
+                padding: 8px 16px;
+                border: none;
+                border-bottom: 2px solid transparent;
+                font-size: 11px;
+                font-weight: 500;
+            }}
+            QTabBar::tab:hover {{
+                color: {THEME.text_primary};
+                background-color: {THEME.bg_hover};
+            }}
+            QTabBar::tab:selected {{
+                color: {THEME.text_primary};
+                background-color: {THEME.bg_panel};
+                border-bottom: 2px solid {THEME.accent_primary};
+            }}
         """)
 
     def _set_stepping_enabled(self, enabled: bool) -> None:

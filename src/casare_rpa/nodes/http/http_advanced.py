@@ -76,6 +76,10 @@ class SetHttpHeadersNode(BaseNode):
         headers: Combined headers dict
     """
 
+    # @category: http
+    # @requires: requests
+    # @ports: base_headers, header_name, header_value, headers_json -> headers
+
     def __init__(
         self, node_id: str, name: str = "Set HTTP Headers", **kwargs: Any
     ) -> None:
@@ -171,6 +175,10 @@ class ParseJsonResponseNode(BaseNode):
         success: True if extraction succeeded
         error: Error message if failed
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: json_data, path, default -> value, success, error
 
     def __init__(self, node_id: str, name: str = "Parse JSON", **kwargs: Any) -> None:
         config = kwargs.get("config", {})
@@ -364,6 +372,10 @@ class HttpDownloadFileNode(BaseNode):
     Outputs:
         file_path, file_size, success, error
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: url, save_path, headers, timeout -> file_path, file_size, success, error
 
     def __init__(
         self, node_id: str, name: str = "HTTP Download File", **kwargs: Any
@@ -576,6 +588,10 @@ class HttpUploadFileNode(BaseNode):
         response_body, response_json, status_code, success, error
     """
 
+    # @category: http
+    # @requires: requests
+    # @ports: url, file_path, field_name, headers, extra_fields, timeout -> response_body, response_json, status_code, success, error
+
     def __init__(
         self, node_id: str, name: str = "HTTP Upload File", **kwargs: Any
     ) -> None:
@@ -753,6 +769,10 @@ class BuildUrlNode(BaseNode):
     Outputs:
         url: Complete URL with parameters
     """
+
+    # @category: http
+    # @requires: requests
+    # @ports: base_url, path, params -> url
 
     def __init__(self, node_id: str, name: str = "Build URL", **kwargs: Any) -> None:
         config = kwargs.get("config", {})

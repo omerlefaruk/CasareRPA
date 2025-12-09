@@ -342,35 +342,36 @@ class ErrorHandlerRegistry:
         logger.debug("Error history cleared")
 
 
-# Thread-safe singleton holder
-from casare_rpa.application.dependency_injection.singleton import Singleton
+# Thread-safe singleton implementation (pure domain, no application dependency)
+import threading
 
-
-def _on_create_error_registry(instance: ErrorHandlerRegistry) -> None:
-    """Callback when registry is created."""
-    logger.info("Global error handler registry created")
-
-
-_error_registry_holder = Singleton(
-    ErrorHandlerRegistry,
-    name="ErrorHandlerRegistry",
-    on_create=_on_create_error_registry,
-)
+_registry_instance: Optional["ErrorHandlerRegistry"] = None
+_registry_lock = threading.Lock()
 
 
 def get_error_handler_registry() -> ErrorHandlerRegistry:
     """
     Get the global error handler registry (singleton).
 
+    Thread-safe lazy initialization.
+
     Returns:
         Global ErrorHandlerRegistry instance.
     """
-    return _error_registry_holder.get()
+    global _registry_instance
+    if _registry_instance is None:
+        with _registry_lock:
+            if _registry_instance is None:
+                _registry_instance = ErrorHandlerRegistry()
+                logger.info("Global error handler registry created")
+    return _registry_instance
 
 
 def reset_error_handler_registry() -> None:
     """Reset the global error handler registry (for testing)."""
-    _error_registry_holder.reset()
+    global _registry_instance
+    with _registry_lock:
+        _registry_instance = None
     logger.debug("Global error handler registry reset")
 
 

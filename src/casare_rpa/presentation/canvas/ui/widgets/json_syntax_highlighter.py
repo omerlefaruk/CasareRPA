@@ -24,19 +24,21 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
 
-# VSCode Dark+ color scheme
+
+# VSCode Dark+ color scheme using THEME
 class JsonColors:
-    """VSCode Dark+ JSON colors."""
+    """VSCode Dark+ JSON colors using THEME."""
 
-    KEY = QColor("#9CDCFE")  # Light blue for keys
-    STRING = QColor("#CE9178")  # Orange-brown for strings
-    NUMBER = QColor("#B5CEA8")  # Light green for numbers
-    BOOLEAN = QColor("#569CD6")  # Blue for booleans
-    NULL = QColor("#569CD6")  # Blue for null
-    BRACKET = QColor("#D4D4D4")  # Light gray for brackets
-    COLON = QColor("#D4D4D4")  # Light gray for colons
-    COMMA = QColor("#D4D4D4")  # Light gray for commas
+    KEY = QColor(THEME.json_key)
+    STRING = QColor(THEME.json_string)
+    NUMBER = QColor(THEME.json_number)
+    BOOLEAN = QColor(THEME.json_boolean)
+    NULL = QColor(THEME.json_boolean)  # Same as boolean
+    BRACKET = QColor(THEME.text_primary)
+    COLON = QColor(THEME.text_primary)
+    COMMA = QColor(THEME.text_primary)
 
 
 class JsonSyntaxHighlighter(QSyntaxHighlighter):
@@ -228,48 +230,48 @@ def get_json_highlighter_stylesheet() -> str:
     Returns:
         CSS stylesheet string for dark theme JSON editor
     """
-    return """
-        QPlainTextEdit {
-            background-color: #1E1E1E;
-            color: #D4D4D4;
+    return f"""
+        QPlainTextEdit {{
+            background-color: {THEME.bg_darker};
+            color: {THEME.text_primary};
             border: none;
             font-family: "Consolas", "Courier New", monospace;
             font-size: 12px;
-            selection-background-color: #264F78;
+            selection-background-color: {THEME.selected};
             selection-color: #FFFFFF;
-        }
-        QScrollBar:vertical {
-            background: #252526;
+        }}
+        QScrollBar:vertical {{
+            background: {THEME.bg_dark};
             width: 12px;
             border: none;
-        }
-        QScrollBar::handle:vertical {
-            background: #424242;
+        }}
+        QScrollBar::handle:vertical {{
+            background: {THEME.scrollbar};
             min-height: 20px;
             border-radius: 6px;
-        }
-        QScrollBar::handle:vertical:hover {
-            background: #505050;
-        }
+        }}
+        QScrollBar::handle:vertical:hover {{
+            background: {THEME.scrollbar_hover};
+        }}
         QScrollBar::add-line:vertical,
-        QScrollBar::sub-line:vertical {
+        QScrollBar::sub-line:vertical {{
             height: 0px;
-        }
-        QScrollBar:horizontal {
-            background: #252526;
+        }}
+        QScrollBar:horizontal {{
+            background: {THEME.bg_dark};
             height: 12px;
             border: none;
-        }
-        QScrollBar::handle:horizontal {
-            background: #424242;
+        }}
+        QScrollBar::handle:horizontal {{
+            background: {THEME.scrollbar};
             min-width: 20px;
             border-radius: 6px;
-        }
-        QScrollBar::handle:horizontal:hover {
-            background: #505050;
-        }
+        }}
+        QScrollBar::handle:horizontal:hover {{
+            background: {THEME.scrollbar_hover};
+        }}
         QScrollBar::add-line:horizontal,
-        QScrollBar::sub-line:horizontal {
+        QScrollBar::sub-line:horizontal {{
             width: 0px;
-        }
+        }}
     """

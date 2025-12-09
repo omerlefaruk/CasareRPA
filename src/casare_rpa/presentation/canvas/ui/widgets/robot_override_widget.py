@@ -24,6 +24,8 @@ from PySide6.QtCore import Signal
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
+
 
 # Available robot capabilities matching RobotCapability enum
 ROBOT_CAPABILITIES = [
@@ -102,7 +104,7 @@ class RobotOverrideWidget(QWidget):
         mode_row.setSpacing(8)
         mode_label = QLabel("Mode:")
         mode_label.setMinimumWidth(70)
-        mode_label.setStyleSheet("color: #a0a0a0;")
+        mode_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._mode_combo = QComboBox()
         self._mode_combo.addItems(["Specific Robot", "By Capability"])
         self._mode_combo.setSizePolicy(
@@ -119,7 +121,7 @@ class RobotOverrideWidget(QWidget):
         robot_layout.setSpacing(8)
         robot_label = QLabel("Robot:")
         robot_label.setMinimumWidth(70)
-        robot_label.setStyleSheet("color: #a0a0a0;")
+        robot_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._robot_combo = QComboBox()
         self._robot_combo.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
@@ -149,7 +151,7 @@ class RobotOverrideWidget(QWidget):
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background: #3d3d3d;")
+        separator.setStyleSheet(f"background: {THEME.input_bg};")
         content_layout.addWidget(separator)
 
         # Reason field
@@ -157,7 +159,7 @@ class RobotOverrideWidget(QWidget):
         reason_row.setSpacing(8)
         reason_label = QLabel("Reason:")
         reason_label.setMinimumWidth(70)
-        reason_label.setStyleSheet("color: #a0a0a0;")
+        reason_label.setStyleSheet(f"color: {THEME.text_secondary};")
         self._reason_edit = QLineEdit()
         self._reason_edit.setPlaceholderText("Reason for override (optional)")
         reason_row.addWidget(reason_label)
@@ -173,94 +175,94 @@ class RobotOverrideWidget(QWidget):
         self._content_widget.hide()
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QWidget {
+        """Apply dark theme styling using THEME."""
+        self.setStyleSheet(f"""
+            QWidget {{
                 background: transparent;
-                color: #e0e0e0;
-            }
-            QGroupBox {
-                background: #2d2d2d;
-                border: 1px solid #3d3d3d;
+                color: {THEME.text_primary};
+            }}
+            QGroupBox {{
+                background: {THEME.bg_medium};
+                border: 1px solid {THEME.input_bg};
                 border-radius: 4px;
                 margin-top: 8px;
                 padding-top: 8px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 left: 8px;
                 padding: 0 4px;
-                color: #a0a0a0;
-            }
-            QCheckBox {
-                color: #e0e0e0;
+                color: {THEME.text_secondary};
+            }}
+            QCheckBox {{
+                color: {THEME.text_primary};
                 spacing: 6px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 14px;
                 height: 14px;
-            }
-            QCheckBox::indicator:unchecked {
-                border: 1px solid #4a4a4a;
-                background: #3d3d3d;
+            }}
+            QCheckBox::indicator:unchecked {{
+                border: 1px solid {THEME.border};
+                background: {THEME.input_bg};
                 border-radius: 2px;
-            }
-            QCheckBox::indicator:checked {
-                border: 1px solid #5a8a9a;
-                background: #5a8a9a;
+            }}
+            QCheckBox::indicator:checked {{
+                border: 1px solid {THEME.accent};
+                background: {THEME.accent};
                 border-radius: 2px;
-            }
-            QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+            }}
+            QComboBox {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 4px 8px;
                 min-height: 20px;
-            }
-            QComboBox:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QComboBox::drop-down {
+            }}
+            QComboBox:focus {{
+                border: 1px solid {THEME.accent};
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 20px;
-            }
-            QComboBox::down-arrow {
+            }}
+            QComboBox::down-arrow {{
                 image: none;
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
-                border-top: 6px solid #a0a0a0;
-            }
-            QComboBox QAbstractItemView {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                color: #e0e0e0;
-                selection-background-color: #5a8a9a;
-            }
-            QLineEdit {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+                border-top: 6px solid {THEME.text_secondary};
+            }}
+            QComboBox QAbstractItemView {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
+                color: {THEME.text_primary};
+                selection-background-color: {THEME.selected};
+            }}
+            QLineEdit {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 4px 8px;
                 min-height: 20px;
-            }
-            QLineEdit:focus {
-                border: 1px solid #5a8a9a;
-            }
-            QPushButton {
-                background: #4a4a4a;
-                border: 1px solid #5a5a5a;
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {THEME.accent};
+            }}
+            QPushButton {{
+                background: {THEME.button_bg};
+                border: 1px solid {THEME.border_light};
                 border-radius: 3px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 6px 12px;
-            }
-            QPushButton:hover {
-                background: #5a5a5a;
-            }
-            QPushButton:pressed {
-                background: #3d3d3d;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.button_hover};
+            }}
+            QPushButton:pressed {{
+                background: {THEME.input_bg};
+            }}
         """)
 
     def _connect_signals(self) -> None:

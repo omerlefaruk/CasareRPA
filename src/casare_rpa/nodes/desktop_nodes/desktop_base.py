@@ -34,6 +34,10 @@ class DesktopNodeBase(BaseNode):
     - Retry support via execute_with_retry()
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: none -> none
+
     __identifier__ = "casare_rpa.nodes.desktop"
 
     # Default retry configuration

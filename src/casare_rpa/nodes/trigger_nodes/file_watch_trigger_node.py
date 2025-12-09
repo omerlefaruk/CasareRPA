@@ -84,6 +84,10 @@ class FileWatchTriggerNode(BaseTriggerNode):
     - old_path: Previous path (for moved events)
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "File Watch"
     trigger_description = "Trigger when files change"
     trigger_icon = "folder"

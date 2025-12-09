@@ -1266,9 +1266,106 @@ class TestMyClass:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-11-30 | Initial baseline - Clean DDD architecture, comprehensive testing rules |
+| 1.1 | 2025-12-09 | Added new component rules (UnifiedHttpClient, THEME, domain interfaces, MainWindow split) |
+
+---
+
+## 18. New Component Rules (2025-12-09)
+
+### 18.1 HTTP Client Usage
+**Rule:** Use `UnifiedHttpClient` for ALL HTTP operations.
+
+```python
+# CORRECT
+from casare_rpa.infrastructure.http import UnifiedHttpClient
+
+async with UnifiedHttpClient() as client:
+    response = await client.get(url)
+
+# INCORRECT - Do not use raw aiohttp
+import aiohttp
+async with aiohttp.ClientSession() as session:
+    response = await session.get(url)  # NO!
+```
+
+**Why:** UnifiedHttpClient provides:
+- Rate limiting
+- Circuit breaker
+- Retry logic
+- SSRF protection
+- Request statistics
+
+### 18.2 Theme Constants
+**Rule:** Use `THEME` constants for ALL colors.
+
+```python
+# CORRECT
+from casare_rpa.presentation.canvas.theme import THEME
+
+widget.setStyleSheet(f"background: {THEME['background']};")
+
+# INCORRECT - No hardcoded colors
+widget.setStyleSheet("background: #1e1e1e;")  # NO!
+```
+
+**Why:** Ensures consistent UI and enables future theme customization.
+
+### 18.3 Domain Interfaces
+**Rule:** Application layer imports domain interfaces, not infrastructure implementations.
+
+```python
+# CORRECT - Application layer
+from casare_rpa.domain.interfaces import IExecutionContext
+
+class MyUseCase:
+    async def execute(self, context: IExecutionContext) -> Result:
+        ...
+
+# INCORRECT - Direct infrastructure import
+from casare_rpa.infrastructure.execution import ExecutionContext  # NO!
+```
+
+**Why:** Maintains Clean DDD layer boundaries.
+
+### 18.4 MainWindow Component Delegation
+**Rule:** MainWindow delegates to specialized components.
+
+| Component | Responsibility |
+|-----------|----------------|
+| `SignalCoordinator` | Action callbacks, controller delegation |
+| `PanelManager` | Panel visibility, tab switching |
+| `WorkflowController` | Workflow CRUD operations |
+| `ExecutionController` | Execution lifecycle |
+
+```python
+# CORRECT - Use coordinator
+self._signal_coordinator.start_execution()
+
+# INCORRECT - Direct implementation in MainWindow
+def on_run_clicked(self):
+    # 50 lines of execution logic...  # NO!
+```
+
+**Why:** Keeps MainWindow manageable (<1000 lines), enables testing.
+
+### 18.5 Node Registration
+**Rule:** Single source of truth in `workflow_loader.py`.
+
+```python
+# Location: src/casare_rpa/utils/workflow/workflow_loader.py
+
+# Add ALL nodes here (both import and NODE_TYPE_MAP entry)
+from casare_rpa.nodes.browser import ClickElementNode
+NODE_TYPE_MAP = {
+    "ClickElementNode": ClickElementNode,
+    # ...
+}
+```
+
+**Why:** Eliminates registration gaps between NODE_REGISTRY and NODE_TYPE_MAP.
 
 ---
 
 **Status:** AUTHORITATIVE. This document supersedes all other standards documentation.
 **Maintainer:** CasareRPA Technical Writing Team
-**Last Review:** 2025-11-30
+**Last Review:** 2025-12-09

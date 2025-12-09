@@ -167,6 +167,10 @@ class ClickElementNode(BrowserBaseNode):
         page: Browser page instance (passthrough)
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: via base class helpers
+
     def __init__(
         self,
         node_id: str,
@@ -449,6 +453,10 @@ class TypeTextNode(BrowserBaseNode):
         page: Browser page instance (passthrough)
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: text -> none
+
     def __init__(
         self,
         node_id: str,
@@ -698,6 +706,10 @@ class SelectDropdownNode(BrowserBaseNode):
         page: Browser page instance (passthrough)
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: value -> none
+
     def __init__(
         self,
         node_id: str,
@@ -891,6 +903,10 @@ class ImageClickNode(BrowserBaseNode):
     Outputs:
         page: Browser page instance (passthrough)
     """
+
+    # @category: browser
+    # @requires: none
+    # @ports: via base class helpers
 
     def __init__(
         self,

@@ -108,6 +108,10 @@ class WhatsAppSendMessageNode(WhatsAppBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: text, preview_url -> text
+
     NODE_TYPE = "whatsapp_send_message"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "WhatsApp: Send Message"
@@ -228,6 +232,10 @@ class WhatsAppSendTemplateNode(WhatsAppBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: template_name, language_code, components -> template_name
 
     NODE_TYPE = "whatsapp_send_template"
     NODE_CATEGORY = "messaging"
@@ -362,6 +370,10 @@ class WhatsAppSendImageNode(WhatsAppBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: image, caption -> image_path
+
     NODE_TYPE = "whatsapp_send_image"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "WhatsApp: Send Image"
@@ -476,6 +488,10 @@ class WhatsAppSendDocumentNode(WhatsAppBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: document, filename, caption -> document_path
+
     NODE_TYPE = "whatsapp_send_document"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "WhatsApp: Send Document"
@@ -586,6 +602,10 @@ class WhatsAppSendVideoNode(WhatsAppBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: video, caption -> video_path
 
     NODE_TYPE = "whatsapp_send_video"
     NODE_CATEGORY = "messaging"
@@ -714,6 +734,10 @@ class WhatsAppSendLocationNode(WhatsAppBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: latitude, longitude, name, address -> latitude, longitude
 
     NODE_TYPE = "whatsapp_send_location"
     NODE_CATEGORY = "messaging"
@@ -885,6 +909,10 @@ class WhatsAppSendInteractiveNode(WhatsAppBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: interactive_type, body_text, action_json, header_json, footer_text -> interactive_type
 
     NODE_TYPE = "whatsapp_send_interactive"
     NODE_CATEGORY = "messaging"

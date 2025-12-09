@@ -74,6 +74,10 @@ class TelegramEditMessageNode(TelegramBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: message_id, text, parse_mode -> none
+
     NODE_TYPE = "telegram_edit_message"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "Telegram: Edit Message"
@@ -179,6 +183,10 @@ class TelegramDeleteMessageNode(TelegramBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: message_id -> success, error
+
     NODE_TYPE = "telegram_delete_message"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "Telegram: Delete Message"
@@ -267,6 +275,10 @@ class TelegramSendMediaGroupNode(TelegramBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: media_json, disable_notification -> message_ids, count, success, error
 
     NODE_TYPE = "telegram_send_media_group"
     NODE_CATEGORY = "messaging"
@@ -417,6 +429,10 @@ class TelegramAnswerCallbackNode(TelegramBaseNode):
         - error: Error message if failed
     """
 
+    # @category: integration
+    # @requires: none
+    # @ports: bot_token, credential_name, callback_query_id, text, show_alert, url -> success, error
+
     NODE_TYPE = "telegram_answer_callback"
     NODE_CATEGORY = "messaging"
     NODE_DISPLAY_NAME = "Telegram: Answer Callback"
@@ -549,6 +565,10 @@ class TelegramGetUpdatesNode(TelegramBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: integration
+    # @requires: none
+    # @ports: bot_token, credential_name, offset, limit, timeout -> updates_json, count, last_update_id, success, error
 
     NODE_TYPE = "telegram_get_updates"
     NODE_CATEGORY = "messaging"

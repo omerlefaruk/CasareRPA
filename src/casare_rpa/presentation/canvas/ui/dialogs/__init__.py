@@ -4,6 +4,18 @@ UI Dialogs Module.
 Reusable dialog components for the CasareRPA Canvas application.
 """
 
+from casare_rpa.presentation.canvas.ui.dialogs.dialog_styles import (
+    DialogStyles,
+    DialogSize,
+    DialogColors,
+    COLORS,
+    DIALOG_DIMENSIONS,
+    apply_dialog_style,
+    show_styled_message,
+    show_styled_warning,
+    show_styled_error,
+    show_styled_question,
+)
 from casare_rpa.presentation.canvas.ui.dialogs.node_properties_dialog import (
     NodePropertiesDialog,
 )
@@ -61,6 +73,18 @@ from casare_rpa.presentation.canvas.ui.dialogs.project_wizard import (
 )
 
 __all__ = [
+    # Dialog Styles
+    "DialogStyles",
+    "DialogSize",
+    "DialogColors",
+    "COLORS",
+    "DIALOG_DIMENSIONS",
+    "apply_dialog_style",
+    "show_styled_message",
+    "show_styled_warning",
+    "show_styled_error",
+    "show_styled_question",
+    # Dialogs
     "NodePropertiesDialog",
     "WorkflowSettingsDialog",
     "PreferencesDialog",

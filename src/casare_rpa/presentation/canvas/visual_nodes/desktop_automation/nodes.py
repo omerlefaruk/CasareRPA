@@ -650,34 +650,21 @@ class VisualSendKeysNode(VisualNode):
 
 
 class VisualSendHotKeyNode(VisualNode):
-    """Visual representation of SendHotKeyNode."""
+    """Visual representation of SendHotKeyNode.
+
+    Widgets are auto-generated from the @node_schema on SendHotKeyNode:
+    - modifier: Dropdown (none, Ctrl, Alt, Shift, Win)
+    - key: Text input for main key
+    - keys: Custom comma-separated keys override
+    - wait_time: Delay after sending
+    """
 
     __identifier__ = "casare_rpa.desktop"
     NODE_NAME = "Send Hotkey"
     NODE_CATEGORY = "desktop_automation/input"
     CASARE_NODE_MODULE = "desktop"
 
-    def __init__(self) -> None:
-        """Initialize Send Hotkey node."""
-        super().__init__()
-        # Modifier dropdown
-        self.add_combo_menu(
-            "modifier",
-            "Modifier",
-            items=["none", "Ctrl", "Alt", "Shift", "Win"],
-            tab="properties",
-        )
-        # Key to send
-        self.add_text_input("key", "Key", text="Enter", tab="properties")
-        # Wait time after sending
-        self.add_text_input("wait_time", "Wait Time (s)", text="0", tab="properties")
-        # Override text (comma-separated keys) - overrides modifier + key if provided
-        self.add_text_input(
-            "keys",
-            "Custom Keys (overrides above)",
-            placeholder_text="e.g., Ctrl,Alt,Delete",
-            tab="advanced",
-        )
+    # No __init__ needed - widgets auto-created from domain schema
 
     def setup_ports(self) -> None:
         """Setup ports."""

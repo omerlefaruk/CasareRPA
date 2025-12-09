@@ -136,34 +136,39 @@ class AutoConnectManager(QObject):
             # Detect node movement first - this sets _dragging_node
             if event.type() == QEvent.Type.MouseMove:
                 if isinstance(event, QMouseEvent):
-                    # Check if we're dragging a node (not a connection)
-                    selected_nodes = self._graph.selected_nodes()
-                    if selected_nodes and event.buttons() & Qt.MouseButton.LeftButton:
-                        # Only track node drag if NOT dragging from a port
-                        # Check if there's an active live pipe (connection being made)
-                        viewer = self._graph.viewer()
-                        is_making_connection = (
-                            viewer
-                            and hasattr(viewer, "_LIVE_PIPE")
-                            and viewer._LIVE_PIPE.isVisible()
-                        )
+                    # Check if left button is pressed
+                    if event.buttons() & Qt.MouseButton.LeftButton:
+                        # Check if we're dragging a node (not a connection)
+                        selected_nodes = self._graph.selected_nodes()
+                        if selected_nodes:
+                            # Only track node drag if NOT dragging from a port
+                            # Check if there's an active live pipe (connection being made)
+                            viewer = self._graph.viewer()
+                            is_making_connection = (
+                                viewer
+                                and hasattr(viewer, "_LIVE_PIPE")
+                                and viewer._LIVE_PIPE.isVisible()
+                            )
 
-                        if is_making_connection:
-                            # User is making a connection, not dragging a node
-                            # Clear any stale drag state
-                            if self._dragging_node:
-                                self._clear_suggestions()
-                                self._dragging_node = None
-                                self._restore_context_menu()
-                        else:
-                            # Start dragging if not already
-                            if not self._dragging_node:
-                                self._dragging_node = selected_nodes[0]
-                                # Disable context menu during drag
-                                self._disable_context_menu()
+                            if is_making_connection:
+                                # User is making a connection, not dragging a node
+                                # Clear any stale drag state
+                                if self._dragging_node:
+                                    self._clear_suggestions()
+                                    self._dragging_node = None
+                                    self._restore_context_menu()
+                            else:
+                                # Start dragging if not already
+                                if not self._dragging_node:
+                                    self._dragging_node = selected_nodes[0]
+                                    logger.debug(
+                                        f"AutoConnect: Started dragging '{self._dragging_node.name()}'"
+                                    )
+                                    # Disable context menu during drag
+                                    self._disable_context_menu()
 
-                            # Update suggestions
-                            self._update_suggestions()
+                                # Update suggestions
+                                self._update_suggestions()
 
             # Track right mouse button state and handle context menu
             elif event.type() == QEvent.Type.MouseButtonPress:
@@ -248,9 +253,11 @@ class AutoConnectManager(QObject):
 
         # Get all nodes except the dragging one
         all_nodes = [n for n in self._graph.all_nodes() if n != self._dragging_node]
+        logger.debug(f"AutoConnect: Updating suggestions, {len(all_nodes)} other nodes")
 
         # Find closest compatible connections
         suggestions = self._find_closest_connections(self._dragging_node, all_nodes)
+        logger.debug(f"AutoConnect: Found {len(suggestions)} suggestions")
 
         # Draw suggestion lines
         self._draw_suggestion_lines(suggestions)
@@ -391,14 +398,19 @@ class AutoConnectManager(QObject):
         self, suggestions: List[Tuple[BaseNode, str, BaseNode, str]]
     ):
         """Draw faded lines showing suggested connections."""
+        logger.debug(f"AutoConnect: Drawing {len(suggestions)} suggestion lines")
         try:
             viewer = self._graph.viewer()
             if not viewer or not viewer.scene():
+                logger.debug("AutoConnect: No viewer or scene")
                 return
 
             scene = viewer.scene()
 
             for from_node, from_port_name, to_node, to_port_name in suggestions:
+                logger.debug(
+                    f"AutoConnect: Drawing line {from_node.name()}:{from_port_name} -> {to_node.name()}:{to_port_name}"
+                )
                 # Get port positions
                 from_pos = self._get_port_scene_pos(
                     from_node, from_port_name, is_output=True

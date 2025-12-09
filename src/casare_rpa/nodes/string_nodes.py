@@ -92,6 +92,10 @@ def _resolve_dict_param(
 class ConcatenateNode(BaseNode):
     """Node that concatenates multiple strings."""
 
+    # @category: data
+    # @requires: none
+    # @ports: string_1, string_2 -> result
+
     def __init__(self, node_id: str, name: str = "Concatenate", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -122,6 +126,10 @@ class ConcatenateNode(BaseNode):
 @executable_node
 class FormatStringNode(BaseNode):
     """Node that formats a string using python's format() method."""
+
+    # @category: data
+    # @requires: none
+    # @ports: template, variables -> result
 
     def __init__(self, node_id: str, name: str = "Format String", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -175,6 +183,10 @@ class FormatStringNode(BaseNode):
 @executable_node
 class RegexMatchNode(BaseNode):
     """Node that searches for a regex pattern in a string."""
+
+    # @category: data
+    # @requires: none
+    # @ports: text, pattern -> match_found, first_match, all_matches, groups, match_count
 
     def __init__(self, node_id: str, name: str = "Regex Match", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -268,6 +280,10 @@ class RegexMatchNode(BaseNode):
 @executable_node
 class RegexReplaceNode(BaseNode):
     """Node that replaces text using regex."""
+
+    # @category: data
+    # @requires: none
+    # @ports: text, pattern, replacement -> result, count
 
     def __init__(self, node_id: str, name: str = "Regex Replace", **kwargs) -> None:
         config = kwargs.get("config", {})

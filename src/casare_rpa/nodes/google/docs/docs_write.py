@@ -22,7 +22,7 @@ from casare_rpa.infrastructure.resources.google_docs_client import (
     DocumentStyle,
     GoogleDocsClient,
 )
-from casare_rpa.nodes.google.docs.docs_base import DocsBaseNode
+from casare_rpa.nodes.google.google_base import DocsBaseNode
 
 
 # ============================================================================
@@ -99,6 +99,10 @@ class DocsCreateDocumentNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: access_token, credential_name, title, content -> document_id, title, success, error
 
     NODE_TYPE = "docs_create_document"
     NODE_CATEGORY = "google"
@@ -212,6 +216,10 @@ class DocsInsertTextNode(DocsBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: text, index -> none
+
     NODE_TYPE = "docs_insert_text"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Google Docs: Insert Text"
@@ -321,6 +329,10 @@ class DocsAppendTextNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: text -> none
 
     NODE_TYPE = "docs_append_text"
     NODE_CATEGORY = "google"
@@ -435,6 +447,10 @@ class DocsReplaceTextNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: search, replace, match_case -> replacements_count
 
     NODE_TYPE = "docs_replace_text"
     NODE_CATEGORY = "google"
@@ -579,6 +595,10 @@ class DocsInsertTableNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: rows, columns, index -> none
 
     NODE_TYPE = "docs_insert_table"
     NODE_CATEGORY = "google"
@@ -728,6 +748,10 @@ class DocsInsertImageNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: image_url, index, image_width, image_height -> none
 
     NODE_TYPE = "docs_insert_image"
     NODE_CATEGORY = "google"
@@ -925,6 +949,10 @@ class DocsApplyStyleNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: start_index, end_index, bold, italic, underline, strikethrough, font_size, font_family -> none
 
     NODE_TYPE = "docs_apply_style"
     NODE_CATEGORY = "google"

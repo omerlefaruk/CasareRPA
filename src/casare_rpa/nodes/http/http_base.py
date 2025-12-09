@@ -141,6 +141,10 @@ class HttpBaseNode(BaseNode):
     3. Optionally override _has_request_body() for methods that send bodies
     """
 
+    # @category: http
+    # @requires: requests
+    # @ports: none -> none
+
     # Subclasses can override these defaults
     DEFAULT_TIMEOUT: float = 30.0
     DEFAULT_CONTENT_TYPE: str = "application/json"

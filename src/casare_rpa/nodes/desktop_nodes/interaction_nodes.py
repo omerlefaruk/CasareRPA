@@ -94,6 +94,10 @@ class InteractionNodeBase(DesktopNodeBase):
     Provides common element handling patterns.
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: none -> none
+
     def get_element_from_input(self) -> Any:
         """
         Get element from input port.
@@ -132,6 +136,10 @@ class SelectFromDropdownNode(InteractionNodeBase):
     Outputs:
         success: Whether selection succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element, value -> success
 
     NODE_NAME = "Select From Dropdown"
 
@@ -192,6 +200,10 @@ class CheckCheckboxNode(InteractionNodeBase):
         success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: element -> success
+
     NODE_NAME = "Check Checkbox"
 
     def __init__(
@@ -243,6 +255,10 @@ class SelectRadioButtonNode(InteractionNodeBase):
     Outputs:
         success: Whether selection succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element -> success
 
     NODE_NAME = "Select Radio Button"
 
@@ -299,6 +315,10 @@ class SelectTabNode(InteractionNodeBase):
     Outputs:
         success: Whether selection succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: tab_control, tab_name, tab_index -> success
 
     NODE_NAME = "Select Tab"
 
@@ -367,6 +387,10 @@ class ExpandTreeItemNode(InteractionNodeBase):
         success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: element -> success
+
     NODE_NAME = "Expand Tree Item"
 
     def __init__(
@@ -423,6 +447,10 @@ class ScrollElementNode(InteractionNodeBase):
     Outputs:
         success: Whether scroll succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element -> success
 
     NODE_NAME = "Scroll Element"
 

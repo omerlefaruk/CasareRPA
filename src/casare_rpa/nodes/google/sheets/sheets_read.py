@@ -19,7 +19,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.google_sheets_client import GoogleSheetsClient
-from casare_rpa.nodes.google.sheets.sheets_base import SheetsBaseNode
+from casare_rpa.nodes.google.google_base import SheetsBaseNode
 
 
 # ============================================================================
@@ -118,6 +118,10 @@ class SheetsGetCellNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, cell, value_render_option -> value
 
     NODE_TYPE = "sheets_get_cell"
     NODE_CATEGORY = "Google Sheets"
@@ -235,6 +239,10 @@ class SheetsGetRangeNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: range, value_render_option, major_dimension -> values, row_count, column_count
 
     NODE_TYPE = "sheets_get_range"
     NODE_CATEGORY = "Google Sheets"
@@ -357,6 +365,10 @@ class SheetsGetRowNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, row_num, start_col, end_col, value_render_option -> values, cell_count
 
     NODE_TYPE = "sheets_get_row"
     NODE_CATEGORY = "Google Sheets"
@@ -495,6 +507,10 @@ class SheetsGetColumnNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: sheet_name, column, start_row, end_row, value_render_option -> values, cell_count
 
     NODE_TYPE = "sheets_get_column"
     NODE_CATEGORY = "Google Sheets"
@@ -640,6 +656,10 @@ class SheetsSearchNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: search_value, sheet_name, search_range, match_case, match_entire_cell -> results, match_count, first_match
 
     NODE_TYPE = "sheets_search"
     NODE_CATEGORY = "Google Sheets"
@@ -803,6 +823,10 @@ class SheetsGetSheetInfoNode(SheetsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> title, sheets, sheet_count, locale
 
     NODE_TYPE = "sheets_get_sheet_info"
     NODE_CATEGORY = "Google Sheets"

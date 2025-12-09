@@ -797,4 +797,224 @@ data: NodeExecutionStartedData = {
 - Coding standards: `.brain/projectRules.md`
 - Feature plans: `.brain/plans/{feature}.md`
 
-*Last updated: 2025-12-03*
+## 12. UnifiedHttpClient Pattern (2025-12-09)
+
+### Composable Resilience
+```python
+from casare_rpa.infrastructure.http import UnifiedHttpClient, HttpClientConfig
+
+# Configure resilience patterns
+config = HttpClientConfig(
+    max_retries=3,
+    retry_base_delay=1.0,
+    circuit_breaker_threshold=5,
+    circuit_breaker_reset_timeout=60,
+    rate_limit_requests=100,
+    rate_limit_period=60,
+    max_connections=10,
+    timeout=30,
+)
+
+# Use client with automatic resilience
+async with UnifiedHttpClient(config) as client:
+    response = await client.get("https://api.example.com/data")
+```
+
+### Components
+| Component | Purpose | Configuration |
+|-----------|---------|---------------|
+| **Rate Limiter** | Token bucket algorithm | `rate_limit_requests`, `rate_limit_period` |
+| **Circuit Breaker** | Fail-fast on repeated errors | `circuit_breaker_threshold`, `circuit_breaker_reset_timeout` |
+| **Retry Logic** | Exponential backoff | `max_retries`, `retry_base_delay` |
+| **Session Pool** | Connection reuse | `max_connections` |
+| **SSRF Protection** | URL validation | Built-in (blocks private IPs) |
+
+### Request Statistics
+```python
+stats = client.get_stats()
+# RequestStats(total=100, success=95, failed=5, avg_latency_ms=150.5)
+```
+
+---
+
+## 13. Domain Interface Pattern (2025-12-09)
+
+### Problem
+Application layer was importing directly from Infrastructure (ExecutionContext), violating Clean DDD.
+
+### Solution
+Domain layer defines Protocol interfaces; Infrastructure implements them.
+
+```python
+# domain/interfaces/execution_context.py
+from typing import Protocol, Any, Optional
+
+class IExecutionContext(Protocol):
+    """Protocol for execution context - Application depends on this."""
+
+    @property
+    def variables(self) -> dict[str, Any]: ...
+
+    @property
+    def resources(self) -> dict[str, Any]: ...
+
+    async def get_page(self) -> Any: ...
+
+    async def execute_parallel(self, tasks: list) -> list: ...
+
+# infrastructure/execution/execution_context.py
+class ExecutionContext:
+    """Concrete implementation - Infrastructure provides this."""
+    # Implements IExecutionContext protocol
+```
+
+### Dependency Flow
+```
+Application Layer
+       |
+       v (depends on abstraction)
+Domain Interfaces (IExecutionContext, IFolderStorage, etc.)
+       ^
+       | (implements)
+Infrastructure Layer (ExecutionContext, FolderStorage, etc.)
+```
+
+### Available Interfaces
+- `IExecutionContext` - Workflow execution state
+- `IFolderStorage` - Project folder persistence
+- `IEnvironmentStorage` - Environment config persistence
+- `ITemplateStorage` - Project template loading
+
+---
+
+## 14. SignalCoordinator Pattern (2025-12-09)
+
+### Purpose
+Extracted from MainWindow to handle action callbacks and controller delegation.
+
+### Location
+`src/casare_rpa/presentation/canvas/coordinators/signal_coordinator.py`
+
+### Responsibilities
+| Method Category | Examples |
+|-----------------|----------|
+| **Workflow Actions** | `new_workflow()`, `open_workflow()`, `save_workflow()` |
+| **Execution Actions** | `start_execution()`, `stop_execution()`, `pause_execution()` |
+| **Debug Actions** | `toggle_debug_mode()`, `step_over()`, `step_into()` |
+| **Node Actions** | `copy_nodes()`, `paste_nodes()`, `delete_nodes()` |
+| **View Actions** | `zoom_in()`, `zoom_out()`, `fit_view()` |
+| **Mode Toggles** | `toggle_edit_mode()`, `toggle_run_mode()` |
+
+### Usage
+```python
+class MainWindow(QMainWindow):
+    def __init__(self):
+        self._signal_coordinator = SignalCoordinator(self)
+
+        # Connect toolbar actions
+        self.run_action.triggered.connect(
+            self._signal_coordinator.start_execution
+        )
+```
+
+---
+
+## 15. PanelManager Pattern (2025-12-09)
+
+### Purpose
+Extracted from MainWindow to manage panel visibility and tab switching.
+
+### Location
+`src/casare_rpa/presentation/canvas/managers/panel_manager.py`
+
+### Responsibilities
+| Method | Purpose |
+|--------|---------|
+| `show_bottom_panel()` | Show bottom panel area |
+| `hide_bottom_panel()` | Hide bottom panel area |
+| `toggle_bottom_panel()` | Toggle visibility |
+| `switch_to_tab(name)` | Switch to named tab |
+| `get_panel(name)` | Get panel widget by name |
+| `toggle_side_panel()` | Toggle node palette |
+| `show_debug_panel()` | Show debug tab |
+
+### Panel Registry
+```python
+# Register panels at startup
+self._panel_manager.register_panel("output", output_panel)
+self._panel_manager.register_panel("variables", variables_panel)
+self._panel_manager.register_panel("debug", debug_panel)
+```
+
+---
+
+## 16. Theme System Pattern (2025-12-09)
+
+### Problem
+Hardcoded colors scattered throughout codebase, inconsistent UI.
+
+### Solution
+Centralized THEME constants with semantic naming.
+
+### Location
+`src/casare_rpa/presentation/canvas/theme.py`
+
+### Usage
+```python
+from casare_rpa.presentation.canvas.theme import THEME
+
+# Widget styling
+widget.setStyleSheet(f"""
+    background-color: {THEME['background']};
+    color: {THEME['text']};
+    border: 1px solid {THEME['border']};
+""")
+
+# Port colors (semantic)
+wire_color = THEME['port_colors']['string']  # Blue
+wire_color = THEME['port_colors']['integer']  # Green
+wire_color = THEME['port_colors']['execution']  # White
+```
+
+### THEME Keys
+| Category | Keys |
+|----------|------|
+| **Base** | `background`, `foreground`, `text`, `border` |
+| **Accent** | `accent`, `accent_hover`, `accent_disabled` |
+| **Status** | `success`, `warning`, `error`, `info` |
+| **Ports** | `port_colors` dict with DataType keys |
+| **Node** | `node_bg`, `node_border`, `node_selected` |
+
+---
+
+## 17. SSRF Protection Pattern (2025-12-09)
+
+### Problem
+HTTP nodes could be used to access internal network resources.
+
+### Solution
+URL validation in UnifiedHttpClient blocks private IP ranges.
+
+### Protected Ranges
+- `127.0.0.0/8` - Loopback
+- `10.0.0.0/8` - Private Class A
+- `172.16.0.0/12` - Private Class B
+- `192.168.0.0/16` - Private Class C
+- `169.254.0.0/16` - Link-local
+- `::1` - IPv6 loopback
+- `fc00::/7` - IPv6 private
+
+### Validation
+```python
+# Automatic in UnifiedHttpClient
+await client.get("http://192.168.1.1/admin")  # Raises SSRFBlockedError
+
+# Manual check
+from casare_rpa.infrastructure.http.security import is_ssrf_safe
+if not is_ssrf_safe(url):
+    raise SecurityError("SSRF blocked")
+```
+
+---
+
+*Last updated: 2025-12-09*

@@ -25,6 +25,8 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 class GraphicsSceneComboBox(QComboBox):
     """
@@ -47,89 +49,89 @@ class GraphicsSceneComboBox(QComboBox):
         super().showPopup()
 
 
-# Styles - VSCode Dark+ theme aligned
-PICKER_STYLE = """
-QComboBox {
-    background: #3c3c3c;
-    border: 1px solid #5c5c5c;
+# Styles using THEME constants
+PICKER_STYLE = f"""
+QComboBox {{
+    background: {THEME.bg_light};
+    border: 1px solid {THEME.border_light};
     border-radius: 4px;
     padding: 4px 8px;
     padding-right: 24px;
-    color: #d4d4d4;
+    color: {THEME.text_secondary};
     min-width: 140px;
     min-height: 24px;
-}
-QComboBox:hover {
-    border-color: #007acc;
-    background: #454545;
-}
-QComboBox:focus {
-    border-color: #007acc;
-}
-QComboBox:disabled {
-    background: #2d2d2d;
-    color: #666666;
-}
-QComboBox::drop-down {
+}}
+QComboBox:hover {{
+    border-color: {THEME.accent_primary};
+    background: {THEME.bg_hover};
+}}
+QComboBox:focus {{
+    border-color: {THEME.accent_primary};
+}}
+QComboBox:disabled {{
+    background: {THEME.bg_dark};
+    color: {THEME.text_disabled};
+}}
+QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: center right;
     width: 20px;
     border-left: none;
     background: transparent;
-}
-QComboBox::down-arrow {
+}}
+QComboBox::down-arrow {{
     image: none;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-top: 6px solid #d4d4d4;
+    border-top: 6px solid {THEME.text_secondary};
     margin-right: 4px;
-}
-QComboBox::down-arrow:hover {
-    border-top-color: #ffffff;
-}
-QComboBox QAbstractItemView {
-    background: #252526;
-    border: 1px solid #3c3c3c;
-    selection-background-color: #094771;
+}}
+QComboBox::down-arrow:hover {{
+    border-top-color: {THEME.text_primary};
+}}
+QComboBox QAbstractItemView {{
+    background: {THEME.bg_dark};
+    border: 1px solid {THEME.border};
+    selection-background-color: {THEME.accent_secondary};
     outline: none;
     padding: 2px;
-}
-QComboBox QAbstractItemView::item {
+}}
+QComboBox QAbstractItemView::item {{
     padding: 6px 8px;
     min-height: 22px;
-}
-QComboBox QAbstractItemView::item:hover {
-    background: #2a2d2e;
-}
-QComboBox QAbstractItemView::item:selected {
-    background: #094771;
-}
+}}
+QComboBox QAbstractItemView::item:hover {{
+    background: {THEME.bg_hover};
+}}
+QComboBox QAbstractItemView::item:selected {{
+    background: {THEME.accent_secondary};
+}}
 """
 
-BUTTON_STYLE = """
-QPushButton {
-    background: #3c3c3c;
-    border: 1px solid #5c5c5c;
+BUTTON_STYLE = f"""
+QPushButton {{
+    background: {THEME.bg_light};
+    border: 1px solid {THEME.border_light};
     border-radius: 4px;
     padding: 0px;
-    color: #d4d4d4;
+    color: {THEME.text_secondary};
     font-size: 16px;
     font-weight: bold;
     min-width: 26px;
     min-height: 26px;
-}
-QPushButton:hover {
-    background: #505050;
-    border-color: #007acc;
-    color: #ffffff;
-}
-QPushButton:pressed {
-    background: #2d2d30;
-}
-QPushButton:disabled {
-    background: #2d2d2d;
-    color: #666666;
-}
+}}
+QPushButton:hover {{
+    background: {THEME.bg_hover};
+    border-color: {THEME.accent_primary};
+    color: {THEME.text_primary};
+}}
+QPushButton:pressed {{
+    background: {THEME.bg_dark};
+}}
+QPushButton:disabled {{
+    background: {THEME.bg_dark};
+    color: {THEME.text_disabled};
+}}
 """
 
 ADD_ACCOUNT_ID = "__add_account__"
@@ -369,7 +371,7 @@ class GoogleCredentialPickerWithLabel(QWidget):
         layout.setSpacing(8)
 
         self._label = QLabel(label)
-        self._label.setStyleSheet("color: #d4d4d4;")
+        self._label.setStyleSheet(f"color: {THEME.text_secondary};")
         layout.addWidget(self._label)
 
         self._picker = GoogleCredentialPicker()

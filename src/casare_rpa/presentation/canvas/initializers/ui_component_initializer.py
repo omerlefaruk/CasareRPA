@@ -3,6 +3,9 @@ UI Component Initializer for MainWindow.
 
 Handles initialization of panels, docks, debug components, and validation
 timers in a structured, tiered loading approach.
+
+Also triggers background node preloading after the window is visible
+to improve perceived startup performance.
 """
 
 from typing import TYPE_CHECKING, Optional
@@ -167,6 +170,7 @@ class UIComponentInitializer:
         Schedule NORMAL tier load after a delay.
 
         Used by showEvent to defer loading until window is visible.
+        Also schedules background node preloading for better performance.
 
         Args:
             delay_ms: Delay in milliseconds before loading (default: 100)
@@ -174,6 +178,23 @@ class UIComponentInitializer:
         if self._normal_components_loaded:
             return
         QTimer.singleShot(delay_ms, self.load_normal_components)
+        # Schedule node preloading after a short delay to let UI settle
+        QTimer.singleShot(delay_ms + 50, self._start_node_preload)
+
+    def _start_node_preload(self) -> None:
+        """
+        Start background node preloading.
+
+        This runs after the window is visible to improve perceived startup.
+        Node modules are loaded in a background thread to avoid blocking UI.
+        """
+        try:
+            from casare_rpa.nodes.preloader import start_node_preload
+
+            start_node_preload()
+        except Exception as e:
+            # Preload failure should not affect application startup
+            logger.debug(f"Node preload initialization skipped: {e}")
 
     def cleanup(self) -> None:
         """

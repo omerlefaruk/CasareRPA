@@ -5,7 +5,7 @@ Provides nodes for reading, creating, and modifying Google Documents
 via the Google Docs API v1.
 """
 
-from casare_rpa.nodes.google.docs.docs_base import DocsBaseNode
+from casare_rpa.nodes.google.google_base import DocsBaseNode
 from casare_rpa.nodes.google.docs.docs_read import (
     DocsExportNode,
     DocsGetDocumentNode,

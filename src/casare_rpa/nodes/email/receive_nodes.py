@@ -128,6 +128,10 @@ class ReadEmailsNode(CredentialAwareMixin, BaseNode):
     3. Environment variables (IMAP_USERNAME, IMAP_PASSWORD)
     """
 
+    # @category: email
+    # @requires: email
+    # @ports: imap_server, imap_port, username, password, folder, limit, search_criteria -> emails, count
+
     def __init__(self, node_id: str, config: Optional[dict] = None, **kwargs) -> None:
         """Initialize ReadEmails node."""
         config = config or kwargs.get("config", {})
@@ -304,6 +308,10 @@ class GetEmailContentNode(BaseNode):
     Parses email data and extracts subject, body, sender, etc.
     """
 
+    # @category: email
+    # @requires: email
+    # @ports: email -> subject, from, to, date, body_text, body_html, attachments
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize GetEmailContent node."""
         super().__init__(node_id, config)
@@ -363,6 +371,10 @@ class FilterEmailsNode(BaseNode):
 
     Supports filtering by subject, sender, date range, etc.
     """
+
+    # @category: email
+    # @requires: email
+    # @ports: emails, subject_contains, from_contains, has_attachments -> filtered, count
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize FilterEmails node."""

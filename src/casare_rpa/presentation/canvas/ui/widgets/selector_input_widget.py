@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
+
 
 # Properties that should show the selector explorer button
 SELECTOR_PROPERTY_NAMES = {
@@ -112,18 +114,18 @@ class SelectorInputWidget(QWidget):
         self._line_edit.setText(initial_value)
         self._line_edit.setPlaceholderText("Enter selector or click icon...")
         self._line_edit.textChanged.connect(self._on_text_changed)
-        self._line_edit.setStyleSheet("""
-            QLineEdit {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+        self._line_edit.setStyleSheet(f"""
+            QLineEdit {{
+                background: {THEME.input_bg};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #60a5fa;
+                color: {THEME.selector_text};
                 padding: 4px;
                 font-family: Consolas, monospace;
-            }
-            QLineEdit:focus {
-                border: 1px solid #3b82f6;
-            }
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {THEME.accent};
+            }}
         """)
         layout.addWidget(self._line_edit, 1)
 
@@ -138,20 +140,20 @@ class SelectorInputWidget(QWidget):
         self._explorer_btn.clicked.connect(self._on_explorer_clicked)
         self._explorer_btn.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._explorer_btn.customContextMenuRequested.connect(self._on_context_menu)
-        self._explorer_btn.setStyleSheet("""
-            QToolButton {
-                background: #3b82f6;
-                border: 1px solid #2563eb;
+        self._explorer_btn.setStyleSheet(f"""
+            QToolButton {{
+                background: {THEME.accent};
+                border: 1px solid {THEME.accent_dark};
                 border-radius: 3px;
                 color: white;
                 font-weight: bold;
-            }
-            QToolButton:hover {
-                background: #2563eb;
-            }
-            QToolButton:pressed {
-                background: #1d4ed8;
-            }
+            }}
+            QToolButton:hover {{
+                background: {THEME.accent_dark};
+            }}
+            QToolButton:pressed {{
+                background: {THEME.accent_darker};
+            }}
         """)
         layout.addWidget(self._explorer_btn)
 
@@ -178,18 +180,18 @@ class SelectorInputWidget(QWidget):
     def _on_context_menu(self, pos) -> None:
         """Show context menu with dialog options."""
         menu = QMenu(self)
-        menu.setStyleSheet("""
-            QMenu {
-                background: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                color: #e0e0e0;
-            }
-            QMenu::item {
+        menu.setStyleSheet(f"""
+            QMenu {{
+                background: {THEME.bg_darker};
+                border: 1px solid {THEME.border};
+                color: {THEME.text_primary};
+            }}
+            QMenu::item {{
                 padding: 6px 12px;
-            }
-            QMenu::item:selected {
-                background: #3b82f6;
-            }
+            }}
+            QMenu::item:selected {{
+                background: {THEME.accent};
+            }}
         """)
 
         # Quick picker action

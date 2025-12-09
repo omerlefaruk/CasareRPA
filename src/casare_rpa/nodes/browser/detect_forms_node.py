@@ -60,6 +60,10 @@ class DetectFormsNode(BrowserBaseNode):
     - field_count: Total number of fields found
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: none -> forms, form_count, field_count, fields
+
     NODE_NAME = "Detect Forms"
 
     def __init__(self, node_id: str, name: str = "Detect Forms", **kwargs: Any) -> None:

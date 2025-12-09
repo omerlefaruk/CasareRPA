@@ -105,6 +105,10 @@ class GoToURLNode(BaseNode):
     Loads a web page at the given URL with optional timeout configuration.
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: page, url -> page
+
     def __init__(
         self,
         node_id: str,
@@ -344,6 +348,10 @@ class GoBackNode(BaseNode):
     Go back node - navigates back in browser history.
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: page -> page
+
     def __init__(self, node_id: str, name: str = "Go Back", **kwargs) -> None:
         """
         Initialize go back node.
@@ -479,6 +487,10 @@ class GoForwardNode(BaseNode):
     Go forward node - navigates forward in browser history.
     """
 
+    # @category: browser
+    # @requires: none
+    # @ports: page -> page
+
     def __init__(self, node_id: str, name: str = "Go Forward", **kwargs) -> None:
         """
         Initialize go forward node.
@@ -613,6 +625,10 @@ class RefreshPageNode(BaseNode):
     """
     Refresh page node - reloads the current page.
     """
+
+    # @category: browser
+    # @requires: none
+    # @ports: page -> page
 
     def __init__(self, node_id: str, name: str = "Refresh Page", **kwargs) -> None:
         """

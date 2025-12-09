@@ -1,17 +1,74 @@
 """
 CasareRPA - Domain Error Handling Module
 
-Provides error classification, handler registry, and recovery interfaces.
+Provides error classification, handler registry, recovery interfaces,
+and Result<T,E> pattern for explicit error handling.
+
+Entry Points:
+    - Result, Ok, Err: Rust-style result types for explicit error handling
+    - DomainError, NodeExecutionError, etc.: Structured exception hierarchy
+    - ErrorHandlerRegistry: Error handler registration and dispatch
 
 Module Structure:
-- types: Error enumerations (ErrorCategory, ErrorSeverity, etc.)
-- context: ErrorContext, RecoveryDecision dataclasses
-- handlers/: Error handler base and implementations
-- registry: ErrorHandlerRegistry and global functions
-- error_handlers: Legacy compatibility module (re-exports all)
+    - result: Result<T,E> type system (Ok, Err, Result)
+    - exceptions: Domain exception hierarchy (DomainError, NodeExecutionError, etc.)
+    - types: Error enumerations (ErrorCategory, ErrorSeverity, etc.)
+    - context: ErrorContext, RecoveryDecision dataclasses
+    - handlers/: Error handler base and implementations
+    - registry: ErrorHandlerRegistry and global functions
+
+Usage:
+    from casare_rpa.domain.errors import Result, Ok, Err, NodeExecutionError
+
+    def get_element(selector: str) -> Result[Element, NodeExecutionError]:
+        try:
+            element = page.query_selector(selector)
+            if element is None:
+                return Err(NodeExecutionError("Not found", node_id=self.node_id))
+            return Ok(element)
+        except Exception as e:
+            return Err(NodeExecutionError(str(e), original_error=e))
+
+Related:
+    - See domain/errors/result.py for Result type documentation
+    - See domain/errors/exceptions.py for exception hierarchy
 """
 
-# Import from new modular structure
+# Result type system (Rust-style)
+from casare_rpa.domain.errors.result import (
+    Result,
+    Ok,
+    Err,
+    is_ok,
+    is_err,
+    unwrap_or_default,
+    collect_results,
+)
+
+# Exception hierarchy
+from casare_rpa.domain.errors.exceptions import (
+    ErrorContext as StructuredErrorContext,
+    DomainError,
+    NodeExecutionError,
+    NodeTimeoutError,
+    NodeValidationError,
+    ValidationError,
+    ConfigurationError,
+    SchemaError,
+    ResourceError,
+    FileSystemError,
+    NetworkError,
+    DatabaseError,
+    APIError,
+    AuthenticationError,
+    AuthorizationError,
+    WorkflowError,
+    WorkflowValidationError,
+    WorkflowExecutionError,
+    wrap_exception,
+)
+
+# Import from existing modular structure
 from casare_rpa.domain.errors.types import (
     ErrorCategory,
     ErrorSeverity,
@@ -38,6 +95,34 @@ from casare_rpa.domain.errors.registry import (
 
 
 __all__ = [
+    # Result types (NEW)
+    "Result",
+    "Ok",
+    "Err",
+    "is_ok",
+    "is_err",
+    "unwrap_or_default",
+    "collect_results",
+    # Exception hierarchy (NEW)
+    "StructuredErrorContext",
+    "DomainError",
+    "NodeExecutionError",
+    "NodeTimeoutError",
+    "NodeValidationError",
+    "ValidationError",
+    "ConfigurationError",
+    "SchemaError",
+    "ResourceError",
+    "FileSystemError",
+    "NetworkError",
+    "DatabaseError",
+    "APIError",
+    "AuthenticationError",
+    "AuthorizationError",
+    "WorkflowError",
+    "WorkflowValidationError",
+    "WorkflowExecutionError",
+    "wrap_exception",
     # Enums
     "ErrorCategory",
     "ErrorSeverity",

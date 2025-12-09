@@ -28,6 +28,10 @@ from casare_rpa.infrastructure.resources.llm_resource_manager import (
 class DocumentBaseNode(BaseNode):
     """Base class for document processing nodes."""
 
+    # @category: data
+    # @requires: none
+    # @ports: none -> none
+
     NODE_CATEGORY = "Document AI"
     DEFAULT_MODEL = "gpt-4o"
 
@@ -135,6 +139,10 @@ class DocumentBaseNode(BaseNode):
 class ClassifyDocumentNode(DocumentBaseNode):
     """Node that classifies documents into predefined categories."""
 
+    # @category: data
+    # @requires: none
+    # @ports: document, categories, model -> document_type, confidence, all_scores, success, error
+
     NODE_NAME = "Classify Document"
     NODE_DESCRIPTION = (
         "Classify a document into categories (invoice, receipt, form, etc.)"
@@ -213,6 +221,10 @@ class ClassifyDocumentNode(DocumentBaseNode):
 
 class ExtractInvoiceNode(DocumentBaseNode):
     """Node that extracts structured data from invoices."""
+
+    # @category: data
+    # @requires: none
+    # @ports: document, custom_fields, model -> vendor_name, invoice_number, invoice_date, due_date, total_amount, currency, subtotal, tax_amount, line_items, raw_extraction, confidence, needs_review, success, error
 
     NODE_NAME = "Extract Invoice"
     NODE_DESCRIPTION = "Extract vendor, amounts, dates, and line items from invoices"
@@ -315,6 +327,10 @@ class ExtractInvoiceNode(DocumentBaseNode):
 class ExtractFormNode(DocumentBaseNode):
     """Node that extracts fields from form documents."""
 
+    # @category: data
+    # @requires: none
+    # @ports: document, field_schema, fuzzy_match, model -> extracted_fields, unmatched_fields, confidence, needs_review, success, error
+
     NODE_NAME = "Extract Form"
     NODE_DESCRIPTION = "Extract fields from forms using a custom schema"
 
@@ -416,6 +432,10 @@ class ExtractFormNode(DocumentBaseNode):
 class ExtractTableNode(DocumentBaseNode):
     """Node that extracts table data from documents."""
 
+    # @category: data
+    # @requires: none
+    # @ports: document, table_hint, model -> tables, row_count, column_count, confidence, success, error
+
     NODE_NAME = "Extract Table"
     NODE_DESCRIPTION = "Extract tabular data from documents"
 
@@ -493,6 +513,10 @@ class ExtractTableNode(DocumentBaseNode):
 
 class ValidateExtractionNode(BaseNode):
     """Node that validates extracted document data."""
+
+    # @category: data
+    # @requires: none
+    # @ports: extraction, required_fields, confidence_threshold, validation_rules -> is_valid, needs_review, confidence_score, validation_errors, field_status, success, error
 
     NODE_NAME = "Validate Extraction"
     NODE_DESCRIPTION = "Validate extracted data and flag for human review"

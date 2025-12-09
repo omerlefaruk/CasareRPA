@@ -62,6 +62,10 @@ class ForkNode(BaseNode):
         - fail_fast: If True, cancel remaining branches on first failure
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Fork node."""
         super().__init__(node_id, config)
@@ -153,6 +157,10 @@ class JoinNode(BaseNode):
     Properties:
         - merge_strategy: How to combine branch results
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> exec_out, results, branch_count
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Join node."""
@@ -293,6 +301,10 @@ class ParallelForEachNode(BaseNode):
         - fail_fast: Stop on first error if True
         - timeout_per_item: Timeout for each item's processing
     """
+
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in, items -> body, completed, current_item, current_index, results
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize ParallelForEach node."""

@@ -69,6 +69,10 @@ class WindowNodeBase(DesktopNodeBase):
     Provides common window handling patterns.
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: none -> none
+
     def get_window_from_input(self) -> Any:
         """
         Get window from input port.
@@ -114,6 +118,10 @@ class ResizeWindowNode(WindowNodeBase):
     Outputs:
         success: Whether the resize succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: window, width, height -> success
 
     NODE_NAME = "Resize Window"
 
@@ -189,6 +197,10 @@ class MoveWindowNode(WindowNodeBase):
         success: Whether the move succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: window, x, y -> success
+
     NODE_NAME = "Move Window"
 
     def __init__(
@@ -255,6 +267,10 @@ class MaximizeWindowNode(WindowNodeBase):
         success: Whether the maximize succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: window -> success
+
     NODE_NAME = "Maximize Window"
 
     def __init__(
@@ -309,6 +325,10 @@ class MinimizeWindowNode(WindowNodeBase):
     Outputs:
         success: Whether the minimize succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: window -> success
 
     NODE_NAME = "Minimize Window"
 
@@ -365,6 +385,10 @@ class RestoreWindowNode(WindowNodeBase):
         success: Whether the restore succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: window -> success
+
     NODE_NAME = "Restore Window"
 
     def __init__(
@@ -420,6 +444,10 @@ class GetWindowPropertiesNode(WindowNodeBase):
         is_maximized: Whether window is maximized
         is_minimized: Whether window is minimized
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: window -> properties, title, x, y, width, height, state, is_maximized, is_minimized
 
     NODE_NAME = "Get Window Properties"
 
@@ -500,6 +528,10 @@ class SetWindowStateNode(WindowNodeBase):
     Outputs:
         success: Whether the state change succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: window, state -> success
 
     NODE_NAME = "Set Window State"
 

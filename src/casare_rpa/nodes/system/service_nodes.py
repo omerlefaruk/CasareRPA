@@ -37,6 +37,10 @@ class GetServiceStatusNode(BaseNode):
         exists: Whether service exists
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: service_name -> status, display_name, exists
+
     def __init__(
         self, node_id: str, name: str = "Get Service Status", **kwargs
     ) -> None:
@@ -135,6 +139,10 @@ class StartServiceNode(BaseNode):
         message: Status message
     """
 
+    # @category: system
+    # @requires: none
+    # @ports: service_name -> success, message
+
     def __init__(self, node_id: str, name: str = "Start Service", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -199,6 +207,10 @@ class StopServiceNode(BaseNode):
         success: Whether service was stopped
         message: Status message
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: service_name -> success, message
 
     def __init__(self, node_id: str, name: str = "Stop Service", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -275,6 +287,10 @@ class RestartServiceNode(BaseNode):
         success: Whether service was restarted
         message: Status message
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: service_name -> success, message
 
     def __init__(self, node_id: str, name: str = "Restart Service", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -358,6 +374,10 @@ class ListServicesNode(BaseNode):
         services: List of service info dicts
         count: Number of services
     """
+
+    # @category: system
+    # @requires: none
+    # @ports: none -> services, count
 
     def __init__(self, node_id: str, name: str = "List Services", **kwargs) -> None:
         config = kwargs.get("config", {})

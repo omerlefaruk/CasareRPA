@@ -109,6 +109,10 @@ class ScheduleTriggerNode(BaseTriggerNode):
     - scheduled_time: The originally scheduled time
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Schedule"
     trigger_description = "Trigger workflow on a schedule"
     trigger_icon = "schedule"

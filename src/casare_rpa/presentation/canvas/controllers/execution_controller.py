@@ -272,12 +272,20 @@ class ExecutionController(BaseController):
                 bottom_panel = self.main_window.get_bottom_panel()
                 if bottom_panel:
                     bottom_panel.terminal_write_stdout(text)
+                else:
+                    logger.warning(
+                        f"Terminal: bottom_panel is None, dropping stdout: {text[:50]}"
+                    )
 
             def on_stderr_received(text: str) -> None:
                 """Handle stderr in main thread."""
                 bottom_panel = self.main_window.get_bottom_panel()
                 if bottom_panel:
                     bottom_panel.terminal_write_stderr(text)
+                else:
+                    logger.warning(
+                        f"Terminal: bottom_panel is None, dropping stderr: {text[:50]}"
+                    )
 
             self._terminal_bridge.stdout_received.connect(
                 on_stdout_received, Qt.ConnectionType.QueuedConnection
@@ -291,14 +299,28 @@ class ExecutionController(BaseController):
                 """Forward stdout via thread-safe signal."""
                 if self._terminal_bridge:
                     self._terminal_bridge.emit_stdout(text)
+                else:
+                    # Log to original stderr to avoid recursion
+                    import sys
+
+                    sys.__stderr__.write(
+                        f"[TERMINAL] Bridge is None, stdout lost: {text}\n"
+                    )
 
             def stderr_callback(text: str) -> None:
                 """Forward stderr via thread-safe signal."""
                 if self._terminal_bridge:
                     self._terminal_bridge.emit_stderr(text)
+                else:
+                    import sys
+
+                    sys.__stderr__.write(
+                        f"[TERMINAL] Bridge is None, stderr lost: {text}\n"
+                    )
 
             # Register callbacks
             set_output_callbacks(stdout_callback, stderr_callback)
+            logger.info("Terminal bridge setup complete - stdout/stderr capture active")
 
         except ImportError as e:
             logger.warning(f"Failed to setup Terminal bridge: {e}")

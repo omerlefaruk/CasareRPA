@@ -20,7 +20,7 @@ from casare_rpa.domain.value_objects.types import (
 )
 from casare_rpa.infrastructure.execution import ExecutionContext
 from casare_rpa.infrastructure.resources.gmail_client import GmailClient
-from casare_rpa.nodes.google.gmail.gmail_base import GmailBaseNode
+from casare_rpa.nodes.google.google_base import GmailBaseNode
 
 
 # ============================================================================
@@ -146,6 +146,10 @@ class GmailSendEmailNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: to, cc, bcc, subject, body, body_type -> message_id, thread_id
 
     NODE_TYPE = "gmail_send_email"
     NODE_CATEGORY = "google"
@@ -294,6 +298,10 @@ class GmailSendWithAttachmentNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: to, cc, bcc, subject, body, body_type, attachments, attachment_list -> message_id, thread_id, attachment_count
 
     NODE_TYPE = "gmail_send_with_attachment"
     NODE_CATEGORY = "google"
@@ -498,6 +506,10 @@ class GmailReplyToEmailNode(GmailBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: thread_id, message_id, body, body_type, cc, bcc -> message_id, thread_id
+
     NODE_TYPE = "gmail_reply_to_email"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Gmail: Reply to Email"
@@ -658,6 +670,10 @@ class GmailForwardEmailNode(GmailBaseNode):
         - error: Error message if failed
     """
 
+    # @category: google
+    # @requires: none
+    # @ports: message_id, to, cc, bcc, additional_body -> message_id, thread_id
+
     NODE_TYPE = "gmail_forward_email"
     NODE_CATEGORY = "google"
     NODE_DISPLAY_NAME = "Gmail: Forward Email"
@@ -802,6 +818,10 @@ class GmailCreateDraftNode(GmailBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: to, cc, bcc, subject, body, body_type, attachments -> draft_id, message_id
 
     NODE_TYPE = "gmail_create_draft"
     NODE_CATEGORY = "google"

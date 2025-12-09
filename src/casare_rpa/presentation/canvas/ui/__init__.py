@@ -26,6 +26,30 @@ from casare_rpa.presentation.canvas.ui.base_widget import (
     BaseDialog,
 )
 
+# Theme System
+from casare_rpa.presentation.canvas.ui.theme import (
+    Theme,
+    ThemeMode,
+    Colors,
+    Spacing,
+    BorderRadius,
+    FontSizes,
+    ButtonSizes,
+    IconSizes,
+    Animations,
+    DARK_COLORS,
+    LIGHT_COLORS,
+    THEME,
+    TYPE_COLORS,
+    TYPE_BADGES,
+    get_canvas_stylesheet,
+    get_node_status_color,
+    get_wire_color,
+    get_status_color,
+    get_type_color,
+    get_type_badge,
+)
+
 # Panels
 from casare_rpa.presentation.canvas.ui.panels import (
     VariablesPanel,
@@ -60,6 +84,27 @@ __all__ = [
     "BaseWidget",
     "BaseDockWidget",
     "BaseDialog",
+    # Theme System
+    "Theme",
+    "ThemeMode",
+    "Colors",
+    "Spacing",
+    "BorderRadius",
+    "FontSizes",
+    "ButtonSizes",
+    "IconSizes",
+    "Animations",
+    "DARK_COLORS",
+    "LIGHT_COLORS",
+    "THEME",
+    "TYPE_COLORS",
+    "TYPE_BADGES",
+    "get_canvas_stylesheet",
+    "get_node_status_color",
+    "get_wire_color",
+    "get_status_color",
+    "get_type_color",
+    "get_type_badge",
     # Panels
     "DebugPanel",
     "VariablesPanel",

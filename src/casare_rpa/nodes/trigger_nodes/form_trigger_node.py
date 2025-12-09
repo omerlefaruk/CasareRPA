@@ -70,6 +70,10 @@ class FormTriggerNode(BaseTriggerNode):
     - ip_address: IP address of submitter
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Form"
     trigger_description = "Trigger on form submission"
     trigger_icon = "form"

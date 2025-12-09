@@ -50,6 +50,10 @@ class ExcelOpenNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: file_path -> workbook, app, success
+
     def __init__(
         self,
         node_id: str = None,
@@ -149,6 +153,10 @@ class ExcelReadCellNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: workbook, sheet, cell -> value, success
+
     def __init__(
         self,
         node_id: str = None,
@@ -224,6 +232,10 @@ class ExcelWriteCellNode(BaseNode):
     Outputs:
         - success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: workbook, sheet, cell, value -> success
 
     def __init__(
         self,
@@ -302,6 +314,10 @@ class ExcelGetRangeNode(BaseNode):
         - columns: Number of columns
         - success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: workbook, sheet, range -> data, rows, columns, success
 
     def __init__(
         self,
@@ -397,6 +413,10 @@ class ExcelCloseNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: workbook, app -> success
+
     def __init__(
         self,
         node_id: str = None,
@@ -467,6 +487,10 @@ class WordOpenNode(BaseNode):
         - app: Word application
         - success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: file_path -> document, app, success
 
     def __init__(
         self,
@@ -548,6 +572,10 @@ class WordGetTextNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: document -> text, word_count, success
+
     def __init__(
         self,
         node_id: str = None,
@@ -609,6 +637,10 @@ class WordReplaceTextNode(BaseNode):
         - replacements: Number of replacements made
         - success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: document, find_text, replace_text -> replacements, success
 
     def __init__(
         self,
@@ -700,6 +732,10 @@ class WordCloseNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: document, app -> success
+
     def __init__(
         self,
         node_id: str = None,
@@ -772,6 +808,10 @@ class OutlookSendEmailNode(BaseNode):
     Outputs:
         - success: Whether email was sent
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: to, subject, body, cc, bcc, attachments -> success
 
     def __init__(
         self,
@@ -881,6 +921,10 @@ class OutlookReadEmailsNode(BaseNode):
         - success: Whether operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: none -> emails, count, success
+
     def __init__(
         self,
         node_id: str = None,
@@ -976,6 +1020,10 @@ class OutlookGetInboxCountNode(BaseNode):
         - unread_count: Unread email count
         - success: Whether operation succeeded
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: none -> total_count, unread_count, success
 
     def __init__(
         self,

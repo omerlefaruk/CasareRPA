@@ -2,6 +2,18 @@
 
 > Trigger nodes are DIFFERENT from executable nodes. They START workflows, not run within them.
 
+## Key Imports
+
+```python
+# Domain layer
+from casare_rpa.domain.decorators import node_schema
+from casare_rpa.domain.schemas import PropertyDef, PropertyType
+from casare_rpa.domain.value_objects.trigger_types import TriggerType
+
+# Trigger base
+from casare_rpa.nodes.trigger_nodes import trigger_node, BaseTriggerNode
+```
+
 ## Key Differences from Executable Nodes
 - Use `@trigger_node` decorator (NOT `@executable_node`)
 - Extend `BaseTriggerNode` (NOT `BaseNode`)
@@ -85,12 +97,25 @@ File: `src/casare_rpa/nodes/__init__.py`
 - Visual: `presentation/canvas/visual_nodes/triggers/__init__.py`
 
 ## Available TriggerTypes
-From `casare_rpa.triggers.base.TriggerType`:
+From `casare_rpa.domain.value_objects.trigger_types.TriggerType`:
 ```
 MANUAL, SCHEDULED, WEBHOOK, FILE_WATCH, APP_EVENT, EMAIL, ERROR,
 WORKFLOW_CALL, FORM, CHAT, RSS_FEED, SSE, TELEGRAM, WHATSAPP,
 GMAIL, SHEETS, DRIVE, CALENDAR
 ```
+
+## Trigger Node Categories (20+ implementations)
+
+| Category | Nodes |
+|----------|-------|
+| Event-based | `WebhookTriggerNode`, `AppEventTriggerNode`, `ErrorTriggerNode` |
+| Time-based | `ScheduleTriggerNode` |
+| File-based | `FileWatchTriggerNode` |
+| Email | `EmailTriggerNode`, `GmailTriggerNode` |
+| Messaging | `TelegramTriggerNode`, `WhatsAppTriggerNode` |
+| Google Workspace | `DriveTriggerNode`, `SheetsTriggerNode`, `CalendarTriggerNode` |
+| Data | `RSSFeedTriggerNode`, `SSETriggerNode` |
+| Workflow | `WorkflowCallTriggerNode`, `FormTriggerNode`, `ChatTriggerNode` |
 
 ## File Structure
 ```

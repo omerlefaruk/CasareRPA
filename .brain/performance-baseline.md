@@ -97,6 +97,46 @@ Performance profiling completed. Found and fixed 1 critical bug (RecursionError 
 
 ---
 
+## New Component Performance (2025-12-09)
+
+### UnifiedHttpClient Targets
+
+| Component | Target | Notes |
+|-----------|--------|-------|
+| Rate limiter check | <1ms | Token bucket algorithm |
+| Circuit breaker check | <1ms | State machine |
+| Session pool acquire | <5ms | Bounded pool with max connections |
+| Retry overhead | <10ms per retry | Exponential backoff |
+| Request stats collection | <1ms | Lock-free counters |
+
+### Node Registry Performance
+
+| Metric | Value | Notes |
+|--------|-------|-------|
+| Total nodes registered | 413 | Single source of truth |
+| Lazy loading | Yes | Nodes loaded on first access |
+| Import time | <100ms | Measured at startup |
+
+### UI Component Initialization
+
+| Component | Target | Notes |
+|-----------|--------|-------|
+| SignalCoordinator init | <50ms | Action callback setup |
+| PanelManager init | <50ms | Panel visibility management |
+| Theme system init | <10ms | THEME constants |
+| MainWindow startup | <2s | Full UI initialization |
+
+### Import Time Targets
+
+| Module | Target | Notes |
+|--------|--------|-------|
+| `casare_rpa.nodes` | <500ms | Lazy loading registry |
+| `casare_rpa.presentation` | <1s | Qt components |
+| `casare_rpa.domain` | <100ms | Pure Python |
+| `casare_rpa.infrastructure` | <300ms | External adapters |
+
+---
+
 ## Next Steps
 
 1. Canvas rendering performance tests (NodeGraphQt profiling)

@@ -2,17 +2,37 @@
 CasareRPA - Template Storage
 
 Infrastructure service for loading and managing project templates.
+
+Result Pattern:
+    This module uses Result[T, E] for explicit error handling instead of
+    returning None or silently failing. Methods that can fail return:
+    - Ok(value) on success
+    - Err(FileSystemError) on failure
+
+    Callers MUST check result.is_ok() before unwrapping:
+        result = TemplateStorage.load_template_safe("my-template")
+        if result.is_ok():
+            template = result.unwrap()
+        else:
+            error = result.error  # FileSystemError with context
 """
 
 import orjson
 from loguru import logger
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from casare_rpa.domain.entities.project.template import (
     ProjectTemplate,
     TemplateCategory,
     TemplatesFile,
+)
+from casare_rpa.domain.errors import (
+    Result,
+    Ok,
+    Err,
+    FileSystemError,
+    ErrorContext,
 )
 from casare_rpa.resources import TEMPLATES_DIR
 
@@ -50,6 +70,49 @@ class TemplateStorage:
         return templates
 
     @staticmethod
+    def load_builtin_templates_safe() -> Result[List[ProjectTemplate], FileSystemError]:
+        """
+        Load all built-in templates with explicit error handling.
+
+        Uses Result pattern - returns Ok(List[ProjectTemplate]) on success.
+        Individual template load failures are logged but don't fail the entire operation.
+
+        Returns:
+            Ok(list of templates) - always succeeds, may be empty on errors
+        """
+        templates = []
+        errors = []
+
+        if not TEMPLATES_DIR.exists():
+            return Ok(templates)
+
+        for template_file in TEMPLATES_DIR.glob("*.json"):
+            try:
+                data = orjson.loads(template_file.read_bytes())
+                template = ProjectTemplate.from_dict(data)
+                template.is_builtin = True
+                templates.append(template)
+            except Exception as e:
+                errors.append(f"{template_file.name}: {e}")
+                logger.warning(f"Error loading template {template_file}: {e}")
+
+        if errors and not templates:
+            # All templates failed - return error
+            return Err(
+                FileSystemError(
+                    message=f"Failed to load any templates: {', '.join(errors)}",
+                    path=str(TEMPLATES_DIR),
+                    context=ErrorContext(
+                        component="TemplateStorage",
+                        operation="load_builtin_templates_safe",
+                        details={"errors": errors},
+                    ),
+                )
+            )
+
+        return Ok(templates)
+
+    @staticmethod
     def load_template(template_id: str) -> Optional[ProjectTemplate]:
         """
         Load a specific template by ID.
@@ -72,6 +135,61 @@ class TemplateStorage:
                 continue
 
         return None
+
+    @staticmethod
+    def load_template_safe(
+        template_id: str,
+    ) -> Result[ProjectTemplate, FileSystemError]:
+        """
+        Load a specific template by ID with explicit error handling.
+
+        Uses Result pattern - returns Ok(ProjectTemplate) on success,
+        Err(FileSystemError) if not found or on I/O failure.
+
+        Args:
+            template_id: Template identifier
+
+        Returns:
+            Ok(ProjectTemplate) on success, Err(FileSystemError) on failure
+        """
+        if not TEMPLATES_DIR.exists():
+            return Err(
+                FileSystemError(
+                    message="Templates directory not found",
+                    path=str(TEMPLATES_DIR),
+                    context=ErrorContext(
+                        component="TemplateStorage",
+                        operation="load_template_safe",
+                        details={"template_id": template_id},
+                    ),
+                )
+            )
+
+        for template_file in TEMPLATES_DIR.glob("*.json"):
+            try:
+                data = orjson.loads(template_file.read_bytes())
+                if data.get("id") == template_id:
+                    template = ProjectTemplate.from_dict(data)
+                    template.is_builtin = True
+                    return Ok(template)
+            except orjson.JSONDecodeError as e:
+                logger.warning(f"Invalid JSON in {template_file}: {e}")
+                continue
+            except Exception as e:
+                logger.warning(f"Error loading template {template_file}: {e}")
+                continue
+
+        return Err(
+            FileSystemError(
+                message=f"Template not found: {template_id}",
+                path=str(TEMPLATES_DIR),
+                context=ErrorContext(
+                    component="TemplateStorage",
+                    operation="load_template_safe",
+                    details={"template_id": template_id},
+                ),
+            )
+        )
 
     @staticmethod
     def get_templates_by_category(category: TemplateCategory) -> List[ProjectTemplate]:
@@ -106,6 +224,48 @@ class TemplateStorage:
         )
 
     @staticmethod
+    def save_user_template_safe(
+        template: ProjectTemplate, templates_dir: Path
+    ) -> Result[None, FileSystemError]:
+        """
+        Save a user-created template with explicit error handling.
+
+        Uses Result pattern - returns Ok(None) on success, Err on failure.
+
+        Args:
+            template: Template to save
+            templates_dir: Directory to save template in
+
+        Returns:
+            Ok(None) on success, Err(FileSystemError) on failure
+        """
+        try:
+            templates_dir.mkdir(parents=True, exist_ok=True)
+            template_file = templates_dir / f"{template.id}.json"
+            template_data = template.to_dict()
+            template_file.write_bytes(
+                orjson.dumps(template_data, option=orjson.OPT_INDENT_2)
+            )
+            return Ok(None)
+        except Exception as e:
+            logger.error(f"Failed to save user template {template.id}: {e}")
+            return Err(
+                FileSystemError(
+                    message=f"Failed to save template '{template.id}': {e}",
+                    path=str(templates_dir / f"{template.id}.json"),
+                    context=ErrorContext(
+                        component="TemplateStorage",
+                        operation="save_user_template_safe",
+                        details={
+                            "template_id": template.id,
+                            "template_name": template.name,
+                        },
+                    ),
+                    original_error=e,
+                )
+            )
+
+    @staticmethod
     def load_user_templates(templates_dir: Path) -> List[ProjectTemplate]:
         """
         Load user-created templates from a directory.
@@ -133,6 +293,54 @@ class TemplateStorage:
         return templates
 
     @staticmethod
+    def load_user_templates_safe(
+        templates_dir: Path,
+    ) -> Result[List[ProjectTemplate], FileSystemError]:
+        """
+        Load user-created templates with explicit error handling.
+
+        Uses Result pattern - returns Ok(List[ProjectTemplate]) on success.
+        Individual template load failures are logged but don't fail the entire operation.
+
+        Args:
+            templates_dir: Directory containing user templates
+
+        Returns:
+            Ok(list of templates) on success, Err on critical failure
+        """
+        templates = []
+        errors = []
+
+        if not templates_dir.exists():
+            return Ok(templates)
+
+        for template_file in templates_dir.glob("*.json"):
+            try:
+                data = orjson.loads(template_file.read_bytes())
+                template = ProjectTemplate.from_dict(data)
+                template.is_builtin = False
+                templates.append(template)
+            except Exception as e:
+                errors.append(f"{template_file.name}: {e}")
+                logger.warning(f"Error loading user template {template_file}: {e}")
+
+        if errors and not templates:
+            # All templates failed - return error
+            return Err(
+                FileSystemError(
+                    message=f"Failed to load any user templates: {', '.join(errors)}",
+                    path=str(templates_dir),
+                    context=ErrorContext(
+                        component="TemplateStorage",
+                        operation="load_user_templates_safe",
+                        details={"errors": errors},
+                    ),
+                )
+            )
+
+        return Ok(templates)
+
+    @staticmethod
     def delete_user_template(template_id: str, templates_dir: Path) -> bool:
         """
         Delete a user-created template.
@@ -151,6 +359,46 @@ class TemplateStorage:
             return True
 
         return False
+
+    @staticmethod
+    def delete_user_template_safe(
+        template_id: str, templates_dir: Path
+    ) -> Result[bool, FileSystemError]:
+        """
+        Delete a user-created template with explicit error handling.
+
+        Uses Result pattern - returns Ok(True) if deleted, Ok(False) if not found,
+        Err on I/O failure.
+
+        Args:
+            template_id: Template to delete
+            templates_dir: Directory containing user templates
+
+        Returns:
+            Ok(True) if deleted, Ok(False) if not found, Err on failure
+        """
+        template_file = templates_dir / f"{template_id}.json"
+
+        if not template_file.exists():
+            return Ok(False)
+
+        try:
+            template_file.unlink()
+            return Ok(True)
+        except Exception as e:
+            logger.error(f"Failed to delete template {template_id}: {e}")
+            return Err(
+                FileSystemError(
+                    message=f"Failed to delete template '{template_id}': {e}",
+                    path=str(template_file),
+                    context=ErrorContext(
+                        component="TemplateStorage",
+                        operation="delete_user_template_safe",
+                        details={"template_id": template_id},
+                    ),
+                    original_error=e,
+                )
+            )
 
     @staticmethod
     def get_all_templates(

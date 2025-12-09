@@ -162,6 +162,10 @@ class WebhookTriggerNode(BaseTriggerNode):
     - client_ip: Client IP address
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Webhook"
     trigger_description = "Trigger workflow via HTTP webhook"
     trigger_icon = "webhook"

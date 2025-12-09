@@ -71,6 +71,10 @@ class DeleteFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: file_path -> deleted_path, success
+
     def __init__(self, node_id: str, name: str = "Delete File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -205,6 +209,10 @@ class CopyFileNode(BaseNode):
         success: Whether operation succeeded
     """
 
+    # @category: file
+    # @requires: none
+    # @ports: source_path, dest_path -> dest_path, bytes_copied, success
+
     def __init__(self, node_id: str, name: str = "Copy File", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -337,6 +345,10 @@ class MoveFileNode(BaseNode):
         dest_path: Final destination path
         success: Whether operation succeeded
     """
+
+    # @category: file
+    # @requires: none
+    # @ports: source_path, dest_path -> dest_path, success
 
     def __init__(self, node_id: str, name: str = "Move File", **kwargs) -> None:
         config = kwargs.get("config", {})

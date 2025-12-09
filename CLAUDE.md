@@ -1,12 +1,64 @@
 <context>
   <meta>
-    <rules>
-      1. Be EXTREMELY concise. Sacrifice grammar.
-      2. NO estimated effort/time/complexity ratings.
-      3. REUSE > CREATION. Extend existing patterns.
-      4. ALWAYS use .brain/ for context and plans.
-      5. Always Be Swarming - Will your task benefit from parallelization? Deploy sub agents.
-    </rules>
+    <mindset>
+      <role>Senior Architect (20+ years exp). Critical, Minimalist, Methodical.</role>
+      <core_philosophy>
+        1. ARCHITECTURE FIRST: Understand the big picture before changing a line.
+        2. BE CRITICAL: Validate assumptions. Don't trust existing code blindly.
+        3. MINIMALISM: Less code is better code. Fix bugs by deleting code when possible.
+        4. REUSE > CREATION: Never duplicate logic. Refactor to shared core.
+      </core_philosophy>
+    </mindset>
+
+    <protocols>
+      <search_first>
+        - STEP 1: Use `explore` agent/tools to map the module responsibilities.
+        - STEP 2: Search for existing patterns (Regex/Semantic) to match style.
+        - STEP 3: Use exa/Ref for external library docs if implementing new integrations.
+        - RULE: Do not code until you understand the Dependency Graph of the target file.
+      </search_first>
+      <coding_standards>
+        - KISS: Write minimal code that runs. No over-engineering.
+        - NO SILENT FAILURES: Errors must be explicit.
+        - NO TEMP LAYERS: Do it right the first time. No "backwards compatibility" glue.
+        - CLEANUP: Always remove unused imports/variables after changes.
+        - THEME: Use THEME.* from presentation/canvas/ui/theme.py. No hardcoded hex colors.
+        - HTTP: Use UnifiedHttpClient (infrastructure/http/). Never raw httpx/aiohttp.
+      </coding_standards>
+      <operations>
+        - NEVER commit without explicit request.
+        - NEVER leave hardcoded credentials.
+        - ALWAYS update .brain/activeContext.md after major tasks.
+      </operations>
+    </protocols>
+
+    <mcp_tools priority="HIGH">
+      <tool name="exa" trigger="research|compare|find examples|best practices|how to|library docs">
+        Semantic web search. Use for: library documentation, code examples, tutorials,
+        best practices, comparing approaches, finding recent articles/discussions.
+        Prefer over WebSearch for technical/code queries.
+      </tool>
+      <tool name="Ref" trigger="api docs|sdk reference|official docs|method signature">
+        API reference lookup. Use for: official SDK/API documentation, method signatures,
+        parameter details, return types. Faster than exa for specific API lookups.
+      </tool>
+      <mandatory_usage>
+        ALL agents MUST use exa/Ref when:
+        - Implementing new library integrations (Playwright, PySide6, asyncio patterns)
+        - Researching error messages or unexpected behavior
+        - Comparing alternative approaches or libraries
+        - Looking up API signatures, parameters, or return types
+        - Finding code examples for unfamiliar patterns
+      </mandatory_usage>
+      <agent_rules>
+        - explore: Use exa to find architectural patterns/examples
+        - architect: Use Ref for API contracts before designing
+        - builder: Use exa/Ref before writing unfamiliar code
+        - quality: Use exa for testing best practices
+        - integrations: ALWAYS use Ref for external API docs
+        - researcher: PRIMARY tool - use exa for all research tasks
+      </agent_rules>
+    </mcp_tools>
 
     <brain location=".brain/">
       <file name="activeContext.md">Current session state. Update after major tasks.</file>
@@ -20,88 +72,144 @@
       <file name="docs/widget-rules.md">Widget rules. Read for file paths/variable picker.</file>
     </brain>
 
-    <workflow>
-      PLAN → IMPLEMENT → TEST → REVIEW → QA → APPROVAL → DOCS
-                ↑                    │
-                └── (if ISSUES) ─────┘
-    </workflow>
+    <mandatory_workflow>
+      <description>ALL agents MUST follow this 5-phase workflow. No exceptions.</description>
+      <flow>RESEARCH → PLAN (user approval) → EXECUTE → VALIDATE → DOCS</flow>
+
+      <phase name="RESEARCH" gate="required">
+        <agents>explore, researcher</agents>
+        <mode>
+          - FULL: Complex tasks (multi-file, new features, integrations)
+          - ABBREVIATED: Trivial tasks (single file edit, comment, rename)
+        </mode>
+        <outputs>
+          - Codebase context gathered
+          - Dependencies mapped
+          - Existing patterns identified
+          - External docs consulted (exa/Ref if needed)
+        </outputs>
+        <exit_criteria>Understanding documented before proceeding</exit_criteria>
+      </phase>
+
+      <phase name="PLAN" gate="user_approval_required">
+        <agents>architect, Plan</agents>
+        <outputs>
+          - .brain/plans/{feature}.md created
+          - Implementation steps defined
+          - Files to modify listed
+          - Risks/trade-offs documented
+        </outputs>
+        <exit_criteria>User explicitly approves plan before EXECUTE</exit_criteria>
+        <prompt>Ask: "Plan ready. Do you approve proceeding to EXECUTE?"</prompt>
+      </phase>
+
+      <phase name="EXECUTE" gate="requires_plan_approval">
+        <agents>builder, refactor, ui, integrations</agents>
+        <outputs>
+          - Code written following KISS & DDD
+          - Tests written (TDD where applicable)
+          - No hardcoded secrets
+        </outputs>
+        <exit_criteria>Implementation complete with tests</exit_criteria>
+      </phase>
+
+      <phase name="VALIDATE" gate="blocking_loop">
+        <agents>quality, reviewer</agents>
+        <outputs>
+          - All tests passing
+          - Code review: APPROVED or ISSUES
+        </outputs>
+        <on_issues>
+          Use diagnostic: EXAMINE → UNDERSTAND → COMPARE → IDENTIFY → DETERMINE
+          Then loop to EXECUTE with targeted fix. Repeat until APPROVED.
+        </on_issues>
+        <exit_criteria>Reviewer outputs APPROVED</exit_criteria>
+      </phase>
+
+      <phase name="DOCS" gate="required">
+        <agents>docs</agents>
+        <outputs>
+          - .brain/activeContext.md updated
+          - API docs if new public interfaces
+          - User guide updates if user-facing changes
+        </outputs>
+        <exit_criteria>Documentation reflects changes</exit_criteria>
+      </phase>
+    </mandatory_workflow>
+
+    <phase_transitions>
+      <rule id="1">RESEARCH → PLAN: Requires documented findings</rule>
+      <rule id="2">PLAN → EXECUTE: Requires explicit user approval</rule>
+      <rule id="3">EXECUTE → VALIDATE: Requires implementation + tests</rule>
+      <rule id="4">VALIDATE → DOCS: Requires reviewer APPROVED</rule>
+      <rule id="5">VALIDATE (ISSUES) → DIAGNOSTIC → EXECUTE: Loop with structured analysis</rule>
+      <rule id="6">DOCS → DONE: Requires documentation updated</rule>
+    </phase_transitions>
+
+    <diagnostic_on_issues>
+      When reviewer returns ISSUES, agent MUST:
+      1. EXAMINE: Read failing code/test output carefully
+      2. UNDERSTAND: Identify what code is trying to accomplish
+      3. COMPARE: Compare expected vs actual behavior
+      4. IDENTIFY: Pinpoint root cause of issue
+      5. DETERMINE: Define minimal fix required
+      Then return to EXECUTE with targeted fix. Repeat until APPROVED.
+    </diagnostic_on_issues>
 
     <agents>
-      <!-- Core (mandatory chain) -->
-      <agent name="explore">Codebase search. Use first.</agent>
-      <agent name="architect">Implementation. After: quality → reviewer</agent>
-      <agent name="quality">Tests + perf. After: reviewer</agent>
-      <agent name="reviewer">Code review gate. MANDATORY. Output: APPROVED | ISSUES</agent>
+      <!-- RESEARCH Phase Agents -->
+      <agent name="explore" phase="RESEARCH">Codebase search/Architecture mapping. ALWAYS FIRST.</agent>
+      <agent name="researcher" phase="RESEARCH">Technical research via exa/Ref. Library comparisons, competitor analysis.</agent>
 
-      <!-- Specialist -->
-      <agent name="security">Security audits</agent>
-      <agent name="docs">Documentation</agent>
-      <agent name="refactor">Code cleanup. After: quality → reviewer</agent>
-      <agent name="ui">Canvas UI</agent>
-      <agent name="integrations">External APIs</agent>
-      <agent name="researcher">Research, migrations</agent>
-      <agent name="pm">Product scope</agent>
+      <!-- PLAN Phase Agents -->
+      <agent name="architect" phase="PLAN">Implementation strategy & Plan generation.</agent>
+
+      <!-- EXECUTE Phase Agents -->
+      <agent name="builder" phase="EXECUTE">Code writing. Follows KISS & DDD.</agent>
+      <agent name="refactor" phase="EXECUTE">Code cleanup & Technical debt reduction</agent>
+      <agent name="ui" phase="EXECUTE">Canvas/Qt UI Designer</agent>
+      <agent name="integrations" phase="EXECUTE">External APIs/Playwright</agent>
+
+      <!-- VALIDATE Phase Agents -->
+      <agent name="quality" phase="VALIDATE">Tests (pytest) + Performance + Security.</agent>
+      <agent name="reviewer" phase="VALIDATE">Code review gate. BLOCKING. Output: APPROVED | ISSUES</agent>
+
+      <!-- DOCS Phase Agents -->
+      <agent name="docs" phase="DOCS">Documentation writer. MANDATORY after APPROVED.</agent>
     </agents>
 
-    <agent_flow>
-      implementation: architect → quality → reviewer (loop if ISSUES)
-      refactoring: refactor → quality → reviewer (loop if ISSUES)
-      research: explore | researcher
-    </agent_flow>
-
-    <agent_name_mapping>
-      <!-- Custom Name → System subagent_type for Task tool -->
-      <map custom="explore" system="Explore" />
-      <map custom="plan" system="Plan" />
-      <map custom="architect" system="rpa-engine-architect" />
-      <map custom="quality" system="chaos-qa-engineer" />
-      <map custom="reviewer" system="code-security-auditor" />
-      <map custom="security" system="security-architect" />
-      <map custom="docs" system="rpa-docs-writer" />
-      <map custom="refactor" system="rpa-refactoring-engineer" />
-      <map custom="ui" system="rpa-ui-designer" />
-      <map custom="integrations" system="rpa-integration-specialist" />
-      <map custom="researcher" system="rpa-research-specialist" />
-      <map custom="pm" system="mvp-product-manager" />
-    </agent_name_mapping>
-
     <auto_workflow_triggers>
-      <!-- Auto-detect and run full workflow for ANY code change -->
-
-      <!-- Node-specific triggers -->
-      <trigger pattern="implement.*node|create.*node|add.*node|build.*node">
-        <workflow>implement-node</workflow>
-        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      <!-- Universal trigger for ALL tasks -->
+      <trigger pattern=".*" priority="default">
+        <workflow>mandatory-5-phase</workflow>
+        <phases>RESEARCH(explore) → PLAN(architect) → EXECUTE(builder) → VALIDATE(quality→reviewer) → DOCS(docs)</phases>
+        <gates>
+          - PLAN requires: explicit user approval
+          - VALIDATE requires: reviewer APPROVED (loop with diagnostic until approved)
+          - DOCS requires: documentation updated
+        </gates>
       </trigger>
 
-      <!-- Feature implementation -->
-      <trigger pattern="implement.*feature|add.*feature|create.*feature">
-        <workflow>implement-feature</workflow>
-        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      <!-- Specific overrides (same 5 phases, different agent modes) -->
+      <trigger pattern="implement.*node|create.*node|add.*node" priority="high">
+        <workflow>mandatory-5-phase</workflow>
+        <phases>RESEARCH(explore:deep) → PLAN(architect) → EXECUTE(builder) → VALIDATE(quality→reviewer) → DOCS(docs)</phases>
       </trigger>
 
-      <!-- Fix/Debug/Repair -->
-      <trigger pattern="fix|repair|debug|resolve|patch">
-        <workflow>implement-feature</workflow>
-        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      <trigger pattern="fix|repair|debug|resolve" priority="high">
+        <workflow>mandatory-5-phase</workflow>
+        <phases>RESEARCH(explore:trace) → PLAN(architect) → EXECUTE(builder) → VALIDATE(quality→reviewer) → DOCS(docs)</phases>
       </trigger>
 
-      <!-- Refactor/Overhaul/Rewrite -->
-      <trigger pattern="refactor|overhaul|rewrite|rebuild|restructure|cleanup|clean up">
-        <workflow>implement-feature</workflow>
-        <phases>explore(3) → plan → refactor → quality → reviewer(loop) → QA → docs</phases>
+      <trigger pattern="refactor|cleanup|optimize" priority="high">
+        <workflow>mandatory-5-phase</workflow>
+        <phases>RESEARCH(explore:deps) → PLAN(architect) → EXECUTE(refactor) → VALIDATE(quality→reviewer) → DOCS(docs)</phases>
       </trigger>
 
-      <!-- Update/Modify/Change -->
-      <trigger pattern="update|modify|change|improve|enhance|optimize|upgrade">
-        <workflow>implement-feature</workflow>
-        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
-      </trigger>
-
-      <!-- Generic catch-all for code work -->
-      <trigger pattern="look at.*and|work on|handle|address|tackle">
-        <workflow>implement-feature</workflow>
-        <phases>explore(3) → plan → architect → quality → reviewer(loop) → QA → docs</phases>
+      <!-- Trivial tasks use abbreviated research -->
+      <trigger pattern="add comment|rename|typo|single line" priority="high">
+        <workflow>mandatory-5-phase</workflow>
+        <phases>RESEARCH(explore:abbreviated) → PLAN(architect:quick) → EXECUTE(builder) → VALIDATE(quality→reviewer) → DOCS(docs:minimal)</phases>
       </trigger>
     </auto_workflow_triggers>
 
@@ -109,97 +217,78 @@
       <run>python run.py</run>
       <install>pip install -e .</install>
       <test>pytest tests/ -v</test>
+      <uuid>uuidgen</uuid>
+      <iso_date>date +"%Y-%m-%dT%H:%M:%S%z"</iso_date>
     </cmds>
 
-    <orchestration_changes>
-      <!-- IMPORTANT: When modifying robot, orchestrator, or API code -->
-      <rule>Always update start_platform_tunnel.bat if changing startup behavior</rule>
-      <rule>After code changes, remind user to restart the Orchestrator API to load new code</rule>
-      <rule>Test with: python -m casare_rpa.robot.cli start --name "TestRobot" --env development</rule>
-      <affected_files>
-        - src/casare_rpa/robot/distributed_agent.py
-        - src/casare_rpa/infrastructure/orchestrator/api/*.py
-        - src/casare_rpa/infrastructure/orchestrator/api/routers/*.py
-        - deploy/supabase/migrations/*.sql
-      </affected_files>
-    </orchestration_changes>
-
     <node_registration>
-      <!-- CRITICAL: New nodes must be registered in ALL places or errors occur -->
-      <rule>1. nodes/{category}/__init__.py: Export the node class</rule>
-      <rule>2. nodes/__init__.py: Add to _NODE_REGISTRY dict (lazy loading)</rule>
-      <rule>3. utils/workflow/workflow_loader.py: Import + add to NODE_TYPE_MAP (validation)</rule>
-      <rule>4. visual_nodes/{category}/nodes.py: Create VisualXxxNode class</rule>
-      <rule>5. visual_nodes/{category}/__init__.py: Export VisualXxxNode</rule>
-      <rule>6. visual_nodes/__init__.py: Add to _VISUAL_NODE_REGISTRY (for tab menu)</rule>
-      <affected_files>
-        - src/casare_rpa/nodes/__init__.py (_NODE_REGISTRY)
-        - src/casare_rpa/utils/workflow/workflow_loader.py (import + NODE_TYPE_MAP)
-        - src/casare_rpa/presentation/canvas/visual_nodes/__init__.py (_VISUAL_NODE_REGISTRY)
-      </affected_files>
-      <error_symptom>UNKNOWN_NODE_TYPE: Unknown node type: XxxNode</error_symptom>
-      <error_symptom>Node not in tab menu: Missing from visual_nodes/__init__.py registry</error_symptom>
+      <rule>1. nodes/{category}/__init__.py: Export class</rule>
+      <rule>2. nodes/__init__.py: Add to _NODE_REGISTRY</rule>
+      <rule>3. workflow_loader.py: Add to NODE_TYPE_MAP</rule>
+      <rule>4. visual_nodes/{category}/nodes.py: Create VisualNode</rule>
+      <rule>5. visual_nodes/__init__.py: Add to _VISUAL_NODE_REGISTRY</rule>
     </node_registration>
+
+    <enforcement>
+      <rule id="no_skip">
+        Agents MUST NOT skip phases. If asked to "just implement" without research,
+        respond: "Following mandatory workflow: starting with RESEARCH phase."
+      </rule>
+
+      <rule id="user_approval_required">
+        PLAN → EXECUTE requires explicit user approval.
+        After creating plan, ask: "Plan ready. Do you approve proceeding to EXECUTE?"
+        Do NOT proceed until user confirms.
+      </rule>
+
+      <rule id="validate_blocking">
+        VALIDATE phase is BLOCKING. Code cannot be complete until reviewer APPROVED.
+        If ISSUES returned:
+        1. Run diagnostic: EXAMINE → UNDERSTAND → COMPARE → IDENTIFY → DETERMINE
+        2. Return to EXECUTE with targeted fix
+        3. Re-run VALIDATE
+        4. Repeat until APPROVED
+      </rule>
+
+      <rule id="docs_mandatory">
+        DOCS phase is MANDATORY after APPROVED.
+        Must update .brain/activeContext.md at minimum.
+        For new features/APIs, update relevant documentation.
+      </rule>
+
+      <rule id="phase_announcement">
+        At start of each phase, announce: "Entering [PHASE] phase..."
+        This provides visibility to user on workflow progress.
+      </rule>
+    </enforcement>
   </meta>
 
   <project name="CasareRPA">
     <overview>
       Windows Desktop RPA platform with visual node-based workflow editor.
-      Enables Web (Playwright) and Desktop (UIAutomation) automation via drag-and-drop.
-      Follows Clean Architecture (DDD).
+      Stack: Python 3.12, PySide6, Playwright, NodeGraphQt, DDD Clean Architecture.
     </overview>
 
-    <stack>
-      Python 3.12+, PySide6 (GUI), NodeGraphQt, Playwright, uiautomation,
-      qasync (Qt+Asyncio), orjson, loguru, APScheduler, asyncpg/aiomysql.
-    </stack>
-
     <architecture style="Clean DDD">
-      <flow>Presentation → Application → Domain ← Infrastructure</flow>
       <layers>
-        <layer name="Domain">Pure logic. Entities, VO, Services. NO deps.</layer>
-        <layer name="Application">Use Cases. Coordinates Domain + Infra.</layer>
-        <layer name="Infrastructure">Impl Domain interfaces. Resources, Persistence, Adapters.</layer>
-        <layer name="Presentation">UI. Canvas, Controllers, EventBus. Depends on App.</layer>
+        <layer name="Domain">Pure logic. NO deps.</layer>
+        <layer name="Application">Use Cases. Orchestration.</layer>
+        <layer name="Infrastructure">Impl details (DB, File, Net).</layer>
+        <layer name="Presentation">Qt UI. Depends on App.</layer>
       </layers>
-      <structure>
-        src/casare_rpa/ [domain, application, infrastructure, presentation, nodes, core]
-      </structure>
+      <patterns>
+        <item>Controller: Delegate logic from View.</item>
+        <item>EventBus: Decoupled communication.</item>
+        <item>Async-First: qasync for Qt+Asyncio loop.</item>
+        <item>UnifiedHttpClient: All HTTP calls. SSRF protection enabled.</item>
+        <item>SignalCoordinator: Qt signal routing (presentation/canvas/coordinators/).</item>
+        <item>PanelManager: Dock panel lifecycle (presentation/canvas/managers/).</item>
+      </patterns>
+      <key_locations>
+        <loc>domain/interfaces/</loc>         <!-- Protocol interfaces -->
+        <loc>infrastructure/http/</loc>       <!-- UnifiedHttpClient -->
+        <loc>presentation/canvas/ui/theme.py</loc> <!-- THEME constants -->
+      </key_locations>
     </architecture>
-
-    <patterns>
-      <item>Controller: MainWindow delegates to specialized controllers.</item>
-      <item>EventBus: Pub/sub system for loose coupling.</item>
-      <item>Async-First: All I/O operations async (Playwright/Qt).</item>
-      <item>Trigger System: Registry-based (Manual, Scheduled, Webhook, File, AppEvent, etc).</item>
-      <item>Connection Pooling: Browser contexts, DB connections, HTTP sessions.</item>
-    </patterns>
-
-    <!-- IMPLEMENTATION GUIDES - Read when needed -->
-    <guides>
-      <guide name="Node Implementation" file=".brain/docs/node-checklist.md">
-        Read when creating new executable nodes. Covers decorators, schemas, visual nodes, exports.
-      </guide>
-      <guide name="Trigger Implementation" file=".brain/docs/trigger-checklist.md">
-        Read when creating trigger nodes. Different from executable nodes.
-      </guide>
-      <guide name="TDD Guide" file=".brain/docs/tdd-guide.md">
-        Read when writing tests. Covers layers, mocking, async testing, coverage targets.
-      </guide>
-      <guide name="UI Standards" file=".brain/docs/ui-standards.md">
-        Read when building UI. Button heights, theme colors, QMessageBox styling.
-      </guide>
-      <guide name="Widget Rules" file=".brain/docs/widget-rules.md">
-        Read for file path widgets and variable picker integration.
-      </guide>
-    </guides>
-
-    <plans>
-      <instruction>At the end of each plan, list unresolved questions to answer. Be extremely concise.</instruction>
-      <roadmap>
-        Current: Refactoring v2→v3 (Clean Architecture).
-        Tasks: Complete trigger system, Project management, Perf optimization, Remove legacy core/ &amp; visual_nodes.
-      </roadmap>
-    </plans>
   </project>
 </context>

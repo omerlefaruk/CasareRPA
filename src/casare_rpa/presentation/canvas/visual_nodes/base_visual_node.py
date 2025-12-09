@@ -10,16 +10,16 @@ from PySide6.QtGui import QColor
 
 from casare_rpa.domain.entities.base_node import BaseNode as CasareBaseNode
 from casare_rpa.domain.value_objects.types import PortType, DataType
-from casare_rpa.domain.port_type_system import (
+from casare_rpa.application.services.port_type_service import (
     PortTypeRegistry,
     get_port_type_registry,
 )
 from casare_rpa.domain.schemas import PropertyType, NodeSchema
 from casare_rpa.presentation.canvas.graph.custom_node_item import CasareNodeItem
 
-# VSCode Dark+ color scheme for nodes
-# Node body should be slightly lighter than canvas (#1E1E1E) to be visible
-UNIFIED_NODE_COLOR = QColor(37, 37, 38)  # VSCode sidebar background - #252526
+# Premium Dark color scheme for node body
+# Matches CanvasThemeColors.bg_node (#27272a / Zinc 800)
+UNIFIED_NODE_COLOR = QColor(39, 39, 42)
 
 
 class VisualNode(NodeGraphQtBaseNode):
@@ -66,19 +66,19 @@ class VisualNode(NodeGraphQtBaseNode):
         # Set node colors with category-based accents
         self._apply_category_colors()
 
-        # Configure selection colors - VSCode selection style
+        # Configure selection colors - Premium Indigo Theme
         self.model.selected_color = (
-            38,
-            79,
-            120,
-            128,
-        )  # VSCode editor selection (#264F78) with transparency
-        self.model.selected_border_color = (
-            0,
-            122,
-            204,
+            55,
+            48,
+            163,
             255,
-        )  # VSCode focus border (#007ACC)
+        )  # Indigo 800 (#3730a3) for selection background
+        self.model.selected_border_color = (
+            99,
+            102,
+            241,
+            255,
+        )  # Indigo 500 (#6366f1) for focus border
 
         # Set temporary icon (will be updated with actual icons later)
         # Use file path for model.icon (required for JSON serialization in copy/paste)
@@ -129,18 +129,20 @@ class VisualNode(NodeGraphQtBaseNode):
         # Get category color
         category_color = CATEGORY_COLORS.get(self.NODE_CATEGORY, QColor(62, 62, 66))
 
-        # VSCode sidebar background for all nodes (#252526)
-        self.set_color(37, 37, 38)
+        # Unified Node Body Color (Zinc 800)
+        self.set_color(39, 39, 42)
 
-        # Category-colored border (use VSCode syntax colors)
-        # Slightly darker for subtlety
-        border_r = int(category_color.red() * 0.8)
-        border_g = int(category_color.green() * 0.8)
-        border_b = int(category_color.blue() * 0.8)
-        self.model.border_color = (border_r, border_g, border_b, 255)
+        # Category-colored border (Vibrant but professional)
+        # Use slightly desaturated values for professional look
+        self.model.border_color = (
+            category_color.red(),
+            category_color.green(),
+            category_color.blue(),
+            255,
+        )
 
-        # VSCode text color (#D4D4D4)
-        self.model.text_color = (212, 212, 212, 255)
+        # Primary Text Color (Zinc 100 - #f4f4f5)
+        self.model.text_color = (244, 244, 245, 255)
 
         # Set category on view for header coloring
         if hasattr(self, "view") and self.view is not None:
@@ -444,18 +446,20 @@ class VisualNode(NodeGraphQtBaseNode):
                 custom_widget = widget.get_custom_widget()
                 if hasattr(custom_widget, "setStyleSheet"):
                     # Apply a more visible background color for text inputs
+                    # Apply a more visible background color for text inputs
+                    # Matching Premium Dark theme input_bg and borders
                     custom_widget.setStyleSheet("""
                         QLineEdit {
-                            background: rgb(60, 60, 80);
-                            border: 1px solid rgb(80, 80, 100);
-                            border-radius: 3px;
-                            color: rgba(230, 230, 230, 255);
-                            padding: 2px;
-                            selection-background-color: rgba(100, 150, 200, 150);
+                            background: #18181b; /* Zinc 900 */
+                            border: 1px solid #3f3f46; /* Zinc 700 */
+                            border-radius: 4px;
+                            color: #f4f4f5; /* Zinc 100 */
+                            padding: 4px 8px;
+                            selection-background-color: #4338ca; /* Indigo 700 */
                         }
                         QLineEdit:focus {
-                            background: rgb(70, 70, 90);
-                            border: 1px solid rgb(100, 150, 200);
+                            background: #27272a; /* Zinc 800 */
+                            border: 1px solid #6366f1; /* Indigo 500 */
                         }
                     """)
 

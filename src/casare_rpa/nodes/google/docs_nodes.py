@@ -34,6 +34,10 @@ async def _get_docs_service(context: ExecutionContext, credential_name: str) -> 
 class DocsCreateDocumentNode(BaseNode):
     """Create a new Google Document."""
 
+    # @category: google
+    # @requires: none
+    # @ports: title -> document_id, document_url, success, error
+
     NODE_NAME = "Docs: Create Document"
     CATEGORY = "google/docs"
 
@@ -79,6 +83,10 @@ class DocsCreateDocumentNode(BaseNode):
 
 class DocsGetDocumentNode(BaseNode):
     """Get a Google Document's metadata."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id -> title, body, revision_id, success, error
 
     NODE_NAME = "Docs: Get Document"
     CATEGORY = "google/docs"
@@ -127,6 +135,10 @@ class DocsGetDocumentNode(BaseNode):
 
 class DocsGetContentNode(BaseNode):
     """Get the text content of a Google Document."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id -> text, word_count, character_count, success, error
 
     NODE_NAME = "Docs: Get Content"
     CATEGORY = "google/docs"
@@ -197,6 +209,10 @@ class DocsGetContentNode(BaseNode):
 class DocsInsertTextNode(BaseNode):
     """Insert text into a Google Document."""
 
+    # @category: google
+    # @requires: none
+    # @ports: document_id, text, index -> success, error
+
     NODE_NAME = "Docs: Insert Text"
     CATEGORY = "google/docs"
 
@@ -247,6 +263,10 @@ class DocsInsertTextNode(BaseNode):
 
 class DocsDeleteContentNode(BaseNode):
     """Delete content from a Google Document."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id, start_index, end_index -> success, error
 
     NODE_NAME = "Docs: Delete Content"
     CATEGORY = "google/docs"
@@ -304,6 +324,10 @@ class DocsDeleteContentNode(BaseNode):
 
 class DocsReplaceTextNode(BaseNode):
     """Replace text in a Google Document."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id, find_text, replace_text, match_case -> occurrences_changed, success, error
 
     NODE_NAME = "Docs: Replace Text"
     CATEGORY = "google/docs"
@@ -388,6 +412,10 @@ class DocsReplaceTextNode(BaseNode):
 class DocsInsertTableNode(BaseNode):
     """Insert a table into a Google Document."""
 
+    # @category: google
+    # @requires: none
+    # @ports: document_id, rows, columns, index -> success, error
+
     NODE_NAME = "Docs: Insert Table"
     CATEGORY = "google/docs"
 
@@ -450,6 +478,10 @@ class DocsInsertTableNode(BaseNode):
 
 class DocsInsertImageNode(BaseNode):
     """Insert an image into a Google Document."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id, image_uri, index, width, height -> success, error
 
     NODE_NAME = "Docs: Insert Image"
     CATEGORY = "google/docs"
@@ -523,6 +555,10 @@ class DocsInsertImageNode(BaseNode):
 
 class DocsUpdateStyleNode(BaseNode):
     """Update text style in a range."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id, start_index, end_index -> success, error
 
     NODE_NAME = "Docs: Update Style"
     CATEGORY = "google/docs"
@@ -606,6 +642,10 @@ class DocsUpdateStyleNode(BaseNode):
 
 class DocsBatchUpdateNode(BaseNode):
     """Execute multiple document updates in a single batch."""
+
+    # @category: google
+    # @requires: none
+    # @ports: document_id, requests -> replies, success, error
 
     NODE_NAME = "Docs: Batch Update"
     CATEGORY = "google/docs"

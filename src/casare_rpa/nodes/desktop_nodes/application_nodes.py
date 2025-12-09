@@ -56,6 +56,10 @@ class LaunchApplicationNode(DesktopNodeBase):
         window_title: Title of the application window
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: application_path, arguments, working_directory -> window, process_id, window_title
+
     NODE_NAME = "Launch Application"
 
     def __init__(
@@ -204,6 +208,10 @@ class CloseApplicationNode(DesktopNodeBase):
         success: Whether the close operation succeeded
     """
 
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: window, process_id, window_title -> success
+
     NODE_NAME = "Close Application"
 
     def __init__(
@@ -282,6 +290,10 @@ class ActivateWindowNode(DesktopNodeBase):
         success: Whether the activation succeeded
         window: The activated window object
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: window, window_title -> success, window
 
     NODE_NAME = "Activate Window"
 
@@ -366,6 +378,10 @@ class GetWindowListNode(DesktopNodeBase):
         window_list: List of window information dictionaries
         window_count: Number of windows found
     """
+
+    # @category: desktop
+    # @requires: pywin32
+    # @ports: none -> window_list, window_count
 
     NODE_NAME = "Get Window List"
 

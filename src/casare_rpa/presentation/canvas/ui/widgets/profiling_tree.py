@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QRect, QModelIndex
 from PySide6.QtGui import QPainter, QColor, QBrush, QPen, QFont
 
+from casare_rpa.presentation.canvas.ui.theme import THEME
+
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QStyleOptionViewItem
 
@@ -76,20 +78,20 @@ class PercentageBarDelegate(QStyledItemDelegate):
     """
     Custom delegate for drawing colored percentage bars.
 
-    Color scheme (UiPath-inspired):
-    - >= 80%: Red (#E74C3C)
-    - >= 50%: Orange (#F39C12)
-    - >= 20%: Yellow (#F1C40F)
-    - < 20%: Green (#27AE60)
+    Color scheme (UiPath-inspired) using THEME:
+    - >= 80%: Red (error)
+    - >= 50%: Orange (warning)
+    - >= 20%: Yellow
+    - < 20%: Green (success)
     """
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._colors = [
-            (80, QColor("#E74C3C")),  # Red for >= 80%
-            (50, QColor("#F39C12")),  # Orange for >= 50%
+            (80, QColor(THEME.error)),  # Red for >= 80%
+            (50, QColor(THEME.warning)),  # Orange for >= 50%
             (20, QColor("#F1C40F")),  # Yellow for >= 20%
-            (0, QColor("#27AE60")),  # Green for < 20%
+            (0, QColor(THEME.success)),  # Green for < 20%
         ]
 
     def _get_color(self, percentage: float) -> QColor:
@@ -121,7 +123,7 @@ class PercentageBarDelegate(QStyledItemDelegate):
         rect = option.rect.adjusted(4, 4, -4, -4)
 
         # Draw background bar (dark gray)
-        bg_color = QColor("#3d3d3d")
+        bg_color = QColor(THEME.input_bg)
         painter.fillRect(rect, bg_color)
 
         # Draw filled portion
@@ -132,7 +134,7 @@ class PercentageBarDelegate(QStyledItemDelegate):
             painter.fillRect(fill_rect, bar_color)
 
         # Draw border
-        painter.setPen(QPen(QColor("#5a5a5a"), 1))
+        painter.setPen(QPen(QColor(THEME.border_light), 1))
         painter.drawRect(rect)
 
         # Draw percentage text
@@ -250,63 +252,63 @@ class ProfilingTreeWidget(QWidget):
         layout.addWidget(self._tree)
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QTreeWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                color: #e0e0e0;
-            }
-            QTreeWidget::item {
+        """Apply dark theme styling using THEME."""
+        self.setStyleSheet(f"""
+            QTreeWidget {{
+                background-color: {THEME.bg_medium};
+                alternate-background-color: {THEME.bg_light};
+                border: 1px solid {THEME.border};
+                color: {THEME.text_primary};
+            }}
+            QTreeWidget::item {{
                 padding: 4px 2px;
                 min-height: 24px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #5a8a9a;
-            }
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {THEME.selected};
+            }}
             QTreeWidget::branch:has-children:!has-siblings:closed,
-            QTreeWidget::branch:closed:has-children:has-siblings {
+            QTreeWidget::branch:closed:has-children:has-siblings {{
                 border-image: none;
                 image: url(none);
-            }
+            }}
             QTreeWidget::branch:open:has-children:!has-siblings,
-            QTreeWidget::branch:open:has-children:has-siblings {
+            QTreeWidget::branch:open:has-children:has-siblings {{
                 border-image: none;
                 image: url(none);
-            }
-            QHeaderView::section {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
+            }}
+            QHeaderView::section {{
+                background-color: {THEME.input_bg};
+                color: {THEME.text_primary};
                 border: none;
-                border-right: 1px solid #4a4a4a;
-                border-bottom: 1px solid #4a4a4a;
+                border-right: 1px solid {THEME.border};
+                border-bottom: 1px solid {THEME.border};
                 padding: 6px;
                 font-weight: bold;
-            }
-            QLineEdit {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+            }}
+            QLineEdit {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 padding: 6px;
                 border-radius: 3px;
-            }
-            QLineEdit:focus {
-                border-color: #5a8a9a;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+            }}
+            QLineEdit:focus {{
+                border-color: {THEME.accent};
+            }}
+            QPushButton {{
+                background-color: {THEME.input_bg};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 padding: 4px 8px;
                 border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #5a5a5a;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.button_hover};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.border_light};
+            }}
         """)
 
     def clear(self) -> None:
@@ -442,7 +444,7 @@ class ProfilingTreeWidget(QWidget):
 
         # Color for failed status
         if entry.status == "failed":
-            item.setForeground(self.COL_ACTIVITY, QBrush(QColor("#f44747")))
+            item.setForeground(self.COL_ACTIVITY, QBrush(QColor(THEME.error)))
 
         # Update all items with new percentages
         for node_id, e in self._entries.items():

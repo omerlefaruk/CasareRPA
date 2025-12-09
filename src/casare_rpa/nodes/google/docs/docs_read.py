@@ -22,7 +22,7 @@ from casare_rpa.infrastructure.resources.google_docs_client import (
     ExportFormat,
     GoogleDocsClient,
 )
-from casare_rpa.nodes.google.docs.docs_base import DocsBaseNode
+from casare_rpa.nodes.google.google_base import DocsBaseNode
 
 
 # ============================================================================
@@ -84,6 +84,10 @@ class DocsGetDocumentNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> document, title
 
     NODE_TYPE = "docs_get_document"
     NODE_CATEGORY = "google"
@@ -162,6 +166,10 @@ class DocsGetTextNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: none -> text
 
     NODE_TYPE = "docs_get_text"
     NODE_CATEGORY = "google"
@@ -256,6 +264,10 @@ class DocsExportNode(DocsBaseNode):
         - success: Boolean
         - error: Error message if failed
     """
+
+    # @category: google
+    # @requires: none
+    # @ports: format, output_path -> content, output_path
 
     NODE_TYPE = "docs_export"
     NODE_CATEGORY = "google"

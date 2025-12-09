@@ -19,6 +19,8 @@ from PySide6.QtGui import QFont
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+
 
 class TenantSelectorWidget(QWidget):
     """
@@ -85,45 +87,45 @@ class TenantSelectorWidget(QWidget):
         layout.addWidget(self._refresh_btn)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet("""
-            QLabel {
-                color: #e0e0e0;
-            }
-            QComboBox {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+        self.setStyleSheet(f"""
+            QLabel {{
+                color: {THEME.text_primary};
+            }}
+            QComboBox {{
+                background: {THEME.bg_light};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 4px 8px;
                 min-height: 24px;
-            }
-            QComboBox::drop-down {
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 20px;
-            }
-            QComboBox::down-arrow {
+            }}
+            QComboBox::down-arrow {{
                 image: none;
                 border-left: 4px solid transparent;
                 border-right: 4px solid transparent;
-                border-top: 6px solid #a0a0a0;
+                border-top: 6px solid {THEME.text_muted};
                 margin-right: 6px;
-            }
-            QComboBox QAbstractItemView {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
-                color: #e0e0e0;
-                selection-background-color: #094771;
-            }
-            QPushButton {
-                background: #3d3d3d;
-                border: 1px solid #4a4a4a;
+            }}
+            QComboBox QAbstractItemView {{
+                background: {THEME.bg_light};
+                border: 1px solid {THEME.border};
+                color: {THEME.text_primary};
+                selection-background-color: {THEME.accent_secondary};
+            }}
+            QPushButton {{
+                background: {THEME.bg_light};
+                border: 1px solid {THEME.border};
                 border-radius: 3px;
-                color: #e0e0e0;
+                color: {THEME.text_primary};
                 padding: 4px 12px;
-            }
-            QPushButton:hover {
-                background: #4a4a4a;
-            }
+            }}
+            QPushButton:hover {{
+                background: {THEME.bg_hover};
+            }}
         """)
 
     def set_super_admin(self, is_super_admin: bool) -> None:

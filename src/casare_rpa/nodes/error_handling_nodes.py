@@ -33,6 +33,10 @@ class TryNode(BaseNode):
     'catch' output with error details.
     """
 
+    # @category: control_flow
+    # @requires: requests
+    # @ports: exec_in -> try_body, success, catch, error_message, error_type
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Try node."""
         super().__init__(node_id, config)
@@ -148,6 +152,10 @@ class RetryNode(BaseNode):
     exponential backoff. Useful for handling transient failures.
     """
 
+    # @category: control_flow
+    # @requires: requests
+    # @ports: exec_in -> retry_body, success, failed, attempt, last_error
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Retry node."""
         super().__init__(node_id, config)
@@ -256,6 +264,10 @@ class RetrySuccessNode(BaseNode):
     the retry loop.
     """
 
+    # @category: control_flow
+    # @requires: requests
+    # @ports: none -> none
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize RetrySuccess node."""
         super().__init__(node_id, config)
@@ -301,6 +313,10 @@ class RetryFailNode(BaseNode):
 
     This node signals that the retry operation failed and should be retried.
     """
+
+    # @category: control_flow
+    # @requires: requests
+    # @ports: error_message -> none
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize RetryFail node."""
@@ -361,6 +377,10 @@ class ThrowErrorNode(BaseNode):
     Intentionally raises an error with a custom message to trigger
     try/catch blocks or other error handling mechanisms.
     """
+
+    # @category: control_flow
+    # @requires: requests
+    # @ports: error_message -> none
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize ThrowError node."""
@@ -460,6 +480,10 @@ class WebhookNotifyNode(BaseNode):
     Sends HTTP POST requests to configured webhook URLs when errors occur,
     enabling integration with Slack, Teams, Discord, or custom endpoints.
     """
+
+    # @category: control_flow
+    # @requires: requests
+    # @ports: webhook_url, message, error_details -> success, response
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize WebhookNotify node."""
@@ -652,6 +676,10 @@ class OnErrorNode(BaseNode):
     errors from connected nodes.
     """
 
+    # @category: control_flow
+    # @requires: requests
+    # @ports: exec_in -> protected_body, on_error, finally, error_message, error_type, error_node, stack_trace
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize OnError node."""
         super().__init__(node_id, config)
@@ -781,6 +809,10 @@ class ErrorRecoveryNode(BaseNode):
     - fallback: Execute a fallback path
     """
 
+    # @category: control_flow
+    # @requires: requests
+    # @ports: exec_in, strategy, max_retries -> exec_out, fallback
+
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize ErrorRecovery node."""
         super().__init__(node_id, config)
@@ -862,6 +894,10 @@ class LogErrorNode(BaseNode):
     Captures error information and logs it with configurable
     severity level and format for debugging and monitoring.
     """
+
+    # @category: control_flow
+    # @requires: requests
+    # @ports: error_message, error_type, context -> log_entry
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize LogError node."""
@@ -969,6 +1005,10 @@ class AssertNode(BaseNode):
     a custom message if the assertion fails. Useful for validation
     and debugging workflows.
     """
+
+    # @category: control_flow
+    # @requires: requests
+    # @ports: condition, message -> passed
 
     def __init__(self, node_id: str, config: Optional[dict] = None) -> None:
         """Initialize Assert node."""

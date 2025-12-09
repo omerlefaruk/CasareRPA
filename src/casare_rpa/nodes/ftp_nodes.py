@@ -96,6 +96,10 @@ class FTPConnectNode(BaseNode):
         server_message: Server welcome message
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: host, port, username, password -> connected, server_message
+
     def __init__(self, node_id: str, name: str = "FTP Connect", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -244,6 +248,10 @@ class FTPUploadNode(BaseNode):
         uploaded: Whether upload succeeded
         bytes_sent: Number of bytes transferred
     """
+
+    # @category: file
+    # @requires: ftp
+    # @ports: local_path, remote_path -> uploaded, bytes_sent
 
     def __init__(self, node_id: str, name: str = "FTP Upload", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -399,6 +407,10 @@ class FTPDownloadNode(BaseNode):
         bytes_received: Number of bytes transferred
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path, local_path -> downloaded, bytes_received
+
     def __init__(self, node_id: str, name: str = "FTP Download", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -533,6 +545,10 @@ class FTPListNode(BaseNode):
         count: Number of items
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path -> items, count
+
     def __init__(self, node_id: str, name: str = "FTP List", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -595,6 +611,10 @@ class FTPDeleteNode(BaseNode):
     Outputs:
         deleted: Whether deletion succeeded
     """
+
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path -> deleted
 
     def __init__(self, node_id: str, name: str = "FTP Delete", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -662,6 +682,10 @@ class FTPMakeDirNode(BaseNode):
     Outputs:
         created: Whether creation succeeded
     """
+
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path -> created
 
     def __init__(self, node_id: str, name: str = "FTP Make Dir", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -731,6 +755,10 @@ class FTPRemoveDirNode(BaseNode):
         removed: Whether removal succeeded
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path -> removed
+
     def __init__(self, node_id: str, name: str = "FTP Remove Dir", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -787,6 +815,10 @@ class FTPRenameNode(BaseNode):
         renamed: Whether rename succeeded
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: old_path, new_path -> renamed
+
     def __init__(self, node_id: str, name: str = "FTP Rename", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -841,6 +873,10 @@ class FTPDisconnectNode(BaseNode):
         disconnected: Whether disconnect succeeded
     """
 
+    # @category: file
+    # @requires: ftp
+    # @ports: none -> disconnected
+
     def __init__(self, node_id: str, name: str = "FTP Disconnect", **kwargs) -> None:
         config = kwargs.get("config", {})
         super().__init__(node_id, config)
@@ -892,6 +928,10 @@ class FTPGetSizeNode(BaseNode):
         size: File size in bytes
         found: Whether file was found
     """
+
+    # @category: file
+    # @requires: ftp
+    # @ports: remote_path -> size, found
 
     def __init__(self, node_id: str, name: str = "FTP Get Size", **kwargs) -> None:
         config = kwargs.get("config", {})

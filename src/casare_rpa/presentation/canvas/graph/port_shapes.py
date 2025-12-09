@@ -16,7 +16,8 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QPainter, QPen, QBrush, QColor, QPolygonF
 
 from casare_rpa.domain.value_objects.types import DataType
-from casare_rpa.domain.port_type_system import PortShape, get_port_type_registry
+from casare_rpa.domain.port_type_system import PortShape
+from casare_rpa.application.services.port_type_service import get_port_type_registry
 
 
 # ============================================================================

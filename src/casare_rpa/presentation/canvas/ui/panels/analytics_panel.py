@@ -31,6 +31,12 @@ from PySide6.QtGui import QColor, QBrush, QFont
 
 from loguru import logger
 
+from casare_rpa.presentation.canvas.theme import THEME
+from casare_rpa.presentation.canvas.ui.panels.panel_ux_helpers import (
+    get_panel_table_stylesheet,
+    get_panel_toolbar_stylesheet,
+)
+
 
 class ApiWorker(QObject):
     """Worker for background API calls."""
@@ -209,10 +215,10 @@ class AnalyticsPanel(QDockWidget):
         api_layout = QHBoxLayout()
         api_layout.addWidget(QLabel("API:"))
         self._api_url_label = QLabel(self._api_base_url)
-        self._api_url_label.setStyleSheet("color: #888;")
+        self._api_url_label.setStyleSheet(f"color: {THEME.text_muted};")
         api_layout.addWidget(self._api_url_label, 1)
-        self._api_status = QLabel("●")
-        self._api_status.setStyleSheet("color: #888;")
+        self._api_status = QLabel("O")
+        self._api_status.setStyleSheet(f"color: {THEME.text_muted};")
         self._api_status.setToolTip("API connection status")
         api_layout.addWidget(self._api_status)
         main_layout.addLayout(api_layout)
@@ -308,7 +314,7 @@ class AnalyticsPanel(QDockWidget):
 
         self._critical_count_label = QLabel("0")
         self._critical_count_label.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        self._critical_count_label.setStyleSheet("color: #f44747;")
+        self._critical_count_label.setStyleSheet(f"color: {THEME.status_error};")
         crit_layout = QVBoxLayout()
         crit_layout.addWidget(
             self._critical_count_label, alignment=Qt.AlignmentFlag.AlignCenter
@@ -473,80 +479,99 @@ class AnalyticsPanel(QDockWidget):
         return widget
 
     def _apply_styles(self) -> None:
-        """Apply dark theme styling."""
-        self.setStyleSheet("""
-            QDockWidget {
-                background: #252525;
-                color: #e0e0e0;
-            }
-            QDockWidget::title {
-                background: #2d2d2d;
-                padding: 6px;
-            }
-            QGroupBox {
-                background: #2d2d2d;
-                border: 1px solid #4a4a4a;
+        """Apply VSCode Dark+ theme styling using THEME system."""
+        self.setStyleSheet(f"""
+            QDockWidget {{
+                background-color: {THEME.bg_panel};
+                color: {THEME.text_primary};
+            }}
+            QDockWidget::title {{
+                background-color: {THEME.dock_title_bg};
+                color: {THEME.dock_title_text};
+                padding: 6px 12px;
+                font-weight: 600;
+                font-size: 11px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 1px solid {THEME.border_dark};
+            }}
+            QGroupBox {{
+                background-color: {THEME.bg_header};
+                border: 1px solid {THEME.border};
                 border-radius: 4px;
-                margin-top: 8px;
-                padding-top: 8px;
-            }
-            QGroupBox::title {
+                margin-top: 12px;
+                padding-top: 12px;
+                font-weight: 500;
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 4px;
-            }
-            QTableWidget {
-                background-color: #2d2d2d;
-                alternate-background-color: #323232;
-                border: 1px solid #4a4a4a;
-                gridline-color: #3d3d3d;
-                color: #e0e0e0;
-            }
-            QTableWidget::item:selected {
-                background-color: #5a8a9a;
-            }
-            QHeaderView::section {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: none;
-                border-right: 1px solid #4a4a4a;
-                border-bottom: 1px solid #4a4a4a;
-                padding: 4px;
-            }
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #3d3d3d;
-                font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 9pt;
-            }
-            QLabel {
-                color: #e0e0e0;
-            }
-            QPushButton {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
+                subcontrol-position: top left;
+                padding: 0 8px;
+                color: {THEME.text_secondary};
+            }}
+            {get_panel_table_stylesheet()}
+            QTextEdit {{
+                background-color: {THEME.bg_darkest};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border_dark};
+                font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+                font-size: 11px;
+            }}
+            QLabel {{
+                color: {THEME.text_primary};
+                background: transparent;
+            }}
+            QPushButton {{
+                background-color: {THEME.bg_light};
+                color: {THEME.text_primary};
+                border: 1px solid {THEME.border};
                 padding: 4px 12px;
                 border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-            }
-            QPushButton:pressed {
-                background-color: #5a5a5a;
-            }
-            QPushButton:disabled {
-                background-color: #2d2d2d;
-                color: #666666;
-            }
-            QComboBox, QSpinBox {
-                background-color: #3d3d3d;
-                color: #e0e0e0;
-                border: 1px solid #4a4a4a;
-                padding: 4px;
-                border-radius: 3px;
-            }
+                font-size: 11px;
+            }}
+            QPushButton:hover {{
+                background-color: {THEME.bg_hover};
+                border-color: {THEME.border_light};
+            }}
+            QPushButton:pressed {{
+                background-color: {THEME.bg_lighter};
+            }}
+            QPushButton:disabled {{
+                background-color: {THEME.bg_medium};
+                color: {THEME.text_disabled};
+                border-color: {THEME.border_dark};
+            }}
+            {get_panel_toolbar_stylesheet()}
+            QTabWidget {{
+                background-color: {THEME.bg_panel};
+                border: none;
+            }}
+            QTabWidget::pane {{
+                background-color: {THEME.bg_panel};
+                border: none;
+                border-top: 1px solid {THEME.border_dark};
+            }}
+            QTabBar {{
+                background-color: {THEME.bg_header};
+            }}
+            QTabBar::tab {{
+                background-color: {THEME.bg_header};
+                color: {THEME.text_muted};
+                padding: 8px 16px;
+                border: none;
+                border-bottom: 2px solid transparent;
+                font-size: 11px;
+                font-weight: 500;
+            }}
+            QTabBar::tab:hover {{
+                color: {THEME.text_primary};
+                background-color: {THEME.bg_hover};
+            }}
+            QTabBar::tab:selected {{
+                color: {THEME.text_primary};
+                background-color: {THEME.bg_panel};
+                border-bottom: 2px solid {THEME.accent_primary};
+            }}
         """)
 
     def _setup_refresh_timer(self) -> None:
@@ -603,14 +628,14 @@ class AnalyticsPanel(QDockWidget):
         url = f"{self._api_base_url.replace('/api/v1', '')}/health"
 
         def on_success(_):
-            self._api_status.setText("●")
-            self._api_status.setStyleSheet("color: #89d185;")
+            self._api_status.setText("O")
+            self._api_status.setStyleSheet(f"color: {THEME.status_success};")
             self._api_status.setToolTip("API connected")
 
         def on_error(err):
             logger.debug(f"API health check failed: {err}")
-            self._api_status.setText("●")
-            self._api_status.setStyleSheet("color: #f44747;")
+            self._api_status.setText("O")
+            self._api_status.setStyleSheet(f"color: {THEME.status_error};")
             self._api_status.setToolTip("API not reachable")
 
         self._run_in_background(url, on_success, on_error, timeout=2.0)
@@ -710,13 +735,13 @@ class AnalyticsPanel(QDockWidget):
             severity_item = QTableWidgetItem(severity.upper())
             severity_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if severity == "critical":
-                severity_item.setForeground(QBrush(QColor("#f44747")))
+                severity_item.setForeground(QBrush(QColor(THEME.status_error)))
             elif severity == "high":
-                severity_item.setForeground(QBrush(QColor("#ff8c00")))
+                severity_item.setForeground(QBrush(QColor(THEME.accent_warning)))
             elif severity == "medium":
-                severity_item.setForeground(QBrush(QColor("#cca700")))
+                severity_item.setForeground(QBrush(QColor(THEME.status_warning)))
             else:
-                severity_item.setForeground(QBrush(QColor("#89d185")))
+                severity_item.setForeground(QBrush(QColor(THEME.status_success)))
             self._bottlenecks_table.setItem(row, 2, severity_item)
 
             # Impact
@@ -773,17 +798,17 @@ class AnalyticsPanel(QDockWidget):
         change = dur_trend.get("change_percent", 0)
 
         if direction == "improving":
-            self._duration_trend_icon.setText("📉")
+            self._duration_trend_icon.setText("v")
             self._duration_trend_label.setText(f"{change:+.1f}%")
-            self._duration_trend_label.setStyleSheet("color: #89d185;")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME.status_success};")
         elif direction == "degrading":
-            self._duration_trend_icon.setText("📈")
+            self._duration_trend_icon.setText("^")
             self._duration_trend_label.setText(f"{change:+.1f}%")
-            self._duration_trend_label.setStyleSheet("color: #f44747;")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME.status_error};")
         else:
-            self._duration_trend_icon.setText("📊")
+            self._duration_trend_icon.setText("-")
             self._duration_trend_label.setText("Stable")
-            self._duration_trend_label.setStyleSheet("color: #cca700;")
+            self._duration_trend_label.setStyleSheet(f"color: {THEME.status_warning};")
 
         # Update success trend
         success_trend = data.get("success_rate_trend", {})
@@ -791,17 +816,17 @@ class AnalyticsPanel(QDockWidget):
         change = success_trend.get("change_percent", 0)
 
         if direction == "improving":
-            self._success_trend_icon.setText("📈")
+            self._success_trend_icon.setText("^")
             self._success_trend_label.setText(f"{change:+.1f}%")
-            self._success_trend_label.setStyleSheet("color: #89d185;")
+            self._success_trend_label.setStyleSheet(f"color: {THEME.status_success};")
         elif direction == "degrading":
-            self._success_trend_icon.setText("📉")
+            self._success_trend_icon.setText("v")
             self._success_trend_label.setText(f"{change:+.1f}%")
-            self._success_trend_label.setStyleSheet("color: #f44747;")
+            self._success_trend_label.setStyleSheet(f"color: {THEME.status_error};")
         else:
-            self._success_trend_icon.setText("📊")
+            self._success_trend_icon.setText("-")
             self._success_trend_label.setText("Stable")
-            self._success_trend_label.setStyleSheet("color: #cca700;")
+            self._success_trend_label.setStyleSheet(f"color: {THEME.status_warning};")
 
         # Update time distribution
         time_dist = data.get("time_distribution", {})
@@ -833,11 +858,11 @@ class AnalyticsPanel(QDockWidget):
             sig_item = QTableWidgetItem(f"{sig:.0f}%")
             sig_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if sig >= 80:
-                sig_item.setForeground(QBrush(QColor("#f44747")))
+                sig_item.setForeground(QBrush(QColor(THEME.status_error)))
             elif sig >= 50:
-                sig_item.setForeground(QBrush(QColor("#cca700")))
+                sig_item.setForeground(QBrush(QColor(THEME.status_warning)))
             else:
-                sig_item.setForeground(QBrush(QColor("#89d185")))
+                sig_item.setForeground(QBrush(QColor(THEME.status_success)))
             self._insights_table.setItem(row, 2, sig_item)
 
     def _on_insight_selected(self) -> None:
@@ -895,14 +920,14 @@ class AnalyticsPanel(QDockWidget):
             # Success
             success_item = QTableWidgetItem(str(point.get("successes", 0)))
             success_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            success_item.setForeground(QBrush(QColor("#89d185")))
+            success_item.setForeground(QBrush(QColor(THEME.status_success)))
             self._timeline_table.setItem(row, 2, success_item)
 
             # Failures
             fail_item = QTableWidgetItem(str(point.get("failures", 0)))
             fail_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if point.get("failures", 0) > 0:
-                fail_item.setForeground(QBrush(QColor("#f44747")))
+                fail_item.setForeground(QBrush(QColor(THEME.status_error)))
             self._timeline_table.setItem(row, 3, fail_item)
 
             # Avg duration

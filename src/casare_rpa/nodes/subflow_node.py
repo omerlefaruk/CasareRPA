@@ -57,6 +57,10 @@ class SubflowNode(BaseNode):
     3. Output port values are collected from the subflow's exit points
     """
 
+    # @category: control_flow
+    # @requires: none
+    # @ports: exec_in -> exec_out, error
+
     def __init__(
         self,
         node_id: str,

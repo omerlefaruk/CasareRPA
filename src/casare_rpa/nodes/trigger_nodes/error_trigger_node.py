@@ -72,6 +72,10 @@ class ErrorTriggerNode(BaseTriggerNode):
     - timestamp: When the error occurred
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Error"
     trigger_description = "Trigger on workflow errors"
     trigger_icon = "error"

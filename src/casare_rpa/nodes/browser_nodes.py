@@ -187,6 +187,10 @@ class LaunchBrowserNode(BaseNode):
     and stores it in the execution context for use by other nodes.
     """
 
+    # @category: browser
+    # @requires: uiautomation
+    # @ports: url -> browser, page, window
+
     def __init__(
         self,
         node_id: str,
@@ -525,6 +529,10 @@ class CloseBrowserNode(BaseNode):
     Properly closes the browser and cleans up resources.
     """
 
+    # @category: browser
+    # @requires: uiautomation
+    # @ports: browser -> none
+
     def __init__(self, node_id: str, name: str = "Close Browser", **kwargs) -> None:
         """
         Initialize close browser node.
@@ -677,6 +685,10 @@ class NewTabNode(BaseNode):
 
     Opens a new tab in the browser and optionally sets it as active.
     """
+
+    # @category: browser
+    # @requires: uiautomation
+    # @ports: browser -> page
 
     def __init__(self, node_id: str, name: str = "New Tab", **kwargs) -> None:
         """
@@ -876,6 +888,10 @@ class GetAllImagesNode(BaseNode):
         - images: List of image URLs
         - count: Number of images found
     """
+
+    # @category: browser
+    # @requires: uiautomation
+    # @ports: none -> images, count
 
     def __init__(self, node_id: str, name: str = "Get All Images", **kwargs) -> None:
         config = kwargs.get("config", {})
@@ -1079,6 +1095,10 @@ class DownloadFileNode(BaseNode):
         - size: File size in bytes
         - success: Whether download succeeded
     """
+
+    # @category: browser
+    # @requires: uiautomation
+    # @ports: url, filename -> path, attachment_file, size, success
 
     def __init__(self, node_id: str, name: str = "Download File", **kwargs) -> None:
         config = kwargs.get("config", {})

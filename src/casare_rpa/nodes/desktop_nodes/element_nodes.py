@@ -68,6 +68,10 @@ class FindElementNode(DesktopNodeBase):
         found: Boolean indicating if element was found
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: window, selector -> element, found
+
     NODE_NAME = "Find Element"
 
     def __init__(
@@ -160,6 +164,10 @@ class ClickElementNode(DesktopNodeBase, ElementInteractionMixin):
         success: Whether the click succeeded
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: element, window, selector -> success
+
     NODE_NAME = "Click Element"
 
     def __init__(
@@ -242,6 +250,10 @@ class TypeTextNode(DesktopNodeBase, ElementInteractionMixin):
     Outputs:
         success: Whether the operation succeeded
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element, window, selector, text -> success
 
     NODE_NAME = "Type Text"
 
@@ -326,6 +338,10 @@ class GetElementTextNode(DesktopNodeBase, ElementInteractionMixin):
         element: The element object
     """
 
+    # @category: desktop
+    # @requires: none
+    # @ports: element, window, selector -> text, element
+
     NODE_NAME = "Get Element Text"
 
     def __init__(
@@ -408,6 +424,10 @@ class GetElementPropertyNode(DesktopNodeBase, ElementInteractionMixin):
         value: The property value
         element: The element object
     """
+
+    # @category: desktop
+    # @requires: none
+    # @ports: element, window, selector, property_name -> value, element
 
     NODE_NAME = "Get Element Property"
 

@@ -137,6 +137,10 @@ class EmailTriggerNode(BaseTriggerNode):
     - received_at: When the email was received
     """
 
+    # @category: trigger
+    # @requires: none
+    # @ports: none -> none
+
     trigger_display_name = "Email"
     trigger_description = "Trigger on new email"
     trigger_icon = "email"

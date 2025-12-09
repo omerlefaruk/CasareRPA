@@ -183,7 +183,9 @@ def check_type_compatibility(
 
     # Check type compatibility using port type registry
     try:
-        from casare_rpa.domain.port_type_system import get_port_type_registry
+        from casare_rpa.application.services.port_type_service import (
+            get_port_type_registry,
+        )
 
         registry = get_port_type_registry()
         return registry.is_compatible(source_type, target_type)
@@ -797,7 +799,12 @@ class CasarePipe(PipeItem):
             # LOW: Keep type-based thickness but simplified
             pen = QPen(wire_color, max(1.0, self._get_wire_thickness() * 0.75))
 
-        pen.setStyle(Qt.PenStyle.SolidLine)
+        # Use dotted line for live connections (being dragged)
+        if not self.input_port or not self.output_port:
+            pen.setStyle(Qt.PenStyle.DashLine)
+            pen.setDashPattern([4, 4])
+        else:
+            pen.setStyle(Qt.PenStyle.SolidLine)
         painter.setPen(pen)
 
         # Draw straight line from start to end instead of bezier path
